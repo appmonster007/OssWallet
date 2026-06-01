@@ -72,6 +72,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.entry.EntryTagSection
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -481,21 +482,28 @@ fun FilterFields(
                 }
 
                 if (filterRules.tagRule.isVisible) {
-                    EntryActionCard(
-                        icon = if (isTagLocked) Icons.Default.Lock else Icons.Default.LocalOffer,
-                        label = "TAGS",
-                        value = if (isTagLocked) {
-                            filter.tags.joinToString(", ")
-                        } else if (filter.tags.isEmpty()) "No Tags" else "${filter.tags.size} Tags",
-                        isSelected = filter.tags.isNotEmpty(),
-                        enabled = !isTagLocked,
-                        onClick = { if (!isTagLocked) activeSheet = "Tags" },
-                        iconContainerColor = if (isTagLocked) AppColors.formIconContainerPrimary.copy(
-                            alpha = 0.05f
+                    if (isTagLocked) {
+                        EntryActionCard(
+                            icon = Icons.Default.Lock,
+                            label = "TAGS",
+                            value = filter.tags.joinToString(", ").ifBlank { "None" },
+                            onClick = {},
+                            isSelected = filter.tags.isNotEmpty(),
+                            enabled = false,
+                            iconContainerColor = AppColors.formIconContainerPrimary.copy(alpha = 0.05f),
+                            iconTint = AppColors.primary.copy(alpha = 0.4f)
                         )
-                        else AppColors.formIconContainerPrimary.copy(alpha = 0.1f),
-                        iconTint = if (isTagLocked) AppColors.primary.copy(alpha = 0.4f) else AppColors.primary
-                    )
+                    } else {
+                        EntryTagSection(
+                            selectedNames = filter.tags,
+                            allAvailableTags = allTags,
+                            onShowTagSheet = { activeSheet = "Tags" },
+                            onRemoveTag = { tag ->
+                                onFilterChange(filter.copy(tags = filter.tags - tag))
+                            },
+                            label = "FILTER BY TAGS"
+                        )
+                    }
                 }
             }
         }

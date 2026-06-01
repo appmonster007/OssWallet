@@ -14,18 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
@@ -46,9 +52,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,19 +84,20 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
+import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
+import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
-import com.osscabinet.ossWallet.ui.theme.NeutralStatusColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -176,6 +185,23 @@ fun PlannedPaymentDetailContent(
     onConfirmOccurrence: (Long?) -> Unit,
     onSkipOccurrence: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0) { 2 }
+    val tabs = listOf(
+        NavigationTab(
+            icon = Icons.Rounded.Info,
+            selectedIcon = Icons.Rounded.Info,
+            label = "Overview",
+            contentDescription = "Overview tab"
+        ),
+        NavigationTab(
+            icon = Icons.Rounded.History,
+            selectedIcon = Icons.Rounded.History,
+            label = "History",
+            contentDescription = "History tab"
+        )
+    )
+
     val now = remember { System.currentTimeMillis() }
     val dateFormatter =
         remember { DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()) }
@@ -190,20 +216,17 @@ fun PlannedPaymentDetailContent(
 
     val upcomingItems = remember(payment, now, filter.timelineRange) {
         val (_, endTime) = TimelineService.getDateRange(filter.timelineRange)
-        val effectiveEnd = endTime ?: (now + 365L * 24 * 60 * 60 * 1000) // Default to 1 year if All Time
+        val effectiveEnd =
+            endTime ?: (now + 365L * 24 * 60 * 60 * 1000) // Default to 1 year if All Time
         PlannedPaymentService.generateUntil(payment, now, effectiveEnd)
     }
     val pastOccurrences = remember(occurrences, now) {
         occurrences.filter { it.scheduledDate < now }.sortedByDescending { it.scheduledDate }
     }
 
-    val accountName = remember(payment.accountId, accounts) {
-        accounts.find { it.id == payment.accountId }?.name ?: payment.accountId?.take(8)
-        ?: "Unknown"
-    }
-    val categoryName = remember(payment.categoryId, categories) {
-        categories.find { it.id == payment.categoryId }?.name ?: "Unknown"
-    }
+    val account = remember(payment.accountId, accounts) { accounts.find { it.id == payment.accountId } }
+    val category = remember(payment.categoryId, categories) { categories.find { it.id == payment.categoryId } }
+    val targetAccount = remember(payment.targetAccountId, accounts) { accounts.find { it.id == payment.targetAccountId } }
 
     Scaffold(
         topBar = {
@@ -211,10 +234,7 @@ fun PlannedPaymentDetailContent(
                 title = {
                     Text(
                         payment.name,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = AppTextStyles.cardTitle
                     )
                 },
                 navigationIcon = {
@@ -236,239 +256,349 @@ fun PlannedPaymentDetailContent(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                .padding(paddingValues)
         ) {
-            // Hero card
-            item {
-                val accentColor = when (payment.status) {
-                    PlannedPaymentStatus.ACTIVE -> when (payment.transactionType) {
-                        TransactionType.INCOME -> AppColors.primary
-                        TransactionType.TRANSFER -> AccentBlue
-                        else -> AppColors.error
-                    }
-
-                    PlannedPaymentStatus.PAUSED -> NeutralStatusColor
-                    else -> NeutralStatusColor
-                }
-                val recurrenceText =
-                    PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
-                val formattedAmount =
-                    payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
-                val nextRelative = formatRelativeDate(payment.schedule.nextDueDate, now)
-
-                AeonExpressiveCard(
-                    title = payment.name,
-                    subtitle = recurrenceText,
-                    accentColor = accentColor,
-                    filter = filter,
-                    onFilterChange = { filter = it },
-                    timelineMode = true,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                    ) {
-                        Text(
-                            formattedAmount,
-                            style = AppTextStyles.heroAmountDisplay,
-                            color = accentColor
-                        )
-                        Text(
-                            payment.currency,
-                            style = AppTextStyles.screenSubTitle,
-                            color = accentColor.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingXs)
-                        )
-                    }
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                        val statusLabel = payment.status.displayName
-                        val statusColor = when (payment.status) {
-                            PlannedPaymentStatus.ACTIVE -> accentColor
-                            PlannedPaymentStatus.PAUSED -> NeutralStatusColor
-                            else -> AppColors.error
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                            color = statusColor.copy(alpha = 0.12f),
-                            border = BorderStroke(0.5.dp, statusColor.copy(alpha = 0.3f))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonTheme.dimensions.screenPadding,
+                                bottom = scrollBottomPadding()
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                         ) {
-                            Text(
-                                statusLabel,
-                                style = AppTextStyles.formSectionLabel,
-                                color = statusColor,
-                                modifier = Modifier.padding(
-                                    horizontal = AeonTheme.dimensions.spacingMd,
-                                    vertical = AeonTheme.dimensions.spacingXs
-                                )
-                            )
-                        }
-                        val typeLabel = payment.transactionType.displayName
-                        Surface(
-                            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                            color = AppColors.insetSurface.copy(alpha = 0.5f)
-                        ) {
-                            Text(
-                                typeLabel,
-                                style = AppTextStyles.transactionSwipeAction,
-                                color = AppColors.contentSecondary,
-                                modifier = Modifier.padding(
-                                    horizontal = AeonTheme.dimensions.spacingMd,
-                                    vertical = AeonTheme.dimensions.spacingXs
-                                )
-                            )
+                            // IMPACT: Hero Card (Compact Read-only)
+                            item {
+                                PlannedPaymentHero(payment = payment)
+                            }
+
+                            // CONTEXT: Grid Layout (Compact Read-only)
+                            item {
+                                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                        CompactDetailCell(
+                                            icon = Icons.Rounded.Bookmark,
+                                            label = "TEMPLATE",
+                                            value = "None",
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        val scheduleSummary =
+                                            PlannedPaymentService.buildScheduleSummary(
+                                                payment.schedule.startDate,
+                                                payment.schedule.recurrenceRule
+                                            )
+                                        CompactDetailCell(
+                                            icon = Icons.Rounded.CalendarToday,
+                                            label = "SCHEDULE",
+                                            value = scheduleSummary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                        CompactDetailCell(
+                                            icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
+                                            label = "ACCOUNT",
+                                            value = account?.name ?: "Unknown",
+                                            modifier = Modifier.weight(1f),
+                                            iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                        )
+                                        
+                                        if (payment.transactionType == TransactionType.TRANSFER) {
+                                            CompactDetailCell(
+                                                icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
+                                                label = "TARGET ACCOUNT",
+                                                value = targetAccount?.name ?: "Unknown",
+                                                modifier = Modifier.weight(1f),
+                                                iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                            )
+                                        } else {
+                                            CompactDetailCell(
+                                                icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
+                                                label = "CATEGORY",
+                                                value = category?.name ?: "Unknown",
+                                                modifier = Modifier.weight(1f),
+                                                iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // DETAIL: Metadata Card
+                            item {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+                                    color = AppColors.cardSurface,
+                                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                                    ) {
+                                        // 1. Note
+                                        DetailMetaRow(
+                                            icon = Icons.AutoMirrored.Rounded.Notes,
+                                            label = "Note",
+                                            value = payment.note ?: "No note",
+                                            singleLine = false
+                                        )
+
+                                        // 2. Payee
+                                        DetailMetaRow(
+                                            icon = Icons.Rounded.Person,
+                                            label = "Payee",
+                                            value = payment.payee ?: "No payee"
+                                        )
+
+                                        // 3. Tags (Always shown)
+                                        DetailMetaRow(
+                                            icon = Icons.Rounded.LocalOffer,
+                                            label = "Tags",
+                                            value = payment.tags.ifEmpty { setOf("None") }.joinToString(" · ")
+                                        )
+
+                                        HorizontalDivider(
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.1f)
+                                        )
+
+                                        // 4. Payment Status Row (Planned Payment Status)
+                                        val statusColor = Color(android.graphics.Color.parseColor(payment.status.colorHex))
+                                        DetailMetaRow(
+                                            icon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.CheckCircle,
+                                            label = "Payment Status",
+                                            value = payment.status.displayName,
+                                            valueColor = statusColor
+                                        )
+
+                                        // 5. Grid Row: Payment Method & Transaction Status
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.Payments,
+                                                    label = "Method",
+                                                    value = payment.paymentMethod?.displayName ?: "Cash"
+                                                )
+                                            }
+                                            Box(modifier = Modifier.weight(1f)) {
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.CheckCircle,
+                                                    label = "Tx Status",
+                                                    value = payment.transactionStatus.name
+                                                )
+                                            }
+                                        }
+
+                                        if (payment.autoConfirm) {
+                                            DetailMetaRow(
+                                                icon = Icons.Rounded.AutoFixHigh,
+                                                label = "Automation",
+                                                value = "Auto-confirm enabled",
+                                                valueColor = AppColors.primary
+                                            )
+                                        }
+
+                                        if (payment.transactionType == TransactionType.TRANSFER) {
+                                            DetailMetaRow(
+                                                icon = Icons.Rounded.Repeat,
+                                                label = "Transfer Rate",
+                                                value = "1 : ${payment.transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Upcoming occurrences
+                            if (upcomingItems.isNotEmpty()) {
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "UPCOMING",
+                                        count = upcomingItems.size,
+                                        sectionColor = AppColors.primary
+                                    )
+                                }
+                                items(
+                                    upcomingItems,
+                                    key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
+                                    val matchedOccurrence =
+                                        occurrences.find { it.scheduledDate == item.scheduledDate }
+                                    val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
+                                    OccurrenceItem(
+                                        item = item,
+                                        status = status,
+                                        dateFormatter = dateFormatter,
+                                        onConfirm = { onConfirmOccurrence(item.scheduledDate) },
+                                        onSkip = onSkipOccurrence
+                                    )
+                                }
+                            }
+
+                            item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                         }
                     }
 
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.15f)
-                    )
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Repeat,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = accentColor.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            recurrenceText,
-                            style = AppTextStyles.drawerItemLabel,
-                            color = AppColors.contentSecondary,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            Icons.Rounded.CalendarToday,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = accentColor.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            "Next: $nextRelative",
-                            style = AppTextStyles.chipLabel,
-                            color = accentColor
-                        )
-                    }
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingXs))
-                    Text(
-                        "Started ${dateFormatter.format(Instant.ofEpochMilli(payment.schedule.startDate))}",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                }
-            }
-
-            // Metadata card
-            val hasMetadata = accounts.isNotEmpty() ||
-                    !payment.payee.isNullOrBlank() ||
-                    payment.paymentMethod != null ||
-                    categoryName != "Unknown" ||
-                    payment.tags.isNotEmpty() ||
-                    !payment.note.isNullOrBlank()
-            if (hasMetadata) {
-                item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                        color = AppColors.cardSurface,
-                        border = BorderStroke(
-                            0.5.dp,
-                            AppColors.divider.copy(alpha = 0.12f)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                        ) {
-                            if (accounts.isNotEmpty()) {
-                                DetailMetaRow(Icons.Rounded.AccountBalance, "Account", accountName)
-                            }
-                            if (!payment.payee.isNullOrBlank()) {
-                                DetailMetaRow(Icons.Rounded.Person, "Payee", payment.payee)
-                            }
-                            if (categoryName != "Unknown") {
-                                DetailMetaRow(Icons.Rounded.Category, "Category", categoryName)
-                            }
-                            if (payment.paymentMethod != null) {
-                                DetailMetaRow(
-                                    Icons.Rounded.Payments,
-                                    "Payment method",
-                                    payment.paymentMethod.displayName
+                    1 -> {
+                        // History Tab: Past occurrences
+                        if (pastOccurrences.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "No history yet",
+                                    style = AppTextStyles.transactionTitle,
+                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
                                 )
                             }
-                            if (payment.tags.isNotEmpty()) {
-                                DetailMetaRow(
-                                    Icons.Rounded.LocalOffer,
-                                    "Tags",
-                                    payment.tags.joinToString(" · ")
-                                )
-                            }
-                            if (!payment.note.isNullOrBlank()) {
-                                DetailMetaRow(
-                                    Icons.AutoMirrored.Rounded.Notes,
-                                    "Note",
-                                    payment.note,
-                                    singleLine = false
-                                )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(
+                                    start = AeonTheme.dimensions.screenPadding,
+                                    end = AeonTheme.dimensions.screenPadding,
+                                    top = AeonTheme.dimensions.screenPadding,
+                                    bottom = scrollBottomPadding()
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                            ) {
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "HISTORY",
+                                        count = pastOccurrences.size,
+                                        sectionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
+                                    )
+                                }
+                                items(pastOccurrences, key = { it.id }) { occ ->
+                                    PastOccurrenceItem(
+                                        occ = occ,
+                                        dateFormatter = dateFormatter,
+                                        payment = payment
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Upcoming occurrences
-            if (upcomingItems.isNotEmpty()) {
-                item {
-                    ManagementSectionHeader(
-                        title = "UPCOMING",
-                        count = upcomingItems.size,
-                        sectionColor = AppColors.primary
-                    )
-                }
-                items(
-                    upcomingItems,
-                    key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                    val matchedOccurrence =
-                        occurrences.find { it.scheduledDate == item.scheduledDate }
-                    val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
-                    OccurrenceItem(
-                        item = item,
-                        status = status,
-                        dateFormatter = dateFormatter,
-                        onConfirm = { onConfirmOccurrence(item.scheduledDate) },
-                        onSkip = onSkipOccurrence
+            UnifiedPillNavigation(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                tabs = tabs,
+                showFab = false
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlannedPaymentHero(
+    payment: PlannedPayment,
+    modifier: Modifier = Modifier
+) {
+    val accentColor = when (payment.transactionType) {
+        TransactionType.INCOME -> AppColors.primary
+        TransactionType.TRANSFER -> AppColors.accent
+        TransactionType.EXPENSE -> AppColors.error
+    }
+
+    AeonExpressiveCard(
+        title = payment.name,
+        subtitle = payment.transactionType.displayName,
+        accentColor = accentColor,
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+        ) {
+            val amountPrefix = when (payment.transactionType) {
+                TransactionType.EXPENSE -> "-"
+                TransactionType.INCOME -> "+"
+                else -> ""
+            }
+            Text(
+                amountPrefix + payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                style = AppTextStyles.heroAmountDisplay,
+                color = accentColor
+            )
+            Text(
+                payment.currency,
+                style = AppTextStyles.screenSubTitle,
+                color = accentColor.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingXs)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactDetailCell(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    iconTint: Color = AppColors.primary
+) {
+    Surface(
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+        color = AppColors.cardSurface,
+        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f)),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(AeonTheme.dimensions.spacingMd),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = iconTint.copy(alpha = 0.1f),
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = iconTint
                     )
                 }
             }
-
-            // History
-            if (pastOccurrences.isNotEmpty()) {
-                item {
-                    ManagementSectionHeader(
-                        title = "HISTORY",
-                        count = pastOccurrences.size,
-                        sectionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
-                    )
-                }
-                items(pastOccurrences, key = { it.id }) { occ ->
-                    PastOccurrenceItem(occ = occ, dateFormatter = dateFormatter, payment = payment)
-                }
+            Column {
+                Text(
+                    label.uppercase(),
+                    style = AppTextStyles.caption.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                )
+                Text(
+                    value,
+                    style = AppTextStyles.transactionTitle,
+                    color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-
-            item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
         }
     }
 }
@@ -478,38 +608,41 @@ private fun DetailMetaRow(
     icon: ImageVector,
     label: String,
     value: String,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    valueColor: Color = AppColors.contentPrimary
 ) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = if (singleLine) Alignment.CenterVertically else Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         Icon(
             icon,
             contentDescription = null,
-            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+            modifier = Modifier.size(18.dp),
             tint = AppColors.contentSecondary.copy(alpha = 0.5f)
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                label,
-                style = AppTextStyles.transactionSwipeAction.copy(
+                label.uppercase(),
+                style = AppTextStyles.caption.copy(
                     fontSize = 10.sp,
-                    letterSpacing = 0.5.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
                 ),
                 color = AppColors.contentSecondary.copy(alpha = 0.45f)
             )
             Text(
                 value,
                 style = AppTextStyles.chartTooltipValue,
-                color = AppColors.contentPrimary,
+                color = valueColor,
                 maxLines = if (singleLine) 1 else 4,
                 overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
+
 
 
 @Composable
@@ -716,7 +849,7 @@ private fun PastOccurrenceItem(
             Icons.Rounded.CheckCircle
         )
 
-        OccurrenceStatus.SKIPPED -> Triple("Skipped", NeutralStatusColor, Icons.Rounded.Cancel)
+        OccurrenceStatus.SKIPPED -> Triple("Skipped", AppColors.contentSecondary.copy(alpha = 0.5f), Icons.Rounded.Cancel)
         OccurrenceStatus.PENDING -> Triple(
             "Pending",
             AppColors.contentSecondary,

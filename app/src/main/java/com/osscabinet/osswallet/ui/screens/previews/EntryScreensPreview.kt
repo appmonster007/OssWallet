@@ -129,7 +129,6 @@ fun FullLoanEntryPreview() {
                     isPayeeRegex = false,
                     minAmount = "100",
                     maxAmount = "10000",
-                    excludeFuture = true
                 ),
                 onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 onEvent = {}
@@ -188,7 +187,6 @@ fun FullFilterEntryPreview() {
                     minAmount = "5",
                     maxAmount = "500",
                     hasWarranty = false,
-                    excludeFuture = true
                 ),
                 onSearch = { kotlinx.coroutines.flow.flowOf(emptyList()) },
                 onEvent = {}

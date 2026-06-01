@@ -104,6 +104,28 @@ object PlannedPaymentService {
     }
 
     /**
+     * Generates upcoming payment occurrences in the window [now, windowEnd].
+     * Respects endDate; stops early for ONE_TIME payments.
+     */
+    fun generateUntil(payment: PlannedPayment, now: Long, windowEnd: Long): List<UpcomingPaymentItem> {
+        if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
+        val result = mutableListOf<UpcomingPaymentItem>()
+        var due = payment.schedule.nextDueDate
+        while (due <= windowEnd) {
+            result += UpcomingPaymentItem(
+                plannedPayment = payment,
+                scheduledDate = due,
+                isOverdue = due < now
+            )
+            val currentSchedule = payment.schedule.copy(nextDueDate = due)
+            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due) ?: break
+            if (next == due) break
+            due = next
+        }
+        return result
+    }
+
+    /**
      * Generates up to [n] future occurrences starting from [payment.schedule.nextDueDate].
      * Respects endDate; stops early for ONE_TIME payments.
      */

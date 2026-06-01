@@ -44,7 +44,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -65,11 +67,15 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -174,8 +180,18 @@ fun PlannedPaymentDetailContent(
     val dateFormatter =
         remember { DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()) }
 
-    val upcomingItems = remember(payment, now) {
-        PlannedPaymentService.generateNextN(payment, now, 10)
+    var filter by remember {
+        mutableStateOf(
+            TransactionFilter(
+                timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false)
+            )
+        )
+    }
+
+    val upcomingItems = remember(payment, now, filter.timelineRange) {
+        val (_, endTime) = TimelineService.getDateRange(filter.timelineRange)
+        val effectiveEnd = endTime ?: (now + 365L * 24 * 60 * 60 * 1000) // Default to 1 year if All Time
+        PlannedPaymentService.generateUntil(payment, now, effectiveEnd)
     }
     val pastOccurrences = remember(occurrences, now) {
         occurrences.filter { it.scheduledDate < now }.sortedByDescending { it.scheduledDate }
@@ -249,6 +265,9 @@ fun PlannedPaymentDetailContent(
                     title = payment.name,
                     subtitle = recurrenceText,
                     accentColor = accentColor,
+                    filter = filter,
+                    onFilterChange = { filter = it },
+                    timelineMode = true,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(

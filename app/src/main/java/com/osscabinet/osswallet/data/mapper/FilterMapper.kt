@@ -34,8 +34,7 @@ fun FilterEntity.toDomain(): Filter {
             currencies = currencies,
             statuses = statuses,
             linkedTransactionIds = linkedTransactionIds,
-            tags = tags,
-            excludeFuture = excludeFuture
+            tags = tags
         )
     )
 }
@@ -69,7 +68,6 @@ fun Filter.toEntity(): FilterEntity {
         currencies = filter.currencies,
         statuses = filter.statuses,
         linkedTransactionIds = filter.linkedTransactionIds,
-        tags = filter.tags,
-        excludeFuture = filter.excludeFuture
+        tags = filter.tags
     )
 }

@@ -248,8 +248,7 @@ object CardAggregationService {
         // We honor excludeFuture toggle if it's part of the card/screen filter.
         val baseFilter = TransactionFilter(
             accountIds = setOf(targetAccountId),
-            timelineRange = TimelineRange.AllTime,
-            excludeFuture = periodFilter.excludeFuture
+            timelineRange = TimelineRange.AllTime(excludeFuture = periodFilter.timelineRange.excludeFuture)
         )
         val lifetimeSummariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, baseFilter)
             .getOrDefault(emptyMap())
@@ -289,7 +288,8 @@ object CardAggregationService {
             else -> {
                 val (_, end) = TimelineService.getDateRange(range)
                 this.copy(
-                    timelineRange = if (end != null) TimelineRange.CustomRange(end = end) else TimelineRange.AllTime
+                    timelineRange = if (end != null) TimelineRange.CustomRange(end = end, excludeFuture = range.excludeFuture) 
+                                   else TimelineRange.AllTime(excludeFuture = range.excludeFuture)
                 )
             }
         }

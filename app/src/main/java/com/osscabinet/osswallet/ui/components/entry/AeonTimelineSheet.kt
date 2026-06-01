@@ -95,7 +95,7 @@ fun AeonTimelineSheet(
 fun AeonTimelineSheetPreview() {
     OssWalletTheme {
         AeonTimelineSheet(
-            selectedRange = TimelineRange.AllTime,
+            selectedRange = TimelineRange.AllTime(),
             onRangeSelected = {},
             onDismiss = {}
         )

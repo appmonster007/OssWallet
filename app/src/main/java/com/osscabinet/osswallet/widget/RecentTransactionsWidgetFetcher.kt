@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
@@ -39,7 +40,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             RecentTransactionsWidgetPrefsStore(context).load(widgetId)
         }.getOrElse { RecentTransactionsWidgetConfig() }
 
-        val filter = TransactionFilter(excludeFuture = true)
+        val filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
         
         // Fetch all transactions for the profile
         val allTransactions = common.databaseQueryService

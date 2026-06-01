@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -15,17 +16,33 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 @Composable
 fun TransactionListEmptyState(
     modifier: Modifier = Modifier,
-    message: String = "No records found"
+    message: String = "No records found",
+    isFutureExcluded: Boolean = false,
+    onIncludeFutureClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = message,
-            style = AppTextStyles.listItemTitle,
-            color = AppColors.contentSecondary
-        )
+        androidx.compose.foundation.layout.Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = message,
+                style = AppTextStyles.listItemTitle,
+                color = AppColors.contentSecondary
+            )
+            
+            if (isFutureExcluded && onIncludeFutureClick != null) {
+                androidx.compose.material3.TextButton(onClick = onIncludeFutureClick) {
+                    Text(
+                        "Include future transactions?",
+                        style = AppTextStyles.caption.copy(color = AppColors.primary)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -34,7 +51,7 @@ fun TransactionListEmptyState(
 fun TransactionListEmptyStatePreview() {
     OssWalletTheme {
         Surface {
-            TransactionListEmptyState()
+            TransactionListEmptyState(isFutureExcluded = true, onIncludeFutureClick = {})
         }
     }
 }

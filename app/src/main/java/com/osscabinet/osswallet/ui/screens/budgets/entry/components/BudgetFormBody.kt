@@ -350,14 +350,6 @@ fun BudgetFormBody(
                             }
                         }
                     }
-
-                    EntrySwitchRow(
-                        label = "Exclude Future",
-                        checked = state.excludeFuture,
-                        onCheckedChange = { onEvent(BudgetEntryEvent.SetExcludeFuture(it)) },
-                        icon = Icons.Rounded.Schedule,
-                        subtitle = "Exclude transactions with future dates"
-                    )
                 }
             }
 

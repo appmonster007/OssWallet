@@ -40,7 +40,7 @@ data class LoanEntryState(
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
     val selectedStatuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val timelineRange: TimelineRange = TimelineRange.AllTime(excludeFuture = true),
     val startDate: Long = System.currentTimeMillis(),
     val hasSettlementDate: Boolean = false,
     val settlementDate: Long = System.currentTimeMillis(),

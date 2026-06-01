@@ -138,12 +138,32 @@ object TimelineService {
      * Extracts the date range from a timeline range.
      */
     fun getDateRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
-        return when (timelineRange) {
+        val baseRange = when (timelineRange) {
             is TimelineRange.AllTime -> Pair(null, null)
-            is TimelineRange.ThisPeriod -> getRangeForThis(timelineRange.period, timelineRange.offset, referenceTime = referenceTime)
-            is TimelineRange.LastPeriod -> getRangeForLast(timelineRange.period, timelineRange.offset, referenceTime = referenceTime)
+            is TimelineRange.ThisPeriod -> getRangeForThis(
+                timelineRange.period,
+                timelineRange.offset,
+                referenceTime = referenceTime
+            )
+
+            is TimelineRange.LastPeriod -> getRangeForLast(
+                timelineRange.period,
+                timelineRange.offset,
+                referenceTime = referenceTime
+            )
+
             is TimelineRange.CustomRange -> Pair(timelineRange.start, timelineRange.end)
         }
+
+        if (!timelineRange.excludeFuture) return baseRange
+
+        val now = referenceTime ?: System.currentTimeMillis()
+        val start = baseRange.first
+        val end = baseRange.second
+
+        val constrainedEnd = if (end != null) minOf(end, now) else now
+
+        return Pair(start, constrainedEnd)
     }
 
     /**
@@ -194,9 +214,14 @@ object TimelineService {
                 val s = range.start ?: return range
                 val e = range.end ?: return range
                 val duration = e - s
-                TimelineRange.CustomRange(s + duration * delta, e + duration * delta)
+                TimelineRange.CustomRange(
+                    start = s + duration * delta,
+                    end = e + duration * delta,
+                    excludeFuture = range.excludeFuture
+                )
             }
-            else -> range
+
+            is TimelineRange.AllTime -> range
         }
     }
 

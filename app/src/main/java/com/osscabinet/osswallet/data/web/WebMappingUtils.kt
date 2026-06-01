@@ -104,7 +104,6 @@ internal fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
         is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
         is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
         is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
-        else -> Triple("ALL_TIME", null, null)
     }
     return FilterSummaryDto(
         timelineType = timelineType, dateFrom = dateFrom, dateTo = dateTo,
@@ -119,7 +118,7 @@ internal fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
         maxAmount = maxAmount?.toDouble(),
         queryNote = queryNote,
         queryPayee = queryPayee,
-        excludeFuture = excludeFuture
+        excludeFuture = timelineRange.excludeFuture
     )
 }
 
@@ -390,7 +389,6 @@ internal fun Filter.toDto(): FilterDto {
         is TimelineRange.CustomRange -> Triple("CUSTOM", tl.start, tl.end)
         is TimelineRange.ThisPeriod -> Triple(tl.period.name, null, null)
         is TimelineRange.LastPeriod -> Triple(tl.period.name, null, null)
-        else -> Triple("ALL_TIME", null, null)
     }
     return FilterDto(
         id = id, name = name,
@@ -407,20 +405,20 @@ internal fun Filter.toDto(): FilterDto {
         minAmount = tf.minAmount?.toDouble(),
         maxAmount = tf.maxAmount?.toDouble(),
         hasWarranty = tf.hasWarranty,
-        excludeFuture = tf.excludeFuture
+        excludeFuture = tf.timelineRange.excludeFuture
     )
 }
 
 internal fun CreateFilterRequest.toTransactionFilter(): TransactionFilter {
     val timelineRange = when (timelineType.uppercase()) {
-        "ALL_TIME" -> TimelineRange.AllTime
-        "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo)
-        "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-        "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
-        "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
-        "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
-        "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
-        else -> TimelineRange.AllTime
+        "ALL_TIME" -> TimelineRange.AllTime(excludeFuture = excludeFuture)
+        "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo, excludeFuture = excludeFuture)
+        "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = excludeFuture)
+        "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = excludeFuture)
+        "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK, excludeFuture = excludeFuture)
+        "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY, excludeFuture = excludeFuture)
+        "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER, excludeFuture = excludeFuture)
+        else -> TimelineRange.AllTime(excludeFuture = excludeFuture)
     }
     return TransactionFilter(
         timelineRange = timelineRange,
@@ -443,8 +441,7 @@ internal fun CreateFilterRequest.toTransactionFilter(): TransactionFilter {
         }.toSet(),
         minAmount = minAmount?.let { BigDecimal.valueOf(it) },
         maxAmount = maxAmount?.let { BigDecimal.valueOf(it) },
-        hasWarranty = hasWarranty,
-        excludeFuture = excludeFuture
+        hasWarranty = hasWarranty
     )
 }
 
@@ -525,19 +522,19 @@ internal fun CardConfig.withFilter(newFilter: TransactionFilter): CardConfig = w
 
 internal fun CardFilterUpdateDto.toDomain(): TransactionFilter {
     val timelineRange = when (timelineType?.uppercase()) {
-        "ALL_TIME" -> TimelineRange.AllTime
-        "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo)
-        "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH)
-        "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR)
-        "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK)
-        "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY)
-        "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER)
-        "HALF_YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR)
-        "LAST_7_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_7_DAYS)
-        "LAST_30_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-        "LAST_6_MONTHS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_6_MONTHS)
-        "LAST_1_YEAR" -> TimelineRange.LastPeriod(LastPeriodType.LAST_1_YEAR)
-        else -> TimelineRange.AllTime
+        "ALL_TIME" -> TimelineRange.AllTime(excludeFuture = excludeFuture)
+        "CUSTOM" -> TimelineRange.CustomRange(start = dateFrom, end = dateTo, excludeFuture = excludeFuture)
+        "MONTH" -> TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = excludeFuture)
+        "YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = excludeFuture)
+        "WEEK" -> TimelineRange.ThisPeriod(ThisPeriodType.WEEK, excludeFuture = excludeFuture)
+        "TODAY" -> TimelineRange.ThisPeriod(ThisPeriodType.TODAY, excludeFuture = excludeFuture)
+        "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER, excludeFuture = excludeFuture)
+        "HALF_YEAR" -> TimelineRange.ThisPeriod(ThisPeriodType.HALF_YEAR, excludeFuture = excludeFuture)
+        "LAST_7_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_7_DAYS, excludeFuture = excludeFuture)
+        "LAST_30_DAYS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS, excludeFuture = excludeFuture)
+        "LAST_6_MONTHS" -> TimelineRange.LastPeriod(LastPeriodType.LAST_6_MONTHS, excludeFuture = excludeFuture)
+        "LAST_1_YEAR" -> TimelineRange.LastPeriod(LastPeriodType.LAST_1_YEAR, excludeFuture = excludeFuture)
+        else -> TimelineRange.AllTime(excludeFuture = excludeFuture)
     }
     return TransactionFilter(
         timelineRange = timelineRange,
@@ -557,7 +554,6 @@ internal fun CardFilterUpdateDto.toDomain(): TransactionFilter {
             PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
         }.toSet(),
         minAmount = minAmount?.let { BigDecimal.valueOf(it) },
-        maxAmount = maxAmount?.let { BigDecimal.valueOf(it) },
-        excludeFuture = excludeFuture
+        maxAmount = maxAmount?.let { BigDecimal.valueOf(it) }
     )
 }

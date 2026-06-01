@@ -103,7 +103,7 @@ fun AeonTimelinePeriodSelector(
     // Sync Pager -> Range
     LaunchedEffect(pagerState.settledPage) {
         val newRange = when (pagerState.settledPage) {
-            0 -> TimelineRange.AllTime
+            0 -> TimelineRange.AllTime()
             1 -> if (currentRange is TimelineRange.ThisPeriod) currentRange else TimelineRange.ThisPeriod(
                 ThisPeriodType.MONTH
             )
@@ -117,7 +117,7 @@ fun AeonTimelinePeriodSelector(
                 TimelineRange.CustomRange(now - 86400000L * 7, now)
             }
 
-            else -> TimelineRange.AllTime
+            else -> TimelineRange.AllTime()
         }
         if (newRange != currentRange) {
             onRangeSelected(newRange)
@@ -144,57 +144,67 @@ fun AeonTimelinePeriodSelector(
             AppColors.outlineVariant
         )
     ) {
-        if (swipeEntireComponent) {
-            // 1. Full Component Pager (Tactile Experience)
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth()
-            ) { page ->
+        Column {
+            if (swipeEntireComponent) {
+                // 1. Full Component Pager (Tactile Experience)
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth()
+                ) { page ->
+                    TimelineSelectorLayout(
+                        page = page,
+                        activePage = pagerState.currentPage,
+                        currentRange = currentRange,
+                        onRangeSelected = onRangeSelected,
+                        onIconClick = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(it)
+                            }
+                        },
+                        showDropdown = showDropdown,
+                        onDropdownShow = { showDropdown = it },
+                        onDatePickerShow = { showDatePicker = it },
+                        contentColor = contentColor,
+                        inactiveContentColor = inactiveContentColor
+                    )
+                }
+            } else {
+                // 2. Value-Only Pager (Fixed Controls Experience)
                 TimelineSelectorLayout(
-                    page = page,
+                    page = pagerState.currentPage,
                     activePage = pagerState.currentPage,
                     currentRange = currentRange,
                     onRangeSelected = onRangeSelected,
-                    onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                    onIconClick = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(it)
+                        }
+                    },
                     showDropdown = showDropdown,
                     onDropdownShow = { showDropdown = it },
                     onDatePickerShow = { showDatePicker = it },
                     contentColor = contentColor,
-                    inactiveContentColor = inactiveContentColor
+                    inactiveContentColor = inactiveContentColor,
+                    centerContent = {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(26.dp)
+                        ) { page ->
+                            DateDisplayArea(
+                                page = page,
+                                activePage = pagerState.currentPage,
+                                currentRange = currentRange,
+                                showDropdown = showDropdown,
+                                onDropdownShow = { showDropdown = it },
+                                onDatePickerShow = { showDatePicker = it },
+                                onRangeSelected = onRangeSelected
+                            )
+                        }
+                    }
                 )
             }
-        } else {
-            // 2. Value-Only Pager (Fixed Controls Experience)
-            TimelineSelectorLayout(
-                page = pagerState.currentPage,
-                activePage = pagerState.currentPage,
-                currentRange = currentRange,
-                onRangeSelected = onRangeSelected,
-                onIconClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                showDropdown = showDropdown,
-                onDropdownShow = { showDropdown = it },
-                onDatePickerShow = { showDatePicker = it },
-                contentColor = contentColor,
-                inactiveContentColor = inactiveContentColor,
-                centerContent = {
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(22.dp)
-                    ) { page ->
-                        DateDisplayArea(
-                            page = page,
-                            activePage = pagerState.currentPage,
-                            currentRange = currentRange,
-                            showDropdown = showDropdown,
-                            onDropdownShow = { showDropdown = it },
-                            onDatePickerShow = { showDatePicker = it },
-                            onRangeSelected = onRangeSelected
-                        )
-                    }
-                }
-            )
         }
     }
 
@@ -355,7 +365,7 @@ private fun DateDisplayArea(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(22.dp)
+            .height(26.dp)
             .clip(RoundedCornerShape(8.dp))
             .onGloballyPositioned { width = it.size.width }
             .clickable {
@@ -367,7 +377,24 @@ private fun DateDisplayArea(
             },
         contentAlignment = Alignment.Center
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            IconButton(
+                onClick = { onRangeSelected(currentRange.withExcludeFuture(!currentRange.excludeFuture)) },
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .size(22.dp)
+            ) {
+                Icon(
+                    Icons.Default.Schedule,
+                    null,
+                    modifier = Modifier.size(14.dp),
+                    tint = if (currentRange.excludeFuture) contentColor else inactiveContentColor
+                )
+            }
+
             Text(
                 text = getRangeSubtitleText(currentRange),
                 style = AppTextStyles.timelinePeriodValue,

@@ -115,10 +115,6 @@ class TransactionQueryBuilder {
             where.append(" AND timestamp <= ?")
             args.add(effectiveEndDate)
         }
-        if (filter.excludeFuture) {
-            where.append(" AND timestamp <= ?")
-            args.add(System.currentTimeMillis())
-        }
         if (filter.accountIds.isNotEmpty()) {
             val placeholders = filter.accountIds.joinToString(",") { "?" }
             where.append(" AND accountId IN ($placeholders)")

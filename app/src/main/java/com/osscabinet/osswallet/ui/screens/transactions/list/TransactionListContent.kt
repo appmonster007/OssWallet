@@ -70,7 +70,18 @@ fun TransactionListContent(
                     .background(AppColors.screenBackground)
             ) {
                 if (listState.isEmpty) {
-                    TransactionListEmptyState()
+                    TransactionListEmptyState(
+                        isFutureExcluded = filter.timelineRange.excludeFuture,
+                        onIncludeFutureClick = {
+                            onFilterEvent(
+                                FilterEvent.Apply(
+                                    filter.copy(
+                                        timelineRange = filter.timelineRange.withExcludeFuture(false)
+                                    )
+                                )
+                            )
+                        }
+                    )
                 } else {
                     AeonTransactionList(
                         listState = listState,

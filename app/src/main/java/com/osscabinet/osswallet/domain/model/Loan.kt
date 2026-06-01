@@ -27,7 +27,7 @@ data class Loan(
     val paymentMethods: Set<PaymentMethod> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val timelineRange: TimelineRange = TimelineRange.AllTime,
+    val timelineRange: TimelineRange = TimelineRange.AllTime(),
     val filterId: Long? = null
 )
 

@@ -60,7 +60,7 @@ class CashFlowComparisonCardComputer(
             baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
-            excludeFuture = mergedFilter.excludeFuture
+            excludeFuture = mergedFilter.timelineRange.excludeFuture
         )
 
         // Previous period — cap at today so we don't show future zero-lines
@@ -76,7 +76,7 @@ class CashFlowComparisonCardComputer(
                 baseCurrency = input.displayCurrency,
                 exchangeRates = input.exchangeRates,
                 today = today,
-                excludeFuture = mergedFilter.excludeFuture
+                excludeFuture = mergedFilter.timelineRange.excludeFuture
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -93,7 +93,7 @@ class CashFlowComparisonCardComputer(
             baseCurrency = input.displayCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
-            excludeFuture = mergedFilter.excludeFuture
+            excludeFuture = mergedFilter.timelineRange.excludeFuture
         )
 
         return CardRenderData.CashFlowComparison(

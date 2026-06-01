@@ -101,22 +101,11 @@ fun FilterFormBody(
 
             // CORE CRITERIA: Primary structural filter logic
             EntrySection(title = "CORE CRITERIA", icon = Icons.Rounded.Tune) {
-                Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                    // Default Period for this filter
-                    AeonTimelinePeriodSelector(
-                        currentRange = state.timelineRange,
-                        onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) }
-                    )
-
-                    // Future transactions exclusion
-                    EntrySwitchRow(
-                        label = "Exclude Future",
-                        checked = state.excludeFuture,
-                        onCheckedChange = { onEvent(FilterEntryEvent.SetExcludeFuture(it)) },
-                        icon = Icons.Rounded.Schedule,
-                        subtitle = "Exclude future dated transactions"
-                    )
-                }
+                // Default Period for this filter
+                AeonTimelinePeriodSelector(
+                    currentRange = state.timelineRange,
+                    onRangeSelected = { onEvent(FilterEntryEvent.SetTimelineRange(it)) }
+                )
             }
 
             // PRIMARY FILTERS: The context grid matching FilterFields logic

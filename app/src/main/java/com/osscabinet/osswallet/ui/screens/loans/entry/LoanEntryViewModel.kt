@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
@@ -113,7 +114,7 @@ class LoanEntryViewModel @Inject constructor(
                     hasWarranty = null,
                     warrantyExpirationStart = null,
                     warrantyExpirationEnd = null,
-                    excludeFuture = true
+                    timelineRange = TimelineRange.AllTime(excludeFuture = true)
                 )
             }
             return
@@ -159,7 +160,7 @@ class LoanEntryViewModel @Inject constructor(
                         hasWarranty = tf.hasWarranty,
                         warrantyExpirationStart = tf.warrantyExpirationStart,
                         warrantyExpirationEnd = tf.warrantyExpirationEnd,
-                        excludeFuture = tf.excludeFuture
+                        excludeFuture = tf.timelineRange.excludeFuture
                     )
                 }
             }
@@ -198,8 +199,11 @@ class LoanEntryViewModel @Inject constructor(
                 )
             }
 
-            is LoanEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
-            is LoanEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
+            is LoanEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range, excludeFuture = event.range.excludeFuture) }
+            is LoanEntryEvent.SetExcludeFuture -> _state.update { 
+                val newRange = it.timelineRange.withExcludeFuture(event.exclude)
+                it.copy(excludeFuture = event.exclude, timelineRange = newRange) 
+            }
             is LoanEntryEvent.SetPaymentMethods -> _state.update { it.copy(selectedPaymentMethods = event.methods) }
             is LoanEntryEvent.SetStatuses -> _state.update { it.copy(selectedStatuses = event.statuses) }
             is LoanEntryEvent.SetLinkedTransactions -> _state.update { it.copy(linkedTransactionIds = event.ids) }
@@ -230,7 +234,7 @@ class LoanEntryViewModel @Inject constructor(
                             warrantyExpirationStart = filter.filter.warrantyExpirationStart,
                             warrantyExpirationEnd = filter.filter.warrantyExpirationEnd,
                             timelineRange = filter.filter.timelineRange,
-                            excludeFuture = filter.filter.excludeFuture,
+                            excludeFuture = filter.filter.timelineRange.excludeFuture,
                             selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
                                 filter.filter.transactionTypes.toSet()
                             } else {
@@ -344,8 +348,7 @@ class LoanEntryViewModel @Inject constructor(
                     hasWarranty = s.hasWarranty,
                     warrantyExpirationStart = s.warrantyExpirationStart,
                     warrantyExpirationEnd = s.warrantyExpirationEnd,
-                    timelineRange = s.timelineRange,
-                    excludeFuture = s.excludeFuture
+                    timelineRange = s.timelineRange
                 )
             )
 
@@ -422,7 +425,6 @@ class LoanEntryViewModel @Inject constructor(
                 s.warrantyExpirationStart != f.warrantyExpirationStart ||
                 s.warrantyExpirationEnd != f.warrantyExpirationEnd ||
                 s.timelineRange != f.timelineRange ||
-                s.excludeFuture != f.excludeFuture ||
                 "${s.name}-Filter" != currentFilter.name
     }
 

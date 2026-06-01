@@ -72,9 +72,9 @@ fun Route.transactionRoutes(
 
                 // Build filter from query params
                 val timelineRange = if (dateFrom != null || dateTo != null) {
-                    TimelineRange.CustomRange(start = dateFrom, end = dateTo)
+                    TimelineRange.CustomRange(start = dateFrom, end = dateTo, excludeFuture = excludeFuture)
                 } else {
-                    TimelineRange.AllTime
+                    TimelineRange.AllTime(excludeFuture = excludeFuture)
                 }
 
                 val filter = TransactionFilter(
@@ -106,8 +106,7 @@ fun Route.transactionRoutes(
                             )
                         } ?: TransactionStatus.CLEARED)
                     } else emptySet(),
-                    queryPayee = payeeParam,
-                    excludeFuture = excludeFuture
+                    queryPayee = payeeParam
                 )
 
                 val filtered =

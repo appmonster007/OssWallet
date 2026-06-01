@@ -34,8 +34,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                     baseCurrency = common.baseCurrency,
                     exchangeRates = common.exchangeRates,
                     filter = TransactionFilter(
-                        timelineRange = config.timelineRange,
-                        excludeFuture = true
+                        timelineRange = config.timelineRange.withExcludeFuture(true)
                     ),
                     accounts = emptyList(),
                     categories = emptyList()
@@ -43,8 +42,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                 config = CashFlowCardConfig(
                     cardId = "cf_widget_$widgetId",
                     filter = TransactionFilter(
-                        timelineRange = config.timelineRange,
-                        excludeFuture = true
+                        timelineRange = config.timelineRange.withExcludeFuture(true)
                     )
                 )
             )
@@ -62,8 +60,7 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
             val currentFilter = TransactionFilter(
-                timelineRange = config.timelineRange,
-                excludeFuture = true
+                timelineRange = config.timelineRange.withExcludeFuture(true)
             )
             val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
             if (prevStart != null && prevEnd != null) {

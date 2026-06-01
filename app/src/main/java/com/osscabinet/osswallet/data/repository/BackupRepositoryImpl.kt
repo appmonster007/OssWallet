@@ -401,8 +401,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "currencies",
                 "statuses",
                 "linkedTransactionIds",
-                "tags",
-                "excludeFuture"
+                "tags"
             ),
             filterDao.getAllFiltersSync().map {
                 listOf(
@@ -427,8 +426,7 @@ class BackupRepositoryImpl @Inject constructor(
                     Json.encodeToString(it.currencies),
                     Json.encodeToString(it.statuses),
                     Json.encodeToString(it.linkedTransactionIds),
-                    Json.encodeToString(it.tags),
-                    it.excludeFuture
+                    Json.encodeToString(it.tags)
                 )
             })
 
@@ -868,9 +866,9 @@ class BackupRepositoryImpl @Inject constructor(
                         try {
                             Json.decodeFromString<TimelineRange>(it)
                         } catch (_: Exception) {
-                            TimelineRange.AllTime
+                            TimelineRange.AllTime()
                         }
-                    } ?: TimelineRange.AllTime,
+                    } ?: TimelineRange.AllTime(),
                     queryNote = p["queryNote"],
                     isNoteRegex = p["isNoteRegex"]?.toBoolean() ?: false,
                     queryPayee = p["queryPayee"],
@@ -937,8 +935,7 @@ class BackupRepositoryImpl @Inject constructor(
                         } catch (_: Exception) {
                             emptySet()
                         }
-                    } ?: emptySet(),
-                    excludeFuture = p["excludeFuture"]?.toBoolean() ?: true
+                    } ?: emptySet()
                 ))
         }
     }

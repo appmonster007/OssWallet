@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -114,6 +115,7 @@ class BudgetEntryViewModel @Inject constructor(
                     hasWarranty = null,
                     warrantyExpirationStart = null,
                     warrantyExpirationEnd = null,
+                    timelineRange = TimelineRange.AllTime(excludeFuture = true),
                     excludeFuture = true
                 )
             }
@@ -157,7 +159,7 @@ class BudgetEntryViewModel @Inject constructor(
                         hasWarranty = tf.hasWarranty,
                         warrantyExpirationStart = tf.warrantyExpirationStart,
                         warrantyExpirationEnd = tf.warrantyExpirationEnd,
-                        excludeFuture = tf.excludeFuture
+                        excludeFuture = tf.timelineRange.excludeFuture
                     )
                 }
             }
@@ -169,7 +171,7 @@ class BudgetEntryViewModel @Inject constructor(
             is BudgetEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
             is BudgetEntryEvent.SetLimitAmount -> _state.update { it.copy(limitAmount = event.amount) }
             is BudgetEntryEvent.SetCurrency -> _state.update { it.copy(currency = event.currency) }
-            is BudgetEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range) }
+            is BudgetEntryEvent.SetTimelineRange -> _state.update { it.copy(timelineRange = event.range, excludeFuture = event.range.excludeFuture) }
             is BudgetEntryEvent.SetTrackTypes -> _state.update { it.copy(selectedTrackTypes = event.types) }
             is BudgetEntryEvent.SetAlertThreshold -> _state.update { it.copy(alertThreshold = event.threshold) }
             is BudgetEntryEvent.SetRollover -> _state.update { it.copy(rollover = event.rollover) }
@@ -197,7 +199,10 @@ class BudgetEntryViewModel @Inject constructor(
                 )
             }
 
-            is BudgetEntryEvent.SetExcludeFuture -> _state.update { it.copy(excludeFuture = event.exclude) }
+            is BudgetEntryEvent.SetExcludeFuture -> _state.update { 
+                val newRange = it.timelineRange.withExcludeFuture(event.exclude)
+                it.copy(excludeFuture = event.exclude, timelineRange = newRange) 
+            }
             is BudgetEntryEvent.ShowNumpad -> _state.update { it.copy(showNumpad = event.show) }
             is BudgetEntryEvent.ShowTimelineSheet -> _state.update { it.copy(showTimelineSheet = event.show) }
             is BudgetEntryEvent.ShowAccountSheet -> _state.update { it.copy(showAccountSheet = event.show) }
@@ -263,7 +268,7 @@ class BudgetEntryViewModel @Inject constructor(
                             warrantyExpirationStart = filter.filter.warrantyExpirationStart,
                             warrantyExpirationEnd = filter.filter.warrantyExpirationEnd,
                             timelineRange = filter.filter.timelineRange,
-                            excludeFuture = filter.filter.excludeFuture,
+                            excludeFuture = filter.filter.timelineRange.excludeFuture,
                             selectedTrackTypes = if (filter.filter.transactionTypes.isNotEmpty()) {
                                 filter.filter.transactionTypes.toSet()
                             } else {
@@ -339,8 +344,7 @@ class BudgetEntryViewModel @Inject constructor(
                     hasWarranty = s.hasWarranty,
                     warrantyExpirationStart = s.warrantyExpirationStart,
                     warrantyExpirationEnd = s.warrantyExpirationEnd,
-                    timelineRange = s.timelineRange,
-                    excludeFuture = s.excludeFuture
+                    timelineRange = s.timelineRange
                 )
             )
 
@@ -408,7 +412,6 @@ class BudgetEntryViewModel @Inject constructor(
                 s.warrantyExpirationStart != f.warrantyExpirationStart ||
                 s.warrantyExpirationEnd != f.warrantyExpirationEnd ||
                 s.timelineRange != f.timelineRange ||
-                s.excludeFuture != f.excludeFuture ||
                 "${s.name}-Filter" != currentFilter.name
     }
 

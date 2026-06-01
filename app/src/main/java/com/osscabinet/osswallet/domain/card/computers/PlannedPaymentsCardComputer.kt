@@ -39,7 +39,7 @@ class PlannedPaymentsCardComputer :
         val overdue = PlannedPaymentService.getOverdue(filteredPayments, now)
         val overdueIds = overdue.map { it.id }.toSet()
 
-        val allUpcoming = if (mergedFilter.excludeFuture) emptyList() else PlannedPaymentService.generateUpcoming(
+        val allUpcoming = if (mergedFilter.timelineRange.excludeFuture) emptyList() else PlannedPaymentService.generateUpcoming(
             payments = filteredPayments,
             fromDate = now,
             daysAhead = config.daysAhead
@@ -53,7 +53,7 @@ class PlannedPaymentsCardComputer :
             PlannedPaymentsViewMode.BOTH -> overdue to upcomingNonOverdue.take(config.maxItems)
             PlannedPaymentsViewMode.FUTURE_ONLY -> {
                 // One nearest upcoming occurrence per active payment schedule
-                val futureOnly = if (mergedFilter.excludeFuture) emptyList() else input.plannedPayments
+                val futureOnly = if (mergedFilter.timelineRange.excludeFuture) emptyList() else input.plannedPayments
                     .filter { it.status == PlannedPaymentStatus.ACTIVE && it.id !in overdueIds }
                     .mapNotNull { payment ->
                         allUpcoming.firstOrNull { it.plannedPayment.id == payment.id && !it.isOverdue }

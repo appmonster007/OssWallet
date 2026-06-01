@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
@@ -181,8 +180,8 @@ fun PillNavigationBar(
     val hazeState = LocalPillHazeState.current
     val isDark = isSystemInDarkTheme()
     
-    // Adjusted width: slightly wider to accommodate labels if needed
-    val barWidth = (80.dp * tabs.size) + 12.dp
+    // Width calculation: 64dp per tab + internal padding
+    val barWidth = (64.dp * tabs.size) + 12.dp
 
     Box(
         modifier = modifier.wrapContentSize(),
@@ -234,7 +233,6 @@ fun PillNavigationBar(
                             onClick = { onTabSelected(index) },
                             icon = tab.icon,
                             selectedIcon = tab.selectedIcon,
-                            label = tab.label,
                             contentDescription = tab.contentDescription,
                             modifier = Modifier.weight(1f)
                         )
@@ -277,7 +275,6 @@ fun PillNavigationItem(
     onClick: () -> Unit,
     icon: ImageVector,
     selectedIcon: ImageVector,
-    label: String,
     contentDescription: String,
     modifier: Modifier = Modifier
 ) {
@@ -309,34 +306,15 @@ fun PillNavigationItem(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = if (selected) selectedIcon else icon,
-                contentDescription = contentDescription,
-                tint = if (selected) 
-                    AppColors.onSelectionContainer 
-                else 
-                    AppColors.contentSecondary.copy(alpha = 0.7f),
-                modifier = Modifier.size(24.dp)
-            )
-            
-            AnimatedVisibility(
-                visible = selected,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Text(
-                    text = label,
-                    style = AppTextStyles.caption.copy(fontSize = 10.sp),
-                    color = AppColors.onSelectionContainer,
-                    maxLines = 1,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-        }
+        Icon(
+            imageVector = if (selected) selectedIcon else icon,
+            contentDescription = contentDescription,
+            tint = if (selected) 
+                AppColors.onSelectionContainer 
+            else 
+                AppColors.contentSecondary.copy(alpha = 0.7f),
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 

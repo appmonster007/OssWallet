@@ -122,7 +122,7 @@ fun PlannedPaymentsCard(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             if (overdue.isEmpty() && upcoming.isEmpty()) {
-                item {
+                item(key = "empty_state") {
                     Text(
                         text = when (config.viewMode) {
                             PlannedPaymentsViewMode.OVERDUE_ONLY -> "No overdue payments"
@@ -136,7 +136,7 @@ fun PlannedPaymentsCard(
                 }
             }
 
-            items(overdue) { payment ->
+            items(overdue, key = { "overdue_${it.id}" }) { payment ->
                 PlannedPaymentRow(
                     title = payment.name,
                     amount = payment.amount,
@@ -150,7 +150,7 @@ fun PlannedPaymentsCard(
                 )
             }
 
-            items(upcoming) { item ->
+            items(upcoming, key = { "upcoming_${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
                 PlannedPaymentRow(
                     title = item.plannedPayment.name,
                     amount = item.plannedPayment.amount,

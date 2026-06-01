@@ -158,7 +158,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val glassmorphismEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[GLASSMORPHISM_ENABLED_KEY] ?: true
+        preferences[GLASSMORPHISM_ENABLED_KEY] ?: false
     }
 
     suspend fun saveCurrency(currency: String) {

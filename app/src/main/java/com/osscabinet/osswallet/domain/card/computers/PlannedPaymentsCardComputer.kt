@@ -37,16 +37,15 @@ class PlannedPaymentsCardComputer :
         // Honor excludeFuture toggle if it's part of the card/screen filter.
         // If excludeFuture is true, we only show overdue payments (which are technically in the past).
         val overdue = PlannedPaymentService.getOverdue(filteredPayments, now)
-        val overdueIds = overdue.map { it.id }.toSet()
 
         val allUpcoming = if (mergedFilter.timelineRange.excludeFuture) emptyList() else PlannedPaymentService.generateUpcoming(
             payments = filteredPayments,
             fromDate = now,
             daysAhead = config.daysAhead
         )
-        
+
         // Strip items that are already in overdue from the upcoming list
-        val upcomingNonOverdue = allUpcoming.filter { it.plannedPayment.id !in overdueIds }
+        val upcomingNonOverdue = allUpcoming.filter { !it.isOverdue }
 
         val (shownOverdue, shownUpcoming) = when (config.viewMode) {
             PlannedPaymentsViewMode.OVERDUE_ONLY -> overdue to emptyList()
@@ -54,7 +53,7 @@ class PlannedPaymentsCardComputer :
             PlannedPaymentsViewMode.FUTURE_ONLY -> {
                 // One nearest upcoming occurrence per active payment schedule
                 val futureOnly = if (mergedFilter.timelineRange.excludeFuture) emptyList() else input.plannedPayments
-                    .filter { it.status == PlannedPaymentStatus.ACTIVE && it.id !in overdueIds }
+                    .filter { it.status == PlannedPaymentStatus.ACTIVE }
                     .mapNotNull { payment ->
                         allUpcoming.firstOrNull { it.plannedPayment.id == payment.id && !it.isOverdue }
                     }

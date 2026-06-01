@@ -288,7 +288,7 @@ data class PlannedPaymentsCardConfig(
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
-    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
+    override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = false))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
     override val filterRules: CardFilterRules get() = CardFilterRules.DEFAULT

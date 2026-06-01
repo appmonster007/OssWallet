@@ -95,6 +95,7 @@ fun UnifiedPillNavigation(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(bottom = fabPaddingBottom)
+                .height(56.dp)
                 .padding(horizontal = 24.dp)
                 .zIndex(2f)
         ) {
@@ -106,62 +107,59 @@ fun UnifiedPillNavigation(
                     tabs = tabs,
                     isDimmed = isFabExpanded,
                     onDimClick = { onFabToggle(false) },
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
 
             // Right-aligned FAB
             if (showFab) {
-                Box(
-                    modifier = Modifier.align(Alignment.BottomEnd),
-                    contentAlignment = Alignment.BottomEnd
-                ) {
-                    // Floating Menu Actions
-                    if (fabMenu != null) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier
-                                .padding(bottom = 72.dp)
-                                .wrapContentWidth(align = Alignment.End, unbounded = true)
-                        ) {
-                            fabMenu()
-                        }
-                    }
-
-                    // Primary FAB
-                    val rotation by animateFloatAsState(
-                        targetValue = if (isFabExpanded) 45f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "FabRotation"
-                    )
-
-                    val haptic = LocalHapticFeedback.current
-                    FloatingActionButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                        },
+                // Floating Menu Actions
+                if (fabMenu != null) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier
-                            .size(56.dp)
-                            .graphicsLayer { rotationZ = rotation },
-                        containerColor = AppColors.primary,
-                        contentColor = AppColors.onPrimary,
-                        shape = CircleShape,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 6.dp,
-                            pressedElevation = 2.dp
-                        )
+                            .align(Alignment.BottomEnd)
+                            .padding(bottom = 64.dp)
+                            .wrapContentWidth(align = Alignment.End, unbounded = true)
                     ) {
-                        Icon(
-                            imageVector = fabIcon,
-                            contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
-                            modifier = Modifier.size(24.dp)
-                        )
+                        fabMenu()
                     }
+                }
+
+                // Primary FAB
+                val rotation by animateFloatAsState(
+                    targetValue = if (isFabExpanded) 45f else 0f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "FabRotation"
+                )
+
+                val haptic = LocalHapticFeedback.current
+                FloatingActionButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(48.dp)
+                        .graphicsLayer { rotationZ = rotation },
+                    containerColor = AppColors.primary,
+                    contentColor = AppColors.onPrimary,
+                    shape = CircleShape,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 6.dp,
+                        pressedElevation = 2.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = fabIcon,
+                        contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }

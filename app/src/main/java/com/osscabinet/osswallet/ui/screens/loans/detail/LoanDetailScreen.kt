@@ -120,7 +120,7 @@ fun LoanDetailScreen(
         onSettleClick = { viewModel.settleLoan(loan); onBackClick() },
         onTransactionEvent = { event ->
             when (event) {
-                is TransactionItemEvent.Click -> onTransactionClick(event.id)
+                is TransactionItemEvent.Click -> onTransactionClick(event.id.substringAfter("_").toLongOrNull() ?: -1L)
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
@@ -133,6 +133,8 @@ fun LoanDetailScreen(
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
+                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
+                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
             }
         },
         onRecordsClick = onRecordsClick
@@ -151,7 +153,7 @@ fun LoanDetailContent(
     categoriesList: List<Category>,
     allTags: List<Tag>,
     baseCurrency: String,
-    revealedCardIds: List<Long>,
+    revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,

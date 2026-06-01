@@ -21,6 +21,9 @@ async function renderRecords() {
 
   showSpinner();
   try {
+    const includePlanned = params.get('includePlanned') !== '0';
+    const excludeFuture  = params.get('excludeFuture') === '1';
+
     let url = `/api/transactions?page=${page}&limit=${pageLimit}`;
     if (accountId)  url += `&accountId=${encodeURIComponent(accountId)}`;
     if (type)       url += `&type=${encodeURIComponent(type)}`;
@@ -31,6 +34,7 @@ async function renderRecords() {
     if (maxAmount)  url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
     if (status)     url += `&status=${encodeURIComponent(status)}`;
     if (payee)      url += `&payee=${encodeURIComponent(payee)}`;
+    url += `&includePlanned=${includePlanned}&excludeFuture=${excludeFuture}`;
 
     const json = await apiFetch(url);
     if (!json.success) { showError('Failed to load records.'); return; }
@@ -74,6 +78,14 @@ async function renderRecords() {
         <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00" min="0" step="0.01"></div>
         <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999" min="0" step="0.01"></div>
         <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
+        <div class="form-field" style="display:flex;align-items:center;gap:8px;margin-top:24px">
+          <input type="checkbox" id="f-planned" ${includePlanned ? 'checked' : ''} style="width:18px;height:18px">
+          <label style="margin:0;cursor:pointer" for="f-planned">Include Planned</label>
+        </div>
+        <div class="form-field" style="display:flex;align-items:center;gap:8px;margin-top:24px">
+          <input type="checkbox" id="f-excl-future" ${excludeFuture ? 'checked' : ''} style="width:18px;height:18px">
+          <label style="margin:0;cursor:pointer" for="f-excl-future">Exclude Future</label>
+        </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
         <div class="form-field" style="margin:0;flex:1;min-width:160px">
@@ -158,22 +170,68 @@ function buildTxTable(items, noHeader) {
     const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
     const tagsHtml = (tx.tags||[]).length ? `<br>${tx.tags.map(t=>`<span class="badge" style="font-size:0.68rem;background:var(--surface2);color:var(--text)">#${esc(t)}</span>`).join(' ')}` : '';
     const warIcon  = tx.warrantyExpiration ? ' 🛡️' : '';
-    s += `<tr style="cursor:pointer" onclick="openTxDetail(${tx.id})">
+
+    let trCls = '';
+    if (tx.isPlanned) {
+      trCls = 'tr-planned';
+      if (tx.isOverdue) trCls += ' tr-overdue';
+    }
+
+    const clickAction = tx.isPlanned ? `openPlannedActionModal(${tx.paymentId}, ${tx.date}, '${esc(tx.title)}')` : `openTxDetail(${tx.id})`;
+
+    s += `<tr class="${trCls}" style="cursor:pointer" onclick="${clickAction}">
       <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-      <td>${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
+      <td>${tx.isPlanned ? '🕒 ' : ''}${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
       <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
       <td>${esc(tx.accountName || '')}</td>
       <td><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span></td>
       <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">📋</button>
-        <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
-        <button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button>
+        ${tx.isPlanned ? `
+          <button class="btn-icon" title="Confirm" onclick="confirmPlannedOccurrence(${tx.paymentId}, ${tx.date})">✅</button>
+          <button class="btn-icon" title="Skip" onclick="skipPlannedOccurrence(${tx.paymentId}, ${tx.date})">⏭️</button>
+        ` : `
+          <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">📋</button>
+          <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
+          <button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button>
+        `}
       </td>
     </tr>`;
   });
   return s + '</tbody></table>';
 }
+
+window.openPlannedActionModal = function(id, date, title) {
+  const body = `
+    <div style="text-align:center;padding:10px 0">
+      <p style="margin-bottom:20px">Planned occurrence for <strong>${esc(title)}</strong> on ${new Date(date).toLocaleDateString()}.</p>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="btn btn-primary" onclick="closeModal();confirmPlannedOccurrence(${id}, ${date})">Confirm Now</button>
+        <button class="btn btn-ghost" onclick="closeModal();skipPlannedOccurrence(${id}, ${date})">Skip This Time</button>
+      </div>
+    </div>
+  `;
+  openModal('Planned Payment', body, null, null);
+};
+
+window.confirmPlannedOccurrence = async function(id, date) {
+  try {
+    const res = await apiWrite('POST', `/api/planned-payments/${id}/confirm-occurrence?date=${date}`);
+    if (res.success) { showToast('Occurrence confirmed!'); renderRecords(); }
+    else { showToast('Failed to confirm: ' + (res.error || ''), 'error'); }
+  } catch(e) { if (e.message !== 'Session expired') showError('Error confirming occurrence.'); }
+};
+
+window.skipPlannedOccurrence = async function(id, date) {
+  confirmDelete('Skip this occurrence? It will be removed from the list.', async () => {
+    try {
+      const res = await apiWrite('POST', `/api/planned-payments/${id}/skip-occurrence?date=${date}`);
+      closeModal();
+      if (res.success) { showToast('Occurrence skipped.'); renderRecords(); }
+      else { showToast('Failed to skip: ' + (res.error || ''), 'error'); }
+    } catch(e) { if (e.message !== 'Session expired') showError('Error skipping occurrence.'); }
+  });
+};
 
 function groupTransactions(items, groupBy) {
   const map = new Map();
@@ -213,6 +271,7 @@ window.setDateQuick = function (from, to) {
 window.applyRecordFilters = function () {
   const params = new URLSearchParams(location.hash.split('?')[1] || '');
   const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const check = id => { const el = document.getElementById(id); return el ? (el.checked ? '1' : '0') : '0'; };
   params.set('type',       get('f-type'));
   params.set('categoryId', get('f-cat'));
   params.set('accountId',  get('f-account'));
@@ -222,6 +281,8 @@ window.applyRecordFilters = function () {
   params.set('maxAmount',  get('f-max'));
   params.set('status',     get('f-status'));
   params.set('payee',      get('f-payee'));
+  params.set('includePlanned', check('f-planned'));
+  params.set('excludeFuture',  check('f-excl-future'));
   params.set('groupBy',    get('f-group'));
   params.set('sortBy',     get('f-sort'));
   params.set('page',       '0');

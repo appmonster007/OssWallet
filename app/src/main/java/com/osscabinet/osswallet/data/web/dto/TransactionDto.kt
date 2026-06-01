@@ -25,5 +25,9 @@ data class TransactionDto(
     val paymentMethod: String? = null,
     val warrantyExpiration: Long? = null,
     val location: String? = null,
-    val linkedTransactionIds: List<Long> = emptyList()
+    val linkedTransactionIds: List<Long> = emptyList(),
+    val isPlanned: Boolean = false,
+    val isOverdue: Boolean = false,
+    val occurrenceId: String? = null,
+    val paymentId: Long? = null
 )

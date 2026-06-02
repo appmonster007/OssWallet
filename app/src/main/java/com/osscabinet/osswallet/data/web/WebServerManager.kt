@@ -24,6 +24,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
+import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
@@ -76,6 +77,13 @@ class WebServerManager @Inject constructor(
     private var engine: EmbeddedServer<*, *>? = null
     private var serverScope: CoroutineScope? = null
     private val authSessionManager = AuthSessionManager()
+    private var lastActivityTime = System.currentTimeMillis()
+
+    private val activityTrackerPlugin = createApplicationPlugin("ActivityTracker") {
+        onCall { _ ->
+            lastActivityTime = System.currentTimeMillis()
+        }
+    }
 
     override fun isRunning(): Boolean = _serverState.value is WebServerState.Running
 
@@ -95,6 +103,7 @@ class WebServerManager @Inject constructor(
     override suspend fun start() {
         if (isRunning()) return
         _serverState.value = WebServerState.Starting
+        lastActivityTime = System.currentTimeMillis()
 
         val ip = NetworkUtils.getWifiInterfaceIp(context)
             ?: NetworkUtils.getAnyAvailableIp()
@@ -131,6 +140,7 @@ class WebServerManager @Inject constructor(
             engine = embeddedServer(CIO, host = ip, port = SERVER_PORT) {
                 install(ContentNegotiation) { json(serverJson) }
                 install(Compression) { gzip() }
+                install(activityTrackerPlugin)
                 install(StatusPages) {
                     exception<Throwable> { call, _ ->
                         call.respond(
@@ -159,8 +169,13 @@ class WebServerManager @Inject constructor(
 
             scope.launch {
                 while (isActive) {
-                    delay(5 * 60 * 1000L)
+                    delay(5 * 60 * 1000L) // Check every 5 minutes
                     authSessionManager.purgeExpiredSessions()
+                    
+                    // Auto-stop if idle for more than IDLE_TIMEOUT
+                    if (System.currentTimeMillis() - lastActivityTime > IDLE_TIMEOUT_MS) {
+                        stop()
+                    }
                 }
             }
 
@@ -182,9 +197,13 @@ class WebServerManager @Inject constructor(
         serverScope?.cancel()
         serverScope = null
         _serverState.value = WebServerState.Stopped
+        
+        // Also ensure preference is updated to reflect stopped state
+        webServerPreferences.setEnabled(false)
     }
 
     companion object {
         const val SERVER_PORT = 8192
+        private const val IDLE_TIMEOUT_MS = 2 * 60 * 60 * 1000L // 2 hours
     }
 }

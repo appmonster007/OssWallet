@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,14 @@ fun AeonTransactionList(
     revealedCardIds: List<String> = emptyList()
 ) {
     val layers = LocalAeonHaze.current
+    val itemHazeModifier = remember(layers) {
+        if (layers != null) {
+            // Register as source for standard depths: Surface(0), Overlay(1), Drawer(2)
+            layers.states.take(3).fold(Modifier as Modifier) { mod, state ->
+                mod.hazeSource(state)
+            }
+        } else Modifier
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -86,15 +95,7 @@ fun AeonTransactionList(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(
-                            if (layers != null) {
-                                // Register transactions as a source for ALL layers
-                                // so sticky headers at Depth 0 can blur them.
-                                layers.states.fold(Modifier as Modifier) { mod, state ->
-                                    mod.hazeSource(state)
-                                }
-                            } else Modifier
-                        )
+                        .then(itemHazeModifier)
                 ) {
                     SwipeableTransactionItem(
                         record = record,

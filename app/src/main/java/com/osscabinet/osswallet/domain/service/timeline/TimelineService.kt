@@ -575,6 +575,7 @@ object TimelineService {
         }
     }
 
+    @androidx.compose.runtime.Immutable
     data class GroupHeaderData(
         val title: String,
         val subtitle: String,

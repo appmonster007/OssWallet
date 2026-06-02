@@ -73,7 +73,9 @@ fun TransactionHeader(
         }
     }
 
-    val currenciesToDisplay = if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
+    val currenciesToDisplay = remember(showOnlyActiveCurrencies, activeCurrencies, allCurrencies) {
+        if (showOnlyActiveCurrencies) activeCurrencies else allCurrencies
+    }
 
     GlassSurface(
         modifier = Modifier

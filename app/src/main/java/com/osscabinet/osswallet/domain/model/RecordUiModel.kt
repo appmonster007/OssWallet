@@ -1,10 +1,12 @@
 package com.osscabinet.ossWallet.domain.model
 
+import androidx.compose.runtime.Immutable
 import java.math.BigDecimal
 
 /**
  * Unified interface for items that can appear in the transaction list.
  */
+@Immutable
 sealed interface RecordUiModel {
     val id: String // Unique ID for LazyColumn key: "tx_{id}" or "planned_{ppId}_{date}"
     val timestamp: Long
@@ -20,6 +22,7 @@ sealed interface RecordUiModel {
     val amountInBase: BigDecimal?
 }
 
+@Immutable
 data class ConfirmedTransactionUiModel(
     val item: TransactionWithBalance,
     override val accountName: String,
@@ -38,6 +41,7 @@ data class ConfirmedTransactionUiModel(
     val status: TransactionStatus get() = item.transaction.status
 }
 
+@Immutable
 data class PlannedPaymentUiModel(
     val paymentId: Long,
     val occurrenceId: Long?,

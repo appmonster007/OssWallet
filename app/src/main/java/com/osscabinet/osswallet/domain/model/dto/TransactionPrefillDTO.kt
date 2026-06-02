@@ -67,6 +67,9 @@ data class TransactionPrefillDTO(
                 location = transaction.location,
                 warrantyExpiration = transaction.warrantyExpiration,
                 status = transaction.status,
+                targetAccountId = transaction.targetAccountId,
+                targetCurrency = transaction.targetCurrency,
+                exchangeRate = transaction.transferRate.toPlainString(),
                 clonedFromTransactionId = clonedFromId ?: transaction.id,
                 timestamp = transaction.timestamp, // Keep original timestamp for splits
                 isSplitMode = isSplitMode
@@ -84,12 +87,15 @@ data class TransactionPrefillDTO(
                 amount = if (template.amount.signum() != 0) template.amount.abs().toPlainString() else "",
                 categoryId = template.categoryId,
                 transactionType = template.transactionType,
-                accountId = template.accountId ?: "",
-                currency = template.currency ?: "",
+                accountId = template.accountId,
+                currency = template.currency,
                 tags = template.tags,
                 paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                 payee = template.payee ?: "",
                 note = template.note ?: "",
+                targetAccountId = template.targetAccountId,
+                targetCurrency = template.targetCurrency,
+                exchangeRate = template.transferRate.toPlainString(),
                 sourceTemplateId = template.id
             )
         }
@@ -107,7 +113,7 @@ data class TransactionPrefillDTO(
                 amount = payment.amount.abs().toPlainString(),
                 categoryId = payment.categoryId,
                 transactionType = payment.transactionType,
-                accountId = payment.accountId ?: "",
+                accountId = payment.accountId,
                 currency = payment.currency,
                 tags = payment.tags,
                 paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,

@@ -66,6 +66,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.ContourBackground
@@ -100,10 +101,6 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -250,25 +247,13 @@ fun DashboardScreen(
         isTopLevelParam || initialViewContext == DashboardViewContext.None
     }
 
-    val hazeLayers = remember { AeonHazeLayers() }
     val filterPillController = remember { FilterPillController() }
 
-    CompositionLocalProvider(
-        LocalAeonHaze provides hazeLayers,
-        LocalFilterPillController provides filterPillController,
-    ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(hazeLayers.surfaceState)
-                .hazeSource(hazeLayers.overlayState)
-        ) {
-            Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
-            ContourBackground()
-        }
-        Scaffold(
-            containerColor = Color.Transparent,
+    AeonHazeProvider {
+        CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
+                    containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -422,6 +407,7 @@ fun DashboardScreen(
             )
         }
     } // outer Box
+    } // AeonHazeProvider
     } // CompositionLocalProvider
 }
 

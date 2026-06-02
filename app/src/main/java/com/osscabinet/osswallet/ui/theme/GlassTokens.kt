@@ -149,21 +149,5 @@ data class AeonHazeLayers(
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
 
-val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
-
 /** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
 val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }
-
-/**
- * HazeState whose source is the Scaffold/content-behind-the-pill.
- * @deprecated Use [LocalAeonHaze] and [HazeLayer.Overlay] instead.
- */
-@Deprecated("Use LocalAeonHaze instead")
-val LocalPillHazeState = staticCompositionLocalOf<HazeState?> { null }
-
-/**
- * HazeState whose source is the flat screen background layer.
- * @deprecated Use [LocalAeonHaze] and [HazeLayer.Surface] instead.
- */
-@Deprecated("Use LocalAeonHaze instead")
-val LocalCardHazeState = staticCompositionLocalOf<HazeState?> { null }

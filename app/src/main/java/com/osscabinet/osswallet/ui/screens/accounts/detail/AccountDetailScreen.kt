@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +47,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,6 +76,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.ContourBackground
@@ -108,10 +107,6 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.net.URLDecoder
@@ -223,8 +218,6 @@ fun AccountDetailScreen(
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val hazeLayers = remember { AeonHazeLayers() }
-
     // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
     // Registered before the dialog/FAB BackHandlers so they retain higher LIFO priority.
     BackHandler(enabled = pagerState.currentPage > 0 && !showSettingsDialog && !showAddCardDialog && !isFabExpanded) {
@@ -277,14 +270,14 @@ fun AccountDetailScreen(
                             label = stringResource(R.string.setting_show_planned),
                             subtitle = stringResource(R.string.setting_show_planned_desc),
                             checked = state.showPlannedPayments,
-                            onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) },
+                            onCheckedChange = { value: Boolean -> accountDetailViewModel.updateShowPlannedPayments(value) },
                             isFlush = true
                         )
                         EntrySwitchRow(
                             label = stringResource(R.string.setting_use_note_as_header),
                             subtitle = stringResource(R.string.setting_use_note_as_header_desc),
                             checked = state.useNoteAsHeader,
-                            onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) },
+                            onCheckedChange = { value: Boolean -> accountDetailViewModel.updateUseNoteAsHeader(value) },
                             isFlush = true
                         )
                     }
@@ -312,19 +305,8 @@ fun AccountDetailScreen(
         }
     }
 
-    CompositionLocalProvider(
-        LocalAeonHaze provides hazeLayers
-    ) {
+    AeonHazeProvider { _ ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(hazeLayers.surfaceState)
-                    .hazeSource(hazeLayers.overlayState)
-            ) {
-                Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
-                ContourBackground()
-            }
             Scaffold(
                 containerColor = Color.Transparent,
                 snackbarHost = { SnackbarHost(snackbarHostState) },

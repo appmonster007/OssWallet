@@ -2,17 +2,18 @@ package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -74,7 +75,7 @@ private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, Stri
 
 /**
  * Scrollable filter sheet content using Column + verticalScroll.
- * Integrates correctly with ModalBottomSheet's drag-to-dismiss gesture.
+ * Designed to render beautifully inside an Aeon Glass surface (Filter Pill or Dialog).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,109 +129,27 @@ fun FilterSheetContent(
         }.distinct().sorted()
     }
 
+    val navPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .background(backgroundColor)
-            .padding(
-                start = AeonTheme.dimensions.screenPadding,
-                top = AeonTheme.dimensions.spacingMd,
-                end = AeonTheme.dimensions.screenPadding,
-                bottom = AeonTheme.dimensions.spacingXl
-            ),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            .padding(horizontal = AeonTheme.dimensions.screenPadding)
+            .padding(top = AeonTheme.dimensions.spacingLg),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // 0. Title Header (from Image 5)
-        if (!title.isNullOrBlank()) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = title.uppercase(),
-                    style = AppTextStyles.screenTitle.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.25.sp
-                    ),
-                    color = AppColors.contentPrimary
-                )
-            }
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-        }
-
-        // 1. Base Scope Indicator
-        val hasBaseFilters = countActiveFilters(baseFilter) > 0
-        if (hasBaseFilters) {
-            Text(
-                "BASE SCOPE",
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = AppColors.secondary.copy(alpha = 0.7f)
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                items(items = baseFilter.categoryIds.toList()) { id ->
-                    FilterChip(
-                        selected = true,
-                        onClick = { },
-                        enabled = false,
-                        label = { Text(categoryMap[id]?.name ?: "Cat: $id") }
-                    )
-                }
-                items(items = baseFilter.accountIds.toList()) { id ->
-                    FilterChip(
-                        selected = true,
-                        onClick = { },
-                        enabled = false,
-                        label = { Text(effectiveAccountNames[id] ?: id) }
-                    )
-                }
-                items(items = baseFilter.transactionTypes.toList()) { type ->
-                    FilterChip(
-                        selected = true,
-                        onClick = { },
-                        enabled = false,
-                        label = { Text(type.displayName) }
-                    )
-                }
-            }
-            Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-        }
-
-        // 2. Timeline Selector
-        if (filterRules.timelineRule.isVisible) {
-            AeonTimelinePeriodSelector(
-                currentRange = localFilter.timelineRange,
-                onRangeSelected = { range ->
-                    localFilter = localFilter.copy(timelineRange = range)
-                    onFilterEvent(FilterEvent.UpdateTimeline(range))
-                    applyFilterWithDebounce(localFilter, debounceMs = 0)
-                },
-                swipeEntireComponent = true,
-                isFlush = true
-            )
-            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
-            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))
-        }
-
-
-        // 4. Title row + Reset
+        // 0. Hero Header with Reset
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Filter Transactions",
-                style = AppTextStyles.screenTitle.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp
-                )
+                text = title ?: "Filter Criteria",
+                style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
+                color = AppColors.contentPrimary
             )
             TextButton(
                 onClick = {
@@ -246,11 +165,72 @@ fun FilterSheetContent(
                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
                 )
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
-                Text("Reset All", style = AppTextStyles.listSectionHeader)
+                Text("Reset", style = AppTextStyles.listSectionHeader)
             }
         }
 
-        // 5. Active Filter Chips
+        // 1. Base Scope Indicator (Standardized)
+        val hasBaseFilters = countActiveFilters(baseFilter) > 0
+        if (hasBaseFilters) {
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
+                Text(
+                    "BASE SCOPE",
+                    style = AppTextStyles.transactionSwipeAction.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                )
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(items = baseFilter.categoryIds.toList()) { id ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { },
+                            enabled = false,
+                            label = { Text(categoryMap[id]?.name ?: "Cat: $id") }
+                        )
+                    }
+                    items(items = baseFilter.accountIds.toList()) { id ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { },
+                            enabled = false,
+                            label = { Text(effectiveAccountNames[id] ?: id) }
+                        )
+                    }
+                    items(items = baseFilter.transactionTypes.toList()) { type ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { },
+                            enabled = false,
+                            label = { Text(type.displayName) }
+                        )
+                    }
+                }
+            }
+        }
+
+        // 2. Timeline Selector
+        if (filterRules.timelineRule.isVisible) {
+            AeonTimelinePeriodSelector(
+                currentRange = localFilter.timelineRange,
+                onRangeSelected = { range ->
+                    localFilter = localFilter.copy(timelineRange = range)
+                    onFilterEvent(FilterEvent.UpdateTimeline(range))
+                    applyFilterWithDebounce(localFilter, debounceMs = 0)
+                },
+                swipeEntireComponent = true,
+                isFlush = true
+            )
+            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.4f))
+        }
+
+        // 3. Active Filter Chips
         val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
         if (activeFiltersRelative > 0) {
             LazyRow(
@@ -335,7 +315,7 @@ fun FilterSheetContent(
             }
         }
 
-        // 6. Filter fields
+        // 4. Filter fields (Core Criteria, Search & Tags, Amount & Records)
         FilterFields(
             filter = localFilter,
             onFilterChange = {
@@ -354,8 +334,7 @@ fun FilterSheetContent(
             filterRules = filterRules
         )
 
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
-
+        // 5. Footer Actions
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
@@ -364,9 +343,9 @@ fun FilterSheetContent(
             TextButton(
                 onClick = onClose,
                 modifier = Modifier.weight(0.4f),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
             ) {
-                Text("Close", style = AppTextStyles.listItemTitle)
+                Text("Close", style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary))
             }
 
             Button(
@@ -376,7 +355,7 @@ fun FilterSheetContent(
                     onSaveFilterClick(localFilter)
                 },
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AppColors.primary,
                     contentColor = AppColors.onPrimary
@@ -386,12 +365,12 @@ fun FilterSheetContent(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "Save Preset",
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                    style = AppTextStyles.buttonLabel
                 )
             }
         }
-        Spacer(modifier = Modifier.navigationBarsPadding())
-        Spacer(modifier = Modifier.height(16.dp))
+        
+        Spacer(modifier = Modifier.height(navPadding + 24.dp))
     }
 }
 

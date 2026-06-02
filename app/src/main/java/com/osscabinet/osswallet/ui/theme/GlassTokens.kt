@@ -142,3 +142,5 @@ val LocalHazeDepth = staticCompositionLocalOf { 0 }
 /** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
 val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }
 val LocalContourBgVersion = staticCompositionLocalOf { 4 }
+val LocalContourLinesEnabled = staticCompositionLocalOf { true }
+val LocalRandomizeContourEachLoad = staticCompositionLocalOf { true }

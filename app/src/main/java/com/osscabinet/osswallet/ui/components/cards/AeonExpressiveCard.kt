@@ -121,7 +121,7 @@ fun AeonExpressiveCard(
 
     val layers = LocalAeonHaze.current
     val glassEnabled = LocalGlassmorphismEnabled.current
-    val useGlass = glassEnabled && layers?.surfaceState != null
+    val useGlass = glassEnabled && layers != null
     val isDark = isSystemInDarkTheme()
     val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
 

@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalHazeDepth
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
@@ -28,11 +28,10 @@ import dev.chrisbanes.haze.hazeSource
 
 /**
  * Standardized Haze infrastructure for all Aeon screens.
- * Enforces the 3-Layer Glass Architecture automatically:
+ * Enforces an N-Layer Glass Architecture automatically:
  *
- * Layer 0: Static Background (Color + Contours) captured for both Surface and Overlay states.
- * Layer 1: Surfaces (Cards, Headers) blur Layer 0 and register as sources for Layer 2.
- * Layer 2: Overlays (Pills, Modals) blur Layer 0 and Layer 1.
+ * Each layer blurs everything below it and registers itself as a source for everything above it.
+ * Level 0: Static Background (Color + Contours) captured for all higher states.
  */
 @Composable
 fun AeonHazeProvider(
@@ -40,21 +39,21 @@ fun AeonHazeProvider(
     drawContours: Boolean = true,
     content: @Composable (AeonHazeLayers) -> Unit
 ) {
-    // Parent-Aware Logic: Use existing layers if available (e.g. from NavGraph)
-    // to ensure global overlays like the Drawer can blur screen content.
     val existing = LocalAeonHaze.current
     val hazeLayers = remember(existing) { existing ?: AeonHazeLayers() }
 
     CompositionLocalProvider(LocalAeonHaze provides hazeLayers) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Level 0: Static Background Capture
-            // We register for BOTH layers so that even if Level 1 is hidden,
-            // Level 2 (Pills) still has a background to blur.
+            // We register the background as a source for EVERY state in the pool.
+            val sourceModifier = hazeLayers.states.fold(Modifier as Modifier) { mod, state ->
+                mod.hazeSource(state)
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(hazeLayers.surfaceState)
-                    .hazeSource(hazeLayers.overlayState)
+                    .then(sourceModifier)
             ) {
                 Spacer(
                     modifier = Modifier
@@ -64,7 +63,6 @@ fun AeonHazeProvider(
                 if (drawContours) ContourBackground()
             }
 
-            // Level 1 & 2 content rendered in this slot
             content(hazeLayers)
         }
     }
@@ -72,24 +70,19 @@ fun AeonHazeProvider(
 
 /**
  * Canonical glass surface shell for the Aeon design system.
+ * Implements auto-incrementing depth for N-layer glass stacking.
  *
- * Encodes the two-sibling RenderNode pattern required for glass and shadow to coexist:
- * the shadow lives on its own [Spacer] graphicsLayer so hazeEffect's internal RenderEffect
- * cannot silently drop it. The background/blur/border modifier chain sits on the inner Box.
- *
- * Always renders [fallbackColor] as the surface background regardless of whether glass is
- * enabled or [hazeState] is null, so the component degrades gracefully in Compose Previews
- * and on screens that haven't wired up a hazeSource.
- *
- * The border and hazeEffect are gated on both [LocalGlassmorphismEnabled] and a non-null
- * [hazeState] so visual glass chrome never appears without the actual blur effect behind it.
+ * @param hazeLayer The semantic depth of this surface. If null, uses [LocalHazeDepth].
+ *                  Surface (0) blurs background.
+ *                  Overlay (1) blurs background + Surface.
+ *                  Drawer (2) blurs background + Surface + Overlay.
  */
 @Composable
 fun GlassSurface(
     modifier: Modifier = Modifier,
     shape: Shape,
     hazeState: HazeState? = null,
-    hazeLayer: HazeLayer? = null,
+    hazeLayer: Int? = null,
     hazeStyle: HazeStyle = GlassTokens.style(),
     fallbackColor: Color = AppColors.cardSurfaceProminent,
     shadowElevation: Dp = 0.dp,
@@ -100,24 +93,20 @@ fun GlassSurface(
 ) {
     val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
+    val depth = hazeLayer ?: LocalHazeDepth.current
 
-    val effectiveHazeState = hazeState ?: when (hazeLayer) {
-        HazeLayer.Surface -> layers?.surfaceState
-        HazeLayer.Overlay -> layers?.overlayState
-        null -> null
-    }
+    // 1. BLUR LOGIC: Blur the state assigned to this depth.
+    val effectiveHazeState = hazeState ?: layers?.states?.getOrNull(depth)
 
-    // Automatic recursive blur: Surfaces (Layer 1) must be captured as sources for Overlays (Layer 2).
-    val autoSourceState = if (hazeLayer == HazeLayer.Surface) layers?.overlayState else null
+    // 2. SOURCE LOGIC: Register this surface as a source for EVERY state at a higher depth.
+    val sourceModifier = if (layers != null && depth >= 0) {
+        layers.states.drop(depth + 1).fold(Modifier as Modifier) { mod, state ->
+            mod.hazeSource(state)
+        }
+    } else Modifier
 
-    Box(
-        modifier = modifier.then(
-            if (autoSourceState != null) Modifier.hazeSource(autoSourceState)
-            else Modifier
-        )
-    ) {
-        // Shadow on its own RenderNode — hazeEffect installs a RenderEffect that silently
-        // drops shadowElevation when both share the same graphicsLayer node.
+    Box(modifier = modifier.then(sourceModifier)) {
+        // Shadow on its own RenderNode
         if (glassEnabled && shadowElevation > 0.dp) {
             Spacer(
                 modifier = Modifier
@@ -145,8 +134,12 @@ fun GlassSurface(
                     if (glassEnabled && effectiveHazeState != null && borderColor != null)
                         Modifier.border(0.5.dp, borderColor, shape)
                     else Modifier
-                ),
-            content = content
-        )
+                )
+        ) {
+            // 3. INCREMENT DEPTH: Nested children will automatically blur this surface.
+            CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
+                content()
+            }
+        }
     }
 }

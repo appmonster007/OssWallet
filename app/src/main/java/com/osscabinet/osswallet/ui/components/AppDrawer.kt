@@ -93,7 +93,7 @@ fun AppDrawerContent(
             .width(280.dp)
             .fillMaxHeight(),
         shape = drawerShape,
-        hazeLayer = HazeLayer.Overlay,
+        hazeLayer = HazeLayer.Drawer,
         hazeStyle = glassStyle,
         fallbackColor = AppColors.drawerSurface,
         shadowElevation = 16.dp,

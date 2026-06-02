@@ -23,8 +23,6 @@ object GlassTokens {
 
     /**
      * Standard glass style for narrow overlay surfaces (e.g. sticky list headers).
-     * The blur source is a constrained band of relatively neutral list rows, so a
-     * light tint alpha is sufficient to keep content legible.
      */
     @Composable
     fun style(): HazeStyle {
@@ -39,9 +37,6 @@ object GlassTokens {
 
     /**
      * Heavy glass style for large overlay surfaces (drawer, full-screen sheets).
-     * The blur source spans the entire app — colourful cards, charts, images — so
-     * a higher tint alpha and wider blur are needed to prevent the bright/vivid
-     * background from washing out text, especially in dark mode.
      */
     @Composable
     fun drawerStyle(): HazeStyle {
@@ -56,8 +51,6 @@ object GlassTokens {
 
     /**
      * Small compact floating elements (nav pill, FAB chips).
-     * Base: AppColors.componentOnCard (surfaceContainerHighest).
-     * Dark α: 0.65f   Light α: 0.45f
      */
     @Composable
     fun pillStyle(): HazeStyle {
@@ -71,9 +64,7 @@ object GlassTokens {
     }
 
     /**
-     * Dashboard/analytics cards (light glass over flat screen background).
-     * Base: AppColors.cardSurface (surfaceContainer).
-     * Dark α: 0.60f   Light α: 0.40f
+     * Dashboard/analytics cards.
      */
     @Composable
     fun cardStyle(): HazeStyle {
@@ -88,8 +79,6 @@ object GlassTokens {
 
     /**
      * Bottom sheets, modals.
-     * Base: AppColors.sheetSurface (surfaceContainerLow).
-     * Dark α: 0.78f   Light α: 0.52f
      */
     @Composable
     fun sheetStyle(): HazeStyle {
@@ -104,8 +93,6 @@ object GlassTokens {
 
     /**
      * Small floating elements (FAB menu label chips, tooltips).
-     * Base: AppColors.popupSurface (surfaceContainerLowest).
-     * Dark α: 0.55f   Light α: 0.38f
      */
     @Composable
     fun popupStyle(): HazeStyle {
@@ -117,37 +104,40 @@ object GlassTokens {
             noiseFactor = NoiseFactor,
         )
     }
-
-    /**
-     * Filter pill — can't use hazeEffect (Dialog window boundary).
-     * Store tint alpha tokens here so the visual-only border/tint is consistent.
-     * Dark α: 0.60f   Light α: 0.40f
-     * (No HazeStyle function — Dialog prevents real blur)
-     */
-    val FilterPillDarkAlpha = 0.60f
-    val FilterPillLightAlpha = 0.40f
 }
 
 /**
- * Layers for the glassmorphism hierarchy.
+ * Semantic depth levels for the glassmorphism hierarchy.
+ * depth 0: Blurs Background, sources all levels >= 1
+ * depth 1: Blurs Background+Surface, sources all levels >= 2
+ * depth 2: Blurs Background+Surface+Overlay, sources all levels >= 3
  */
-enum class HazeLayer {
+object HazeLayer {
     /** Layer 1: Elements sitting on the screen background (cards, headers). */
-    Surface,
+    const val Surface = 0
 
     /** Layer 2: Elements sitting on top of everything else (navigation pill, modals). */
-    Overlay
+    const val Overlay = 1
+
+    /** Layer 3: Global system-level overlays (navigation drawer). */
+    const val Drawer = 2
 }
 
 /**
  * Container for the app's unified haze hierarchy.
+ * Supports up to 10 layers of overlapping glass.
  */
 data class AeonHazeLayers(
-    val surfaceState: HazeState = HazeState(),
-    val overlayState: HazeState = HazeState()
+    val states: List<HazeState> = List(10) { HazeState() }
 )
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
+
+/**
+ * Tracks the current nesting level of glass surfaces.
+ * Automatically increments when nesting [GlassSurface].
+ */
+val LocalHazeDepth = staticCompositionLocalOf { 0 }
 
 /** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
 val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }

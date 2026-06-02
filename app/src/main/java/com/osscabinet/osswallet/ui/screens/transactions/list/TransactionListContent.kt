@@ -1,10 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +16,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
@@ -28,11 +27,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,19 +51,8 @@ fun TransactionListContent(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     revealedCardIds: List<String> = emptyList()
 ) {
-    val hazeLayers = remember { AeonHazeLayers() }
-
-    CompositionLocalProvider(LocalAeonHaze provides hazeLayers) {
+    AeonHazeProvider { _ ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(hazeLayers.surfaceState)
-                    .hazeSource(hazeLayers.overlayState)
-            ) {
-                Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
-                ContourBackground()
-            }
             Scaffold(
                 containerColor = androidx.compose.ui.graphics.Color.Transparent,
                 topBar = {

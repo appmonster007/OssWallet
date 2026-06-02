@@ -57,7 +57,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import android.graphics.Color as AndroidColor
 
 @Composable
@@ -80,7 +80,6 @@ fun AppDrawerContent(
     // navigate-while-animating race that caused inconsistent tap behaviour.
     onNavigate: (() -> Unit) -> Unit
 ) {
-    val hazeState = LocalHazeState.current
     val isDark = isSystemInDarkTheme()
     val drawerShape = RoundedCornerShape(
         topEnd = AeonTheme.dimensions.cardCornerRadius,
@@ -94,7 +93,7 @@ fun AppDrawerContent(
             .width(280.dp)
             .fillMaxHeight(),
         shape = drawerShape,
-        hazeState = hazeState,
+        hazeLayer = HazeLayer.Overlay,
         hazeStyle = glassStyle,
         fallbackColor = AppColors.drawerSurface,
         shadowElevation = 16.dp,

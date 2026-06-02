@@ -15,7 +15,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.filterNotNull
@@ -92,7 +93,7 @@ fun OssWalletNavGraph(
     // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
     val resolvedDestination = startDestination ?: return
 
-    val drawerHazeState = remember { HazeState() }
+    val rootHazeLayers = remember { AeonHazeLayers() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var isDrawerNavigating by remember { mutableStateOf(false) }
@@ -133,8 +134,8 @@ fun OssWalletNavGraph(
         }
     }
 
-    CompositionLocalProvider(LocalHazeState provides drawerHazeState) {
-    ModalNavigationDrawer(
+    CompositionLocalProvider(LocalAeonHaze provides rootHazeLayers) {
+        ModalNavigationDrawer(
         drawerState = drawerState,
         // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
         // and background scrim taps to close automatically and robustly.
@@ -195,7 +196,7 @@ fun OssWalletNavGraph(
             )
         }
     ) {
-        Box(modifier = Modifier.fillMaxSize().hazeSource(drawerHazeState)) {
+        Box(modifier = Modifier.fillMaxSize().hazeSource(rootHazeLayers.overlayState)) {
         NavHost(
             navController = navController,
             startDestination = resolvedDestination

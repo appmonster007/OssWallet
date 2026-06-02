@@ -249,11 +249,18 @@ class TransactionEntryViewModel @Inject constructor(
         val txType = prefill.transactionType
 
         val isOpenedAsReceiver = Category.isAnyTransferInflow(prefill.categoryId)
-        var sourceAcc = accounts.find { it.id == prefill.accountId }
-        var targetAcc = prefill.targetAccountId?.let { id -> accounts.find { acc -> acc.id == id } }
+
+        // Use prefill data if available, otherwise fallback to current selection
+        var sourceAccId = prefill.accountId ?: currentState.source.accountId
+        var targetAccId = prefill.targetAccountId ?: currentState.destination.accountId
+
         var sourceCurrency =
-            prefill.currency.ifEmpty { sourceAcc?.currencyCode ?: currentState.selectedCurrency }
-        var targetCurr = prefill.targetCurrency ?: targetAcc?.currencyCode ?: ""
+            prefill.currency.ifEmpty {
+                accounts.find { it.id == sourceAccId }?.currencyCode ?: currentState.selectedCurrency
+            }
+        var targetCurr =
+            prefill.targetCurrency ?: accounts.find { it.id == targetAccId }?.currencyCode ?: ""
+
         var amountBD = prefill.amount.toBigDecimalOrNull()?.abs() ?: BigDecimal.ZERO
         val rateBD = prefill.exchangeRate.toBigDecimalOrNull() ?: BigDecimal.ONE
         var targetAmtBD = amountBD.multiply(rateBD).setScale(8, java.math.RoundingMode.HALF_UP)
@@ -262,9 +269,9 @@ class TransactionEntryViewModel @Inject constructor(
 
         if (txType == TransactionType.TRANSFER && isOpenedAsReceiver) {
             // Flip for display consistency
-            val originalSource = sourceAcc
-            sourceAcc = targetAcc
-            targetAcc = originalSource
+            val originalSourceId = sourceAccId
+            sourceAccId = targetAccId
+            targetAccId = originalSourceId
 
             val originalSourceCurr = sourceCurrency
             sourceCurrency = targetCurr
@@ -285,13 +292,14 @@ class TransactionEntryViewModel @Inject constructor(
         _state.update {
             it.copy(
                 source = TransactionSide(
-                    accountId = sourceAcc?.id,
-                    amount = amountBD.stripTrailingZeros().toPlainString(),
+                    accountId = sourceAccId,
+                    amount = if (prefill.amount.isNotEmpty()) amountBD.stripTrailingZeros()
+                        .toPlainString() else it.amount,
                     currency = sourceCurrency,
                     categoryId = categoryId
                 ),
                 destination = TransactionSide(
-                    accountId = targetAcc?.id,
+                    accountId = targetAccId,
                     amount = targetAmtBD.toPlainString(),
                     currency = targetCurr
                 ),
@@ -328,7 +336,8 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         // Post-prefill logic for transfers
-        if (txType == TransactionType.TRANSFER) {
+        // Only recalculate if the prefill didn't provide a custom exchange rate (1.0 is default)
+        if (txType == TransactionType.TRANSFER && prefill.exchangeRate == "1.0") {
             recalculateExchangeRate()
         }
     }

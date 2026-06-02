@@ -25,7 +25,7 @@ fun ContourBackground(
 
     // Use a color that contrasts clearly with the screen background
     // onScreenBackground is dark on light theme and light on dark theme
-    val lineColor = AppColors.onScreenBackground.copy(alpha = 0.14f)
+    val lineColor = AppColors.onScreenBackground.copy(alpha = 0.5f)
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val width = size.width
@@ -91,7 +91,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawContourCluster(
         drawPath(
             path = path,
             color = color,
-            style = Stroke(width = 1.5f)
+            style = Stroke(width = 5f)
         )
     }
 }

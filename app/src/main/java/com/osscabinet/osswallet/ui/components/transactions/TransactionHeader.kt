@@ -28,7 +28,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
@@ -61,7 +61,6 @@ fun TransactionHeader(
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
 
     val styles = TransactionHeaderStyles.default()
-    val hazeState = LocalHazeState.current
     val isDark = isSystemInDarkTheme()
     val glassShape = RoundedCornerShape(12.dp)
     val glassStyle = GlassTokens.style()
@@ -81,7 +80,7 @@ fun TransactionHeader(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = glassShape,
-        hazeState = hazeState,
+        hazeLayer = HazeLayer.Surface,
         hazeStyle = glassStyle,
         fallbackColor = AppColors.cardSurfaceProminent,
         shadowElevation = 12.dp,

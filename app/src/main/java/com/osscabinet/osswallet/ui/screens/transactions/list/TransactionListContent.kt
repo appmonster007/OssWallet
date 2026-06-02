@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,8 +28,8 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
-import dev.chrisbanes.haze.HazeState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,26 +56,22 @@ fun TransactionListContent(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     revealedCardIds: List<String> = emptyList()
 ) {
-    val pillHazeState = remember { HazeState() }
+    val hazeLayers = remember { AeonHazeLayers() }
 
-    CompositionLocalProvider(LocalPillHazeState provides pillHazeState) {
+    CompositionLocalProvider(LocalAeonHaze provides hazeLayers) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(AppColors.screenBackground)
-                    .hazeSource(pillHazeState)
+                    .hazeSource(hazeLayers.surfaceState)
+                    .hazeSource(hazeLayers.overlayState)
             ) {
+                Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
                 ContourBackground()
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(pillHazeState)
-            ) {
-                Scaffold(
-                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    topBar = {
+            Scaffold(
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                topBar = {
                         TransactionListTopAppBar(
                             filter = filter,
                             recordsSettings = recordsSettings,
@@ -128,9 +125,8 @@ fun TransactionListContent(
                         }
                     }
                 }
-            }
 
-            TransactionFilterPill(
+                TransactionFilterPill(
                 filter = filter,
                 accounts = accounts,
                 categories = categories,

@@ -48,6 +48,7 @@ class SettingsDataStore(private val context: Context) {
         val ANALYTICS_CARDS_CONFIG_KEY = stringPreferencesKey("analytics_cards_config")
         val ANALYTICS_COMMON_FILTER_ENABLED_KEY = booleanPreferencesKey("analytics_common_filter_enabled")
         val GLASSMORPHISM_ENABLED_KEY = booleanPreferencesKey("glassmorphism_enabled")
+        val CONTOUR_BG_VERSION_KEY = intPreferencesKey("contour_bg_version")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -159,6 +160,10 @@ class SettingsDataStore(private val context: Context) {
 
     val glassmorphismEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[GLASSMORPHISM_ENABLED_KEY] ?: false
+    }
+
+    val contourBgVersion: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[CONTOUR_BG_VERSION_KEY] ?: 4
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -315,6 +320,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveGlassmorphismEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[GLASSMORPHISM_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun saveContourBgVersion(version: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[CONTOUR_BG_VERSION_KEY] = version
         }
     }
 

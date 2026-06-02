@@ -85,6 +85,9 @@ class SettingsViewModel @Inject constructor(
     val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val contourBgVersion: StateFlow<Int> = settingsRepository.contourBgVersion
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
+
     val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
         .flatMapLatest { providerId ->
             flow {
@@ -213,6 +216,12 @@ class SettingsViewModel @Inject constructor(
     fun setGlassmorphismEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveGlassmorphismEnabled(enabled)
+        }
+    }
+
+    fun setContourBgVersion(version: Int) {
+        viewModelScope.launch {
+            settingsRepository.saveContourBgVersion(version)
         }
     }
 

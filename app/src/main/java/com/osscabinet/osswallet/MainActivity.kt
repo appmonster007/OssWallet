@@ -57,6 +57,7 @@ class MainActivity : FragmentActivity() {
             val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
             val glassmorphismEnabled by settingsRepository.glassmorphismEnabled.collectAsStateWithLifecycle(initialValue = true)
+            val contourBgVersion by settingsRepository.contourBgVersion.collectAsStateWithLifecycle(initialValue = 4)
 
             LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -71,7 +72,10 @@ class MainActivity : FragmentActivity() {
             }
 
             OssWalletTheme(theme = theme, fontName = selectedFont) {
-                CompositionLocalProvider(LocalGlassmorphismEnabled provides glassmorphismEnabled) {
+                CompositionLocalProvider(
+                    LocalGlassmorphismEnabled provides glassmorphismEnabled,
+                    com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion provides contourBgVersion
+                ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = AppColors.screenBackground

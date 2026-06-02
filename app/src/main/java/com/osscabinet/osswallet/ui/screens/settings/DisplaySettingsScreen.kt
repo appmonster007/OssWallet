@@ -434,32 +434,31 @@ fun DisplaySettingsScreen(
                             thickness = 0.5.dp,
                             color = AppColors.divider.copy(alpha = 0.5f)
                         )
-                        AeonSettingsItem(
-                            title = "Contour Background",
-                            subtitle = when (contourBgVersion) {
-                                1 -> "Clean"
-                                2 -> "Bold"
-                                3 -> "Organic"
-                                else -> "Geographical"
-                            },
-                            icon = Icons.Rounded.SettingsSuggest,
-                            onClick = { showContourDialog = true }
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            thickness = 0.5.dp,
-                            color = AppColors.divider.copy(alpha = 0.5f)
-                        )
                         EntrySwitchRow(
                             label = "Contour Lines",
                             subtitle = if (contourLinesEnabled) "Draw topographic lines in background" else "Hide topographic lines",
-                            icon = Icons.Rounded.AddCircleOutline, // Using a generic icon or could find better one
+                            icon = Icons.Rounded.AddCircleOutline,
                             checked = contourLinesEnabled,
                             onCheckedChange = { viewModel.setContourLinesEnabled(it) },
                             isFlush = false
                         )
                         if (contourLinesEnabled) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Contour Style",
+                                subtitle = when (contourBgVersion) {
+                                    1 -> "Clean"
+                                    2 -> "Bold"
+                                    3 -> "Organic"
+                                    else -> "Geographical"
+                                },
+                                icon = Icons.Rounded.SettingsSuggest,
+                                onClick = { showContourDialog = true }
+                            )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                                 thickness = 0.5.dp,

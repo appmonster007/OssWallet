@@ -50,20 +50,19 @@ private fun GeographicalContours(modifier: Modifier) {
     val baseColor = AppColors.onScreenBackground
     val randomize = LocalRandomizeContourEachLoad.current
 
-    // Pre-calculate combined paths to minimize draw calls and object allocation
     val pathData = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
-        val gridX = 40 // Optimized from 50
-        val gridY = 40
+        val gridX = 30 // Reduced for efficiency
+        val gridY = 30
         val cellW = 1000f / gridX
         val cellH = 1000f / gridY
 
-        val peaks = List(random.nextInt(10, 15)) {
+        val peaks = List(random.nextInt(8, 12)) {
             PeakV4(
                 x = random.nextFloat(),
                 y = random.nextFloat(),
                 strength = random.nextFloat() * 0.5f + 0.1f,
-                radiusSq = (random.nextFloat() * 0.3f + 0.05f).let { it * it }
+                radiusSq = (random.nextFloat() * 0.35f + 0.1f).let { it * it }
             )
         }
 
@@ -75,7 +74,10 @@ private fun GeographicalContours(modifier: Modifier) {
                 for (p in peaks) {
                     val dx = x - p.x
                     val dy = y - p.y
-                    total += p.strength * exp(-(dx * dx + dy * dy) / p.radiusSq)
+                    val d2 = dx * dx + dy * dy
+                    if (d2 < p.radiusSq * 4) { // Optimization: early exit for distant peaks
+                        total += p.strength * exp(-d2 / p.radiusSq)
+                    }
                 }
                 total
             }
@@ -83,15 +85,17 @@ private fun GeographicalContours(modifier: Modifier) {
 
         val normalPath = Path()
         val indexPath = Path()
-        val thresholdCount = 12 // Optimized from 20
+        val thresholdCount = 10 // Reduced from 12
 
         for (i in 0 until thresholdCount) {
-            val t = (i + 1) * 0.08f
+            val t = (i + 1) * 0.1f
             val isIndex = (i + 1) % 4 == 0
             val targetPath = if (isIndex) indexPath else normalPath
 
             for (ix in 0 until gridX) {
+                val xPos = ix * cellW
                 for (iy in 0 until gridY) {
+                    val yPos = iy * cellH
                     val v0 = grid[ix][iy]
                     val v1 = grid[ix + 1][iy]
                     val v2 = grid[ix + 1][iy + 1]
@@ -105,11 +109,8 @@ private fun GeographicalContours(modifier: Modifier) {
 
                     if (cellIndex == 0 || cellIndex == 15) continue
 
-                    val segments = getSegmentsForGeographical(cellIndex, v0, v1, v2, v3, t, ix, iy, cellW, cellH)
-                    for (s in segments.indices step 2) {
-                        targetPath.moveTo(segments[s].x, segments[s].y)
-                        targetPath.lineTo(segments[s + 1].x, segments[s + 1].y)
-                    }
+                    // Inlined and optimized segment generation
+                    drawSegmentsInPath(targetPath, cellIndex, v0, v1, v2, v3, t, xPos, yPos, cellW, cellH)
                 }
             }
         }
@@ -119,7 +120,9 @@ private fun GeographicalContours(modifier: Modifier) {
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .graphicsLayer { // Enables hardware layer for the entire background
+            .graphicsLayer {
+                // Hint for GPU to cache this layer
+                renderEffect = null 
                 clip = true
             }
     ) {
@@ -129,77 +132,76 @@ private fun GeographicalContours(modifier: Modifier) {
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            // Only 2 draw calls instead of 20+
             drawPath(
                 path = pathData.first,
-                color = baseColor.copy(alpha = 0.12f),
-                style = Stroke(width = 1.2f / scaleX)
+                color = baseColor.copy(alpha = 0.10f),
+                style = Stroke(width = 1.0f / scaleX)
             )
             drawPath(
                 path = pathData.second,
-                color = baseColor.copy(alpha = 0.35f),
-                style = Stroke(width = 3.2f / scaleX)
+                color = baseColor.copy(alpha = 0.30f),
+                style = Stroke(width = 2.8f / scaleX)
             )
+        }
+    }
+}
+
+private fun drawSegmentsInPath(
+    path: Path, cellIndex: Int, v0: Float, v1: Float, v2: Float, v3: Float, t: Float,
+    x: Float, y: Float, cw: Float, ch: Float
+) {
+    fun getOffset(side: Int): Offset {
+        return when (side) {
+            0 -> Offset(x + (t - v0) / (v1 - v0) * cw, y)
+            1 -> Offset(x + cw, y + (t - v1) / (v2 - v1) * ch)
+            2 -> Offset(x + (t - v3) / (v2 - v3) * cw, y + ch)
+            else -> Offset(x, y + (t - v0) / (v3 - v0) * ch)
+        }
+    }
+
+    when (cellIndex) {
+        1, 14 -> { val e0 = getOffset(0); val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y) }
+        2, 13 -> { val e0 = getOffset(0); val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y) }
+        3, 12 -> { val e1 = getOffset(1); val e3 = getOffset(3); path.moveTo(e1.x, e1.y); path.lineTo(e3.x, e3.y) }
+        4, 11 -> { val e1 = getOffset(1); val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y) }
+        5 -> {
+            val e0 = getOffset(0); val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y)
+            val e2 = getOffset(2); val e3 = getOffset(3); path.moveTo(e2.x, e2.y); path.lineTo(e3.x, e3.y)
+        }
+        6, 9 -> { val e0 = getOffset(0); val e2 = getOffset(2); path.moveTo(e0.x, e0.y); path.lineTo(e2.x, e2.y) }
+        7, 8 -> { val e3 = getOffset(3); val e2 = getOffset(2); path.moveTo(e3.x, e3.y); path.lineTo(e2.x, e2.y) }
+        10 -> {
+            val e0 = getOffset(0); val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y)
+            val e1 = getOffset(1); val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y)
         }
     }
 }
 
 private data class PeakV4(val x: Float, val y: Float, val strength: Float, val radiusSq: Float)
 
-private fun getSegmentsForGeographical(
-    cellIndex: Int, v0: Float, v1: Float, v2: Float, v3: Float, t: Float,
-    ix: Int, iy: Int, cw: Float, ch: Float
-): List<Offset> {
-    fun lerpX(x1: Int, x2: Int, y: Int, val1: Float, val2: Float) = Offset(
-        (x1 + ((t - val1) / (val2 - val1)) * (x2 - x1)) * cw,
-        y * ch
-    )
-    fun lerpY(y1: Int, y2: Int, x: Int, val1: Float, val2: Float) = Offset(
-        x * cw,
-        (y1 + ((t - val1) / (val2 - val1)) * (y2 - y1)) * ch
-    )
-
-    val e0 = lerpX(ix, ix + 1, iy, v0, v1)
-    val e1 = lerpY(iy, iy + 1, ix + 1, v1, v2)
-    val e2 = lerpX(ix, ix + 1, iy + 1, v3, v2)
-    val e3 = lerpY(iy, iy + 1, ix, v0, v3)
-
-    return when (cellIndex) {
-        1, 14 -> listOf(e0, e3)
-        2, 13 -> listOf(e0, e1)
-        3, 12 -> listOf(e1, e3)
-        4, 11 -> listOf(e1, e2)
-        5 -> listOf(e0, e1, e2, e3)
-        6, 9 -> listOf(e0, e2)
-        7, 8 -> listOf(e3, e2)
-        10 -> listOf(e0, e3, e1, e2)
-        else -> emptyList()
-    }
-}
+// endregion
 // endregion
 
-// region Premium Organic
 @Composable
 private fun OrganicContours(modifier: Modifier) {
     val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
 
-    // Pre-calculate paths to avoid allocation in the draw loop
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
-        val count = random.nextInt(4, 7)
+        val count = random.nextInt(3, 4) // Further reduced
         val path = Path()
         
         repeat(count) {
             val centerX = random.nextFloat() * 1400f - 200f
             val centerY = random.nextFloat() * 1400f - 200f
             val baseRadius = random.nextFloat() * 400f + 250f
-            val levels = random.nextInt(6, 12)
+            val levels = random.nextInt(4, 8) // Further reduced
             val seed = random.nextFloat() * 20f
 
             for (i in 1..levels) {
                 val radius = baseRadius * (i.toFloat() / levels)
-                val points = 40
+                val points = 16 // Optimized for GPU vertex limit
                 for (p in 0..points) {
                     val angle = (p.toFloat() / points) * 2 * PI
                     val wobble = (
@@ -223,11 +225,10 @@ private fun OrganicContours(modifier: Modifier) {
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.5f / scaleX))
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.0f / scaleX))
         }
     }
 }
-// endregion
 
 // region Bold & Simple
 @Composable
@@ -237,19 +238,19 @@ private fun BoldContours(modifier: Modifier) {
 
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
-        val count = random.nextInt(3, 6)
+        val count = random.nextInt(2, 3) // Further reduced
         val path = Path()
 
         repeat(count) {
             val centerX = random.nextFloat() * 1200f - 100f
             val centerY = random.nextFloat() * 1200f - 100f
             val baseRadius = random.nextFloat() * 300f + 300f
-            val levels = random.nextInt(4, 9)
+            val levels = random.nextInt(3, 6) // Further reduced
             val seed = random.nextFloat() * 10f
 
             for (i in 1..levels) {
                 val radius = baseRadius * (i.toFloat() / levels)
-                val points = 30
+                val points = 16 // Optimized
                 for (p in 0..points) {
                     val angle = (p.toFloat() / points) * 2 * PI
                     val wobble = (
@@ -273,7 +274,7 @@ private fun BoldContours(modifier: Modifier) {
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.2f), style = Stroke(width = 5f / scaleX))
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.2f), style = Stroke(width = 3.5f / scaleX))
         }
     }
 }
@@ -287,19 +288,19 @@ private fun CleanContours(modifier: Modifier) {
 
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
-        val count = random.nextInt(4, 7)
+        val count = random.nextInt(3, 4) // Further reduced
         val path = Path()
 
         repeat(count) {
             val centerX = random.nextFloat() * 1400f - 200f
             val centerY = random.nextFloat() * 1400f - 200f
             val baseRadius = random.nextFloat() * 400f + 250f
-            val levels = random.nextInt(6, 12)
+            val levels = random.nextInt(4, 8) // Further reduced
             val seed = random.nextFloat() * 20f
 
             for (i in 1..levels) {
                 val radius = baseRadius * (i.toFloat() / levels)
-                val points = 40
+                val points = 20 // Optimized
                 for (p in 0..points) {
                     val angle = (p.toFloat() / points) * 2 * PI
                     val wobble = (sin(angle * 2 + i + seed) * (18f + i * 2)).toFloat()
@@ -319,11 +320,10 @@ private fun CleanContours(modifier: Modifier) {
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.5f / scaleX))
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.0f / scaleX))
         }
     }
 }
-// endregion
 
 private data class ContourCluster(
     val xFrac: Float,

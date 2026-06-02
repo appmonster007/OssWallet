@@ -182,9 +182,16 @@ fun PillNavigationBar(
     onDimClick: () -> Unit = {}
 ) {
     val isDark = isSystemInDarkTheme()
+    val dimensions = LocalAeonDimensions.current
     
-    // Width calculation: 64dp per tab + internal padding
-    val barWidth = (64.dp * tabs.size)
+    // Grid constants derived from the Aeon Design System
+    val spacing = dimensions.spacingSm // 8.dp (The base grid unit)
+    val itemWidth = AeonSize.D56.value // Standard touch target width
+    val barHeight = AeonSize.D56.value // Matches Material BottomAppBar height
+    val indicatorHeight = AeonSize.D40.value // Leaves exactly 8dp (spacingSm) vertical padding
+    
+    // Total width = (ItemWidth * Tabs) + (Spacing * (Tabs + 1))
+    val barWidth = (itemWidth * tabs.size) + (spacing * (tabs.size + 1))
 
     Box(
         modifier = modifier.wrapContentSize(),
@@ -193,7 +200,7 @@ fun PillNavigationBar(
         GlassSurface(
             modifier = Modifier
                 .width(barWidth)
-                .height(56.dp),
+                .height(barHeight),
             shape = CircleShape,
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
@@ -201,14 +208,10 @@ fun PillNavigationBar(
             shadowElevation = 8.dp,
             borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.6f)
         ) {
-            BoxWithConstraints(
-                modifier = Modifier
-                    .padding(6.dp)
-                    .fillMaxSize()
-            ) {
-                val itemWidth = maxWidth / tabs.size
+            Box(modifier = Modifier.fillMaxSize()) {
+                // Sliding Selection Indicator
                 val indicatorOffset by animateDpAsState(
-                    targetValue = itemWidth * selectedTab,
+                    targetValue = spacing + (itemWidth + spacing) * selectedTab,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioLowBouncy,
                         stiffness = Spring.StiffnessLow
@@ -216,20 +219,26 @@ fun PillNavigationBar(
                     label = "indicatorOffset"
                 )
 
-                // Sliding Selection Indicator
                 Box(
                     modifier = Modifier
                         .offset { IntOffset(x = indicatorOffset.roundToPx(), y = 0) }
                         .width(itemWidth)
-                        .fillMaxHeight()
-                        .padding(horizontal = 4.dp)
+                        .height(indicatorHeight)
+                        .align(Alignment.CenterStart)
                         .background(
                             color = AppColors.primaryContainer,
                             shape = CircleShape
                         )
                 )
 
-                Row(modifier = Modifier.fillMaxSize()) {
+                // Navigation Items
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = spacing),
+                    horizontalArrangement = Arrangement.spacedBy(spacing),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     tabs.forEachIndexed { index, tab ->
                         PillNavigationItem(
                             selected = selectedTab == index,
@@ -237,7 +246,9 @@ fun PillNavigationBar(
                             icon = tab.icon,
                             selectedIcon = tab.selectedIcon,
                             contentDescription = tab.contentDescription,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .width(itemWidth)
+                                .fillMaxHeight()
                         )
                     }
                 }
@@ -457,7 +468,7 @@ fun UnifiedPillNavigationPreview() {
         NavigationTab(Icons.Rounded.History, Icons.Rounded.History, "History"),
         NavigationTab(Icons.Rounded.AccountBalance, Icons.Rounded.AccountBalance, "Accounts")
     )
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(2) }
     var isExpanded by remember { mutableStateOf(false) }
 
     OssWalletTheme {

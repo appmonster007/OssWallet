@@ -100,7 +100,6 @@ fun AnalyticsScreen(
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val nonArchivedAccounts = remember(accounts) { accounts.filter { !it.isArchived } }
-    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
         initialValue = true
     )
@@ -204,7 +203,6 @@ fun AnalyticsScreen(
                                 bottom = scrollBottomPadding()
                             ),
                             animateCards = cardAnimationEnabled,
-                            currentTheme = currentTheme,
                             filterContext = FilterSelectionContext(
                                 accounts = state.accounts,
                                 allCategories = state.allCategories,

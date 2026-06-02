@@ -247,7 +247,6 @@ fun AeonFlowCard(
     baseCurrency: String,
     type: CashFlowType,
     modifier: Modifier = Modifier,
-    @Suppress("UNUSED_PARAMETER") currentTheme: String = "System",
     incomeColor: Color = AppColors.positive,
     expenseColor: Color = AppColors.negative,
     onClick: () -> Unit = {},

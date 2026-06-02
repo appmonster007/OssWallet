@@ -52,7 +52,6 @@ fun AeonCardList(
     contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.screenPadding),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
     animateCards: Boolean = true,
-    currentTheme: String = "light",
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
@@ -86,7 +85,6 @@ fun AeonCardList(
             onDelete = onDelete,
             onRecordsClick = onRecordsClick,
             callbacks = callbacks,
-            currentTheme = currentTheme,
             preComputedData = preComputedData,
             filterSheetEnabled = !disableFilterSheet
         )
@@ -105,7 +103,6 @@ fun AeonCardList(
                     cardWithCallbacks = effectiveCard,
                     modifier = Modifier.fillMaxWidth(),
                     headerModifier = dragModifier,
-                    currentTheme = currentTheme,
                     filterContext = filterContext,
                     inheritedFilter = cardInput.filter,
                     screenOwnsTimeline = cardInput.screenOwnsTimeline,

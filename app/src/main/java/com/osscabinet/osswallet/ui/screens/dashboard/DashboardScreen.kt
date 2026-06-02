@@ -188,7 +188,6 @@ fun DashboardScreen(
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
         initialValue = true
     )
@@ -337,7 +336,6 @@ fun DashboardScreen(
                         pagerState = pagerState,
                         tabs = tabs,
                         state = state,
-                        currentTheme = currentTheme,
                         onManageAccountsClick = { navigate(onManageAccountsClick) },
                         onAccountClick = { id -> navigate { onAccountClick(id) } },
                         onNavigateToPlannedPaymentList = { navigate(onNavigateToPlannedPaymentList) },
@@ -440,7 +438,6 @@ fun DashboardContent(
     pagerState: PagerState,
     tabs: List<NavigationTab>,
     state: DashboardUiState.Success,
-    currentTheme: String,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onNavigateToPlannedPaymentList: () -> Unit = {},
@@ -483,7 +480,6 @@ fun DashboardContent(
                         cardComputerRegistry = cardComputerRegistry,
                         cardUpdateHandler = dashboardViewModel,
                         savedFilters = savedFilters,
-                        currentTheme = currentTheme,
                         cardAnimationEnabled = cardAnimationEnabled,
                         onShowAddCardDialogChange = { onShowAddCardDialogChange(it) },
                         onRecordsClick = onRecordsClick,
@@ -583,7 +579,6 @@ fun DashboardGlanceTab(
     cardComputerRegistry: CardComputerRegistry,
     cardUpdateHandler: CardUpdateHandler,
     savedFilters: List<Filter>,
-    currentTheme: String,
     cardAnimationEnabled: Boolean,
     onShowAddCardDialogChange: (Boolean) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit,
@@ -745,7 +740,6 @@ fun DashboardGlanceTab(
             bottom = scrollBottomPadding()
         ),
         animateCards = cardAnimationEnabled,
-        currentTheme = currentTheme,
         filterContext = FilterSelectionContext(
             accounts = state.accounts,
             allCategories = state.allCategories,

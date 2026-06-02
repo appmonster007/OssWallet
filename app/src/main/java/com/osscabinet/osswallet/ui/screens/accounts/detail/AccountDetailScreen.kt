@@ -156,7 +156,6 @@ fun AccountDetailScreen(
         }
     }
 
-    val currentTheme by settingsViewModel.theme.collectAsStateWithLifecycle(initialValue = "System")
     val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
         initialValue = true
     )
@@ -376,7 +375,6 @@ fun AccountDetailScreen(
                                     accountDetailViewModel = accountDetailViewModel,
                                     cardComputerRegistry = cardComputerRegistry,
                                     onRecordsClick = onRecordsClick,
-                                    currentTheme = currentTheme,
                                     savedFilters = savedFilters,
                                     transactionViewModel = transactionViewModel,
                                     onCloneTransactionClick = onCloneTransactionClick,
@@ -537,7 +535,6 @@ fun DynamicAccountDetailCards(
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
     onRecordsClick: (TransactionFilter) -> Unit,
-    currentTheme: String,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
     transactionViewModel: TransactionViewModel,
     onCloneTransactionClick: (Long) -> Unit,
@@ -652,7 +649,6 @@ fun DynamicAccountDetailCards(
                 bottom = scrollBottomPadding()
             ),
             animateCards = cardAnimationEnabled,
-            currentTheme = currentTheme,
             filterContext = FilterSelectionContext(
                 accounts = listOf(state.account),
                 allCategories = state.allCategories,

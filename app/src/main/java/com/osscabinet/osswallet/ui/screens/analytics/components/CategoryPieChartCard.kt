@@ -59,6 +59,7 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
@@ -79,7 +80,6 @@ fun CategoryPieChartCard(
     inheritedFilter: TransactionFilter = TransactionFilter(),
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
-    currentTheme: String = "System",
     showFilterButton: Boolean = true
 ) {
     val displayFilter =
@@ -87,12 +87,9 @@ fun CategoryPieChartCard(
             config.filter.copy(timelineRange = inheritedFilter.timelineRange)
         else config.filter
 
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
+    val mode = LocalThemeMode.current
+    val isDarkTheme = mode.isDarkTheme
+    val isAmoled = mode.isAmoled
 
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }

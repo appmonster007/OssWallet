@@ -6,6 +6,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 
 // ============================================================================
 // ARCHITECT SLATE COLOR PALETTE (MAXIMIZED TONAL CONTRAST)
@@ -215,6 +216,10 @@ val LocalAppColorScheme = staticCompositionLocalOf<ColorScheme> {
     error("No AppColorScheme provided. Wrap your UI in OssWalletTheme.")
 }
 
+val LocalThemeMode = staticCompositionLocalOf<ThemeMode> {
+    error("No ThemeMode provided. Wrap your UI in OssWalletTheme.")
+}
+
 object AppColors {
 
     // ── Accent / Brand ──────────────────────────────────────────────────────
@@ -248,17 +253,23 @@ object AppColors {
     // ── Semantic Feedback (colors.md 2.7) ──────────────────────────────────
     // Positive (Income/Profit) and Negative (Expense/Loss) colors.
     val positive: Color
-        @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(
-            0xFF5BE093
-        ) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFF4DCE85) else Color(
-            0xFF1E9B4F
-        )
+        @Composable @ReadOnlyComposable get() {
+            val mode = LocalThemeMode.current
+            return when {
+                mode.isAmoled -> Color(0xFF5BE093)
+                mode.isDarkTheme -> Color(0xFF4DCE85)
+                else -> Color(0xFF1E9B4F)
+            }
+        }
     val negative: Color
-        @Composable @ReadOnlyComposable get() = if (LocalAppColorScheme.current.background == BackgroundAmoled) Color(
-            0xFFF08782
-        ) else if (LocalAppColorScheme.current.background == BackgroundDark) Color(0xFFE27974) else Color(
-            0xFFC8463F
-        )
+        @Composable @ReadOnlyComposable get() {
+            val mode = LocalThemeMode.current
+            return when {
+                mode.isAmoled -> Color(0xFFF08782)
+                mode.isDarkTheme -> Color(0xFFE27974)
+                else -> Color(0xFFC8463F)
+            }
+        }
 
     // ── Screen Background ───────────────────────────────────────────────────
     // Outermost scaffold fill behind all content.

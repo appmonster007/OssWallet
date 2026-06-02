@@ -36,7 +36,6 @@ fun UnifiedCardRenderer(
     cardWithCallbacks: CardWithCallbacks,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
-    currentTheme: String = "light",
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
     screenOwnsTimeline: Boolean = false,
@@ -165,7 +164,6 @@ fun UnifiedCardRenderer(
                 inheritedFilter = inheritedFilter,
                 filterRules = cardWithCallbacks.filterRules,
                 screenOwnsTimeline = screenOwnsTimeline,
-                currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled
@@ -233,7 +231,6 @@ fun UnifiedCardRenderer(
                 inheritedFilter = inheritedFilter,
                 filterRules = cardWithCallbacks.filterRules,
                 screenOwnsTimeline = screenOwnsTimeline,
-                currentTheme = currentTheme,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled
@@ -275,7 +272,6 @@ fun UnifiedCardRenderer(
                 accounts = renderData.updatedAccounts,
                 accountStats = renderData.accountStats,
                 baseCurrency = renderData.baseCurrency,
-                currentTheme = currentTheme,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,

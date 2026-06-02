@@ -95,71 +95,77 @@ fun UnifiedPillNavigation(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(bottom = fabPaddingBottom)
-                .height(56.dp)
                 .padding(horizontal = 24.dp)
                 .zIndex(2f)
         ) {
-            // Centered Pill Navigation
-            if (tabs.isNotEmpty()) {
-                PillNavigationBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = onTabSelected,
-                    tabs = tabs,
-                    isDimmed = isFabExpanded,
-                    onDimClick = { onFabToggle(false) },
-                    modifier = Modifier.align(Alignment.Center)
-                )
+            // Floating Menu Actions
+            if (showFab && fabMenu != null) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 64.dp)
+                        .wrapContentWidth(align = Alignment.End, unbounded = true)
+                ) {
+                    fabMenu()
+                }
             }
 
-            // Right-aligned FAB
-            if (showFab) {
-                // Floating Menu Actions
-                if (fabMenu != null) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(bottom = 64.dp)
-                            .wrapContentWidth(align = Alignment.End, unbounded = true)
-                    ) {
-                        fabMenu()
-                    }
+            // Bottom Bar Container (Pill + FAB)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .align(Alignment.BottomCenter)
+            ) {
+                // Centered Pill Navigation
+                if (tabs.isNotEmpty()) {
+                    PillNavigationBar(
+                        selectedTab = selectedTab,
+                        onTabSelected = onTabSelected,
+                        tabs = tabs,
+                        isDimmed = isFabExpanded,
+                        onDimClick = { onFabToggle(false) },
+                        modifier = Modifier.align(Alignment.Center)
+                    )
                 }
 
                 // Primary FAB
-                val rotation by animateFloatAsState(
-                    targetValue = if (isFabExpanded) 45f else 0f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "FabRotation"
-                )
+                if (showFab) {
+                    val rotation by animateFloatAsState(
+                        targetValue = if (isFabExpanded) 45f else 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "FabRotation"
+                    )
 
-                val haptic = LocalHapticFeedback.current
-                FloatingActionButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .size(48.dp)
-                        .graphicsLayer { rotationZ = rotation },
-                    containerColor = AppColors.primary,
-                    contentColor = AppColors.onPrimary,
-                    shape = CircleShape,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 6.dp,
-                        pressedElevation = 2.dp
-                    )
-                ) {
-                    Icon(
-                        imageVector = fabIcon,
-                        contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    val haptic = LocalHapticFeedback.current
+                    FloatingActionButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(48.dp)
+                            .graphicsLayer { rotationZ = rotation },
+                        containerColor = AppColors.primary,
+                        contentColor = AppColors.onPrimary,
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 2.dp
+                        )
+                    ) {
+                        Icon(
+                            imageVector = fabIcon,
+                            contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }

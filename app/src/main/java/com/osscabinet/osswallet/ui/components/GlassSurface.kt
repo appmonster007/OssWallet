@@ -1,23 +1,44 @@
 package com.osscabinet.ossWallet.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalHazeDepth
@@ -139,6 +160,80 @@ fun GlassSurface(
             // 3. INCREMENT DEPTH: Nested children will automatically blur this surface.
             CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
                 content()
+            }
+        }
+    }
+}
+
+/**
+ * A custom glass bottom sheet that stays in the same window hierarchy.
+ * This is essential for glassmorphism because ModalBottomSheet creates a new window,
+ * which loses access to the Haze background capture.
+ */
+@Composable
+fun AeonGlassSheet(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    hazeLayer: Int = HazeLayer.Overlay,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Popup(
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
+    ) {
+        var visible by remember { mutableStateOf(false) }
+        SideEffect { visible = true }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            // Scrim
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismiss
+                    )
+            )
+
+            AnimatedVisibility(
+                visible = visible,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                modifier = modifier
+            ) {
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    hazeLayer = hazeLayer,
+                    hazeStyle = GlassTokens.sheetStyle(),
+                    fallbackColor = AppColors.sheetSurface,
+                    borderColor = Color.White.copy(alpha = 0.15f),
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Standard Drag Handle
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 36.dp, height = 4.dp)
+                                    .background(
+                                        AppColors.outlineVariant.copy(alpha = 0.3f),
+                                        RoundedCornerShape(2.dp)
+                                    )
+                            )
+                        }
+                        content()
+                    }
+                }
             }
         }
     }

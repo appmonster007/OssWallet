@@ -1,10 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,8 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
+import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -82,12 +76,11 @@ fun CardSettingsSheet(
 
     if (glassEnabled) {
         AeonGlassSheet(
-            title = title,
             onDismiss = onDismiss,
-            onDelete = onDelete,
-            modifier = modifier,
-            content = content
-        )
+            modifier = modifier
+        ) {
+            SheetBody(title, onDismiss, onDelete, content)
+        }
     } else {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
@@ -99,77 +92,6 @@ fun CardSettingsSheet(
             modifier = modifier.statusBarsPadding()
         ) {
             SheetBody(title, onDismiss, onDelete, content)
-        }
-    }
-}
-
-/**
- * A custom bottom-sheet-like overlay that supports real glassmorphism by staying
- * within the same window hierarchy.
- */
-@Composable
-fun AeonGlassSheet(
-    title: String,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Popup(
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true, dismissOnClickOutside = true)
-    ) {
-        var visible by remember { mutableStateOf(false) }
-        SideEffect { visible = true }
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            // Scrim
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDismiss
-                    )
-            )
-
-            AnimatedVisibility(
-                visible = visible,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                modifier = modifier
-            ) {
-                GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                    hazeLayer = HazeLayer.Overlay,
-                    hazeStyle = GlassTokens.sheetStyle(),
-                    fallbackColor = AppColors.sheetSurface,
-                    borderColor = Color.White.copy(alpha = 0.2f),
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        // Drag Handle
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 32.dp, height = 4.dp)
-                                    .background(AppColors.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp))
-                            )
-                        }
-                        SheetBody(title, onDismiss, onDelete, content)
-                    }
-                }
-            }
         }
     }
 }

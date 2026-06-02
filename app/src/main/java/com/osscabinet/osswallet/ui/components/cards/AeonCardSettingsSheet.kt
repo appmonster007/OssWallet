@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.FilterSheetContent
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -45,33 +46,31 @@ fun AeonCardSettingsSheet(
 
     if (glassEnabled) {
         AeonGlassSheet(
-            title = title,
-            onDismiss = onDismiss,
-            onDelete = {}, // Filters don't typically have a delete card action here
-            content = {
-                FilterSheetContent(
-                    filter = filter,
-                    accounts = filterContext.accounts,
-                    allCategories = filterContext.allCategories,
-                    onSearchTransactions = filterContext.onSearchTransactions,
-                    onFilterEvent = { event ->
-                        when (event) {
-                            is FilterEvent.Apply -> onFilterChange(event.filter)
-                            is FilterEvent.Reset -> onFilterChange(baseFilter)
-                            else -> {}
-                        }
-                    },
-                    onClose = onDismiss,
-                    modifier = Modifier.fillMaxHeight(0.8f),
-                    allTags = filterContext.allTags,
-                    savedFilters = filterContext.savedFilters,
-                    onSaveFilterClick = onSaveFilterClick,
-                    backgroundColor = Color.Transparent,
-                    filterRules = filterRules,
-                    baseFilter = baseFilter
-                )
-            }
-        )
+            onDismiss = onDismiss
+        ) {
+            FilterSheetContent(
+                title = title,
+                filter = filter,
+                accounts = filterContext.accounts,
+                allCategories = filterContext.allCategories,
+                onSearchTransactions = filterContext.onSearchTransactions,
+                onFilterEvent = { event ->
+                    when (event) {
+                        is FilterEvent.Apply -> onFilterChange(event.filter)
+                        is FilterEvent.Reset -> onFilterChange(baseFilter)
+                        else -> {}
+                    }
+                },
+                onClose = onDismiss,
+                modifier = Modifier.fillMaxHeight(0.85f),
+                allTags = filterContext.allTags,
+                savedFilters = filterContext.savedFilters,
+                onSaveFilterClick = onSaveFilterClick,
+                backgroundColor = Color.Transparent,
+                filterRules = filterRules,
+                baseFilter = baseFilter
+            )
+        }
     } else {
         ModalBottomSheet(
             onDismissRequest = onDismiss,

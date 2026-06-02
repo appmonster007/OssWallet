@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Payments
@@ -71,6 +70,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
+import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.components.entry.EntryTagSection
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -301,7 +301,6 @@ fun FilterFields(
         modifier = Modifier.padding(bottom = AeonTheme.dimensions.spacingLg),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // ... (skipping some code for context)
         // Primary Context Grid (Type, Accounts, Categories, Currencies, Status, Methods)
         AeonContextGrid {
             EntryActionRow {
@@ -460,18 +459,20 @@ fun FilterFields(
             ) {
                 if (filterRules.searchRule.isVisible) {
                     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        CompactTextField(
+                        EntryEditorialInput(
                             value = filter.queryNote ?: "",
                             onValueChange = { onFilterChange(filter.copy(queryNote = it.ifBlank { null })) },
+                            label = "NOTE QUERY",
+                            icon = Icons.Default.Subtitles,
                             placeholder = "Search note...",
-                            leadingIcon = Icons.Default.Subtitles,
                             enabled = !isSearchLocked
                         )
-                        CompactTextField(
+                        EntryEditorialInput(
                             value = filter.queryPayee ?: "",
                             onValueChange = { onFilterChange(filter.copy(queryPayee = it.ifBlank { null })) },
+                            label = "PAYEE QUERY",
+                            icon = Icons.Default.Person,
                             placeholder = "Search payee...",
-                            leadingIcon = Icons.Default.Person,
                             enabled = !isSearchLocked
                         )
                     }
@@ -641,67 +642,6 @@ fun FilterFieldsPreview() {
                 allCategories = emptyList(),
                 onSearchTransactions = { _ -> flowOf(emptyList()) }
             )
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CompactTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
-    enabled: Boolean = true
-) {
-    Surface(
-        modifier = modifier.height(AeonTheme.dimensions.iconSize2xl),
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = AppColors.insetSurface.copy(alpha = 0.5f)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (leadingIcon != null) {
-                Icon(
-                    leadingIcon,
-                    contentDescription = null,
-                    tint = AppColors.contentSecondary,
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                )
-                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
-            }
-            androidx.compose.foundation.text.BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
-                enabled = enabled,
-                textStyle = AppTextStyles.transactionTitle.copy(color = AppColors.contentPrimary),
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(AppColors.primary),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
-                decorationBox = { innerTextField ->
-                    if (value.isEmpty()) {
-                        Text(
-                            placeholder,
-                            style = AppTextStyles.transactionTitle,
-                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                        )
-                    }
-                    innerTextField()
-                }
-            )
-            if (value.isNotEmpty() && enabled) {
-                IconButton(
-                    onClick = { onValueChange("") },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(Icons.Default.Close, null, Modifier.size(16.dp))
-                }
-            }
         }
     }
 }

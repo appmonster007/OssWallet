@@ -68,6 +68,7 @@ import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -259,12 +260,15 @@ fun DashboardScreen(
         LocalFilterPillController provides filterPillController,
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        Spacer(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColors.screenBackground)
                 .hazeSource(cardHazeState)
-        )
+                .hazeSource(pillHazeState)
+        ) {
+            ContourBackground()
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -275,7 +279,7 @@ fun DashboardScreen(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = AppColors.screenBackground,
+                        containerColor = Color.Transparent,
                         titleContentColor = AppColors.onScreenBackground,
                         navigationIconContentColor = AppColors.onScreenBackground
                     ),
@@ -609,7 +613,6 @@ fun DashboardGlanceTab(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppColors.screenBackground)
     ) {
         // Header row with Add Card button
         Row(

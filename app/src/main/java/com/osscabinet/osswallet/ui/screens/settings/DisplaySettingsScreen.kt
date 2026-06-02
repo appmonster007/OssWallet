@@ -21,8 +21,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Block
-import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.BlurOff
+import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.CurrencyExchange
@@ -57,6 +57,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -280,83 +281,90 @@ fun DisplaySettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(AppColors.screenBackground)
-                .verticalScroll(rememberScrollState())
-                .padding(AeonTheme.dimensions.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
         ) {
-            AeonSettingsSection("APPEARANCE") {
-                AeonSettingsItem(
-                    title = "Theme",
-                    subtitle = theme,
-                    icon = Icons.Rounded.Palette,
-                    onClick = { showThemeDialog = true }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                AeonSettingsItem(
-                    title = "Font",
-                    subtitle = AppFont.fromName(selectedFont).displayName,
-                    icon = Icons.Rounded.FontDownload,
-                    onClick = { showFontDialog = true }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                EntrySwitchRow(
-                    label = "Glass Effect",
-                    subtitle = if (glassmorphismEnabled) "Frosted blur on headers" else "Solid surface on headers",
-                    icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
-                    checked = glassmorphismEnabled,
-                    onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
-                    isFlush = false
-                )
-            }
+            ContourBackground()
 
-            AeonSettingsSection("ANIMATIONS & INTERFACE") {
-                EntrySwitchRow(
-                    label = "Card Animations",
-                    subtitle = if (cardAnimationEnabled) "Animate cards on screen load" else "Disable card animations",
-                    icon = if (cardAnimationEnabled) Icons.Rounded.Animation else Icons.Rounded.Block,
-                    checked = cardAnimationEnabled,
-                    onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
-                    isFlush = false
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                EntrySwitchRow(
-                    label = "Expandable Action Button",
-                    subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
-                    icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
-                    checked = expandableFabEnabled,
-                    onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
-                    isFlush = false
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                EntrySwitchRow(
-                    label = "Recent Activities Breakdown",
-                    subtitle = if (recentActivitiesBreakdown) "Currency breakdown shown in group headers" else "Currency breakdown hidden in group headers",
-                    icon = Icons.Rounded.CurrencyExchange,
-                    checked = recentActivitiesBreakdown,
-                    onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
-                    isFlush = false
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(AeonTheme.dimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
+            ) {
+                AeonSettingsSection("APPEARANCE") {
+                    AeonSettingsItem(
+                        title = "Theme",
+                        subtitle = theme,
+                        icon = Icons.Rounded.Palette,
+                        onClick = { showThemeDialog = true }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    AeonSettingsItem(
+                        title = "Font",
+                        subtitle = AppFont.fromName(selectedFont).displayName,
+                        icon = Icons.Rounded.FontDownload,
+                        onClick = { showFontDialog = true }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    EntrySwitchRow(
+                        label = "Glass Effect",
+                        subtitle = if (glassmorphismEnabled) "Frosted blur on headers" else "Solid surface on headers",
+                        icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
+                        checked = glassmorphismEnabled,
+                        onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
+                        isFlush = false
+                    )
+                }
+
+                AeonSettingsSection("ANIMATIONS & INTERFACE") {
+                    EntrySwitchRow(
+                        label = "Card Animations",
+                        subtitle = if (cardAnimationEnabled) "Animate cards on screen load" else "Disable card animations",
+                        icon = if (cardAnimationEnabled) Icons.Rounded.Animation else Icons.Rounded.Block,
+                        checked = cardAnimationEnabled,
+                        onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
+                        isFlush = false
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    EntrySwitchRow(
+                        label = "Expandable Action Button",
+                        subtitle = if (expandableFabEnabled) "Show quick templates and actions" else "Simple button for new entries",
+                        icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
+                        checked = expandableFabEnabled,
+                        onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
+                        isFlush = false
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    EntrySwitchRow(
+                        label = "Recent Activities Breakdown",
+                        subtitle = if (recentActivitiesBreakdown) "Currency breakdown shown in group headers" else "Currency breakdown hidden in group headers",
+                        icon = Icons.Rounded.CurrencyExchange,
+                        checked = recentActivitiesBreakdown,
+                        onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
+                        isFlush = false
+                    )
+                }
             }
         }
     }

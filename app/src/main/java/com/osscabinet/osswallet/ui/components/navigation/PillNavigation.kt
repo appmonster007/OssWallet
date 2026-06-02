@@ -17,9 +17,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.SyncAlt
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.*
@@ -65,7 +65,7 @@ fun UnifiedPillNavigation(
     showFab: Boolean = true,
     isFabExpanded: Boolean = false,
     onFabToggle: (Boolean) -> Unit = {},
-    fabIcon: ImageVector = Icons.Default.Add,
+    fabIcon: ImageVector = Icons.Rounded.Add,
     onFabClick: () -> Unit = {},
     fabMenu: @Composable (ColumnScope.() -> Unit)? = null
 ) {
@@ -353,7 +353,7 @@ fun TransactionFabMenu(
         FabMenuItem(
             visible = isExpanded,
             label = "Add Account",
-            icon = Icons.Default.AccountBalance,
+            icon = Icons.Rounded.AccountBalance,
             index = baseIndex,
             onClick = onAddAccountClick
         )
@@ -362,7 +362,7 @@ fun TransactionFabMenu(
     FabMenuItem(
         visible = isExpanded,
         label = "Transfer",
-        icon = Icons.Default.SyncAlt,
+        icon = Icons.Rounded.SyncAlt,
         index = if (onAddAccountClick != null) baseIndex + 1 else baseIndex,
         onClick = { onAddClick(TransactionType.TRANSFER, null) }
     )
@@ -370,7 +370,7 @@ fun TransactionFabMenu(
     FabMenuItem(
         visible = isExpanded,
         label = "New Transaction",
-        icon = Icons.Default.Add,
+        icon = Icons.Rounded.Add,
         index = if (onAddAccountClick != null) baseIndex + 2 else baseIndex + 1,
         onClick = { onAddClick(TransactionType.EXPENSE, null) }
     )
@@ -455,7 +455,7 @@ fun UnifiedPillNavigationPreview() {
     val tabs = listOf(
         NavigationTab(Icons.Rounded.Dashboard, Icons.Rounded.Dashboard, "Dashboard"),
         NavigationTab(Icons.Rounded.History, Icons.Rounded.History, "History"),
-        NavigationTab(Icons.Default.AccountBalance, Icons.Default.AccountBalance, "Accounts")
+        NavigationTab(Icons.Rounded.AccountBalance, Icons.Rounded.AccountBalance, "Accounts")
     )
     var selectedTab by remember { mutableIntStateOf(0) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -473,14 +473,14 @@ fun UnifiedPillNavigationPreview() {
                     FabMenuItem(
                         visible = isExpanded, 
                         label = "Add Template", 
-                        icon = Icons.Default.Add, 
+                        icon = Icons.Rounded.Add, 
                         index = 0, 
                         onClick = { isExpanded = false }
                     )
                     FabMenuItem(
                         visible = isExpanded, 
                         label = "Transfer", 
-                        icon = Icons.Default.SyncAlt, 
+                        icon = Icons.Rounded.SyncAlt,
                         index = 1, 
                         onClick = { isExpanded = false }
                     )

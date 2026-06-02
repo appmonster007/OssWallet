@@ -86,6 +86,10 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
+import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
+import androidx.compose.runtime.CompositionLocalProvider
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
@@ -179,7 +183,6 @@ fun AccountDetailScreen(
 
     val categories by transactionViewModel.categories.collectAsStateWithLifecycle()
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-    remember(categories) { categories.associateBy { it.id } }
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
 
     var navTriggered by remember { mutableStateOf(false) }
@@ -216,7 +219,9 @@ fun AccountDetailScreen(
 
     var showSettingsDialog by rememberSaveable { mutableStateOf(false) }
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
-    var isFabExpanded by rememberSaveable { mutableStateOf(false) }
+    var isFabExpanded by remember { mutableStateOf(false) }
+
+    val filterPillController = remember { FilterPillController() }
 
     // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
     // Registered before the dialog/FAB BackHandlers so they retain higher LIFO priority.
@@ -306,8 +311,9 @@ fun AccountDetailScreen(
     }
 
     AeonHazeProvider { _ ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
+        CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Scaffold(
                 containerColor = Color.Transparent,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                     topBar = {
@@ -519,6 +525,7 @@ fun AccountDetailScreen(
                                             TransactionFabMenu(
                                                 isExpanded = isFabExpanded,
                                                 templates = allTemplates,
+                                                categories = categories,
                                                 onAddClick = { type, templateId ->
                                                     isFabExpanded = false
                                                     navigate {
@@ -537,9 +544,33 @@ fun AccountDetailScreen(
                         }
                     }
                 }
+
+                // TransactionFilterPill rendered here — above the nav pill, inside the main window
+                // so LocalAeonHaze is accessible and real glass blur applies.
+                val pillRequest = filterPillController.activeRequest
+                if (pillRequest != null) {
+                    TransactionFilterPill(
+                        filter = pillRequest.filter,
+                        accounts = pillRequest.accounts,
+                        categories = pillRequest.categories,
+                        allTags = pillRequest.allTags,
+                        savedFilters = pillRequest.savedFilters,
+                        onSearchTransactions = pillRequest.onSearchTransactions,
+                        onFilterEvent = pillRequest.onFilterEvent,
+                        onSaveFilterClick = pillRequest.onSaveFilterClick,
+                        onDismiss = {
+                            pillRequest.onDismiss()
+                            filterPillController.dismiss()
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        filterRules = pillRequest.filterRules,
+                        baseFilter = pillRequest.baseFilter,
+                    )
+                }
             }
         }
     }
+}
 
 @Composable
 fun DynamicAccountDetailCards(

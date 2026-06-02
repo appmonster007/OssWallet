@@ -142,7 +142,8 @@ fun AdvancedFilterSection(
                 currentRange = filter.timelineRange,
                 onRangeSelected = { range -> onFilterChange(filter.copy(timelineRange = range)) },
                 modifier = Modifier.fillMaxWidth(),
-                swipeEntireComponent = false
+                swipeEntireComponent = false,
+                isFlush = true
             )
 
             Spacer(Modifier.height(8.dp))

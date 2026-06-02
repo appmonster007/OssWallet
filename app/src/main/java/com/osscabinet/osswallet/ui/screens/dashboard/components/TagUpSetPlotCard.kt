@@ -288,7 +288,9 @@ private fun TagUpSetSettingsSheet(
     CardSettingsSheet(title = "Tag Analytics", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Display") {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -352,9 +354,15 @@ private fun TagUpSetSettingsSheet(
                     }
                 }
             }
-            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.3f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -426,8 +434,15 @@ private fun TagUpSetSettingsSheet(
                     }
                 }
             }
-            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.3f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
                 Text(
                     "DYNAMIC FILTERING",
                     style = AppTextStyles.transactionSwipeAction.copy(
@@ -469,7 +484,9 @@ private fun TagUpSetSettingsSheet(
         }
         CardSettingsSection("Sorting") {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -514,9 +531,15 @@ private fun TagUpSetSettingsSheet(
                     }
                 }
             }
-            HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.3f))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.3f),
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

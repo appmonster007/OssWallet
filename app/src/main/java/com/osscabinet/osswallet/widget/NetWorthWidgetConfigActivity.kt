@@ -155,7 +155,8 @@ private fun NetWorthWidgetConfigScreen(
                 label = "Show Comparison",
                 subtitle = "Compare with previous period",
                 checked = config.showComparison,
-                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
+                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) },
+                isFlush = true
             )
 
             Spacer(modifier = Modifier.height(8.dp))

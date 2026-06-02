@@ -322,7 +322,11 @@ private fun NetWorthSettingsSheet(
 ) {
     CardSettingsSheet(title = "Net Worth", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
         CardSettingsSection("Font Size") {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
                 listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                     SegmentedButton(
                         selected = config.fontSize == size,
@@ -347,7 +351,8 @@ private fun NetWorthSettingsSheet(
                 label = "Show Comparison",
                 subtitle = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+                isFlush = true
             )
         }
     }

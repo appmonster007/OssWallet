@@ -204,7 +204,8 @@ fun BudgetFormBody(
                                 checked = state.isNoteRegex,
                                 onCheckedChange = { onEvent(BudgetEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags"
+                                subtitle = "Supports /pattern/flags",
+                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
@@ -222,7 +223,8 @@ fun BudgetFormBody(
                                 checked = state.isPayeeRegex,
                                 onCheckedChange = { onEvent(BudgetEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags"
+                                subtitle = "Supports /pattern/flags",
+                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,
@@ -356,7 +358,10 @@ fun BudgetFormBody(
             // MANAGEMENT: Meta Configuration
             EntrySection(title = "MANAGEMENT", icon = Icons.Rounded.Settings) {
                 Column(verticalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(dims.spacingSm)) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = dims.cardPadding),
+                        verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
+                    ) {
                         Text(
                             text = "Alert threshold at ${(state.alertThreshold * 100).toInt()}%",
                             style = AppTextStyles.transactionAmount
@@ -374,7 +379,8 @@ fun BudgetFormBody(
                         checked = state.rollover,
                         onCheckedChange = { onEvent(BudgetEntryEvent.SetRollover(it)) },
                         icon = Icons.Rounded.Autorenew,
-                        subtitle = "Carry forward unused amounts to next period"
+                        subtitle = "Carry forward unused amounts to next period",
+                        isFlush = true
                     )
                 }
             }

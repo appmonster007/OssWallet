@@ -272,7 +272,8 @@ fun PlannedPaymentFormBody(
                     label = "Has End Date",
                     checked = state.hasEndDate,
                     onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetHasEndDate(it)) },
-                    icon = Icons.Rounded.EventBusy
+                    icon = Icons.Rounded.EventBusy,
+                    isFlush = true
                 )
 
                 if (state.hasEndDate) {
@@ -288,7 +289,8 @@ fun PlannedPaymentFormBody(
                     label = "Auto-confirm Transaction",
                     checked = state.autoConfirm,
                     onCheckedChange = { onEvent(PlannedPaymentEntryEvent.SetAutoConfirm(it)) },
-                    icon = Icons.Rounded.AutoFixHigh
+                    icon = Icons.Rounded.AutoFixHigh,
+                    isFlush = true
                 )
             }
         }

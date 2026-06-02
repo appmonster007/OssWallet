@@ -603,29 +603,34 @@ private fun CashFlowComparisonSettingsSheet(
             EntrySwitchRow(
                 label = "Cumulative",
                 checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+                isFlush = true
             )
         }
         CardSettingsSection("Series") {
             EntrySwitchRow(
                 label = "Current Period",
                 checked = config.showCurrentPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Previous Period",
                 checked = config.showPreviousPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Same Period Last Year",
                 checked = config.showSamePeriodLastYear,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
+                isFlush = true
             )
         }
     }

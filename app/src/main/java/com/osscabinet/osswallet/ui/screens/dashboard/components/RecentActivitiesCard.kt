@@ -193,7 +193,11 @@ private fun RecentActivitiesSettingsSheet(
 ) {
     CardSettingsSheet(title = "Recent Activities", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Grouping") {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
                 TransactionGroupingType.entries.forEachIndexed { index, type ->
                     SegmentedButton(
                         selected = config.groupBy == type,
@@ -219,37 +223,44 @@ private fun RecentActivitiesSettingsSheet(
             EntrySwitchRow(
                 label = "Use Note as Header",
                 checked = config.useNoteAsHeader,
-                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) }
+                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Account",
                 checked = config.showAccount,
-                onCheckedChange = { onUpdate(config.copy(showAccount = it)) }
+                onCheckedChange = { onUpdate(config.copy(showAccount = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Category",
                 checked = config.showCategory,
-                onCheckedChange = { onUpdate(config.copy(showCategory = it)) }
+                onCheckedChange = { onUpdate(config.copy(showCategory = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Note",
                 checked = config.showNote,
-                onCheckedChange = { onUpdate(config.copy(showNote = it)) }
+                onCheckedChange = { onUpdate(config.copy(showNote = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Tags",
                 checked = config.showTags,
-                onCheckedChange = { onUpdate(config.copy(showTags = it)) }
+                onCheckedChange = { onUpdate(config.copy(showTags = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Timestamp",
                 checked = config.showTimestamp,
-                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) }
+                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Icon",
                 checked = config.showIcon,
-                onCheckedChange = { onUpdate(config.copy(showIcon = it)) }
+                onCheckedChange = { onUpdate(config.copy(showIcon = it)) },
+                isFlush = true
             )
         }
 
@@ -257,17 +268,20 @@ private fun RecentActivitiesSettingsSheet(
             EntrySwitchRow(
                 label = "Show Opening Balance",
                 checked = config.showOpeningBalance,
-                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) }
+                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Closing Balance",
                 checked = config.showClosingBalance,
-                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) }
+                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
+                isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Currency Breakdown",
                 checked = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) }
+                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
+                isFlush = true
             )
         }
     }

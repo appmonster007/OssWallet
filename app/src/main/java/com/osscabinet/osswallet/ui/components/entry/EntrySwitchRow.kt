@@ -40,13 +40,17 @@ fun EntrySwitchRow(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     subtitle: String? = null,
+    isFlush: Boolean = false,
     iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.secondary
 ) {
+    val horizontalPadding = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding
+    val verticalPadding = if (isFlush) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.cardPadding
+
     Row(
         modifier = modifier
-            .fillMaxWidth(),
-//            .padding(AeonTheme.dimensions.cardPadding),
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {

@@ -26,7 +26,8 @@ fun EntryWarrantySection(
         label = "Warranty Protection",
         checked = enabled,
         onCheckedChange = onToggle,
-        icon = Icons.Rounded.Security
+        icon = Icons.Rounded.Security,
+        isFlush = true
     )
     if (enabled) {
         EntryDateCard(

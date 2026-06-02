@@ -211,7 +211,8 @@ fun FilterSheetContent(
                     onFilterEvent(FilterEvent.UpdateTimeline(range))
                     applyFilterWithDebounce(localFilter, debounceMs = 0)
                 },
-                swipeEntireComponent = true
+                swipeEntireComponent = true,
+                isFlush = true
             )
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.7f))

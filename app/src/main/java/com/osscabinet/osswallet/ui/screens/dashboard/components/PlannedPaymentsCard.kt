@@ -184,7 +184,9 @@ private fun PlannedPaymentsSettingsSheet(
             )
             viewModes.forEach { (mode, label) ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -198,7 +200,9 @@ private fun PlannedPaymentsSettingsSheet(
         }
         CardSettingsSection("Display") {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -227,10 +231,13 @@ private fun PlannedPaymentsSettingsSheet(
             }
             HorizontalDivider(
                 thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.3f)
+                color = AppColors.divider.copy(alpha = 0.3f),
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

@@ -292,7 +292,8 @@ private fun IncomeExpenseBarSettingsSheet(
             EntrySwitchRow(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+                isFlush = true
             )
         }
     }

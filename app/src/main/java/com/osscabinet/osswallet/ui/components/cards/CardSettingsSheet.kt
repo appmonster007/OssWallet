@@ -146,8 +146,8 @@ fun CardSettingsSection(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             Text(
                 text = title.uppercase(),
@@ -156,7 +156,8 @@ fun CardSettingsSection(
                     letterSpacing = 1.2.sp,
                     fontSize = 11.sp
                 ),
-                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
             )
             content()
         }

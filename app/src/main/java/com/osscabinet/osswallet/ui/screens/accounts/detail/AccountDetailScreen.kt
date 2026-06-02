@@ -268,13 +268,15 @@ fun AccountDetailScreen(
                             label = stringResource(R.string.setting_show_planned),
                             subtitle = stringResource(R.string.setting_show_planned_desc),
                             checked = state.showPlannedPayments,
-                            onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) }
+                            onCheckedChange = { accountDetailViewModel.updateShowPlannedPayments(it) },
+                            isFlush = true
                         )
                         EntrySwitchRow(
                             label = stringResource(R.string.setting_use_note_as_header),
                             subtitle = stringResource(R.string.setting_use_note_as_header_desc),
                             checked = state.useNoteAsHeader,
-                            onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) }
+                            onCheckedChange = { accountDetailViewModel.updateUseNoteAsHeader(it) },
+                            isFlush = true
                         )
                     }
 

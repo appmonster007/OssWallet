@@ -132,14 +132,10 @@ fun FilterFields(
         }
 
         "Currencies" -> {
-            val availableCurrencies = if (allAvailableCurrencies.isNotEmpty()) {
-                allAvailableCurrencies
-            } else {
+            val availableCurrencies = allAvailableCurrencies.ifEmpty {
                 accounts.flatMap { account ->
-                    if (account.allowedCurrencies.isEmpty()) {
+                    account.allowedCurrencies.ifEmpty {
                         listOf(account.currencyCode)
-                    } else {
-                        account.allowedCurrencies
                     }
                 }.distinct().sorted()
             }

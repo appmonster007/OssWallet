@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -83,10 +84,14 @@ fun AeonTransactionItem(
     onClick: () -> Unit
 ) {
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
-    val headerText = if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
-    else (if (showCategory) category else if (showNote) note else "")
-    val bottomText = if (isNoteHeader) (if (showCategory) category else "")
-    else (if (showNote) note else "")
+    val headerText = remember(isNoteHeader, showNote, note, showCategory, category) {
+        if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
+        else (if (showCategory) category else if (showNote) note else "")
+    }
+    val bottomText = remember(isNoteHeader, showCategory, showNote, category, note) {
+        if (isNoteHeader) (if (showCategory) category else "")
+        else (if (showNote) note else "")
+    }
 
     val itemContainerColor = containerColor
 

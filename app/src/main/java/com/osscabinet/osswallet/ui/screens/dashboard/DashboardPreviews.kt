@@ -54,7 +54,6 @@ fun DashboardGlanceTabPreview() {
                 override val cardScreenContext: ScreenContext get() = ScreenContext.DASHBOARD
             },
             savedFilters = emptyList(),
-            currentTheme = "Light",
             cardAnimationEnabled = true,
             onShowAddCardDialogChange = {},
             onRecordsClick = {},

@@ -13,11 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.osscabinet.ossWallet.domain.formatter.ThemeMode
+import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
@@ -147,6 +150,11 @@ fun OssWalletTheme(
         else -> isSystemInDarkTheme()
     }
 
+    // Resolve the actual state once
+    val themeMode = remember(theme, darkTheme) {
+        ThemeHelper.getThemeMode(theme, darkTheme)
+    }
+
     // Dynamic color is available on Android 12+
     val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -181,7 +189,8 @@ fun OssWalletTheme(
 
     CompositionLocalProvider(
         LocalAeonDimensions provides AeonDimensions(),
-        LocalAppColorScheme provides colorScheme
+        LocalAppColorScheme provides colorScheme,
+        LocalThemeMode provides themeMode
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

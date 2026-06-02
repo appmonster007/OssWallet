@@ -54,7 +54,6 @@ fun AccountsCard(
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    currentTheme: String,
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -91,7 +90,6 @@ fun AccountsCard(
         if (accounts.isEmpty()) {
             AeonAddAccountCard(
                 baseCurrency = baseCurrency,
-                currentTheme = currentTheme,
                 onClick = callbacks.onManageClick,
                 gridColumns = if (config.layout == "grid") config.gridColumns else 2,
                 modifier = Modifier.fillMaxWidth()
@@ -108,7 +106,6 @@ fun AccountsCard(
                         account = account,
                         accountStats = accountStats,
                         baseCurrency = baseCurrency,
-                        currentTheme = currentTheme,
                         gridColumns = config.gridColumns,
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
@@ -122,7 +119,6 @@ fun AccountsCard(
                 if (config.showAddAccountCard) {
                     AeonAddAccountCard(
                         baseCurrency = baseCurrency,
-                        currentTheme = currentTheme,
                         onClick = callbacks.onManageClick,
                         gridColumns = config.gridColumns,
                         modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(
@@ -145,7 +141,6 @@ fun AccountsCard(
                         account = account,
                         accountStats = accountStats,
                         baseCurrency = baseCurrency,
-                        currentTheme = currentTheme,
                         gridColumns = 2,
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
@@ -157,7 +152,6 @@ fun AccountsCard(
                     item {
                         AeonAddAccountCard(
                             baseCurrency = baseCurrency,
-                            currentTheme = currentTheme,
                             onClick = callbacks.onManageClick,
                             gridColumns = 2,
                             modifier = Modifier.width(180.dp)
@@ -216,7 +210,6 @@ private fun FlowRowScope.AccountItemWrapper(
     account: Account,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    currentTheme: String,
     gridColumns: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
@@ -227,7 +220,6 @@ private fun FlowRowScope.AccountItemWrapper(
         account = account,
         accountStats = accountStats,
         baseCurrency = baseCurrency,
-        currentTheme = currentTheme,
         gridColumns = gridColumns,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
@@ -241,7 +233,6 @@ private fun AccountItemWrapper(
     account: Account,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    currentTheme: String,
     gridColumns: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
@@ -252,7 +243,6 @@ private fun AccountItemWrapper(
         account = account,
         accountStats = accountStats,
         baseCurrency = baseCurrency,
-        currentTheme = currentTheme,
         gridColumns = gridColumns,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
@@ -266,7 +256,6 @@ private fun AccountItemContent(
     account: Account,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    currentTheme: String,
     gridColumns: Int,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
@@ -277,13 +266,6 @@ private fun AccountItemContent(
     val balance = stats?.balance ?: BigDecimal.ZERO
     val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
 
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
-
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
             account = account,
@@ -293,8 +275,6 @@ private fun AccountItemContent(
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
             incomeInAccountCurrency = stats?.incomeInAccountCurrency ?: BigDecimal.ZERO,
             expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
             onClickIncome = {
@@ -321,8 +301,6 @@ private fun AccountItemContent(
             balanceInBase = totalInBase,
             baseCurrency = baseCurrency,
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
             modifier = modifier
         )
@@ -333,8 +311,6 @@ private fun AccountItemContent(
             balanceInBase = totalInBase,
             baseCurrency = baseCurrency,
             currencyBalances = stats?.currencyBalances ?: emptyMap(),
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = { onAccountClick(account.id) },
             modifier = modifier
         )
@@ -345,39 +321,30 @@ private fun AccountItemContent(
 @Composable
 fun FlowRowScope.AeonAddAccountCard(
     baseCurrency: String,
-    currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
     modifier: Modifier = Modifier
 ) {
-    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, modifier)
+    AeonAddAccountCardContent(baseCurrency, onClick, gridColumns, modifier)
 }
 
 @Composable
 fun AeonAddAccountCard(
     baseCurrency: String,
-    currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
     modifier: Modifier = Modifier
 ) {
-    AeonAddAccountCardContent(baseCurrency, currentTheme, onClick, gridColumns, modifier)
+    AeonAddAccountCardContent(baseCurrency, onClick, gridColumns, modifier)
 }
 
 @Composable
 private fun AeonAddAccountCardContent(
     baseCurrency: String,
-    currentTheme: String,
     onClick: () -> Unit,
     gridColumns: Int = 2,
     modifier: Modifier = Modifier
 ) {
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
     val seedColor = AppColors.primary
     val placeholderAccount = Account(
         "empty",
@@ -395,8 +362,6 @@ private fun AeonAddAccountCardContent(
             balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = onClick,
             modifier = modifier,
             extraLabel = "Add New"
@@ -407,8 +372,6 @@ private fun AeonAddAccountCardContent(
             balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = onClick,
             modifier = modifier
         )
@@ -418,8 +381,6 @@ private fun AeonAddAccountCardContent(
             balance = BigDecimal.ZERO,
             balanceInBase = BigDecimal.ZERO,
             baseCurrency = baseCurrency,
-            isDarkTheme = isDarkTheme,
-            isAmoled = isAmoled,
             onClick = onClick,
             modifier = modifier
         )
@@ -476,7 +437,6 @@ fun AccountsCardPreview() {
                 accounts = accounts,
                 accountStats = stats,
                 baseCurrency = "USD",
-                currentTheme = "System",
                 config = AccountsCardConfig(cardId = "preview"),
                 callbacks = CardCallbacks.Accounts(onManageClick = {}, onAccountClick = {})
             )

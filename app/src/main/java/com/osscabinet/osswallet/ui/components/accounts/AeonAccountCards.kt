@@ -59,13 +59,16 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.BackgroundAmoled
-import com.osscabinet.ossWallet.ui.theme.BackgroundDark
 import com.osscabinet.ossWallet.ui.theme.LocalAppColorScheme
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
+/**
+ * Aeon Account Card components following the Category Tint System.
+ */
 @Composable
 fun AeonAccountCardSmall(
     account: Account,
@@ -73,24 +76,17 @@ fun AeonAccountCardSmall(
     balanceInBase: BigDecimal,
     baseCurrency: String,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    isDarkTheme: Boolean = false,
-    isAmoled: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accountColor = try {
-        Color(android.graphics.Color.parseColor(account.colorHex))
+        Color(account.colorHex.toColorInt())
     } catch (e: Exception) {
         AppColors.primary
     }
 
-    val scheme = LocalAppColorScheme.current
-    val theme = when (scheme.background) {
-        BackgroundAmoled -> "Amoled"
-        BackgroundDark -> "Dark"
-        else -> "Light"
-    }
-    val (containerColor, contentColor) = accountColor.applyAeonTint(theme)
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
@@ -155,24 +151,17 @@ fun AeonAccountCardMedium(
     balanceInBase: BigDecimal,
     baseCurrency: String,
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    isDarkTheme: Boolean = false,
-    isAmoled: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val accountColor = try {
-        Color(android.graphics.Color.parseColor(account.colorHex))
+        Color(account.colorHex.toColorInt())
     } catch (e: Exception) {
         AppColors.primary
     }
 
-    val scheme = LocalAppColorScheme.current
-    val theme = when (scheme.background) {
-        BackgroundAmoled -> "Amoled"
-        BackgroundDark -> "Dark"
-        else -> "Light"
-    }
-    val (containerColor, contentColor) = accountColor.applyAeonTint(theme)
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
@@ -268,8 +257,6 @@ fun AeonAccountCardLarge(
     currencyBalances: Map<String, BigDecimal> = emptyMap(),
     incomeInAccountCurrency: BigDecimal = BigDecimal.ZERO,
     expenseInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    isDarkTheme: Boolean = false,
-    isAmoled: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardNumber: String? = null,
@@ -278,18 +265,13 @@ fun AeonAccountCardLarge(
     onClickExpense: (() -> Unit)? = null
 ) {
     val accountColor = try {
-        Color(android.graphics.Color.parseColor(account.colorHex))
+        Color(account.colorHex.toColorInt())
     } catch (e: Exception) {
         AppColors.primary
     }
 
-    val scheme = LocalAppColorScheme.current
-    val theme = when (scheme.background) {
-        BackgroundAmoled -> "Amoled"
-        BackgroundDark -> "Dark"
-        else -> "Light"
-    }
-    val (containerColor, contentColor) = accountColor.applyAeonTint(theme)
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
@@ -565,8 +547,6 @@ fun AeonAccountCardsPreview() {
                 balance = BigDecimal("1234.56"),
                 balanceInBase = BigDecimal("1234.56"),
                 baseCurrency = "USD",
-                isDarkTheme = false,
-                isAmoled = false,
                 onClick = {}
             )
 
@@ -575,8 +555,6 @@ fun AeonAccountCardsPreview() {
                 balance = BigDecimal("1234.56"),
                 balanceInBase = BigDecimal("1234.56"),
                 baseCurrency = "USD",
-                isDarkTheme = false,
-                isAmoled = false,
                 onClick = {}
             )
 
@@ -585,8 +563,6 @@ fun AeonAccountCardsPreview() {
                 balance = BigDecimal("1234.56"),
                 balanceInBase = BigDecimal("1234.56"),
                 baseCurrency = "USD",
-                isDarkTheme = false,
-                isAmoled = false,
                 onClick = {},
                 incomeInAccountCurrency = BigDecimal("500.00"),
                 expenseInAccountCurrency = BigDecimal("100.00")
@@ -618,8 +594,6 @@ fun AeonAccountCardsDarkPreview() {
                     balance = BigDecimal("1234.56"),
                     balanceInBase = BigDecimal("1234.56"),
                     baseCurrency = "USD",
-                    isDarkTheme = true,
-                    isAmoled = false,
                     onClick = {}
                 )
 
@@ -628,8 +602,6 @@ fun AeonAccountCardsDarkPreview() {
                     balance = BigDecimal("1234.56"),
                     balanceInBase = BigDecimal("1234.56"),
                     baseCurrency = "USD",
-                    isDarkTheme = true,
-                    isAmoled = false,
                     onClick = {}
                 )
 
@@ -638,8 +610,6 @@ fun AeonAccountCardsDarkPreview() {
                     balance = BigDecimal("1234.56"),
                     balanceInBase = BigDecimal("1234.56"),
                     baseCurrency = "USD",
-                    isDarkTheme = true,
-                    isAmoled = false,
                     onClick = {},
                     incomeInAccountCurrency = BigDecimal("500.00"),
                     expenseInAccountCurrency = BigDecimal("100.00")

@@ -43,7 +43,6 @@ fun rememberCardWithCallbacks(
     onDelete: (String) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
-    currentTheme: String = "light",
     preComputedData: CardRenderData? = null,
     filterSheetEnabled: Boolean = true
 ): CardWithCallbacks? {
@@ -83,7 +82,6 @@ fun rememberCardWithCallbacks(
         onDelete,
         onRecordsClick,
         callbacks,
-        currentTheme,
         renderData,
         filterSheetEnabled
     ) {

@@ -46,9 +46,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.BackgroundAmoled
-import com.osscabinet.ossWallet.ui.theme.BackgroundDark
-import com.osscabinet.ossWallet.ui.theme.LocalAppColorScheme
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
 
@@ -82,13 +80,8 @@ fun AccountHeroCard(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
-    val scheme = LocalAppColorScheme.current
-    val theme = when (scheme.background) {
-        BackgroundAmoled -> "Amoled"
-        BackgroundDark -> "Dark"
-        else -> "Light"
-    }
-    val (containerColor, contentColor) = accountColor.applyAeonTint(theme)
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
 
     val balanceInBase = CurrencyService.convertAmount(
         amount = balance,

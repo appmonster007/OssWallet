@@ -64,6 +64,7 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.generateShade
@@ -85,7 +86,6 @@ fun CategoryTreemapCard(
     inheritedFilter: TransactionFilter = TransactionFilter(),
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
-    currentTheme: String = "System",
     showFilterButton: Boolean = true
 ) {
     val displayFilter =
@@ -93,12 +93,9 @@ fun CategoryTreemapCard(
             config.filter.copy(timelineRange = inheritedFilter.timelineRange)
         else config.filter
 
-    val isDarkTheme = when (currentTheme) {
-        "Light" -> false
-        "Dark", "Amoled" -> true
-        else -> isSystemInDarkTheme()
-    }
-    val isAmoled = currentTheme == "Amoled"
+    val mode = LocalThemeMode.current
+    val isDarkTheme = mode.isDarkTheme
+    val isAmoled = mode.isAmoled
 
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }

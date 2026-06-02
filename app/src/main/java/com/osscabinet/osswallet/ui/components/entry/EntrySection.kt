@@ -40,11 +40,16 @@ fun EntrySection(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val glassEnabled = com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.surfaceContainerLow,
-        border = BorderStroke(1.dp, AppColors.outlineVariant),
+        color = if (glassEnabled) AppColors.surfaceContainerLow.copy(alpha = 0.6f) else AppColors.surfaceContainerLow,
+        border = BorderStroke(
+            1.dp,
+            if (glassEnabled) AppColors.outlineVariant.copy(alpha = 0.2f) else AppColors.outlineVariant
+        ),
         shadowElevation = 0.dp
     ) {
         Column(

@@ -88,6 +88,12 @@ class SettingsViewModel @Inject constructor(
     val contourBgVersion: StateFlow<Int> = settingsRepository.contourBgVersion
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
 
+    val contourLinesEnabled: StateFlow<Boolean> = settingsRepository.contourLinesEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val randomizeContourEachLoad: StateFlow<Boolean> = settingsRepository.randomizeContourEachLoad
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
         .flatMapLatest { providerId ->
             flow {
@@ -222,6 +228,18 @@ class SettingsViewModel @Inject constructor(
     fun setContourBgVersion(version: Int) {
         viewModelScope.launch {
             settingsRepository.saveContourBgVersion(version)
+        }
+    }
+
+    fun setContourLinesEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveContourLinesEnabled(enabled)
+        }
+    }
+
+    fun setRandomizeContourEachLoad(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveRandomizeContourEachLoad(enabled)
         }
     }
 

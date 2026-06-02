@@ -77,6 +77,8 @@ fun DisplaySettingsScreen(
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
     val contourBgVersion by viewModel.contourBgVersion.collectAsStateWithLifecycle()
+    val contourLinesEnabled by viewModel.contourLinesEnabled.collectAsStateWithLifecycle()
+    val randomizeContourEachLoad by viewModel.randomizeContourEachLoad.collectAsStateWithLifecycle()
 
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
@@ -443,6 +445,35 @@ fun DisplaySettingsScreen(
                             icon = Icons.Rounded.SettingsSuggest,
                             onClick = { showContourDialog = true }
                         )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.5f)
+                        )
+                        EntrySwitchRow(
+                            label = "Contour Lines",
+                            subtitle = if (contourLinesEnabled) "Draw topographic lines in background" else "Hide topographic lines",
+                            icon = Icons.Rounded.AddCircleOutline, // Using a generic icon or could find better one
+                            checked = contourLinesEnabled,
+                            onCheckedChange = { viewModel.setContourLinesEnabled(it) },
+                            isFlush = false
+                        )
+                        if (contourLinesEnabled) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            EntrySwitchRow(
+                                label = "Randomize Each Load",
+                                subtitle = if (randomizeContourEachLoad) "Generate new patterns on every load" else "Keep pattern consistent",
+                                icon = Icons.Rounded.Animation,
+                                checked = randomizeContourEachLoad,
+                                onCheckedChange = { viewModel.setRandomizeContourEachLoad(it) },
+                                isFlush = false
+                            )
+                        }
                     }
                 }
 

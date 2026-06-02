@@ -49,6 +49,8 @@ class SettingsDataStore(private val context: Context) {
         val ANALYTICS_COMMON_FILTER_ENABLED_KEY = booleanPreferencesKey("analytics_common_filter_enabled")
         val GLASSMORPHISM_ENABLED_KEY = booleanPreferencesKey("glassmorphism_enabled")
         val CONTOUR_BG_VERSION_KEY = intPreferencesKey("contour_bg_version")
+        val CONTOUR_LINES_ENABLED_KEY = booleanPreferencesKey("contour_lines_enabled")
+        val RANDOMIZE_CONTOUR_EACH_LOAD_KEY = booleanPreferencesKey("randomize_contour_each_load")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -164,6 +166,14 @@ class SettingsDataStore(private val context: Context) {
 
     val contourBgVersion: Flow<Int> = context.dataStore.data.map { preferences ->
         preferences[CONTOUR_BG_VERSION_KEY] ?: 4
+    }
+
+    val contourLinesEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[CONTOUR_LINES_ENABLED_KEY] ?: true
+    }
+
+    val randomizeContourEachLoad: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[RANDOMIZE_CONTOUR_EACH_LOAD_KEY] ?: true
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -326,6 +336,18 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveContourBgVersion(version: Int) {
         context.dataStore.edit { preferences ->
             preferences[CONTOUR_BG_VERSION_KEY] = version
+        }
+    }
+
+    suspend fun saveContourLinesEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[CONTOUR_LINES_ENABLED_KEY] = enabled
+        }
+    }
+
+    suspend fun saveRandomizeContourEachLoad(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[RANDOMIZE_CONTOUR_EACH_LOAD_KEY] = enabled
         }
     }
 

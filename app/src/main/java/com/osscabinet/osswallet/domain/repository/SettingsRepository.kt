@@ -30,6 +30,8 @@ interface SettingsRepository {
     val shortlistedCurrencies: Flow<Set<String>?>
     val glassmorphismEnabled: Flow<Boolean>
     val contourBgVersion: Flow<Int>
+    val contourLinesEnabled: Flow<Boolean>
+    val randomizeContourEachLoad: Flow<Boolean>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -57,4 +59,6 @@ interface SettingsRepository {
     suspend fun saveShortlistedCurrencies(currencies: Set<String>)
     suspend fun saveGlassmorphismEnabled(enabled: Boolean)
     suspend fun saveContourBgVersion(version: Int)
+    suspend fun saveContourLinesEnabled(enabled: Boolean)
+    suspend fun saveRandomizeContourEachLoad(enabled: Boolean)
 }

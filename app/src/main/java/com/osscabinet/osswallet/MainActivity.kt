@@ -58,6 +58,8 @@ class MainActivity : FragmentActivity() {
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
             val glassmorphismEnabled by settingsRepository.glassmorphismEnabled.collectAsStateWithLifecycle(initialValue = true)
             val contourBgVersion by settingsRepository.contourBgVersion.collectAsStateWithLifecycle(initialValue = 4)
+            val contourLinesEnabled by settingsRepository.contourLinesEnabled.collectAsStateWithLifecycle(initialValue = true)
+            val randomizeContourEachLoad by settingsRepository.randomizeContourEachLoad.collectAsStateWithLifecycle(initialValue = true)
 
             LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -74,7 +76,9 @@ class MainActivity : FragmentActivity() {
             OssWalletTheme(theme = theme, fontName = selectedFont) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
-                    com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion provides contourBgVersion
+                    com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion provides contourBgVersion,
+                    com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled provides contourLinesEnabled,
+                    com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad provides randomizeContourEachLoad
                 ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

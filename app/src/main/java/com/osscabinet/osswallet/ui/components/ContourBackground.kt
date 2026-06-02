@@ -11,9 +11,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.graphicsLayer
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion
+import com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.exp
@@ -30,7 +33,8 @@ fun ContourBackground(
     version: Int = LocalContourBgVersion.current,
 ) {
     val glassEnabled = LocalGlassmorphismEnabled.current
-    if (!glassEnabled) return
+    val contoursEnabled = LocalContourLinesEnabled.current
+    if (!glassEnabled || !contoursEnabled) return
 
     when (version) {
         1 -> CleanContours(modifier)
@@ -44,38 +48,25 @@ fun ContourBackground(
 @Composable
 private fun GeographicalContours(modifier: Modifier) {
     val baseColor = AppColors.onScreenBackground
+    val randomize = LocalRandomizeContourEachLoad.current
 
-    // Pre-calculate paths for a high-fidelity topographic map
-    val contourPaths = remember {
-        val gridX = 50
-        val gridY = 50
+    // Pre-calculate combined paths to minimize draw calls and object allocation
+    val pathData = remember(randomize) {
+        val random = if (randomize) Random.Default else Random(42)
+        val gridX = 40 // Optimized from 50
+        val gridY = 40
         val cellW = 1000f / gridX
         val cellH = 1000f / gridY
 
-        // 1. Generate multi-scale peaks for organic "terrain"
-        val peaks = mutableListOf<PeakV4>()
-        
-        // Large "mountain ranges"
-        repeat(Random.nextInt(3, 5)) {
-            peaks.add(PeakV4(
-                x = Random.nextFloat(),
-                y = Random.nextFloat(),
-                strength = Random.nextFloat() * 0.6f + 0.4f,
-                radiusSq = (Random.nextFloat() * 0.4f + 0.2f).let { it * it }
-            ))
-        }
-        
-        // Smaller "hills/ridges" for detail
-        repeat(Random.nextInt(8, 15)) {
-            peaks.add(PeakV4(
-                x = Random.nextFloat(),
-                y = Random.nextFloat(),
-                strength = Random.nextFloat() * 0.3f + 0.1f,
-                radiusSq = (Random.nextFloat() * 0.15f + 0.05f).let { it * it }
-            ))
+        val peaks = List(random.nextInt(10, 15)) {
+            PeakV4(
+                x = random.nextFloat(),
+                y = random.nextFloat(),
+                strength = random.nextFloat() * 0.5f + 0.1f,
+                radiusSq = (random.nextFloat() * 0.3f + 0.05f).let { it * it }
+            )
         }
 
-        // 2. Build elevation grid with a potential field
         val grid = Array(gridX + 1) { ix ->
             FloatArray(gridY + 1) { iy ->
                 val x = ix.toFloat() / gridX
@@ -84,18 +75,21 @@ private fun GeographicalContours(modifier: Modifier) {
                 for (p in peaks) {
                     val dx = x - p.x
                     val dy = y - p.y
-                    // Gaussian influence
                     total += p.strength * exp(-(dx * dx + dy * dy) / p.radiusSq)
                 }
                 total
             }
         }
 
-        // 3. Marching Squares to generate non-intersecting lines
-        val thresholdCount = 20 // More lines for better density
-        List(thresholdCount) { i ->
-            val t = (i + 1) * 0.06f // Threshold elevation
-            val path = Path()
+        val normalPath = Path()
+        val indexPath = Path()
+        val thresholdCount = 12 // Optimized from 20
+
+        for (i in 0 until thresholdCount) {
+            val t = (i + 1) * 0.08f
+            val isIndex = (i + 1) % 4 == 0
+            val targetPath = if (isIndex) indexPath else normalPath
+
             for (ix in 0 until gridX) {
                 for (iy in 0 until gridY) {
                     val v0 = grid[ix][iy]
@@ -113,47 +107,39 @@ private fun GeographicalContours(modifier: Modifier) {
 
                     val segments = getSegmentsForGeographical(cellIndex, v0, v1, v2, v3, t, ix, iy, cellW, cellH)
                     for (s in segments.indices step 2) {
-                        path.moveTo(segments[s].x, segments[s].y)
-                        path.lineTo(segments[s + 1].x, segments[s + 1].y)
+                        targetPath.moveTo(segments[s].x, segments[s].y)
+                        targetPath.lineTo(segments[s + 1].x, segments[s + 1].y)
                     }
                 }
             }
-            path
         }
+        Pair(normalPath, indexPath)
     }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer { // Enables hardware layer for the entire background
+                clip = true
+            }
+    ) {
         val scaleX = size.width / 1000f
         val scaleY = size.height / 1000f
 
-        contourPaths.forEachIndexed { index, path ->
-            // Elevation depth: Higher lines are slightly more "visible"
-            val elevationFactor = (index.toFloat() / contourPaths.size)
-            
-            // Standard map conventions: index contours every 5 lines
-            val isIndexContour = (index + 1) % 5 == 0
-            
-            // Refined alpha logic: base + elevation-based boost (increased for visibility)
-            val alpha = if (isIndexContour) {
-                0.25f + (elevationFactor * 0.2f)
-            } else {
-                0.08f + (elevationFactor * 0.12f)
-            }
-            
-            val strokeWidth = if (isIndexContour) 3.2f else 1.2f
-
-            withTransform({
-                scale(scaleX, scaleY, pivot = Offset.Zero)
-            }) {
-                drawPath(
-                    path = path,
-                    color = baseColor.copy(alpha = alpha),
-                    style = Stroke(
-                        width = strokeWidth / scaleX,
-                        miter = 10f
-                    )
-                )
-            }
+        withTransform({
+            scale(scaleX, scaleY, pivot = Offset.Zero)
+        }) {
+            // Only 2 draw calls instead of 20+
+            drawPath(
+                path = pathData.first,
+                color = baseColor.copy(alpha = 0.12f),
+                style = Stroke(width = 1.2f / scaleX)
+            )
+            drawPath(
+                path = pathData.second,
+                color = baseColor.copy(alpha = 0.35f),
+                style = Stroke(width = 3.2f / scaleX)
+            )
         }
     }
 }
@@ -195,61 +181,50 @@ private fun getSegmentsForGeographical(
 // region Premium Organic
 @Composable
 private fun OrganicContours(modifier: Modifier) {
-    val clusters = remember {
-        val count = Random.nextInt(4, 7)
-        List(count) {
-            ContourCluster(
-                xFrac = Random.nextFloat() * 1.4f - 0.2f,
-                yFrac = Random.nextFloat() * 1.4f - 0.2f,
-                baseRadius = Random.nextFloat() * 400f + 250f,
-                levels = Random.nextInt(6, 12),
-                seed = Random.nextFloat() * 20f
-            )
-        }
-    }
-
+    val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
 
-    Canvas(modifier = modifier.fillMaxSize()) {
-        clusters.forEach { cluster ->
-            drawContourClusterOrganic(
-                centerX = size.width * cluster.xFrac,
-                centerY = size.height * cluster.yFrac,
-                cluster = cluster,
-                color = baseColor
-            )
-        }
-    }
-}
-
-private fun DrawScope.drawContourClusterOrganic(
-    centerX: Float,
-    centerY: Float,
-    cluster: ContourCluster,
-    color: Color
-) {
-    for (i in 1..cluster.levels) {
-        val alpha = (i.toFloat() / cluster.levels) * 0.12f + 0.03f
-        val radius = cluster.baseRadius * (i.toFloat() / cluster.levels)
+    // Pre-calculate paths to avoid allocation in the draw loop
+    val combinedPath = remember(randomize) {
+        val random = if (randomize) Random.Default else Random(42)
+        val count = random.nextInt(4, 7)
+        val path = Path()
         
-        val path = Path().apply {
-            val points = 60
-            for (p in 0..points) {
-                val angle = (p.toFloat() / points) * 2 * PI
-                val wobble = (
-                    sin(angle * 2 + i + cluster.seed) * (18f + i * 2) + 
-                    sin(angle * 4 - i * 0.5 + cluster.seed) * 12f +
-                    cos(angle * 3 + (i * 0.8f) + cluster.seed) * 10f +
-                    sin(angle * 7 + cluster.seed) * 5f
-                ).toFloat()
-                
-                val x = centerX + (radius + wobble) * cos(angle).toFloat()
-                val y = centerY + (radius + wobble) * sin(angle).toFloat()
-                if (p == 0) moveTo(x, y) else lineTo(x, y)
+        repeat(count) {
+            val centerX = random.nextFloat() * 1400f - 200f
+            val centerY = random.nextFloat() * 1400f - 200f
+            val baseRadius = random.nextFloat() * 400f + 250f
+            val levels = random.nextInt(6, 12)
+            val seed = random.nextFloat() * 20f
+
+            for (i in 1..levels) {
+                val radius = baseRadius * (i.toFloat() / levels)
+                val points = 40
+                for (p in 0..points) {
+                    val angle = (p.toFloat() / points) * 2 * PI
+                    val wobble = (
+                        sin(angle * 2 + i + seed) * (18f + i * 2) + 
+                        sin(angle * 4 - i * 0.5 + seed) * 12f
+                    ).toFloat()
+                    
+                    val x = centerX + (radius + wobble) * cos(angle).toFloat()
+                    val y = centerY + (radius + wobble) * sin(angle).toFloat()
+                    if (p == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                path.close()
             }
-            close()
         }
-        drawPath(path = path, color = color.copy(alpha = alpha), style = Stroke(width = 1.5f))
+        path
+    }
+
+    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+        val scaleX = size.width / 1000f
+        val scaleY = size.height / 1000f
+        withTransform({
+            scale(scaleX, scaleY, pivot = Offset.Zero)
+        }) {
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.5f / scaleX))
+        }
     }
 }
 // endregion
@@ -257,43 +232,48 @@ private fun DrawScope.drawContourClusterOrganic(
 // region Bold & Simple
 @Composable
 private fun BoldContours(modifier: Modifier) {
-    val clusters = remember {
-        val count = Random.nextInt(3, 6)
-        List(count) {
-            ContourCluster(
-                xFrac = Random.nextFloat() * 1.2f - 0.1f,
-                yFrac = Random.nextFloat() * 1.2f - 0.1f,
-                baseRadius = Random.nextFloat() * 300f + 300f,
-                levels = Random.nextInt(4, 9),
-                seed = Random.nextFloat() * 10f
-            )
+    val randomize = LocalRandomizeContourEachLoad.current
+    val baseColor = AppColors.onScreenBackground
+
+    val combinedPath = remember(randomize) {
+        val random = if (randomize) Random.Default else Random(42)
+        val count = random.nextInt(3, 6)
+        val path = Path()
+
+        repeat(count) {
+            val centerX = random.nextFloat() * 1200f - 100f
+            val centerY = random.nextFloat() * 1200f - 100f
+            val baseRadius = random.nextFloat() * 300f + 300f
+            val levels = random.nextInt(4, 9)
+            val seed = random.nextFloat() * 10f
+
+            for (i in 1..levels) {
+                val radius = baseRadius * (i.toFloat() / levels)
+                val points = 30
+                for (p in 0..points) {
+                    val angle = (p.toFloat() / points) * 2 * PI
+                    val wobble = (
+                        sin(angle * 2 + i + seed) * 15f + 
+                        sin(angle * 5 - i + seed) * 10f
+                    ).toFloat()
+                    
+                    val x = centerX + (radius + wobble) * cos(angle).toFloat()
+                    val y = centerY + (radius + wobble) * sin(angle).toFloat()
+                    if (p == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                path.close()
+            }
         }
+        path
     }
 
-    val lineColor = AppColors.onScreenBackground.copy(alpha = 0.2f)
-
-    Canvas(modifier = modifier.fillMaxSize()) {
-        clusters.forEach { cluster ->
-            for (i in 1..cluster.levels) {
-                val radius = cluster.baseRadius * (i.toFloat() / cluster.levels)
-                val path = Path().apply {
-                    val points = 30
-                    for (p in 0..points) {
-                        val angle = (p.toFloat() / points) * 2 * PI
-                        val wobble = (
-                            sin(angle * 2 + i + cluster.seed) * 15f + 
-                            sin(angle * 5 - i + cluster.seed) * 10f +
-                            cos(angle * 3 + (i * 0.5f) + cluster.seed) * 12f
-                        ).toFloat()
-                        
-                        val x = (size.width * cluster.xFrac) + (radius + wobble) * cos(angle).toFloat()
-                        val y = (size.height * cluster.yFrac) + (radius + wobble) * sin(angle).toFloat()
-                        if (p == 0) moveTo(x, y) else lineTo(x, y)
-                    }
-                    close()
-                }
-                drawPath(path = path, color = lineColor, style = Stroke(width = 5f))
-            }
+    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+        val scaleX = size.width / 1000f
+        val scaleY = size.height / 1000f
+        withTransform({
+            scale(scaleX, scaleY, pivot = Offset.Zero)
+        }) {
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.2f), style = Stroke(width = 5f / scaleX))
         }
     }
 }
@@ -302,39 +282,44 @@ private fun BoldContours(modifier: Modifier) {
 // region Clean Original
 @Composable
 private fun CleanContours(modifier: Modifier) {
-    val clusters = remember {
-        val count = Random.nextInt(4, 7)
-        List(count) {
-            ContourCluster(
-                xFrac = Random.nextFloat() * 1.4f - 0.2f,
-                yFrac = Random.nextFloat() * 1.4f - 0.2f,
-                baseRadius = Random.nextFloat() * 400f + 250f,
-                levels = Random.nextInt(6, 12),
-                seed = Random.nextFloat() * 20f
-            )
-        }
-    }
-
+    val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
 
-    Canvas(modifier = modifier.fillMaxSize()) {
-        clusters.forEach { cluster ->
-            for (i in 1..cluster.levels) {
-                val alpha = (i.toFloat() / cluster.levels) * 0.12f + 0.03f
-                val radius = cluster.baseRadius * (i.toFloat() / cluster.levels)
-                val path = Path().apply {
-                    val points = 60
-                    for (p in 0..points) {
-                        val angle = (p.toFloat() / points) * 2 * PI
-                        val wobble = (sin(angle * 2 + i + cluster.seed) * (18f + i * 2)).toFloat()
-                        val x = (size.width * cluster.xFrac) + (radius + wobble) * cos(angle).toFloat()
-                        val y = (size.height * cluster.yFrac) + (radius + wobble) * sin(angle).toFloat()
-                        if (p == 0) moveTo(x, y) else lineTo(x, y)
-                    }
-                    close()
+    val combinedPath = remember(randomize) {
+        val random = if (randomize) Random.Default else Random(42)
+        val count = random.nextInt(4, 7)
+        val path = Path()
+
+        repeat(count) {
+            val centerX = random.nextFloat() * 1400f - 200f
+            val centerY = random.nextFloat() * 1400f - 200f
+            val baseRadius = random.nextFloat() * 400f + 250f
+            val levels = random.nextInt(6, 12)
+            val seed = random.nextFloat() * 20f
+
+            for (i in 1..levels) {
+                val radius = baseRadius * (i.toFloat() / levels)
+                val points = 40
+                for (p in 0..points) {
+                    val angle = (p.toFloat() / points) * 2 * PI
+                    val wobble = (sin(angle * 2 + i + seed) * (18f + i * 2)).toFloat()
+                    val x = centerX + (radius + wobble) * cos(angle).toFloat()
+                    val y = centerY + (radius + wobble) * sin(angle).toFloat()
+                    if (p == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
-                drawPath(path = path, color = baseColor.copy(alpha = alpha), style = Stroke(width = 1.5f))
+                path.close()
             }
+        }
+        path
+    }
+
+    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+        val scaleX = size.width / 1000f
+        val scaleY = size.height / 1000f
+        withTransform({
+            scale(scaleX, scaleY, pivot = Offset.Zero)
+        }) {
+            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.5f / scaleX))
         }
     }
 }

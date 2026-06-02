@@ -196,7 +196,13 @@ fun OssWalletNavGraph(
             )
         }
     ) {
-        Box(modifier = Modifier.fillMaxSize().hazeSource(rootHazeLayers.overlayState)) {
+        // Register NavHost content as a source for Drawer (Level 3) and above.
+        // This ensures the global drawer can blur everything on the screen.
+        // We skip sourcing Overlay (Level 2) here to avoid recursion with the pills.
+        val navSourceModifier = rootHazeLayers.states.drop(2).fold(Modifier as Modifier) { mod, state ->
+            mod.hazeSource(state)
+        }
+        Box(modifier = Modifier.fillMaxSize().then(navSourceModifier)) {
         NavHost(
             navController = navController,
             startDestination = resolvedDestination

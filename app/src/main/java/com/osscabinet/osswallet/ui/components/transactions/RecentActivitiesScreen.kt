@@ -169,9 +169,10 @@ fun RecentActivitiesScreen(
                                 .fillMaxWidth()
                                 .then(
                                     if (layers != null) {
-                                        Modifier
-                                            .hazeSource(layers.surfaceState)
-                                            .hazeSource(layers.overlayState)
+                                        // Register transactions as a source for Overlay and Drawer
+                                        layers.states.drop(1).fold(Modifier as Modifier) { mod, state ->
+                                            mod.hazeSource(state)
+                                        }
                                     } else Modifier
                                 )
                         ) {

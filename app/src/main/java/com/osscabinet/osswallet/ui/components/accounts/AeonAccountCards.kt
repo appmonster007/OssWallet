@@ -1,8 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.accounts
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,13 +18,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,13 +57,17 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalAppColorScheme
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import com.osscabinet.ossWallet.ui.util.toColorInt
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 import java.math.BigDecimal
 
 /**
@@ -87,57 +91,64 @@ fun AeonAccountCardSmall(
 
     val mode = LocalThemeMode.current
     val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
-    Surface(
+    GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.1f))
+        hazeLayer = HazeLayer.Surface,
+        hazeStyle = HazeStyle(
+            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
+            blurRadius = GlassTokens.CardBlurRadius
+        ),
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f)
     ) {
-        Box {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 10.dp)
-                    .size(48.dp)
-                    .alpha(0.1f),
-                tint = contentColor
-            )
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    account.name.uppercase(),
-                    style = AppTextStyles.overlineLabel.copy(
-                        fontSize = 9.sp,
-                        letterSpacing = 1.sp
-                    ),
-                    color = contentColor.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 10.dp)
+                        .size(48.dp)
+                        .alpha(0.1f),
+                    tint = contentColor
                 )
-                Column {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
-                        formatAuto(balance, account.currencyCode, shorten = true),
-                        style = AppTextStyles.transactionSubtitle.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
-                        style = AppTextStyles.metaLabel,
+                        account.name.uppercase(),
+                        style = AppTextStyles.overlineLabel.copy(
+                            fontSize = 9.sp,
+                            letterSpacing = 1.sp
+                        ),
                         color = contentColor.copy(alpha = 0.6f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Column {
+                        Text(
+                            formatAuto(balance, account.currencyCode, shorten = true),
+                            style = AppTextStyles.transactionSubtitle.copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
+                            style = AppTextStyles.metaLabel,
+                            color = contentColor.copy(alpha = 0.6f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
@@ -162,86 +173,93 @@ fun AeonAccountCardMedium(
 
     val mode = LocalThemeMode.current
     val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
-    Surface(
+    GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        color = containerColor,
-        contentColor = contentColor,
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.1f))
+        hazeLayer = HazeLayer.Surface,
+        hazeStyle = HazeStyle(
+            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
+            blurRadius = GlassTokens.CardBlurRadius
+        ),
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f)
     ) {
-        Box {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 10.dp)
-                    .size(80.dp)
-                    .alpha(0.1f),
-                tint = contentColor
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = contentColor.copy(alpha = 0.7f)
-                    )
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 10.dp)
+                        .size(80.dp)
+                        .alpha(0.1f),
+                    tint = contentColor
+                )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = contentColor.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            account.name.uppercase(),
+                            style = AppTextStyles.overlineLabel.copy(
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp
+                            ),
+                            color = contentColor.copy(alpha = 0.6f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val amountText = formatAuto(balance, shorten = true)
+                    val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
+                    val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+
                     Text(
-                        account.name.uppercase(),
-                        style = AppTextStyles.overlineLabel.copy(
-                            fontSize = 10.sp,
-                            letterSpacing = 1.sp
-                        ),
-                        color = contentColor.copy(alpha = 0.6f),
+                        text = buildAnnotatedString {
+                            if (isSymbolLeft) {
+                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
+                                    append(symbolText)
+                                }
+                                append(" ")
+                                append(amountText)
+                            } else {
+                                append(amountText)
+                                append(" ")
+                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
+                                    append(symbolText)
+                                }
+                            }
+                        },
+                        style = AppTextStyles.cardSectionTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
+                        style = AppTextStyles.tagLabel,
+                        color = contentColor.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                val amountText = formatAuto(balance, shorten = true)
-                val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
-                val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
-                
-                Text(
-                    text = buildAnnotatedString {
-                        if (isSymbolLeft) {
-                            withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                append(symbolText)
-                            }
-                            append(" ")
-                            append(amountText)
-                        } else {
-                            append(amountText)
-                            append(" ")
-                            withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                append(symbolText)
-                            }
-                        }
-                    },
-                    style = AppTextStyles.cardSectionTitle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Text(
-                    "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
-                    style = AppTextStyles.tagLabel,
-                    color = contentColor.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }
@@ -272,188 +290,195 @@ fun AeonAccountCardLarge(
 
     val mode = LocalThemeMode.current
     val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
 
-    Card(
+    GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
             .onSizeChanged { cardSize = it },
-        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(32.dp),
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.1f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        hazeLayer = HazeLayer.Surface,
+        hazeStyle = HazeStyle(
+            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
+            blurRadius = GlassTokens.CardBlurRadius
+        ),
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Background Icon
-            val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(iconHeight)
-                    .alpha(0.15f),
-                tint = contentColor
-            )
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                // Background Icon
+                val iconHeight = with(density) { (cardSize.height * 0.75f).toDp() }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(iconHeight)
+                        .alpha(0.15f),
+                    tint = contentColor
+                )
 
-            Column(modifier = Modifier.padding(24.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(modifier = Modifier.padding(24.dp)) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = contentColor.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            account.name.uppercase(),
-                            style = AppTextStyles.overlineLabel.copy(letterSpacing = 1.2.sp),
-                            color = contentColor.copy(alpha = 0.7f)
-                        )
-                    }
-
-
-                    // Income/Expense Badges
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AeonFlowBadge(
-                            amount = incomeInAccountCurrency,
-                            type = CashFlowType.INCOME,
-                            currency = account.currencyCode,
-                            onClick = onClickIncome
-                        )
-                        AeonFlowBadge(
-                            amount = expenseInAccountCurrency,
-                            type = CashFlowType.EXPENSE,
-                            currency = account.currencyCode,
-                            onClick = onClickExpense
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Column {
-                    val amountText = formatAuto(balance, shorten = true)
-                    val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
-                    val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
-
-                    Text(
-                        text = buildAnnotatedString {
-                            if (isSymbolLeft) {
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 28.sp)) {
-                                    append(symbolText)
-                                }
-                                append(" ")
-                                append(amountText)
-                            } else {
-                                append(amountText)
-                                append(" ")
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 28.sp)) {
-                                    append(symbolText)
-                                }
-                            }
-                        },
-                        style = AppTextStyles.calculatorDisplay.copy(fontSize = 36.sp),
-                        color = contentColor
-                    )
-                    if (account.currencyCode != baseCurrency) {
-                        Text(
-                            text = "≈ ${
-                                formatAuto(
-                                    balanceInBase,
-                                    baseCurrency,
-                                    shorten = true
-                                )
-                            }",
-                            style = AppTextStyles.metaLabel,
-                            color = contentColor.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Horizontal scrollable list for subAccounts and currency codes
-                    Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            color = contentColor.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(16.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = contentColor.copy(alpha = 0.7f)
+                            )
                             Text(
-                                account.structureType.displayName.uppercase(),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                style = AppTextStyles.transactionBadge,
-                                color = contentColor
+                                account.name.uppercase(),
+                                style = AppTextStyles.overlineLabel.copy(letterSpacing = 1.2.sp),
+                                color = contentColor.copy(alpha = 0.7f)
                             )
                         }
 
-                        val sortedCurrencyBalances = remember(currencyBalances) {
-                            currencyBalances.toList().sortedBy { it.first }
-                        }
 
-                        sortedCurrencyBalances.forEach { (curr, bal) ->
+                        // Income/Expense Badges
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AeonFlowBadge(
+                                amount = incomeInAccountCurrency,
+                                type = CashFlowType.INCOME,
+                                currency = account.currencyCode,
+                                onClick = onClickIncome
+                            )
+                            AeonFlowBadge(
+                                amount = expenseInAccountCurrency,
+                                type = CashFlowType.EXPENSE,
+                                currency = account.currencyCode,
+                                onClick = onClickExpense
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Column {
+                        val amountText = formatAuto(balance, shorten = true)
+                        val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
+                        val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+
+                        Text(
+                            text = buildAnnotatedString {
+                                if (isSymbolLeft) {
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 28.sp)) {
+                                        append(symbolText)
+                                    }
+                                    append(" ")
+                                    append(amountText)
+                                } else {
+                                    append(amountText)
+                                    append(" ")
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 28.sp)) {
+                                        append(symbolText)
+                                    }
+                                }
+                            },
+                            style = AppTextStyles.calculatorDisplay.copy(fontSize = 36.sp),
+                            color = contentColor
+                        )
+                        if (account.currencyCode != baseCurrency) {
+                            Text(
+                                text = "≈ ${
+                                    formatAuto(
+                                        balanceInBase,
+                                        baseCurrency,
+                                        shorten = true
+                                    )
+                                }",
+                                style = AppTextStyles.metaLabel,
+                                color = contentColor.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Horizontal scrollable list for subAccounts and currency codes
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             Surface(
-                                color = contentColor.copy(alpha = 0.15f),
+                                color = contentColor.copy(alpha = 0.2f),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(
-                                        horizontal = 12.dp,
-                                        vertical = 6.dp
-                                    ),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Text(
+                                    account.structureType.displayName.uppercase(),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    style = AppTextStyles.transactionBadge,
+                                    color = contentColor
+                                )
+                            }
+
+                            val sortedCurrencyBalances = remember(currencyBalances) {
+                                currencyBalances.toList().sortedBy { it.first }
+                            }
+
+                            sortedCurrencyBalances.forEach { (curr, bal) ->
+                                Surface(
+                                    color = contentColor.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
-                                    Text(
-                                        curr,
-                                        style = AppTextStyles.transactionBadge,
-                                        color = contentColor.copy(alpha = 0.6f)
-                                    )
-                                    Text(
-                                        formatAuto(bal),
-                                        style = AppTextStyles.transactionBadge,
-                                        color = contentColor
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(
+                                            horizontal = 12.dp,
+                                            vertical = 6.dp
+                                        ),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            curr,
+                                            style = AppTextStyles.transactionBadge,
+                                            color = contentColor.copy(alpha = 0.6f)
+                                        )
+                                        Text(
+                                            formatAuto(bal),
+                                            style = AppTextStyles.transactionBadge,
+                                            color = contentColor
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.weight(1f))
 
-                    Column(horizontalAlignment = Alignment.End) {
-                        if (cardNumber != null) {
-                            Text(
-                                cardNumber,
-                                style = AppTextStyles.overlineLabel,
-                                color = contentColor.copy(alpha = 0.5f)
-                            )
-                        }
-                        if (extraLabel != null) {
-                            Text(
-                                extraLabel,
-                                style = AppTextStyles.overlineLabel,
-                                color = contentColor.copy(alpha = 0.5f)
-                            )
+                        Column(horizontalAlignment = Alignment.End) {
+                            if (cardNumber != null) {
+                                Text(
+                                    cardNumber,
+                                    style = AppTextStyles.overlineLabel,
+                                    color = contentColor.copy(alpha = 0.5f)
+                                )
+                            }
+                            if (extraLabel != null) {
+                                Text(
+                                    extraLabel,
+                                    style = AppTextStyles.overlineLabel,
+                                    color = contentColor.copy(alpha = 0.5f)
+                                )
+                            }
                         }
                     }
                 }

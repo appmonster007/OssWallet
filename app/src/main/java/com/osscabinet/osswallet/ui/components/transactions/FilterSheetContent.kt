@@ -76,6 +76,7 @@ private val TransactionFilterSaver = Saver<MutableState<TransactionFilter>, Stri
 /**
  * Scrollable filter sheet content using Column + verticalScroll.
  * Designed to render beautifully inside an Aeon Glass surface (Filter Pill or Dialog).
+ * Supports a conditional Hero Header to enable seamless morph transitions.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,6 +131,7 @@ fun FilterSheetContent(
     }
 
     val navPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val hasHeroHeader = !title.isNullOrBlank()
 
     Column(
         modifier = modifier
@@ -137,35 +139,39 @@ fun FilterSheetContent(
             .verticalScroll(rememberScrollState())
             .background(backgroundColor)
             .padding(horizontal = AeonTheme.dimensions.screenPadding)
-            .padding(top = AeonTheme.dimensions.spacingLg),
+            .padding(top = if (hasHeroHeader) AeonTheme.dimensions.spacingLg else AeonTheme.dimensions.spacingMd),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // 0. Hero Header with Reset
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title ?: "Filter Criteria",
-                style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
-                color = AppColors.contentPrimary
-            )
-            TextButton(
-                onClick = {
-                    localFilter = baseFilter
-                    onFilterEvent(FilterEvent.Reset)
-                },
-                contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
-                colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
+        // 0. Hero Header (Conditional)
+        // If title is provided, we show the full Architect Slate header.
+        // If title is null (e.g. inside a Pill), we hide this to allow the Pill's timeline to be the header.
+        if (hasHeroHeader) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Rounded.RestartAlt,
-                    contentDescription = null,
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
+                Text(
+                    text = title,
+                    style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
+                    color = AppColors.contentPrimary
                 )
-                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
-                Text("Reset", style = AppTextStyles.listSectionHeader)
+                TextButton(
+                    onClick = {
+                        localFilter = baseFilter
+                        onFilterEvent(FilterEvent.Reset)
+                    },
+                    contentPadding = PaddingValues(horizontal = AeonTheme.dimensions.spacingSm),
+                    colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
+                ) {
+                    Icon(
+                        Icons.Rounded.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs)
+                    )
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingXs))
+                    Text("Reset", style = AppTextStyles.listSectionHeader)
+                }
             }
         }
 
@@ -230,13 +236,33 @@ fun FilterSheetContent(
             HorizontalDivider(thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.4f))
         }
 
-        // 3. Active Filter Chips
+        // 3. Active Filter Chips + Inline Reset
         val activeFiltersRelative = countActiveFilters(localFilter, baseFilter, filterRules)
-        if (activeFiltersRelative > 0) {
+        if (activeFiltersRelative > 0 || !hasHeroHeader) {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Inline Reset Button (only shown if Hero Header is hidden to ensure access)
+                if (!hasHeroHeader) {
+                    item {
+                        TextButton(
+                            onClick = {
+                                localFilter = baseFilter
+                                onFilterEvent(FilterEvent.Reset)
+                            },
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.textButtonColors(contentColor = AppColors.primary)
+                        ) {
+                            Icon(Icons.Rounded.RestartAlt, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Reset All", style = AppTextStyles.transactionSwipeAction)
+                        }
+                    }
+                }
+
                 items(items = localFilter.categoryIds.toList()) { id ->
                     if (id !in baseFilter.categoryIds) {
                         FilterChip(

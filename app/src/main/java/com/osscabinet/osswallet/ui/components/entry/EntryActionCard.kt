@@ -78,12 +78,16 @@ fun EntryActionCard(
     }
 
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.surfaceContainerLow,
+        if (isSelected) selectedColor 
+        else if (com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current) AppColors.insetSurface.copy(alpha = 0.4f)
+        else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor else AppColors.outlineVariant.copy(alpha = 0.5f),
+        if (isSelected) selectedColor 
+        else if (com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current) Color.White.copy(alpha = 0.1f)
+        else AppColors.outlineVariant.copy(alpha = 0.5f),
         label = "borderColor"
     )
 

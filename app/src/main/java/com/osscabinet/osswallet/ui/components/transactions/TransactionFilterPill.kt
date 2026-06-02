@@ -324,7 +324,7 @@ fun TransactionFilterPill(
                     onSaveFilterClick = onSaveFilterClick,
                     onAddTag = onAddTag,
                     onClose = {},
-                    backgroundColor = AppColors.cardSurfaceProminent,
+                    backgroundColor = Color.Transparent,
                     accountNames = remember(accounts) {
                         accounts.associateBy(
                             { it.id },

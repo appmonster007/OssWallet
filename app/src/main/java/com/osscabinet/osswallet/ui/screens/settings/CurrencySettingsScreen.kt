@@ -417,7 +417,7 @@ fun CurrencySettingsScreen(
                     icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
                     checked = autoSaveExchangeRates,
                     onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
-                    isFlush = true
+                    isFlush = false
                 )
             }
 
@@ -494,7 +494,7 @@ fun CurrencySettingsScreen(
                     icon = Icons.Rounded.Schedule,
                     checked = use24HourFormat,
                     onCheckedChange = { viewModel.setUse24HourFormat(it) },
-                    isFlush = true
+                    isFlush = false
                 )
             }
         }

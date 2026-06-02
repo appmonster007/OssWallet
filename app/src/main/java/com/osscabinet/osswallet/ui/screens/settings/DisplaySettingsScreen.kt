@@ -76,9 +76,11 @@ fun DisplaySettingsScreen(
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
+    val contourBgVersion by viewModel.contourBgVersion.collectAsStateWithLifecycle()
 
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
+    var showContourDialog by remember { mutableStateOf(false) }
 
     if (showThemeDialog) {
         val themes = listOf("System", "Light", "Dark", "Amoled")
@@ -269,6 +271,103 @@ fun DisplaySettingsScreen(
         }
     }
 
+    if (showContourDialog) {
+        val versions = listOf(
+            1 to "Clean",
+            2 to "Bold",
+            3 to "Organic",
+            4 to "Geographical"
+        )
+        Dialog(
+            onDismissRequest = { showContourDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "Contour Style",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        versions.forEach { (v, name) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setContourBgVersion(v)
+                                        showContourDialog = false
+                                    }
+                                    .padding(AeonTheme.dimensions.cardPadding),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.SettingsSuggest,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                )
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                                Text(
+                                    name,
+                                    modifier = Modifier.weight(1f),
+                                    style = AppTextStyles.listItemTitle
+                                )
+                                if (v == contourBgVersion) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(
+                            onClick = { showContourDialog = false }
+                        ) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -327,6 +426,24 @@ fun DisplaySettingsScreen(
                         onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
                         isFlush = false
                     )
+                    if (glassmorphismEnabled) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            thickness = 0.5.dp,
+                            color = AppColors.divider.copy(alpha = 0.5f)
+                        )
+                        AeonSettingsItem(
+                            title = "Contour Background",
+                            subtitle = when (contourBgVersion) {
+                                1 -> "Clean"
+                                2 -> "Bold"
+                                3 -> "Organic"
+                                else -> "Geographical"
+                            },
+                            icon = Icons.Rounded.SettingsSuggest,
+                            onClick = { showContourDialog = true }
+                        )
+                    }
                 }
 
                 AeonSettingsSection("ANIMATIONS & INTERFACE") {

@@ -68,7 +68,7 @@ fun SecuritySettingsScreen(
                     icon = if (mapsAccessEnabled) Icons.Rounded.LocationOn else Icons.Rounded.LocationOff,
                     checked = mapsAccessEnabled,
                     onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
-                    isFlush = true
+                    isFlush = false
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

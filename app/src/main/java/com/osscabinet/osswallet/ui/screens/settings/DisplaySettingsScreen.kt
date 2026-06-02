@@ -318,7 +318,7 @@ fun DisplaySettingsScreen(
                     icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
                     checked = glassmorphismEnabled,
                     onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
-                    isFlush = true
+                    isFlush = false
                 )
             }
 
@@ -329,7 +329,7 @@ fun DisplaySettingsScreen(
                     icon = if (cardAnimationEnabled) Icons.Rounded.Animation else Icons.Rounded.Block,
                     checked = cardAnimationEnabled,
                     onCheckedChange = { viewModel.setCardAnimationEnabled(it) },
-                    isFlush = true
+                    isFlush = false
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
@@ -342,7 +342,7 @@ fun DisplaySettingsScreen(
                     icon = if (expandableFabEnabled) Icons.Rounded.GridView else Icons.Rounded.AddCircleOutline,
                     checked = expandableFabEnabled,
                     onCheckedChange = { viewModel.setExpandableFabEnabled(it) },
-                    isFlush = true
+                    isFlush = false
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
@@ -355,7 +355,7 @@ fun DisplaySettingsScreen(
                     icon = Icons.Rounded.CurrencyExchange,
                     checked = recentActivitiesBreakdown,
                     onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
-                    isFlush = true
+                    isFlush = false
                 )
             }
         }

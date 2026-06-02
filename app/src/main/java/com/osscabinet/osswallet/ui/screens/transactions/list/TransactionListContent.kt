@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
@@ -26,7 +27,12 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,76 +55,93 @@ fun TransactionListContent(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     revealedCardIds: List<String> = emptyList()
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.background(AppColors.transparent),
-            topBar = {
-                TransactionListTopAppBar(
-                    filter = filter,
-                    recordsSettings = recordsSettings,
-                    onBackClick = onBackClick,
-                    onMenuClick = onMenuClick,
-                    isTopLevel = isTopLevel,
-                    onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
-                )
-            }
-        ) { innerPadding ->
-            Column(
+    val pillHazeState = remember { HazeState() }
+
+    CompositionLocalProvider(LocalPillHazeState provides pillHazeState) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
                     .background(AppColors.screenBackground)
+                    .hazeSource(pillHazeState)
             ) {
-                if (listState.isEmpty) {
-                    TransactionListEmptyState(
-                        isFutureExcluded = filter.timelineRange.excludeFuture,
-                        onIncludeFutureClick = {
-                            onFilterEvent(
-                                FilterEvent.Apply(
-                                    filter.copy(
-                                        timelineRange = filter.timelineRange.withExcludeFuture(false)
+                ContourBackground()
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .hazeSource(pillHazeState)
+            ) {
+                Scaffold(
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                    topBar = {
+                        TransactionListTopAppBar(
+                            filter = filter,
+                            recordsSettings = recordsSettings,
+                            onBackClick = onBackClick,
+                            onMenuClick = onMenuClick,
+                            isTopLevel = isTopLevel,
+                            onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
+                        )
+                    }
+                ) { innerPadding ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        if (listState.isEmpty) {
+                            TransactionListEmptyState(
+                                isFutureExcluded = filter.timelineRange.excludeFuture,
+                                onIncludeFutureClick = {
+                                    onFilterEvent(
+                                        FilterEvent.Apply(
+                                            filter.copy(
+                                                timelineRange = filter.timelineRange.withExcludeFuture(false)
+                                            )
+                                        )
                                     )
-                                )
+                                }
+                            )
+                        } else {
+                            AeonTransactionList(
+                                listState = listState,
+                                onTransactionEvent = onTransactionEvent,
+                                contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+                                useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                                showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance,
+                                showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance,
+                                showItemOpeningBalance = recordsSettings.showItemOpeningBalance,
+                                showItemClosingBalance = recordsSettings.showItemClosingBalance,
+                                showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
+                                showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
+                                showAccount = recordsSettings.showAccount,
+                                showCategory = recordsSettings.showCategory,
+                                showNote = recordsSettings.showNote,
+                                showTags = recordsSettings.showTags,
+                                showTimestamp = recordsSettings.showTimestamp,
+                                showIcon = recordsSettings.showIcon,
+                                baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency
+                                    ?: "USD",
+                                revealedCardIds = revealedCardIds,
                             )
                         }
-                    )
-                } else {
-                    AeonTransactionList(
-                        listState = listState,
-                        onTransactionEvent = onTransactionEvent,
-                        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                        showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance,
-                        showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance,
-                        showItemOpeningBalance = recordsSettings.showItemOpeningBalance,
-                        showItemClosingBalance = recordsSettings.showItemClosingBalance,
-                        showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
-                        showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
-                        showAccount = recordsSettings.showAccount,
-                        showCategory = recordsSettings.showCategory,
-                        showNote = recordsSettings.showNote,
-                        showTags = recordsSettings.showTags,
-                        showTimestamp = recordsSettings.showTimestamp,
-                        showIcon = recordsSettings.showIcon,
-                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency
-                            ?: "USD",
-                        revealedCardIds = revealedCardIds,
-                    )
+                    }
                 }
             }
-        }
 
-        TransactionFilterPill(
-            filter = filter,
-            accounts = accounts,
-            categories = categories,
-            allTags = allTags,
-            onSearchTransactions = onSearchTransactions,
-            savedFilters = savedFilters,
-            onFilterEvent = onFilterEvent,
-            onSaveFilterClick = onSaveFilterClick,
-            onAddTag = onAddTag,
-            modifier = Modifier.fillMaxSize()
-        )
+            TransactionFilterPill(
+                filter = filter,
+                accounts = accounts,
+                categories = categories,
+                allTags = allTags,
+                onSearchTransactions = onSearchTransactions,
+                savedFilters = savedFilters,
+                onFilterEvent = onFilterEvent,
+                onSaveFilterClick = onSaveFilterClick,
+                onAddTag = onAddTag,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

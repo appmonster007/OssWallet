@@ -67,11 +67,12 @@ fun GlassSurface(
         Box(
             modifier = Modifier
                 .graphicsLayer { this.shape = shape; clip = true }
-                .background(fallbackColor, shape)
                 .then(
-                    if (glassEnabled && hazeState != null)
+                    if (glassEnabled && hazeState != null) {
                         Modifier.hazeEffect(hazeState, hazeStyle)
-                    else Modifier
+                    } else {
+                        Modifier.background(fallbackColor, shape)
+                    }
                 )
                 .then(
                     if (glassEnabled && hazeState != null && borderColor != null)

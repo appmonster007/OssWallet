@@ -184,7 +184,7 @@ fun PillNavigationBar(
     val isDark = isSystemInDarkTheme()
     
     // Width calculation: 64dp per tab + internal padding
-    val barWidth = (64.dp * tabs.size) + 12.dp
+    val barWidth = (64.dp * tabs.size)
 
     Box(
         modifier = modifier.wrapContentSize(),

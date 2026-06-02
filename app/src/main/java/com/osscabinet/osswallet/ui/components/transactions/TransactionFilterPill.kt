@@ -303,6 +303,7 @@ fun TransactionFilterPill(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 6.dp),
+                        isFlush = true,
                         containerColor = selectorBg,
                         contentColor = contentColor,
                         inactiveContentColor = inactiveColor,

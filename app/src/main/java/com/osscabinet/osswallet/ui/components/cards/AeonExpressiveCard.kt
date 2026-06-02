@@ -266,6 +266,7 @@ fun AeonExpressiveCard(
                         currentRange = filter.timelineRange,
                         onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
                         modifier = Modifier.fillMaxWidth(),
+                        isFlush = true
                     )
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                 }

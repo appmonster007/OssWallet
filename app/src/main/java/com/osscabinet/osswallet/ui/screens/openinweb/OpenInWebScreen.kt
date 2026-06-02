@@ -117,7 +117,8 @@ fun OpenInWebScreen(
                         is WebServerState.Error -> "Error: ${s.message}"
                     },
                     checked = isEnabled,
-                    onCheckedChange = { viewModel.toggleServer(it) }
+                    onCheckedChange = { viewModel.toggleServer(it) },
+                    isFlush = true
                 )
             }
 

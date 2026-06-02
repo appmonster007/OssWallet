@@ -318,7 +318,8 @@ fun AnalyticsScreen(
                             label = "Common Filter",
                             subtitle = "Use a single filter for all cards on this screen",
                             checked = commonFilterEnabled,
-                            onCheckedChange = { viewModel.toggleCommonFilter(it) }
+                            onCheckedChange = { viewModel.toggleCommonFilter(it) },
+                            isFlush = true
                         )
                     }
 

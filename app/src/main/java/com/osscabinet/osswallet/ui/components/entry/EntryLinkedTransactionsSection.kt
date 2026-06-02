@@ -51,7 +51,10 @@ fun EntryLinkedTransactionsSection(
     onShowSheet: () -> Unit,
     onRemoveLink: (Long) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Surface(
             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             color = AppColors.primaryContainer,

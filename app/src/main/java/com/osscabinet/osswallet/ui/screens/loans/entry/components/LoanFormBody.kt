@@ -250,7 +250,8 @@ fun LoanFormBody(
                                 checked = state.isNoteRegex,
                                 onCheckedChange = { onEvent(LoanEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags"
+                                subtitle = "Supports /pattern/flags",
+                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
@@ -268,7 +269,8 @@ fun LoanFormBody(
                                 checked = state.isPayeeRegex,
                                 onCheckedChange = { onEvent(LoanEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
-                                subtitle = "Supports /pattern/flags"
+                                subtitle = "Supports /pattern/flags",
+                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,
@@ -388,7 +390,8 @@ fun LoanFormBody(
                     checked = state.hasSettlementDate,
                     onCheckedChange = { onEvent(LoanEntryEvent.SetHasSettlementDate(it)) },
                     icon = Icons.Rounded.NotificationAdd,
-                    subtitle = "Set a date for full repayment"
+                    subtitle = "Set a date for full repayment",
+                    isFlush = true
                 )
             }
         }

@@ -182,7 +182,8 @@ fun TransactionListTopAppBar(
                                             showPlannedPayments = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                         }
 
@@ -198,7 +199,8 @@ fun TransactionListTopAppBar(
                                             showCurrencyBreakdown = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -217,7 +219,8 @@ fun TransactionListTopAppBar(
                                             showOnlyActiveCurrencies = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -235,7 +238,8 @@ fun TransactionListTopAppBar(
                                             showHeaderOpeningBalance = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -253,7 +257,8 @@ fun TransactionListTopAppBar(
                                             showHeaderClosingBalance = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                         }
 
@@ -269,7 +274,8 @@ fun TransactionListTopAppBar(
                                             showIcon = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -287,7 +293,8 @@ fun TransactionListTopAppBar(
                                             showCategory = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -305,7 +312,8 @@ fun TransactionListTopAppBar(
                                             showNote = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -324,7 +332,8 @@ fun TransactionListTopAppBar(
                                             useNoteAsHeader = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -342,7 +351,8 @@ fun TransactionListTopAppBar(
                                             showAccount = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -360,7 +370,8 @@ fun TransactionListTopAppBar(
                                             showTags = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -378,7 +389,8 @@ fun TransactionListTopAppBar(
                                             showTimestamp = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                         }
 
@@ -394,7 +406,8 @@ fun TransactionListTopAppBar(
                                             showItemOpeningBalance = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -412,7 +425,8 @@ fun TransactionListTopAppBar(
                                             showItemClosingBalance = it
                                         )
                                     )
-                                }
+                                },
+                                isFlush = true
                             )
                         }
                     }

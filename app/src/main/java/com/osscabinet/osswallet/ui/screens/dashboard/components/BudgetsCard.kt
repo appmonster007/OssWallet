@@ -112,7 +112,8 @@ private fun BudgetsSettingsSheet(
             EntrySwitchRow(
                 label = "Show archived budgets",
                 checked = config.showArchived,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
+                isFlush = true
             )
         }
     }

@@ -6,6 +6,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +64,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -85,6 +87,7 @@ fun AeonTimelinePeriodSelector(
     onRangeSelected: (TimelineRange) -> Unit,
     modifier: Modifier = Modifier,
     swipeEntireComponent: Boolean = false,
+    isFlush: Boolean = false,
     containerColor: Color = AppColors.cardSurface,
     contentColor: Color = AppColors.primary,
     inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
@@ -135,11 +138,13 @@ fun AeonTimelinePeriodSelector(
     var showDatePicker by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (isFlush) Modifier else Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding)),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         color = containerColor,
         tonalElevation = 1.dp,
-        border = if (containerColor == Color.Transparent) null else androidx.compose.foundation.BorderStroke(
+        border = if (containerColor == Color.Transparent || isFlush) null else BorderStroke(
             1.dp,
             AppColors.outlineVariant
         )
@@ -524,6 +529,26 @@ fun AeonTimelinePeriodSelectorPreview() {
             AeonTimelinePeriodSelector(
                 currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
                 onRangeSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonTimelinePeriodSelectorPillPreview() {
+    OssWalletTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            AeonTimelinePeriodSelector(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp),
+                isFlush = true,
+                containerColor = AppColors.primaryContainer,
+                contentColor = AppColors.onSelectionContainer,
+                inactiveContentColor = AppColors.onSelectionContainer,
+                currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
+                onRangeSelected = { }
             )
         }
     }

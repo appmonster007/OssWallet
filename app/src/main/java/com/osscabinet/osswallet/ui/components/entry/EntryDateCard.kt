@@ -42,17 +42,21 @@ fun EntryDateCard(
     dateMillis: Long?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Select Date"
+    placeholder: String = "Select Date",
+    isFlush: Boolean = false
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = AppColors.surfaceContainerLow,
-        border = BorderStroke(1.dp, AppColors.outlineVariant),
+        shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
+        border = if (isFlush) null else BorderStroke(1.dp, AppColors.outlineVariant),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.padding(
+                horizontal = if (isFlush) 0.dp else 16.dp,
+                vertical = if (isFlush) AeonTheme.dimensions.spacingSm else 10.dp
+            ),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

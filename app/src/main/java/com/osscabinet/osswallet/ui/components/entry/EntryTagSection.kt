@@ -54,9 +54,11 @@ fun EntryTagSection(
     }
 
     FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = AeonTheme.dimensions.cardPadding),
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
     ) {
         // Add Tag Button
         Surface(

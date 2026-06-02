@@ -151,7 +151,8 @@ private fun CashFlowWidgetConfigScreen(
                 label = "Show Base Conversion",
                 subtitle = "Show ≈ equivalent in base currency",
                 checked = config.showBaseConversion,
-                onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) }
+                onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) },
+                isFlush = true
             )
 
             HorizontalDivider()
@@ -160,7 +161,8 @@ private fun CashFlowWidgetConfigScreen(
                 label = "Show Totals Row",
                 subtitle = "Show TOTAL footer below currency list",
                 checked = config.showTotals,
-                onCheckedChange = { onConfigChange(config.copy(showTotals = it)) }
+                onCheckedChange = { onConfigChange(config.copy(showTotals = it)) },
+                isFlush = true
             )
 
             HorizontalDivider()
@@ -169,7 +171,8 @@ private fun CashFlowWidgetConfigScreen(
                 label = "Show Comparison",
                 subtitle = "Compare net flow with previous period",
                 checked = config.showComparison,
-                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) }
+                onCheckedChange = { onConfigChange(config.copy(showComparison = it)) },
+                isFlush = true
             )
 
             Spacer(modifier = Modifier.height(8.dp))

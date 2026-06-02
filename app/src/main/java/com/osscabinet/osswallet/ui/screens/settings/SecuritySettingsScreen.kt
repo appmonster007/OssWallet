@@ -67,7 +67,8 @@ fun SecuritySettingsScreen(
                     subtitle = if (mapsAccessEnabled) "Auto-fill current location for new transactions" else "Disabled location auto-fill",
                     icon = if (mapsAccessEnabled) Icons.Rounded.LocationOn else Icons.Rounded.LocationOff,
                     checked = mapsAccessEnabled,
-                    onCheckedChange = { viewModel.setMapsAccessEnabled(it) }
+                    onCheckedChange = { viewModel.setMapsAccessEnabled(it) },
+                    isFlush = true
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),

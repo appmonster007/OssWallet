@@ -69,7 +69,8 @@ fun AeonTimelineSheet(
                     currentRange = currentRange,
                     onRangeSelected = { currentRange = it },
                     modifier = Modifier.padding(horizontal = 12.dp),
-                    swipeEntireComponent = false
+                    swipeEntireComponent = false,
+                    isFlush = true
                 )
 
                 Spacer(Modifier.height(8.dp))

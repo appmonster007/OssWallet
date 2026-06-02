@@ -416,7 +416,8 @@ fun CurrencySettingsScreen(
                     subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
                     icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
                     checked = autoSaveExchangeRates,
-                    onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) }
+                    onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
+                    isFlush = true
                 )
             }
 
@@ -492,7 +493,8 @@ fun CurrencySettingsScreen(
                     subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",
                     icon = Icons.Rounded.Schedule,
                     checked = use24HourFormat,
-                    onCheckedChange = { viewModel.setUse24HourFormat(it) }
+                    onCheckedChange = { viewModel.setUse24HourFormat(it) },
+                    isFlush = true
                 )
             }
         }

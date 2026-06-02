@@ -128,13 +128,42 @@ object GlassTokens {
     val FilterPillLightAlpha = 0.40f
 }
 
+/**
+ * Layers for the glassmorphism hierarchy.
+ */
+enum class HazeLayer {
+    /** Layer 1: Elements sitting on the screen background (cards, headers). */
+    Surface,
+
+    /** Layer 2: Elements sitting on top of everything else (navigation pill, modals). */
+    Overlay
+}
+
+/**
+ * Container for the app's unified haze hierarchy.
+ */
+data class AeonHazeLayers(
+    val surfaceState: HazeState = HazeState(),
+    val overlayState: HazeState = HazeState()
+)
+
+val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
+
 val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
 
 /** When false, all hazeEffect/glassmorphism modifiers are skipped app-wide. */
 val LocalGlassmorphismEnabled = staticCompositionLocalOf { true }
 
-/** HazeState whose source is the Scaffold/content-behind-the-pill. Provided by each screen that hosts UnifiedPillNavigation. */
+/**
+ * HazeState whose source is the Scaffold/content-behind-the-pill.
+ * @deprecated Use [LocalAeonHaze] and [HazeLayer.Overlay] instead.
+ */
+@Deprecated("Use LocalAeonHaze instead")
 val LocalPillHazeState = staticCompositionLocalOf<HazeState?> { null }
 
-/** HazeState whose source is the flat screen background layer. Provided by screens with glass cards. */
+/**
+ * HazeState whose source is the flat screen background layer.
+ * @deprecated Use [LocalAeonHaze] and [HazeLayer.Surface] instead.
+ */
+@Deprecated("Use LocalAeonHaze instead")
 val LocalCardHazeState = staticCompositionLocalOf<HazeState?> { null }

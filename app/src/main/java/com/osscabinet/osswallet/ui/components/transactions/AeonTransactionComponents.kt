@@ -11,8 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -23,8 +21,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.LocalHazeState
-import dev.chrisbanes.haze.HazeState
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import dev.chrisbanes.haze.hazeSource
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
@@ -50,104 +47,109 @@ fun AeonTransactionList(
     baseCurrency: String,
     revealedCardIds: List<String> = emptyList()
 ) {
-    val hazeState = remember { HazeState() }
-    CompositionLocalProvider(LocalHazeState provides hazeState) {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = contentPadding,
-            verticalArrangement = Arrangement.spacedBy(0.dp)
-        ) {
-            listState.groups.forEach { group ->
-                stickyHeader {
-                    TransactionHeader(
-                        title = group.headerData.title,
-                        subtitle = group.headerData.subtitle,
-                        incomeByCurrency = group.headerData.incomeByCurrency,
-                        expenseByCurrency = group.headerData.expenseByCurrency,
-                        openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
-                        closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
-                        allCurrencies = group.headerData.allCurrencies,
-                        incomeBase = group.headerData.incomeBase,
-                        expenseBase = group.headerData.expenseBase,
-                        netBase = group.headerData.netBase,
-                        totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
-                        totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
-                        baseCurrency = baseCurrency,
-                        showOpeningBalance = showHeaderOpeningBalance,
-                        showClosingBalance = showHeaderClosingBalance,
-                        showOnlyActiveCurrencies = showOnlyActiveCurrencies,
-                        showCurrencyBreakdown = showCurrencyBreakdown
-                    )
-                }
+    val layers = LocalAeonHaze.current
 
-                itemsIndexed(
-                    group.transactions,
-                    key = { _, record -> record.id }) { index, record ->
-                    val icon = getIconByName(record.categoryIcon)
-                    val iconBg = Color(record.categoryColor)
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .hazeSource(hazeState)
-                    ) {
-                        SwipeableTransactionItem(
-                            record = record,
-                            isRevealed = revealedCardIds.contains(record.id),
-                            onEvent = onTransactionEvent
-                        ) {
-                            AeonTransactionItem(
-                                category = record.categoryName,
-                                account = record.accountName,
-                                amount = formatAuto(
-                                    record.amount,
-                                    record.currency
-                                ),
-                                convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
-                                    formatAuto(record.amountInBase, baseCurrency)
-                                } else null,
-                                balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
-                                    record.item.balanceBefore,
-                                    record.accountCurrency
-                                ) else "",
-                                balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
-                                    record.item.balanceAfter,
-                                    record.accountCurrency
-                                ) else "",
-                                type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = if (record is ConfirmedTransactionUiModel) com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
-                                    record.timestamp
-                                )
-                                else com.osscabinet.ossWallet.ui.util.TimeUtils.formatDate(record.timestamp),
-                                note = record.note,
-                                tags = record.tags,
-                                icon = icon,
-                                iconBg = iconBg,
-                                useNoteAsHeader = useNoteAsHeader,
-                                showOpeningBalance = showItemOpeningBalance && record is ConfirmedTransactionUiModel,
-                                showClosingBalance = showItemClosingBalance && record is ConfirmedTransactionUiModel,
-                                status = (record as? ConfirmedTransactionUiModel)?.status
-                                    ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
-                                showAccount = showAccount,
-                                showCategory = showCategory,
-                                showNote = showNote,
-                                showTags = showTags,
-                                showTimestamp = showTimestamp,
-                                showIcon = showIcon,
-                                showDividers = index < group.transactions.size - 1,
-                                isPlanned = record is PlannedPaymentUiModel
-                            ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
-                        }
-                    } // hazeSource Box
-                }
-            }
-            item {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp), // Replaced AeonTheme.dimensions.listPadding with 16.dp for simplicity if AeonTheme is not imported
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = contentPadding,
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        listState.groups.forEach { group ->
+            stickyHeader {
+                TransactionHeader(
+                    title = group.headerData.title,
+                    subtitle = group.headerData.subtitle,
+                    incomeByCurrency = group.headerData.incomeByCurrency,
+                    expenseByCurrency = group.headerData.expenseByCurrency,
+                    openingBalancesByCurrency = group.headerData.openingBalancesByCurrency,
+                    closingBalancesByCurrency = group.headerData.closingBalancesByCurrency,
+                    allCurrencies = group.headerData.allCurrencies,
+                    incomeBase = group.headerData.incomeBase,
+                    expenseBase = group.headerData.expenseBase,
+                    netBase = group.headerData.netBase,
+                    totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
+                    totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
+                    baseCurrency = baseCurrency,
+                    showOpeningBalance = showHeaderOpeningBalance,
+                    showClosingBalance = showHeaderClosingBalance,
+                    showOnlyActiveCurrencies = showOnlyActiveCurrencies,
+                    showCurrencyBreakdown = showCurrencyBreakdown
                 )
             }
+
+            itemsIndexed(
+                group.transactions,
+                key = { _, record -> record.id }) { index, record ->
+                val icon = getIconByName(record.categoryIcon)
+                val iconBg = Color(record.categoryColor)
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (layers != null) {
+                                Modifier
+                                    .hazeSource(layers.surfaceState)
+                                    .hazeSource(layers.overlayState)
+                            } else Modifier
+                        )
+                ) {
+                    SwipeableTransactionItem(
+                        record = record,
+                        isRevealed = revealedCardIds.contains(record.id),
+                        onEvent = onTransactionEvent
+                    ) {
+                        AeonTransactionItem(
+                            category = record.categoryName,
+                            account = record.accountName,
+                            amount = formatAuto(
+                                record.amount,
+                                record.currency
+                            ),
+                            convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
+                                formatAuto(record.amountInBase, baseCurrency)
+                            } else null,
+                            balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                record.item.balanceBefore,
+                                record.accountCurrency
+                            ) else "",
+                            balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                record.item.balanceAfter,
+                                record.accountCurrency
+                            ) else "",
+                            type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                            timestamp = if (record is ConfirmedTransactionUiModel) com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
+                                record.timestamp
+                            )
+                            else com.osscabinet.ossWallet.ui.util.TimeUtils.formatDate(record.timestamp),
+                            note = record.note,
+                            tags = record.tags,
+                            icon = icon,
+                            iconBg = iconBg,
+                            useNoteAsHeader = useNoteAsHeader,
+                            showOpeningBalance = showItemOpeningBalance && record is ConfirmedTransactionUiModel,
+                            showClosingBalance = showItemClosingBalance && record is ConfirmedTransactionUiModel,
+                            status = (record as? ConfirmedTransactionUiModel)?.status
+                                ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
+                            showAccount = showAccount,
+                            showCategory = showCategory,
+                            showNote = showNote,
+                            showTags = showTags,
+                            showTimestamp = showTimestamp,
+                            showIcon = showIcon,
+                            showDividers = index < group.transactions.size - 1,
+                            isPlanned = record is PlannedPaymentUiModel
+                        ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
+                    }
+                } // hazeSource Box
+            }
         }
-    } // CompositionLocalProvider
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 0.5.dp,
+                color = AppColors.divider.copy(alpha = 0.5f)
+            )
+        }
+    }
 }

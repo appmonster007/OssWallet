@@ -62,8 +62,8 @@ import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
-import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -109,7 +109,6 @@ fun TransactionFilterPill(
     val density = LocalDensity.current
     val glassEnabled = LocalGlassmorphismEnabled.current
     val isDark = isSystemInDarkTheme()
-    val pillHazeState = LocalPillHazeState.current
 
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalBottomPadding = bottomPadding + navBarPadding
@@ -221,9 +220,6 @@ fun TransactionFilterPill(
         )
 
         // ── Pill surface ───────────────────────────────────────────────────────
-        // pillHazeState is non-null when the pill renders in the main window
-        // (DashboardScreen provides LocalPillHazeState). Null in the Dialog fallback
-        // path (other screens) — GlassSurface degrades to solid fallbackColor.
         GlassSurface(
             modifier = Modifier
                 .nestedScroll(nestedScrollConnection)
@@ -232,7 +228,7 @@ fun TransactionFilterPill(
                 .height(surfaceH)
                 .offset { IntOffset(0, offsetYPx.roundToInt()) },
             shape = RoundedCornerShape(corner),
-            hazeState = pillHazeState,
+            hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             fallbackColor = surfaceColor,
             shadowElevation = elevation,

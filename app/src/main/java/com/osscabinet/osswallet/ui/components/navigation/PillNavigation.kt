@@ -181,7 +181,6 @@ fun PillNavigationBar(
     isDimmed: Boolean = false,
     onDimClick: () -> Unit = {}
 ) {
-    val hazeState = LocalPillHazeState.current
     val isDark = isSystemInDarkTheme()
     
     // Width calculation: 64dp per tab + internal padding
@@ -196,7 +195,7 @@ fun PillNavigationBar(
                 .width(barWidth)
                 .height(56.dp),
             shape = CircleShape,
-            hazeState = hazeState,
+            hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             fallbackColor = AppColors.componentOnCard,
             shadowElevation = 8.dp,

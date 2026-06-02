@@ -108,8 +108,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
-import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
@@ -223,8 +223,7 @@ fun AccountDetailScreen(
     var showAddCardDialog by rememberSaveable { mutableStateOf(false) }
     var isFabExpanded by rememberSaveable { mutableStateOf(false) }
 
-    val cardHazeState = remember { HazeState() }
-    val pillHazeState = remember { HazeState() }
+    val hazeLayers = remember { AeonHazeLayers() }
 
     // Intercept back on non-first tab: scroll to tab 0 before allowing normal back navigation.
     // Registered before the dialog/FAB BackHandlers so they retain higher LIFO priority.
@@ -314,26 +313,21 @@ fun AccountDetailScreen(
     }
 
     CompositionLocalProvider(
-        LocalCardHazeState provides cardHazeState,
-        LocalPillHazeState provides pillHazeState
+        LocalAeonHaze provides hazeLayers
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .hazeSource(cardHazeState)
-                    .hazeSource(pillHazeState)
+                    .hazeSource(hazeLayers.surfaceState)
+                    .hazeSource(hazeLayers.overlayState)
             ) {
+                Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
                 ContourBackground()
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(pillHazeState)
-            ) {
-                Scaffold(
-                    containerColor = Color.Transparent,
-                    snackbarHost = { SnackbarHost(snackbarHostState) },
+            Scaffold(
+                containerColor = Color.Transparent,
+                snackbarHost = { SnackbarHost(snackbarHostState) },
                     topBar = {
                         TopAppBar(
                             title = {
@@ -564,7 +558,6 @@ fun AccountDetailScreen(
             }
         }
     }
-}
 
 @Composable
 fun DynamicAccountDetailCards(

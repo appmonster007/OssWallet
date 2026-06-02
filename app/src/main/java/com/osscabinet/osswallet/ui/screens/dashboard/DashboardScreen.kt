@@ -100,8 +100,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
-import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
@@ -250,30 +250,23 @@ fun DashboardScreen(
         isTopLevelParam || initialViewContext == DashboardViewContext.None
     }
 
-    val pillHazeState = remember { HazeState() }
-    val cardHazeState = remember { HazeState() }
+    val hazeLayers = remember { AeonHazeLayers() }
     val filterPillController = remember { FilterPillController() }
 
     CompositionLocalProvider(
-        LocalPillHazeState provides pillHazeState,
-        LocalCardHazeState provides cardHazeState,
+        LocalAeonHaze provides hazeLayers,
         LocalFilterPillController provides filterPillController,
     ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(AppColors.screenBackground)
-                .hazeSource(cardHazeState)
-                .hazeSource(pillHazeState)
+                .hazeSource(hazeLayers.surfaceState)
+                .hazeSource(hazeLayers.overlayState)
         ) {
+            Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
             ContourBackground()
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(pillHazeState)
-        ) {
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
@@ -377,8 +370,6 @@ fun DashboardScreen(
                 }
             }
         }
-        } // pillHazeState hazeSource Box
-
         UnifiedPillNavigation(
             selectedTab = pagerState.currentPage,
             onTabSelected = { index ->
@@ -409,7 +400,7 @@ fun DashboardScreen(
         )
 
         // TransactionFilterPill rendered here — above the nav pill, inside the main window
-        // so LocalPillHazeState is accessible and real glass blur applies.
+        // so LocalAeonHaze is accessible and real glass blur applies.
         val pillRequest = filterPillController.activeRequest
         if (pillRequest != null) {
             TransactionFilterPill(

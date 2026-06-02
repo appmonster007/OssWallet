@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
@@ -44,9 +43,8 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalHazeState
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
 
@@ -122,8 +120,8 @@ fun RecentActivitiesScreen(
             }
         }
 
-        val hazeState = remember { HazeState() }
-        CompositionLocalProvider(LocalHazeState provides hazeState) {
+        val layers = LocalAeonHaze.current
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,7 +165,15 @@ fun RecentActivitiesScreen(
                         val iconBg = Color(record.categoryColor)
 
                         Box(
-                            modifier = Modifier.fillMaxWidth().hazeSource(hazeState)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(
+                                    if (layers != null) {
+                                        Modifier
+                                            .hazeSource(layers.surfaceState)
+                                            .hazeSource(layers.overlayState)
+                                    } else Modifier
+                                )
                         ) {
                         SwipeableTransactionItem(
                             record = record,
@@ -218,7 +224,6 @@ fun RecentActivitiesScreen(
                 }
             }
         }
-        } // CompositionLocalProvider
     }
 }
 

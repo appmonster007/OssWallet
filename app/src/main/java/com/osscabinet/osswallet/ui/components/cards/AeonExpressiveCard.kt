@@ -65,7 +65,8 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.text.SimpleDateFormat
@@ -118,9 +119,9 @@ fun AeonExpressiveCard(
     val isPressed = interactionSource?.collectIsPressedAsState()?.value ?: false
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
 
-    val cardHazeState = LocalCardHazeState.current
+    val layers = LocalAeonHaze.current
     val glassEnabled = LocalGlassmorphismEnabled.current
-    val useGlass = glassEnabled && cardHazeState != null
+    val useGlass = glassEnabled && layers?.surfaceState != null
     val isDark = isSystemInDarkTheme()
     val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
 
@@ -142,7 +143,7 @@ fun AeonExpressiveCard(
     GlassSurface(
         modifier = modifier.graphicsLayer { scaleX = scale; scaleY = scale },
         shape = cardShape,
-        hazeState = cardHazeState,
+        hazeLayer = HazeLayer.Surface,
         hazeStyle = GlassTokens.cardStyle(),
         fallbackColor = containerColor,
         borderColor = if (useGlass && !isWarning && accentColor == null)
@@ -299,7 +300,7 @@ fun AeonExpressiveCard(
     if (showFilterSheet && filter != null && onFilterChange != null) {
         if (filterPillController != null) {
             // Controller path: pill renders at screen level in the main window so
-            // LocalPillHazeState is accessible and real glass blur works.
+            // LocalAeonHaze is accessible and real glass blur works.
             SideEffect {
                 filterPillController.show(
                     FilterPillRequest(

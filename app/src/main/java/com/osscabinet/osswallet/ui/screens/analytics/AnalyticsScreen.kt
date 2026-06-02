@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -71,8 +72,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalCardHazeState
-import com.osscabinet.ossWallet.ui.theme.LocalPillHazeState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 
@@ -118,31 +119,24 @@ fun AnalyticsScreen(
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
 
-    val cardHazeState = remember { HazeState() }
-    val pillHazeState = remember { HazeState() }
+    val hazeLayers = remember { AeonHazeLayers() }
 
     CompositionLocalProvider(
-        LocalCardHazeState provides cardHazeState,
-        LocalPillHazeState provides pillHazeState
+        LocalAeonHaze provides hazeLayers
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(AppColors.screenBackground)
-                    .hazeSource(cardHazeState)
-                    .hazeSource(pillHazeState)
+                    .hazeSource(hazeLayers.surfaceState)
+                    .hazeSource(hazeLayers.overlayState)
             ) {
+                Spacer(modifier = Modifier.fillMaxSize().background(AppColors.screenBackground))
                 ContourBackground()
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(pillHazeState)
-            ) {
-                Scaffold(
-                    containerColor = Color.Transparent,
-                    topBar = {
+            Scaffold(
+                containerColor = Color.Transparent,
+                topBar = {
                         TopAppBar(
                             title = { Text("Intelligence", style = AppTextStyles.screenTitle) },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -284,7 +278,6 @@ fun AnalyticsScreen(
                                 )
                             }
                         }
-                    }
                 }
 
                 // Floating Filter Pill

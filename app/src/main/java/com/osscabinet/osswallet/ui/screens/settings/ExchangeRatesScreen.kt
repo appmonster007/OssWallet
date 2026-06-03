@@ -71,6 +71,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -244,20 +245,27 @@ fun ExchangeRatesScreen(
             }
         }
     ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        ) { page ->
-            when (page) {
-                0 -> RatesTab(uiState)
-                1 -> ConverterTab(
-                    uiState = uiState,
-                    onConvert = { amount, from, to, callback ->
-                        viewModel.convert(amount, from, to, callback)
-                    }
-                )
+                .background(AppColors.screenBackground)
+        ) {
+            ContourBackground()
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> RatesTab(uiState)
+                    1 -> ConverterTab(
+                        uiState = uiState,
+                        onConvert = { amount, from, to, callback ->
+                            viewModel.convert(amount, from, to, callback)
+                        }
+                    )
+                }
             }
         }
     }

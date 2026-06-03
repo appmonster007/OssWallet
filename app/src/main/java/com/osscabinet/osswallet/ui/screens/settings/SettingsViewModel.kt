@@ -1,9 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
 import android.net.Uri
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
-import com.osscabinet.ossWallet.domain.model.ProfileType
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
@@ -14,17 +14,14 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -38,74 +35,74 @@ sealed class SyncState {
     object Success : SyncState()
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
     private val currencyRepository: CurrencyRepository,
     private val providerRegistry: ExchangeRateProviderRegistry
-) : BaseViewModel(settingsRepository) {
+) : ViewModel() {
 
     val currency: StateFlow<String> = settingsRepository.currency
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    
     val theme: StateFlow<String> = settingsRepository.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
-
+    
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
-
+    
     val numberingSystem: StateFlow<String> = settingsRepository.numberingSystem
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WESTERN")
-
+    
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsRepository.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val expandableFabEnabled: StateFlow<Boolean> = settingsRepository.expandableFabEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val mapsAccessEnabled: StateFlow<Boolean> = settingsRepository.mapsAccessEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    
     val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
-
+    
     val useSystemFont: StateFlow<Boolean> = settingsRepository.useSystemFont
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    
     val selectedFont: StateFlow<String> = settingsRepository.selectedFont
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "MANROPE")
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Default")
+    
     val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val contourBgVersion: StateFlow<Int> = settingsRepository.contourBgVersion
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 4)
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+    
     val contourLinesEnabled: StateFlow<Boolean> = settingsRepository.contourLinesEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+    
     val randomizeContourEachLoad: StateFlow<Boolean> = settingsRepository.randomizeContourEachLoad
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    
     val glassSettings: StateFlow<GlassSettings> = settingsRepository.glassSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlassSettings())
 
-    val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
-        .flatMapLatest { providerId ->
-            flow {
-                emit(providerRegistry.getProvider(providerId).fetchSupportedCurrencies())
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val recentActivitiesBreakdown: StateFlow<Boolean> = settingsRepository.recentActivitiesBreakdown
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val shortlistedCurrencies: StateFlow<Set<String>?> = settingsRepository.shortlistedCurrencies
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private val _availableCurrencies = MutableStateFlow<List<CurrencyMetadata>>(emptyList())
+    val availableCurrencies: StateFlow<List<CurrencyMetadata>> = _availableCurrencies
 
     val availableProviders: List<ExchangeRateProvider> = providerRegistry.getAllProviders()
 
@@ -116,15 +113,26 @@ class SettingsViewModel @Inject constructor(
     val profiles: StateFlow<List<Profile>> = profileRepository.getAllProfiles()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val currentProfile: StateFlow<Profile?> = settingsRepository.currentProfileId
-        .map { id -> profileRepository.getProfileById(id) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val currentProfile: StateFlow<Profile?> = combine(
+        profileRepository.getAllProfiles(),
+        settingsRepository.currentProfileId
+    ) { profiles, id ->
+        profiles.find { it.id == id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
-    val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState.asStateFlow()
+    val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState
 
-    private val _backupMessage = Channel<String>(Channel.BUFFERED)
+    private val _backupMessage = Channel<String>()
     val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            val providerId = settingsRepository.currencyProvider.first()
+            val provider = providerRegistry.getProvider(providerId)
+            _availableCurrencies.value = provider.fetchSupportedCurrencies()
+        }
+    }
 
     fun setCurrency(currencyCode: String) {
         viewModelScope.launch {
@@ -141,18 +149,20 @@ class SettingsViewModel @Inject constructor(
 
     fun fetchAndSaveRates(baseCurrency: String) {
         viewModelScope.launch {
+            _onboardingSyncState.value = SyncState.Loading
             try {
                 val rates = currencyRepository.fetchFreshRates(baseCurrency)
                 currencyRepository.saveRates(baseCurrency, rates)
+                _onboardingSyncState.value = SyncState.Success
             } catch (e: Exception) {
-                // Log error
+                _onboardingSyncState.value = SyncState.Error(e.message ?: "Failed to fetch rates")
             }
         }
     }
 
-    fun setTheme(theme: String) {
+    fun setTheme(themeName: String) {
         viewModelScope.launch {
-            settingsRepository.saveTheme(theme)
+            settingsRepository.saveTheme(themeName)
         }
     }
 
@@ -186,9 +196,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setUse24HourFormat(use24Hour: Boolean) {
+    fun setUse24HourFormat(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.saveUse24HourFormat(use24Hour)
+            settingsRepository.saveUse24HourFormat(enabled)
         }
     }
 
@@ -207,8 +217,8 @@ class SettingsViewModel @Inject constructor(
     fun setCurrencyProvider(providerId: String) {
         viewModelScope.launch {
             settingsRepository.saveCurrencyProvider(providerId)
-            // Trigger a refresh with the new provider
-            fetchAndSaveRates(currency.value)
+            val provider = providerRegistry.getProvider(providerId)
+            _availableCurrencies.value = provider.fetchSupportedCurrencies()
         }
     }
 
@@ -314,6 +324,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.standard.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.standard.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.standard.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.standard.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.standard.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.standard
                         }
                     }
@@ -323,6 +335,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.drawer.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.drawer.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.drawer.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.drawer.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.drawer.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.drawer
                         }
                     }
@@ -332,6 +346,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.pill.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.pill.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.pill.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.pill.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.pill.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.pill
                         }
                     }
@@ -341,6 +357,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.card.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.card.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.card.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.card.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.card.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.card
                         }
                     }
@@ -350,6 +368,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.sheet.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.sheet.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.sheet.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.sheet.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.sheet.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.sheet
                         }
                     }
@@ -359,6 +379,8 @@ class SettingsViewModel @Inject constructor(
                             "lightAlpha" -> current.popup.copy(lightAlpha = defaultStyle.lightAlpha)
                             "darkAlpha" -> current.popup.copy(darkAlpha = defaultStyle.darkAlpha)
                             "noiseFactor" -> current.popup.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.popup.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.popup.copy(borderAlpha = defaultStyle.borderAlpha)
                             else -> current.popup
                         }
                     }
@@ -390,39 +412,29 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun createProfile(name: String, currency: String) {
+    fun createProfile(name: String) {
         viewModelScope.launch {
-            profileRepository.insertProfile(
-                Profile(
-                    name = name,
-                    baseCurrency = currency,
-                    type = ProfileType.PERSONAL
-                )
-            )
+            profileRepository.insertProfile(Profile(name = name, baseCurrency = currency.value))
         }
     }
 
     fun exportBackup(uri: Uri, type: BackupType) {
         viewModelScope.launch {
             backupRepository.exportData(uri.toString(), type)
-                .onSuccess { _backupMessage.send("Backup exported successfully") }
-                .onFailure { _backupMessage.send("Export failed: ${it.message}") }
+            _backupMessage.send("Backup exported successfully")
         }
     }
 
     fun importBackup(uri: Uri, type: BackupType) {
         viewModelScope.launch {
             backupRepository.importData(uri.toString(), type)
-                .onSuccess { _backupMessage.send("Backup imported successfully") }
-                .onFailure { _backupMessage.send("Import failed: ${it.message}") }
+            _backupMessage.send("Backup imported successfully")
         }
     }
 
     fun deleteAllData() {
         viewModelScope.launch {
             backupRepository.deleteAllData()
-                .onSuccess { _backupMessage.send("All data cleared") }
-                .onFailure { _backupMessage.send("Failed to clear data: ${it.message}") }
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -147,43 +149,50 @@ fun DataManagementScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(AppColors.screenBackground)
-                .verticalScroll(rememberScrollState())
-                .padding(AeonTheme.dimensions.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
         ) {
-            AeonSettingsSection("BACKUP & RESTORE") {
-                AeonSettingsItem(
-                    title = "Import Backup",
-                    subtitle = "Restore your history from a file",
-                    icon = Icons.Rounded.CloudSync,
-                    onClick = { showImportDialog = true }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f)
-                )
-                AeonSettingsItem(
-                    title = "Export Data",
-                    subtitle = "Download all records and database",
-                    icon = Icons.Rounded.FileDownload,
-                    onClick = { showExportDialog = true }
-                )
-            }
+            ContourBackground()
 
-            AeonSettingsSection("DANGER ZONE") {
-                AeonSettingsItem(
-                    title = "Delete All Data",
-                    subtitle = "Permanently clear your account",
-                    icon = Icons.Rounded.DeleteForever,
-                    color = AppColors.error,
-                    onClick = { showDeleteConfirmDialog = true }
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(AeonTheme.dimensions.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
+            ) {
+                AeonSettingsSection("BACKUP & RESTORE") {
+                    AeonSettingsItem(
+                        title = "Import Backup",
+                        subtitle = "Restore your history from a file",
+                        icon = Icons.Rounded.CloudSync,
+                        onClick = { showImportDialog = true }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    AeonSettingsItem(
+                        title = "Export Data",
+                        subtitle = "Download all records and database",
+                        icon = Icons.Rounded.FileDownload,
+                        onClick = { showExportDialog = true }
+                    )
+                }
+
+                AeonSettingsSection("DANGER ZONE") {
+                    AeonSettingsItem(
+                        title = "Delete All Data",
+                        subtitle = "Permanently clear your account",
+                        icon = Icons.Rounded.DeleteForever,
+                        color = AppColors.error,
+                        onClick = { showDeleteConfirmDialog = true }
+                    )
+                }
             }
         }
     }

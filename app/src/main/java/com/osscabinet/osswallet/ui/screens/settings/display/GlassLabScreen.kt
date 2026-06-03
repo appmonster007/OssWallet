@@ -23,17 +23,21 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -66,8 +69,8 @@ fun GlassLabScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit
 ) {
-    val glassSettings by viewModel.glassSettings.collectAsStateWithLifecycle()
-    
+    val glassSettings by viewModel.glassSettings.collectAsState()
+
     GlassLabContent(
         glassSettings = glassSettings,
         onBack = onBack,
@@ -91,6 +94,15 @@ fun GlassLabContent(
     var isDarkPreview by remember(themeMode.isDarkTheme) { mutableStateOf(themeMode.isDarkTheme) }
     val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup")
 
+    val currentConfig = when (selectedToken) {
+        "Drawer" -> glassSettings.drawer
+        "Pill" -> glassSettings.pill
+        "Card" -> glassSettings.card
+        "Sheet" -> glassSettings.sheet
+        "Popup" -> glassSettings.popup
+        else -> glassSettings.standard
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,17 +123,13 @@ fun GlassLabContent(
         ) {
             ContourBackground()
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(AeonTheme.dimensions.screenPadding),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                // Preview Section
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Sticky Preview Section
                 CompositionLocalProvider(LocalGlassSettings provides glassSettings) {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AeonTheme.dimensions.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Row(
@@ -191,16 +199,20 @@ fun GlassLabContent(
                                         modifier = Modifier.size(280.dp, 100.dp),
                                         shape = RoundedCornerShape(20.dp),
                                         hazeState = hazeLayers.states[0],
-                                        hazeStyle = when (selectedToken) {
-                                            "Drawer" -> GlassTokens.drawerStyle(isDark = isDarkPreview)
-                                            "Pill" -> GlassTokens.pillStyle(isDark = isDarkPreview)
-                                            "Card" -> GlassTokens.cardStyle(isDark = isDarkPreview)
-                                            "Sheet" -> GlassTokens.sheetStyle(isDark = isDarkPreview)
-                                            "Popup" -> GlassTokens.popupStyle(isDark = isDarkPreview)
-                                            else -> GlassTokens.style(isDark = isDarkPreview)
-                                        },
-                                        fallbackColor = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f),
-                                        borderColor = (if (isDarkPreview) Color.White else AppColors.outlineVariant).copy(alpha = 0.5f)
+                                        hazeStyle = GlassTokens.createHazeStyle(
+                                            config = currentConfig,
+                                            bgColor = when (selectedToken) {
+                                                "Pill" -> AppColors.componentOnCard
+                                                "Card" -> AppColors.cardSurface
+                                                "Sheet" -> AppColors.sheetSurface
+                                                "Popup" -> AppColors.popupSurface
+                                                else -> AppColors.cardSurfaceProminent
+                                            },
+                                            isDark = isDarkPreview
+                                        ),
+                                        shadowElevation = currentConfig.shadowElevation.dp,
+                                        borderAlpha = currentConfig.borderAlpha,
+                                        fallbackColor = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
                                     ) {
                                         Text(
                                             selectedToken.uppercase(),
@@ -218,135 +230,153 @@ fun GlassLabContent(
                     }
                 }
 
-                // Token Selection
+                // Scrollable Tuning Section
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Text(
-                        "SELECT STYLE TO TUNE",
-                        style = AppTextStyles.sectionOverline,
-                        color = AppColors.primary
-                    )
-                    
-                    Row(
+                    // Token Selection
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            tokens.take(3).forEach { token ->
-                                StyleChip(
-                                    label = token,
-                                    selected = selectedToken == token,
-                                    onClick = { selectedToken = token }
-                                )
-                            }
-                        }
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            tokens.drop(3).forEach { token ->
-                                StyleChip(
-                                    label = token,
-                                    selected = selectedToken == token,
-                                    onClick = { selectedToken = token }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Tuning Controls
-                val currentConfig = when (selectedToken) {
-                    "Drawer" -> glassSettings.drawer
-                    "Pill" -> glassSettings.pill
-                    "Card" -> glassSettings.card
-                    "Sheet" -> glassSettings.sheet
-                    "Popup" -> glassSettings.popup
-                    else -> glassSettings.standard
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "PARAMETERS: ${selectedToken.uppercase()}",
+                            "SELECT STYLE TO TUNE",
                             style = AppTextStyles.sectionOverline,
                             color = AppColors.primary
                         )
                         
-                        TextButton(
-                            onClick = { onResetStyle(selectedToken) },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                            modifier = Modifier.height(32.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                Icons.Rounded.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = AppColors.primary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                tokens.take(3).forEach { token ->
+                                    StyleChip(
+                                        label = token,
+                                        selected = selectedToken == token,
+                                        onClick = { selectedToken = token }
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                tokens.drop(3).forEach { token ->
+                                    StyleChip(
+                                        label = token,
+                                        selected = selectedToken == token,
+                                        onClick = { selectedToken = token }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Tuning Controls
+                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                "RESET STYLE",
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 10.sp,
-                                    color = AppColors.primary
+                                text = "PARAMETERS: ${selectedToken.uppercase()}",
+                                style = AppTextStyles.sectionOverline,
+                                color = AppColors.primary
+                            )
+                            
+                            TextButton(
+                                onClick = { onResetStyle(selectedToken) },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = AppColors.primary
                                 )
-                            )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "RESET STYLE",
+                                    style = AppTextStyles.caption.copy(
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 10.sp,
+                                        color = AppColors.primary
+                                    )
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                            color = AppColors.surfaceContainerLow,
+                            border = BorderStroke(1.dp, AppColors.outlineVariant)
+                        ) {
+                            Column {
+                                TuningSliderRow(
+                                    label = "Blur Radius",
+                                    value = currentConfig.blurRadius,
+                                    range = 0f..40f,
+                                    valueDisplay = "${currentConfig.blurRadius.toInt()}dp",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(blurRadius = v) } },
+                                    onReset = { onResetParameter(selectedToken, "blurRadius") }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                TuningSliderRow(
+                                    label = "Light Alpha",
+                                    value = currentConfig.lightAlpha,
+                                    range = 0f..1f,
+                                    valueDisplay = "${(currentConfig.lightAlpha * 100).toInt()}%",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(lightAlpha = v) } },
+                                    onReset = { onResetParameter(selectedToken, "lightAlpha") }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                TuningSliderRow(
+                                    label = "Dark Alpha",
+                                    value = currentConfig.darkAlpha,
+                                    range = 0f..1f,
+                                    valueDisplay = "${(currentConfig.darkAlpha * 100).toInt()}%",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(darkAlpha = v) } },
+                                    onReset = { onResetParameter(selectedToken, "darkAlpha") }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                TuningSliderRow(
+                                    label = "Noise Factor",
+                                    value = currentConfig.noiseFactor,
+                                    range = 0f..1f,
+                                    valueDisplay = "${(currentConfig.noiseFactor * 100).toInt()}%",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(noiseFactor = v) } },
+                                    onReset = { onResetParameter(selectedToken, "noiseFactor") }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                TuningSliderRow(
+                                    label = "Shadow Elevation",
+                                    value = currentConfig.shadowElevation,
+                                    range = 0f..32f,
+                                    valueDisplay = "${currentConfig.shadowElevation.toInt()}dp",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(shadowElevation = v) } },
+                                    onReset = { onResetParameter(selectedToken, "shadowElevation") }
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                TuningSliderRow(
+                                    label = "Border Alpha",
+                                    value = currentConfig.borderAlpha,
+                                    range = 0f..1f,
+                                    valueDisplay = "${(currentConfig.borderAlpha * 100).toInt()}%",
+                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(borderAlpha = v) } },
+                                    onReset = { onResetParameter(selectedToken, "borderAlpha") }
+                                )
+                            }
                         }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                        color = AppColors.surfaceContainerLow,
-                        border = BorderStroke(1.dp, AppColors.outlineVariant)
-                    ) {
-                        Column {
-                            TuningSliderRow(
-                                label = "Blur Radius",
-                                value = currentConfig.blurRadius,
-                                range = 0f..40f,
-                                valueDisplay = "${currentConfig.blurRadius.toInt()}dp",
-                                onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(blurRadius = v) } },
-                                onReset = { onResetParameter(selectedToken, "blurRadius") }
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                            TuningSliderRow(
-                                label = "Light Alpha",
-                                value = currentConfig.lightAlpha,
-                                range = 0f..1f,
-                                valueDisplay = "${(currentConfig.lightAlpha * 100).toInt()}%",
-                                onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(lightAlpha = v) } },
-                                onReset = { onResetParameter(selectedToken, "lightAlpha") }
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                            TuningSliderRow(
-                                label = "Dark Alpha",
-                                value = currentConfig.darkAlpha,
-                                range = 0f..1f,
-                                valueDisplay = "${(currentConfig.darkAlpha * 100).toInt()}%",
-                                onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(darkAlpha = v) } },
-                                onReset = { onResetParameter(selectedToken, "darkAlpha") }
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                            TuningSliderRow(
-                                label = "Noise Factor",
-                                value = currentConfig.noiseFactor,
-                                range = 0f..1f,
-                                valueDisplay = "${(currentConfig.noiseFactor * 100).toInt()}%",
-                                onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(noiseFactor = v) } },
-                                onReset = { onResetParameter(selectedToken, "noiseFactor") }
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

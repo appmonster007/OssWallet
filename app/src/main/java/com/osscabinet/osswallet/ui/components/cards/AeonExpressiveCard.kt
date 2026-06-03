@@ -146,9 +146,10 @@ fun AeonExpressiveCard(
         hazeLayer = HazeLayer.Surface,
         hazeStyle = GlassTokens.cardStyle(),
         fallbackColor = containerColor,
-        borderColor = if (useGlass && !isWarning && accentColor == null)
-            if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.50f)
-        else null
+        borderColor = when {
+            isWarning || accentColor != null -> Color.Transparent
+            else -> null // Uses default glass rim
+        }
     ) {
     Card(
         modifier = Modifier

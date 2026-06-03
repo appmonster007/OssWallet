@@ -15,7 +15,13 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionGroup
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -27,8 +33,11 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,5 +132,92 @@ fun TransactionListContent(
                 modifier = Modifier.fillMaxSize()
             )
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Empty State")
+@Composable
+fun TransactionListScreenEmptyPreview() {
+    OssWalletTheme {
+        TransactionListContent(
+            listState = TransactionListState(isEmpty = true),
+            onSearchTransactions = { flowOf(emptyList()) },
+            accounts = emptyList(),
+            categories = emptyList(),
+            analyticsState = AnalyticsUiState.Loading,
+            filter = TransactionFilter(),
+            recordsSettings = TransactionSectionSettings(),
+            onTransactionEvent = {},
+            onBackClick = {},
+            onFilterEvent = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Populated List")
+@Composable
+fun TransactionListScreenPopulatedPreview() {
+    val dummyTransaction = Transaction(
+        id = 1,
+        name = "Groceries",
+        amount = BigDecimal("-50.00"),
+        timestamp = System.currentTimeMillis(),
+        currency = "USD",
+        transactionType = TransactionType.EXPENSE,
+        accountId = "acc1",
+        categoryId = 1
+    )
+    
+    val dummyRecord = ConfirmedTransactionUiModel(
+        item = TransactionWithBalance(dummyTransaction, BigDecimal("1000.00"), BigDecimal("950.00")),
+        accountName = "Main Wallet",
+        accountCurrency = "USD",
+        categoryName = "Food",
+        categoryIcon = "ShoppingCart",
+        categoryColor = 0xFF4CAF50.toInt()
+    )
+
+    val headerData = TimelineService.GroupHeaderData(
+        title = "Today",
+        subtitle = "March 15, 2024",
+        incomeByCurrency = emptyMap(),
+        expenseByCurrency = mapOf("USD" to BigDecimal("50.00")),
+        openingBalancesByCurrency = mapOf("USD" to BigDecimal("1000.00")),
+        closingBalancesByCurrency = mapOf("USD" to BigDecimal("950.00")),
+        allCurrencies = listOf("USD"),
+        incomeBase = BigDecimal.ZERO,
+        expenseBase = BigDecimal("50.00"),
+        netBase = BigDecimal("-50.00"),
+        totalOpeningBalanceBase = BigDecimal("1000.00"),
+        totalClosingBalanceBase = BigDecimal("950.00")
+    )
+
+    val listState = TransactionListState(
+        groups = listOf(
+            TransactionGroup(
+                key = "today",
+                headerData = headerData,
+                transactions = listOf(dummyRecord)
+            )
+        ),
+        isEmpty = false
+    )
+
+    OssWalletTheme {
+        TransactionListContent(
+            listState = listState,
+            onSearchTransactions = { flowOf(emptyList()) },
+            accounts = emptyList(),
+            categories = emptyList(),
+            analyticsState = AnalyticsUiState.Loading,
+            filter = TransactionFilter(),
+            recordsSettings = TransactionSectionSettings(
+                showHeaderOpeningBalance = true,
+                showHeaderClosingBalance = true
+            ),
+            onTransactionEvent = {},
+            onBackClick = {},
+            onFilterEvent = {}
+        )
     }
 }

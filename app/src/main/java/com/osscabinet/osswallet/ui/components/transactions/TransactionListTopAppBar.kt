@@ -58,6 +58,7 @@ import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -76,38 +77,12 @@ fun TransactionListTopAppBar(
 ) {
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    TopAppBar(
-        title = {
-            Column {
-                Text(
-                    "Records",
-                    style = AppTextStyles.screenTitle,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
-                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
-                    color = AppColors.contentSecondary
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            titleContentColor = AppColors.onScreenBackground,
-            navigationIconContentColor = AppColors.onScreenBackground,
-            actionIconContentColor = AppColors.onScreenBackground
-        ),
-        navigationIcon = {
-            if (isTopLevel) {
-                IconButton(onClick = onMenuClick) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu")
-                }
-            } else {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            }
-        },
+    AeonTopAppBar(
+        title = "Records",
+        subtitle = if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
+        onBackClick = onBackClick,
+        onMenuClick = onMenuClick,
+        isTopLevel = isTopLevel,
         actions = {
             IconButton(onClick = { showSettingsDialog = true }) {
                 Icon(

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -41,6 +42,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val contourBgVersion: Flow<Int> = settingsDataStore.contourBgVersion
     override val contourLinesEnabled: Flow<Boolean> = settingsDataStore.contourLinesEnabled
     override val randomizeContourEachLoad: Flow<Boolean> = settingsDataStore.randomizeContourEachLoad
+    override val glassSettings: Flow<GlassSettings> = settingsDataStore.glassSettings
 
     override suspend fun saveCurrency(currency: String) = settingsDataStore.saveCurrency(currency)
     override suspend fun saveTheme(theme: String) = settingsDataStore.saveTheme(theme)
@@ -119,4 +121,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveRandomizeContourEachLoad(enabled: Boolean) =
         settingsDataStore.saveRandomizeContourEachLoad(enabled)
+
+    override suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings) =
+        settingsDataStore.updateGlassSettings(update)
 }

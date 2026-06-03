@@ -21,6 +21,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import android.content.Intent
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 
@@ -60,6 +61,7 @@ class MainActivity : FragmentActivity() {
             val contourBgVersion by settingsRepository.contourBgVersion.collectAsStateWithLifecycle(initialValue = 4)
             val contourLinesEnabled by settingsRepository.contourLinesEnabled.collectAsStateWithLifecycle(initialValue = true)
             val randomizeContourEachLoad by settingsRepository.randomizeContourEachLoad.collectAsStateWithLifecycle(initialValue = true)
+            val glassSettings by settingsRepository.glassSettings.collectAsStateWithLifecycle(initialValue = GlassSettings())
 
             LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -73,7 +75,11 @@ class MainActivity : FragmentActivity() {
                 com.osscabinet.ossWallet.ui.util.TimeUtils.use24HourFormat = use24Hour
             }
 
-            OssWalletTheme(theme = theme, fontName = selectedFont) {
+            OssWalletTheme(
+                theme = theme,
+                fontName = selectedFont,
+                glassSettings = glassSettings
+            ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
                     com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion provides contourBgVersion,

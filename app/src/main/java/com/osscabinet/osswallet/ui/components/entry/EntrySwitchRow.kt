@@ -1,12 +1,17 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Repeat
@@ -15,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +35,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Standardized row with an optional icon, label, and switch for entry screens and settings.
- * Following the "Architect Slate" design specification.
+ * Supports a "double action" where the main area is clickable independently of the switch.
  */
 @Composable
 fun EntrySwitchRow(
@@ -37,6 +43,7 @@ fun EntrySwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     icon: ImageVector? = null,
     enabled: Boolean = true,
     subtitle: String? = null,
@@ -50,55 +57,83 @@ fun EntrySwitchRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        if (icon != null) {
-            Surface(
-                shape = CircleShape,
-                color = if (enabled) iconContainerColor else iconContainerColor.copy(alpha = 0.05f),
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (enabled) iconTint else iconTint.copy(alpha = 0.4f)
+        // Main content area (Icon + Text)
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+                .padding(start = horizontalPadding, top = verticalPadding, bottom = verticalPadding, end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (icon != null) {
+                Surface(
+                    shape = CircleShape,
+                    color = if (enabled) iconContainerColor else iconContainerColor.copy(alpha = 0.05f),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (enabled) iconTint else iconTint.copy(alpha = 0.4f)
+                        )
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = AppTextStyles.transactionTitle,
+                    color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.4f)
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary.copy(alpha = if (enabled) 0.6f else 0.4f)
                     )
                 }
             }
         }
-        
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                style = AppTextStyles.transactionTitle,
-                color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.4f)
+
+        // Divider (only if double action)
+        if (onClick != null) {
+            VerticalDivider(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(vertical = 12.dp)
+                    .width(0.5.dp),
+                color = AppColors.divider.copy(alpha = 0.3f)
             )
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary.copy(alpha = if (enabled) 0.6f else 0.4f)
-                )
-            }
         }
 
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = AppColors.primary,
-                checkedTrackColor = AppColors.switchTrackOn,
-                checkedBorderColor = AppColors.primary,
-                uncheckedThumbColor = AppColors.switchThumbOff,
-                uncheckedTrackColor = AppColors.switchTrackOff,
-                uncheckedBorderColor = AppColors.outline
+        // Switch area
+        Box(
+            modifier = Modifier
+                .padding(start = 12.dp, end = horizontalPadding)
+                .padding(vertical = verticalPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AppColors.primary,
+                    checkedTrackColor = AppColors.switchTrackOn,
+                    checkedBorderColor = AppColors.primary,
+                    uncheckedThumbColor = AppColors.switchThumbOff,
+                    uncheckedTrackColor = AppColors.switchTrackOff,
+                    uncheckedBorderColor = AppColors.outline
+                )
             )
-        )
+        }
     }
 }
 
@@ -113,19 +148,14 @@ fun EntrySwitchRowPreview() {
                     checked = true,
                     onCheckedChange = {},
                     icon = Icons.Rounded.Repeat,
-                    subtitle = "Automatically create this transaction every month"
+                    subtitle = "Automatically create this transaction every month",
+                    onClick = {}
                 )
                 EntrySwitchRow(
                     label = "Notify me",
                     checked = false,
                     onCheckedChange = {},
                     icon = Icons.Rounded.Repeat
-                )
-                EntrySwitchRow(
-                    label = "No Icon Toggle",
-                    checked = true,
-                    onCheckedChange = {},
-                    subtitle = "This toggle doesn't have an icon"
                 )
             }
         }

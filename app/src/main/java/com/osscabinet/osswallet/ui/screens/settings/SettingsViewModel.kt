@@ -4,6 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.ProfileType
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
+import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
@@ -93,6 +95,9 @@ class SettingsViewModel @Inject constructor(
 
     val randomizeContourEachLoad: StateFlow<Boolean> = settingsRepository.randomizeContourEachLoad
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val glassSettings: StateFlow<GlassSettings> = settingsRepository.glassSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlassSettings())
 
     val availableCurrencies: StateFlow<List<CurrencyMetadata>> = currencyProvider
         .flatMapLatest { providerId ->
@@ -240,6 +245,136 @@ class SettingsViewModel @Inject constructor(
     fun setRandomizeContourEachLoad(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveRandomizeContourEachLoad(enabled)
+        }
+    }
+
+    fun updateGlassSettings(update: (GlassSettings) -> GlassSettings) {
+        viewModelScope.launch {
+            settingsRepository.updateGlassSettings(update)
+        }
+    }
+
+    fun updateGlassStyle(style: String, update: (GlassStyleConfig) -> GlassStyleConfig) {
+        viewModelScope.launch {
+            settingsRepository.updateGlassSettings { current ->
+                when (style) {
+                    "Standard" -> current.copy(standard = update(current.standard))
+                    "Drawer" -> current.copy(drawer = update(current.drawer))
+                    "Pill" -> current.copy(pill = update(current.pill))
+                    "Card" -> current.copy(card = update(current.card))
+                    "Sheet" -> current.copy(sheet = update(current.sheet))
+                    "Popup" -> current.copy(popup = update(current.popup))
+                    else -> current
+                }
+            }
+        }
+    }
+
+    fun resetGlassSettings() {
+        viewModelScope.launch {
+            settingsRepository.updateGlassSettings { GlassSettings() }
+        }
+    }
+
+    fun resetGlassStyle(style: String) {
+        viewModelScope.launch {
+            val defaults = GlassSettings()
+            settingsRepository.updateGlassSettings { current ->
+                when (style) {
+                    "Standard" -> current.copy(standard = defaults.standard)
+                    "Drawer" -> current.copy(drawer = defaults.drawer)
+                    "Pill" -> current.copy(pill = defaults.pill)
+                    "Card" -> current.copy(card = defaults.card)
+                    "Sheet" -> current.copy(sheet = defaults.sheet)
+                    "Popup" -> current.copy(popup = defaults.popup)
+                    else -> current
+                }
+            }
+        }
+    }
+
+    fun resetGlassParameter(style: String, parameter: String) {
+        viewModelScope.launch {
+            val defaults = GlassSettings()
+            val defaultStyle = when (style) {
+                "Standard" -> defaults.standard
+                "Drawer" -> defaults.drawer
+                "Pill" -> defaults.pill
+                "Card" -> defaults.card
+                "Sheet" -> defaults.sheet
+                "Popup" -> defaults.popup
+                else -> return@launch
+            }
+
+            settingsRepository.updateGlassSettings { current ->
+                val updatedStyle = when (style) {
+                    "Standard" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.standard.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.standard.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.standard.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.standard.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.standard
+                        }
+                    }
+                    "Drawer" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.drawer.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.drawer.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.drawer.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.drawer.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.drawer
+                        }
+                    }
+                    "Pill" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.pill.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.pill.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.pill.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.pill.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.pill
+                        }
+                    }
+                    "Card" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.card.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.card.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.card.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.card.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.card
+                        }
+                    }
+                    "Sheet" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.sheet.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.sheet.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.sheet.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.sheet.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.sheet
+                        }
+                    }
+                    "Popup" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.popup.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.popup.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.popup.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.popup.copy(noiseFactor = defaultStyle.noiseFactor)
+                            else -> current.popup
+                        }
+                    }
+                    else -> return@updateGlassSettings current
+                }
+
+                when (style) {
+                    "Standard" -> current.copy(standard = updatedStyle)
+                    "Drawer" -> current.copy(drawer = updatedStyle)
+                    "Pill" -> current.copy(pill = updatedStyle)
+                    "Card" -> current.copy(card = updatedStyle)
+                    "Sheet" -> current.copy(sheet = updatedStyle)
+                    "Popup" -> current.copy(popup = updatedStyle)
+                    else -> current
+                }
+            }
         }
     }
 

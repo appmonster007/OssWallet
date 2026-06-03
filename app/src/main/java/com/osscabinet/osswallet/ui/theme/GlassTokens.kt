@@ -3,7 +3,10 @@ package com.osscabinet.ossWallet.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
+import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -12,96 +15,72 @@ import dev.chrisbanes.haze.HazeTint
  * Design tokens for glassmorphism effects using the Haze library.
  */
 object GlassTokens {
-    val BlurRadius = 8.dp
-    val DrawerBlurRadius = 16.dp
-    val NoiseFactor = 0f
-
-    // Per-surface blur radii
-    val PillBlurRadius = 12.dp
-    val CardBlurRadius = 6.dp
-    val SheetBlurRadius = 14.dp
-
     /**
      * Standard glass style for narrow overlay surfaces (e.g. sticky list headers).
      */
     @Composable
-    fun style(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.cardSurfaceProminent
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.45f else 0.30f)),
-            blurRadius = BlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun style(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.standard,
+        bgColor = AppColors.cardSurfaceProminent,
+        isDark = isDark
+    )
 
     /**
      * Heavy glass style for large overlay surfaces (drawer, full-screen sheets).
      */
     @Composable
-    fun drawerStyle(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.cardSurfaceProminent
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.82f else 0.55f)),
-            blurRadius = DrawerBlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun drawerStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.drawer,
+        bgColor = AppColors.cardSurfaceProminent,
+        isDark = isDark
+    )
 
     /**
      * Small compact floating elements (nav pill, FAB chips).
      */
     @Composable
-    fun pillStyle(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.componentOnCard
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.65f else 0.45f)),
-            blurRadius = PillBlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun pillStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.pill,
+        bgColor = AppColors.componentOnCard,
+        isDark = isDark
+    )
 
     /**
      * Dashboard/analytics cards.
      */
     @Composable
-    fun cardStyle(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.cardSurface
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
-            blurRadius = CardBlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun cardStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.card,
+        bgColor = AppColors.cardSurface,
+        isDark = isDark
+    )
 
     /**
      * Bottom sheets, modals.
      */
     @Composable
-    fun sheetStyle(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.sheetSurface
-        return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.78f else 0.52f)),
-            blurRadius = SheetBlurRadius,
-            noiseFactor = NoiseFactor,
-        )
-    }
+    fun sheetStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.sheet,
+        bgColor = AppColors.sheetSurface,
+        isDark = isDark
+    )
 
     /**
      * Small floating elements (FAB menu label chips, tooltips).
      */
     @Composable
-    fun popupStyle(): HazeStyle {
-        val isDark = isSystemInDarkTheme()
-        val bgColor = AppColors.popupSurface
+    fun popupStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.popup,
+        bgColor = AppColors.popupSurface,
+        isDark = isDark
+    )
+
+    @Composable
+    private fun createHazeStyle(config: GlassStyleConfig, bgColor: Color, isDark: Boolean): HazeStyle {
         return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) 0.55f else 0.38f)),
-            blurRadius = BlurRadius,
-            noiseFactor = NoiseFactor,
+            tint = HazeTint(bgColor.copy(alpha = if (isDark) config.darkAlpha else config.lightAlpha)),
+            blurRadius = config.blurRadius.dp,
+            noiseFactor = config.noiseFactor,
         )
     }
 }
@@ -132,6 +111,8 @@ data class AeonHazeLayers(
 )
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
+
+val LocalGlassSettings = staticCompositionLocalOf { GlassSettings() }
 
 /**
  * Tracks the current nesting level of glass surfaces.

@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.settings.display
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,8 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.MenuOpen
+import androidx.compose.material.icons.rounded.Circle
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -238,36 +245,74 @@ fun GlassLabContent(
                         .padding(horizontal = AeonTheme.dimensions.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    // Token Selection
+                    // Token Selection (Revamped)
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = AeonTheme.dimensions.spacingSm),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                     ) {
-                        Text(
-                            "SELECT STYLE TO TUNE",
-                            style = AppTextStyles.sectionOverline,
-                            color = AppColors.primary
-                        )
+                        Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                            Text(
+                                "SELECT COMPONENT STYLE",
+                                style = AppTextStyles.sectionOverline,
+                                color = AppColors.primary
+                            )
+                            Text(
+                                "Choose a glass profile to customize its specific properties",
+                                style = AppTextStyles.caption.copy(color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                            )
+                        }
                         
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                         ) {
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                tokens.take(3).forEach { token ->
-                                    StyleChip(
-                                        label = token,
-                                        selected = selectedToken == token,
-                                        onClick = { selectedToken = token }
-                                    )
+                            tokens.forEach { token ->
+                                val isSelected = selectedToken == token
+                                val icon = when (token) {
+                                    "Drawer" -> Icons.AutoMirrored.Rounded.MenuOpen
+                                    "Pill" -> Icons.Rounded.Circle
+                                    "Card" -> Icons.Rounded.Dashboard
+                                    "Sheet" -> Icons.Rounded.KeyboardArrowUp
+                                    "Popup" -> Icons.Rounded.PictureInPicture
+                                    else -> Icons.Rounded.Layers
                                 }
-                            }
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                tokens.drop(3).forEach { token ->
-                                    StyleChip(
-                                        label = token,
-                                        selected = selectedToken == token,
-                                        onClick = { selectedToken = token }
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .width(72.dp)
+                                        .clickable { selectedToken = token }
+                                ) {
+                                    Surface(
+                                        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+                                        color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.surfaceContainerLow,
+                                        border = BorderStroke(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) AppColors.primary else AppColors.outlineVariant
+                                        ),
+                                        modifier = Modifier.size(64.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                                    Text(
+                                        text = token,
+                                        style = AppTextStyles.caption.copy(
+                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = if (isSelected) AppColors.primary else AppColors.contentSecondary
+                                        )
                                     )
                                 }
                             }

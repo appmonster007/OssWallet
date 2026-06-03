@@ -106,15 +106,33 @@ fun GlassSurface(
     hazeLayer: Int? = null,
     hazeStyle: HazeStyle = GlassTokens.style(),
     fallbackColor: Color = AppColors.cardSurfaceProminent,
-    shadowElevation: Dp = 0.dp,
-    ambientShadowAlpha: Float = 0.06f,
-    spotShadowAlpha: Float = 0.12f,
+    shadowElevation: Dp? = null,
+    ambientShadowAlpha: Float = 0.1f,
+    spotShadowAlpha: Float = 0.2f,
     borderColor: Color? = null,
+    borderAlpha: Float? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
+    val config = GlassTokens.config(depth)
+
+    // Default glass rim that catches light at the edges
+    val effectiveBorderAlpha = borderAlpha ?: config.borderAlpha
+    val glassRimColor = if (isDark) {
+        Color.White.copy(alpha = effectiveBorderAlpha)
+    } else {
+        // In light mode, we use a more defined border to prevent blending
+        AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f) // definition boost
+    }
+    val effectiveBorderColor = borderColor ?: glassRimColor
+
+    // Theme-aware shadow intensity
+    val effectiveAmbientAlpha = if (isDark) ambientShadowAlpha else ambientShadowAlpha * 1.5f
+    val effectiveSpotAlpha = if (isDark) spotShadowAlpha else spotShadowAlpha * 1.5f
+    val effectiveShadowElevation = shadowElevation ?: config.shadowElevation.dp
 
     // 1. BLUR LOGIC: Blur the state assigned to this depth.
     val effectiveHazeState = hazeState ?: layers?.states?.getOrNull(depth)
@@ -128,27 +146,26 @@ fun GlassSurface(
 
     Box(
         modifier = modifier.then(sourceModifier),
-        contentAlignment = Alignment.Center
+        propagateMinConstraints = true
     ) {
         // Shadow on its own RenderNode
-        if (glassEnabled && shadowElevation > 0.dp) {
+        if (glassEnabled && effectiveShadowElevation > 0.dp) {
             Spacer(
                 modifier = Modifier
                     .matchParentSize()
                     .graphicsLayer {
                         this.shape = shape
                         clip = false
-                        this.shadowElevation = shadowElevation.toPx()
-                        ambientShadowColor = Color.Black.copy(alpha = ambientShadowAlpha)
-                        spotShadowColor = Color.Black.copy(alpha = spotShadowAlpha)
+                        this.shadowElevation = effectiveShadowElevation.toPx()
+                        ambientShadowColor = Color.Black.copy(alpha = effectiveAmbientAlpha)
+                        spotShadowColor = Color.Black.copy(alpha = effectiveSpotAlpha)
                     }
             )
         }
         
-        // Background layer (Blur/Glass)
+        // Background layer (Blur/Glass) + Content Container
         Box(
             modifier = Modifier
-                .matchParentSize()
                 .graphicsLayer { this.shape = shape; clip = true }
                 .then(
                     if (glassEnabled && effectiveHazeState != null) {
@@ -158,14 +175,14 @@ fun GlassSurface(
                     }
                 )
                 .then(
-                    if (glassEnabled && effectiveHazeState != null && borderColor != null)
-                        Modifier.border(0.5.dp, borderColor, shape)
+                    if (glassEnabled && effectiveHazeState != null)
+                        Modifier.border(0.5.dp, effectiveBorderColor, shape)
                     else Modifier
                 )
-        )
-
-        CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
-            content()
+        ) {
+            CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
+                content()
+            }
         }
     }
 }
@@ -217,7 +234,6 @@ fun AeonGlassSheet(
                     hazeLayer = hazeLayer,
                     hazeStyle = GlassTokens.sheetStyle(),
                     fallbackColor = AppColors.sheetSurface,
-                    borderColor = Color.White.copy(alpha = 0.15f),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // Standard Drag Handle

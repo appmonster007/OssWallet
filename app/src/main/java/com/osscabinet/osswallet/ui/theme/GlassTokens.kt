@@ -76,7 +76,17 @@ object GlassTokens {
     )
 
     @Composable
-    private fun createHazeStyle(config: GlassStyleConfig, bgColor: Color, isDark: Boolean): HazeStyle {
+    fun config(hazeLayer: Int): GlassStyleConfig {
+        val settings = LocalGlassSettings.current
+        return when (hazeLayer) {
+            HazeLayer.Drawer -> settings.drawer
+            HazeLayer.Overlay -> settings.pill // Approximation for overlay
+            else -> settings.standard
+        }
+    }
+
+    @Composable
+    fun createHazeStyle(config: GlassStyleConfig, bgColor: Color, isDark: Boolean): HazeStyle {
         return HazeStyle(
             tint = HazeTint(bgColor.copy(alpha = if (isDark) config.darkAlpha else config.lightAlpha)),
             blurRadius = config.blurRadius.dp,

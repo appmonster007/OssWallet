@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.repository
 
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import kotlinx.coroutines.flow.Flow
 
@@ -32,6 +33,7 @@ interface SettingsRepository {
     val contourBgVersion: Flow<Int>
     val contourLinesEnabled: Flow<Boolean>
     val randomizeContourEachLoad: Flow<Boolean>
+    val glassSettings: Flow<GlassSettings>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -61,4 +63,5 @@ interface SettingsRepository {
     suspend fun saveContourBgVersion(version: Int)
     suspend fun saveContourLinesEnabled(enabled: Boolean)
     suspend fun saveRandomizeContourEachLoad(enabled: Boolean)
+    suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings)
 }

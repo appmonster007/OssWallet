@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
+import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
@@ -142,6 +143,7 @@ fun OssWalletTheme(
     theme: String = "System",
     dynamicColor: Boolean = true,
     fontName: String = AppFont.DEFAULT.name,
+    glassSettings: GlassSettings = GlassSettings(),
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (theme) {
@@ -190,7 +192,8 @@ fun OssWalletTheme(
     CompositionLocalProvider(
         LocalAeonDimensions provides AeonDimensions(),
         LocalAppColorScheme provides colorScheme,
-        LocalThemeMode provides themeMode
+        LocalThemeMode provides themeMode,
+        LocalGlassSettings provides glassSettings
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

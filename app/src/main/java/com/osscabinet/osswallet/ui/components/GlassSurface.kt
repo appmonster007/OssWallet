@@ -126,7 +126,10 @@ fun GlassSurface(
         }
     } else Modifier
 
-    Box(modifier = modifier.then(sourceModifier)) {
+    Box(
+        modifier = modifier.then(sourceModifier),
+        contentAlignment = Alignment.Center
+    ) {
         // Shadow on its own RenderNode
         if (glassEnabled && shadowElevation > 0.dp) {
             Spacer(
@@ -141,8 +144,11 @@ fun GlassSurface(
                     }
             )
         }
+        
+        // Background layer (Blur/Glass)
         Box(
             modifier = Modifier
+                .matchParentSize()
                 .graphicsLayer { this.shape = shape; clip = true }
                 .then(
                     if (glassEnabled && effectiveHazeState != null) {
@@ -156,11 +162,10 @@ fun GlassSurface(
                         Modifier.border(0.5.dp, borderColor, shape)
                     else Modifier
                 )
-        ) {
-            // 3. INCREMENT DEPTH: Nested children will automatically blur this surface.
-            CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
-                content()
-            }
+        )
+
+        CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
+            content()
         }
     }
 }

@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
@@ -94,6 +95,7 @@ fun AeonAccountCardSmall(
     val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val glassSettings = LocalGlassSettings.current
 
     GlassSurface(
         modifier = modifier
@@ -102,8 +104,13 @@ fun AeonAccountCardSmall(
         shape = RoundedCornerShape(16.dp),
         hazeLayer = HazeLayer.Surface,
         hazeStyle = HazeStyle(
-            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
-            blurRadius = GlassTokens.CardBlurRadius
+            tint = HazeTint(
+                containerColor.copy(
+                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
+                )
+            ),
+            blurRadius = glassSettings.card.blurRadius.dp,
+            noiseFactor = glassSettings.card.noiseFactor
         ),
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f)
@@ -176,6 +183,7 @@ fun AeonAccountCardMedium(
     val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
+    val glassSettings = LocalGlassSettings.current
 
     GlassSurface(
         modifier = modifier
@@ -184,8 +192,13 @@ fun AeonAccountCardMedium(
         shape = RoundedCornerShape(24.dp),
         hazeLayer = HazeLayer.Surface,
         hazeStyle = HazeStyle(
-            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
-            blurRadius = GlassTokens.CardBlurRadius
+            tint = HazeTint(
+                containerColor.copy(
+                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
+                )
+            ),
+            blurRadius = glassSettings.card.blurRadius.dp,
+            noiseFactor = glassSettings.card.noiseFactor
         ),
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f)
@@ -296,6 +309,7 @@ fun AeonAccountCardLarge(
 
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
+    val glassSettings = LocalGlassSettings.current
 
     GlassSurface(
         modifier = modifier
@@ -305,8 +319,13 @@ fun AeonAccountCardLarge(
         shape = RoundedCornerShape(32.dp),
         hazeLayer = HazeLayer.Surface,
         hazeStyle = HazeStyle(
-            tint = HazeTint(containerColor.copy(alpha = if (isDark) 0.60f else 0.40f)),
-            blurRadius = GlassTokens.CardBlurRadius
+            tint = HazeTint(
+                containerColor.copy(
+                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
+                )
+            ),
+            blurRadius = glassSettings.card.blurRadius.dp,
+            noiseFactor = glassSettings.card.noiseFactor
         ),
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f)

@@ -16,6 +16,7 @@ import kotlinx.serialization.json.Json
 // These types live in domain — typealiases preserve backward compatibility for data-layer references.
 typealias TransactionGroupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 typealias TransactionSectionSettings = com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+typealias GlassSettings = com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -51,6 +52,7 @@ class SettingsDataStore(private val context: Context) {
         val CONTOUR_BG_VERSION_KEY = intPreferencesKey("contour_bg_version")
         val CONTOUR_LINES_ENABLED_KEY = booleanPreferencesKey("contour_lines_enabled")
         val RANDOMIZE_CONTOUR_EACH_LOAD_KEY = booleanPreferencesKey("randomize_contour_each_load")
+        val GLASS_SETTINGS_KEY = stringPreferencesKey("glass_settings")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -174,6 +176,16 @@ class SettingsDataStore(private val context: Context) {
 
     val randomizeContourEachLoad: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[RANDOMIZE_CONTOUR_EACH_LOAD_KEY] ?: true
+    }
+
+    val glassSettings: Flow<GlassSettings> = context.dataStore.data.map { preferences ->
+        preferences[GLASS_SETTINGS_KEY]?.let {
+            try {
+                Json.decodeFromString<GlassSettings>(it)
+            } catch (e: Exception) {
+                GlassSettings()
+            }
+        } ?: GlassSettings()
     }
 
     suspend fun saveCurrency(currency: String) {
@@ -348,6 +360,19 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveRandomizeContourEachLoad(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[RANDOMIZE_CONTOUR_EACH_LOAD_KEY] = enabled
+        }
+    }
+
+    suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[GLASS_SETTINGS_KEY]?.let {
+                try {
+                    Json.decodeFromString<GlassSettings>(it)
+                } catch (e: Exception) {
+                    GlassSettings()
+                }
+            } ?: GlassSettings()
+            preferences[GLASS_SETTINGS_KEY] = Json.encodeToString(update(current))
         }
     }
 

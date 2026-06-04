@@ -78,6 +78,7 @@ fun MainDisplaySettings(
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
+    val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
 
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
@@ -365,6 +366,21 @@ fun MainDisplaySettings(
                         icon = Icons.Rounded.CurrencyExchange,
                         checked = recentActivitiesBreakdown,
                         onCheckedChange = { viewModel.setRecentActivitiesBreakdown(it) },
+                        isFlush = false
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = 0.5f)
+                    )
+                    EntrySwitchRow(
+                        label = "Sticky Headers",
+                        subtitle = if (recordsSettings.stickyHeaders) "Transaction headers stick to top" else "Headers flow with list content",
+                        icon = Icons.Rounded.GridView,
+                        checked = recordsSettings.stickyHeaders,
+                        onCheckedChange = { checked ->
+                            viewModel.updateRecordsSettings { it.copy(stickyHeaders = checked) }
+                        },
                         isFlush = false
                     )
                 }

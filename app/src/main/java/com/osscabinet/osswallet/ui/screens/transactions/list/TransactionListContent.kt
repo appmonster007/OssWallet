@@ -3,27 +3,31 @@ package com.osscabinet.ossWallet.ui.screens.transactions.list
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionGroup
-import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
@@ -32,12 +36,11 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
-import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.tooling.preview.Preview
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,66 +63,81 @@ fun TransactionListContent(
     onAddTag: (String, Int) -> Unit = { _, _ -> },
     revealedCardIds: List<String> = emptyList()
 ) {
+    val pillHeight = AeonSize.D64.value
+
     AeonHazeProvider { _ ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                topBar = {
-                        TransactionListTopAppBar(
-                            filter = filter,
-                            recordsSettings = recordsSettings,
-                            onBackClick = onBackClick,
-                            onMenuClick = onMenuClick,
-                            isTopLevel = isTopLevel,
-                            onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
-                        )
-                    }
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        if (listState.isEmpty) {
-                            TransactionListEmptyState(
-                                isFutureExcluded = filter.timelineRange.excludeFuture,
-                                onIncludeFutureClick = {
-                                    onFilterEvent(
-                                        FilterEvent.Apply(
-                                            filter.copy(
-                                                timelineRange = filter.timelineRange.withExcludeFuture(false)
-                                            )
-                                        )
-                                    )
-                                }
-                            )
+            // 1. Transaction List (Layer 1)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding() // Avoid bleeding into status bar icons
+                    .then(
+                        if (recordsSettings.stickyHeaders) {
+                            Modifier.padding(top = pillHeight)
                         } else {
-                            AeonTransactionList(
-                                listState = listState,
-                                onTransactionEvent = onTransactionEvent,
-                                contentPadding = PaddingValues(bottom = scrollBottomPadding()),
-                                useNoteAsHeader = recordsSettings.useNoteAsHeader,
-                                showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance,
-                                showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance,
-                                showItemOpeningBalance = recordsSettings.showItemOpeningBalance,
-                                showItemClosingBalance = recordsSettings.showItemClosingBalance,
-                                showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
-                                showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
-                                showAccount = recordsSettings.showAccount,
-                                showCategory = recordsSettings.showCategory,
-                                showNote = recordsSettings.showNote,
-                                showTags = recordsSettings.showTags,
-                                showTimestamp = recordsSettings.showTimestamp,
-                                showIcon = recordsSettings.showIcon,
-                                baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency
-                                    ?: "USD",
-                                revealedCardIds = revealedCardIds,
-                            )
+                            Modifier
                         }
-                    }
+                    )
+            ) {
+                if (listState.isEmpty) {
+                    TransactionListEmptyState(
+                        isFutureExcluded = filter.timelineRange.excludeFuture,
+                        onIncludeFutureClick = {
+                            onFilterEvent(
+                                FilterEvent.Apply(
+                                    filter.copy(
+                                        timelineRange = filter.timelineRange.withExcludeFuture(false)
+                                    )
+                                )
+                            )
+                        },
+                        modifier = if (!recordsSettings.stickyHeaders) {
+                            Modifier.padding(top = pillHeight)
+                        } else Modifier
+                    )
+                } else {
+                    AeonTransactionList(
+                        listState = listState,
+                        onTransactionEvent = onTransactionEvent,
+                        contentPadding = PaddingValues(
+                            top = if (recordsSettings.stickyHeaders) 0.dp else pillHeight,
+                            bottom = scrollBottomPadding()
+                        ),
+                        useNoteAsHeader = recordsSettings.useNoteAsHeader,
+                        showHeaderOpeningBalance = recordsSettings.showHeaderOpeningBalance,
+                        showHeaderClosingBalance = recordsSettings.showHeaderClosingBalance,
+                        showItemOpeningBalance = recordsSettings.showItemOpeningBalance,
+                        showItemClosingBalance = recordsSettings.showItemClosingBalance,
+                        showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
+                        showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
+                        showAccount = recordsSettings.showAccount,
+                        showCategory = recordsSettings.showCategory,
+                        showNote = recordsSettings.showNote,
+                        showTags = recordsSettings.showTags,
+                        showTimestamp = recordsSettings.showTimestamp,
+                        showIcon = recordsSettings.showIcon,
+                        baseCurrency = (analyticsState as? AnalyticsUiState.Success)?.selectedCurrency
+                            ?: "USD",
+                        revealedCardIds = revealedCardIds,
+                        hasStickyHeader = recordsSettings.stickyHeaders,
+                    )
                 }
+            }
 
-                TransactionFilterPill(
+            // 2. Top Bar (Layer 3 - Floating Pills)
+            TransactionListTopAppBar(
+                filter = filter,
+                recordsSettings = recordsSettings,
+                onBackClick = onBackClick,
+                onMenuClick = onMenuClick,
+                isTopLevel = isTopLevel,
+                onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
+            )
+// ...
+
+            // 3. Filter Pill (Layer 4 - if applicable)
+            TransactionFilterPill(
                 filter = filter,
                 accounts = accounts,
                 categories = categories,

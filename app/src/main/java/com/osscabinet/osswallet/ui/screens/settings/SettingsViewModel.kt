@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
@@ -97,6 +98,9 @@ class SettingsViewModel @Inject constructor(
 
     val recentActivitiesBreakdown: StateFlow<Boolean> = settingsRepository.recentActivitiesBreakdown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val recordsSettings: StateFlow<TransactionSectionSettings> = settingsRepository.recordsSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
     val shortlistedCurrencies: StateFlow<Set<String>?> = settingsRepository.shortlistedCurrencies
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -211,6 +215,12 @@ class SettingsViewModel @Inject constructor(
     fun setRecentActivitiesBreakdown(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.saveRecentActivitiesBreakdown(enabled)
+        }
+    }
+
+    fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings) {
+        viewModelScope.launch {
+            settingsRepository.updateRecordsSettings(update)
         }
     }
 

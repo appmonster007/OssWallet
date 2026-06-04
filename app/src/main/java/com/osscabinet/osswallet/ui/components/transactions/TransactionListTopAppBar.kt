@@ -167,6 +167,25 @@ fun TransactionListTopAppBar(
                                 },
                                 isFlush = true
                             )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            EntrySwitchRow(
+                                label = "Sticky Headers",
+                                subtitle = "Transaction headers stick to top",
+                                icon = Icons.AutoMirrored.Rounded.Sort,
+                                checked = recordsSettings.stickyHeaders,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            stickyHeaders = it
+                                        )
+                                    )
+                                },
+                                isFlush = true
+                            )
                         }
 
                         AeonSettingsSection("GROUP SUMMARIES") {

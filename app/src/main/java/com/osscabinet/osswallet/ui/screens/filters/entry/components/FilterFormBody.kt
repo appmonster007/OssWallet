@@ -196,7 +196,6 @@ fun FilterFormBody(
                                 onCheckedChange = { onEvent(FilterEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Matches notes with regex",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
@@ -215,7 +214,6 @@ fun FilterFormBody(
                                 onCheckedChange = { onEvent(FilterEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Matches payees with regex",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,

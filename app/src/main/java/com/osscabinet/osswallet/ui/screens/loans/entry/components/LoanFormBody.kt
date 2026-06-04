@@ -251,7 +251,6 @@ fun LoanFormBody(
                                 onCheckedChange = { onEvent(LoanEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Supports /pattern/flags",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
@@ -270,7 +269,6 @@ fun LoanFormBody(
                                 onCheckedChange = { onEvent(LoanEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Supports /pattern/flags",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,

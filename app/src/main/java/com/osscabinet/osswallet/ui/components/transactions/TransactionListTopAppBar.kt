@@ -165,7 +165,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -184,7 +183,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                         }
 
@@ -201,7 +199,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -221,7 +218,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -240,7 +236,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -259,7 +254,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                         }
 
@@ -276,7 +270,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -295,7 +288,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -314,7 +306,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -334,7 +325,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -353,7 +343,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -372,7 +361,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -391,7 +379,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                         }
 
@@ -408,7 +395,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -427,7 +413,6 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
-                                isFlush = true
                             )
                         }
                     }

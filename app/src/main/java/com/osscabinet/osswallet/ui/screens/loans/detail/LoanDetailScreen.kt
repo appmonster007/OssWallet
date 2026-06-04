@@ -263,7 +263,7 @@ fun LoanDetailContent(
                                             onRecordsClick(loanFilter)
                                         },
                                         baseCurrency = baseCurrency,
-                                        contentPadding = PaddingValues(top = pillHeight),
+                                        contentPadding = PaddingValues(top = pillHeight + AeonTheme.dimensions.spacingMd),
                                         revealedCardIds = revealedCardIds,
                                         showCurrencyBreakdown = recentActivitiesBreakdown,
                                         onTransactionEvent = onTransactionEvent,

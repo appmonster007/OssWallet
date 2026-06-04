@@ -356,7 +356,10 @@ fun AccountDetailScreen(
                                                         listState = state.listState,
                                                         onRecordsClick = { drillDown -> onRecordsClick(state.currentFilter.merge(drillDown)) },
                                                         baseCurrency = state.baseCurrency,
-                                                        contentPadding = PaddingValues(top = pillHeight, bottom = scrollBottomPadding()),
+                                                        contentPadding = PaddingValues(
+                                                            top = pillHeight + AeonTheme.dimensions.spacingMd,
+                                                            bottom = scrollBottomPadding()
+                                                        ),
                                                         modifier = Modifier.fillMaxSize(),
                                                         revealedCardIds = revealedCardIds,
                                                         showCurrencyBreakdown = recentActivitiesBreakdown,

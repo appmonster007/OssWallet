@@ -205,7 +205,6 @@ fun BudgetFormBody(
                                 onCheckedChange = { onEvent(BudgetEntryEvent.SetNoteRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Supports /pattern/flags",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryNote,
@@ -224,7 +223,6 @@ fun BudgetFormBody(
                                 onCheckedChange = { onEvent(BudgetEntryEvent.SetPayeeRegex(it)) },
                                 icon = Icons.Rounded.Code,
                                 subtitle = "Supports /pattern/flags",
-                                isFlush = true
                             )
                             EntryEditorialInput(
                                 value = state.queryPayee,
@@ -410,7 +408,7 @@ fun BudgetFormBody(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 1400)
 @Composable
 fun BudgetFormBodyPreview() {
     OssWalletTheme {

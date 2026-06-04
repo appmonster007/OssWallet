@@ -2,16 +2,18 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
@@ -56,124 +59,157 @@ fun AeonTopAppBar(
     subtitleContent: @Composable (() -> Unit)? = null,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(windowInsets)
-            .height(64.dp)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    val topBarHeight = AeonSize.D64.value
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val totalHeaderHeight = topBarHeight + statusBarHeight
+
+    Box(
+        modifier = modifier.fillMaxWidth()
     ) {
-        // Left Pill: [Icon + Title/Subtitle]
-        val hasNavigation = (isTopLevel && onMenuClick != null) || onBackClick != null
-        val hasTitle = title.isNotEmpty() || titleContent != null
-
-        if (hasNavigation || hasTitle) {
-            GlassSurface(
-                shape = CircleShape,
-                hazeLayer = HazeLayer.Overlay,
-                hazeStyle = GlassTokens.pillStyle(),
-                fallbackColor = AppColors.componentOnCard,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(
-                        start = if (hasNavigation) 4.dp else 16.dp,
-                        end = 16.dp,
-                        top = 4.dp,
-                        bottom = 4.dp
-                    )
-                ) {
-                    if (isTopLevel && onMenuClick != null) {
-                        AppBarIconButton(icon = Icons.Rounded.Menu, onClick = onMenuClick)
-                        Spacer(modifier = Modifier.width(4.dp))
-                    } else if (onBackClick != null) {
-                        AppBarIconButton(icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = onBackClick)
-                        Spacer(modifier = Modifier.width(4.dp))
-                    }
-
-                    Column(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        if (titleContent != null) {
-                            titleContent()
-                        } else if (title.isNotEmpty()) {
-                            Text(
-                                title,
-                                style = AppTextStyles.screenTitle.copy(
-                                    fontSize = 16.sp,
-                                    lineHeight = 20.sp,
-                                    letterSpacing = 0.sp
-                                ),
-                                fontWeight = FontWeight.SemiBold,
-                                color = AppColors.onScreenBackground
-                            )
-                        }
-                        if (subtitleContent != null) {
-                            subtitleContent()
-                        } else if (subtitle != null) {
-                            Text(
-                                subtitle,
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 10.sp,
-                                    lineHeight = 12.sp,
-                                    letterSpacing = 0.2.sp
-                                ),
-                                color = AppColors.contentSecondary.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
-            Spacer(modifier = Modifier.width(1.dp))
+        // 1. Header Background Glass (Addressing Visual Issues 1, 2, 3, 4)
+        // Provides a subtle blur over the status bar and top bar area to prevent contamination
+        // and sharp cuts in the list content scrolling under.
+        GlassSurface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(totalHeaderHeight),
+            shape = RoundedCornerShape(0.dp), // Full bleed for the header strip
+            hazeLayer = HazeLayer.Surface,
+            hazeStyle = GlassTokens.style(),
+            fallbackColor = Color.Transparent,
+            shadowElevation = 0.dp,
+            borderAlpha = 0f // No rim for the base background strip
+        ) {
+            // Spacer ensures the GlassSurface occupies the full measured header area
+            Spacer(modifier = Modifier.fillMaxSize())
         }
 
-        // Right Pill: [Actions]
-        if (actions != null) {
-            GlassSurface(
-                shape = CircleShape,
-                hazeLayer = HazeLayer.Overlay,
-                hazeStyle = GlassTokens.pillStyle(),
-                fallbackColor = AppColors.componentOnCard,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+        // 2. The Content Row (The "Floating Pills" Aesthetic)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(windowInsets)
+                .height(topBarHeight)
+                .padding(horizontal = AeonSize.D12.value),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Pill: [Icon + Title/Subtitle]
+            val hasNavigation = (isTopLevel && onMenuClick != null) || onBackClick != null
+            val hasTitle = title.isNotEmpty() || titleContent != null
+
+            if (hasNavigation || hasTitle) {
+                GlassSurface(
+                    shape = CircleShape,
+                    hazeLayer = HazeLayer.Overlay,
+                    hazeStyle = GlassTokens.pillStyle(),
+                    fallbackColor = AppColors.componentOnCard,
+                    shadowElevation = AeonSize.D8.value
                 ) {
-                    CompositionLocalProvider(
-                        LocalContentColor provides AppColors.onScreenBackground
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(
+                            start = if (hasNavigation) AeonSize.D4.value else AeonSize.D16.value,
+                            end = AeonSize.D16.value,
+                            top = AeonSize.D4.value,
+                            bottom = AeonSize.D4.value
+                        )
                     ) {
-                        actions()
+                        if (isTopLevel && onMenuClick != null) {
+                            AppBarIconButton(icon = Icons.Rounded.Menu, onClick = onMenuClick)
+                            Spacer(modifier = Modifier.width(AeonSize.D4.value))
+                        } else if (onBackClick != null) {
+                            AppBarIconButton(
+                                icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                                onClick = onBackClick
+                            )
+                            Spacer(modifier = Modifier.width(AeonSize.D4.value))
+                        }
+
+                        Column(
+                            modifier = Modifier.padding(vertical = AeonSize.D4.value),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            if (titleContent != null) {
+                                titleContent()
+                            } else if (title.isNotEmpty()) {
+                                Text(
+                                    title,
+                                    style = AppTextStyles.screenTitle.copy(
+                                        fontSize = 16.sp,
+                                        lineHeight = 20.sp,
+                                        letterSpacing = 0.sp
+                                    ),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColors.onScreenBackground
+                                )
+                            }
+                            if (subtitleContent != null) {
+                                subtitleContent()
+                            } else if (subtitle != null) {
+                                Text(
+                                    subtitle,
+                                    style = AppTextStyles.caption.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontSize = 10.sp,
+                                        lineHeight = 12.sp,
+                                        letterSpacing = 0.2.sp
+                                    ),
+                                    color = AppColors.contentSecondary.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
                     }
                 }
+            } else {
+                Spacer(modifier = Modifier.width(1.dp))
             }
-        } else {
-            Spacer(modifier = Modifier.width(1.dp))
+
+            // Right Pill: [Actions]
+            if (actions != null) {
+                GlassSurface(
+                    shape = CircleShape,
+                    hazeLayer = HazeLayer.Overlay,
+                    hazeStyle = GlassTokens.pillStyle(),
+                    fallbackColor = AppColors.componentOnCard,
+                    shadowElevation = AeonSize.D8.value
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(
+                            horizontal = AeonSize.D4.value,
+                            vertical = AeonSize.D4.value
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(AeonSize.D2.value)
+                    ) {
+                        CompositionLocalProvider(
+                            LocalContentColor provides AppColors.onScreenBackground
+                        ) {
+                            actions()
+                        }
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.width(1.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun AppBarIconButton(
+fun AppBarIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(40.dp)
+        modifier = modifier.size(AeonSize.D40.value)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(AeonSize.D22.value),
             tint = AppColors.onScreenBackground
         )
     }
@@ -189,9 +225,9 @@ fun AeonTopAppBarPreview() {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 40.dp)
+                        .padding(top = AeonSize.D40.value)
                         .hazeSource(hazeLayers.states[HazeLayer.Overlay]),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(AeonSize.D12.value)
                 ) {
                     repeat(10) { i ->
                         Text(
@@ -200,12 +236,12 @@ fun AeonTopAppBarPreview() {
                                 fontSize = 24.sp,
                                 color = if (i % 2 == 0) AppColors.primary.copy(alpha = 0.15f) else AppColors.secondary.copy(alpha = 0.1f)
                             ),
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                            modifier = Modifier.padding(horizontal = AeonSize.D16.value)
                         )
                     }
                 }
 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(AeonSize.D8.value)) {
                     // Full AppBar
                     AeonTopAppBar(
                         title = "Dashboard",

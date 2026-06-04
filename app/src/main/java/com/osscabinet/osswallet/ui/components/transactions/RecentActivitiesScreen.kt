@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
@@ -56,7 +57,7 @@ fun RecentActivitiesScreen(
     modifier: Modifier = Modifier,
     onTransactionEvent: (TransactionItemEvent) -> Unit = {},
     baseCurrency: String = "USD",
-    contentPadding: PaddingValues = PaddingValues(bottom = 24.dp),
+    contentPadding: PaddingValues = PaddingValues(bottom = AeonSize.D24.value),
     revealedCardIds: List<String> = emptyList(),
     filter: TransactionFilter = TransactionFilter(),
     showHeader: Boolean = true,
@@ -82,19 +83,19 @@ fun RecentActivitiesScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = AeonSize.D16.value, vertical = AeonSize.D12.value),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(AeonSize.D8.value)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.History,
                         contentDescription = null,
                         tint = AppColors.primary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(AeonSize.D20.value)
                     )
                     Text(
                         text = headerTitle,
@@ -105,8 +106,8 @@ fun RecentActivitiesScreen(
                 }
                 TextButton(
                     onClick = { onRecordsClick(filter) },
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    modifier = Modifier.height(32.dp)
+                    contentPadding = PaddingValues(horizontal = AeonSize.D8.value, vertical = 0.dp),
+                    modifier = Modifier.height(AeonSize.D32.value)
                 ) {
                     Text(
                         text = "VIEW ALL",

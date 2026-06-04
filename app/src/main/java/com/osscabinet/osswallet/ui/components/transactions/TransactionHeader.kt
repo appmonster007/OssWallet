@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -62,7 +63,7 @@ fun TransactionHeader(
 
     val styles = TransactionHeaderStyles.default()
     val isDark = isSystemInDarkTheme()
-    val glassShape = RoundedCornerShape(12.dp)
+    val glassShape = RoundedCornerShape(AeonSize.D12.value)
     val glassStyle = GlassTokens.style()
 
     val activeCurrencies = remember(allCurrencies, incomeByCurrency, expenseByCurrency) {
@@ -80,41 +81,46 @@ fun TransactionHeader(
     GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = AeonSize.D16.value, vertical = AeonSize.D8.value),
         shape = glassShape,
         hazeLayer = HazeLayer.Surface,
         hazeStyle = glassStyle,
         fallbackColor = AppColors.cardSurfaceProminent,
-        shadowElevation = 12.dp,
+        shadowElevation = AeonSize.D12.value,
         ambientShadowAlpha = 0.06f,
         spotShadowAlpha = 0.12f,
         borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f)
     ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-                Box(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = AeonSize.D12.value,
+                vertical = AeonSize.D12.value
+            )
+        ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = title.uppercase(),
+                    style = styles.titleStyle,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+                if (!showCurrencyBreakdown) {
                     Text(
-                        text = title.uppercase(),
-                        style = styles.titleStyle,
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    )
-                    if (!showCurrencyBreakdown) {
-                        Text(
-                            text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
-                            style = styles.baseValueStyle,
-                            color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    }
-                    Text(
-                        text = subtitle.uppercase(),
-                        style = styles.subtitleStyle,
-                        modifier = Modifier.align(Alignment.CenterEnd)
+                        text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
+                        style = styles.baseValueStyle,
+                        color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
+                Text(
+                    text = subtitle.uppercase(),
+                    style = styles.subtitleStyle,
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
+            }
 
-                if (showCurrencyBreakdown) {
-                    Spacer(modifier = Modifier.height(4.dp))
+            if (showCurrencyBreakdown) {
+                Spacer(modifier = Modifier.height(AeonSize.D4.value))
 
                     TransactionSummaryBreakdown(
                         incomeByCurrency = incomeByCurrency,
@@ -164,7 +170,7 @@ private data class TransactionHeaderStyles(
             negativeColor = AppColors.error,
             outlineColor = AppColors.border,
             dividerColor = AppColors.divider.copy(alpha = 0.5f),
-            labelColumnWidth = 40.dp,
+            labelColumnWidth = AeonSize.D40.value,
             titleStyle = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Bold,
                 color = AppColors.border,

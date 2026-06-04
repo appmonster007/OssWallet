@@ -48,6 +48,9 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.ContourBackground
@@ -118,46 +121,24 @@ fun AnalyticsScreen(
             Scaffold(
                 containerColor = Color.Transparent,
                 topBar = {
-                        TopAppBar(
-                            title = { Text("Intelligence", style = AppTextStyles.screenTitle) },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent,
-                                titleContentColor = AppColors.onScreenBackground,
-                                navigationIconContentColor = AppColors.onScreenBackground
-                            ),
-                            navigationIcon = {
-                                if (isTopLevel) {
-                                    IconButton(onClick = onMenuClick) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                                    }
-                                } else {
-                                    IconButton(onClick = onBackClick) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = "Back"
-                                        )
-                                    }
-                                }
-                            },
-                            actions = {
-                                IconButton(onClick = { showSettingsDialog = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Settings,
-                                        contentDescription = "Settings",
-                                        tint = AppColors.primary
-                                    )
-                                }
-                                IconButton(onClick = { showAddCardDialog = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Add card",
-                                        tint = AppColors.primary
-                                    )
-                                }
-                            }
-                        )
-                    }
-                ) { innerPadding ->
+                    AeonTopAppBar(
+                        title = "Intelligence",
+                        isTopLevel = isTopLevel,
+                        onMenuClick = if (isTopLevel) onMenuClick else null,
+                        onBackClick = if (!isTopLevel) onBackClick else null,
+                        actions = {
+                            AppBarIconButton(
+                                icon = Icons.Default.Settings,
+                                onClick = { showSettingsDialog = true }
+                            )
+                            AppBarIconButton(
+                                icon = Icons.Default.Add,
+                                onClick = { showAddCardDialog = true }
+                            )
+                        }
+                    )
+                }
+            ) { innerPadding ->
                     when (val state = uiState) {
                         is AnalyticsUiState.Loading -> {
                             AeonShimmer(
@@ -180,7 +161,6 @@ fun AnalyticsScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(innerPadding)
                             ) {
                                 AeonCardList(
                                     cards = cardsConfig.cards,
@@ -209,8 +189,8 @@ fun AnalyticsScreen(
                                     contentPadding = PaddingValues(
                                         start = AeonTheme.dimensions.screenPadding,
                                         end = AeonTheme.dimensions.screenPadding,
-                                        top = AeonTheme.dimensions.spacingMd,
-                                        bottom = scrollBottomPadding()
+                                        top = AeonTheme.dimensions.spacingMd + innerPadding.calculateTopPadding(),
+                                        bottom = scrollBottomPadding() + innerPadding.calculateBottomPadding()
                                     ),
                                     animateCards = cardAnimationEnabled,
                                     filterContext = FilterSelectionContext(
@@ -305,12 +285,12 @@ fun AnalyticsScreen(
                         modifier = Modifier
                             .fillMaxWidth(0.92f)
                             .heightIn(max = screenHeight * 0.85f),
-                        shape = RoundedCornerShape(32.dp),
+                        shape = RoundedCornerShape(AeonSize.D32.value),
                         color = AppColors.sheetSurface,
-                        tonalElevation = 6.dp
+                        tonalElevation = AeonSize.D6.value
                     ) {
                         Column(
-                            modifier = Modifier.padding(24.dp)
+                            modifier = Modifier.padding(AeonSize.D24.value)
                         ) {
                             Text(
                                 text = "Intelligence Settings",
@@ -319,7 +299,7 @@ fun AnalyticsScreen(
                                     fontSize = 28.sp,
                                     color = AppColors.contentPrimary.copy(alpha = 0.8f)
                                 ),
-                                modifier = Modifier.padding(bottom = 24.dp)
+                                modifier = Modifier.padding(bottom = AeonSize.D24.value)
                             )
 
                             Column(

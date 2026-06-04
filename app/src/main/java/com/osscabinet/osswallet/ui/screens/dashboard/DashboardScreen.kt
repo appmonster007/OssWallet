@@ -67,6 +67,8 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.ContourBackground
@@ -254,51 +256,40 @@ fun DashboardScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 Scaffold(
                     containerColor = Color.Transparent,
-            topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        titleContentColor = AppColors.onScreenBackground,
-                        navigationIconContentColor = AppColors.onScreenBackground
-                    ),
-                    navigationIcon = {
-                        if (isTopLevel) {
-                            IconButton(onClick = onMenuClick) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    topBar = {
+                        AeonTopAppBar(
+                            isTopLevel = isTopLevel,
+                            onMenuClick = if (isTopLevel) onMenuClick else null,
+                            onBackClick = if (!isTopLevel) onBackClick else null,
+                            title = "",
+                            titleContent = {
+                                Column(
+                                    modifier = Modifier.clickable { navigate(onSettingsClick) },
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        currentProfile?.name ?: "Intelligence",
+                                        style = AppTextStyles.screenTitle.copy(
+                                            fontSize = 16.sp,
+                                            lineHeight = 20.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = (-0.5).sp
+                                        )
+                                    )
+                                    Text(
+                                        "Personal Account",
+                                        style = AppTextStyles.caption.copy(
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 10.sp,
+                                            lineHeight = 12.sp
+                                        ),
+                                        color = AppColors.contentSecondary
+                                    )
+                                }
                             }
-                        } else {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        }
-                    },
-                    title = {
-                        Column(
-                            modifier = Modifier.clickable { navigate(onSettingsClick) },
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                currentProfile?.name ?: "Intelligence",
-                                style = AppTextStyles.screenTitle.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.5).sp
-                                )
-                            )
-                            Text(
-                                "Personal Account",
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = AppColors.contentSecondary
-                            )
-                        }
+                        )
                     }
-                )
-            }
-        ) { innerPadding ->
+                ) { innerPadding ->
             // Context indicator banner (if view focus is applied)
             if (initialViewContext != DashboardViewContext.None) {
                 DashboardViewIndicator(
@@ -361,7 +352,7 @@ fun DashboardScreen(
                 scope.launch { pagerState.animateScrollToPage(index) }
             },
             tabs = tabs,
-            fabPaddingBottom = 16.dp + navigationBarHeight,
+            fabPaddingBottom = AeonSize.D16.value + navigationBarHeight,
             isFabExpanded = isFabExpanded,
             onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
             onFabClick = {
@@ -442,9 +433,7 @@ fun DashboardContent(
     cardAnimationEnabled: Boolean
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
+        modifier = Modifier.fillMaxSize()
     ) {
         HorizontalPager(
             state = pagerState,
@@ -486,7 +475,9 @@ fun DashboardContent(
                         onQuickSkip = dashboardViewModel::quickSkipById,
                         onAddTag = transactionViewModel::addTag,
                         onReorderCards = dashboardViewModel::reorderCards,
-                        onRemoveCard = dashboardViewModel::removeCard
+                        onRemoveCard = dashboardViewModel::removeCard,
+                        topPadding = innerPadding.calculateTopPadding(),
+                        bottomPadding = innerPadding.calculateBottomPadding()
                     )
                 }
 
@@ -507,6 +498,7 @@ fun DashboardContent(
                                         onEditTransactionClick(event.id.removePrefix("tx_").toLong())
                                     }
                                 }
+
                                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
                                     event.id
                                 )
@@ -529,10 +521,20 @@ fun DashboardContent(
                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                                     event.id
                                 )
-                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
-                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
+
+                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(
+                                    event.paymentId,
+                                    event.scheduledDate
+                                )
+
+                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(
+                                    event.paymentId,
+                                    event.scheduledDate
+                                )
                             }
-                        }
+                        },
+                        topPadding = innerPadding.calculateTopPadding(),
+                        bottomPadding = innerPadding.calculateBottomPadding()
                     )
                 }
             }
@@ -586,6 +588,8 @@ fun DashboardGlanceTab(
     onAddTag: (String, Int) -> Unit,
     onReorderCards: (List<CardConfig>) -> Unit,
     onRemoveCard: (String) -> Unit,
+    topPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     Column(
         modifier = Modifier
@@ -597,8 +601,8 @@ fun DashboardGlanceTab(
                 .fillMaxWidth()
                 .padding(
                     start = AeonTheme.dimensions.screenPadding,
-                    end = AeonTheme.dimensions.screenPadding - 8.dp, // Compensate for button padding
-                    top = AeonTheme.dimensions.spacingMd,
+                    end = AeonTheme.dimensions.screenPadding - AeonSize.D8.value, // Compensate for button padding
+                    top = topPadding + AeonTheme.dimensions.spacingMd,
                     bottom = AeonTheme.dimensions.spacingSm
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -613,13 +617,13 @@ fun DashboardGlanceTab(
             )
             IconButton(
                 onClick = { onShowAddCardDialogChange(true) },
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(AeonSize.D40.value)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add card",
                     tint = AppColors.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(AeonSize.D24.value)
                 )
             }
         }
@@ -717,7 +721,7 @@ fun DashboardGlanceTab(
             start = AeonTheme.dimensions.screenPadding,
             end = AeonTheme.dimensions.screenPadding,
             top = AeonTheme.dimensions.spacingMd,
-            bottom = scrollBottomPadding()
+            bottom = scrollBottomPadding() + bottomPadding
         ),
         animateCards = cardAnimationEnabled,
         filterContext = FilterSelectionContext(
@@ -739,13 +743,18 @@ fun DashboardRecentActivitiesTab(
     recentActivitiesBreakdown: Boolean,
     baseCurrency: String,
     onRecordsClick: (TransactionFilter) -> Unit,
-    onTransactionEvent: (TransactionItemEvent) -> Unit
+    onTransactionEvent: (TransactionItemEvent) -> Unit,
+    topPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     RecentActivitiesScreen(
         listState = recentActivitiesState,
         onRecordsClick = onRecordsClick,
         baseCurrency = baseCurrency,
-        contentPadding = PaddingValues(bottom = scrollBottomPadding()),
+        contentPadding = PaddingValues(
+            top = topPadding,
+            bottom = scrollBottomPadding() + bottomPadding
+        ),
         modifier = Modifier.fillMaxSize(),
         revealedCardIds = revealedCardIds,
         showCurrencyBreakdown = recentActivitiesBreakdown,

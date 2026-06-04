@@ -82,6 +82,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -378,7 +379,8 @@ fun AccountDetailScreen(
                                                             }
                                                         },
                                                         filter = state.currentFilter,
-                                                        hasStickyHeader = false
+                                                        hasStickyHeader = false,
+                                                        showHeader = false
                                                     )
                                                 }
                                             }
@@ -417,14 +419,33 @@ fun AccountDetailScreen(
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)
+                val activeTabConfig = remember(pagerState.currentPage, showSettingsDialog, showAddCardDialog) {
+                    when (pagerState.currentPage) {
+                        0 -> AeonAppBarTab(
+                            label = context.getString(R.string.nav_overview),
+                            actions = {
+                                AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { onEditAccountClick(accountId) } })
+                                AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
+                                AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
+                            }
+                        )
+                        1 -> AeonAppBarTab(
+                            label = context.getString(R.string.nav_transactions),
+                            actions = {
+                                AppBarIconButton(
+                                    icon = Icons.Rounded.History,
+                                    onClick = { onRecordsClick(TransactionFilter(accountIds = setOf(accountId))) }
+                                )
+                            }
+                        )
+                        else -> null
+                    }
+                }
+
                 AeonTopAppBar(
                     title = stringResource(R.string.account_detail_title),
                     onBackClick = { navigate { onBackClick() } },
-                    actions = {
-                        AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { onEditAccountClick(accountId) } })
-                        AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
-                        AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
-                    }
+                    tab = activeTabConfig
                 )
 
                 // 3. Filter Pill Layer (Layer 4)

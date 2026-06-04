@@ -67,8 +67,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
@@ -326,11 +328,36 @@ fun DashboardScreen(
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)
+                val activeTabConfig = remember(pagerState.currentPage, showAddCardDialog) {
+                    when (pagerState.currentPage) {
+                        0 -> AeonAppBarTab(
+                            label = "Glance",
+                            actions = {
+                                AppBarIconButton(
+                                    icon = Icons.Default.Add,
+                                    onClick = { showAddCardDialog = true }
+                                )
+                            }
+                        )
+                        1 -> AeonAppBarTab(
+                            label = "Recent Activities",
+                            actions = {
+                                AppBarIconButton(
+                                    icon = Icons.Rounded.History,
+                                    onClick = { onRecordsClick(TransactionFilter()) }
+                                )
+                            }
+                        )
+                        else -> null
+                    }
+                }
+
                 AeonTopAppBar(
                     isTopLevel = isTopLevel,
                     onMenuClick = if (isTopLevel) onMenuClick else null,
                     onBackClick = if (!isTopLevel) onBackClick else null,
                     title = "",
+                    tab = activeTabConfig,
                     titleContent = {
                         Column(
                             modifier = Modifier.clickable { navigate(onSettingsClick) },
@@ -344,15 +371,6 @@ fun DashboardScreen(
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = (-0.5).sp
                                 )
-                            )
-                            Text(
-                                "Personal Account",
-                                style = AppTextStyles.caption.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 10.sp,
-                                    lineHeight = 12.sp
-                                ),
-                                color = AppColors.contentSecondary
                             )
                         }
                     }
@@ -610,39 +628,6 @@ fun DashboardGlanceTab(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        // Header row with Add Card button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = AeonTheme.dimensions.screenPadding,
-                    end = AeonTheme.dimensions.screenPadding - AeonSize.D8.value, // Compensate for button padding
-                    top = topPadding + AeonTheme.dimensions.spacingMd,
-                    bottom = AeonTheme.dimensions.spacingSm
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Glance",
-                style = AppTextStyles.screenTitle.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp
-                )
-            )
-            IconButton(
-                onClick = { onShowAddCardDialogChange(true) },
-                modifier = Modifier.size(AeonSize.D40.value)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add card",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(AeonSize.D24.value)
-                )
-            }
-        }
-
     val sharedCallbacks = remember(
         onManageAccountsClick,
         onAccountClick,
@@ -735,7 +720,7 @@ fun DashboardGlanceTab(
         contentPadding = PaddingValues(
             start = AeonTheme.dimensions.screenPadding,
             end = AeonTheme.dimensions.screenPadding,
-            top = AeonTheme.dimensions.spacingMd,
+            top = topPadding + AeonTheme.dimensions.spacingMd,
             bottom = scrollBottomPadding() + bottomPadding
         ),
         animateCards = cardAnimationEnabled,
@@ -768,14 +753,15 @@ fun DashboardRecentActivitiesTab(
         onRecordsClick = onRecordsClick,
         baseCurrency = baseCurrency,
         contentPadding = PaddingValues(
-            top = topPadding,
+            top = topPadding + AeonTheme.dimensions.spacingMd,
             bottom = scrollBottomPadding() + bottomPadding
         ),
         modifier = Modifier.fillMaxSize(),
         revealedCardIds = revealedCardIds,
         showCurrencyBreakdown = recentActivitiesBreakdown,
         onTransactionEvent = onTransactionEvent,
-        hasStickyHeader = hasStickyHeader
+        hasStickyHeader = hasStickyHeader,
+        showHeader = false
     )
 }
 

@@ -46,14 +46,17 @@ fun AeonTransactionList(
     showTimestamp: Boolean = true,
     showIcon: Boolean = true,
     baseCurrency: String,
-    revealedCardIds: List<String> = emptyList()
+    revealedCardIds: List<String> = emptyList(),
+    hasStickyHeader: Boolean = true
 ) {
     val layers = LocalAeonHaze.current
-    val itemHazeModifier = remember(layers) {
+    val itemHazeModifier = remember(layers, hasStickyHeader) {
         if (layers != null) {
-            // Register as source for standard depths: Surface(0), Overlay(1), Drawer(2)
-            layers.states.take(3).fold(Modifier as Modifier) { mod, state ->
-                mod.hazeSource(state)
+            layers.states.take(3).foldIndexed(Modifier as Modifier) { index, mod, state ->
+                // Skip Overlay layer (index 1) if sticky headers are enabled,
+                // as content does not flow under the top app bar pills in that mode.
+                if (hasStickyHeader && index == 1) mod
+                else mod.hazeSource(state)
             }
         } else Modifier
     }
@@ -64,7 +67,7 @@ fun AeonTransactionList(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         listState.groups.forEach { group ->
-            stickyHeader {
+            val headerContent: @Composable () -> Unit = {
                 TransactionHeader(
                     title = group.headerData.title,
                     subtitle = group.headerData.subtitle,
@@ -84,6 +87,12 @@ fun AeonTransactionList(
                     showOnlyActiveCurrencies = showOnlyActiveCurrencies,
                     showCurrencyBreakdown = showCurrencyBreakdown
                 )
+            }
+
+            if (hasStickyHeader) {
+                stickyHeader { headerContent() }
+            } else {
+                item { headerContent() }
             }
 
             itemsIndexed(

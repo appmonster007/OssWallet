@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -60,31 +59,11 @@ fun AeonTopAppBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
     val topBarHeight = AeonSize.D64.value
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val totalHeaderHeight = topBarHeight + statusBarHeight
 
     Box(
         modifier = modifier.fillMaxWidth()
     ) {
-        // 1. Header Background Glass (Addressing Visual Issues 1, 2, 3, 4)
-        // Provides a subtle blur over the status bar and top bar area to prevent contamination
-        // and sharp cuts in the list content scrolling under.
-        GlassSurface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(totalHeaderHeight),
-            shape = RoundedCornerShape(0.dp), // Full bleed for the header strip
-            hazeLayer = HazeLayer.Surface,
-            hazeStyle = GlassTokens.style(),
-            fallbackColor = Color.Transparent,
-            shadowElevation = 0.dp,
-            borderAlpha = 0f // No rim for the base background strip
-        ) {
-            // Spacer ensures the GlassSurface occupies the full measured header area
-            Spacer(modifier = Modifier.fillMaxSize())
-        }
-
-        // 2. The Content Row (The "Floating Pills" Aesthetic)
+        // The Content Row (The "Floating Pills" Aesthetic)
         Row(
             modifier = Modifier
                 .fillMaxWidth()

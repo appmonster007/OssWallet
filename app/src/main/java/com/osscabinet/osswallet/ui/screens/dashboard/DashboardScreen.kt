@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -251,154 +252,165 @@ fun DashboardScreen(
 
     val filterPillController = remember { FilterPillController() }
 
+    val pillHeight = AeonSize.D64.value
+
     AeonHazeProvider {
         CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
             Box(modifier = Modifier.fillMaxSize()) {
+                // 1. Content Layer (Layer 1)
                 Scaffold(
-                    containerColor = Color.Transparent,
-                    topBar = {
-                        AeonTopAppBar(
-                            isTopLevel = isTopLevel,
-                            onMenuClick = if (isTopLevel) onMenuClick else null,
-                            onBackClick = if (!isTopLevel) onBackClick else null,
-                            title = "",
-                            titleContent = {
-                                Column(
-                                    modifier = Modifier.clickable { navigate(onSettingsClick) },
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        currentProfile?.name ?: "Intelligence",
-                                        style = AppTextStyles.screenTitle.copy(
-                                            fontSize = 16.sp,
-                                            lineHeight = 20.sp,
-                                            fontWeight = FontWeight.ExtraBold,
-                                            letterSpacing = (-0.5).sp
-                                        )
-                                    )
-                                    Text(
-                                        "Personal Account",
-                                        style = AppTextStyles.caption.copy(
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = 10.sp,
-                                            lineHeight = 12.sp
-                                        ),
-                                        color = AppColors.contentSecondary
-                                    )
-                                }
-                            }
-                        )
-                    }
+                    containerColor = Color.Transparent
                 ) { innerPadding ->
-            // Context indicator banner (if view focus is applied)
-            if (initialViewContext != DashboardViewContext.None) {
-                DashboardViewIndicator(
-                    context = initialViewContext,
-                    onReset = { dashboardViewModel.resetToInitialView() }
-                )
-            }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .padding(bottom = innerPadding.calculateBottomPadding())
+                    ) {
+                        // Context indicator banner (if view focus is applied)
+                        if (initialViewContext != DashboardViewContext.None) {
+                            DashboardViewIndicator(
+                                context = initialViewContext,
+                                onReset = { dashboardViewModel.resetToInitialView() }
+                            )
+                        }
 
-            when (val state = dashboardUiState) {
-                is DashboardUiState.Loading -> {
-                    AeonShimmer(innerPadding = innerPadding)
-                }
+                        when (val state = dashboardUiState) {
+                            is DashboardUiState.Loading -> {
+                                AeonShimmer(innerPadding = innerPadding)
+                            }
 
-                is DashboardUiState.Success -> {
-                    DashboardContent(
-                        innerPadding = innerPadding,
-                        pagerState = pagerState,
-                        tabs = tabs,
-                        state = state,
-                        onManageAccountsClick = { navigate(onManageAccountsClick) },
-                        onAccountClick = { id -> navigate { onAccountClick(id) } },
-                        onNavigateToPlannedPaymentList = { navigate(onNavigateToPlannedPaymentList) },
-                        onNavigateToBudgetList = { navigate(onNavigateToBudgetList) },
-                        onNavigateToLoanList = { navigate(onNavigateToLoanList) },
-                        onNavigateToPlannedPaymentDetail = { id ->
-                            navigate {
-                                onNavigateToPlannedPaymentDetail(
-                                    id
+                            is DashboardUiState.Success -> {
+                                DashboardContent(
+                                    innerPadding = innerPadding,
+                                    pagerState = pagerState,
+                                    tabs = tabs,
+                                    state = state,
+                                    onManageAccountsClick = { navigate(onManageAccountsClick) },
+                                    onAccountClick = { id -> navigate { onAccountClick(id) } },
+                                    onNavigateToPlannedPaymentList = { navigate(onNavigateToPlannedPaymentList) },
+                                    onNavigateToBudgetList = { navigate(onNavigateToBudgetList) },
+                                    onNavigateToLoanList = { navigate(onNavigateToLoanList) },
+                                    onNavigateToPlannedPaymentDetail = { id ->
+                                        navigate {
+                                            onNavigateToPlannedPaymentDetail(
+                                                id
+                                            )
+                                        }
+                                    },
+                                    onNavigateToBudgetDetail = { id -> navigate { onNavigateToBudgetDetail(id) } },
+                                    onNavigateToLoanDetail = { id -> navigate { onNavigateToLoanDetail(id) } },
+                                    onRecordsClick = { context -> navigate { onRecordsClick(context) } },
+                                    onSaveFilterClick = onSaveFilterClick,
+                                    onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
+                                    onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
+                                    onSplitTransactionClick = { id -> navigate { onSplitTransactionClick(id) } },
+                                    transactionViewModel = transactionViewModel,
+                                    dashboardViewModel = dashboardViewModel,
+                                    cardComputerRegistry = cardComputerRegistry,
+                                    cardsConfig = cardsConfig,
+                                    glanceListState = glanceListState,
+                                    showAddCardDialog = showAddCardDialog,
+                                    onShowAddCardDialogChange = { showAddCardDialog = it },
+                                    cardAnimationEnabled = cardAnimationEnabled
                                 )
                             }
-                        },
-                        onNavigateToBudgetDetail = { id -> navigate { onNavigateToBudgetDetail(id) } },
-                        onNavigateToLoanDetail = { id -> navigate { onNavigateToLoanDetail(id) } },
-                        onRecordsClick = { context -> navigate { onRecordsClick(context) } },
-                        onSaveFilterClick = onSaveFilterClick,
-                        onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
-                        onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
-                        onSplitTransactionClick = { id -> navigate { onSplitTransactionClick(id) } },
-                        transactionViewModel = transactionViewModel,
-                        dashboardViewModel = dashboardViewModel,
-                        cardComputerRegistry = cardComputerRegistry,
-                        cardsConfig = cardsConfig,
-                        glanceListState = glanceListState,
-                        showAddCardDialog = showAddCardDialog,
-                        onShowAddCardDialogChange = { showAddCardDialog = it },
-                        cardAnimationEnabled = cardAnimationEnabled
-                    )
-                }
 
-                is DashboardUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message)
+                            is DashboardUiState.Error -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(state.message)
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-        UnifiedPillNavigation(
-            selectedTab = pagerState.currentPage,
-            onTabSelected = { index ->
-                scope.launch { pagerState.animateScrollToPage(index) }
-            },
-            tabs = tabs,
-            fabPaddingBottom = AeonSize.D16.value + navigationBarHeight,
-            isFabExpanded = isFabExpanded,
-            onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-            onFabClick = {
-                if (!expandableFabEnabled) {
-                    navigate { onAddClick(TransactionType.EXPENSE, null) }
-                }
-            },
-            fabMenu = if (expandableFabEnabled) {
-                {
-                    TransactionFabMenu(
-                        isExpanded = isFabExpanded,
-                        templates = allTemplates,
-                        categories = allCategories,
-                        onAddClick = { type, templateId ->
-                            isFabExpanded = false
-                            navigate { onAddClick(type, templateId) }
+
+                // 2. Top Bar Layer (Layer 3 - Floating Pills)
+                AeonTopAppBar(
+                    isTopLevel = isTopLevel,
+                    onMenuClick = if (isTopLevel) onMenuClick else null,
+                    onBackClick = if (!isTopLevel) onBackClick else null,
+                    title = "",
+                    titleContent = {
+                        Column(
+                            modifier = Modifier.clickable { navigate(onSettingsClick) },
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                currentProfile?.name ?: "Intelligence",
+                                style = AppTextStyles.screenTitle.copy(
+                                    fontSize = 16.sp,
+                                    lineHeight = 20.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = (-0.5).sp
+                                )
+                            )
+                            Text(
+                                "Personal Account",
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 10.sp,
+                                    lineHeight = 12.sp
+                                ),
+                                color = AppColors.contentSecondary
+                            )
                         }
+                    }
+                )
+
+                // 3. Navigation Layer (Overlay)
+                UnifiedPillNavigation(
+                    selectedTab = pagerState.currentPage,
+                    onTabSelected = { index ->
+                        scope.launch { pagerState.animateScrollToPage(index) }
+                    },
+                    tabs = tabs,
+                    fabPaddingBottom = AeonSize.D16.value + navigationBarHeight,
+                    isFabExpanded = isFabExpanded,
+                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                    onFabClick = {
+                        if (!expandableFabEnabled) {
+                            navigate { onAddClick(TransactionType.EXPENSE, null) }
+                        }
+                    },
+                    fabMenu = if (expandableFabEnabled) {
+                        {
+                            TransactionFabMenu(
+                                isExpanded = isFabExpanded,
+                                templates = allTemplates,
+                                categories = allCategories,
+                                onAddClick = { type, templateId ->
+                                    isFabExpanded = false
+                                    navigate { onAddClick(type, templateId) }
+                                }
+                            )
+                        }
+                    } else null
+                )
+
+                // 4. Filter Pill Layer (Overlay)
+                val pillRequest = filterPillController.activeRequest
+                if (pillRequest != null) {
+                    TransactionFilterPill(
+                        filter = pillRequest.filter,
+                        accounts = pillRequest.accounts,
+                        categories = pillRequest.categories,
+                        allTags = pillRequest.allTags,
+                        savedFilters = pillRequest.savedFilters,
+                        onSearchTransactions = pillRequest.onSearchTransactions,
+                        onFilterEvent = pillRequest.onFilterEvent,
+                        onSaveFilterClick = pillRequest.onSaveFilterClick,
+                        onDismiss = {
+                            pillRequest.onDismiss()
+                            filterPillController.dismiss()
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        filterRules = pillRequest.filterRules,
+                        baseFilter = pillRequest.baseFilter,
                     )
                 }
-            } else null
-        )
-
-        // TransactionFilterPill rendered here — above the nav pill, inside the main window
-        // so LocalAeonHaze is accessible and real glass blur applies.
-        val pillRequest = filterPillController.activeRequest
-        if (pillRequest != null) {
-            TransactionFilterPill(
-                filter = pillRequest.filter,
-                accounts = pillRequest.accounts,
-                categories = pillRequest.categories,
-                allTags = pillRequest.allTags,
-                savedFilters = pillRequest.savedFilters,
-                onSearchTransactions = pillRequest.onSearchTransactions,
-                onFilterEvent = pillRequest.onFilterEvent,
-                onSaveFilterClick = pillRequest.onSaveFilterClick,
-                onDismiss = {
-                    pillRequest.onDismiss()
-                    filterPillController.dismiss()
-                },
-                modifier = Modifier.fillMaxSize(),
-                filterRules = pillRequest.filterRules,
-                baseFilter = pillRequest.baseFilter,
-            )
-        }
-    } // outer Box
-    } // AeonHazeProvider
+            } // outer Box
+        } // AeonHazeProvider
     } // CompositionLocalProvider
 }
 
@@ -432,6 +444,8 @@ fun DashboardContent(
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
 ) {
+    val pillHeight = AeonSize.D64.value
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -476,7 +490,7 @@ fun DashboardContent(
                         onAddTag = transactionViewModel::addTag,
                         onReorderCards = dashboardViewModel::reorderCards,
                         onRemoveCard = dashboardViewModel::removeCard,
-                        topPadding = innerPadding.calculateTopPadding(),
+                        topPadding = pillHeight,
                         bottomPadding = innerPadding.calculateBottomPadding()
                     )
                 }
@@ -533,8 +547,9 @@ fun DashboardContent(
                                 )
                             }
                         },
-                        topPadding = innerPadding.calculateTopPadding(),
-                        bottomPadding = innerPadding.calculateBottomPadding()
+                        topPadding = pillHeight,
+                        bottomPadding = innerPadding.calculateBottomPadding(),
+                        hasStickyHeader = false
                     )
                 }
             }
@@ -745,7 +760,8 @@ fun DashboardRecentActivitiesTab(
     onRecordsClick: (TransactionFilter) -> Unit,
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     topPadding: androidx.compose.ui.unit.Dp = 0.dp,
-    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    hasStickyHeader: Boolean = true
 ) {
     RecentActivitiesScreen(
         listState = recentActivitiesState,
@@ -758,7 +774,8 @@ fun DashboardRecentActivitiesTab(
         modifier = Modifier.fillMaxSize(),
         revealedCardIds = revealedCardIds,
         showCurrencyBreakdown = recentActivitiesBreakdown,
-        onTransactionEvent = onTransactionEvent
+        onTransactionEvent = onTransactionEvent,
+        hasStickyHeader = hasStickyHeader
     )
 }
 

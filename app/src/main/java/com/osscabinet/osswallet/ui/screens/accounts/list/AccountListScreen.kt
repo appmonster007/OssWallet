@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,7 +38,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,9 +60,13 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ReorderableList
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -150,34 +154,88 @@ fun AccountListScreen(
         }
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts",
-                        style = AppTextStyles.cardSectionTitle
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = if (isSelectionMode) {
-                            { isSelectionMode = false; selectedAccountIds = emptySet() }
-                        } else {
-                            { navigate(onBackClick) }
-                        }) {
-                        Icon(
-                            if (isSelectionMode) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = if (isSelectionMode) "Exit Selection" else "Back"
+    val pillHeight = AeonSize.D64.value
+
+    AeonHazeProvider { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                floatingActionButton = {
+                    if (isSelectionMode) {
+                        if (selectedAccountIds.isNotEmpty()) {
+                            AeonExtendedFloatingActionButton(
+                                onClick = { showMultiDeleteDialog = true },
+                                icon = Icons.Rounded.Delete,
+                                text = "Delete Selected (${selectedAccountIds.size})",
+                                containerColor = AppColors.error,
+                                contentColor = AppColors.onError
+                            )
+                        }
+                    } else {
+                        AeonFloatingActionButton(
+                            onClick = { navigate(onAddAccountClick) },
+                            icon = Icons.Rounded.Add,
+                            contentDescription = "Add New Account"
                         )
                     }
+                }
+            ) { innerPadding ->
+                ReorderableList(
+                    items = editList,
+                    onReorder = { newList ->
+                        editList = newList
+                    },
+                    onDragEnd = { newList ->
+                        viewModel.updateAccountsOrder(newList)
+                    },
+                    key = { it.id },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .padding(bottom = innerPadding.calculateBottomPadding())
+                        .background(AppColors.screenBackground)
+                        .graphicsLayer(clip = false),
+                    contentPadding = PaddingValues(
+                        top = pillHeight + AeonTheme.dimensions.screenPadding,
+                        bottom = 100.dp,
+                        start = AeonTheme.dimensions.screenPadding,
+                        end = AeonTheme.dimensions.screenPadding
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                ) { account, isDragging ->
+                    AccountManagementListItem(
+                        account = account,
+                        isSelectionMode = isSelectionMode,
+                        isSelected = account.id in selectedAccountIds,
+                        isDragging = isDragging,
+                        onSelect = {
+                            selectedAccountIds = if (account.id in selectedAccountIds) {
+                                selectedAccountIds - account.id
+                            } else {
+                                selectedAccountIds + account.id
+                            }
+                        },
+                        onToggleArchive = { viewModel.toggleArchiveAccount(account) },
+                        onAccountClick = { navigate { onAccountClick(account.id) } }
+                    )
+                }
+            }
+
+            // 2. Top Bar Layer (Layer 3 - Floating Pills)
+            AeonTopAppBar(
+                title = if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts",
+                onBackClick = if (isSelectionMode) {
+                    { isSelectionMode = false; selectedAccountIds = emptySet() }
+                } else {
+                    { navigate(onBackClick) }
                 },
                 actions = {
                     if (!isSelectionMode) {
                         Box {
-                            IconButton(onClick = { showMoreMenu = true }) {
-                                Icon(Icons.Rounded.MoreHoriz, contentDescription = "More")
-                            }
+                            AppBarIconButton(
+                                icon = Icons.Rounded.MoreHoriz,
+                                onClick = { showMoreMenu = true }
+                            )
                             DropdownMenu(
                                 expanded = showMoreMenu,
                                 onDismissRequest = { showMoreMenu = false }
@@ -199,64 +257,6 @@ fun AccountListScreen(
                         }
                     }
                 }
-            )
-        },
-        floatingActionButton = {
-            if (isSelectionMode) {
-                if (selectedAccountIds.isNotEmpty()) {
-                    AeonExtendedFloatingActionButton(
-                        onClick = { showMultiDeleteDialog = true },
-                        icon = Icons.Rounded.Delete,
-                        text = "Delete Selected (${selectedAccountIds.size})",
-                        containerColor = AppColors.error,
-                        contentColor = AppColors.onError
-                    )
-                }
-            } else {
-                AeonFloatingActionButton(
-                    onClick = { navigate(onAddAccountClick) },
-                    icon = Icons.Rounded.Add,
-                    contentDescription = "Add New Account"
-                )
-            }
-        }
-    ) { innerPadding ->
-        ReorderableList(
-            items = editList,
-            onReorder = { newList ->
-                editList = newList
-            },
-            onDragEnd = { newList ->
-                viewModel.updateAccountsOrder(newList)
-            },
-            key = { it.id },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-                .background(AppColors.screenBackground)
-                .graphicsLayer(clip = false),
-            contentPadding = PaddingValues(
-                top = AeonTheme.dimensions.screenPadding,
-                bottom = 100.dp,
-                start = AeonTheme.dimensions.screenPadding,
-                end = AeonTheme.dimensions.screenPadding
-            ),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-        ) { account, isDragging ->
-            AccountManagementListItem(
-                account = account,
-                isSelectionMode = isSelectionMode,
-                isSelected = account.id in selectedAccountIds,
-                isDragging = isDragging,
-                onSelect = {
-                    selectedAccountIds = if (account.id in selectedAccountIds) {
-                        selectedAccountIds - account.id
-                    } else {
-                        selectedAccountIds + account.id
-                    }
-                },
-                onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                onAccountClick = { navigate { onAccountClick(account.id) } }
             )
         }
     }

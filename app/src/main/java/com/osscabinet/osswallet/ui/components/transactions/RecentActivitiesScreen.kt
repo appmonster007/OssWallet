@@ -74,11 +74,13 @@ fun RecentActivitiesScreen(
     showTags: Boolean = true,
     showTimestamp: Boolean = true,
     showIcon: Boolean = true,
-    tagColors: Map<String, Int> = emptyMap()
+    tagColors: Map<String, Int> = emptyMap(),
+    hasStickyHeader: Boolean = true
 ) {
     Column(
         modifier = modifier.fillMaxSize()
     ) {
+// ... (omitting intermediate for brevity, will use full block in tool call)
         if (showHeader) {
             Row(
                 modifier = Modifier
@@ -122,6 +124,16 @@ fun RecentActivitiesScreen(
         }
 
         val layers = LocalAeonHaze.current
+        val itemHazeModifier = remember(layers, hasStickyHeader) {
+            if (layers != null) {
+                layers.states.take(3).foldIndexed(Modifier as Modifier) { index, mod, state ->
+                    // Skip Overlay layer (index 1) if sticky headers are enabled,
+                    // as content does not flow under the top app bar pills in that mode.
+                    if (hasStickyHeader && index == 1) mod
+                    else mod.hazeSource(state)
+                }
+            } else Modifier
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -138,7 +150,7 @@ fun RecentActivitiesScreen(
                 }
             } else {
                 listState.groups.forEach { group ->
-                    stickyHeader {
+                    val headerContent: @Composable () -> Unit = {
                         TransactionHeader(
                             title = group.headerData.title,
                             subtitle = group.headerData.subtitle,
@@ -159,6 +171,12 @@ fun RecentActivitiesScreen(
                         )
                     }
 
+                    if (hasStickyHeader) {
+                        stickyHeader { headerContent() }
+                    } else {
+                        item { headerContent() }
+                    }
+
                     itemsIndexed(
                         group.transactions,
                         key = { _, record -> record.id }) { index, record ->
@@ -168,15 +186,7 @@ fun RecentActivitiesScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .then(
-                                    if (layers != null) {
-                                        // Register transactions as a source for ALL layers
-                                        // so sticky headers at Depth 0 can blur them.
-                                        layers.states.fold(Modifier as Modifier) { mod, state ->
-                                            mod.hazeSource(state)
-                                        }
-                                    } else Modifier
-                                )
+                                .then(itemHazeModifier)
                         ) {
                         SwipeableTransactionItem(
                             record = record,

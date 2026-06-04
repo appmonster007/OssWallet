@@ -9,6 +9,7 @@ enum class TransactionGroupingType {
 
 @Serializable
 data class TransactionSectionSettings(
+    val stickyHeaders: Boolean = false,
     val showPlannedPayments: Boolean = false,
     val useNoteAsHeader: Boolean = false,
     val showHeaderOpeningBalance: Boolean = false,

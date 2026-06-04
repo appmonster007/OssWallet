@@ -181,7 +181,6 @@ fun PillNavigationBar(
     isDimmed: Boolean = false,
     onDimClick: () -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
     val dimensions = LocalAeonDimensions.current
     
     // Grid constants derived from the Aeon Design System
@@ -205,8 +204,7 @@ fun PillNavigationBar(
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             fallbackColor = AppColors.componentOnCard,
-            shadowElevation = 8.dp,
-            borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.6f)
+            shadowElevation = AeonSize.D8.value
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Sliding Selection Indicator

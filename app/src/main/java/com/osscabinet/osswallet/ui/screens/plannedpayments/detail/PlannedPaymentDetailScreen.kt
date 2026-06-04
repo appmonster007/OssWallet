@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -84,6 +85,10 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
@@ -92,6 +97,7 @@ import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -241,274 +247,288 @@ fun PlannedPaymentDetailContent(
     val category = remember(payment.categoryId, categories) { categories.find { it.id == payment.categoryId } }
     val targetAccount = remember(payment.targetAccountId, accounts) { accounts.find { it.id == payment.targetAccountId } }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        payment.name,
-                        style = AppTextStyles.cardTitle
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onSaveAsTemplateClick) {
-                        Icon(Icons.Rounded.Schedule, contentDescription = "Save as Template")
-                    }
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Rounded.Edit, contentDescription = "Edit")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = AppColors.screenBackground
-                )
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = AeonTheme.dimensions.screenPadding,
-                                end = AeonTheme.dimensions.screenPadding,
-                                top = AeonTheme.dimensions.screenPadding,
-                                bottom = scrollBottomPadding()
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-                        ) {
-                            // IMPACT: Hero Card (Compact Read-only)
-                            item {
-                                PlannedPaymentHero(payment = payment)
-                            }
+    val pillHeight = AeonSize.D64.value
 
-                            // CONTEXT: Grid Layout (Compact Read-only)
-                            item {
-                                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                                    CompactDetailCell(
-                                        icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
-                                        label = "ACCOUNT",
-                                        value = account?.name ?: "Unknown",
-                                        modifier = Modifier.weight(1f),
-                                        iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
-                                    )
-
-                                    if (payment.transactionType == TransactionType.TRANSFER) {
-                                        CompactDetailCell(
-                                            icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
-                                            label = "TARGET ACCOUNT",
-                                            value = targetAccount?.name ?: "Unknown",
-                                            modifier = Modifier.weight(1f),
-                                            iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
-                                        )
-                                    } else {
-                                        CompactDetailCell(
-                                            icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
-                                            label = "CATEGORY",
-                                            value = category?.name ?: "Unknown",
-                                            modifier = Modifier.weight(1f),
-                                            iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
-                                        )
+    AeonHazeProvider { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. Content Layer
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .padding(bottom = paddingValues.calculateBottomPadding())
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        when (page) {
+                            0 -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        start = AeonTheme.dimensions.screenPadding,
+                                        end = AeonTheme.dimensions.screenPadding,
+                                        top = AeonTheme.dimensions.screenPadding + pillHeight,
+                                        bottom = scrollBottomPadding()
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                                ) {
+                                    // IMPACT: Hero Card (Compact Read-only)
+                                    item {
+                                        PlannedPaymentHero(payment = payment)
                                     }
+
+                                    // CONTEXT: Grid Layout (Compact Read-only)
+                                    item {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                            CompactDetailCell(
+                                                icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
+                                                label = "ACCOUNT",
+                                                value = account?.name ?: "Unknown",
+                                                modifier = Modifier.weight(1f),
+                                                iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                            )
+
+                                            if (payment.transactionType == TransactionType.TRANSFER) {
+                                                CompactDetailCell(
+                                                    icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
+                                                    label = "TARGET ACCOUNT",
+                                                    value = targetAccount?.name ?: "Unknown",
+                                                    modifier = Modifier.weight(1f),
+                                                    iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                                )
+                                            } else {
+                                                CompactDetailCell(
+                                                    icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
+                                                    label = "CATEGORY",
+                                                    value = category?.name ?: "Unknown",
+                                                    modifier = Modifier.weight(1f),
+                                                    iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // DETAIL: Metadata Card
+                                    item {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+                                            color = AppColors.cardSurface,
+                                            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f))
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                                            ) {
+                                                // 1. Schedule
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.CalendarToday,
+                                                    label = "Schedule",
+                                                    value = scheduleSummary,
+                                                    singleLine = false
+                                                )
+
+                                                // 2. Template
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.Bookmark,
+                                                    label = "Linked Template",
+                                                    value = if (payment.templateId != null) "Linked Template" else "None"
+                                                )
+
+                                                // 3. Note
+                                                DetailMetaRow(
+                                                    icon = Icons.AutoMirrored.Rounded.Notes,
+                                                    label = "Note",
+                                                    value = payment.note ?: "No note",
+                                                    singleLine = false
+                                                )
+
+                                                // 4. Payee
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.Person,
+                                                    label = "Payee",
+                                                    value = payment.payee ?: "No payee"
+                                                )
+
+                                                // 3. Tags (Always shown)
+                                                DetailMetaRow(
+                                                    icon = Icons.Rounded.LocalOffer,
+                                                    label = "Tags",
+                                                    value = payment.tags.ifEmpty { setOf("None") }.joinToString(" · ")
+                                                )
+
+                                                HorizontalDivider(
+                                                    thickness = 0.5.dp,
+                                                    color = AppColors.divider.copy(alpha = 0.1f)
+                                                )
+
+                                                // 4. Payment Status Row (Planned Payment Status)
+                                                val statusColor = Color(android.graphics.Color.parseColor(payment.status.colorHex))
+                                                DetailMetaRow(
+                                                    icon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.CheckCircle,
+                                                    label = "Payment Status",
+                                                    value = payment.status.displayName,
+                                                    valueColor = statusColor
+                                                )
+
+                                                // 5. Grid Row: Payment Method & Transaction Status
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                                ) {
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        DetailMetaRow(
+                                                            icon = Icons.Rounded.Payments,
+                                                            label = "Method",
+                                                            value = payment.paymentMethod?.displayName ?: "Cash"
+                                                        )
+                                                    }
+                                                    Box(modifier = Modifier.weight(1f)) {
+                                                        DetailMetaRow(
+                                                            icon = Icons.Rounded.CheckCircle,
+                                                            label = "Tx Status",
+                                                            value = payment.transactionStatus.name
+                                                        )
+                                                    }
+                                                }
+
+                                                if (payment.autoConfirm) {
+                                                    DetailMetaRow(
+                                                        icon = Icons.Rounded.AutoFixHigh,
+                                                        label = "Automation",
+                                                        value = "Auto-confirm enabled",
+                                                        valueColor = AppColors.primary
+                                                    )
+                                                }
+
+                                                if (payment.transactionType == TransactionType.TRANSFER) {
+                                                    DetailMetaRow(
+                                                        icon = Icons.Rounded.Repeat,
+                                                        label = "Transfer Rate",
+                                                        value = "1 : ${payment.transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}"
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Upcoming occurrences
+                                    if (upcomingItems.isNotEmpty()) {
+                                        item {
+                                            ManagementSectionHeader(
+                                                title = "UPCOMING",
+                                                count = upcomingItems.size,
+                                                sectionColor = AppColors.primary
+                                            )
+                                        }
+                                        items(
+                                            upcomingItems,
+                                            key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
+                                            val matched_occurrence =
+                                                occurrences.find { it.scheduledDate == item.scheduledDate }
+                                            val status = matched_occurrence?.status ?: OccurrenceStatus.PENDING
+                                            OccurrenceItem(
+                                                item = item,
+                                                status = status,
+                                                dateFormatter = dateFormatter,
+                                                onConfirm = { onConfirmOccurrence(item.scheduledDate) },
+                                                onSkip = onSkipOccurrence
+                                            )
+                                        }
+                                    }
+
+                                    item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                                 }
                             }
 
-                            // DETAIL: Metadata Card
-                            item {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                                    color = AppColors.cardSurface,
-                                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f))
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                            1 -> {
+                                // History Tab: Past occurrences
+                                if (pastOccurrences.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            "No history yet",
+                                            style = AppTextStyles.transactionTitle,
+                                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(
+                                            start = AeonTheme.dimensions.screenPadding,
+                                            end = AeonTheme.dimensions.screenPadding,
+                                            top = AeonTheme.dimensions.screenPadding + pillHeight,
+                                            bottom = scrollBottomPadding()
+                                        ),
                                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                                     ) {
-                                        // 1. Schedule
-                                        DetailMetaRow(
-                                            icon = Icons.Rounded.CalendarToday,
-                                            label = "Schedule",
-                                            value = scheduleSummary,
-                                            singleLine = false
-                                        )
-
-                                        // 2. Template
-                                        DetailMetaRow(
-                                            icon = Icons.Rounded.Bookmark,
-                                            label = "Linked Template",
-                                            value = if (payment.templateId != null) "Linked Template" else "None"
-                                        )
-
-                                        // 3. Note
-                                        DetailMetaRow(
-                                            icon = Icons.AutoMirrored.Rounded.Notes,
-                                            label = "Note",
-                                            value = payment.note ?: "No note",
-                                            singleLine = false
-                                        )
-
-                                        // 4. Payee
-                                        DetailMetaRow(
-                                            icon = Icons.Rounded.Person,
-                                            label = "Payee",
-                                            value = payment.payee ?: "No payee"
-                                        )
-
-                                        // 3. Tags (Always shown)
-                                        DetailMetaRow(
-                                            icon = Icons.Rounded.LocalOffer,
-                                            label = "Tags",
-                                            value = payment.tags.ifEmpty { setOf("None") }.joinToString(" · ")
-                                        )
-
-                                        HorizontalDivider(
-                                            thickness = 0.5.dp,
-                                            color = AppColors.divider.copy(alpha = 0.1f)
-                                        )
-
-                                        // 4. Payment Status Row (Planned Payment Status)
-                                        val statusColor = Color(android.graphics.Color.parseColor(payment.status.colorHex))
-                                        DetailMetaRow(
-                                            icon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.CheckCircle,
-                                            label = "Payment Status",
-                                            value = payment.status.displayName,
-                                            valueColor = statusColor
-                                        )
-
-                                        // 5. Grid Row: Payment Method & Transaction Status
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                                        ) {
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                DetailMetaRow(
-                                                    icon = Icons.Rounded.Payments,
-                                                    label = "Method",
-                                                    value = payment.paymentMethod?.displayName ?: "Cash"
-                                                )
-                                            }
-                                            Box(modifier = Modifier.weight(1f)) {
-                                                DetailMetaRow(
-                                                    icon = Icons.Rounded.CheckCircle,
-                                                    label = "Tx Status",
-                                                    value = payment.transactionStatus.name
-                                                )
-                                            }
-                                        }
-
-                                        if (payment.autoConfirm) {
-                                            DetailMetaRow(
-                                                icon = Icons.Rounded.AutoFixHigh,
-                                                label = "Automation",
-                                                value = "Auto-confirm enabled",
-                                                valueColor = AppColors.primary
+                                        item {
+                                            ManagementSectionHeader(
+                                                title = "HISTORY",
+                                                count = pastOccurrences.size,
+                                                sectionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
                                             )
                                         }
-
-                                        if (payment.transactionType == TransactionType.TRANSFER) {
-                                            DetailMetaRow(
-                                                icon = Icons.Rounded.Repeat,
-                                                label = "Transfer Rate",
-                                                value = "1 : ${payment.transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}"
+                                        items(pastOccurrences, key = { it.id }) { occ ->
+                                            PastOccurrenceItem(
+                                                occ = occ,
+                                                dateFormatter = dateFormatter,
+                                                payment = payment
                                             )
                                         }
                                     }
                                 }
                             }
-
-                            // Upcoming occurrences
-                            if (upcomingItems.isNotEmpty()) {
-                                item {
-                                    ManagementSectionHeader(
-                                        title = "UPCOMING",
-                                        count = upcomingItems.size,
-                                        sectionColor = AppColors.primary
-                                    )
-                                }
-                                items(
-                                    upcomingItems,
-                                    key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                                    val matchedOccurrence =
-                                        occurrences.find { it.scheduledDate == item.scheduledDate }
-                                    val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
-                                    OccurrenceItem(
-                                        item = item,
-                                        status = status,
-                                        dateFormatter = dateFormatter,
-                                        onConfirm = { onConfirmOccurrence(item.scheduledDate) },
-                                        onSkip = onSkipOccurrence
-                                    )
-                                }
-                            }
-
-                            item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                         }
                     }
 
-                    1 -> {
-                        // History Tab: Past occurrences
-                        if (pastOccurrences.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "No history yet",
-                                    style = AppTextStyles.transactionTitle,
-                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                                )
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    start = AeonTheme.dimensions.screenPadding,
-                                    end = AeonTheme.dimensions.screenPadding,
-                                    top = AeonTheme.dimensions.screenPadding,
-                                    bottom = scrollBottomPadding()
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-                            ) {
-                                item {
-                                    ManagementSectionHeader(
-                                        title = "HISTORY",
-                                        count = pastOccurrences.size,
-                                        sectionColor = AppColors.contentSecondary.copy(alpha = 0.5f)
-                                    )
-                                }
-                                items(pastOccurrences, key = { it.id }) { occ ->
-                                    PastOccurrenceItem(
-                                        occ = occ,
-                                        dateFormatter = dateFormatter,
-                                        payment = payment
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    UnifiedPillNavigation(
+                        selectedTab = pagerState.currentPage,
+                        onTabSelected = { index ->
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        tabs = tabs,
+                        showFab = false
+                    )
                 }
             }
 
-            UnifiedPillNavigation(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                tabs = tabs,
-                showFab = false
+            // 2. Top Bar Layer
+            val activeTabConfig = remember(pagerState.currentPage) {
+                when (pagerState.currentPage) {
+                    0 -> AeonAppBarTab(
+                        label = "Overview",
+                        actions = {
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Schedule,
+                                onClick = onSaveAsTemplateClick
+                            )
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Edit,
+                                onClick = onEditClick
+                            )
+                        }
+                    )
+                    1 -> AeonAppBarTab(
+                        label = "History"
+                    )
+                    else -> null
+                }
+            }
+
+            AeonTopAppBar(
+                title = payment.name,
+                onBackClick = onBackClick,
+                tab = activeTabConfig
             )
         }
     }

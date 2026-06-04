@@ -13,15 +13,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -32,6 +38,7 @@ import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.components.BudgetHeroCard
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -180,174 +187,197 @@ fun BudgetDetailContent(
         )
     )
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        budget.name,
-                        style = AppTextStyles.cardTitle
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Rounded.Edit, contentDescription = "Edit")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = AeonTheme.dimensions.screenPadding,
-                                end = AeonTheme.dimensions.screenPadding,
-                                top = AeonTheme.dimensions.screenPadding,
-                                bottom = scrollBottomPadding()
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
-                        ) {
-                            item {
-                                BudgetHeroCard(
-                                    budget = budget,
-                                    progress = progress,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+    val pillHeight = AeonSize.D64.value
 
-                            item {
-                                ManagementScopeCard(
-                                    filter = budgetFilter,
-                                    allAccounts = accounts,
-                                    allCategories = categoriesList
-                                )
-                            }
-
-                            if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
-                                item {
-                                    Surface(
-                                        color = AppColors.primary.copy(alpha = 0.05f),
-                                        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                                        border = BorderStroke(
-                                            1.dp,
-                                            AppColors.primary.copy(alpha = 0.1f)
+    AeonHazeProvider { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. Content Layer
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .padding(bottom = paddingValues.calculateBottomPadding())
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        when (page) {
+                            0 -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        start = AeonTheme.dimensions.screenPadding,
+                                        end = AeonTheme.dimensions.screenPadding,
+                                        top = AeonTheme.dimensions.screenPadding + pillHeight,
+                                        bottom = scrollBottomPadding()
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
+                                ) {
+                                    item {
+                                        BudgetHeroCard(
+                                            budget = budget,
+                                            progress = progress,
+                                            modifier = Modifier.fillMaxWidth()
                                         )
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .padding(AeonTheme.dimensions.cardPadding)
-                                                .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                                        ) {
-                                            Icon(
-                                                Icons.Rounded.Autorenew,
-                                                contentDescription = null,
-                                                tint = AppColors.primary
-                                            )
-                                            Column {
-                                                Text(
-                                                    "Rollover Applied",
-                                                    style = AppTextStyles.managementItemTitle.copy(
-                                                        fontWeight = FontWeight.Bold
-                                                    ),
-                                                    color = AppColors.primary
+                                    }
+
+                                    item {
+                                        ManagementScopeCard(
+                                            filter = budgetFilter,
+                                            allAccounts = accounts,
+                                            allCategories = categoriesList
+                                        )
+                                    }
+
+                                    if (budget.rollover && progress.rolloverAmount > BigDecimal.ZERO) {
+                                        item {
+                                            Surface(
+                                                color = AppColors.primary.copy(alpha = 0.05f),
+                                                shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+                                                border = BorderStroke(
+                                                    1.dp,
+                                                    AppColors.primary.copy(alpha = 0.1f)
                                                 )
-                                                Text(
-                                                    "Remaining budget from previous period was added to this month.",
-                                                    style = AppTextStyles.caption,
-                                                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                                                )
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .padding(AeonTheme.dimensions.cardPadding)
+                                                        .fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                                ) {
+                                                    Icon(
+                                                        Icons.Rounded.Autorenew,
+                                                        contentDescription = null,
+                                                        tint = AppColors.primary
+                                                    )
+                                                    Column {
+                                                        Text(
+                                                            "Rollover Applied",
+                                                            style = AppTextStyles.managementItemTitle.copy(
+                                                                fontWeight = FontWeight.Bold
+                                                            ),
+                                                            color = AppColors.primary
+                                                        )
+                                                        Text(
+                                                            "Remaining budget from previous period was added to this month.",
+                                                            style = AppTextStyles.caption,
+                                                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    1 -> {
-                        if (budgetTransactions.isEmpty()) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(AeonTheme.dimensions.screenPadding),
-                                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                                color = AppColors.cardSurface,
-                                border = BorderStroke(
-                                    0.5.dp,
-                                    AppColors.divider.copy(alpha = 0.15f)
-                                )
-                            ) {
-                                Box(
-                                    Modifier.padding(AeonTheme.dimensions.spacing2xl),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        "No related transactions",
-                                        style = AppTextStyles.transactionTitle,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            1 -> {
+                                if (budgetTransactions.isEmpty()) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = pillHeight + AeonTheme.dimensions.screenPadding)
+                                            .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+                                        color = AppColors.cardSurface,
+                                        border = BorderStroke(
+                                            0.5.dp,
+                                            AppColors.divider.copy(alpha = 0.15f)
+                                        )
+                                    ) {
+                                        Box(
+                                            Modifier.padding(AeonTheme.dimensions.spacing2xl),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "No related transactions",
+                                                style = AppTextStyles.transactionTitle,
+                                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    val budgetListState = remember(
+                                        budgetTransactions,
+                                        absoluteTransactionsWithBalance,
+                                        baseCurrency,
+                                        allTags
+                                    ) {
+                                        val groups = TimelineService.getGroupedData(
+                                            transactions = budgetTransactions,
+                                            absoluteHistory = absoluteTransactionsWithBalance,
+                                            groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
+                                            accounts = accounts,
+                                            categories = categoriesList,
+                                            allTags = allTags,
+                                            baseCurrency = baseCurrency,
+                                            exchangeRates = emptyMap()
+                                        )
+                                        TransactionListState(groups = groups, isEmpty = groups.isEmpty())
+                                    }
+
+                                    RecentActivitiesScreen(
+                                        listState = budgetListState,
+                                        onRecordsClick = { _ ->
+                                            onRecordsClick(budgetFilter)
+                                        },
+                                        baseCurrency = baseCurrency,
+                                        contentPadding = PaddingValues(top = pillHeight),
+                                        revealedCardIds = revealedCardIds,
+                                        showCurrencyBreakdown = recentActivitiesBreakdown,
+                                        onTransactionEvent = onTransactionEvent,
+                                        hasStickyHeader = false,
+                                        showHeader = false
                                     )
                                 }
                             }
-                        } else {
-                            val budgetListState = remember(
-                                budgetTransactions,
-                                absoluteTransactionsWithBalance,
-                                baseCurrency,
-                                allTags
-                            ) {
-                                val groups = TimelineService.getGroupedData(
-                                    transactions = budgetTransactions,
-                                    absoluteHistory = absoluteTransactionsWithBalance,
-                                    groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
-                                    accounts = accounts,
-                                    categories = categoriesList,
-                                    allTags = allTags,
-                                    baseCurrency = baseCurrency,
-                                    exchangeRates = emptyMap()
-                                )
-                                TransactionListState(groups = groups, isEmpty = groups.isEmpty())
-                            }
-
-                            RecentActivitiesScreen(
-                                listState = budgetListState,
-                                onRecordsClick = { _ ->
-                                    onRecordsClick(budgetFilter)
-                                },
-                                baseCurrency = baseCurrency,
-                                contentPadding = PaddingValues(0.dp),
-                                revealedCardIds = revealedCardIds,
-                                showCurrencyBreakdown = recentActivitiesBreakdown,
-                                onTransactionEvent = onTransactionEvent
-                            )
                         }
                     }
+
+                    UnifiedPillNavigation(
+                        selectedTab = pagerState.currentPage,
+                        onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                        tabs = tabs,
+                        showFab = false
+                    )
                 }
             }
 
-            UnifiedPillNavigation(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                tabs = tabs,
-                showFab = false
+            // 2. Top Bar Layer
+            val activeTabConfig = remember(pagerState.currentPage) {
+                when (pagerState.currentPage) {
+                    0 -> AeonAppBarTab(
+                        label = "Overview",
+                        actions = {
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Edit,
+                                onClick = onEditClick
+                            )
+                        }
+                    )
+                    1 -> AeonAppBarTab(
+                        label = "Activity",
+                        actions = {
+                            AppBarIconButton(
+                                icon = Icons.Rounded.History,
+                                onClick = { onRecordsClick(budgetFilter) }
+                            )
+                        }
+                    )
+                    else -> null
+                }
+            }
+
+            AeonTopAppBar(
+                title = budget.name,
+                onBackClick = onBackClick,
+                tab = activeTabConfig
             )
         }
     }

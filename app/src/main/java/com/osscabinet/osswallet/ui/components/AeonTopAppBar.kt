@@ -54,6 +54,7 @@ fun AeonTopAppBar(
     onMenuClick: (() -> Unit)? = null,
     isTopLevel: Boolean = onMenuClick != null,
     actions: @Composable (RowScope.() -> Unit)? = null,
+    tab: AeonAppBarTab? = null,
     titleContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
@@ -76,6 +77,7 @@ fun AeonTopAppBar(
             // Left Pill: [Icon + Title/Subtitle]
             val hasNavigation = (isTopLevel && onMenuClick != null) || onBackClick != null
             val hasTitle = title.isNotEmpty() || titleContent != null
+            val displaySubtitle = subtitle ?: tab?.label
 
             if (hasNavigation || hasTitle) {
                 GlassSurface(
@@ -125,9 +127,9 @@ fun AeonTopAppBar(
                             }
                             if (subtitleContent != null) {
                                 subtitleContent()
-                            } else if (subtitle != null) {
+                            } else if (displaySubtitle != null) {
                                 Text(
-                                    subtitle,
+                                    displaySubtitle,
                                     style = AppTextStyles.caption.copy(
                                         fontWeight = FontWeight.Normal,
                                         fontSize = 10.sp,
@@ -145,7 +147,7 @@ fun AeonTopAppBar(
             }
 
             // Right Pill: [Actions]
-            if (actions != null) {
+            if (actions != null || tab?.actions != null) {
                 GlassSurface(
                     shape = CircleShape,
                     hazeLayer = HazeLayer.Overlay,
@@ -164,7 +166,8 @@ fun AeonTopAppBar(
                         CompositionLocalProvider(
                             LocalContentColor provides AppColors.onScreenBackground
                         ) {
-                            actions()
+                            actions?.invoke(this)
+                            tab?.actions?.invoke(this)
                         }
                     }
                 }
@@ -174,6 +177,11 @@ fun AeonTopAppBar(
         }
     }
 }
+
+data class AeonAppBarTab(
+    val label: String,
+    val actions: @Composable (RowScope.() -> Unit)? = null
+)
 
 @Composable
 fun AppBarIconButton(

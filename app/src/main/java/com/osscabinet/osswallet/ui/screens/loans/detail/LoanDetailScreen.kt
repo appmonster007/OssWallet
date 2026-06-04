@@ -27,6 +27,10 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -38,6 +42,7 @@ import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
 import com.osscabinet.ossWallet.ui.screens.loans.detail.components.LoanHeroCard
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -178,130 +183,144 @@ fun LoanDetailContent(
         )
     )
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        loan.name,
-                        style = AppTextStyles.cardTitle
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Rounded.Payments, contentDescription = "Edit")
-                    }
-                    if (loan.status == LoanStatus.ACTIVE) {
-                        Button(
-                            onClick = onSettleClick,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.primary.copy(alpha = 0.1f),
-                                contentColor = AppColors.primary
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(0.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text(
-                                "Settle",
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> LoanOverviewTab(
-                        loan = loan,
-                        summary = summary,
-                        loanFilter = loanFilter,
-                        accounts = accounts,
-                        categoriesList = categoriesList
-                    )
+    val pillHeight = AeonSize.D64.value
 
-                    1 -> {
-                        if (loanTransactions.isEmpty()) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(AeonTheme.dimensions.screenPadding),
-                                shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-                                color = AppColors.cardSurface,
-                                border = BorderStroke(
-                                    0.5.dp,
-                                    AppColors.divider.copy(alpha = 0.15f)
-                                )
-                            ) {
-                                Box(
-                                    Modifier.padding(AeonTheme.dimensions.spacing2xl),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        "No related transactions",
-                                        style = AppTextStyles.transactionTitle,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+    AeonHazeProvider { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 1. Content Layer
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .padding(bottom = paddingValues.calculateBottomPadding())
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.Top
+                    ) { page ->
+                        when (page) {
+                            0 -> LoanOverviewTab(
+                                loan = loan,
+                                summary = summary,
+                                loanFilter = loanFilter,
+                                accounts = accounts,
+                                categoriesList = categoriesList,
+                                topPadding = pillHeight
+                            )
+
+                            1 -> {
+                                if (loanTransactions.isEmpty()) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = pillHeight + AeonTheme.dimensions.screenPadding)
+                                            .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+                                        color = AppColors.cardSurface,
+                                        border = BorderStroke(
+                                            0.5.dp,
+                                            AppColors.divider.copy(alpha = 0.15f)
+                                        )
+                                    ) {
+                                        Box(
+                                            Modifier.padding(AeonTheme.dimensions.spacing2xl),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "No related transactions",
+                                                style = AppTextStyles.transactionTitle,
+                                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    val loanListState = remember(
+                                        loanTransactions,
+                                        absoluteTransactionsWithBalance,
+                                        baseCurrency,
+                                        allTags
+                                    ) {
+                                        val groups = TimelineService.getGroupedData(
+                                            transactions = loanTransactions,
+                                            absoluteHistory = absoluteTransactionsWithBalance,
+                                            groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
+                                            accounts = accounts,
+                                            categories = categoriesList,
+                                            allTags = allTags,
+                                            baseCurrency = baseCurrency,
+                                            exchangeRates = emptyMap()
+                                        )
+                                        TransactionListState(groups = groups, isEmpty = groups.isEmpty())
+                                    }
+
+                                    RecentActivitiesScreen(
+                                        listState = loanListState,
+                                        onRecordsClick = { _ ->
+                                            onRecordsClick(loanFilter)
+                                        },
+                                        baseCurrency = baseCurrency,
+                                        contentPadding = PaddingValues(top = pillHeight),
+                                        revealedCardIds = revealedCardIds,
+                                        showCurrencyBreakdown = recentActivitiesBreakdown,
+                                        onTransactionEvent = onTransactionEvent,
+                                        hasStickyHeader = false,
+                                        showHeader = false
                                     )
                                 }
                             }
-                        } else {
-                            val loanListState = remember(
-                                loanTransactions,
-                                absoluteTransactionsWithBalance,
-                                baseCurrency,
-                                allTags
-                            ) {
-                                val groups = TimelineService.getGroupedData(
-                                    transactions = loanTransactions,
-                                    absoluteHistory = absoluteTransactionsWithBalance,
-                                    groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
-                                    accounts = accounts,
-                                    categories = categoriesList,
-                                    allTags = allTags,
-                                    baseCurrency = baseCurrency,
-                                    exchangeRates = emptyMap()
-                                )
-                                TransactionListState(groups = groups, isEmpty = groups.isEmpty())
-                            }
-
-                            RecentActivitiesScreen(
-                                listState = loanListState,
-                                onRecordsClick = { _ ->
-                                    onRecordsClick(loanFilter)
-                                },
-                                baseCurrency = baseCurrency,
-                                contentPadding = PaddingValues(0.dp),
-                                revealedCardIds = revealedCardIds,
-                                showCurrencyBreakdown = recentActivitiesBreakdown,
-                                onTransactionEvent = onTransactionEvent
-                            )
                         }
                     }
+
+                    UnifiedPillNavigation(
+                        selectedTab = pagerState.currentPage,
+                        onTabSelected = { index ->
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        },
+                        tabs = tabs,
+                        showFab = false
+                    )
                 }
             }
 
-            UnifiedPillNavigation(
-                selectedTab = pagerState.currentPage,
-                onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                tabs = tabs,
-                showFab = false
+            // 2. Top Bar Layer
+            val activeTabConfig = remember(pagerState.currentPage, loan.status) {
+                when (pagerState.currentPage) {
+                    0 -> AeonAppBarTab(
+                        label = "Overview",
+                        actions = {
+                            if (loan.status == LoanStatus.ACTIVE) {
+                                AppBarIconButton(
+                                    icon = Icons.Rounded.CheckCircle,
+                                    onClick = onSettleClick
+                                )
+                            }
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Payments,
+                                onClick = onEditClick
+                            )
+                        }
+                    )
+                    1 -> AeonAppBarTab(
+                        label = "Activity",
+                        actions = {
+                            AppBarIconButton(
+                                icon = Icons.Rounded.History,
+                                onClick = { onRecordsClick(loanFilter) }
+                            )
+                        }
+                    )
+                    else -> null
+                }
+            }
+
+            AeonTopAppBar(
+                title = loan.name,
+                onBackClick = onBackClick,
+                tab = activeTabConfig
             )
         }
     }
@@ -361,7 +380,8 @@ private fun LoanOverviewTab(
     summary: LoanSummary,
     loanFilter: TransactionFilter,
     accounts: List<Account>,
-    categoriesList: List<Category>
+    categoriesList: List<Category>,
+    topPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     var showAmortization by remember { mutableStateOf(false) }
     var showAllAmortization by remember { mutableStateOf(false) }
@@ -380,7 +400,7 @@ private fun LoanOverviewTab(
         contentPadding = PaddingValues(
             start = AeonTheme.dimensions.screenPadding,
             end = AeonTheme.dimensions.screenPadding,
-            top = AeonTheme.dimensions.screenPadding,
+            top = AeonTheme.dimensions.screenPadding + topPadding,
             bottom = scrollBottomPadding()
         ),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)

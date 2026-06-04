@@ -61,6 +61,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
@@ -103,8 +104,6 @@ fun TransactionFilterPill(
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val glassEnabled = LocalGlassmorphismEnabled.current
-    val isDark = isSystemInDarkTheme()
 
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalBottomPadding = bottomPadding + navBarPadding
@@ -207,11 +206,10 @@ fun TransactionFilterPill(
         }
 
         // UI Visuals
-        val borderAlpha = if (isDark) 0.06f + 0.08f * f else 0.30f + 0.20f * f
         val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
         val horizMargin = lerp(pillHorizMargin, 8.dp, f)
         val corner = lerp(28.dp, 20.dp, f)
-        val elevation = lerp(6.dp, 12.dp, f)
+        val elevation = lerp(AeonSize.D8.value, 12.dp, f)
         val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
         val contentColor = lerp(AppColors.onSelectionContainer, AppColors.primary, f)
         val inactiveColor = lerp(
@@ -260,8 +258,7 @@ fun TransactionFilterPill(
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             fallbackColor = surfaceColor,
-            shadowElevation = elevation,
-            borderColor = if (glassEnabled) Color.White.copy(alpha = borderAlpha) else null,
+            shadowElevation = elevation
         ) {
             Column(Modifier.fillMaxSize()) {
                 Box(

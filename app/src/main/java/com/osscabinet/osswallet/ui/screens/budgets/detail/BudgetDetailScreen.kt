@@ -51,28 +51,42 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
 
+/**
+ * A Value Object representing a valid configuration for the Budget Detail screen.
+ */
+data class BudgetDetailConfig(
+    val budgetId: Long,
+    val baseCurrency: String
+)
+
+/**
+ * Grouped actions for the Budget Detail screen.
+ */
+data class BudgetDetailActions(
+    val onEditClick: (Long) -> Unit,
+    val onBackClick: () -> Unit,
+    val onTransactionClick: (Long) -> Unit,
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {},
+    val onRecordsClick: (TransactionFilter) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetDetailScreen(
-    budgetId: Long,
+    config: BudgetDetailConfig,
+    actions: BudgetDetailActions,
     viewModel: BudgetViewModel,
     accountViewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    baseCurrency: String,
-    onEditClick: (Long) -> Unit,
-    onBackClick: () -> Unit,
-    onTransactionClick: (Long) -> Unit,
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    onRecordsClick: (TransactionFilter) -> Unit
+    transactionViewModel: TransactionViewModel
 ) {
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val budgetProgress by viewModel.budgetProgress.collectAsStateWithLifecycle()
-    val budget = remember(budgetId, budgets) { budgets.find { it.id == budgetId } }
+    val budget = remember(config.budgetId, budgets) { budgets.find { it.id == config.budgetId } }
 
     LaunchedEffect(budgets) {
         if (budgets.isNotEmpty() && budget == null) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
@@ -123,16 +137,16 @@ fun BudgetDetailScreen(
         accounts = accounts,
         categoriesList = categoriesList,
         allTags = allTags,
-        baseCurrency = baseCurrency,
+        baseCurrency = config.baseCurrency,
         revealedCardIds = revealedCardIds,
         recentActivitiesBreakdown = recentActivitiesBreakdown,
-        onEditClick = { onEditClick(budget.id) },
-        onBackClick = onBackClick,
+        onEditClick = { actions.onEditClick(budget.id) },
+        onBackClick = actions.onBackClick,
         onTransactionEvent = { event ->
             when (event) {
                 is TransactionItemEvent.Click -> {
                     if (event.id.startsWith("tx_")) {
-                        onTransactionClick(event.id.removePrefix("tx_").toLong())
+                        actions.onTransactionClick(event.id.removePrefix("tx_").toLong())
                     }
                 }
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
@@ -141,9 +155,9 @@ fun BudgetDetailScreen(
                     event.id,
                     event.status
                 )
-                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -151,7 +165,7 @@ fun BudgetDetailScreen(
                 is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
             }
         },
-        onRecordsClick = onRecordsClick
+        onRecordsClick = actions.onRecordsClick
     )
 }
 

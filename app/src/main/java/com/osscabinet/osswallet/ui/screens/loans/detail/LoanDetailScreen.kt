@@ -59,27 +59,41 @@ import java.util.Date
 import java.util.Locale
 
 
+/**
+ * A Value Object representing a valid configuration for the Loan Detail screen.
+ */
+data class LoanDetailConfig(
+    val loanId: Long,
+    val baseCurrency: String
+)
+
+/**
+ * Grouped actions for the Loan Detail screen.
+ */
+data class LoanDetailActions(
+    val onEditClick: () -> Unit,
+    val onBackClick: () -> Unit,
+    val onTransactionClick: (Long) -> Unit,
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {},
+    val onRecordsClick: (TransactionFilter) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanDetailScreen(
-    loanId: Long,
+    config: LoanDetailConfig,
+    actions: LoanDetailActions,
     viewModel: LoanViewModel,
     accountViewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    baseCurrency: String,
-    onEditClick: () -> Unit,
-    onBackClick: () -> Unit,
-    onTransactionClick: (Long) -> Unit,
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    onRecordsClick: (TransactionFilter) -> Unit
+    transactionViewModel: TransactionViewModel
 ) {
     val loans by viewModel.loans.collectAsStateWithLifecycle()
     val loanSummaries by viewModel.loanSummaries.collectAsStateWithLifecycle()
-    val loan = remember(loanId, loans) { loans.find { it.id == loanId } }
+    val loan = remember(config.loanId, loans) { loans.find { it.id == config.loanId } }
 
     LaunchedEffect(loans) {
-        if (loans.isNotEmpty() && loan == null) onBackClick()
+        if (loans.isNotEmpty() && loan == null) actions.onBackClick()
     }
 
     if (loan == null) {
@@ -95,7 +109,7 @@ fun LoanDetailScreen(
     val absoluteTransactionsWithBalance by transactionViewModel.absoluteTransactionsWithBalance.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
 
-    val summary = loanSummaries[loanId] ?: LoanService.buildSummary(
+    val summary = loanSummaries[config.loanId] ?: LoanService.buildSummary(
         loan, emptyList(), System.currentTimeMillis()
     )
 
@@ -121,24 +135,24 @@ fun LoanDetailScreen(
         accounts = accounts,
         categoriesList = categoriesList,
         allTags = allTags,
-        baseCurrency = baseCurrency,
+        baseCurrency = config.baseCurrency,
         revealedCardIds = revealedCardIds,
         recentActivitiesBreakdown = recentActivitiesBreakdown,
-        onEditClick = onEditClick,
-        onBackClick = onBackClick,
-        onSettleClick = { viewModel.settleLoan(loan); onBackClick() },
+        onEditClick = actions.onEditClick,
+        onBackClick = actions.onBackClick,
+        onSettleClick = { viewModel.settleLoan(loan); actions.onBackClick() },
         onTransactionEvent = { event ->
             when (event) {
-                is TransactionItemEvent.Click -> onTransactionClick(event.id.substringAfter("_").toLongOrNull() ?: -1L)
+                is TransactionItemEvent.Click -> actions.onTransactionClick(event.id.substringAfter("_").toLongOrNull() ?: -1L)
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
                     event.id,
                     event.status
                 )
-                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -146,7 +160,7 @@ fun LoanDetailScreen(
                 is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
             }
         },
-        onRecordsClick = onRecordsClick
+        onRecordsClick = actions.onRecordsClick
     )
 }
 

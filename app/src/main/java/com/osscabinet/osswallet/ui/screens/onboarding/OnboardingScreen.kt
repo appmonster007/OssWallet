@@ -104,13 +104,13 @@ import java.math.BigDecimal
 @Composable
 fun OnboardingScreen(
     viewModel: OnboardingViewModel,
-    onComplete: () -> Unit,
+    actions: OnboardingActions
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.onboardingCompleted.collect {
-            onComplete()
+            actions.onComplete()
         }
     }
 
@@ -119,6 +119,10 @@ fun OnboardingScreen(
         onEvent = viewModel::onEvent
     )
 }
+
+data class OnboardingActions(
+    val onComplete: () -> Unit
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

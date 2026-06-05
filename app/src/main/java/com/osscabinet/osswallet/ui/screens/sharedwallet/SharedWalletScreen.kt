@@ -35,7 +35,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun SharedWalletScreen(
     viewModel: SharedWalletViewModel,
-    onBackClick: () -> Unit
+    actions: SharedWalletActions
 ) {
     AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -88,7 +88,7 @@ fun SharedWalletScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Shared Wallets",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -96,3 +96,7 @@ fun SharedWalletScreen(
         }
     }
 }
+
+data class SharedWalletActions(
+    val onBackClick: () -> Unit
+)

@@ -80,12 +80,19 @@ import com.osscabinet.ossWallet.ui.theme.ColorOnLight
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
 
+/**
+ * Grouped actions for the Account List screen.
+ */
+data class AccountListActions(
+    val onBackClick: () -> Unit,
+    val onAddAccountClick: () -> Unit,
+    val onAccountClick: (String) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountListScreen(
-    onBackClick: () -> Unit,
-    onAddAccountClick: () -> Unit,
-    onAccountClick: (String) -> Unit,
+    actions: AccountListActions,
     viewModel: AccountViewModel
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
@@ -178,7 +185,7 @@ fun AccountListScreen(
                         }
                     } else {
                         AeonFloatingActionButton(
-                            onClick = { navigate(onAddAccountClick) },
+                            onClick = { navigate(actions.onAddAccountClick) },
                             icon = Icons.Rounded.Add,
                             contentDescription = "Add New Account"
                         )
@@ -222,7 +229,7 @@ fun AccountListScreen(
                             }
                         },
                         onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                        onAccountClick = { navigate { onAccountClick(account.id) } }
+                        onAccountClick = { navigate { actions.onAccountClick(account.id) } }
                     )
                 }
             }
@@ -236,7 +243,7 @@ fun AccountListScreen(
                             onBackClick = if (isSelectionMode) {
                                 { isSelectionMode = false; selectedAccountIds = emptySet() }
                             } else {
-                                { navigate(onBackClick) }
+                                { navigate(actions.onBackClick) }
                             }
                         )
                     }

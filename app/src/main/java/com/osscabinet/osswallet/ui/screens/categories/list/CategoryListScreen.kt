@@ -50,7 +50,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun CategoryListScreen(
     viewModel: CategoryViewModel,
-    onBackClick: () -> Unit
+    actions: CategoryListActions
 ) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -120,7 +120,7 @@ fun CategoryListScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Manage Categories",
-                            onBackClick = { navigate(onBackClick) }
+                            onBackClick = { navigate(actions.onBackClick) }
                         )
                     }
                 ),
@@ -192,3 +192,7 @@ fun CategoryListScreen(
         )
     }
 }
+
+data class CategoryListActions(
+    val onBackClick: () -> Unit
+)

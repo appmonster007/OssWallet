@@ -115,6 +115,7 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -127,41 +128,55 @@ import java.math.BigDecimal
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+/**
+ * A Value Object representing a valid configuration for the Account Detail screen.
+ */
+data class AccountDetailConfig(
+    val accountId: String,
+    val filterJson: String? = null
+)
+
+/**
+ * Grouped actions for the Account Detail screen.
+ */
+data class AccountDetailActions(
+    val onBackClick: () -> Unit,
+    val onEditAccountClick: (String) -> Unit,
+    val onAccountClick: (String) -> Unit,
+    val onEditTransactionClick: (Long) -> Unit,
+    val onNavigateToPlannedPaymentList: () -> Unit = {},
+    val onNavigateToBudgetList: () -> Unit = {},
+    val onNavigateToLoanList: () -> Unit = {},
+    val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
+    val onNavigateToBudgetDetail: (Long) -> Unit = {},
+    val onNavigateToLoanDetail: (Long) -> Unit = {},
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {},
+    val onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
+    val onRecordsClick: (TransactionFilter) -> Unit,
+    val onSaveFilterClick: (TransactionFilter) -> Unit = {}
+)
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AccountDetailScreen(
-    accountId: String,
-    filterJson: String? = null,
-    accountViewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    settingsViewModel: SettingsViewModel,
-    analyticsViewModel: AnalyticsViewModel,
-    accountDetailViewModel: AccountDetailViewModel,
-    cardComputerRegistry: CardComputerRegistry,
-    templateViewModel: TemplateViewModel,
-    onBackClick: () -> Unit,
-    onEditAccountClick: (String) -> Unit,
-    onAccountClick: (String) -> Unit,
-    onEditTransactionClick: (Long) -> Unit,
-    onNavigateToPlannedPaymentList: () -> Unit = {},
-    onNavigateToBudgetList: () -> Unit = {},
-    onNavigateToLoanList: () -> Unit = {},
-    onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
-    onNavigateToBudgetDetail: (Long) -> Unit = {},
-    onNavigateToLoanDetail: (Long) -> Unit = {},
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
-    onRecordsClick: (TransactionFilter) -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit = {}
+    config: AccountDetailConfig,
+    actions: AccountDetailActions,
+    vms: SharedNavViewModels,
+    accountDetailViewModel: AccountDetailViewModel
 ) {
+    val transactionViewModel = vms.transactionViewModel
+    val settingsViewModel = vms.settingsViewModel
+    val templateViewModel = vms.templateViewModel
+    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
+
     val snackbarHostState = remember { SnackbarHostState() }
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    LaunchedEffect(filterJson) {
-        if (filterJson != null) {
+    LaunchedEffect(config.filterJson) {
+        if (config.filterJson != null) {
             try {
-                val decoded = URLDecoder.decode(filterJson, StandardCharsets.UTF_8.toString())
+                val decoded = URLDecoder.decode(config.filterJson, StandardCharsets.UTF_8.toString())
                 val filter = Json.decodeFromString<TransactionFilter>(decoded)
                 accountDetailViewModel.updateFilter(filter)
             } catch (e: Exception) {
@@ -178,7 +193,7 @@ fun AccountDetailScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is AccountDetailUiState.Error) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
@@ -325,19 +340,19 @@ fun AccountDetailScreen(
                                                     cardsConfig = accountDetailCardsConfig,
                                                     accountDetailViewModel = accountDetailViewModel,
                                                     cardComputerRegistry = cardComputerRegistry,
-                                                    onRecordsClick = onRecordsClick,
+                                                    onRecordsClick = actions.onRecordsClick,
                                                     savedFilters = savedFilters,
                                                     transactionViewModel = transactionViewModel,
-                                                    onCloneTransactionClick = onCloneTransactionClick,
-                                                    onEditTransactionClick = onEditTransactionClick,
-                                                    onSplitTransactionClick = onSplitTransactionClick,
-                                                    onAccountClick = onAccountClick,
-                                                    onNavigateToPlannedPaymentList = onNavigateToPlannedPaymentList,
-                                                    onNavigateToBudgetList = onNavigateToBudgetList,
-                                                    onNavigateToLoanList = onNavigateToLoanList,
-                                                    onNavigateToPlannedPaymentDetail = onNavigateToPlannedPaymentDetail,
-                                                    onNavigateToBudgetDetail = onNavigateToBudgetDetail,
-                                                    onNavigateToLoanDetail = onNavigateToLoanDetail,
+                                                    onCloneTransactionClick = actions.onCloneTransactionClick,
+                                                    onEditTransactionClick = actions.onEditTransactionClick,
+                                                    onSplitTransactionClick = actions.onSplitTransactionClick,
+                                                    onAccountClick = actions.onAccountClick,
+                                                    onNavigateToPlannedPaymentList = actions.onNavigateToPlannedPaymentList,
+                                                    onNavigateToBudgetList = actions.onNavigateToBudgetList,
+                                                    onNavigateToLoanList = actions.onNavigateToLoanList,
+                                                    onNavigateToPlannedPaymentDetail = actions.onNavigateToPlannedPaymentDetail,
+                                                    onNavigateToBudgetDetail = actions.onNavigateToBudgetDetail,
+                                                    onNavigateToLoanDetail = actions.onNavigateToLoanDetail,
                                                     navigate = navigate,
                                                     modifier = Modifier.fillMaxSize().padding(horizontal = AeonTheme.dimensions.screenPadding),
                                                     showAddCardDialog = showAddCardDialog,
@@ -360,7 +375,7 @@ fun AccountDetailScreen(
                                                 } else {
                                                     RecentActivitiesScreen(
                                                         listState = state.listState,
-                                                        onRecordsClick = { drillDown -> onRecordsClick(state.currentFilter.merge(drillDown)) },
+                                                        onRecordsClick = { drillDown -> actions.onRecordsClick(state.currentFilter.merge(drillDown)) },
                                                         baseCurrency = state.baseCurrency,
                                                         contentPadding = PaddingValues(
                                                             top = pillHeight + AeonTheme.dimensions.spacingMd,
@@ -373,15 +388,15 @@ fun AccountDetailScreen(
                                                             when (event) {
                                                                 is TransactionItemEvent.Click -> navigate {
                                                                     if (event.id.startsWith("tx_")) {
-                                                                        onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                                                                        actions.onEditTransactionClick(event.id.removePrefix("tx_").toLong())
                                                                     }
                                                                 }
                                                                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                                                                 is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
                                                                 is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
-                                                                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                                                                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                                                                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                                                                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                                                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
                                                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                                                 is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
                                                                 is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
@@ -404,7 +419,7 @@ fun AccountDetailScreen(
                                         onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                                         onFabClick = {
                                             if (!expandableFabEnabled) {
-                                                navigate { onAddTransactionClick(accountId, TransactionType.EXPENSE, null) }
+                                                navigate { actions.onAddTransactionClick(config.accountId, TransactionType.EXPENSE, null) }
                                             }
                                         },
                                         fabMenu = if (expandableFabEnabled) {
@@ -415,7 +430,7 @@ fun AccountDetailScreen(
                                                     categories = categories,
                                                     onAddClick = { type, templateId ->
                                                         isFabExpanded = false
-                                                        navigate { onAddTransactionClick(accountId, type, templateId) }
+                                                        navigate { actions.onAddTransactionClick(config.accountId, type, templateId) }
                                                     }
                                                 )
                                             }
@@ -433,7 +448,7 @@ fun AccountDetailScreen(
                         content = {
                             AeonTopBarNavTitlePill(
                                 title = stringResource(R.string.account_detail_title),
-                                onBackClick = { navigate { onBackClick() } },
+                                onBackClick = { navigate { actions.onBackClick() } },
                                 tabs = tabs.map { it.label },
                                 selectedTabIndex = pagerState.currentPage,
                                 onTabSelected = { index ->
@@ -447,14 +462,14 @@ fun AccountDetailScreen(
                             AeonTopBarActionPill {
                                 when (pagerState.currentPage) {
                                     0 -> {
-                                        AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { onEditAccountClick(accountId) } })
+                                        AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { actions.onEditAccountClick(config.accountId) } })
                                         AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
                                         AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
                                     }
                                     1 -> {
                                         AppBarIconButton(
                                             icon = Icons.Rounded.History,
-                                            onClick = { onRecordsClick(TransactionFilter(accountIds = setOf(accountId))) }
+                                            onClick = { actions.onRecordsClick(TransactionFilter(accountIds = setOf(config.accountId))) }
                                         )
                                     }
                                 }

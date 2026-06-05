@@ -59,15 +59,29 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
 
 
+/**
+ * A Value Object representing a valid configuration for the Budget List screen.
+ */
+data class BudgetListConfig(
+    val baseCurrency: String = "USD"
+)
+
+/**
+ * Grouped actions for the Budget List screen.
+ */
+data class BudgetListActions(
+    val onBackClick: () -> Unit,
+    val onAddClick: () -> Unit,
+    val onEditClick: (Long) -> Unit,
+    val onDetailClick: (Long) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetListScreen(
-    onBackClick: () -> Unit,
-    viewModel: BudgetViewModel,
-    onAddClick: () -> Unit,
-    onEditClick: (Long) -> Unit,
-    onDetailClick: (Long) -> Unit,
-    baseCurrency: String = "USD"
+    config: BudgetListConfig,
+    actions: BudgetListActions,
+    viewModel: BudgetViewModel
 ) {
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
@@ -156,8 +170,8 @@ fun BudgetListScreen(
                                         spentText = progress.spent.toPlainString(),
                                         progressFraction = progress.percentage.coerceIn(0f, 1f),
                                         alertLevel = progress.alertLevel,
-                                        onTap = { onDetailClick(budget.id) },
-                                        onEdit = { onEditClick(budget.id) },
+                                        onTap = { actions.onDetailClick(budget.id) },
+                                        onEdit = { actions.onEditClick(budget.id) },
                                         onDelete = { viewModel.delete(budget.id) },
                                         onArchive = { viewModel.archive(budget) }
                                     )
@@ -181,8 +195,8 @@ fun BudgetListScreen(
                                         spentText = progress.spent.toPlainString(),
                                         progressFraction = progress.percentage.coerceIn(0f, 1f),
                                         alertLevel = progress.alertLevel,
-                                        onTap = { onDetailClick(budget.id) },
-                                        onEdit = { onEditClick(budget.id) },
+                                        onTap = { actions.onDetailClick(budget.id) },
+                                        onEdit = { actions.onEditClick(budget.id) },
                                         onDelete = { viewModel.delete(budget.id) },
                                         onArchive = {}
                                     )
@@ -198,7 +212,7 @@ fun BudgetListScreen(
                 onTabSelected = {},
                 tabs = emptyList(),
                 fabPaddingBottom = 16.dp + navigationBarHeight,
-                onFabClick = onAddClick,
+                onFabClick = actions.onAddClick,
                 fabIcon = Icons.Rounded.AccountBalance,
                 showFab = true
             )
@@ -208,7 +222,7 @@ fun BudgetListScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Budgets",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )

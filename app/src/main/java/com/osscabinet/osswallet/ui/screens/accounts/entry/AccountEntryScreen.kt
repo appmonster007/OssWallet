@@ -14,16 +14,30 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.AccountFormBody
 
+/**
+ * A Value Object representing a valid configuration for the Account Entry screen.
+ */
+data class AccountEntryConfig(
+    val accountId: String? = null
+)
+
+/**
+ * Grouped actions for the Account Entry screen.
+ */
+data class AccountEntryActions(
+    val onBackClick: () -> Unit,
+    val onDone: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountEntryScreen(
-    accountId: String? = null,
-    viewModel: AccountEntryViewModel,
-    onBackClick: () -> Unit,
-    onDone: () -> Unit
+    config: AccountEntryConfig,
+    actions: AccountEntryActions,
+    viewModel: AccountEntryViewModel
 ) {
-    LaunchedEffect(accountId) {
-        viewModel.initialize(accountId)
+    LaunchedEffect(config.accountId) {
+        viewModel.initialize(config.accountId)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -38,13 +52,13 @@ fun AccountEntryScreen(
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onDone()
+            actions.onDone()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Account" else "New Account",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             viewModel.saveAccount {
                 viewModel.onEvent(AccountEntryEvent.TriggerNavigation)
@@ -60,7 +74,7 @@ fun AccountEntryScreen(
             onDeleteClick = if (state.isEditMode) {
                 {
                     viewModel.deleteAccount {
-                        onBackClick()
+                        actions.onBackClick()
                     }
                 }
             } else null

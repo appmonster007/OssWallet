@@ -177,16 +177,23 @@ private fun SwipeablePaymentItem(
 }
 
 
+/**
+ * Grouped actions for the Planned Payment List screen.
+ */
+data class PlannedPaymentListActions(
+    val onBackClick: () -> Unit,
+    val onAddClick: () -> Unit,
+    val onEditClick: (Long) -> Unit,
+    val onDetailClick: (Long) -> Unit,
+    val onConfirmClick: ((Long, Long?) -> Unit)? = null
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentListScreen(
-    onBackClick: () -> Unit,
+    actions: PlannedPaymentListActions,
     viewModel: PlannedPaymentViewModel,
-    transactionManager: TransactionManager,
-    onAddClick: () -> Unit,
-    onEditClick: (Long) -> Unit,
-    onDetailClick: (Long) -> Unit,
-    onConfirmClick: ((Long, Long?) -> Unit)? = null
+    transactionManager: TransactionManager
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
@@ -194,16 +201,16 @@ fun PlannedPaymentListScreen(
     PlannedPaymentListContent(
         payments = payments,
         profileId = profileId,
-        onBackClick = onBackClick,
-        onAddClick = onAddClick,
-        onEditClick = onEditClick,
-        onDetailClick = onDetailClick,
+        onBackClick = actions.onBackClick,
+        onAddClick = actions.onAddClick,
+        onEditClick = actions.onEditClick,
+        onDetailClick = actions.onDetailClick,
         onDelete = { id -> viewModel.delete(id, false) },
         onPause = { viewModel.pause(it) },
         onResume = { viewModel.resume(it) },
         onConfirm = { payment, date ->
-            if (onConfirmClick != null) {
-                onConfirmClick(payment.id, date)
+            if (actions.onConfirmClick != null) {
+                actions.onConfirmClick(payment.id, date)
             } else {
                 viewModel.quickConfirm(payment, profileId)
             }

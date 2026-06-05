@@ -73,31 +73,47 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import dev.chrisbanes.haze.hazeSource
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+
+/**
+ * A Value Object representing a valid configuration for the Analytics screen.
+ */
+data class AnalyticsConfig(
+    val isTopLevel: Boolean = false
+)
+
+/**
+ * Grouped actions for the Analytics screen.
+ */
+data class AnalyticsActions(
+    val onMenuClick: () -> Unit,
+    val onBackClick: () -> Unit = {},
+    val onRecordsClick: (TransactionFilter) -> Unit,
+    val onAccountClick: (String) -> Unit,
+    val onNavigateToPlannedPaymentList: () -> Unit = {},
+    val onNavigateToBudgetList: () -> Unit = {},
+    val onNavigateToLoanList: () -> Unit = {},
+    val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
+    val onNavigateToBudgetDetail: (Long) -> Unit = {},
+    val onNavigateToLoanDetail: (Long) -> Unit = {},
+    val onEditTransactionClick: (Long) -> Unit,
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {}
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
-    onMenuClick: () -> Unit,
-    onBackClick: () -> Unit = {},
-    isTopLevel: Boolean = false,
-    viewModel: AnalyticsViewModel,
-    accountViewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    templateViewModel: TemplateViewModel,
-    settingsViewModel: SettingsViewModel,
-    onRecordsClick: (TransactionFilter) -> Unit,
-    onAccountClick: (String) -> Unit,
-    onNavigateToPlannedPaymentList: () -> Unit = {},
-    onNavigateToBudgetList: () -> Unit = {},
-    onNavigateToLoanList: () -> Unit = {},
-    onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
-    onNavigateToBudgetDetail: (Long) -> Unit = {},
-    onNavigateToLoanDetail: (Long) -> Unit = {},
-    onEditTransactionClick: (Long) -> Unit,
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    cardComputerRegistry: CardComputerRegistry
+    config: AnalyticsConfig,
+    actions: AnalyticsActions,
+    vms: SharedNavViewModels
 ) {
+    val viewModel = vms.analyticsViewModel
+    val accountViewModel = vms.accountViewModel
+    val transactionViewModel = vms.transactionViewModel
+    val settingsViewModel = vms.settingsViewModel
+    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
     val cardDataMap by viewModel.cardDataMap.collectAsStateWithLifecycle()
@@ -172,7 +188,7 @@ fun AnalyticsScreen(
                                 cardUpdateHandler = viewModel,
                                 onReorder = { viewModel.reorderCards(it) },
                                 onDelete = { viewModel.removeCard(it) },
-                                onRecordsClick = onRecordsClick,
+                                onRecordsClick = actions.onRecordsClick,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
                                     start = AeonTheme.dimensions.screenPadding,
@@ -190,26 +206,26 @@ fun AnalyticsScreen(
                                 ),
                                 callbacks = AeonInteractionCallbacks(
                                     accountActions = AccountActions(
-                                        onClick = onAccountClick,
+                                        onClick = actions.onAccountClick,
                                         onSeeAll = { /* Analytics doesn't have a standard account list link */ }
                                     ),
                                     budgetActions = BudgetActions(
-                                        onClick = onNavigateToBudgetDetail,
-                                        onSeeAll = onNavigateToBudgetList
+                                        onClick = actions.onNavigateToBudgetDetail,
+                                        onSeeAll = actions.onNavigateToBudgetList
                                     ),
                                     loanActions = LoanActions(
-                                        onClick = onNavigateToLoanDetail,
-                                        onSeeAll = onNavigateToLoanList
+                                        onClick = actions.onNavigateToLoanDetail,
+                                        onSeeAll = actions.onNavigateToLoanList
                                     ),
                                     transactionActions = TransactionActions(
-                                        onClick = onEditTransactionClick,
-                                        onClone = { onCloneTransactionClick(it) },
+                                        onClick = actions.onEditTransactionClick,
+                                        onClone = { actions.onCloneTransactionClick(it) },
                                         onDelete = {
                                             transactionViewModel.quickDeleteTransaction(
                                                 it
                                             )
                                         },
-                                        onSplit = { onSplitTransactionClick(it) },
+                                        onSplit = { actions.onSplitTransactionClick(it) },
                                         onFullSwipeRight = {
                                             transactionViewModel.toggleStatusClearedUncleared(
                                                 it
@@ -217,8 +233,8 @@ fun AnalyticsScreen(
                                         }
                                     ),
                                     paymentActions = PaymentActions(
-                                        onClick = onNavigateToPlannedPaymentDetail,
-                                        onSeeAll = onNavigateToPlannedPaymentList
+                                        onClick = actions.onNavigateToPlannedPaymentDetail,
+                                        onSeeAll = actions.onNavigateToPlannedPaymentList
                                     ),
                                     tagActions = TagActions(
                                         onAdd = transactionViewModel::addTag
@@ -237,9 +253,9 @@ fun AnalyticsScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Intelligence",
-                            isTopLevel = isTopLevel,
-                            onMenuClick = if (isTopLevel) onMenuClick else null,
-                            onBackClick = if (!isTopLevel) onBackClick else null
+                            isTopLevel = config.isTopLevel,
+                            onMenuClick = if (config.isTopLevel) actions.onMenuClick else null,
+                            onBackClick = if (!config.isTopLevel) actions.onBackClick else null
                         )
                     }
                 ),

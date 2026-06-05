@@ -88,14 +88,31 @@ import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import java.util.Locale
 
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+
+/**
+ * A Value Object representing a valid configuration for the Exchange Rates screen.
+ */
+data class ExchangeRatesConfig(
+    val isTopLevel: Boolean = false
+)
+
+/**
+ * Grouped actions for the Exchange Rates screen.
+ */
+data class ExchangeRatesActions(
+    val onMenuClick: () -> Unit,
+    val onBackClick: () -> Unit = {}
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExchangeRatesScreen(
-    onMenuClick: () -> Unit,
-    onBackClick: () -> Unit = {},
-    isTopLevel: Boolean = false,
-    viewModel: CurrencyViewModel
+    config: ExchangeRatesConfig,
+    actions: ExchangeRatesActions,
+    vms: SharedNavViewModels
 ) {
+    val viewModel = vms.currencyViewModel
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
@@ -263,9 +280,9 @@ fun ExchangeRatesScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Exchange Rates",
-                            isTopLevel = isTopLevel,
-                            onMenuClick = if (isTopLevel) onMenuClick else null,
-                            onBackClick = if (!isTopLevel) onBackClick else null
+                            isTopLevel = config.isTopLevel,
+                            onMenuClick = if (config.isTopLevel) actions.onMenuClick else null,
+                            onBackClick = if (!config.isTopLevel) actions.onBackClick else null
                         )
                     }
                 ),

@@ -29,37 +29,32 @@ import com.osscabinet.ossWallet.ui.screens.transactions.entry.components.Transac
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionEntryScreen(
-    transactionId: Long? = null,
-    accountId: String? = null,
-    initialType: TransactionType? = null,
-    initialTemplateId: Long? = null,
-    prefillDto: com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO? = null,
     viewModel: TransactionEntryViewModel,
-    onBackClick: () -> Unit,
-    onDispose: () -> Unit = {},
+    config: TransactionEntryConfig,
+    actions: TransactionEntryActions
 ) {
     LaunchedEffect(Unit) {
         viewModel.initialize(
-            transactionId = transactionId,
-            accountId = accountId,
-            initialType = initialType ?: TransactionType.EXPENSE,
-            initialTemplateId = initialTemplateId,
-            prefillDto = prefillDto
+            transactionId = config.transactionId,
+            accountId = config.accountId,
+            initialType = config.initialType ?: TransactionType.EXPENSE,
+            initialTemplateId = config.initialTemplateId,
+            prefillDto = config.prefillDto
         )
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(prefillDto) {
-        if (prefillDto != null && (prefillDto != state.prefillDto)) {
-            viewModel.onEvent(TransactionEntryEvent.ApplyPrefill(prefillDto))
+    LaunchedEffect(config.prefillDto) {
+        if (config.prefillDto != null && (config.prefillDto != state.prefillDto)) {
+            viewModel.onEvent(TransactionEntryEvent.ApplyPrefill(config.prefillDto))
         }
     }
 
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearPrefillDto()
-            onDispose()
+            actions.onDispose()
         }
     }
 
@@ -69,13 +64,13 @@ fun TransactionEntryScreen(
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Transaction" else "New Transaction",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             viewModel.saveTransaction {
                 viewModel.onEvent(TransactionEntryEvent.TriggerNavigation)
@@ -85,7 +80,7 @@ fun TransactionEntryScreen(
         isEditMode = state.isEditMode,
         onDeleteClick = if (state.isEditMode) {
             {
-                viewModel.deleteTransaction { onBackClick() }
+                viewModel.deleteTransaction { actions.onBackClick() }
             }
         } else null
     ) { innerPadding ->
@@ -103,6 +98,19 @@ fun TransactionEntryScreen(
         )
     }
 }
+
+data class TransactionEntryConfig(
+    val transactionId: Long? = null,
+    val accountId: String? = null,
+    val initialType: TransactionType? = null,
+    val initialTemplateId: Long? = null,
+    val prefillDto: com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO? = null
+)
+
+data class TransactionEntryActions(
+    val onBackClick: () -> Unit,
+    val onDispose: () -> Unit = {}
+)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable

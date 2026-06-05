@@ -23,20 +23,28 @@ import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TagListRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateListRoute
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebActions
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
+import com.osscabinet.ossWallet.ui.screens.settings.CurrencySettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencySettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.DataManagementActions
 import com.osscabinet.ossWallet.ui.screens.settings.DataManagementScreen
+import com.osscabinet.ossWallet.ui.screens.settings.DisplaySettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.DisplaySettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.SecuritySettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.SecuritySettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsActions
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesActions
 import com.osscabinet.ossWallet.ui.screens.settings.ShortlistedCurrenciesScreen
+import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsActions
 import com.osscabinet.ossWallet.ui.screens.smartsuggestions.SmartSuggestionsScreen
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 fun NavGraphBuilder.settingsGraph(
     navController: NavHostController,
-    vms: SharedNavViewModels
+    vms: SharedNavViewModels,
 ) {
     composable<SettingsRoute>(
         enterTransition = { EnterTransitionSpec },
@@ -46,17 +54,19 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         SettingsScreen(
             viewModel = vms.settingsViewModel,
-            onDisplayClick = { navController.navigate(SettingsDisplayRoute) },
-            onCurrencyClick = { navController.navigate(SettingsCurrencyRoute) },
-            onAccountsClick = { navController.navigate(AccountListRoute) },
-            onCategoriesClick = { navController.navigate(CategoryListRoute) },
-            onTagsClick = { navController.navigate(TagListRoute) },
-            onTemplatesClick = { navController.navigate(TemplateListRoute) },
-            onSmartSuggestionsClick = { navController.navigate(SmartSuggestionsRoute) },
-            onFiltersClick = { navController.navigate(FilterListRoute) },
-            onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
-            onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
-            onBackClick = { navController.popBackStack() }
+            actions = SettingsActions(
+                onDisplayClick = { navController.navigate(SettingsDisplayRoute) },
+                onCurrencyClick = { navController.navigate(SettingsCurrencyRoute) },
+                onAccountsClick = { navController.navigate(AccountListRoute) },
+                onCategoriesClick = { navController.navigate(CategoryListRoute) },
+                onTagsClick = { navController.navigate(TagListRoute) },
+                onTemplatesClick = { navController.navigate(TemplateListRoute) },
+                onSmartSuggestionsClick = { navController.navigate(SmartSuggestionsRoute) },
+                onFiltersClick = { navController.navigate(FilterListRoute) },
+                onSecurityClick = { navController.navigate(SettingsSecurityRoute) },
+                onDataManagementClick = { navController.navigate(SettingsDataManagementRoute) },
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -68,7 +78,9 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         DisplaySettingsScreen(
             viewModel = vms.settingsViewModel,
-            onBackClick = { navController.popBackStack() }
+            actions = DisplaySettingsActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -80,8 +92,10 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         CurrencySettingsScreen(
             viewModel = vms.settingsViewModel,
-            onShortlistedCurrenciesClick = { navController.navigate(ShortlistedCurrenciesRoute) },
-            onBackClick = { navController.popBackStack() }
+            actions = CurrencySettingsActions(
+                onShortlistedCurrenciesClick = { navController.navigate(ShortlistedCurrenciesRoute) },
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -93,8 +107,10 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         SecuritySettingsScreen(
             viewModel = vms.settingsViewModel,
-            onOpenInWebClick = { navController.navigate(OpenInWebRoute) },
-            onBackClick = { navController.popBackStack() }
+            actions = SecuritySettingsActions(
+                onOpenInWebClick = { navController.navigate(OpenInWebRoute) },
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -106,7 +122,9 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         DataManagementScreen(
             viewModel = vms.settingsViewModel,
-            onBackClick = { navController.popBackStack() }
+            actions = DataManagementActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -118,7 +136,9 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         ShortlistedCurrenciesScreen(
             viewModel = vms.settingsViewModel,
-            onBack = { navController.popBackStack() }
+            actions = ShortlistedCurrenciesActions(
+                onBack = { navController.popBackStack() }
+            )
         )
     }
 
@@ -130,9 +150,11 @@ fun NavGraphBuilder.settingsGraph(
     ) {
         SmartSuggestionsScreen(
             viewModel = vms.transactionViewModel,
-            onAcceptAsTemplate = { navController.navigate(TemplateEntryRoute()) },
-            onAcceptAsPlannedPayment = { navController.navigate(PlannedPaymentEntryRoute()) },
-            onBackClick = { navController.popBackStack() }
+            actions = SmartSuggestionsActions(
+                onAcceptAsTemplate = { navController.navigate(TemplateEntryRoute()) },
+                onAcceptAsPlannedPayment = { navController.navigate(PlannedPaymentEntryRoute()) },
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -145,7 +167,9 @@ fun NavGraphBuilder.settingsGraph(
         val vm: OpenInWebViewModel = hiltViewModel()
         OpenInWebScreen(
             viewModel = vm,
-            onNavigateBack = { navController.popBackStack() }
+            actions = OpenInWebActions(
+                onNavigateBack = { navController.popBackStack() }
+            )
         )
     }
 }

@@ -26,29 +26,43 @@ import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.Plan
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
+/**
+ * A Value Object representing a valid configuration for the Planned Payment Entry screen.
+ */
+data class PlannedPaymentEntryConfig(
+    val plannedPaymentId: Long? = null,
+    val prefill: com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO? = null
+)
+
+/**
+ * Grouped actions for the Planned Payment Entry screen.
+ */
+data class PlannedPaymentEntryActions(
+    val onBackClick: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentEntryScreen(
-    plannedPaymentId: Long? = null,
-    prefill: com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO? = null,
-    viewModel: PlannedPaymentEntryViewModel,
-    onBackClick: () -> Unit
+    config: PlannedPaymentEntryConfig,
+    actions: PlannedPaymentEntryActions,
+    viewModel: PlannedPaymentEntryViewModel
 ) {
-    LaunchedEffect(plannedPaymentId, prefill) {
-        viewModel.initialize(plannedPaymentId, prefill)
+    LaunchedEffect(config.plannedPaymentId, config.prefill) {
+        viewModel.initialize(config.plannedPaymentId, config.prefill)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Payment" else "New Payment",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             viewModel.savePlannedPayment {
                 viewModel.onEvent(PlannedPaymentEntryEvent.TriggerNavigation)

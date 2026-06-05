@@ -55,9 +55,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun FilterListScreen(
     viewModel: FilterViewModel,
-    onBackClick: () -> Unit,
-    onAddFilterClick: () -> Unit,
-    onEditFilterClick: (Filter) -> Unit
+    actions: FilterListActions
 ) {
     val filters by viewModel.allFilters.collectAsStateWithLifecycle()
 
@@ -67,7 +65,7 @@ fun FilterListScreen(
                 containerColor = Color.Transparent,
                 floatingActionButton = {
                     AeonFloatingActionButton(
-                        onClick = onAddFilterClick,
+                        onClick = actions.onAddFilterClick,
                         icon = Icons.Rounded.Add,
                         contentDescription = "Add Filter"
                     )
@@ -120,7 +118,7 @@ fun FilterListScreen(
                             items(filters) { filter ->
                                 FilterItem(
                                     filter = filter,
-                                    onClick = { onEditFilterClick(filter) },
+                                    onClick = { actions.onEditFilterClick(filter) },
                                     onDelete = { viewModel.deleteFilter(filter) }
                                 )
                             }
@@ -134,7 +132,7 @@ fun FilterListScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Saved Filters",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -142,6 +140,12 @@ fun FilterListScreen(
         }
     }
 }
+
+data class FilterListActions(
+    val onBackClick: () -> Unit,
+    val onAddFilterClick: () -> Unit,
+    val onEditFilterClick: (Filter) -> Unit
+)
 
 @Composable
 fun FilterItem(

@@ -70,9 +70,7 @@ import java.math.BigDecimal
 @Composable
 fun SmartSuggestionsScreen(
     viewModel: TransactionViewModel,
-    onAcceptAsTemplate: () -> Unit,
-    onAcceptAsPlannedPayment: () -> Unit,
-    onBackClick: () -> Unit
+    actions: SmartSuggestionsActions
 ) {
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -138,11 +136,11 @@ fun SmartSuggestionsScreen(
                                     categories = categories,
                                     onAcceptAsTemplate = {
                                         viewModel.saveTemplateFromPattern(it)
-                                        onAcceptAsTemplate()
+                                        actions.onAcceptAsTemplate()
                                     },
                                     onAcceptAsPlannedPayment = {
                                         viewModel.savePlannedPaymentFromPattern(it)
-                                        onAcceptAsPlannedPayment()
+                                        actions.onAcceptAsPlannedPayment()
                                     },
                                     onDismiss = {
                                         dismissedPatterns =
@@ -160,7 +158,7 @@ fun SmartSuggestionsScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Smart Suggestions",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -168,6 +166,12 @@ fun SmartSuggestionsScreen(
         }
     }
 }
+
+data class SmartSuggestionsActions(
+    val onAcceptAsTemplate: () -> Unit,
+    val onAcceptAsPlannedPayment: () -> Unit,
+    val onBackClick: () -> Unit
+)
 
 @Composable
 private fun SuggestionListItem(

@@ -80,8 +80,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun CurrencySettingsScreen(
     viewModel: SettingsViewModel,
-    onShortlistedCurrenciesClick: () -> Unit,
-    onBackClick: () -> Unit
+    actions: CurrencySettingsActions
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val decimalPrecision by viewModel.decimalPrecision.collectAsStateWithLifecycle()
@@ -408,7 +407,7 @@ fun CurrencySettingsScreen(
                                 subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" }
                                     ?: "All currencies",
                                 icon = Icons.Rounded.Bookmarks,
-                                onClick = onShortlistedCurrenciesClick
+                                onClick = actions.onShortlistedCurrenciesClick
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
@@ -522,7 +521,7 @@ fun CurrencySettingsScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Currency & Localization",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -530,3 +529,8 @@ fun CurrencySettingsScreen(
         }
     }
 }
+
+data class CurrencySettingsActions(
+    val onShortlistedCurrenciesClick: () -> Unit,
+    val onBackClick: () -> Unit
+)

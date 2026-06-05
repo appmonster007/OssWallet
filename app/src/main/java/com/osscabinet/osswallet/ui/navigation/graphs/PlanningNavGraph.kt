@@ -23,25 +23,41 @@ import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.BudgetDetailActions
+import com.osscabinet.ossWallet.ui.screens.budgets.detail.BudgetDetailConfig
 import com.osscabinet.ossWallet.ui.screens.budgets.detail.BudgetDetailScreen
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryActions
+import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryConfig
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryScreen
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.BudgetEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.budgets.list.BudgetListActions
+import com.osscabinet.ossWallet.ui.screens.budgets.list.BudgetListConfig
 import com.osscabinet.ossWallet.ui.screens.budgets.list.BudgetListScreen
 import com.osscabinet.ossWallet.ui.screens.loans.LoanViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.detail.LoanDetailActions
+import com.osscabinet.ossWallet.ui.screens.loans.detail.LoanDetailConfig
 import com.osscabinet.ossWallet.ui.screens.loans.detail.LoanDetailScreen
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryActions
+import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryConfig
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryScreen
 import com.osscabinet.ossWallet.ui.screens.loans.entry.LoanEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.loans.list.LoanListActions
 import com.osscabinet.ossWallet.ui.screens.loans.list.LoanListScreen
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.PlannedPaymentDetailActions
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.PlannedPaymentDetailConfig
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.detail.PlannedPaymentDetailScreen
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryActions
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryConfig
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryScreen
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentListActions
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentListScreen
 import androidx.compose.runtime.getValue
 
 fun NavGraphBuilder.planningGraph(
     navController: NavHostController,
-    vms: SharedNavViewModels
+    vms: SharedNavViewModels,
 ) {
     // ── Planned Payments ──────────────────────────────────────────────────────
 
@@ -53,16 +69,18 @@ fun NavGraphBuilder.planningGraph(
     ) {
         val plannedPaymentViewModel: PlannedPaymentViewModel = hiltViewModel()
         PlannedPaymentListScreen(
+            actions = PlannedPaymentListActions(
+                onAddClick = { navController.navigate(PlannedPaymentEntryRoute()) },
+                onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
+                onDetailClick = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onConfirmClick = { id, date ->
+                    vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onBackClick = { navController.popBackStack() }
+            ),
             viewModel = plannedPaymentViewModel,
-            transactionManager = vms.dashboardViewModel.transactionManager,
-            onAddClick = { navController.navigate(PlannedPaymentEntryRoute()) },
-            onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
-            onDetailClick = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
-            onConfirmClick = { id, date ->
-                vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onBackClick = { navController.popBackStack() }
+            transactionManager = vms.dashboardViewModel.transactionManager
         )
     }
 
@@ -75,9 +93,9 @@ fun NavGraphBuilder.planningGraph(
         val route = backStackEntry.toRoute<PlannedPaymentEntryRoute>()
         val entryViewModel: PlannedPaymentEntryViewModel = hiltViewModel()
         PlannedPaymentEntryScreen(
-            plannedPaymentId = route.plannedPaymentId.takeIf { it != -1L },
-            viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() }
+            config = PlannedPaymentEntryConfig(plannedPaymentId = route.plannedPaymentId.takeIf { it != -1L }),
+            actions = PlannedPaymentEntryActions(onBackClick = { navController.popBackStack() }),
+            viewModel = entryViewModel
         )
     }
 
@@ -92,17 +110,19 @@ fun NavGraphBuilder.planningGraph(
         val accounts by vms.accountViewModel.accounts.collectAsStateWithLifecycle()
         val categories by vms.transactionViewModel.categories.collectAsStateWithLifecycle()
         PlannedPaymentDetailScreen(
-            plannedPaymentId = route.plannedPaymentId,
+            config = PlannedPaymentDetailConfig(plannedPaymentId = route.plannedPaymentId),
+            actions = PlannedPaymentDetailActions(
+                onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
+                onConfirmClick = { id, date ->
+                    vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onBackClick = { navController.popBackStack() }
+            ),
             viewModel = plannedPaymentViewModel,
             transactionManager = vms.dashboardViewModel.transactionManager,
             accounts = accounts,
-            categories = categories,
-            onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
-            onConfirmClick = { id, date ->
-                vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onBackClick = { navController.popBackStack() }
+            categories = categories
         )
     }
 
@@ -117,12 +137,14 @@ fun NavGraphBuilder.planningGraph(
         val budgetViewModel: BudgetViewModel = hiltViewModel()
         val baseCurrency by vms.settingsViewModel.currency.collectAsStateWithLifecycle()
         BudgetListScreen(
-            viewModel = budgetViewModel,
-            onAddClick = { navController.navigate(BudgetEntryRoute()) },
-            onEditClick = { id -> navController.navigate(BudgetEntryRoute(budgetId = id)) },
-            onDetailClick = { id -> navController.navigate(BudgetDetailRoute(id)) },
-            onBackClick = { navController.popBackStack() },
-            baseCurrency = baseCurrency
+            config = BudgetListConfig(baseCurrency = baseCurrency),
+            actions = BudgetListActions(
+                onAddClick = { navController.navigate(BudgetEntryRoute()) },
+                onEditClick = { id -> navController.navigate(BudgetEntryRoute(budgetId = id)) },
+                onDetailClick = { id -> navController.navigate(BudgetDetailRoute(id)) },
+                onBackClick = { navController.popBackStack() }
+            ),
+            viewModel = budgetViewModel
         )
     }
 
@@ -135,9 +157,9 @@ fun NavGraphBuilder.planningGraph(
         val route = backStackEntry.toRoute<BudgetEntryRoute>()
         val entryViewModel: BudgetEntryViewModel = hiltViewModel()
         BudgetEntryScreen(
-            budgetId = route.budgetId.takeIf { it != -1L },
-            viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() }
+            config = BudgetEntryConfig(budgetId = route.budgetId.takeIf { it != -1L }),
+            actions = BudgetEntryActions(onBackClick = { navController.popBackStack() }),
+            viewModel = entryViewModel
         )
     }
 
@@ -151,23 +173,27 @@ fun NavGraphBuilder.planningGraph(
         val budgetViewModel: BudgetViewModel = hiltViewModel()
         val baseCurrency by vms.settingsViewModel.currency.collectAsStateWithLifecycle()
         BudgetDetailScreen(
-            budgetId = route.budgetId,
+            config = BudgetDetailConfig(
+                budgetId = route.budgetId,
+                baseCurrency = baseCurrency
+            ),
+            actions = BudgetDetailActions(
+                onEditClick = { id -> navController.navigate(BudgetEntryRoute(budgetId = id)) },
+                onBackClick = { navController.popBackStack() },
+                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+            ),
             viewModel = budgetViewModel,
             accountViewModel = vms.accountViewModel,
-            transactionViewModel = vms.transactionViewModel,
-            baseCurrency = baseCurrency,
-            onEditClick = { id -> navController.navigate(BudgetEntryRoute(budgetId = id)) },
-            onBackClick = { navController.popBackStack() },
-            onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+            transactionViewModel = vms.transactionViewModel
         )
     }
 
@@ -181,10 +207,12 @@ fun NavGraphBuilder.planningGraph(
     ) {
         val loanViewModel: LoanViewModel = hiltViewModel()
         LoanListScreen(
-            viewModel = loanViewModel,
-            onAddClick = { navController.navigate(LoanEntryRoute()) },
-            onLoanClick = { id -> navController.navigate(LoanDetailRoute(id)) },
-            onBackClick = { navController.popBackStack() }
+            actions = LoanListActions(
+                onAddClick = { navController.navigate(LoanEntryRoute()) },
+                onLoanClick = { id -> navController.navigate(LoanDetailRoute(id)) },
+                onBackClick = { navController.popBackStack() }
+            ),
+            viewModel = loanViewModel
         )
     }
 
@@ -197,9 +225,9 @@ fun NavGraphBuilder.planningGraph(
         val route = backStackEntry.toRoute<LoanEntryRoute>()
         val entryViewModel: LoanEntryViewModel = hiltViewModel()
         LoanEntryScreen(
-            loanId = route.loanId.takeIf { it != -1L },
-            viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() }
+            config = LoanEntryConfig(loanId = route.loanId.takeIf { it != -1L }),
+            actions = LoanEntryActions(onBackClick = { navController.popBackStack() }),
+            viewModel = entryViewModel
         )
     }
 
@@ -213,23 +241,27 @@ fun NavGraphBuilder.planningGraph(
         val loanViewModel: LoanViewModel = hiltViewModel()
         val baseCurrency by vms.settingsViewModel.currency.collectAsStateWithLifecycle()
         LoanDetailScreen(
-            loanId = route.loanId,
+            config = LoanDetailConfig(
+                loanId = route.loanId,
+                baseCurrency = baseCurrency
+            ),
+            actions = LoanDetailActions(
+                onEditClick = { navController.navigate(LoanEntryRoute(loanId = route.loanId)) },
+                onBackClick = { navController.popBackStack() },
+                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+            ),
             viewModel = loanViewModel,
             accountViewModel = vms.accountViewModel,
-            transactionViewModel = vms.transactionViewModel,
-            baseCurrency = baseCurrency,
-            onEditClick = { navController.navigate(LoanEntryRoute(loanId = route.loanId)) },
-            onBackClick = { navController.popBackStack() },
-            onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+            transactionViewModel = vms.transactionViewModel
         )
     }
 }

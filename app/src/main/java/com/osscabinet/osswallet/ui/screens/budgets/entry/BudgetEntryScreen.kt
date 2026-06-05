@@ -12,15 +12,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.budgets.entry.components.BudgetFormBody
 
+/**
+ * A Value Object representing a valid configuration for the Budget Entry screen.
+ */
+data class BudgetEntryConfig(
+    val budgetId: Long? = null
+)
+
+/**
+ * Grouped actions for the Budget Entry screen.
+ */
+data class BudgetEntryActions(
+    val onBackClick: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetEntryScreen(
-    budgetId: Long? = null,
-    viewModel: BudgetEntryViewModel,
-    onBackClick: () -> Unit
+    config: BudgetEntryConfig,
+    actions: BudgetEntryActions,
+    viewModel: BudgetEntryViewModel
 ) {
-    LaunchedEffect(budgetId) {
-        viewModel.initialize(budgetId)
+    LaunchedEffect(config.budgetId) {
+        viewModel.initialize(config.budgetId)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -28,13 +42,13 @@ fun BudgetEntryScreen(
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Budget" else "New Budget",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             viewModel.saveBudget {

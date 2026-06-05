@@ -17,7 +17,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -41,6 +40,7 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.categories.CategoryViewModel
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardViewModel
 import com.osscabinet.ossWallet.ui.screens.main.MainViewModel
+import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingActions
 import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingScreen
 import com.osscabinet.ossWallet.ui.screens.onboarding.OnboardingViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.CurrencyViewModel
@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
-    onSplashConditionChanged: (Boolean) -> Unit = {}
+    onSplashConditionChanged: (Boolean) -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
         settingsViewModel = hiltViewModel(),
@@ -216,11 +216,13 @@ fun OssWalletNavGraph(
                 val onboardingViewModel: OnboardingViewModel = hiltViewModel()
                 OnboardingScreen(
                     viewModel = onboardingViewModel,
-                    onComplete = {
-                        navController.navigate(DashboardRoute()) {
-                            popUpTo<OnboardingRoute> { inclusive = true }
+                    actions = OnboardingActions(
+                        onComplete = {
+                            navController.navigate(DashboardRoute()) {
+                                popUpTo<OnboardingRoute> { inclusive = true }
+                            }
                         }
-                    }
+                    )
                 )
             }
 

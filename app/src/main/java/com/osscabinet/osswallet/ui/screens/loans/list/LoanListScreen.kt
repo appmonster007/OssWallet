@@ -55,13 +55,20 @@ import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 
+/**
+ * Grouped actions for the Loan List screen.
+ */
+data class LoanListActions(
+    val onBackClick: () -> Unit,
+    val onAddClick: () -> Unit,
+    val onLoanClick: (Long) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoanListScreen(
-    onBackClick: () -> Unit,
-    viewModel: LoanViewModel,
-    onAddClick: () -> Unit,
-    onLoanClick: (Long) -> Unit
+    actions: LoanListActions,
+    viewModel: LoanViewModel
 ) {
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val loans by viewModel.loans.collectAsStateWithLifecycle()
@@ -141,7 +148,7 @@ fun LoanListScreen(
                                 items(active, key = { it.id }) { loan ->
                                     LoanItem(
                                         loan = loan,
-                                        onEdit = { onLoanClick(loan.id) },
+                                        onEdit = { actions.onLoanClick(loan.id) },
                                         onDelete = { viewModel.deleteLoan(loan.id) },
                                         onSettle = { viewModel.settleLoan(loan) }
                                     )
@@ -157,7 +164,7 @@ fun LoanListScreen(
                                 items(settled, key = { it.id }) { loan ->
                                     LoanItem(
                                         loan = loan,
-                                        onEdit = { onLoanClick(loan.id) },
+                                        onEdit = { actions.onLoanClick(loan.id) },
                                         onDelete = { viewModel.deleteLoan(loan.id) },
                                         onSettle = {}
                                     )
@@ -173,7 +180,7 @@ fun LoanListScreen(
                 onTabSelected = {},
                 tabs = emptyList(),
                 fabPaddingBottom = 16.dp + navigationBarHeight,
-                onFabClick = onAddClick,
+                onFabClick = actions.onAddClick,
                 fabIcon = Icons.Rounded.AccountBalance,
                 showFab = true
             )
@@ -183,7 +190,7 @@ fun LoanListScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Loans",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )

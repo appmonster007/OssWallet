@@ -7,33 +7,42 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
-import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import kotlinx.serialization.json.Json
+
+/**
+ * A Value Object representing a valid configuration for the Transaction List screen.
+ */
+data class TransactionListConfig(
+    val isTopLevel: Boolean = false,
+    val filterJson: String? = null
+)
+
+/**
+ * Grouped actions for the Transaction List screen.
+ */
+data class TransactionListActions(
+    val onMenuClick: () -> Unit,
+    val onBackClick: () -> Unit,
+    val onEditTransactionClick: (Long) -> Unit,
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {},
+    val onSaveFilterClick: (TransactionFilter) -> Unit = {}
+)
 
 @Composable
 fun TransactionListScreen(
-    onMenuClick: () -> Unit,
-    isTopLevelParam: Boolean = false,
-    viewModel: TransactionViewModel,
-    accountViewModel: AccountViewModel,
-    analyticsViewModel: AnalyticsViewModel,
-    settingsViewModel: SettingsViewModel,
-    onEditTransactionClick: (Long) -> Unit,
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    onBackClick: () -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit = {},
-    templateViewModel: TemplateViewModel,
-    // Context-aware parameters
-    filterJson: String? = null
+    config: TransactionListConfig,
+    actions: TransactionListActions,
+    vms: SharedNavViewModels
 ) {
+    val viewModel = vms.transactionViewModel
+    val accountViewModel = vms.accountViewModel
+    val analyticsViewModel = vms.analyticsViewModel
+    
     val listState by viewModel.listState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -59,22 +68,22 @@ fun TransactionListScreen(
     }
 
     // Initialize mode and filter from navigation parameters
-    LaunchedEffect(isTopLevelParam, filterJson) {
-        val filter = if (!filterJson.isNullOrEmpty()) {
+    LaunchedEffect(config.isTopLevel, config.filterJson) {
+        val filter = if (!config.filterJson.isNullOrEmpty()) {
             try {
                 Json.decodeFromString<TransactionFilter>(
-                    java.net.URLDecoder.decode(filterJson, "UTF-8")
+                    java.net.URLDecoder.decode(config.filterJson, "UTF-8")
                 )
             } catch (e: Exception) { null }
         } else null
         
-        viewModel.setRecordsMode(topLevel = isTopLevelParam, filter = filter)
+        viewModel.setRecordsMode(topLevel = config.isTopLevel, filter = filter)
     }
 
     // Only clear filters when explicitly navigating back (not when navigating within records context)
     // Removed automatic filter clearing on screen disposal
 
-    val isTopLevel = isTopLevelParam
+    val isTopLevel = config.isTopLevel
 
     TransactionListContent(
         listState = listState,
@@ -90,7 +99,7 @@ fun TransactionListScreen(
             when (event) {
                 is TransactionItemEvent.Click -> navigate { 
                     if (event.id.startsWith("tx_")) {
-                        onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                        actions.onEditTransactionClick(event.id.removePrefix("tx_").toLong())
                     } else {
                         // Handle planned payment click if needed, maybe open detail?
                     }
@@ -102,9 +111,9 @@ fun TransactionListScreen(
                     event.status
                 )
 
-                is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
+                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> viewModel.quickDeleteTransaction(event.id)
-                is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
                 is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -114,12 +123,12 @@ fun TransactionListScreen(
         },
         onBackClick = {
             navigate {
-                onBackClick()
+                actions.onBackClick()
             }
         },
-        onMenuClick = onMenuClick,
+        onMenuClick = actions.onMenuClick,
         isTopLevel = isTopLevel,
-        onSaveFilterClick = onSaveFilterClick,
+        onSaveFilterClick = actions.onSaveFilterClick,
         onFilterEvent = { event ->
             when (event) {
                 is FilterEvent.Apply -> viewModel.updateRecordsFilter(event.filter)

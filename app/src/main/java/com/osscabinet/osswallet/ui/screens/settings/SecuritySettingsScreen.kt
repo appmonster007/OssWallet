@@ -42,8 +42,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @Composable
 fun SecuritySettingsScreen(
     viewModel: SettingsViewModel,
-    onOpenInWebClick: () -> Unit,
-    onBackClick: () -> Unit
+    actions: SecuritySettingsActions
 ) {
     val mapsAccessEnabled by viewModel.mapsAccessEnabled.collectAsStateWithLifecycle()
 
@@ -90,7 +89,7 @@ fun SecuritySettingsScreen(
                                 title = "Open in Web",
                                 subtitle = "Browse your data on the same WiFi network",
                                 icon = Icons.Rounded.Wifi,
-                                onClick = onOpenInWebClick
+                                onClick = actions.onOpenInWebClick
                             )
                         }
                     }
@@ -102,7 +101,7 @@ fun SecuritySettingsScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Security & Privacy",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -110,3 +109,8 @@ fun SecuritySettingsScreen(
         }
     }
 }
+
+data class SecuritySettingsActions(
+    val onOpenInWebClick: () -> Unit,
+    val onBackClick: () -> Unit
+)

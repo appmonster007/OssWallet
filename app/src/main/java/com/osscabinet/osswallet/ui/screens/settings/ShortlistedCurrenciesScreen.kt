@@ -65,7 +65,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun ShortlistedCurrenciesScreen(
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    actions: ShortlistedCurrenciesActions
 ) {
     val availableCurrencies by viewModel.availableCurrencies.collectAsStateWithLifecycle()
     val shortlistedCurrencies by viewModel.shortlistedCurrencies.collectAsStateWithLifecycle()
@@ -220,7 +220,7 @@ fun ShortlistedCurrenciesScreen(
                         AeonTopBarNavTitlePill(
                             title = "Active Currencies",
                             subtitle = "${selected.size} selected",
-                            onBackClick = onBack
+                            onBackClick = actions.onBack
                         )
                     }
                 ),
@@ -251,3 +251,7 @@ fun ShortlistedCurrenciesScreen(
         }
     }
 }
+
+data class ShortlistedCurrenciesActions(
+    val onBack: () -> Unit
+)

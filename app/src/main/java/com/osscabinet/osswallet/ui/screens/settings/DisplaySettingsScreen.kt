@@ -23,7 +23,7 @@ enum class DisplaySubScreen {
 @Composable
 fun DisplaySettingsScreen(
     viewModel: SettingsViewModel,
-    onBackClick: () -> Unit
+    actions: DisplaySettingsActions
 ) {
     var currentScreen by remember { mutableStateOf(DisplaySubScreen.MAIN) }
 
@@ -44,7 +44,7 @@ fun DisplaySettingsScreen(
             DisplaySubScreen.MAIN -> {
                 MainDisplaySettings(
                     viewModel = viewModel,
-                    onBackClick = onBackClick,
+                    onBackClick = actions.onBackClick,
                     onNavigateToAdvancedGlass = { currentScreen = DisplaySubScreen.ADVANCED_GLASS }
                 )
             }
@@ -66,3 +66,7 @@ fun DisplaySettingsScreen(
         }
     }
 }
+
+data class DisplaySettingsActions(
+    val onBackClick: () -> Unit
+)

@@ -27,11 +27,17 @@ import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsActions
+import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsConfig
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardActions
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardConfig
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardScreen
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesActions
+import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesConfig
 import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
+import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListActions
+import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListConfig
 import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,19 +49,19 @@ fun NavGraphBuilder.primaryTabsGraph(
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    vms: SharedNavViewModels
+    vms: SharedNavViewModels,
 ) {
     composable<DashboardRoute>(
         enterTransition = { FadeEnterTransitionSpec },
         exitTransition = { FadeExitTransitionSpec },
         popEnterTransition = { FadeEnterTransitionSpec },
-        popExitTransition = { FadeExitTransitionSpec }
+        popExitTransition = { FadeExitTransitionSpec },
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<DashboardRoute>()
         DashboardScreen(
             config = DashboardConfig(
                 isTopLevel = route.topLevel,
-                viewContextJson = route.viewContextJson
+                viewContextJson = route.viewContextJson,
             ),
             actions = DashboardActions(
                 onMenuClick = { scope.launch { drawerState.open() } },
@@ -91,7 +97,7 @@ fun NavGraphBuilder.primaryTabsGraph(
                 onSplitTransactionClick = { id ->
                     vms.transactionViewModel.setSplitTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
-                }
+                },
             ),
             vms = vms
         )
@@ -105,28 +111,28 @@ fun NavGraphBuilder.primaryTabsGraph(
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<TransactionListRoute>()
         TransactionListScreen(
-            onMenuClick = { scope.launch { drawerState.open() } },
-            isTopLevelParam = route.topLevel,
-            viewModel = vms.transactionViewModel,
-            accountViewModel = vms.accountViewModel,
-            analyticsViewModel = vms.analyticsViewModel,
-            settingsViewModel = vms.settingsViewModel,
-            onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onBackClick = { navController.popBackStack() },
-            onSaveFilterClick = { filter ->
-                val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
-                navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
-            },
-            templateViewModel = vms.templateViewModel,
-            filterJson = route.filterJson.ifEmpty { null }
+            config = TransactionListConfig(
+                isTopLevel = route.topLevel,
+                filterJson = route.filterJson.ifEmpty { null }
+            ),
+            actions = TransactionListActions(
+                onMenuClick = { scope.launch { drawerState.open() } },
+                onBackClick = { navController.popBackStack() },
+                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSaveFilterClick = { filter ->
+                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
+                }
+            ),
+            vms = vms
         )
     }
 
@@ -137,32 +143,31 @@ fun NavGraphBuilder.primaryTabsGraph(
         popExitTransition = { FadeExitTransitionSpec }
     ) {
         AnalyticsScreen(
-            onMenuClick = { scope.launch { drawerState.open() } },
-            onBackClick = { navController.popBackStack() },
-            isTopLevel = true,
-            viewModel = vms.analyticsViewModel,
-            accountViewModel = vms.accountViewModel,
-            transactionViewModel = vms.transactionViewModel,
-            templateViewModel = vms.templateViewModel,
-            settingsViewModel = vms.settingsViewModel,
-            onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
-            onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
-            onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
-            onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
-            onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-            onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
-            onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
-            onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-            onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
+            config = AnalyticsConfig(
+                isTopLevel = true
+            ),
+            actions = AnalyticsActions(
+                onMenuClick = { scope.launch { drawerState.open() } },
+                onBackClick = { navController.popBackStack() },
+                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
+                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
+                onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
+                onNavigateToLoanList = { navController.navigate(LoanListRoute) },
+                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
+                onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
+                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+            ),
+            vms = vms
         )
     }
 
@@ -173,10 +178,14 @@ fun NavGraphBuilder.primaryTabsGraph(
         popExitTransition = { FadeExitTransitionSpec }
     ) {
         ExchangeRatesScreen(
-            onMenuClick = { scope.launch { drawerState.open() } },
-            onBackClick = { navController.popBackStack() },
-            isTopLevel = true,
-            viewModel = vms.currencyViewModel
+            config = ExchangeRatesConfig(
+                isTopLevel = true
+            ),
+            actions = ExchangeRatesActions(
+                onMenuClick = { scope.launch { drawerState.open() } },
+                onBackClick = { navController.popBackStack() }
+            ),
+            vms = vms
         )
     }
 }

@@ -55,7 +55,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun DataManagementScreen(
     viewModel: SettingsViewModel,
-    onBackClick: () -> Unit
+    actions: DataManagementActions
 ) {
     val context = LocalContext.current
 
@@ -205,7 +205,7 @@ fun DataManagementScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Data Management",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -213,6 +213,10 @@ fun DataManagementScreen(
         }
     }
 }
+
+data class DataManagementActions(
+    val onBackClick: () -> Unit
+)
 
 @Composable
 private fun ExportDialog(onDismiss: () -> Unit, onExportZip: () -> Unit, onExportSqlite: () -> Unit) {

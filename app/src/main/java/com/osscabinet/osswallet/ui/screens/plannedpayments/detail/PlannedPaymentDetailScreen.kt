@@ -116,22 +116,36 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 
+/**
+ * A Value Object representing a valid configuration for the Planned Payment Detail screen.
+ */
+data class PlannedPaymentDetailConfig(
+    val plannedPaymentId: Long
+)
+
+/**
+ * Grouped actions for the Planned Payment Detail screen.
+ */
+data class PlannedPaymentDetailActions(
+    val onEditClick: (Long) -> Unit,
+    val onConfirmClick: (Long, Long?) -> Unit,
+    val onBackClick: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentDetailScreen(
-    plannedPaymentId: Long,
+    config: PlannedPaymentDetailConfig,
+    actions: PlannedPaymentDetailActions,
     viewModel: PlannedPaymentViewModel,
     transactionManager: TransactionManager, // Keep for signature consistency with NavGraph
     templateViewModel: TemplateViewModel? = null,
     accounts: List<Account> = emptyList(),
-    categories: List<Category> = emptyList(),
-    onEditClick: (Long) -> Unit,
-    onConfirmClick: (Long, Long?) -> Unit,
-    onBackClick: () -> Unit
+    categories: List<Category> = emptyList()
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val payment =
-        remember(plannedPaymentId, payments) { payments.find { it.id == plannedPaymentId } }
+        remember(config.plannedPaymentId, payments) { payments.find { it.id == config.plannedPaymentId } }
 
     var hasLoadedInitially by remember { mutableStateOf(false) }
 
@@ -142,12 +156,12 @@ fun PlannedPaymentDetailScreen(
         
         // If we previously had the payment (or at least loaded the list) and now it's gone, navigate back.
         if (hasLoadedInitially && payment == null) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
-    val occurrencesFlow = remember(plannedPaymentId) {
-        viewModel.getOccurrencesForPayment(plannedPaymentId)
+    val occurrencesFlow = remember(config.plannedPaymentId) {
+        viewModel.getOccurrencesForPayment(config.plannedPaymentId)
     }
     val occurrences by occurrencesFlow.collectAsStateWithLifecycle(emptyList())
 
@@ -163,8 +177,8 @@ fun PlannedPaymentDetailScreen(
         occurrences = occurrences,
         accounts = accounts,
         categories = categories,
-        onBackClick = onBackClick,
-        onEditClick = { onEditClick(payment.id) },
+        onBackClick = actions.onBackClick,
+        onEditClick = { actions.onEditClick(payment.id) },
         onSaveAsTemplateClick = {
             templateViewModel?.addTemplate(
                 name = payment.name,
@@ -184,7 +198,7 @@ fun PlannedPaymentDetailScreen(
                 profileId = payment.profileId
             )
         },
-        onConfirmOccurrence = { date -> onConfirmClick(payment.id, date) },
+        onConfirmOccurrence = { date -> actions.onConfirmClick(payment.id, date) },
         onSkipOccurrence = { viewModel.quickSkip(payment) }
     )
 }

@@ -60,7 +60,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 @Composable
 fun OpenInWebScreen(
     viewModel: OpenInWebViewModel,
-    onNavigateBack: () -> Unit
+    actions: OpenInWebActions
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isEnabled by viewModel.isEnabled.collectAsStateWithLifecycle()
@@ -300,7 +300,7 @@ fun OpenInWebScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Open in Web",
-                            onBackClick = onNavigateBack
+                            onBackClick = actions.onNavigateBack
                         )
                     }
                 )
@@ -308,3 +308,7 @@ fun OpenInWebScreen(
         }
     }
 }
+
+data class OpenInWebActions(
+    val onNavigateBack: () -> Unit
+)

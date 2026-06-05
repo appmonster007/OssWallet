@@ -91,12 +91,10 @@ import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateListScreen(
-    onBackClick: () -> Unit,
     viewModel: TemplateViewModel,
     accountViewModel: AccountViewModel,
     categoryMap: Map<Long, Category>,
-    onAddTemplateClick: (Long?) -> Unit,
-    onCreatePlannedPayment: (Template) -> Unit
+    actions: TemplateListActions
 ) {
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val starredTemplates by viewModel.starredTemplates.collectAsStateWithLifecycle()
@@ -105,12 +103,10 @@ fun TemplateListScreen(
         templates = templates,
         starredTemplates = starredTemplates,
         categoryMap = categoryMap,
-        onBackClick = onBackClick,
-        onAddTemplateClick = onAddTemplateClick,
+        actions = actions,
         onDeleteTemplate = { viewModel.deleteTemplate(it) },
         onUpdateOrder = { viewModel.updateTemplatesOrder(it) },
-        onToggleStar = { viewModel.toggleStar(it) },
-        onCreatePlannedPayment = onCreatePlannedPayment
+        onToggleStar = { viewModel.toggleStar(it) }
     )
 }
 
@@ -120,12 +116,10 @@ fun TemplateListScreenContent(
     templates: List<Template>,
     starredTemplates: List<Template>,
     categoryMap: Map<Long, Category>,
-    onBackClick: () -> Unit,
-    onAddTemplateClick: (Long?) -> Unit,
+    actions: TemplateListActions,
     onDeleteTemplate: (Template) -> Unit,
     onUpdateOrder: (List<Template>) -> Unit,
-    onToggleStar: (Template) -> Unit,
-    onCreatePlannedPayment: (Template) -> Unit
+    onToggleStar: (Template) -> Unit
 ) {
     var editList by remember { mutableStateOf(emptyList<Template>()) }
     var templateToDelete by remember { mutableStateOf<Template?>(null) }
@@ -171,7 +165,7 @@ fun TemplateListScreenContent(
                 floatingActionButton = {
                     if (!isReorderMode) {
                         AeonFloatingActionButton(
-                            onClick = { navigate { onAddTemplateClick(null) } },
+                            onClick = { navigate { actions.onAddTemplateClick(null) } },
                             icon = Icons.Rounded.Add,
                             contentDescription = "Add Template"
                         )
@@ -226,10 +220,10 @@ fun TemplateListScreenContent(
                                     template = template,
                                     categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
                                     categoryIconName = categoryMap[template.categoryId]?.iconName,
-                                    onEdit = { navigate { onAddTemplateClick(template.id) } },
+                                    onEdit = { navigate { actions.onAddTemplateClick(template.id) } },
                                     onDelete = { templateToDelete = template },
                                     onToggleStar = { onToggleStar(template) },
-                                    onCreatePlannedPayment = { onCreatePlannedPayment(template) }
+                                    onCreatePlannedPayment = { actions.onCreatePlannedPayment(template) }
                                 )
                             }
                         }
@@ -245,7 +239,7 @@ fun TemplateListScreenContent(
                             onBackClick = if (isReorderMode) {
                                 { isReorderMode = false }
                             } else {
-                                onBackClick
+                                actions.onBackClick
                             }
                         )
                     }
@@ -265,6 +259,12 @@ fun TemplateListScreenContent(
         }
     }
 }
+
+data class TemplateListActions(
+    val onBackClick: () -> Unit,
+    val onAddTemplateClick: (Long?) -> Unit,
+    val onCreatePlannedPayment: (Template) -> Unit
+)
 
 @Composable
 fun ReorderTemplateItem(

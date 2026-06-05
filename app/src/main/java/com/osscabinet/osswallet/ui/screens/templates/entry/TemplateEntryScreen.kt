@@ -15,26 +15,25 @@ import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateFo
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplateEntryScreen(
-    templateId: Long? = null,
-    prefill: com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO? = null,
     viewModel: TemplateEntryViewModel,
-    onBackClick: () -> Unit
+    config: TemplateEntryConfig,
+    actions: TemplateEntryActions
 ) {
-    LaunchedEffect(templateId, prefill) {
-        viewModel.initialize(templateId, prefill)
+    LaunchedEffect(config.templateId, config.prefill) {
+        viewModel.initialize(config.templateId, config.prefill)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.templateId == null) "New Template" else "Edit Template",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             viewModel.saveTemplate {
                 viewModel.onEvent(TemplateEntryEvent.TriggerNavigation)
@@ -74,3 +73,12 @@ fun TemplateEntryScreen(
         )
     }
 }
+
+data class TemplateEntryConfig(
+    val templateId: Long? = null,
+    val prefill: com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO? = null
+)
+
+data class TemplateEntryActions(
+    val onBackClick: () -> Unit
+)

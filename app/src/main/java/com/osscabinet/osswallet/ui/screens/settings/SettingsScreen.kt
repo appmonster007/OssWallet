@@ -60,17 +60,7 @@ import dev.chrisbanes.haze.hazeSource
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onDisplayClick: () -> Unit,
-    onCurrencyClick: () -> Unit,
-    onAccountsClick: () -> Unit,
-    onCategoriesClick: () -> Unit,
-    onTagsClick: () -> Unit,
-    onTemplatesClick: () -> Unit,
-    onSmartSuggestionsClick: () -> Unit,
-    onFiltersClick: () -> Unit,
-    onSecurityClick: () -> Unit,
-    onDataManagementClick: () -> Unit,
-    onBackClick: () -> Unit
+    actions: SettingsActions
 ) {
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
@@ -108,14 +98,14 @@ fun SettingsScreen(
                                 title = "Display & Style",
                                 subtitle = "Theme, fonts, and animations",
                                 icon = Icons.Rounded.Palette,
-                                onClick = onDisplayClick
+                                onClick = actions.onDisplayClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Currency & Localization",
                                 subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
                                 icon = Icons.Rounded.CurrencyExchange,
-                                onClick = onCurrencyClick
+                                onClick = actions.onCurrencyClick
                             )
                         }
 
@@ -124,21 +114,21 @@ fun SettingsScreen(
                                 title = "Accounts",
                                 subtitle = "Manage balances and visibility",
                                 icon = Icons.Rounded.AccountBalance,
-                                onClick = onAccountsClick
+                                onClick = actions.onAccountsClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Categories",
                                 subtitle = "Income and expense classification",
                                 icon = Icons.Rounded.Category,
-                                onClick = onCategoriesClick
+                                onClick = actions.onCategoriesClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Tags",
                                 subtitle = "Custom labeling for transactions",
                                 icon = Icons.AutoMirrored.Rounded.Label,
-                                onClick = onTagsClick
+                                onClick = actions.onTagsClick
                             )
                         }
 
@@ -147,21 +137,21 @@ fun SettingsScreen(
                                 title = "Transaction Templates",
                                 subtitle = "Quick shortcuts for frequent entries",
                                 icon = Icons.Rounded.AutoAwesome,
-                                onClick = onTemplatesClick
+                                onClick = actions.onTemplatesClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Smart Suggestions",
                                 subtitle = "Discover recurring transactions",
                                 icon = Icons.Rounded.AutoAwesome,
-                                onClick = onSmartSuggestionsClick
+                                onClick = actions.onSmartSuggestionsClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Saved Filters",
                                 subtitle = "Custom search presets",
                                 icon = Icons.Rounded.FilterList,
-                                onClick = onFiltersClick
+                                onClick = actions.onFiltersClick
                             )
                         }
 
@@ -170,14 +160,14 @@ fun SettingsScreen(
                                 title = "Security & Privacy",
                                 subtitle = "App lock, location, and web access",
                                 icon = Icons.Rounded.Lock,
-                                onClick = onSecurityClick
+                                onClick = actions.onSecurityClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Data Management",
                                 subtitle = "Import, export, and backups",
                                 icon = Icons.Rounded.CloudSync,
-                                onClick = onDataManagementClick
+                                onClick = actions.onDataManagementClick
                             )
                         }
 
@@ -224,7 +214,7 @@ fun SettingsScreen(
                     content = {
                         AeonTopBarNavTitlePill(
                             title = "Settings",
-                            onBackClick = onBackClick
+                            onBackClick = actions.onBackClick
                         )
                     }
                 )
@@ -232,6 +222,20 @@ fun SettingsScreen(
         }
     }
 }
+
+data class SettingsActions(
+    val onDisplayClick: () -> Unit,
+    val onCurrencyClick: () -> Unit,
+    val onAccountsClick: () -> Unit,
+    val onCategoriesClick: () -> Unit,
+    val onTagsClick: () -> Unit,
+    val onTemplatesClick: () -> Unit,
+    val onSmartSuggestionsClick: () -> Unit,
+    val onFiltersClick: () -> Unit,
+    val onSecurityClick: () -> Unit,
+    val onDataManagementClick: () -> Unit,
+    val onBackClick: () -> Unit
+)
 
 @Composable
 private fun SettingsNavigationItem(

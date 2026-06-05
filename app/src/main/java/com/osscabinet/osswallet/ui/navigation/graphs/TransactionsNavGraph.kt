@@ -23,41 +23,56 @@ import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateListRoute
 import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
+import com.osscabinet.ossWallet.ui.screens.categories.list.CategoryListActions
 import com.osscabinet.ossWallet.ui.screens.categories.list.CategoryListScreen
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
+import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryActions
+import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryConfig
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryScreen
 import com.osscabinet.ossWallet.ui.screens.filters.entry.FilterEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListActions
 import com.osscabinet.ossWallet.ui.screens.filters.list.FilterListScreen
+import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletActions
 import com.osscabinet.ossWallet.ui.screens.sharedwallet.SharedWalletScreen
+import com.osscabinet.ossWallet.ui.screens.tags.list.TagListActions
 import com.osscabinet.ossWallet.ui.screens.tags.list.TagListScreen
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryActions
+import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryConfig
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryScreen
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.templates.list.TemplateListActions
 import com.osscabinet.ossWallet.ui.screens.templates.list.TemplateListScreen
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryActions
+import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryConfig
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryViewModel
 
 fun NavGraphBuilder.transactionsGraph(
     navController: NavHostController,
-    vms: SharedNavViewModels
+    vms: SharedNavViewModels,
 ) {
     composable<TransactionEntryRoute>(
         enterTransition = { EnterTransitionSpec },
         exitTransition = { ExitTransitionSpec },
         popEnterTransition = { PopEnterTransitionSpec },
-        popExitTransition = { PopExitTransitionSpec }
+        popExitTransition = { PopExitTransitionSpec },
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<TransactionEntryRoute>()
         val prefillDto by vms.transactionViewModel.prefillDto.collectAsStateWithLifecycle()
         val entryViewModel: TransactionEntryViewModel = hiltViewModel()
         TransactionEntryScreen(
-            transactionId = route.transactionId.takeIf { it != -1L },
-            accountId = route.accountId,
-            initialType = if (route.transactionType == -1) null else TransactionType.fromInt(route.transactionType),
-            initialTemplateId = route.templateId.takeIf { it != -1L },
-            prefillDto = prefillDto,
             viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() },
-            onDispose = { vms.transactionViewModel.clearPrefillDto() }
+            config = TransactionEntryConfig(
+                transactionId = route.transactionId.takeIf { it != -1L },
+                accountId = route.accountId,
+                initialType = if (route.transactionType == -1) null else TransactionType.fromInt(route.transactionType),
+                initialTemplateId = route.templateId.takeIf { it != -1L },
+                prefillDto = prefillDto
+            ),
+            actions = TransactionEntryActions(
+                onBackClick = { navController.popBackStack() },
+                onDispose = { vms.transactionViewModel.clearPrefillDto() }
+            )
         )
     }
 
@@ -69,7 +84,9 @@ fun NavGraphBuilder.transactionsGraph(
     ) {
         SharedWalletScreen(
             viewModel = vms.sharedWalletViewModel,
-            onBackClick = { navController.popBackStack() }
+            actions = SharedWalletActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -85,14 +102,16 @@ fun NavGraphBuilder.transactionsGraph(
             viewModel = vms.templateViewModel,
             accountViewModel = vms.accountViewModel,
             categoryMap = categoryMap,
-            onAddTemplateClick = { id ->
-                navController.navigate(TemplateEntryRoute(templateId = id ?: -1L))
-            },
-            onCreatePlannedPayment = { template ->
-                vms.transactionViewModel.setPlannedPaymentPrefillFromTemplate(template)
-                navController.navigate(PlannedPaymentEntryRoute())
-            },
-            onBackClick = { navController.popBackStack() }
+            actions = TemplateListActions(
+                onAddTemplateClick = { id ->
+                    navController.navigate(TemplateEntryRoute(templateId = id ?: -1L))
+                },
+                onCreatePlannedPayment = { template ->
+                    vms.transactionViewModel.setPlannedPaymentPrefillFromTemplate(template)
+                    navController.navigate(PlannedPaymentEntryRoute())
+                },
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -100,7 +119,7 @@ fun NavGraphBuilder.transactionsGraph(
         enterTransition = { EnterTransitionSpec },
         exitTransition = { ExitTransitionSpec },
         popEnterTransition = { PopEnterTransitionSpec },
-        popExitTransition = { PopExitTransitionSpec }
+        popExitTransition = { PopExitTransitionSpec },
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<TemplateEntryRoute>()
         val prefill by vms.transactionViewModel.templatePrefill.collectAsStateWithLifecycle()
@@ -109,10 +128,14 @@ fun NavGraphBuilder.transactionsGraph(
             if (prefill != null) vms.transactionViewModel.clearTemplatePrefill()
         }
         TemplateEntryScreen(
-            templateId = route.templateId.takeIf { it != -1L },
-            prefill = prefill,
             viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() }
+            config = TemplateEntryConfig(
+                templateId = route.templateId.takeIf { it != -1L },
+                prefill = prefill
+            ),
+            actions = TemplateEntryActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -125,11 +148,13 @@ fun NavGraphBuilder.transactionsGraph(
         val filterViewModel: FilterViewModel = hiltViewModel()
         FilterListScreen(
             viewModel = filterViewModel,
-            onBackClick = { navController.popBackStack() },
-            onAddFilterClick = { navController.navigate(FilterEntryRoute()) },
-            onEditFilterClick = { filter ->
-                navController.navigate(FilterEntryRoute(filterId = filter.id))
-            }
+            actions = FilterListActions(
+                onBackClick = { navController.popBackStack() },
+                onAddFilterClick = { navController.navigate(FilterEntryRoute()) },
+                onEditFilterClick = { filter ->
+                    navController.navigate(FilterEntryRoute(filterId = filter.id))
+                }
+            )
         )
     }
 
@@ -137,15 +162,19 @@ fun NavGraphBuilder.transactionsGraph(
         enterTransition = { EnterTransitionSpec },
         exitTransition = { ExitTransitionSpec },
         popEnterTransition = { PopEnterTransitionSpec },
-        popExitTransition = { PopExitTransitionSpec }
+        popExitTransition = { PopExitTransitionSpec },
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<FilterEntryRoute>()
         val entryViewModel: FilterEntryViewModel = hiltViewModel()
         FilterEntryScreen(
-            filterId = route.filterId.takeIf { it != -1L },
-            initialFilterJson = route.initialFilterJson,
             viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() }
+            config = FilterEntryConfig(
+                filterId = route.filterId.takeIf { it != -1L },
+                initialFilterJson = route.initialFilterJson
+            ),
+            actions = FilterEntryActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -157,7 +186,9 @@ fun NavGraphBuilder.transactionsGraph(
     ) {
         TagListScreen(
             viewModel = vms.tagViewModel,
-            onBackClick = { navController.popBackStack() }
+            actions = TagListActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 
@@ -169,7 +200,9 @@ fun NavGraphBuilder.transactionsGraph(
     ) {
         CategoryListScreen(
             viewModel = vms.categoryViewModel,
-            onBackClick = { navController.popBackStack() }
+            actions = CategoryListActions(
+                onBackClick = { navController.popBackStack() }
+            )
         )
     }
 }

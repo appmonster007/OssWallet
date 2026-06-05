@@ -17,20 +17,19 @@ import kotlinx.serialization.json.Json
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterEntryScreen(
-    filterId: Long? = null,
-    initialFilterJson: String? = null,
     viewModel: FilterEntryViewModel,
-    onBackClick: () -> Unit
+    config: FilterEntryConfig,
+    actions: FilterEntryActions
 ) {
-    LaunchedEffect(filterId, initialFilterJson) {
-        val initialFilter = initialFilterJson?.let {
+    LaunchedEffect(config.filterId, config.initialFilterJson) {
+        val initialFilter = config.initialFilterJson?.let {
             try {
                 Json.decodeFromString<TransactionFilter>(java.net.URLDecoder.decode(it, "UTF-8"))
             } catch (e: Exception) {
                 null
             }
         }
-        viewModel.initialize(filterId, initialFilter)
+        viewModel.initialize(config.filterId, initialFilter)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -38,13 +37,13 @@ fun FilterEntryScreen(
 
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
-            onBackClick()
+            actions.onBackClick()
         }
     }
 
     AeonEntryScaffold(
         title = if (state.isEditMode) "Edit Filter" else "New Filter",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         onSaveClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             viewModel.saveFilter {
@@ -70,3 +69,12 @@ fun FilterEntryScreen(
         )
     }
 }
+
+data class FilterEntryConfig(
+    val filterId: Long? = null,
+    val initialFilterJson: String? = null
+)
+
+data class FilterEntryActions(
+    val onBackClick: () -> Unit
+)

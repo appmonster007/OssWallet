@@ -22,10 +22,15 @@ import com.osscabinet.ossWallet.ui.navigation.PopExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailActions
+import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailConfig
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailScreen
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.AccountDetailViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryActions
+import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryConfig
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryScreen
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryViewModel
+import com.osscabinet.ossWallet.ui.screens.accounts.list.AccountListActions
 import com.osscabinet.ossWallet.ui.screens.accounts.list.AccountListScreen
 import kotlinx.serialization.json.Json
 import java.net.URLEncoder
@@ -33,7 +38,7 @@ import java.nio.charset.StandardCharsets
 
 fun NavGraphBuilder.accountsGraph(
     navController: NavHostController,
-    vms: SharedNavViewModels
+    vms: SharedNavViewModels,
 ) {
     composable<AccountListRoute>(
         enterTransition = { EnterTransitionSpec },
@@ -42,9 +47,11 @@ fun NavGraphBuilder.accountsGraph(
         popExitTransition = { PopExitTransitionSpec }
     ) {
         AccountListScreen(
-            onBackClick = { navController.popBackStack() },
-            onAddAccountClick = { navController.navigate(AccountEntryRoute()) },
-            onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+            actions = AccountListActions(
+                onBackClick = { navController.popBackStack() },
+                onAddAccountClick = { navController.navigate(AccountEntryRoute()) },
+                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) }
+            ),
             viewModel = vms.accountViewModel
         )
     }
@@ -58,47 +65,46 @@ fun NavGraphBuilder.accountsGraph(
         val route = backStackEntry.toRoute<AccountDetailRoute>()
         val accountDetailViewModel: AccountDetailViewModel = hiltViewModel()
         AccountDetailScreen(
-            accountId = route.accountId,
-            filterJson = route.filterJson,
-            accountViewModel = vms.accountViewModel,
-            transactionViewModel = vms.transactionViewModel,
-            settingsViewModel = vms.settingsViewModel,
-            analyticsViewModel = vms.analyticsViewModel,
-            accountDetailViewModel = accountDetailViewModel,
-            cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry,
-            templateViewModel = vms.templateViewModel,
-            onBackClick = { navController.popBackStack() },
-            onEditAccountClick = { id -> navController.navigate(AccountEntryRoute(accountId = id)) },
-            onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
-            onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
-            onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
-            onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-            onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
-            onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
-            onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-            onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onAddTransactionClick = { accId, type, templateId ->
-                navController.navigate(
-                    TransactionEntryRoute(
-                        accountId = accId,
-                        transactionType = type?.toInt() ?: -1,
-                        templateId = templateId ?: -1L
+            config = AccountDetailConfig(
+                accountId = route.accountId,
+                filterJson = route.filterJson
+            ),
+            actions = AccountDetailActions(
+                onBackClick = { navController.popBackStack() },
+                onEditAccountClick = { id -> navController.navigate(AccountEntryRoute(accountId = id)) },
+                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
+                onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
+                onNavigateToLoanList = { navController.navigate(LoanListRoute) },
+                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
+                onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
+                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
+                },
+                onAddTransactionClick = { accId, type, templateId ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            accountId = accId,
+                            transactionType = type?.toInt() ?: -1,
+                            templateId = templateId ?: -1L
+                        )
                     )
-                )
-            },
-            onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
-            onSaveFilterClick = { filter ->
-                val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
-                navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
-            }
+                },
+                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
+                onSaveFilterClick = { filter ->
+                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
+                }
+            ),
+            vms = vms,
+            accountDetailViewModel = accountDetailViewModel
         )
     }
 
@@ -111,10 +117,12 @@ fun NavGraphBuilder.accountsGraph(
         val route = backStackEntry.toRoute<AccountEntryRoute>()
         val entryViewModel: AccountEntryViewModel = hiltViewModel()
         AccountEntryScreen(
-            accountId = route.accountId,
-            viewModel = entryViewModel,
-            onBackClick = { navController.popBackStack() },
-            onDone = { navController.popBackStack() }
+            config = AccountEntryConfig(accountId = route.accountId),
+            actions = AccountEntryActions(
+                onBackClick = { navController.popBackStack() },
+                onDone = { navController.popBackStack() }
+            ),
+            viewModel = entryViewModel
         )
     }
 }

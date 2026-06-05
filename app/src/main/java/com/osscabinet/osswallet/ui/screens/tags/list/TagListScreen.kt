@@ -45,7 +45,7 @@ import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 @Composable
 fun TagListScreen(
     viewModel: TagViewModel,
-    onBackClick: () -> Unit
+    actions: TagListActions
 ) {
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     var tagToDelete by remember { mutableStateOf<Tag?>(null) }
@@ -97,7 +97,7 @@ fun TagListScreen(
     AeonTagSelectionContent(
         tags = tags,
         selectedTags = emptySet<String>(),
-        onTagsSelected = { onBackClick() },
+        onTagsSelected = { actions.onBackClick() },
         onAddTag = { name, color ->
             viewModel.addTag(name, color)
         },
@@ -107,11 +107,15 @@ fun TagListScreen(
         onDeleteTag = { tag ->
             tagToDelete = tag
         },
-        onDismiss = onBackClick,
+        onDismiss = actions.onBackClick,
         title = stringResource(R.string.tag_manage_title),
         isSelectionModeEnabled = false
     )
 }
+
+data class TagListActions(
+    val onBackClick: () -> Unit
+)
 
 @Composable
 fun EditTagDialog(

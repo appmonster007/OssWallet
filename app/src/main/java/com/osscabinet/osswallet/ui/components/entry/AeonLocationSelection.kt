@@ -103,6 +103,11 @@ import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSearchPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.AeonTopBarPill
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -496,63 +501,23 @@ private fun AeonLocationSelectionContent(
 
             // ── 2. Top bar: back + search pill ────────────────────────────────
             AeonTopAppBar(
-                onBackClick = onDismiss,
-                title = "",
-                titleContent = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .height(AeonSize.D40.value),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            contentDescription = null,
-                            tint = if (isSearchFocused) accentColor else contentSecondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(Modifier.width(dims.spacingSm))
-                        BasicTextField(
-                            value = searchQuery,
-                            onValueChange = onSearchQueryChange,
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(searchFocusRequester)
-                                .onFocusChanged { onSearchFocusChange(it.isFocused) },
-                            singleLine = true,
-                            textStyle = AppTextStyles.transactionTitle.copy(color = contentPrimary),
-                            decorationBox = { inner ->
-                                Box {
-                                    if (searchQuery.isEmpty()) {
-                                        Text(
-                                            "Search for a place…",
-                                            style = AppTextStyles.formFieldHint,
-                                            color = contentSecondary
-                                        )
-                                    }
-                                    inner()
-                                }
-                            }
-                        )
-                        AnimatedVisibility(
-                            visible = searchQuery.isNotEmpty(),
-                            enter = fadeIn(),
-                            exit = fadeOut()
-                        ) {
-                            IconButton(
-                                onClick = onClearSearch,
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Close,
-                                    contentDescription = "Clear search",
-                                    modifier = Modifier.size(18.dp),
-                                    tint = contentSecondary
-                                )
-                            }
-                        }
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavPill(onBackClick = onDismiss)
                     }
-                }
+                ),
+                center = AeonTopBarSection(
+                    content = {
+                        AeonTopBarSearchPill(
+                            query = searchQuery,
+                            onQueryChange = onSearchQueryChange,
+                            placeholder = "Search for a place...",
+                            onClear = onClearSearch,
+                            focusRequester = searchFocusRequester,
+                            onFocusChange = onSearchFocusChange
+                        )
+                    }
+                )
             )
 
             // ── 3. Search results / recents dropdown ──────────────────────────
@@ -982,6 +947,41 @@ private fun LocationRow(
 // ─────────────────────────────────────────────────────────────────────────────
 // Previews
 // ─────────────────────────────────────────────────────────────────────────────
+
+@ThemePreviews
+@Composable
+fun AeonLocationSelectionSearchActivePreview() {
+    OssWalletTheme {
+        AeonLocationSelectionContent(
+            mapCenter = GeoPoint(37.7749, -122.4194),
+            mapZoom = 13.0,
+            selectedPoint = null,
+            selectedLocation = null,
+            isGeocoding = false,
+            searchQuery = "San Francisco",
+            searchResults = listOf(
+                LocationResult("San Francisco", "San Francisco, CA", 37.7749, -122.4194),
+                LocationResult("San Francisco Bay", "California", 37.8199, -122.3478)
+            ),
+            recentLocations = emptyList(),
+            isSearchActive = true,
+            showPanel = false,
+            isLocating = false,
+            isSearchFocused = true,
+            searchFocusRequester = remember { FocusRequester() },
+            onDismiss = {},
+            onSearchQueryChange = {},
+            onSearchFocusChange = {},
+            onClearSearch = {},
+            onGpsClick = {},
+            onMapTap = {},
+            onLocationClick = {},
+            onConfirmLocation = {},
+            onPanelDismiss = {},
+            onCopyCoords = {}
+        )
+    }
+}
 
 @ThemePreviews
 @Composable

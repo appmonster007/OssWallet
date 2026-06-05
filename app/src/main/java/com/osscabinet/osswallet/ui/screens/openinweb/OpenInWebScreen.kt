@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,11 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Card
@@ -28,15 +29,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -45,7 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.ContourBackground
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,232 +64,239 @@ fun OpenInWebScreen(
     val isEnabled by viewModel.isEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Open in Web", style = AppTextStyles.screenTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Navigate back"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (!uiState.isWifiConnected) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = AppColors.errorContainer
-                    )
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.WifiOff,
-                            contentDescription = null,
-                            tint = AppColors.onErrorContainer
-                        )
-                        Text(
-                            "Not connected to WiFi. Connect to a WiFi network to enable web access.",
-                            style = AppTextStyles.transactionSubtitle,
-                            color = AppColors.onErrorContainer
-                        )
-                    }
-                }
-            }
+                    ContourBackground()
 
-            Card {
-                EntrySwitchRow(
-                    modifier = Modifier.padding(16.dp),
-                    label = "Open in Web",
-                    subtitle = when (val s = uiState.serverState) {
-                        is WebServerState.Stopped -> "Disabled"
-                        is WebServerState.Starting -> "Starting..."
-                        is WebServerState.Running -> "Running on port ${s.port}"
-                        is WebServerState.Error -> "Error: ${s.message}"
-                    },
-                    checked = isEnabled,
-                    onCheckedChange = { viewModel.toggleServer(it) },
-                    isFlush = true
-                )
-            }
-
-            val runningState = uiState.serverState as? WebServerState.Running
-            if (runningState != null) {
-                Card {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .statusBarsPadding()
+                            .padding(top = AeonSize.D64.value)
+                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            "Access Code",
-                            style = AppTextStyles.formSectionLabel,
-                            color = AppColors.contentSecondary
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = runningState.accessCode,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 32.sp,
-                            letterSpacing = 6.sp,
-                            style = AppTextStyles.heroAmountDisplay,
-                            color = AppColors.primary
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Type this code in your browser after opening the URL below.",
-                            style = AppTextStyles.caption,
-                            color = AppColors.contentSecondary,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-
-                uiState.qrBitmap?.let { bitmap ->
-                    Card {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "Scan QR Code",
-                                style = AppTextStyles.formSectionLabel,
-                                color = AppColors.contentSecondary
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Image(
-                                bitmap = bitmap.asImageBitmap(),
-                                contentDescription = "QR code for ${runningState.accessUrl}",
-                                modifier = Modifier
-                                    .size(240.dp)
-                                    .border(
-                                        1.dp,
-                                        AppColors.divider,
-                                        RoundedCornerShape(8.dp)
+                        if (!uiState.isWifiConnected) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = AppColors.errorContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.WifiOff,
+                                        contentDescription = null,
+                                        tint = AppColors.onErrorContainer
                                     )
-                            )
-                        }
-                    }
-                }
-
-                Card {
-                    Column(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)) {
-                        Text(
-                            "Access URL",
-                            style = AppTextStyles.formSectionLabel,
-                            color = AppColors.contentSecondary
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = runningState.accessUrl,
-                                style = AppTextStyles.transactionTitle,
-                                fontFamily = FontFamily.Monospace,
-                                modifier = Modifier.weight(1f),
-                                color = AppColors.primary
-                            )
-                            IconButton(
-                                onClick = {
-                                    val clipboard =
-                                        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(
-                                        ClipData.newPlainText(
-                                            "OssWallet URL",
-                                            runningState.accessUrl
-                                        )
+                                    Text(
+                                        "Not connected to WiFi. Connect to a WiFi network to enable web access.",
+                                        style = AppTextStyles.transactionSubtitle,
+                                        color = AppColors.onErrorContainer
                                     )
                                 }
+                            }
+                        }
+
+                        Card {
+                            EntrySwitchRow(
+                                modifier = Modifier.padding(16.dp),
+                                label = "Open in Web",
+                                subtitle = when (val s = uiState.serverState) {
+                                    is WebServerState.Stopped -> "Disabled"
+                                    is WebServerState.Starting -> "Starting..."
+                                    is WebServerState.Running -> "Running on port ${s.port}"
+                                    is WebServerState.Error -> "Error: ${s.message}"
+                                },
+                                checked = isEnabled,
+                                onCheckedChange = { viewModel.toggleServer(it) },
+                                isFlush = true
+                            )
+                        }
+
+                        val runningState = uiState.serverState as? WebServerState.Running
+                        if (runningState != null) {
+                            Card {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        "Access Code",
+                                        style = AppTextStyles.formSectionLabel,
+                                        color = AppColors.contentSecondary
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Text(
+                                        text = runningState.accessCode,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 32.sp,
+                                        letterSpacing = 6.sp,
+                                        style = AppTextStyles.heroAmountDisplay,
+                                        color = AppColors.primary
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(
+                                        "Type this code in your browser after opening the URL below.",
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.contentSecondary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+
+                            uiState.qrBitmap?.let { bitmap ->
+                                Card {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(20.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            "Scan QR Code",
+                                            style = AppTextStyles.formSectionLabel,
+                                            color = AppColors.contentSecondary
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Image(
+                                            bitmap = bitmap.asImageBitmap(),
+                                            contentDescription = "QR code for ${runningState.accessUrl}",
+                                            modifier = Modifier
+                                                .size(240.dp)
+                                                .border(
+                                                    1.dp,
+                                                    AppColors.divider,
+                                                    RoundedCornerShape(8.dp)
+                                                )
+                                        )
+                                    }
+                                }
+                            }
+
+                            Card {
+                                Column(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)) {
+                                    Text(
+                                        "Access URL",
+                                        style = AppTextStyles.formSectionLabel,
+                                        color = AppColors.contentSecondary
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            text = runningState.accessUrl,
+                                            style = AppTextStyles.transactionTitle,
+                                            fontFamily = FontFamily.Monospace,
+                                            modifier = Modifier.weight(1f),
+                                            color = AppColors.primary
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                val clipboard =
+                                                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                clipboard.setPrimaryClip(
+                                                    ClipData.newPlainText(
+                                                        "OssWallet URL",
+                                                        runningState.accessUrl
+                                                    )
+                                                )
+                                            }
+                                        ) {
+                                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL")
+                                        }
+                                    }
+                                }
+                            }
+
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = AppColors.secondaryContainer
+                                )
                             ) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL")
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        "How to connect",
+                                        style = AppTextStyles.formSectionLabel,
+                                        color = AppColors.onSecondaryContainer
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "1. Make sure your laptop/desktop is on the same WiFi network as this phone.\n" +
+                                                "2. Open the URL above in a browser, or scan the QR code.\n" +
+                                                "3. Enter the access code shown above.\n" +
+                                                "4. The web view is read-only. The server stops when you turn off the toggle.",
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.onSecondaryContainer
+                                    )
+                                }
+                            }
+                        }
+
+                        if (uiState.serverState is WebServerState.Starting) {
+                            Card {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+
+                        val errorState = uiState.serverState as? WebServerState.Error
+                        if (errorState != null) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = AppColors.errorContainer
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        "Failed to start server",
+                                        style = AppTextStyles.cardSectionTitle,
+                                        color = AppColors.onErrorContainer
+                                    )
+                                    Text(
+                                        errorState.message,
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.onErrorContainer
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = AppColors.secondaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            "How to connect",
-                            style = AppTextStyles.formSectionLabel,
-                            color = AppColors.onSecondaryContainer
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "1. Make sure your laptop/desktop is on the same WiFi network as this phone.\n" +
-                                    "2. Open the URL above in a browser, or scan the QR code.\n" +
-                                    "3. Enter the access code shown above.\n" +
-                                    "4. The web view is read-only. The server stops when you turn off the toggle.",
-                            style = AppTextStyles.caption,
-                            color = AppColors.onSecondaryContainer
-                        )
-                    }
-                }
             }
 
-            if (uiState.serverState is WebServerState.Starting) {
-                Card {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            }
-
-            val errorState = uiState.serverState as? WebServerState.Error
-            if (errorState != null) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = AppColors.errorContainer
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            "Failed to start server",
-                            style = AppTextStyles.cardSectionTitle,
-                            color = AppColors.onErrorContainer
-                        )
-                        Text(
-                            errorState.message,
-                            style = AppTextStyles.caption,
-                            color = AppColors.onErrorContainer
-                        )
-                    }
-                }
-            }
+            AeonTopAppBar(
+                title = "Open in Web",
+                onBackClick = onNavigateBack
+            )
         }
-    } // end Scaffold
+    }
 }

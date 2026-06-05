@@ -33,6 +33,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -83,29 +84,32 @@ fun <T, ID> AeonSelectionSheet(
             onBack = onDismiss,
             actions = {
                 if (mode == AeonSelectMode.MULTI && filteredIds.isNotEmpty()) {
-                    IconButton(onClick = {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onSelectionChange(selectedIds + filteredIds)
-                    }) {
-                        Icon(Icons.Rounded.SelectAll, contentDescription = "Select All")
-                    }
-                    IconButton(onClick = {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        onSelectionChange(selectedIds - filteredIds)
-                    }) {
-                        Icon(Icons.Rounded.Deselect, contentDescription = "Deselect All")
-                    }
-                    IconButton(onClick = {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                        val newSelection = selectedIds.toMutableSet()
-                        filteredIds.forEach { id ->
-                            if (id in newSelection) newSelection.remove(id)
-                            else newSelection.add(id)
+                    AppBarIconButton(
+                        icon = Icons.Rounded.SelectAll,
+                        onClick = {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            onSelectionChange(selectedIds + filteredIds)
                         }
-                        onSelectionChange(newSelection)
-                    }) {
-                        Icon(Icons.Rounded.Flip, contentDescription = "Invert Selection")
-                    }
+                    )
+                    AppBarIconButton(
+                        icon = Icons.Rounded.Deselect,
+                        onClick = {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            onSelectionChange(selectedIds - filteredIds)
+                        }
+                    )
+                    AppBarIconButton(
+                        icon = Icons.Rounded.Flip,
+                        onClick = {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            val newSelection = selectedIds.toMutableSet()
+                            filteredIds.forEach { id ->
+                                if (id in newSelection) newSelection.remove(id)
+                                else newSelection.add(id)
+                            }
+                            onSelectionChange(newSelection)
+                        }
+                    )
                 }
             }
         ) { padding ->

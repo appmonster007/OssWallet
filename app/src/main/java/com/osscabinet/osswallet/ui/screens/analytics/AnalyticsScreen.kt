@@ -68,6 +68,8 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +115,7 @@ fun AnalyticsScreen(
 
     val pillHeight = AeonSize.D64.value
 
-    AeonHazeProvider { _ ->
+    AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             // 1. Content Layer (Layer 1)
             Scaffold(
@@ -123,6 +125,7 @@ fun AnalyticsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = innerPadding.calculateBottomPadding())
                 ) {
                     when (val state = uiState) {

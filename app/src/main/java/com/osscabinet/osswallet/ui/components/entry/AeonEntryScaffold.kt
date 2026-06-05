@@ -1,37 +1,40 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.R
+import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.ContourBackground
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.hazeSource
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.
- * Following the "Architect Slate" design specification.
+ * Following the Aeon "Floating Pill" glass architecture.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,72 +51,74 @@ fun AeonEntryScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topBarHeight = AeonSize.D64.value
+    
+    // Standardized offset for floating pill architecture
+    val totalTopPadding = statusBarPadding + topBarHeight + 8.dp
 
-    Scaffold(
-        modifier = modifier,
-        containerColor = containerColor,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = AppTextStyles.screenTitle
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back)
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(containerColor)
+                ) {
+                    ContourBackground()
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                    ) {
+                        content(
+                            PaddingValues(
+                                top = totalTopPadding,
+                                bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                                start = 0.dp,
+                                end = 0.dp
+                            )
                         )
                     }
-                },
+                }
+            }
+
+            AeonTopAppBar(
+                title = title,
+                onBackClick = onBackClick,
                 actions = {
                     if (onResetClick != null) {
-                        IconButton(onClick = onResetClick) {
-                            Icon(
-                                Icons.Rounded.RestartAlt,
-                                contentDescription = stringResource(R.string.action_reset)
-                            )
-                        }
+                        AppBarIconButton(
+                            icon = Icons.Rounded.RestartAlt,
+                            onClick = onResetClick
+                        )
                     }
                     if (isEditMode && onDeleteClick != null) {
-                        IconButton(onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onDeleteClick()
-                        }) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = stringResource(R.string.action_delete),
-                                tint = AppColors.error
-                            )
-                        }
+                        AppBarIconButton(
+                            icon = Icons.Rounded.Delete,
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onDeleteClick()
+                            },
+                            tint = AppColors.error
+                        )
                     }
-                    IconButton(
+                    AppBarIconButton(
+                        icon = Icons.Rounded.Done,
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onSaveClick()
                         },
-                        enabled = canSave
-                    ) {
-                        Icon(
-                            Icons.Rounded.Done,
-                            contentDescription = stringResource(R.string.action_save),
-                            tint = if (canSave) {
-                                AppColors.primary
-                            } else {
-                                AppColors.contentSecondary.copy(alpha = 0.38f)
-                            }
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = containerColor
-                )
+                        enabled = canSave,
+                        tint = AppColors.primary
+                    )
+                }
             )
         }
-    ) { innerPadding ->
-        content(innerPadding)
     }
 }
 

@@ -11,21 +11,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -47,7 +47,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
@@ -65,6 +65,10 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.ReorderableList
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -72,8 +76,11 @@ import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -154,95 +161,95 @@ fun TemplateListScreenContent(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (isReorderMode) "Reorder Starred" else "Templates") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = if (isReorderMode) {
-                            { isReorderMode = false }
-                        } else {
-                            onBackClick
-                        }) {
-                        Icon(
-                            if (isReorderMode) Icons.Rounded.Close else Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = if (isReorderMode) "Cancel" else "Back"
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                floatingActionButton = {
+                    if (!isReorderMode) {
+                        AeonFloatingActionButton(
+                            onClick = { navigate { onAddTemplateClick(null) } },
+                            icon = Icons.Rounded.Add,
+                            contentDescription = "Add Template"
                         )
                     }
-                },
-                actions = {
-                    if (starredTemplates.isNotEmpty()) {
-                        IconButton(onClick = { isReorderMode = !isReorderMode }) {
-                            Icon(
-                                if (isReorderMode) Icons.Rounded.Check else Icons.Rounded.SwapVert,
-                                contentDescription = if (isReorderMode) "Done" else "Reorder Starred"
+                }
+            ) { padding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                ) {
+                    ContourBackground()
+
+                    if (isReorderMode) {
+                        ReorderableList(
+                            items = editList,
+                            key = { it.id },
+                            onReorder = { newList -> editList = newList },
+                            onDragEnd = { newList -> onUpdateOrder(newList) },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
+                                bottom = padding.calculateBottomPadding() + scrollBottomPadding()
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                        ) { template, isDragging ->
+                            ReorderTemplateItem(
+                                template = template,
+                                isDragging = isDragging
                             )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
+                                bottom = padding.calculateBottomPadding() + scrollBottomPadding()
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                        ) {
+                            items(templates, key = { it.id }) { template ->
+                                TemplateItem(
+                                    template = template,
+                                    categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
+                                    categoryIconName = categoryMap[template.categoryId]?.iconName,
+                                    onEdit = { navigate { onAddTemplateClick(template.id) } },
+                                    onDelete = { templateToDelete = template },
+                                    onToggleStar = { onToggleStar(template) },
+                                    onCreatePlannedPayment = { onCreatePlannedPayment(template) }
+                                )
+                            }
                         }
                     }
                 }
+            }
+
+            AeonTopAppBar(
+                title = if (isReorderMode) "Reorder Starred" else "Templates",
+                onBackClick = if (isReorderMode) {
+                    { isReorderMode = false }
+                } else {
+                    onBackClick
+                },
+                actions = {
+                    if (starredTemplates.isNotEmpty()) {
+                        AppBarIconButton(
+                            icon = if (isReorderMode) Icons.Rounded.Check else Icons.Rounded.SwapVert,
+                            onClick = { isReorderMode = !isReorderMode }
+                        )
+                    }
+                }
             )
-        },
-        floatingActionButton = {
-            if (!isReorderMode) {
-                AeonFloatingActionButton(
-                    onClick = { navigate { onAddTemplateClick(null) } },
-                    icon = Icons.Rounded.Add,
-                    contentDescription = "Add Template"
-                )
-            }
-        }
-    ) { padding ->
-        if (isReorderMode) {
-            Box(modifier = Modifier.padding(padding)) {
-                ReorderableList(
-                    items = editList,
-                    key = { it.id },
-                    onReorder = { newList -> editList = newList },
-                    onDragEnd = { newList -> onUpdateOrder(newList) },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColors.screenBackground),
-                    contentPadding = PaddingValues(
-                        start = AeonTheme.dimensions.screenPadding,
-                        end = AeonTheme.dimensions.screenPadding,
-                        top = AeonTheme.dimensions.screenPadding,
-                        bottom = scrollBottomPadding()
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
-                ) { template, isDragging ->
-                    ReorderTemplateItem(
-                        template = template,
-                        isDragging = isDragging
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(AppColors.screenBackground),
-                contentPadding = PaddingValues(
-                    start = AeonTheme.dimensions.screenPadding,
-                    end = AeonTheme.dimensions.screenPadding,
-                    top = AeonTheme.dimensions.screenPadding,
-                    bottom = scrollBottomPadding()
-                ),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
-            ) {
-                items(templates, key = { it.id }) { template ->
-                    TemplateItem(
-                        template = template,
-                        categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
-                        categoryIconName = categoryMap[template.categoryId]?.iconName,
-                        onEdit = { navigate { onAddTemplateClick(template.id) } },
-                        onDelete = { templateToDelete = template },
-                        onToggleStar = { onToggleStar(template) },
-                        onCreatePlannedPayment = { onCreatePlannedPayment(template) }
-                    )
-                }
-            }
         }
     }
 }
@@ -496,4 +503,3 @@ fun TemplateDialog(
         )
     }
 }
-

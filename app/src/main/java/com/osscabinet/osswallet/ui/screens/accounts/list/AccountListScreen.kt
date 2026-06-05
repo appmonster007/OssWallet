@@ -69,6 +69,8 @@ import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.ColorOnLight
@@ -156,7 +158,7 @@ fun AccountListScreen(
 
     val pillHeight = AeonSize.D64.value
 
-    AeonHazeProvider { _ ->
+    AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent,
@@ -192,6 +194,7 @@ fun AccountListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = innerPadding.calculateBottomPadding())
                         .background(AppColors.screenBackground)
                         .graphicsLayer(clip = false),

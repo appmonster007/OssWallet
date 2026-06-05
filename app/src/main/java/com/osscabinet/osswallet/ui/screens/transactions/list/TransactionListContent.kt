@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.screens.transactions.list
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -37,7 +36,9 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyS
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListTopAppBar
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
@@ -61,24 +62,25 @@ fun TransactionListContent(
     isTopLevel: Boolean = true,
     onFilterEvent: (FilterEvent) -> Unit,
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    revealedCardIds: List<String> = emptyList()
+    revealedCardIds: List<String> = emptyList(),
 ) {
     val pillHeight = AeonSize.D64.value
 
-    AeonHazeProvider { _ ->
+    AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             // 1. Transaction List (Layer 1)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding() // Avoid bleeding into status bar icons
-                    .then(
+                    .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                    .let { baseModifier ->
                         if (recordsSettings.stickyHeaders) {
-                            Modifier.padding(top = pillHeight)
+                            baseModifier.padding(top = pillHeight)
                         } else {
-                            Modifier
+                            baseModifier
                         }
-                    )
+                    }
             ) {
                 if (listState.isEmpty) {
                     TransactionListEmptyState(
@@ -87,7 +89,7 @@ fun TransactionListContent(
                             onFilterEvent(
                                 FilterEvent.Apply(
                                     filter.copy(
-                                        timelineRange = filter.timelineRange.withExcludeFuture(false)
+                                        timelineRange = filter.timelineRange.withExcludeFuture(exclude = false)
                                     )
                                 )
                             )
@@ -132,8 +134,7 @@ fun TransactionListContent(
                 onBackClick = onBackClick,
                 onMenuClick = onMenuClick,
                 isTopLevel = isTopLevel,
-                onUpdateRecordsSettings = { onFilterEvent(FilterEvent.UpdateSettings(it)) }
-            )
+            ) { onFilterEvent(FilterEvent.UpdateSettings(it)) }
 // ...
 
             // 3. Filter Pill (Layer 4 - if applicable)

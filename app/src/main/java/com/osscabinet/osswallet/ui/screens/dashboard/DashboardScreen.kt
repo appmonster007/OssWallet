@@ -106,6 +106,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -256,7 +258,7 @@ fun DashboardScreen(
 
     val pillHeight = AeonSize.D64.value
 
-    AeonHazeProvider {
+    AeonHazeProvider { hazeLayers ->
         CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -267,6 +269,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .statusBarsPadding()
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(bottom = innerPadding.calculateBottomPadding())
                     ) {
                         // Context indicator banner (if view focus is applied)

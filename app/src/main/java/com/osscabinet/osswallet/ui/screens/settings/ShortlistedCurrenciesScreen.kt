@@ -50,6 +50,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -212,29 +215,38 @@ fun ShortlistedCurrenciesScreen(
             }
 
             AeonTopAppBar(
-                title = "Active Currencies",
-                subtitle = "${selected.size} selected",
-                onBackClick = onBack,
-                actions = {
-                    if (filteredCodes.isNotEmpty()) {
-                        AppBarIconButton(icon = Icons.Rounded.SelectAll, onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.setShortlistedCurrencies(selected + filteredCodes)
-                        })
-                        AppBarIconButton(icon = Icons.Rounded.Deselect, onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.setShortlistedCurrencies(selected - filteredCodes)
-                        })
-                        AppBarIconButton(icon = Icons.Rounded.Flip, onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            val toggled = selected.toMutableSet()
-                            filteredCodes.forEach { code ->
-                                if (code in toggled) toggled.remove(code) else toggled.add(code)
-                            }
-                            viewModel.setShortlistedCurrencies(toggled)
-                        })
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Active Currencies",
+                            subtitle = "${selected.size} selected",
+                            onBackClick = onBack
+                        )
                     }
-                }
+                ),
+                right = AeonTopBarSection(
+                    visible = filteredCodes.isNotEmpty(),
+                    content = {
+                        AeonTopBarActionPill {
+                            AppBarIconButton(icon = Icons.Rounded.SelectAll, onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.setShortlistedCurrencies(selected + filteredCodes)
+                            })
+                            AppBarIconButton(icon = Icons.Rounded.Deselect, onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.setShortlistedCurrencies(selected - filteredCodes)
+                            })
+                            AppBarIconButton(icon = Icons.Rounded.Flip, onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                val toggled = selected.toMutableSet()
+                                filteredCodes.forEach { code ->
+                                    if (code in toggled) toggled.remove(code) else toggled.add(code)
+                                }
+                                viewModel.setShortlistedCurrencies(toggled)
+                            })
+                        }
+                    }
+                )
             )
         }
     }

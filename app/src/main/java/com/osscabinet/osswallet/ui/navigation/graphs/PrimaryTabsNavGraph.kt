@@ -23,7 +23,6 @@ import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentListRoute
 import com.osscabinet.ossWallet.ui.navigation.PopEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.PopExitTransitionSpec
-import com.osscabinet.ossWallet.ui.navigation.SettingsRoute
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
@@ -75,7 +74,6 @@ fun NavGraphBuilder.primaryTabsGraph(
             onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
             onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
             onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-            onSettingsClick = { navController.navigate(SettingsRoute) },
             onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
             onSaveFilterClick = { filter ->
                 val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())

@@ -67,6 +67,9 @@ import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.ReorderableList
@@ -235,20 +238,29 @@ fun TemplateListScreenContent(
             }
 
             AeonTopAppBar(
-                title = if (isReorderMode) "Reorder Starred" else "Templates",
-                onBackClick = if (isReorderMode) {
-                    { isReorderMode = false }
-                } else {
-                    onBackClick
-                },
-                actions = {
-                    if (starredTemplates.isNotEmpty()) {
-                        AppBarIconButton(
-                            icon = if (isReorderMode) Icons.Rounded.Check else Icons.Rounded.SwapVert,
-                            onClick = { isReorderMode = !isReorderMode }
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = if (isReorderMode) "Reorder Starred" else "Templates",
+                            onBackClick = if (isReorderMode) {
+                                { isReorderMode = false }
+                            } else {
+                                onBackClick
+                            }
                         )
                     }
-                }
+                ),
+                right = AeonTopBarSection(
+                    visible = starredTemplates.isNotEmpty(),
+                    content = {
+                        AeonTopBarActionPill {
+                            AppBarIconButton(
+                                icon = if (isReorderMode) Icons.Rounded.Check else Icons.Rounded.SwapVert,
+                                onClick = { isReorderMode = !isReorderMode }
+                            )
+                        }
+                    }
+                )
             )
         }
     }

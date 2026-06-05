@@ -45,6 +45,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -82,10 +83,12 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
@@ -425,33 +428,39 @@ fun AccountDetailScreen(
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)
-                val activeTabConfig = remember(pagerState.currentPage, showSettingsDialog, showAddCardDialog) {
-                    when (pagerState.currentPage) {
-                        0 -> AeonAppBarTab(
-                            label = context.getString(R.string.nav_overview),
-                            actions = {
-                                AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { onEditAccountClick(accountId) } })
-                                AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
-                                AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
-                            }
-                        )
-                        1 -> AeonAppBarTab(
-                            label = context.getString(R.string.nav_transactions),
-                            actions = {
-                                AppBarIconButton(
-                                    icon = Icons.Rounded.History,
-                                    onClick = { onRecordsClick(TransactionFilter(accountIds = setOf(accountId))) }
-                                )
-                            }
-                        )
-                        else -> null
-                    }
-                }
-
                 AeonTopAppBar(
-                    title = stringResource(R.string.account_detail_title),
-                    onBackClick = { navigate { onBackClick() } },
-                    tab = activeTabConfig
+                    left = AeonTopBarSection(
+                        content = {
+                            AeonTopBarNavTitlePill(
+                                title = stringResource(R.string.account_detail_title),
+                                onBackClick = { navigate { onBackClick() } },
+                                tabs = tabs.map { it.label },
+                                selectedTabIndex = pagerState.currentPage,
+                                onTabSelected = { index ->
+                                    scope.launch { pagerState.animateScrollToPage(index) }
+                                }
+                            )
+                        }
+                    ),
+                    right = AeonTopBarSection(
+                        content = {
+                            AeonTopBarActionPill {
+                                when (pagerState.currentPage) {
+                                    0 -> {
+                                        AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { onEditAccountClick(accountId) } })
+                                        AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
+                                        AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
+                                    }
+                                    1 -> {
+                                        AppBarIconButton(
+                                            icon = Icons.Rounded.History,
+                                            onClick = { onRecordsClick(TransactionFilter(accountIds = setOf(accountId))) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    )
                 )
 
                 // 3. Filter Pill Layer (Layer 4)

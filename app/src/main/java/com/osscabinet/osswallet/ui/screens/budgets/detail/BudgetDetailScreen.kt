@@ -24,9 +24,11 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -353,34 +355,36 @@ fun BudgetDetailContent(
             }
 
             // 2. Top Bar Layer
-            val activeTabConfig = remember(pagerState.currentPage) {
-                when (pagerState.currentPage) {
-                    0 -> AeonAppBarTab(
-                        label = "Overview",
-                        actions = {
-                            AppBarIconButton(
-                                icon = Icons.Rounded.Edit,
-                                onClick = onEditClick
-                            )
-                        }
-                    )
-                    1 -> AeonAppBarTab(
-                        label = "Activity",
-                        actions = {
-                            AppBarIconButton(
-                                icon = Icons.Rounded.History,
-                                onClick = { onRecordsClick(budgetFilter) }
-                            )
-                        }
-                    )
-                    else -> null
-                }
-            }
-
             AeonTopAppBar(
-                title = budget.name,
-                onBackClick = onBackClick,
-                tab = activeTabConfig
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = budget.name,
+                            onBackClick = onBackClick,
+                            tabs = tabs.map { it.label },
+                            selectedTabIndex = pagerState.currentPage,
+                            onTabSelected = { index ->
+                                scope.launch { pagerState.animateScrollToPage(index) }
+                            }
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill {
+                            when (pagerState.currentPage) {
+                                0 -> AppBarIconButton(
+                                    icon = Icons.Rounded.Edit,
+                                    onClick = onEditClick
+                                )
+                                1 -> AppBarIconButton(
+                                    icon = Icons.Rounded.History,
+                                    onClick = { onRecordsClick(budgetFilter) }
+                                )
+                            }
+                        }
+                    }
+                )
             )
         }
     }

@@ -65,6 +65,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -516,8 +518,14 @@ fun CurrencySettingsScreen(
             }
 
             AeonTopAppBar(
-                title = "Currency & Localization",
-                onBackClick = onBackClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Currency & Localization",
+                            onBackClick = onBackClick
+                        )
+                    }
+                )
             )
         }
     }

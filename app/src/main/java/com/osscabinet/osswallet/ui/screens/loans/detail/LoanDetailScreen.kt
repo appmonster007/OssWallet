@@ -27,9 +27,11 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
@@ -290,40 +292,46 @@ fun LoanDetailContent(
             }
 
             // 2. Top Bar Layer
-            val activeTabConfig = remember(pagerState.currentPage, loan.status) {
-                when (pagerState.currentPage) {
-                    0 -> AeonAppBarTab(
-                        label = "Overview",
-                        actions = {
-                            if (loan.status == LoanStatus.ACTIVE) {
-                                AppBarIconButton(
-                                    icon = Icons.Rounded.CheckCircle,
-                                    onClick = onSettleClick
-                                )
-                            }
-                            AppBarIconButton(
-                                icon = Icons.Rounded.Payments,
-                                onClick = onEditClick
-                            )
-                        }
-                    )
-                    1 -> AeonAppBarTab(
-                        label = "Activity",
-                        actions = {
-                            AppBarIconButton(
-                                icon = Icons.Rounded.History,
-                                onClick = { onRecordsClick(loanFilter) }
-                            )
-                        }
-                    )
-                    else -> null
-                }
-            }
-
             AeonTopAppBar(
-                title = loan.name,
-                onBackClick = onBackClick,
-                tab = activeTabConfig
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = loan.name,
+                            onBackClick = onBackClick,
+                            tabs = tabs.map { it.label },
+                            selectedTabIndex = pagerState.currentPage,
+                            onTabSelected = { index ->
+                                scope.launch { pagerState.animateScrollToPage(index) }
+                            }
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill {
+                            when (pagerState.currentPage) {
+                                0 -> {
+                                    if (loan.status == LoanStatus.ACTIVE) {
+                                        AppBarIconButton(
+                                            icon = Icons.Rounded.CheckCircle,
+                                            onClick = onSettleClick
+                                        )
+                                    }
+                                    AppBarIconButton(
+                                        icon = Icons.Rounded.Payments,
+                                        onClick = onEditClick
+                                    )
+                                }
+                                1 -> {
+                                    AppBarIconButton(
+                                        icon = Icons.Rounded.History,
+                                        onClick = { onRecordsClick(loanFilter) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
             )
         }
     }

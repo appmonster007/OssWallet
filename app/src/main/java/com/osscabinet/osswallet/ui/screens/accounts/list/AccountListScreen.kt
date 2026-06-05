@@ -62,6 +62,9 @@ import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ReorderableList
@@ -226,40 +229,50 @@ fun AccountListScreen(
 
             // 2. Top Bar Layer (Layer 3 - Floating Pills)
             AeonTopAppBar(
-                title = if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts",
-                onBackClick = if (isSelectionMode) {
-                    { isSelectionMode = false; selectedAccountIds = emptySet() }
-                } else {
-                    { navigate(onBackClick) }
-                },
-                actions = {
-                    if (!isSelectionMode) {
-                        Box {
-                            AppBarIconButton(
-                                icon = Icons.Rounded.MoreHoriz,
-                                onClick = { showMoreMenu = true }
-                            )
-                            DropdownMenu(
-                                expanded = showMoreMenu,
-                                onDismissRequest = { showMoreMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Select to Delete") },
-                                    onClick = {
-                                        isSelectionMode = true
-                                        showMoreMenu = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Rounded.Checklist,
-                                            contentDescription = null
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = if (isSelectionMode) "${selectedAccountIds.size} Selected" else "Manage Accounts",
+                            onBackClick = if (isSelectionMode) {
+                                { isSelectionMode = false; selectedAccountIds = emptySet() }
+                            } else {
+                                { navigate(onBackClick) }
+                            }
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        if (!isSelectionMode) {
+                            AeonTopBarActionPill {
+                                Box {
+                                    AppBarIconButton(
+                                        icon = Icons.Rounded.MoreHoriz,
+                                        onClick = { showMoreMenu = true }
+                                    )
+                                    DropdownMenu(
+                                        expanded = showMoreMenu,
+                                        onDismissRequest = { showMoreMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Select to Delete") },
+                                            onClick = {
+                                                isSelectionMode = true
+                                                showMoreMenu = false
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Rounded.Checklist,
+                                                    contentDescription = null
+                                                )
+                                            }
                                         )
                                     }
-                                )
+                                }
                             }
                         }
                     }
-                }
+                )
             )
         }
     }

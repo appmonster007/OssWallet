@@ -45,6 +45,9 @@ import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
@@ -230,20 +233,30 @@ fun AnalyticsScreen(
 
             // 2. Top Bar Layer (Layer 3 - Floating Pills)
             AeonTopAppBar(
-                title = "Intelligence",
-                isTopLevel = isTopLevel,
-                onMenuClick = if (isTopLevel) onMenuClick else null,
-                onBackClick = if (!isTopLevel) onBackClick else null,
-                actions = {
-                    AppBarIconButton(
-                        icon = Icons.Default.Settings,
-                        onClick = { showSettingsDialog = true }
-                    )
-                    AppBarIconButton(
-                        icon = Icons.Default.Add,
-                        onClick = { showAddCardDialog = true }
-                    )
-                }
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Intelligence",
+                            isTopLevel = isTopLevel,
+                            onMenuClick = if (isTopLevel) onMenuClick else null,
+                            onBackClick = if (!isTopLevel) onBackClick else null
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill {
+                            AppBarIconButton(
+                                icon = Icons.Default.Settings,
+                                onClick = { showSettingsDialog = true }
+                            )
+                            AppBarIconButton(
+                                icon = Icons.Default.Add,
+                                onClick = { showAddCardDialog = true }
+                            )
+                        }
+                    }
+                )
             )
 
             // 3. Floating Filter Pill Layer (Layer 4)

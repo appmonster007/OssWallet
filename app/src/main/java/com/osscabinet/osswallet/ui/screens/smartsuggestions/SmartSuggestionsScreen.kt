@@ -51,6 +51,8 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
@@ -154,8 +156,14 @@ fun SmartSuggestionsScreen(
             }
 
             AeonTopAppBar(
-                title = "Smart Suggestions",
-                onBackClick = onBackClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Smart Suggestions",
+                            onBackClick = onBackClick
+                        )
+                    }
+                )
             )
         }
     }

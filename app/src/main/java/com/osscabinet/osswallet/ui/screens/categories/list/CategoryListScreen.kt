@@ -31,6 +31,9 @@ import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonHierarchicalHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -113,14 +116,24 @@ fun CategoryListScreen(
             }
 
             AeonTopAppBar(
-                title = "Manage Categories",
-                onBackClick = { navigate(onBackClick) },
-                actions = {
-                    AppBarIconButton(
-                        icon = Icons.Rounded.Add,
-                        onClick = { showAddDialog = true }
-                    )
-                }
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Manage Categories",
+                            onBackClick = { navigate(onBackClick) }
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill {
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Add,
+                                onClick = { showAddDialog = true }
+                            )
+                        }
+                    }
+                )
             )
         }
     }

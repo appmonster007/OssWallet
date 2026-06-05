@@ -105,6 +105,7 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -117,6 +118,36 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 
+/**
+ * A Value Object representing a valid configuration for the Dashboard.
+ */
+data class DashboardConfig(
+    val isTopLevel: Boolean,
+    val viewContextJson: String? = null
+)
+
+/**
+ * Grouped actions for the Dashboard screen.
+ */
+data class DashboardActions(
+    val onMenuClick: () -> Unit,
+    val onBackClick: () -> Unit = {},
+    val onRecordsClick: (TransactionFilter) -> Unit,
+    val onAddClick: (TransactionType?, Long?) -> Unit,
+    val onManageAccountsClick: () -> Unit,
+    val onAccountClick: (String) -> Unit,
+    val onNavigateToPlannedPaymentList: () -> Unit = {},
+    val onNavigateToBudgetList: () -> Unit = {},
+    val onNavigateToLoanList: () -> Unit = {},
+    val onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
+    val onNavigateToBudgetDetail: (Long) -> Unit = {},
+    val onNavigateToLoanDetail: (Long) -> Unit = {},
+    val onEditTransactionClick: (Long) -> Unit,
+    val onSaveFilterClick: (TransactionFilter) -> Unit = {},
+    val onCloneTransactionClick: (Long) -> Unit = {},
+    val onSplitTransactionClick: (Long) -> Unit = {},
+)
+
 @OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalLayoutApi::class,
@@ -124,32 +155,16 @@ import java.nio.charset.StandardCharsets
 )
 @Composable
 fun DashboardScreen(
-    onMenuClick: () -> Unit,
-    onBackClick: () -> Unit = {},
-    isTopLevelParam: Boolean = false,
-    onRecordsClick: (TransactionFilter) -> Unit,
-    onAddClick: (TransactionType?, Long?) -> Unit,
-    onManageAccountsClick: () -> Unit,
-    onAccountClick: (String) -> Unit,
-    onNavigateToPlannedPaymentList: () -> Unit = {},
-    onNavigateToBudgetList: () -> Unit = {},
-    onNavigateToLoanList: () -> Unit = {},
-    onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
-    onNavigateToBudgetDetail: (Long) -> Unit = {},
-    onNavigateToLoanDetail: (Long) -> Unit = {},
-    onEditTransactionClick: (Long) -> Unit,
-    onSaveFilterClick: (TransactionFilter) -> Unit = {},
-    onCloneTransactionClick: (Long) -> Unit = {},
-    onSplitTransactionClick: (Long) -> Unit = {},
-    accountViewModel: AccountViewModel,
-    transactionViewModel: TransactionViewModel,
-    settingsViewModel: SettingsViewModel,
-    analyticsViewModel: AnalyticsViewModel,
-    templateViewModel: TemplateViewModel,
-    dashboardViewModel: DashboardViewModel,
-    cardComputerRegistry: CardComputerRegistry,
-    viewContext: String? = null
+    config: DashboardConfig,
+    actions: DashboardActions,
+    vms: SharedNavViewModels
 ) {
+    val dashboardViewModel = vms.dashboardViewModel
+    val transactionViewModel = vms.transactionViewModel
+    val settingsViewModel = vms.settingsViewModel
+    val templateViewModel = vms.templateViewModel
+    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
+
     var navTriggered by remember { mutableStateOf(false) }
 
     // Reset navTriggered when returning to this screen
@@ -158,8 +173,8 @@ fun DashboardScreen(
     }
 
     // Apply initial view focus when screen opens with context
-    LaunchedEffect(viewContext) {
-        viewContext?.let { contextString ->
+    LaunchedEffect(config.viewContextJson) {
+        config.viewContextJson?.let { contextString ->
             try {
                 val decodedContext =
                     URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
@@ -251,8 +266,8 @@ fun DashboardScreen(
         scope.launch { pagerState.animateScrollToPage(0) }
     }
 
-    val isTopLevel = remember(initialViewContext, isTopLevelParam) {
-        isTopLevelParam || initialViewContext == DashboardViewContext.None
+    val isTopLevel = remember(initialViewContext, config.isTopLevel) {
+        config.isTopLevel || initialViewContext == DashboardViewContext.None
     }
 
     val filterPillController = remember { FilterPillController() }
@@ -292,25 +307,25 @@ fun DashboardScreen(
                                     pagerState = pagerState,
                                     tabs = tabs,
                                     state = state,
-                                    onManageAccountsClick = { navigate(onManageAccountsClick) },
-                                    onAccountClick = { id -> navigate { onAccountClick(id) } },
-                                    onNavigateToPlannedPaymentList = { navigate(onNavigateToPlannedPaymentList) },
-                                    onNavigateToBudgetList = { navigate(onNavigateToBudgetList) },
-                                    onNavigateToLoanList = { navigate(onNavigateToLoanList) },
+                                    onManageAccountsClick = { navigate(actions.onManageAccountsClick) },
+                                    onAccountClick = { id -> navigate { actions.onAccountClick(id) } },
+                                    onNavigateToPlannedPaymentList = { navigate(actions.onNavigateToPlannedPaymentList) },
+                                    onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
+                                    onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
                                     onNavigateToPlannedPaymentDetail = { id ->
                                         navigate {
-                                            onNavigateToPlannedPaymentDetail(
+                                            actions.onNavigateToPlannedPaymentDetail(
                                                 id
                                             )
                                         }
                                     },
-                                    onNavigateToBudgetDetail = { id -> navigate { onNavigateToBudgetDetail(id) } },
-                                    onNavigateToLoanDetail = { id -> navigate { onNavigateToLoanDetail(id) } },
-                                    onRecordsClick = { context -> navigate { onRecordsClick(context) } },
-                                    onSaveFilterClick = onSaveFilterClick,
-                                    onEditTransactionClick = { id -> navigate { onEditTransactionClick(id) } },
-                                    onCloneTransactionClick = { id -> navigate { onCloneTransactionClick(id) } },
-                                    onSplitTransactionClick = { id -> navigate { onSplitTransactionClick(id) } },
+                                    onNavigateToBudgetDetail = { id -> navigate { actions.onNavigateToBudgetDetail(id) } },
+                                    onNavigateToLoanDetail = { id -> navigate { actions.onNavigateToLoanDetail(id) } },
+                                    onRecordsClick = { context -> navigate { actions.onRecordsClick(context) } },
+                                    onSaveFilterClick = actions.onSaveFilterClick,
+                                    onEditTransactionClick = { id -> navigate { actions.onEditTransactionClick(id) } },
+                                    onCloneTransactionClick = { id -> navigate { actions.onCloneTransactionClick(id) } },
+                                    onSplitTransactionClick = { id -> navigate { actions.onSplitTransactionClick(id) } },
                                     transactionViewModel = transactionViewModel,
                                     dashboardViewModel = dashboardViewModel,
                                     cardComputerRegistry = cardComputerRegistry,
@@ -337,8 +352,8 @@ fun DashboardScreen(
                         content = {
                             AeonTopBarNavTitlePill(
                                 title = "", // Using titleContent instead
-                                onMenuClick = if (isTopLevel) onMenuClick else null,
-                                onBackClick = if (!isTopLevel) onBackClick else null,
+                                onMenuClick = if (isTopLevel) actions.onMenuClick else null,
+                                onBackClick = if (!isTopLevel) actions.onBackClick else null,
                                 isTopLevel = isTopLevel,
                                 tabs = tabs.map { it.label },
                                 selectedTabIndex = pagerState.currentPage,
@@ -373,7 +388,7 @@ fun DashboardScreen(
                                     )
                                     1 -> AppBarIconButton(
                                         icon = Icons.Rounded.History,
-                                        onClick = { onRecordsClick(TransactionFilter()) }
+                                        onClick = { actions.onRecordsClick(TransactionFilter()) }
                                     )
                                 }
                             }
@@ -393,7 +408,7 @@ fun DashboardScreen(
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {
                         if (!expandableFabEnabled) {
-                            navigate { onAddClick(TransactionType.EXPENSE, null) }
+                            navigate { actions.onAddClick(TransactionType.EXPENSE, null) }
                         }
                     },
                     fabMenu = if (expandableFabEnabled) {
@@ -404,7 +419,7 @@ fun DashboardScreen(
                                 categories = allCategories,
                                 onAddClick = { type, templateId ->
                                     isFabExpanded = false
-                                    navigate { onAddClick(type, templateId) }
+                                    navigate { actions.onAddClick(type, templateId) }
                                 }
                             )
                         }

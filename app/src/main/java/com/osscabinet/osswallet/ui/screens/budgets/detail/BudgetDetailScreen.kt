@@ -41,6 +41,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
@@ -189,7 +191,7 @@ fun BudgetDetailContent(
 
     val pillHeight = AeonSize.D64.value
 
-    AeonHazeProvider { _ ->
+    AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             // 1. Content Layer
             Scaffold(
@@ -199,6 +201,7 @@ fun BudgetDetailContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = paddingValues.calculateBottomPadding())
                 ) {
                     HorizontalPager(

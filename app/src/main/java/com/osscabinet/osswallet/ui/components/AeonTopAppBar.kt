@@ -187,17 +187,20 @@ data class AeonAppBarTab(
 fun AppBarIconButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    tint: Color = AppColors.onScreenBackground
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(AeonSize.D40.value)
+        modifier = modifier.size(AeonSize.D40.value),
+        enabled = enabled
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(AeonSize.D22.value),
-            tint = AppColors.onScreenBackground
+            tint = if (enabled) tint else tint.copy(alpha = 0.38f)
         )
     }
 }

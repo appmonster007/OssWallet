@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,18 +31,13 @@ import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -59,9 +55,11 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -110,349 +108,326 @@ fun GlassLabContent(
         else -> glassSettings.standard
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Glass Lab", style = AppTextStyles.screenTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(AppColors.screenBackground)
-        ) {
-            ContourBackground()
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                ) {
+                    ContourBackground()
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Sticky Preview Section
-                CompositionLocalProvider(LocalGlassSettings provides glassSettings) {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(AeonTheme.dimensions.screenPadding),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "LIVE PREVIEW",
-                                style = AppTextStyles.sectionOverline,
-                                color = AppColors.primary
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .padding(
+                                top = AeonSize.D64.value,
+                                bottom = innerPadding.calculateBottomPadding()
                             )
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { isDarkPreview = !isDarkPreview }
+                    ) {
+                        // Sticky Preview Section
+                        CompositionLocalProvider(LocalGlassSettings provides glassSettings) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(AeonTheme.dimensions.screenPadding),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
-                                    if (isDarkPreview) "DARK MODE" else "LIGHT MODE",
-                                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                                    color = AppColors.contentSecondary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    if (isDarkPreview) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = AppColors.primary
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "LIVE PREVIEW",
+                                        style = AppTextStyles.sectionOverline,
+                                        color = AppColors.primary
+                                    )
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.clickable { isDarkPreview = !isDarkPreview }
+                                    ) {
+                                        Text(
+                                            if (isDarkPreview) "DARK MODE" else "LIGHT MODE",
+                                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                                            color = AppColors.contentSecondary
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Icon(
+                                            if (isDarkPreview) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = AppColors.primary
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = Color.Transparent,
+                                    border = BorderStroke(1.dp, if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant)
+                                ) {
+                                    AeonHazeProvider(
+                                        backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
+                                        drawContours = true
+                                    ) { innerHaze ->
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            // Background pattern to see the blur clearly
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .hazeSource(innerHaze.states[0])
+                                                    .padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                repeat(8) {
+                                                    Text(
+                                                        "GLASSMORPHISM PREVIEW TEXT ".repeat(2),
+                                                        style = AppTextStyles.caption.copy(
+                                                            color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.2f),
+                                                            letterSpacing = 2.sp
+                                                        )
+                                                    )
+                                                }
+                                            }
+
+                                            // The Glass layer on top
+                                            GlassSurface(
+                                                modifier = Modifier.size(280.dp, 100.dp),
+                                                shape = RoundedCornerShape(20.dp),
+                                                hazeState = innerHaze.states[0],
+                                                hazeStyle = GlassTokens.createHazeStyle(
+                                                    config = currentConfig,
+                                                    bgColor = when (selectedToken) {
+                                                        "Pill" -> AppColors.componentOnCard
+                                                        "Card" -> AppColors.cardSurface
+                                                        "Sheet" -> AppColors.sheetSurface
+                                                        "Popup" -> AppColors.popupSurface
+                                                        else -> AppColors.cardSurfaceProminent
+                                                    },
+                                                    isDark = isDarkPreview
+                                                ),
+                                                shadowElevation = currentConfig.shadowElevation.dp,
+                                                borderAlpha = currentConfig.borderAlpha,
+                                                fallbackColor = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
+                                            ) {
+                                                Text(
+                                                    selectedToken.uppercase(),
+                                                    style = AppTextStyles.managementItemTitle.copy(
+                                                        letterSpacing = 2.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isDarkPreview) Color.White else AppColors.contentPrimary
+                                                    ),
+                                                    modifier = Modifier.align(Alignment.Center)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        Surface(
+                        // Scrollable Tuning Section
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            color = Color.Transparent,
-                            border = BorderStroke(1.dp, if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant)
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                            verticalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-                            AeonHazeProvider(
-                                backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
-                                drawContours = true
-                            ) { hazeLayers ->
-                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                    // Background pattern to see the blur clearly
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .hazeSource(hazeLayers.states[0])
-                                            .padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        repeat(8) {
+                            // Token Selection (Revamped)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = AeonTheme.dimensions.spacingSm),
+                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                            ) {
+                                Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                                    Text(
+                                        "SELECT COMPONENT STYLE",
+                                        style = AppTextStyles.sectionOverline,
+                                        color = AppColors.primary
+                                    )
+                                    Text(
+                                        "Choose a glass profile to customize its specific properties",
+                                        style = AppTextStyles.caption.copy(color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                                    )
+                                }
+                                
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                ) {
+                                    tokens.forEach { token ->
+                                        val isSelected = selectedToken == token
+                                        val icon = when (token) {
+                                            "Drawer" -> Icons.AutoMirrored.Rounded.MenuOpen
+                                            "Pill" -> Icons.Rounded.Circle
+                                            "Card" -> Icons.Rounded.Dashboard
+                                            "Sheet" -> Icons.Rounded.KeyboardArrowUp
+                                            "Popup" -> Icons.Rounded.PictureInPicture
+                                            else -> Icons.Rounded.Layers
+                                        }
+
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier
+                                                .width(72.dp)
+                                                .clickable { selectedToken = token }
+                                        ) {
+                                            Surface(
+                                                shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+                                                color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.surfaceContainerLow,
+                                                border = BorderStroke(
+                                                    width = if (isSelected) 2.dp else 1.dp,
+                                                    color = if (isSelected) AppColors.primary else AppColors.outlineVariant
+                                                ),
+                                                modifier = Modifier.size(64.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        imageVector = icon,
+                                                        contentDescription = null,
+                                                        tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.7f),
+                                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                                             Text(
-                                                "GLASSMORPHISM PREVIEW TEXT ".repeat(2),
+                                                text = token,
                                                 style = AppTextStyles.caption.copy(
-                                                    color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.2f),
-                                                    letterSpacing = 2.sp
+                                                    fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                                                    fontSize = 11.sp,
+                                                    color = if (isSelected) AppColors.primary else AppColors.contentSecondary
                                                 )
                                             )
                                         }
                                     }
-
-                                    // The Glass layer on top
-                                    GlassSurface(
-                                        modifier = Modifier.size(280.dp, 100.dp),
-                                        shape = RoundedCornerShape(20.dp),
-                                        hazeState = hazeLayers.states[0],
-                                        hazeStyle = GlassTokens.createHazeStyle(
-                                            config = currentConfig,
-                                            bgColor = when (selectedToken) {
-                                                "Pill" -> AppColors.componentOnCard
-                                                "Card" -> AppColors.cardSurface
-                                                "Sheet" -> AppColors.sheetSurface
-                                                "Popup" -> AppColors.popupSurface
-                                                else -> AppColors.cardSurfaceProminent
-                                            },
-                                            isDark = isDarkPreview
-                                        ),
-                                        shadowElevation = currentConfig.shadowElevation.dp,
-                                        borderAlpha = currentConfig.borderAlpha,
-                                        fallbackColor = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
-                                    ) {
-                                        Text(
-                                            selectedToken.uppercase(),
-                                            style = AppTextStyles.managementItemTitle.copy(
-                                                letterSpacing = 2.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isDarkPreview) Color.White else AppColors.contentPrimary
-                                            ),
-                                            modifier = Modifier.align(Alignment.Center)
-                                        )
-                                    }
                                 }
                             }
-                        }
-                    }
-                }
 
-                // Scrollable Tuning Section
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = AeonTheme.dimensions.screenPadding),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    // Token Selection (Revamped)
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = AeonTheme.dimensions.spacingSm),
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 4.dp)) {
-                            Text(
-                                "SELECT COMPONENT STYLE",
-                                style = AppTextStyles.sectionOverline,
-                                color = AppColors.primary
-                            )
-                            Text(
-                                "Choose a glass profile to customize its specific properties",
-                                style = AppTextStyles.caption.copy(color = AppColors.contentSecondary.copy(alpha = 0.6f))
-                            )
-                        }
-                        
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                        ) {
-                            tokens.forEach { token ->
-                                val isSelected = selectedToken == token
-                                val icon = when (token) {
-                                    "Drawer" -> Icons.AutoMirrored.Rounded.MenuOpen
-                                    "Pill" -> Icons.Rounded.Circle
-                                    "Card" -> Icons.Rounded.Dashboard
-                                    "Sheet" -> Icons.Rounded.KeyboardArrowUp
-                                    "Popup" -> Icons.Rounded.PictureInPicture
-                                    else -> Icons.Rounded.Layers
-                                }
-
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                            // Tuning Controls
+                            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                Row(
                                     modifier = Modifier
-                                        .width(72.dp)
-                                        .clickable { selectedToken = token }
+                                        .fillMaxWidth()
+                                        .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-                                        color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.surfaceContainerLow,
-                                        border = BorderStroke(
-                                            width = if (isSelected) 2.dp else 1.dp,
-                                            color = if (isSelected) AppColors.primary else AppColors.outlineVariant
-                                        ),
-                                        modifier = Modifier.size(64.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = icon,
-                                                contentDescription = null,
-                                                tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.7f),
-                                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
                                     Text(
-                                        text = token,
-                                        style = AppTextStyles.caption.copy(
-                                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                                            fontSize = 11.sp,
-                                            color = if (isSelected) AppColors.primary else AppColors.contentSecondary
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Tuning Controls
-                    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = AeonTheme.dimensions.screenPadding),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "PARAMETERS: ${selectedToken.uppercase()}",
-                                style = AppTextStyles.sectionOverline,
-                                color = AppColors.primary
-                            )
-                            
-                            TextButton(
-                                onClick = { onResetStyle(selectedToken) },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Refresh,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp),
-                                    tint = AppColors.primary
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    "RESET STYLE",
-                                    style = AppTextStyles.caption.copy(
-                                        fontWeight = FontWeight.Black,
-                                        fontSize = 10.sp,
+                                        text = "PARAMETERS: ${selectedToken.uppercase()}",
+                                        style = AppTextStyles.sectionOverline,
                                         color = AppColors.primary
                                     )
-                                )
-                            }
-                        }
+                                    
+                                    TextButton(
+                                        onClick = { onResetStyle(selectedToken) },
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                        modifier = Modifier.height(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(14.dp),
+                                            tint = AppColors.primary
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "RESET STYLE",
+                                            style = AppTextStyles.caption.copy(
+                                                fontWeight = FontWeight.Black,
+                                                fontSize = 10.sp,
+                                                color = AppColors.primary
+                                            )
+                                        )
+                                    }
+                                }
 
-                        Surface(
-                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                            color = AppColors.surfaceContainerLow,
-                            border = BorderStroke(1.dp, AppColors.outlineVariant)
-                        ) {
-                            Column {
-                                TuningSliderRow(
-                                    label = "Blur Radius",
-                                    value = currentConfig.blurRadius,
-                                    range = 0f..40f,
-                                    valueDisplay = "${currentConfig.blurRadius.toInt()}dp",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(blurRadius = v) } },
-                                    onReset = { onResetParameter(selectedToken, "blurRadius") }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                                TuningSliderRow(
-                                    label = "Light Alpha",
-                                    value = currentConfig.lightAlpha,
-                                    range = 0f..1f,
-                                    valueDisplay = "${(currentConfig.lightAlpha * 100).toInt()}%",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(lightAlpha = v) } },
-                                    onReset = { onResetParameter(selectedToken, "lightAlpha") }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                                TuningSliderRow(
-                                    label = "Dark Alpha",
-                                    value = currentConfig.darkAlpha,
-                                    range = 0f..1f,
-                                    valueDisplay = "${(currentConfig.darkAlpha * 100).toInt()}%",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(darkAlpha = v) } },
-                                    onReset = { onResetParameter(selectedToken, "darkAlpha") }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                                TuningSliderRow(
-                                    label = "Noise Factor",
-                                    value = currentConfig.noiseFactor,
-                                    range = 0f..1f,
-                                    valueDisplay = "${(currentConfig.noiseFactor * 100).toInt()}%",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(noiseFactor = v) } },
-                                    onReset = { onResetParameter(selectedToken, "noiseFactor") }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                                TuningSliderRow(
-                                    label = "Shadow Elevation",
-                                    value = currentConfig.shadowElevation,
-                                    range = 0f..32f,
-                                    valueDisplay = "${currentConfig.shadowElevation.toInt()}dp",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(shadowElevation = v) } },
-                                    onReset = { onResetParameter(selectedToken, "shadowElevation") }
-                                )
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
-                                TuningSliderRow(
-                                    label = "Border Alpha",
-                                    value = currentConfig.borderAlpha,
-                                    range = 0f..1f,
-                                    valueDisplay = "${(currentConfig.borderAlpha * 100).toInt()}%",
-                                    onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(borderAlpha = v) } },
-                                    onReset = { onResetParameter(selectedToken, "borderAlpha") }
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                    color = AppColors.surfaceContainerLow,
+                                    border = BorderStroke(1.dp, AppColors.outlineVariant)
+                                ) {
+                                    Column {
+                                        TuningSliderRow(
+                                            label = "Blur Radius",
+                                            value = currentConfig.blurRadius,
+                                            range = 0f..40f,
+                                            valueDisplay = "${currentConfig.blurRadius.toInt()}dp",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(blurRadius = v) } },
+                                            onReset = { onResetParameter(selectedToken, "blurRadius") }
+                                        )
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        TuningSliderRow(
+                                            label = "Light Alpha",
+                                            value = currentConfig.lightAlpha,
+                                            range = 0f..1f,
+                                            valueDisplay = "${(currentConfig.lightAlpha * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(lightAlpha = v) } },
+                                            onReset = { onResetParameter(selectedToken, "lightAlpha") }
+                                        )
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        TuningSliderRow(
+                                            label = "Dark Alpha",
+                                            value = currentConfig.darkAlpha,
+                                            range = 0f..1f,
+                                            valueDisplay = "${(currentConfig.darkAlpha * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(darkAlpha = v) } },
+                                            onReset = { onResetParameter(selectedToken, "darkAlpha") }
+                                        )
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        TuningSliderRow(
+                                            label = "Noise Factor",
+                                            value = currentConfig.noiseFactor,
+                                            range = 0f..1f,
+                                            valueDisplay = "${(currentConfig.noiseFactor * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(noiseFactor = v) } },
+                                            onReset = { onResetParameter(selectedToken, "noiseFactor") }
+                                        )
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        TuningSliderRow(
+                                            label = "Shadow Elevation",
+                                            value = currentConfig.shadowElevation,
+                                            range = 0f..32f,
+                                            valueDisplay = "${currentConfig.shadowElevation.toInt()}dp",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(shadowElevation = v) } },
+                                            onReset = { onResetParameter(selectedToken, "shadowElevation") }
+                                        )
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        TuningSliderRow(
+                                            label = "Border Alpha",
+                                            value = currentConfig.borderAlpha,
+                                            range = 0f..1f,
+                                            valueDisplay = "${(currentConfig.borderAlpha * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(borderAlpha = v) } },
+                                            onReset = { onResetParameter(selectedToken, "borderAlpha") }
+                                        )
+                                    }
+                                }
                             }
+
+                            Spacer(modifier = Modifier.height(32.dp))
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
+
+            AeonTopAppBar(
+                title = "Glass Lab",
+                onBackClick = onBack
+            )
         }
-    }
-}
-
-@Preview(showBackground = true, name = "Light Mode")
-@Composable
-fun GlassLabScreenPreviewLight() {
-    val settings = GlassSettings()
-    OssWalletTheme(theme = "Light", glassSettings = settings) {
-        GlassLabContent(
-            glassSettings = settings,
-            onBack = {},
-            onUpdateStyle = { _, _ -> },
-            onResetStyle = {},
-            onResetParameter = { _, _ -> }
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Dark Mode")
-@Composable
-fun GlassLabScreenPreviewDark() {
-    val settings = GlassSettings()
-    OssWalletTheme(theme = "Dark", glassSettings = settings) {
-        GlassLabContent(
-            glassSettings = settings,
-            onBack = {},
-            onUpdateStyle = { _, _ -> },
-            onResetStyle = {},
-            onResetParameter = { _, _ -> }
-        )
     }
 }

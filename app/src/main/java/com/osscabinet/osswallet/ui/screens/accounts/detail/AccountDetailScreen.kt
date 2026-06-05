@@ -116,6 +116,8 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.math.BigDecimal
@@ -282,7 +284,7 @@ fun AccountDetailScreen(
         }
     }
 
-    AeonHazeProvider { _ ->
+    AeonHazeProvider { hazeLayers ->
         CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
@@ -294,6 +296,7 @@ fun AccountDetailScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .statusBarsPadding()
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(bottom = screenPadding.calculateBottomPadding())
                     ) {
                         when (val state = uiState) {

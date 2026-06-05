@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Bookmarks
@@ -46,7 +46,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -61,13 +61,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -355,160 +360,165 @@ fun CurrencySettingsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Currency & Localization", style = AppTextStyles.screenTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(AppColors.screenBackground)
-        ) {
-            ContourBackground()
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                ) {
+                    ContourBackground()
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(AeonTheme.dimensions.screenPadding),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
-            ) {
-                AeonSettingsSection("CURRENCY") {
-                    AeonSettingsItem(
-                        title = "Base Currency",
-                        subtitle = "${getCurrencySymbol(currencyCode)} ${
-                            getCurrencyName(
-                                currencyCode
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .statusBarsPadding()
+                            .padding(
+                                top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
+                                bottom = innerPadding.calculateBottomPadding()
                             )
-                        }",
-                        icon = Icons.Rounded.CurrencyExchange,
-                        onClick = { showCurrencyDialog = true }
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.5f)
-                    )
-                    AeonSettingsItem(
-                        title = "Active Currencies",
-                        subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" }
-                            ?: "All currencies",
-                        icon = Icons.Rounded.Bookmarks,
-                        onClick = onShortlistedCurrenciesClick
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.5f)
-                    )
-                    AeonSettingsItem(
-                        title = "Exchange Rate Provider",
-                        subtitle = availableProviders.find { it.id == currencyProviderId }?.name
-                            ?: "Select Provider",
-                        icon = Icons.Rounded.Api,
-                        onClick = { showProviderDialog = true }
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.5f)
-                    )
-                    EntrySwitchRow(
-                        label = "Auto-save Exchange Rates",
-                        subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
-                        icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
-                        checked = autoSaveExchangeRates,
-                        onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
-                        isFlush = false
-                    )
-                }
-
-                AeonSettingsSection("FORMATTING") {
-                    AeonSettingsItem(
-                        title = "Decimal Precision",
-                        subtitle = "Toggle between 2 and 3 places",
-                        icon = Icons.Rounded.PrecisionManufacturing,
-                        trailingContent = {
-                            Row(
-                                modifier = Modifier
-                                    .height(AeonTheme.dimensions.spacing2xl)
-                                    .background(
-                                        AppColors.insetSurface.copy(alpha = 0.5f),
-                                        CircleShape
+                            .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
+                    ) {
+                        AeonSettingsSection("CURRENCY") {
+                            AeonSettingsItem(
+                                title = "Base Currency",
+                                subtitle = "${getCurrencySymbol(currencyCode)} ${
+                                    getCurrencyName(
+                                        currencyCode
                                     )
-                                    .padding(2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                listOf(2, 3).forEach { p ->
-                                    Surface(
+                                }",
+                                icon = Icons.Rounded.CurrencyExchange,
+                                onClick = { showCurrencyDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Active Currencies",
+                                subtitle = shortlistedCurrencies?.let { "${it.size} currencies selected" }
+                                    ?: "All currencies",
+                                icon = Icons.Rounded.Bookmarks,
+                                onClick = onShortlistedCurrenciesClick
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Exchange Rate Provider",
+                                subtitle = availableProviders.find { it.id == currencyProviderId }?.name
+                                    ?: "Select Provider",
+                                icon = Icons.Rounded.Api,
+                                onClick = { showProviderDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            EntrySwitchRow(
+                                label = "Auto-save Exchange Rates",
+                                subtitle = if (autoSaveExchangeRates) "Automatically save fresh rates" else "Show preview before saving",
+                                icon = if (autoSaveExchangeRates) Icons.Rounded.AutoFixHigh else Icons.Rounded.Quiz,
+                                checked = autoSaveExchangeRates,
+                                onCheckedChange = { viewModel.setAutoSaveExchangeRates(it) },
+                                isFlush = false
+                            )
+                        }
+
+                        AeonSettingsSection("FORMATTING") {
+                            AeonSettingsItem(
+                                title = "Decimal Precision",
+                                subtitle = "Toggle between 2 and 3 places",
+                                icon = Icons.Rounded.PrecisionManufacturing,
+                                trailingContent = {
+                                    Row(
                                         modifier = Modifier
-                                            .fillMaxHeight()
-                                            .width(AeonTheme.dimensions.iconSizeXl)
-                                            .clickable {
-                                                if (decimalPrecision != p) {
-                                                    viewModel.setDecimalPrecision(p)
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Precision set to $p decimal places",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            },
-                                        shape = CircleShape,
-                                        color = if (decimalPrecision == p) AppColors.primary else AppColors.transparent
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                p.toString(),
-                                                style = AppTextStyles.drawerItemLabel,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (decimalPrecision == p) AppColors.onPrimary else AppColors.contentSecondary
+                                            .height(AeonTheme.dimensions.spacing2xl)
+                                            .background(
+                                                AppColors.insetSurface.copy(alpha = 0.5f),
+                                                CircleShape
                                             )
+                                            .padding(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        listOf(2, 3).forEach { p ->
+                                            Surface(
+                                                modifier = Modifier
+                                                    .fillMaxHeight()
+                                                    .width(AeonTheme.dimensions.iconSizeXl)
+                                                    .clickable {
+                                                        if (decimalPrecision != p) {
+                                                            viewModel.setDecimalPrecision(p)
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Precision set to $p decimal places",
+                                                                Toast.LENGTH_SHORT
+                                                            ).show()
+                                                        }
+                                                    },
+                                                shape = CircleShape,
+                                                color = if (decimalPrecision == p) AppColors.primary else AppColors.transparent
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Text(
+                                                        p.toString(),
+                                                        style = AppTextStyles.drawerItemLabel,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (decimalPrecision == p) AppColors.onPrimary else AppColors.contentSecondary
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Formatting System",
+                                subtitle = CurrencyFormatter.formatAuto(
+                                    amount = java.math.BigDecimal("1234.5678"),
+                                    currencyCode = currencyCode,
+                                    precision = decimalPrecision
+                                ),
+                                icon = Icons.Rounded.AutoFixHigh,
+                                onClick = { showSystemDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            EntrySwitchRow(
+                                label = "24-Hour Time Format",
+                                subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",
+                                icon = Icons.Rounded.Schedule,
+                                checked = use24HourFormat,
+                                onCheckedChange = { viewModel.setUse24HourFormat(it) },
+                                isFlush = false
+                            )
                         }
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.5f)
-                    )
-                    AeonSettingsItem(
-                        title = "Formatting System",
-                        subtitle = CurrencyFormatter.formatAuto(
-                            amount = java.math.BigDecimal("1234.5678"),
-                            currencyCode = currencyCode,
-                            precision = decimalPrecision
-                        ),
-                        icon = Icons.Rounded.AutoFixHigh,
-                        onClick = { showSystemDialog = true }
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                        thickness = 0.5.dp,
-                        color = AppColors.divider.copy(alpha = 0.5f)
-                    )
-                    EntrySwitchRow(
-                        label = "24-Hour Time Format",
-                        subtitle = if (use24HourFormat) "Use 24-hour clock (14:30)" else "Use 12-hour clock (02:30 PM)",
-                        icon = Icons.Rounded.Schedule,
-                        checked = use24HourFormat,
-                        onCheckedChange = { viewModel.setUse24HourFormat(it) },
-                        isFlush = false
-                    )
+                    }
                 }
             }
+
+            AeonTopAppBar(
+                title = "Currency & Localization",
+                onBackClick = onBackClick
+            )
         }
     }
 }

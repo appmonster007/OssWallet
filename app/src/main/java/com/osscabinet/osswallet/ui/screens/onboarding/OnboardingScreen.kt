@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,7 +49,6 @@ import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.SettingsSuggest
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -60,7 +61,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,6 +70,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -83,11 +84,17 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -121,202 +128,201 @@ fun OnboardingContent(
     val pagerState = rememberPagerState { totalSteps }
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        containerColor = AppColors.screenBackground,
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Step ${pagerState.currentPage + 1} of $totalSteps",
-                        style = AppTextStyles.drawerItemLabel.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = AppColors.primary
-                    )
-                },
-                navigationIcon = {
-                    if (pagerState.currentPage > 0) {
-                        IconButton(onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                            }
-                        }) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.transparent
-                )
-            )
-        },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = AppColors.screenBackground,
-                tonalElevation = 0.dp
-            ) {
-                Column {
-                    LinearProgressIndicator(
-                        progress = { (pagerState.currentPage + 1).toFloat() / totalSteps },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp),
-                        color = AppColors.primary,
-                        trackColor = AppColors.divider.copy(alpha = 0.1f)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .padding(AeonTheme.dimensions.spacingXl)
-                            .fillMaxWidth()
-                            .navigationBarsPadding(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent,
+                bottomBar = {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = AppColors.screenBackground,
+                        tonalElevation = 0.dp
                     ) {
-                        // In Seed step, we don't use the standard NEXT button if they choose to seed
-                        val isSeedStep = uiState.showDebugSeedStep && pagerState.currentPage == 0
+                        Column {
+                            LinearProgressIndicator(
+                                progress = { (pagerState.currentPage + 1).toFloat() / totalSteps },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp),
+                                color = AppColors.primary,
+                                trackColor = AppColors.divider.copy(alpha = 0.1f)
+                            )
 
-                        if (!isSeedStep) {
-                            Button(
-                                onClick = {
-                                    if (pagerState.currentPage < totalSteps - 1) {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            Row(
+                                modifier = Modifier
+                                    .padding(AeonTheme.dimensions.spacingXl)
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                              ) {
+                                // In Seed step, we don't use the standard NEXT button if they choose to seed
+                                val isSeedStep = uiState.showDebugSeedStep && pagerState.currentPage == 0
+
+                                if (!isSeedStep) {
+                                    Button(
+                                        onClick = {
+                                            if (pagerState.currentPage < totalSteps - 1) {
+                                                scope.launch {
+                                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                                }
+                                            } else {
+                                                onEvent(OnboardingEvent.CompleteOnboarding)
+                                            }
+                                        },
+                                        enabled = !uiState.isCompleting && !uiState.isSeeding,
+                                        modifier = Modifier.height(56.dp),
+                                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = AppColors.primary,
+                                            contentColor = AppColors.onPrimary
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 24.dp)
+                                    ) {
+                                        if (uiState.isCompleting) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(24.dp),
+                                                color = AppColors.onPrimary,
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Text(
+                                                text = if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
+                                                style = AppTextStyles.drawerItemLabel.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 1.sp
+                                                )
+                                            )
+                                            Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
+                                            Icon(
+                                                imageVector = if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
                                         }
-                                    } else {
-                                        onEvent(OnboardingEvent.CompleteOnboarding)
                                     }
-                                },
-                                enabled = !uiState.isCompleting && !uiState.isSeeding,
-                                modifier = Modifier.height(56.dp),
-                                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = AppColors.primary,
-                                    contentColor = AppColors.onPrimary
-                                ),
-                                contentPadding = PaddingValues(horizontal = 24.dp)
-                            ) {
-                                if (uiState.isCompleting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        color = AppColors.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
                                 } else {
-                                    Text(
-                                        if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
-                                        style = AppTextStyles.listSectionHeader
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Icon(
-                                        if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        } else {
-                            // On Step 0 (Seed Step), we show skip or seed
-                            Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            pagerState.animateScrollToPage(1)
+                                    // On Step 0 (Seed Step), we show skip or seed
+                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    pagerState.animateScrollToPage(1)
+                                                }
+                                            },
+                                            modifier = Modifier.height(56.dp),
+                                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = AppColors.cardSurface,
+                                                contentColor = AppColors.contentPrimary
+                                            )
+                                        ) {
+                                            Text("SKIP SEEDING", style = AppTextStyles.listSectionHeader)
                                         }
-                                    },
-                                    modifier = Modifier.height(56.dp),
-                                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = AppColors.cardSurface,
-                                        contentColor = AppColors.contentPrimary
-                                    )
-                                ) {
-                                    Text("SKIP SEEDING", style = AppTextStyles.listSectionHeader)
-                                }
 
-                                Button(
-                                    onClick = { onEvent(OnboardingEvent.SeedDataRequested) },
-                                    enabled = !uiState.isSeeding,
-                                    modifier = Modifier.height(56.dp),
-                                    shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = AppColors.primary,
-                                        contentColor = AppColors.onPrimary
-                                    )
-                                ) {
-                                    if (uiState.isSeeding) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(24.dp),
-                                            color = AppColors.onPrimary,
-                                            strokeWidth = 2.dp
-                                        )
-                                    } else {
-                                        Text("SEED DEBUG DATA", style = AppTextStyles.listSectionHeader)
+                                        Button(
+                                            onClick = { onEvent(OnboardingEvent.SeedDataRequested) },
+                                            enabled = !uiState.isSeeding,
+                                            modifier = Modifier.height(56.dp),
+                                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = AppColors.primary,
+                                                contentColor = AppColors.onPrimary
+                                            )
+                                        ) {
+                                            if (uiState.isSeeding) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(24.dp),
+                                                    color = AppColors.onPrimary,
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Text("SEED DEBUG DATA", style = AppTextStyles.listSectionHeader)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-        }
-    ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            beyondViewportPageCount = 1,
-            userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting
-        ) { page ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = AeonTheme.dimensions.spacingXl)
-            ) {
-                val actualPage = if (uiState.showDebugSeedStep) page - 1 else page
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                ) {
+                    ContourBackground()
 
-                if (uiState.showDebugSeedStep && page == 0) {
-                    SeedStep()
-                } else {
-                    when (actualPage) {
-                        0 -> WelcomeStep()
-                        1 -> ProfileStep(
-                            userName = uiState.userName,
-                            onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
-                        )
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .padding(paddingValues),
+                        beyondViewportPageCount = 1,
+                        userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting
+                    ) { page ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = AeonTheme.dimensions.spacingXl)
+                        ) {
+                            val actualPage = if (uiState.showDebugSeedStep) page - 1 else page
 
-                        2 -> ProviderStep(
-                            selectedProviderId = uiState.selectedProviderId,
-                            availableProviders = uiState.availableProviders,
-                            onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
-                        )
-
-                        3 -> CurrenciesStep(
-                            selectedCurrency = uiState.selectedCurrency,
-                            shortlistedCurrencies = uiState.shortlistedCurrencies,
-                            availableCurrencies = uiState.availableCurrencies,
-                            onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
-                            onShortlistChanged = {
-                                onEvent(
-                                    OnboardingEvent.ShortlistedCurrenciesChanged(
-                                        it
+                            if (uiState.showDebugSeedStep && page == 0) {
+                                SeedStep()
+                            } else {
+                                when (actualPage) {
+                                    0 -> WelcomeStep()
+                                    1 -> ProfileStep(
+                                        userName = uiState.userName,
+                                        onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
                                     )
-                                )
-                            }
-                        )
 
-                        4 -> AppearanceStep(
-                            selectedTheme = uiState.selectedTheme,
-                            onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
-                            selectedPrecision = uiState.decimalPrecision,
-                            onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
-                        )
+                                    2 -> ProviderStep(
+                                        selectedProviderId = uiState.selectedProviderId,
+                                        availableProviders = uiState.availableProviders,
+                                        onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
+                                    )
+
+                                    3 -> CurrenciesStep(
+                                        selectedCurrency = uiState.selectedCurrency,
+                                        shortlistedCurrencies = uiState.shortlistedCurrencies,
+                                        availableCurrencies = uiState.availableCurrencies,
+                                        onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
+                                        onShortlistChanged = {
+                                            onEvent(
+                                                OnboardingEvent.ShortlistedCurrenciesChanged(
+                                                    it
+                                                )
+                                            )
+                                        }
+                                    )
+
+                                    4 -> AppearanceStep(
+                                        selectedTheme = uiState.selectedTheme,
+                                        onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
+                                        selectedPrecision = uiState.decimalPrecision,
+                                        onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            AeonTopAppBar(
+                title = "Step ${pagerState.currentPage + 1} of $totalSteps",
+                onBackClick = if (pagerState.currentPage > 0) {
+                    {
+                        scope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    }
+                } else null
+            )
         }
     }
 }

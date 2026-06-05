@@ -18,19 +18,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
@@ -55,7 +55,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -71,11 +70,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -174,99 +180,103 @@ fun ExchangeRatesScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Exchange Rates") },
-                    navigationIcon = {
-                        if (isTopLevel) {
-                            IconButton(onClick = onMenuClick) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { paddingValues ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                ) {
+                    ContourBackground()
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .padding(top = AeonSize.D64.value)
+                    ) {
+                        // Custom Tab Row Pill
+                        GlassSurface(
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .padding(horizontal = AeonTheme.dimensions.screenPadding)
+                                .padding(bottom = AeonTheme.dimensions.spacingMd),
+                            fallbackColor = AppColors.panelSurface
+                        ) {
+                            TabRow(
+                                selectedTabIndex = pagerState.currentPage,
+                                containerColor = Color.Transparent,
+                                divider = {},
+                                indicator = { tabPositions ->
+                                    if (pagerState.currentPage < tabPositions.size) {
+                                        TabRowDefaults.SecondaryIndicator(
+                                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                            color = AppColors.primary
+                                        )
+                                    }
+                                }
+                            ) {
+                                tabs.forEachIndexed { index, title ->
+                                    Tab(
+                                        selected = pagerState.currentPage == index,
+                                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                                        text = { 
+                                            Text(
+                                                title,
+                                                style = AppTextStyles.caption.copy(
+                                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            ) 
+                                        }
+                                    )
+                                }
                             }
-                        } else {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            when (page) {
+                                0 -> RatesTab(uiState)
+                                1 -> ConverterTab(
+                                    uiState = uiState,
+                                    onConvert = { amount, from, to, callback ->
+                                        viewModel.convert(amount, from, to, callback)
+                                    }
                                 )
                             }
                         }
-                    },
-                    actions = {
-                        if (pagerState.currentPage == 0) {
-                            val lastUpdatedStr =
-                                if (uiState.lastUpdated > 0) com.osscabinet.ossWallet.ui.util.TimeUtils.formatFullDateTime(
-                                    uiState.lastUpdated
-                                ) else "Never"
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = lastUpdatedStr,
-                                        style = AppTextStyles.formFieldHint,
-                                        color = AppColors.border
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.refreshRates() }) {
-                                    if (uiState.isLoading) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                            strokeWidth = 2.dp
-                                        )
-                                    } else {
-                                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                                    }
-                                }
-                            }
-                        }
                     }
-                )
-                TabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    containerColor = AppColors.panelSurface,
-                    indicator = { tabPositions ->
-                        if (pagerState.currentPage < tabPositions.size) {
-                            TabRowDefaults.SecondaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                }
+            }
+
+            AeonTopAppBar(
+                title = "Exchange Rates",
+                isTopLevel = isTopLevel,
+                onMenuClick = if (isTopLevel) onMenuClick else null,
+                onBackClick = if (!isTopLevel) onBackClick else null,
+                actions = {
+                    if (pagerState.currentPage == 0) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                strokeWidth = 2.dp,
                                 color = AppColors.primary
+                            )
+                        } else {
+                            AppBarIconButton(
+                                icon = Icons.Default.Refresh,
+                                onClick = { viewModel.refreshRates() }
                             )
                         }
                     }
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = pagerState.currentPage == index,
-                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                            text = { Text(title) }
-                        )
-                    }
                 }
-            }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(AppColors.screenBackground)
-        ) {
-            ContourBackground()
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (page) {
-                    0 -> RatesTab(uiState)
-                    1 -> ConverterTab(
-                        uiState = uiState,
-                        onConvert = { amount, from, to, callback ->
-                            viewModel.convert(amount, from, to, callback)
-                        }
-                    )
-                }
-            }
+            )
         }
     }
 }
@@ -854,6 +864,3 @@ fun KeyButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) 
         }
     }
 }
-
-// --- PREVIEWS ---
-

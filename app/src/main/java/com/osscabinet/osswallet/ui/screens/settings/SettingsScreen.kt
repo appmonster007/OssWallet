@@ -4,11 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,25 +30,29 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,146 +76,151 @@ fun SettingsScreen(
 
     val scrollState = rememberScrollState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Settings", style = AppTextStyles.screenTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                ) {
+                    ContourBackground()
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .statusBarsPadding()
+                            .padding(
+                                top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
+                                bottom = innerPadding.calculateBottomPadding() + 40.dp
+                            )
+                            .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
+                    ) {
+                        AeonSettingsSection("PERSONALIZATION") {
+                            SettingsNavigationItem(
+                                title = "Display & Style",
+                                subtitle = "Theme, fonts, and animations",
+                                icon = Icons.Rounded.Palette,
+                                onClick = onDisplayClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Currency & Localization",
+                                subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
+                                icon = Icons.Rounded.CurrencyExchange,
+                                onClick = onCurrencyClick
+                            )
+                        }
+
+                        AeonSettingsSection("FINANCIAL SETUP") {
+                            SettingsNavigationItem(
+                                title = "Accounts",
+                                subtitle = "Manage balances and visibility",
+                                icon = Icons.Rounded.AccountBalance,
+                                onClick = onAccountsClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Categories",
+                                subtitle = "Income and expense classification",
+                                icon = Icons.Rounded.Category,
+                                onClick = onCategoriesClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Tags",
+                                subtitle = "Custom labeling for transactions",
+                                icon = Icons.AutoMirrored.Rounded.Label,
+                                onClick = onTagsClick
+                            )
+                        }
+
+                        AeonSettingsSection("AUTOMATION & TOOLS") {
+                            SettingsNavigationItem(
+                                title = "Transaction Templates",
+                                subtitle = "Quick shortcuts for frequent entries",
+                                icon = Icons.Rounded.AutoAwesome,
+                                onClick = onTemplatesClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Smart Suggestions",
+                                subtitle = "Discover recurring transactions",
+                                icon = Icons.Rounded.AutoAwesome,
+                                onClick = onSmartSuggestionsClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Saved Filters",
+                                subtitle = "Custom search presets",
+                                icon = Icons.Rounded.FilterList,
+                                onClick = onFiltersClick
+                            )
+                        }
+
+                        AeonSettingsSection("PRIVACY & SAFETY") {
+                            SettingsNavigationItem(
+                                title = "Security & Privacy",
+                                subtitle = "App lock, location, and web access",
+                                icon = Icons.Rounded.Lock,
+                                onClick = onSecurityClick
+                            )
+                            SettingsDivider()
+                            SettingsNavigationItem(
+                                title = "Data Management",
+                                subtitle = "Import, export, and backups",
+                                icon = Icons.Rounded.CloudSync,
+                                onClick = onDataManagementClick
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = AeonTheme.dimensions.spacingLg),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                        ) {
+                            Text(
+                                text = "OssWallet v1.1.0",
+                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                                color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Built for Modern Accounts",
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            )
+
+                            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+
+                            Text(
+                                "Currency rates provided by",
+                                style = AppTextStyles.transactionSwipeAction,
+                                color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                availableProviders.find { it.id == currencyProviderId }?.attribution
+                                    ?: "Exchangerate.host",
+                                style = AppTextStyles.transactionSwipeAction.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = AppColors.primary
+                            )
+                        }
                     }
                 }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(AppColors.screenBackground)
-        ) {
-            ContourBackground()
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(AeonTheme.dimensions.screenPadding),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
-            ) {
-                AeonSettingsSection("PERSONALIZATION") {
-                    SettingsNavigationItem(
-                        title = "Display & Style",
-                        subtitle = "Theme, fonts, and animations",
-                        icon = Icons.Rounded.Palette,
-                        onClick = onDisplayClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Currency & Localization",
-                        subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
-                        icon = Icons.Rounded.CurrencyExchange,
-                        onClick = onCurrencyClick
-                    )
-                }
-
-                AeonSettingsSection("FINANCIAL SETUP") {
-                    SettingsNavigationItem(
-                        title = "Accounts",
-                        subtitle = "Manage balances and visibility",
-                        icon = Icons.Rounded.AccountBalance,
-                        onClick = onAccountsClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Categories",
-                        subtitle = "Income and expense classification",
-                        icon = Icons.Rounded.Category,
-                        onClick = onCategoriesClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Tags",
-                        subtitle = "Custom labeling for transactions",
-                        icon = Icons.AutoMirrored.Rounded.Label,
-                        onClick = onTagsClick
-                    )
-                }
-
-                AeonSettingsSection("AUTOMATION & TOOLS") {
-                    SettingsNavigationItem(
-                        title = "Transaction Templates",
-                        subtitle = "Quick shortcuts for frequent entries",
-                        icon = Icons.Rounded.AutoAwesome,
-                        onClick = onTemplatesClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Smart Suggestions",
-                        subtitle = "Discover recurring transactions",
-                        icon = Icons.Rounded.AutoAwesome,
-                        onClick = onSmartSuggestionsClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Saved Filters",
-                        subtitle = "Custom search presets",
-                        icon = Icons.Rounded.FilterList,
-                        onClick = onFiltersClick
-                    )
-                }
-
-                AeonSettingsSection("PRIVACY & SAFETY") {
-                    SettingsNavigationItem(
-                        title = "Security & Privacy",
-                        subtitle = "App lock, location, and web access",
-                        icon = Icons.Rounded.Lock,
-                        onClick = onSecurityClick
-                    )
-                    SettingsDivider()
-                    SettingsNavigationItem(
-                        title = "Data Management",
-                        subtitle = "Import, export, and backups",
-                        icon = Icons.Rounded.CloudSync,
-                        onClick = onDataManagementClick
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = AeonTheme.dimensions.spacingLg),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                ) {
-                    Text(
-                        text = "OssWallet v1.1.0",
-                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
-                        color = AppColors.contentPrimary.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = "Built for Modern Accounts",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-
-                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-
-                    Text(
-                        "Currency rates provided by",
-                        style = AppTextStyles.transactionSwipeAction,
-                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                    )
-                    Text(
-                        availableProviders.find { it.id == currencyProviderId }?.attribution
-                            ?: "Exchangerate.host",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = AppColors.primary
-                    )
-                }
             }
+
+            AeonTopAppBar(
+                title = "Settings",
+                onBackClick = onBackClick
+            )
         }
     }
 }

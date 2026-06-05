@@ -14,26 +14,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,7 +44,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,16 +58,22 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -247,178 +249,177 @@ fun PlannedPaymentListContent(
     }
     val paused = remember(payments) { payments.filter { it.status == PlannedPaymentStatus.PAUSED } }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Planned Payments",
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = AppColors.screenBackground
-                )
-            )
-        }
-    ) { padding ->
+    AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
-            if (payments.isEmpty()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
+                        .background(AppColors.screenBackground)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = AppColors.primary.copy(alpha = 0.08f),
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl)
+                    ContourBackground()
+
+                    if (payments.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding()
+                                .padding(top = AeonSize.D64.value),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.Repeat,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                                    tint = AppColors.primary
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = AppColors.primary.copy(alpha = 0.08f),
+                                    modifier = Modifier.size(AeonSize.D64.value) // Using AeonSize
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Rounded.Repeat,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                                            tint = AppColors.primary
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "No Planned Payments",
+                                    style = AppTextStyles.calculatorKey,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
+                                    style = AppTextStyles.transactionTitle,
+                                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
-                        Text(
-                            "No Planned Payments",
-                            style = AppTextStyles.calculatorKey,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Tap 'New Payment' to schedule\nrecurring bills and subscriptions",
-                            style = AppTextStyles.transactionTitle,
-                            color = AppColors.contentSecondary.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(AeonTheme.dimensions.screenPadding),
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
-                ) {
-                    if (overdue.isNotEmpty()) {
-                        item {
-                            ManagementSectionHeader(
-                                title = "OVERDUE",
-                                count = overdue.size,
-                                sectionColor = AppColors.error
-                            )
-                        }
-                        items(overdue, key = { it.id }) { payment ->
-                            SwipeablePaymentItem(
-                                payment = payment,
-                                now = now,
-                                isOverdue = true,
-                                onTap = { onDetailClick(payment.id) },
-                                onEdit = { onEditClick(payment.id) },
-                                onDelete = { onDelete(payment.id) },
-                                onPause = { onPause(payment) },
-                                onResume = { onResume(payment) },
-                                onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
-                                onSkip = { onSkip(payment) }
-                            )
-                        }
-                    }
-
-                    if (upcoming.isNotEmpty()) {
-                        val upcomingNonOverdue = upcoming.filter { !it.isOverdue }
-                            .distinctBy { it.plannedPayment.id }
-                        if (upcomingNonOverdue.isNotEmpty()) {
-                            item {
-                                ManagementSectionHeader(
-                                    title = "UPCOMING",
-                                    count = upcomingNonOverdue.size,
-                                    sectionColor = AppColors.primary
-                                )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
+                                bottom = innerPadding.calculateBottomPadding() + scrollBottomPadding()
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                        ) {
+                            if (overdue.isNotEmpty()) {
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "OVERDUE",
+                                        count = overdue.size,
+                                        sectionColor = AppColors.error
+                                    )
+                                }
+                                items(overdue, key = { it.id }) { payment ->
+                                    SwipeablePaymentItem(
+                                        payment = payment,
+                                        now = now,
+                                        isOverdue = true,
+                                        onTap = { onDetailClick(payment.id) },
+                                        onEdit = { onEditClick(payment.id) },
+                                        onDelete = { onDelete(payment.id) },
+                                        onPause = { onPause(payment) },
+                                        onResume = { onResume(payment) },
+                                        onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
+                                        onSkip = { onSkip(payment) }
+                                    )
+                                }
                             }
-                            items(
-                                upcomingNonOverdue,
-                                key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
-                            ) { item ->
-                                SwipeablePaymentItem(
-                                    payment = item.plannedPayment,
-                                    now = now,
-                                    isOverdue = false,
-                                    scheduledDate = item.scheduledDate,
-                                    onTap = { onDetailClick(item.plannedPayment.id) },
-                                    onEdit = { onEditClick(item.plannedPayment.id) },
-                                    onDelete = { onDelete(item.plannedPayment.id) },
-                                    onPause = { onPause(item.plannedPayment) },
-                                    onResume = { onResume(item.plannedPayment) },
-                                    onConfirm = { onConfirm(item.plannedPayment, item.scheduledDate) },
-                                    onSkip = { onSkip(item.plannedPayment) }
-                                )
+
+                            if (upcoming.isNotEmpty()) {
+                                val upcomingNonOverdue = upcoming.filter { !it.isOverdue }
+                                    .distinctBy { it.plannedPayment.id }
+                                if (upcomingNonOverdue.isNotEmpty()) {
+                                    item {
+                                        ManagementSectionHeader(
+                                            title = "UPCOMING",
+                                            count = upcomingNonOverdue.size,
+                                            sectionColor = AppColors.primary
+                                        )
+                                    }
+                                    items(
+                                        upcomingNonOverdue,
+                                        key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
+                                    ) { item ->
+                                        SwipeablePaymentItem(
+                                            payment = item.plannedPayment,
+                                            now = now,
+                                            isOverdue = false,
+                                            scheduledDate = item.scheduledDate,
+                                            onTap = { onDetailClick(item.plannedPayment.id) },
+                                            onEdit = { onEditClick(item.plannedPayment.id) },
+                                            onDelete = { onDelete(item.plannedPayment.id) },
+                                            onPause = { onPause(item.plannedPayment) },
+                                            onResume = { onResume(item.plannedPayment) },
+                                            onConfirm = { onConfirm(item.plannedPayment, item.scheduledDate) },
+                                            onSkip = { onSkip(item.plannedPayment) }
+                                        )
+                                    }
+                                }
                             }
+
+                            if (scheduled.isNotEmpty()) {
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "SCHEDULED",
+                                        count = scheduled.size,
+                                        sectionColor = AppColors.secondary
+                                    )
+                                }
+                                items(scheduled, key = { it.id }) { payment ->
+                                    SwipeablePaymentItem(
+                                        payment = payment,
+                                        now = now,
+                                        isOverdue = false,
+                                        scheduledDate = payment.schedule.nextDueDate,
+                                        onTap = { onDetailClick(payment.id) },
+                                        onEdit = { onEditClick(payment.id) },
+                                        onDelete = { onDelete(payment.id) },
+                                        onPause = { onPause(payment) },
+                                        onResume = { onResume(payment) },
+                                        onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
+                                        onSkip = { onSkip(payment) }
+                                    )
+                                }
+                            }
+
+                            if (paused.isNotEmpty()) {
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "PAUSED",
+                                        count = paused.size,
+                                        sectionColor = AppColors.contentSecondary.copy(alpha = 0.4f)
+                                    )
+                                }
+                                items(paused, key = { it.id }) { payment ->
+                                    SwipeablePaymentItem(
+                                        payment = payment,
+                                        now = now,
+                                        isOverdue = false,
+                                        onTap = { onDetailClick(payment.id) },
+                                        onEdit = { onEditClick(payment.id) },
+                                        onDelete = { onDelete(payment.id) },
+                                        onPause = { onPause(payment) },
+                                        onResume = { onResume(payment) }
+                                    )
+                                }
+                            }
+
+                            item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                         }
                     }
-
-                    if (scheduled.isNotEmpty()) {
-                        item {
-                            ManagementSectionHeader(
-                                title = "SCHEDULED",
-                                count = scheduled.size,
-                                sectionColor = AppColors.secondary
-                            )
-                        }
-                        items(scheduled, key = { it.id }) { payment ->
-                            SwipeablePaymentItem(
-                                payment = payment,
-                                now = now,
-                                isOverdue = false,
-                                scheduledDate = payment.schedule.nextDueDate,
-                                onTap = { onDetailClick(payment.id) },
-                                onEdit = { onEditClick(payment.id) },
-                                onDelete = { onDelete(payment.id) },
-                                onPause = { onPause(payment) },
-                                onResume = { onResume(payment) },
-                                onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
-                                onSkip = { onSkip(payment) }
-                            )
-                        }
-                    }
-
-                    if (paused.isNotEmpty()) {
-                        item {
-                            ManagementSectionHeader(
-                                title = "PAUSED",
-                                count = paused.size,
-                                sectionColor = AppColors.contentSecondary.copy(alpha = 0.4f)
-                            )
-                        }
-                        items(paused, key = { it.id }) { payment ->
-                            SwipeablePaymentItem(
-                                payment = payment,
-                                now = now,
-                                isOverdue = false,
-                                onTap = { onDetailClick(payment.id) },
-                                onEdit = { onEditClick(payment.id) },
-                                onDelete = { onDelete(payment.id) },
-                                onPause = { onPause(payment) },
-                                onResume = { onResume(payment) }
-                            )
-                        }
-                    }
-
-                    item { Spacer(modifier = Modifier.height(scrollBottomPadding())) }
                 }
             }
 
@@ -430,6 +431,11 @@ fun PlannedPaymentListContent(
                 onFabClick = onAddClick,
                 fabIcon = Icons.Rounded.Repeat,
                 showFab = true
+            )
+
+            AeonTopAppBar(
+                title = "Planned Payments",
+                onBackClick = onBackClick
             )
         }
     }
@@ -604,4 +610,3 @@ private fun PlannedPaymentListPreview() {
         )
     }
 }
-

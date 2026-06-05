@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.smartsuggestions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -29,7 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,13 +49,19 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,75 +78,85 @@ fun SmartSuggestionsScreen(
     val visiblePatterns =
         patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Smart Suggestions") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    AeonHazeProvider { hazeLayers ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                containerColor = Color.Transparent
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(AppColors.screenBackground)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                ) {
+                    ContourBackground()
+
+                    if (visiblePatterns.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding()
+                                .padding(top = AeonSize.D64.value),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
+                                    tint = AppColors.border
+                                )
+                                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
+                                Text(
+                                    "No suggestions available yet",
+                                    style = AppTextStyles.listItemTitle,
+                                    color = AppColors.border
+                                )
+                                Text(
+                                    "Continue tracking to see patterns",
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.border
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = AeonTheme.dimensions.screenPadding,
+                                end = AeonTheme.dimensions.screenPadding,
+                                top = AeonSize.D64.value + AeonTheme.dimensions.spacingSm + 48.dp, // +48dp for status bars approx or use statusBarsPadding
+                                bottom = innerPadding.calculateBottomPadding() + scrollBottomPadding()
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
+                        ) {
+                            items(visiblePatterns) { pattern ->
+                                SuggestionListItem(
+                                    pattern = pattern,
+                                    categories = categories,
+                                    onAcceptAsTemplate = {
+                                        viewModel.saveTemplateFromPattern(it)
+                                        onAcceptAsTemplate()
+                                    },
+                                    onAcceptAsPlannedPayment = {
+                                        viewModel.savePlannedPaymentFromPattern(it)
+                                        onAcceptAsPlannedPayment()
+                                    },
+                                    onDismiss = {
+                                        dismissedPatterns =
+                                            dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
+            }
+
+            AeonTopAppBar(
+                title = "Smart Suggestions",
+                onBackClick = onBackClick
             )
-        }
-    ) { padding ->
-        if (visiblePatterns.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
-                        tint = AppColors.border
-                    )
-                    Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
-                    Text(
-                        "No suggestions available yet",
-                        style = AppTextStyles.listItemTitle,
-                        color = AppColors.border
-                    )
-                    Text(
-                        "Continue tracking to see patterns",
-                        style = AppTextStyles.caption,
-                        color = AppColors.border
-                    )
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = AeonTheme.dimensions.screenPadding,
-                    end = AeonTheme.dimensions.screenPadding,
-                    top = padding.calculateTopPadding() + AeonTheme.dimensions.spacingSm,
-                    bottom = scrollBottomPadding()
-                ),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
-            ) {
-                items(visiblePatterns) { pattern ->
-                    SuggestionListItem(
-                        pattern = pattern,
-                        categories = categories,
-                        onAcceptAsTemplate = {
-                            viewModel.saveTemplateFromPattern(it)
-                            onAcceptAsTemplate()
-                        },
-                        onAcceptAsPlannedPayment = {
-                            viewModel.savePlannedPaymentFromPattern(it)
-                            onAcceptAsPlannedPayment()
-                        },
-                        onDismiss = {
-                            dismissedPatterns =
-                                dismissedPatterns + "${pattern.payee}|${pattern.averageAmount}"
-                        }
-                    )
-                }
-            }
         }
     }
 }

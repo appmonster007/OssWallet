@@ -28,6 +28,8 @@ import com.osscabinet.ossWallet.ui.navigation.TransactionEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import com.osscabinet.ossWallet.ui.navigation.navigateToRecords
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsScreen
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardActions
+import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardConfig
 import com.osscabinet.ossWallet.ui.screens.dashboard.DashboardScreen
 import com.osscabinet.ossWallet.ui.screens.settings.ExchangeRatesScreen
 import com.osscabinet.ossWallet.ui.screens.transactions.list.TransactionListScreen
@@ -51,49 +53,47 @@ fun NavGraphBuilder.primaryTabsGraph(
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<DashboardRoute>()
         DashboardScreen(
-            onMenuClick = { scope.launch { drawerState.open() } },
-            onBackClick = { navController.popBackStack() },
-            isTopLevelParam = route.topLevel,
-            viewContext = route.viewContextJson,
-            onRecordsClick = { filter ->
-                navController.navigateToRecords(filter, topLevel = false)
-            },
-            onAddClick = { type, templateId ->
-                if (templateId != null) {
-                    vms.transactionViewModel.setTemplatePrefill(templateId)
+            config = DashboardConfig(
+                isTopLevel = route.topLevel,
+                viewContextJson = route.viewContextJson
+            ),
+            actions = DashboardActions(
+                onMenuClick = { scope.launch { drawerState.open() } },
+                onBackClick = { navController.popBackStack() },
+                onRecordsClick = { filter ->
+                    navController.navigateToRecords(filter, topLevel = false)
+                },
+                onAddClick = { type, templateId ->
+                    if (templateId != null) {
+                        vms.transactionViewModel.setTemplatePrefill(templateId)
+                        navController.navigate(TransactionEntryRoute())
+                    } else {
+                        navController.navigate(TransactionEntryRoute(transactionType = type?.toInt() ?: -1))
+                    }
+                },
+                onManageAccountsClick = { navController.navigate(AccountListRoute) },
+                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
+                onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
+                onNavigateToLoanList = { navController.navigate(LoanListRoute) },
+                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
+                onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
+                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onSaveFilterClick = { filter ->
+                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
+                },
+                onCloneTransactionClick = { id ->
+                    vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
-                } else {
-                    navController.navigate(TransactionEntryRoute(transactionType = type?.toInt() ?: -1))
+                },
+                onSplitTransactionClick = { id ->
+                    vms.transactionViewModel.setSplitTransactionId(id)
+                    navController.navigate(TransactionEntryRoute())
                 }
-            },
-            onManageAccountsClick = { navController.navigate(AccountListRoute) },
-            onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
-            onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
-            onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
-            onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-            onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
-            onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
-            onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-            onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
-            onSaveFilterClick = { filter ->
-                val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
-                navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
-            },
-            onCloneTransactionClick = { id ->
-                vms.transactionViewModel.setCloneTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            onSplitTransactionClick = { id ->
-                vms.transactionViewModel.setSplitTransactionId(id)
-                navController.navigate(TransactionEntryRoute())
-            },
-            accountViewModel = vms.accountViewModel,
-            transactionViewModel = vms.transactionViewModel,
-            settingsViewModel = vms.settingsViewModel,
-            analyticsViewModel = vms.analyticsViewModel,
-            templateViewModel = vms.templateViewModel,
-            dashboardViewModel = vms.dashboardViewModel,
-            cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry,
+            ),
+            vms = vms
         )
     }
 

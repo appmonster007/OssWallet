@@ -60,6 +60,8 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
@@ -434,8 +436,14 @@ fun PlannedPaymentListContent(
             )
 
             AeonTopAppBar(
-                title = "Planned Payments",
-                onBackClick = onBackClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Planned Payments",
+                            onBackClick = onBackClick
+                        )
+                    }
+                )
             )
         }
     }

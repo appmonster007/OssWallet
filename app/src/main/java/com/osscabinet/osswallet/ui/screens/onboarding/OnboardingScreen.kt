@@ -86,6 +86,8 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadat
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -314,14 +316,20 @@ fun OnboardingContent(
             }
 
             AeonTopAppBar(
-                title = "Step ${pagerState.currentPage + 1} of $totalSteps",
-                onBackClick = if (pagerState.currentPage > 0) {
-                    {
-                        scope.launch {
-                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                        }
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Step ${pagerState.currentPage + 1} of $totalSteps",
+                            onBackClick = if (pagerState.currentPage > 0) {
+                                {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                    }
+                                }
+                            } else null
+                        )
                     }
-                } else null
+                )
             )
         }
     }

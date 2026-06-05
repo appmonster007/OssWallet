@@ -59,6 +59,9 @@ import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -78,20 +81,30 @@ fun TransactionListTopAppBar(
     var showSettingsDialog by remember { mutableStateOf(false) }
 
     AeonTopAppBar(
-        title = "Records",
-        subtitle = if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
-        onBackClick = onBackClick,
-        onMenuClick = onMenuClick,
-        isTopLevel = isTopLevel,
-        actions = {
-            IconButton(onClick = { showSettingsDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = AppColors.primary
+        left = AeonTopBarSection(
+            content = {
+                AeonTopBarNavTitlePill(
+                    title = "Records",
+                    subtitle = if (filter == TransactionFilter()) "Showing all transactions" else "Filtered results",
+                    onBackClick = onBackClick,
+                    onMenuClick = onMenuClick,
+                    isTopLevel = isTopLevel
                 )
             }
-        }
+        ),
+        right = AeonTopBarSection(
+            content = {
+                AeonTopBarActionPill {
+                    IconButton(onClick = { showSettingsDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = AppColors.primary
+                        )
+                    }
+                }
+            }
+        )
     )
 
     if (showSettingsDialog) {

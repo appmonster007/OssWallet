@@ -67,8 +67,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
-import com.osscabinet.ossWallet.ui.components.AeonAppBarTab
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -135,7 +137,6 @@ fun DashboardScreen(
     onNavigateToPlannedPaymentDetail: (Long) -> Unit = {},
     onNavigateToBudgetDetail: (Long) -> Unit = {},
     onNavigateToLoanDetail: (Long) -> Unit = {},
-    onSettingsClick: () -> Unit,
     onEditTransactionClick: (Long) -> Unit,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
     onCloneTransactionClick: (Long) -> Unit = {},
@@ -331,52 +332,53 @@ fun DashboardScreen(
                 }
 
                 // 2. Top Bar Layer (Layer 3 - Floating Pills)
-                val activeTabConfig = remember(pagerState.currentPage, showAddCardDialog) {
-                    when (pagerState.currentPage) {
-                        0 -> AeonAppBarTab(
-                            label = "Glance",
-                            actions = {
-                                AppBarIconButton(
-                                    icon = Icons.Default.Add,
-                                    onClick = { showAddCardDialog = true }
-                                )
-                            }
-                        )
-                        1 -> AeonAppBarTab(
-                            label = "Recent Activities",
-                            actions = {
-                                AppBarIconButton(
-                                    icon = Icons.Rounded.History,
-                                    onClick = { onRecordsClick(TransactionFilter()) }
-                                )
-                            }
-                        )
-                        else -> null
-                    }
-                }
-
                 AeonTopAppBar(
-                    isTopLevel = isTopLevel,
-                    onMenuClick = if (isTopLevel) onMenuClick else null,
-                    onBackClick = if (!isTopLevel) onBackClick else null,
-                    title = "",
-                    tab = activeTabConfig,
-                    titleContent = {
-                        Column(
-                            modifier = Modifier.clickable { navigate(onSettingsClick) },
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                currentProfile?.name ?: "Intelligence",
-                                style = AppTextStyles.screenTitle.copy(
-                                    fontSize = 16.sp,
-                                    lineHeight = 20.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.5).sp
-                                )
+                    left = AeonTopBarSection(
+                        content = {
+                            AeonTopBarNavTitlePill(
+                                title = "", // Using titleContent instead
+                                onMenuClick = if (isTopLevel) onMenuClick else null,
+                                onBackClick = if (!isTopLevel) onBackClick else null,
+                                isTopLevel = isTopLevel,
+                                tabs = tabs.map { it.label },
+                                selectedTabIndex = pagerState.currentPage,
+                                onTabSelected = { index ->
+                                    scope.launch { pagerState.animateScrollToPage(index) }
+                                },
+                                titleContent = {
+                                    Column(
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            currentProfile?.name ?: "Intelligence",
+                                            style = AppTextStyles.screenTitle.copy(
+                                                fontSize = 16.sp,
+                                                lineHeight = 20.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = (-0.5).sp
+                                            )
+                                        )
+                                    }
+                                }
                             )
                         }
-                    }
+                    ),
+                    right = AeonTopBarSection(
+                        content = {
+                            AeonTopBarActionPill {
+                                when (pagerState.currentPage) {
+                                    0 -> AppBarIconButton(
+                                        icon = Icons.Default.Add,
+                                        onClick = { showAddCardDialog = true }
+                                    )
+                                    1 -> AppBarIconButton(
+                                        icon = Icons.Rounded.History,
+                                        onClick = { onRecordsClick(TransactionFilter()) }
+                                    )
+                                }
+                            }
+                        }
+                    )
                 )
 
                 // 3. Navigation Layer (Overlay)

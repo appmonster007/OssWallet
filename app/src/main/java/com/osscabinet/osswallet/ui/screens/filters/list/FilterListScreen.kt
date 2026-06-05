@@ -39,6 +39,8 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
@@ -128,8 +130,14 @@ fun FilterListScreen(
             }
 
             AeonTopAppBar(
-                title = "Saved Filters",
-                onBackClick = onBackClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Saved Filters",
+                            onBackClick = onBackClick
+                        )
+                    }
+                )
             )
         }
     }

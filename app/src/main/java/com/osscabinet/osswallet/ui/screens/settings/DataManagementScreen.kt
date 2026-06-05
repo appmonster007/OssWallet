@@ -41,6 +41,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -199,8 +201,14 @@ fun DataManagementScreen(
             }
 
             AeonTopAppBar(
-                title = "Data Management",
-                onBackClick = onBackClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Data Management",
+                            onBackClick = onBackClick
+                        )
+                    }
+                )
             )
         }
     }

@@ -24,6 +24,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -88,35 +91,45 @@ fun AeonEntryScaffold(
             }
 
             AeonTopAppBar(
-                title = title,
-                onBackClick = onBackClick,
-                actions = {
-                    if (onResetClick != null) {
-                        AppBarIconButton(
-                            icon = Icons.Rounded.RestartAlt,
-                            onClick = onResetClick
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = title,
+                            onBackClick = onBackClick
                         )
                     }
-                    if (isEditMode && onDeleteClick != null) {
-                        AppBarIconButton(
-                            icon = Icons.Rounded.Delete,
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onDeleteClick()
-                            },
-                            tint = AppColors.error
-                        )
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill {
+                            if (onResetClick != null) {
+                                AppBarIconButton(
+                                    icon = Icons.Rounded.RestartAlt,
+                                    onClick = onResetClick
+                                )
+                            }
+                            if (isEditMode && onDeleteClick != null) {
+                                AppBarIconButton(
+                                    icon = Icons.Rounded.Delete,
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onDeleteClick()
+                                    },
+                                    tint = AppColors.error
+                                )
+                            }
+                            AppBarIconButton(
+                                icon = Icons.Rounded.Done,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onSaveClick()
+                                },
+                                enabled = canSave,
+                                tint = AppColors.primary
+                            )
+                        }
                     }
-                    AppBarIconButton(
-                        icon = Icons.Rounded.Done,
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onSaveClick()
-                        },
-                        enabled = canSave,
-                        tint = AppColors.primary
-                    )
-                }
+                )
             )
         }
     }

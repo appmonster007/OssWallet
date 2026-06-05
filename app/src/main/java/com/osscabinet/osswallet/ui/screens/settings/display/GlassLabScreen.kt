@@ -56,6 +56,8 @@ import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
@@ -425,8 +427,14 @@ fun GlassLabContent(
             }
 
             AeonTopAppBar(
-                title = "Glass Lab",
-                onBackClick = onBack
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Glass Lab",
+                            onBackClick = onBack
+                        )
+                    }
+                )
             )
         }
     }

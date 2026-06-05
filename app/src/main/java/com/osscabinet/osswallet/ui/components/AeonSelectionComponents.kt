@@ -109,9 +109,19 @@ fun AeonSelectionScreen(
             }
 
             AeonTopAppBar(
-                title = title,
-                onBackClick = onBack,
-                actions = actions
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = title,
+                            onBackClick = onBack
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill(actions = actions)
+                    }
+                )
             )
         }
     }

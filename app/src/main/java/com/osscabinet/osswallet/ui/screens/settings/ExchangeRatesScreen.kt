@@ -72,6 +72,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -256,26 +259,40 @@ fun ExchangeRatesScreen(
             }
 
             AeonTopAppBar(
-                title = "Exchange Rates",
-                isTopLevel = isTopLevel,
-                onMenuClick = if (isTopLevel) onMenuClick else null,
-                onBackClick = if (!isTopLevel) onBackClick else null,
-                actions = {
-                    if (pagerState.currentPage == 0) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                strokeWidth = 2.dp,
-                                color = AppColors.primary
-                            )
-                        } else {
-                            AppBarIconButton(
-                                icon = Icons.Default.Refresh,
-                                onClick = { viewModel.refreshRates() }
-                            )
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Exchange Rates",
+                            isTopLevel = isTopLevel,
+                            onMenuClick = if (isTopLevel) onMenuClick else null,
+                            onBackClick = if (!isTopLevel) onBackClick else null
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    visible = pagerState.currentPage == 0,
+                    content = {
+                        AeonTopBarActionPill {
+                            if (uiState.isLoading) {
+                                Box(
+                                    modifier = Modifier.size(AeonSize.D40.value),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                        strokeWidth = 2.dp,
+                                        color = AppColors.primary
+                                    )
+                                }
+                            } else {
+                                AppBarIconButton(
+                                    icon = Icons.Default.Refresh,
+                                    onClick = { viewModel.refreshRates() }
+                                )
+                            }
                         }
                     }
-                }
+                )
             )
         }
     }

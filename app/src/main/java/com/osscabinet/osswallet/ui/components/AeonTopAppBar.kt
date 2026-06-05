@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.osscabinet.ossWallet.ui.components
 
 import android.content.res.Configuration
@@ -5,9 +7,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -20,24 +24,31 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -47,13 +58,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -68,7 +84,7 @@ import dev.chrisbanes.haze.hazeSource
  */
 data class AeonTopBarSection(
     val content: @Composable () -> Unit,
-    val visible: Boolean = true
+    val visible: Boolean = true,
 )
 
 /**
@@ -80,14 +96,14 @@ object AeonTopBarDefaults {
     val HorizontalPadding = AeonSize.D12.value
     val ContentPadding = PaddingValues(AeonSize.D4.value)
     
-    val TitleStyle: androidx.compose.ui.text.TextStyle
+    val TitleStyle: TextStyle
         @Composable get() = AppTextStyles.screenTitle.copy(
             fontSize = 16.sp,
             lineHeight = 20.sp,
             letterSpacing = 0.sp
         )
     
-    val SubtitleStyle: androidx.compose.ui.text.TextStyle
+    val SubtitleStyle: TextStyle
         @Composable get() = AppTextStyles.caption.copy(
             fontWeight = FontWeight.Normal,
             fontSize = 10.sp,
@@ -158,61 +174,6 @@ fun AeonTopAppBar(
 }
 
 /**
- * Standard high-level implementation of AeonTopAppBar.
- * Uses conventional Title/Nav/Action parameters and automatically organizes them
- * into the standardized Left and Right sections.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AeonTopAppBar(
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    onBackClick: (() -> Unit)? = null,
-    onMenuClick: (() -> Unit)? = null,
-    isTopLevel: Boolean = onMenuClick != null,
-    actions: @Composable (RowScope.() -> Unit)? = null,
-    tab: AeonAppBarTab? = null,
-    titleContent: @Composable (() -> Unit)? = null,
-    subtitleContent: @Composable (() -> Unit)? = null,
-    windowInsets: WindowInsets = AeonTopBarDefaults.windowInsets(),
-) {
-    val hasNavigation = (isTopLevel && onMenuClick != null) || onBackClick != null
-    val hasTitle = title.isNotEmpty() || titleContent != null
-    val displaySubtitle = subtitle ?: tab?.label
-
-    AeonTopAppBar(
-        modifier = modifier,
-        left = if (hasNavigation || hasTitle) {
-            AeonTopBarSection(
-                content = {
-                    AeonTopBarNavTitlePill(
-                        title = title,
-                        subtitle = displaySubtitle,
-                        onBackClick = onBackClick,
-                        onMenuClick = onMenuClick,
-                        isTopLevel = isTopLevel,
-                        titleContent = titleContent,
-                        subtitleContent = subtitleContent
-                    )
-                }
-            )
-        } else null,
-        right = if (actions != null || tab?.actions != null) {
-            AeonTopBarSection(
-                content = {
-                    AeonTopBarActionPill {
-                        actions?.invoke(this)
-                        tab?.actions?.invoke(this)
-                    }
-                }
-            )
-        } else null,
-        windowInsets = windowInsets
-    )
-}
-
-/**
  * Standard container for TopBar sections.
  * Renders as a glass-blurred pill.
  */
@@ -246,6 +207,7 @@ fun AeonTopBarPill(
 /**
  * Standardized Left Section component combining Navigation and Title into a single pill.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AeonTopBarNavTitlePill(
     title: String,
@@ -254,6 +216,9 @@ fun AeonTopBarNavTitlePill(
     onBackClick: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null,
     isTopLevel: Boolean = onMenuClick != null,
+    tabs: List<String> = emptyList(),
+    selectedTabIndex: Int = 0,
+    onTabSelected: (Int) -> Unit = {},
     titleContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
 ) {
@@ -277,8 +242,11 @@ fun AeonTopBarNavTitlePill(
         AeonTopBarTitle(
             title = title,
             subtitle = subtitle,
+            tabs = tabs,
+            selectedTabIndex = selectedTabIndex,
+            onTabSelected = onTabSelected,
             titleContent = titleContent,
-            subtitleContent = subtitleContent
+            subtitleContent = subtitleContent,
         )
     }
 }
@@ -410,18 +378,28 @@ fun AeonTopBarNavPill(
 }
 
 /**
- * Standard Title/Subtitle component.
+ * Standard Title/Subtitle component with integrated tab navigation.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AeonTopBarTitle(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    tabs: List<String> = emptyList(),
+    selectedTabIndex: Int = 0,
+    onTabSelected: (Int) -> Unit = {},
     titleContent: @Composable (() -> Unit)? = null,
     subtitleContent: @Composable (() -> Unit)? = null,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    val isInteractive = tabs.size > 1
+    val displaySubtitle = if (tabs.isNotEmpty()) tabs.getOrElse(selectedTabIndex) { "" } else subtitle
+
     Column(
-        modifier = modifier.padding(vertical = AeonSize.D4.value),
+        modifier = modifier
+            .padding(vertical = AeonSize.D4.value)
+            .then(if (isInteractive) Modifier.clickable { expanded = true } else Modifier),
         verticalArrangement = Arrangement.Center
     ) {
         if (titleContent != null) {
@@ -431,25 +409,108 @@ fun AeonTopBarTitle(
                 title,
                 style = AeonTopBarDefaults.TitleStyle,
                 fontWeight = FontWeight.SemiBold,
-                color = AppColors.onScreenBackground
+                color = AppColors.onScreenBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
-        if (subtitleContent != null) {
-            subtitleContent()
-        } else if (subtitle != null) {
-            Text(
-                subtitle,
-                style = AeonTopBarDefaults.SubtitleStyle,
-                color = AppColors.contentSecondary.copy(alpha = 0.8f)
+
+        if (subtitleContent != null || (displaySubtitle != null && displaySubtitle.isNotEmpty())) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (subtitleContent != null) {
+                    subtitleContent()
+                } else if (displaySubtitle != null) {
+                    Text(
+                        displaySubtitle,
+                        style = AeonTopBarDefaults.SubtitleStyle,
+                        color = AppColors.contentSecondary.copy(alpha = 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                if (isInteractive) {
+                    Spacer(Modifier.width(AeonSize.D2.value))
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = "Switch Tab",
+                        modifier = Modifier.size(AeonSize.D12.value),
+                        tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                }
+            }
+        }
+
+        if (isInteractive) {
+            AeonTopBarDropdown(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                options = tabs,
+                selectedOptionIndex = selectedTabIndex,
+                onOptionSelected = {
+                    onTabSelected(it)
+                    expanded = false
+                }
             )
         }
     }
 }
 
-data class AeonAppBarTab(
-    val label: String,
-    val actions: @Composable (RowScope.() -> Unit)? = null
-)
+/**
+ * Standardized interactive dropdown for the AeonTopAppBar.
+ */
+@Composable
+fun AeonTopBarDropdown(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    options: List<String>,
+    selectedOptionIndex: Int,
+    onOptionSelected: (Int) -> Unit,
+) {
+    val cardSurface = AppColors.surfaceContainerLow
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    if (expanded) {
+        Popup(
+            onDismissRequest = onDismissRequest,
+            properties = PopupProperties(focusable = true),
+            offset = IntOffset(0, 100) // Positioned below the pill
+        ) {
+            GlassSurface(
+                modifier = Modifier.width(IntrinsicSize.Max),
+                shape = RoundedCornerShape(AeonSize.D16.value),
+                hazeLayer = HazeLayer.Overlay,
+                hazeStyle = GlassTokens.popupStyle(),
+                fallbackColor = cardSurface,
+                shadowElevation = AeonSize.D12.value,
+                borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f),
+            ) {
+                Column(modifier = Modifier.padding(vertical = AeonSize.D8.value)) {
+                    options.forEachIndexed { index, option ->
+                        val isSelected = index == selectedOptionIndex
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    option,
+                                    style = AppTextStyles.transactionTitle.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 14.sp
+                                    )
+                                )
+                            },
+                            onClick = { onOptionSelected(index) },
+                            colors = MenuDefaults.itemColors(
+                                textColor = if (isSelected) AppColors.primary else AppColors.contentPrimary
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun AppBarIconButton(
@@ -495,21 +556,33 @@ class AeonPreviewProvider : PreviewParameterProvider<AeonPreviewState> {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(group = "Aeon Top Bar", showBackground = true)
 @Composable
 fun PreviewStandardTopAppBar(
     @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
 ) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
     AeonTopAppBar(
-        title = "Wallet",
-        subtitle = "Main Balance",
-        onMenuClick = {},
-        actions = {
-            AppBarIconButton(icon = Icons.Rounded.Search, onClick = {})
-        }
+        left = AeonTopBarSection(
+            content = {
+                AeonTopBarNavTitlePill(
+                    title = "Wallet",
+                    subtitle = "Main Balance",
+                    onMenuClick = {}
+                )
+            }
+        ),
+        right = AeonTopBarSection(
+            content = {
+                AeonTopBarActionPill {
+                    AppBarIconButton(icon = Icons.Rounded.Search, onClick = {})
+                }
+            }
+        )
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(group = "Aeon Top Bar", showBackground = true)
 @Composable
 fun PreviewSearchCenterTopAppBar(
@@ -531,6 +604,7 @@ fun PreviewSearchCenterTopAppBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(group = "Aeon Top Bar", showBackground = true)
 @Composable
 fun PreviewCustomModularTopAppBar(
@@ -562,17 +636,25 @@ fun PreviewCustomModularTopAppBar(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(group = "Aeon Top Bar", showBackground = true)
 @Composable
 fun PreviewBackTitleTopAppBar(
     @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
 ) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
     AeonTopAppBar(
-        title = "Settings",
-        onBackClick = {}
+        left = AeonTopBarSection(
+            content = {
+                AeonTopBarNavTitlePill(
+                    title = "Settings",
+                    onBackClick = {}
+                )
+            }
+        )
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(group = "Aeon Top Bar", showBackground = true)
 @Composable
 fun PreviewSearchActionsTopAppBar(

@@ -64,7 +64,6 @@ import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -258,7 +257,7 @@ fun PlannedPaymentListContent(
     }
     val paused = remember(payments) { payments.filter { it.status == PlannedPaymentStatus.PAUSED } }
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
@@ -266,11 +265,8 @@ fun PlannedPaymentListContent(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     if (payments.isEmpty()) {
                         Box(
                             modifier = Modifier

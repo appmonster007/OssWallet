@@ -45,7 +45,6 @@ import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -89,7 +88,7 @@ fun BudgetListScreen(
     val active = budgets.filter { !it.isArchived }
     val archived = budgets.filter { it.isArchived }
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
@@ -97,11 +96,8 @@ fun BudgetListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     if (budgets.isEmpty()) {
                         Box(
                             modifier = Modifier

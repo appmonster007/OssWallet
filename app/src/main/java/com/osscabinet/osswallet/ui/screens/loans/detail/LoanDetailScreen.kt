@@ -294,18 +294,20 @@ fun LoanDetailContent(
                         }
                     }
 
-                    UnifiedPillNavigation(
-                        selectedTab = pagerState.currentPage,
-                        onTabSelected = { index ->
-                            scope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        tabs = tabs,
-                        showFab = false
-                    )
                 }
             }
 
-            // 2. Top Bar Layer
+            // 2. Pill Navigation Layer (sibling of Scaffold — must be outside hazeSource content)
+            UnifiedPillNavigation(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs,
+                showFab = false
+            )
+
+            // 3. Top Bar Layer
             AeonTopAppBar(
                 left = AeonTopBarSection(
                     content = {

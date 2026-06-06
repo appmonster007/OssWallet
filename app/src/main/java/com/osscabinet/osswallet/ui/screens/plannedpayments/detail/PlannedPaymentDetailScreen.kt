@@ -105,7 +105,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
@@ -511,18 +510,20 @@ fun PlannedPaymentDetailContent(
                         }
                     }
 
-                    UnifiedPillNavigation(
-                        selectedTab = pagerState.currentPage,
-                        onTabSelected = { index ->
-                            scope.launch { pagerState.animateScrollToPage(index) }
-                        },
-                        tabs = tabs,
-                        showFab = false
-                    )
                 }
             }
 
-            // 2. Top Bar Layer
+            // 2. Pill Navigation Layer (sibling of Scaffold — must be outside hazeSource content)
+            UnifiedPillNavigation(
+                selectedTab = pagerState.currentPage,
+                onTabSelected = { index ->
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                tabs = tabs,
+                showFab = false
+            )
+
+            // 3. Top Bar Layer
             AeonTopAppBar(
                 left = AeonTopBarSection(
                     content = {

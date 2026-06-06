@@ -149,12 +149,12 @@ class TemplateEntryViewModel @Inject constructor(
                             .divide(template.transferRate, 8, java.math.RoundingMode.HALF_UP)
                             .stripTrailingZeros().toPlainString()
                     } else targetAmtStr
-                    // Normalize category for Receiver focus
-                    existingCategoryId =
-                        if (Category.isInitialBalance(template.categoryId)) Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
-                } else if (template.transactionType == TransactionType.TRANSFER) {
-                    existingCategoryId =
-                        if (Category.isInitialBalance(template.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+                }
+                
+                if (template.transactionType == TransactionType.TRANSFER) {
+                    // Semantic Normalization: Source is always Outflow, Destination is always Inflow
+                    existingCategoryId = if (Category.isInitialBalance(template.categoryId)) 
+                        Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
                 }
 
                 _state.update {
@@ -279,8 +279,13 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SetAccount -> {
                 val s = _state.value
-                val blocked = event.accountId == null && s.isTransfer && s.destination.accountId == null
-                if (!blocked) {
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = true,
+                    newAccountId = event.accountId,
+                    otherSideAccountId = s.destination.accountId
+                )
+                
+                if (isValid || !s.isTransfer) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.accountId }
                         state.copy(
@@ -296,8 +301,13 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SetTargetAccount -> {
                 val s = _state.value
-                val blocked = event.accountId == null && s.isTransfer && s.source.accountId == null
-                if (!blocked) {
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = false,
+                    newAccountId = event.accountId,
+                    otherSideAccountId = s.source.accountId
+                )
+                
+                if (isValid) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.accountId }
                         state.copy(

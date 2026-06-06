@@ -185,12 +185,12 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             .divide(existing.transferRate, 8, java.math.RoundingMode.HALF_UP)
                             .stripTrailingZeros().toPlainString()
                     } else targetAmtStr
-                    // Normalize category for Receiver focus
-                    existingCategoryId =
-                        if (Category.isInitialBalance(existing.categoryId)) Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
-                } else if (existing.transactionType == TransactionType.TRANSFER) {
-                    existingCategoryId =
-                        if (Category.isInitialBalance(existing.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+                }
+                
+                if (existing.transactionType == TransactionType.TRANSFER) {
+                    // Semantic Normalization: Source is always Outflow, Destination is always Inflow
+                    existingCategoryId = if (Category.isInitialBalance(existing.categoryId)) 
+                        Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
                 }
 
                 _state.update {
@@ -332,8 +332,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             is PlannedPaymentEntryEvent.SetAccountId -> {
                 val s = _state.value
-                val blocked = event.id == null && s.isTransfer && s.destination.accountId == null
-                if (!blocked) {
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = true,
+                    newAccountId = event.id,
+                    otherSideAccountId = s.destination.accountId
+                )
+                
+                if (isValid || !s.isTransfer) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.id }
                         state.copy(
@@ -349,8 +354,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
                 val s = _state.value
-                val blocked = event.id == null && s.isTransfer && s.source.accountId == null
-                if (!blocked) {
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = false,
+                    newAccountId = event.id,
+                    otherSideAccountId = s.source.accountId
+                )
+                
+                if (isValid) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.id }
                         state.copy(

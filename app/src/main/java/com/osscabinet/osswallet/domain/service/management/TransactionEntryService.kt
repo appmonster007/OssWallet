@@ -19,9 +19,11 @@ object TransactionEntryService {
 
     /**
      * Rules for switching types:
+     * - Idempotency: If newType == oldType, return current state.
      * - Expense -> Transfer: Original account stays as SOURCE (Giver).
      * - Income -> Transfer: Original account moves to DESTINATION (Receiver).
-     * - Transfer -> Normal: Revert to single side based on whether it was an Inflow or Outflow.
+     * - Transfer -> Normal: Revert to single side based on which side holds a managed account.
+     * - Income <-> Expense: Reset category to SYSTEM_UNKNOWN.
      */
     fun transitionType(
         oldType: TransactionType,
@@ -30,12 +32,28 @@ object TransactionEntryService {
         currentDestination: TransactionSide,
         isSplitMode: Boolean
     ): TypeTransitionResult {
+        // 1. Idempotency: Prevent state reset when clicking the already-active type
+        if (oldType == newType) {
+            return TypeTransitionResult(newType, currentSource, currentDestination, isSplitMode)
+        }
+
         val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
 
-        // Identify which side was the "Primary" account in the previous state.
-        // If it was a Transfer where we were the Receiver, the primary account is in 'destination'.
-        val wasTransferInflow = oldType == TransactionType.TRANSFER && Category.isAnyTransferInflow(currentSource.categoryId)
-        val primarySide = if (isTransferToNormal && wasTransferInflow) currentDestination else currentSource
+        // Determine the "Primary" account from the user's perspective.
+        val primarySide = if (isTransferToNormal) {
+            when (newType) {
+                TransactionType.INCOME -> {
+                    // INCOME is positive impact. In a transfer, the Target side (destination) was receiving.
+                    if (currentDestination.accountId != null) currentDestination else currentSource
+                }
+                else -> {
+                    // EXPENSE is negative impact. In a transfer, the Source side was giving.
+                    if (currentSource.accountId != null) currentSource else currentDestination
+                }
+            }
+        } else {
+            currentSource
+        }
 
         val newSource: TransactionSide
         val newDestination: TransactionSide
@@ -43,8 +61,7 @@ object TransactionEntryService {
         when (newType) {
             TransactionType.TRANSFER -> {
                 if (oldType == TransactionType.INCOME) {
-                    // Refinement: Income account was receiving money, so it becomes the Receiver (Target) in a transfer.
-                    // The Source (Giver) is initialized empty but with transfer outflow category.
+                    // Refinement: Income account was receiving money, so it moves to Target (Receiver).
                     newSource = TransactionSide(
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = primarySide.amount,
@@ -59,24 +76,54 @@ object TransactionEntryService {
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
                     )
-                    newDestination = TransactionSide()
+                    newDestination = TransactionSide(
+                        categoryId = Category.SYSTEM_TRANSFER_INFLOW,
+                        currency = primarySide.currency
+                    )
                 }
             }
             else -> {
-                // Moving to Expense or Income: Normalize back to a single side.
+                // Moving between Income/Expense or from Transfer to Normal.
+                // Reset category if switching natures or leaving Transfer.
+                val needsCategoryReset = isTransferToNormal || oldType != newType
+                
                 newSource = primarySide.copy(
                     amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString(),
-                    categoryId = if (Category.isTransfer(primarySide.categoryId)) Category.SYSTEM_UNKNOWN else primarySide.categoryId
+                    categoryId = if (needsCategoryReset) Category.SYSTEM_UNKNOWN else primarySide.categoryId
                 )
                 newDestination = TransactionSide()
             }
         }
 
+        // 2. Identity Exclusion: Ensure Source != Target for transfers
+        val finalDestination = if (newSource.accountId != null && newSource.accountId == newDestination.accountId) {
+            newDestination.copy(accountId = null, currency = "")
+        } else newDestination
+
         return TypeTransitionResult(
             newType = newType,
             source = newSource,
-            destination = newDestination,
+            destination = finalDestination,
             isSplitModeAllowed = newType != TransactionType.TRANSFER && isSplitMode
         )
+    }
+
+    /**
+     * Logic for selecting a new account on either side of a transfer.
+     * Rule 1: Source != Target.
+     * Rule 2: At least one side must be a managed account (No Outside -> Outside).
+     */
+    fun validateAccountSelection(
+        isSourceSide: Boolean,
+        newAccountId: String?,
+        otherSideAccountId: String?
+    ): Boolean {
+        // Identity Exclusion
+        if (newAccountId != null && newAccountId == otherSideAccountId) return false
+        
+        // Wallet Minimum Rule (No Outside-to-Outside)
+        if (newAccountId == null && otherSideAccountId == null) return false
+        
+        return true
     }
 }

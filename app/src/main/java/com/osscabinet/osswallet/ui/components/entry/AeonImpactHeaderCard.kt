@@ -173,6 +173,7 @@ fun <T> AeonImpactHeaderCard(
         fallbackColor = AppColors.cardSurface,
         borderColor = AppColors.divider.copy(alpha = 0.15f),
         borderAlpha = 0.1f,
+        borderWidth = (AeonTheme.dimensions.spacingXs / 8),
         shadowElevation = 0.dp
     ) {
         Column(

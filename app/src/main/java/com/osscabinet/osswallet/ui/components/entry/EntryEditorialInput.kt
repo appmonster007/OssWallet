@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -46,9 +47,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -93,20 +96,23 @@ fun EntryEditorialInput(
         onExpandedChange = { },
         modifier = modifier.fillMaxWidth()
     ) {
-        Surface(
+        GlassSurface(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth(),
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            color = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
-            border = if (isFlush) null else BorderStroke(1.dp, AppColors.outlineVariant),
-            onClick = { if (enabled) focusRequester.requestFocus() }
+            hazeStyle = GlassTokens.cardStyle(),
+            fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
+            borderColor = if (isFlush) null else AppColors.outlineVariant.copy(alpha = 0.2f),
+            shadowElevation = 0.dp
         ) {
             Row(
-                modifier = Modifier.padding(
-                    horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding,
-                    vertical = if (isFlush) AeonTheme.dimensions.spacingMd else AeonTheme.dimensions.cardPadding
-                ),
+                modifier = Modifier
+                    .clickable(enabled = enabled) { if (enabled) focusRequester.requestFocus() }
+                    .padding(
+                        horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding,
+                        vertical = if (isFlush) AeonTheme.dimensions.spacingMd else AeonTheme.dimensions.cardPadding
+                    ),
                 verticalAlignment = Alignment.Top
             ) {
                 Surface(

@@ -10,19 +10,14 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -32,7 +27,6 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 
 /**
  * A dialog that behaves like a full screen, allowing "screen" transitions without
@@ -82,8 +76,11 @@ fun AeonSelectionScreen(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    // We use windowInsetsPadding for the top bar to handle status bar correctly
-    // And use a fixed offset for the content to prevent jumping
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topBarHeight = AeonSize.D64.value
+    
+    // Standardized offset for floating pill architecture
+    val totalTopPadding = statusBarPadding + topBarHeight + 8.dp
 
     AeonHazeProvider { hazeLayers ->
         Box(
@@ -95,41 +92,21 @@ fun AeonSelectionScreen(
 
             Scaffold(
                 containerColor = Color.Transparent,
-                topBar = {
-                    Box {
-                        AeonTopAppBar(
-                            modifier = Modifier.background(Color.Transparent),
-                            left = AeonTopBarSection(
-                                content = {
-                                    AeonTopBarNavTitlePill(
-                                        title = title,
-                                        onBackClick = onBack
-                                    )
-                                }
-                            ),
-                            right = AeonTopBarSection(
-                                content = {
-                                    AeonTopBarActionPill(actions = actions)
-                                }
-                            )
-                        )
-                    }
-                },
                 bottomBar = {
                     Box {
                         bottomBar()
                     }
                 },
-                contentWindowInsets = WindowInsets.systemBars // Let scaffold handle system bars
+                contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { padding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
-                        .padding(top = padding.calculateTopPadding() + 16.dp) // Use scaffold's top padding
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
                     content(
                         PaddingValues(
+                            top = totalTopPadding,
                             bottom = padding.calculateBottomPadding() + 24.dp,
                             start = 0.dp,
                             end = 0.dp
@@ -137,6 +114,22 @@ fun AeonSelectionScreen(
                     )
                 }
             }
+
+            AeonTopAppBar(
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = title,
+                            onBackClick = onBack
+                        )
+                    }
+                ),
+                right = AeonTopBarSection(
+                    content = {
+                        AeonTopBarActionPill(actions = actions)
+                    }
+                )
+            )
         }
     }
 }

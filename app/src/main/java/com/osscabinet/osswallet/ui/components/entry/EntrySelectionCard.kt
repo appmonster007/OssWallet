@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.entry
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,9 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.isDark
 
@@ -76,20 +79,18 @@ fun EntrySelectionCard(
         label = "borderColor"
     )
 
-    val borderWidth by animateDpAsState(
-        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) 1.5.dp else 0.5.dp,
-        label = "borderWidth"
-    )
-
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
+    GlassSurface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = backgroundColor,
-        border = BorderStroke(borderWidth, borderColor),
-        modifier = modifier.fillMaxWidth()
+        hazeStyle = GlassTokens.cardStyle(),
+        fallbackColor = backgroundColor,
+        borderColor = borderColor,
+        borderAlpha = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) 0.5f else 0.1f
     ) {
         Row(
             modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),

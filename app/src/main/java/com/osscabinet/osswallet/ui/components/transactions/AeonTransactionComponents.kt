@@ -21,9 +21,9 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import dev.chrisbanes.haze.hazeSource
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -56,7 +56,7 @@ fun AeonTransactionList(
                 // Skip Overlay layer (index 1) if sticky headers are enabled,
                 // as content does not flow under the top app bar pills in that mode.
                 if (hasStickyHeader && index == 1) mod
-                else mod.hazeSource(state)
+                else mod.aeonHazeSource(state)
             }
         } else Modifier
     }

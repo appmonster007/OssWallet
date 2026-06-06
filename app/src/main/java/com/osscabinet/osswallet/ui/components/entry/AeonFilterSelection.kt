@@ -102,7 +102,9 @@ fun AeonFilterSelection(
                         borderWidth = 1.dp
                     ) {
                         Row(
-                            modifier = Modifier.padding(dims.spacingLg),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(dims.spacingLg),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
@@ -142,7 +144,9 @@ fun AeonFilterSelection(
                             borderWidth = if (isSelected) 1.dp else 0.5.dp
                         ) {
                             Row(
-                                modifier = Modifier.padding(dims.spacingLg),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(dims.spacingLg),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(

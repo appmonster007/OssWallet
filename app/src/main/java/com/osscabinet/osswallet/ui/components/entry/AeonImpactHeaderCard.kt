@@ -311,7 +311,8 @@ fun <T> AeonImpactHeaderCard(
                     onValueChange = nameState.onValueChange,
                     label = nameState.label ?: "",
                     icon = nameIcon,
-                    isError = nameState.isError
+                    isError = nameState.isError,
+                    isFlush = true
                 )
             }
         }

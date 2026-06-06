@@ -39,6 +39,7 @@ sealed class CardCallbacks {
      * Callbacks for currency balances
      */
     data class CurrencyBalances(
+        val onGridColumnsChange: (String, Int) -> Unit = { _, _ -> },
         val onLayoutChange: (String, String) -> Unit = { _, _ -> },
         val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },

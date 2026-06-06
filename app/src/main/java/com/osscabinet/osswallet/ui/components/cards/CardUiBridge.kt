@@ -134,6 +134,12 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.CurrencyBalances(
                     renderData = renderData,
                     callbacks = CardCallbacks.CurrencyBalances(
+                        onGridColumnsChange = { id, cols ->
+                            updateHandler.updateCardCurrencyBalancesGridColumns(
+                                id,
+                                cols
+                            )
+                        },
                         onLayoutChange = { id, layout ->
                             updateHandler.updateCardCurrencyBalancesLayout(
                                 id,

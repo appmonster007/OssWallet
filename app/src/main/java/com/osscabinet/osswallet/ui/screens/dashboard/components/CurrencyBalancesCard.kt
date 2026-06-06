@@ -5,13 +5,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,7 +28,9 @@ import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
+import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
+import com.osscabinet.ossWallet.ui.components.AeonLazyRow
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -40,6 +42,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
@@ -90,42 +93,41 @@ fun CurrencyBalancesCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else if (config.layout == "grid") {
-            val chunks = currencyTotals.chunked(3)
-            Column(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = config.gridColumns
             ) {
-                chunks.forEach { rowItems ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        rowItems.forEach { item ->
-                            CurrencyBalanceItem(
-                                curr = item.currency,
-                                amount = item.amount,
-                                inBase = item.amountInBase,
-                                baseCurrency = baseCurrency,
-                                showBaseConversion = config.showBaseConversion,
-                                onClick = {
-                                    callbacks.onCurrencyClick?.invoke(
-                                        item.currency,
-                                        config.filter.timelineRange
-                                    )
-                                },
-                                modifier = Modifier.weight(1f)
+                currencyTotals.forEach { item ->
+                    val isLarge = config.gridColumns == 1
+                    CurrencyBalanceItem(
+                        curr = item.currency,
+                        amount = item.amount,
+                        inBase = item.amountInBase,
+                        baseCurrency = baseCurrency,
+                        showBaseConversion = config.showBaseConversion,
+                        isLarge = isLarge,
+                        onClick = {
+                            callbacks.onCurrencyClick?.invoke(
+                                item.currency,
+                                config.filter.timelineRange
                             )
-                        }
-                        if (rowItems.size < 3) {
-                            repeat(3 - rowItems.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+                        },
+                        modifier = if (isLarge) Modifier.fillMaxWidth() else Modifier.weight(
+                            1f
+                        )
+                    )
+                }
+
+                if (config.gridColumns > 1 && currencyTotals.size % config.gridColumns != 0) {
+                    repeat(config.gridColumns - (currencyTotals.size % config.gridColumns)) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
         } else {
-            LazyRow(
+            AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 4.dp)
             ) {
@@ -167,6 +169,12 @@ private fun CurrencyBalancesSettingsSheet(
                 layout = config.layout,
                 onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
             )
+            if (config.layout == "grid") {
+                AeonGridColumnsSettings(
+                    gridColumns = config.gridColumns,
+                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
+                )
+            }
             AeonBaseConversionToggle(
                 baseCurrency = baseCurrency,
                 showBaseConversion = config.showBaseConversion,
@@ -188,9 +196,13 @@ fun CurrencyBalanceItem(
     inBase: BigDecimal,
     baseCurrency: String,
     showBaseConversion: Boolean = true,
+    isLarge: Boolean = false,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val style = if (isLarge) AppTextStyles.heroAmount else AppTextStyles.cardSecondaryAmount
+    val verticalPadding = if (isLarge) 16.dp else 12.dp
+
     Surface(
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = AppColors.surfaceContainerLow,
@@ -199,7 +211,7 @@ fun CurrencyBalanceItem(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = verticalPadding)
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -211,14 +223,14 @@ fun CurrencyBalanceItem(
             )
 
             Text(
-                formatAuto(amount, curr, shorten = true),
-                style = AppTextStyles.cardSecondaryAmount,
+                formatAuto(amount, curr, shorten = !isLarge),
+                style = style,
                 maxLines = 1
             )
 
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
+                    "≈ ${formatAuto(inBase, baseCurrency, shorten = !isLarge)}",
                     style = AppTextStyles.caption,
                     color = AppColors.contentSecondary,
                     maxLines = 1

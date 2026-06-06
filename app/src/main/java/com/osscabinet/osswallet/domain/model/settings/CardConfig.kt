@@ -122,7 +122,7 @@ sealed class CardConfig : BaseCardConfig {
 @SerialName("net_worth")
 data class NetWorthCardConfig(
     override val cardId: String,
-    override val title: String = "NET WORTH",
+    override val title: String = "Net Worth",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -142,7 +142,7 @@ data class NetWorthCardConfig(
 @SerialName("currency_balances")
 data class CurrencyBalancesCardConfig(
     override val cardId: String,
-    override val title: String = "CURRENCY BALANCES",
+    override val title: String = "Currency Balances",
     override val isEnabled: Boolean = true,
     override val order: Int = 1,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -161,7 +161,7 @@ data class CurrencyBalancesCardConfig(
 @SerialName("cash_flow")
 data class CashFlowCardConfig(
     override val cardId: String,
-    override val title: String = "CASH FLOW",
+    override val title: String = "Cash Flow",
     override val isEnabled: Boolean = true,
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -179,7 +179,7 @@ data class CashFlowCardConfig(
 @SerialName("accounts")
 data class AccountsCardConfig(
     override val cardId: String,
-    override val title: String = "ACCOUNTS",
+    override val title: String = "Accounts",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -199,7 +199,7 @@ data class AccountsCardConfig(
 @SerialName("category_breakdown")
 data class CategoryPieChartCardConfig(
     override val cardId: String,
-    override val title: String = "CATEGORY PIE CHART",
+    override val title: String = "Category Pie Chart",
     override val isEnabled: Boolean = true,
     override val order: Int = 5,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
@@ -223,7 +223,7 @@ data class CategoryPieChartCardConfig(
 @SerialName("category_expense_treemap")
 data class CategoryTreemapCardConfig(
     override val cardId: String,
-    override val title: String = "CATEGORY TREEMAP",
+    override val title: String = "Category Treemap",
     override val isEnabled: Boolean = true,
     override val order: Int = 7,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
@@ -247,7 +247,7 @@ data class CategoryTreemapCardConfig(
 @SerialName("account_hero")
 data class AccountHeroCardConfig(
     override val cardId: String,
-    override val title: String = "ACCOUNT HERO",
+    override val title: String = "Account Hero",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
@@ -279,7 +279,7 @@ enum class UpSetIntersectionSortMode { DECREASING_ABS, INCREASING_ABS, DECREASIN
 @SerialName("planned_payments")
 data class PlannedPaymentsCardConfig(
     override val cardId: String,
-    override val title: String = "PLANNED PAYMENTS",
+    override val title: String = "Planned Payments",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -301,7 +301,7 @@ data class PlannedPaymentsCardConfig(
 @SerialName("budgets")
 data class BudgetsCardConfig(
     override val cardId: String,
-    override val title: String = "BUDGETS",
+    override val title: String = "Budgets",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -320,7 +320,7 @@ data class BudgetsCardConfig(
 @SerialName("loans")
 data class LoansCardConfig(
     override val cardId: String,
-    override val title: String = "LOANS",
+    override val title: String = "Loans",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -339,7 +339,7 @@ data class LoansCardConfig(
 @SerialName("recent_activities")
 data class RecentActivitiesCardConfig(
     override val cardId: String,
-    override val title: String = "RECENT ACTIVITIES",
+    override val title: String = "Recent Activities",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -373,7 +373,7 @@ enum class ChartMetric { NET, INCOME, EXPENSE }
 @SerialName("cashflow_comparison")
 data class CashFlowComparisonCardConfig(
     override val cardId: String,
-    override val title: String = "CASH FLOW COMPARISON",
+    override val title: String = "Cash Flow Comparison",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -393,7 +393,7 @@ data class CashFlowComparisonCardConfig(
 @SerialName("category_spending_trend")
 data class CategorySpendingTrendCardConfig(
     override val cardId: String,
-    override val title: String = "CATEGORY SPENDING",
+    override val title: String = "Category Spending",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -410,7 +410,7 @@ data class CategorySpendingTrendCardConfig(
 @SerialName("income_expense_bar")
 data class IncomeExpenseBarCardConfig(
     override val cardId: String,
-    override val title: String = "INCOME & EXPENSE",
+    override val title: String = "Income & Expense",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
@@ -426,7 +426,7 @@ data class IncomeExpenseBarCardConfig(
 @SerialName("tag_upset_plot")
 data class TagUpSetPlotCardConfig(
     override val cardId: String,
-    override val title: String = "TAG UPSET PLOT",
+    override val title: String = "Tag UpSet Plot",
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,

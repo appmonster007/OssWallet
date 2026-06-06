@@ -183,7 +183,7 @@ private fun AccountsSettingsSheet(
                 )
             }
             AeonSettingsToggle(
-                label = "SHOW ADD ACCOUNT CARD",
+                label = "Show add account card",
                 checked = config.showAddAccountCard,
                 onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) }
             )

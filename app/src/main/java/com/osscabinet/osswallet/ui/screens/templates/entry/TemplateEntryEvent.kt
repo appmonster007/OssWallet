@@ -51,6 +51,8 @@ sealed class TemplateEntryEvent {
     data class ShowLinkedTransactionSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 
+    data object SwapAccounts : TemplateEntryEvent()
+
     // Navigation
     data object TriggerNavigation : TemplateEntryEvent()
 }

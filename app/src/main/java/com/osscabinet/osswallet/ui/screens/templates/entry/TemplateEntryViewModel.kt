@@ -467,6 +467,25 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
+
+            is TemplateEntryEvent.SwapAccounts -> _state.update { state ->
+                if (!state.isTransfer) return@update state
+                val src = state.source
+                val dst = state.destination
+                val effectiveDstAmount = dst.amount.ifBlank {
+                    src.amountValue.multiply(state.transferRate)
+                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                }
+                val newRate = if (state.transferRate.signum() != 0)
+                    java.math.BigDecimal.ONE.divide(state.transferRate, 8, java.math.RoundingMode.HALF_UP)
+                else java.math.BigDecimal.ONE
+                state.copy(
+                    source = src.copy(accountId = dst.accountId, currency = dst.currency, amount = effectiveDstAmount),
+                    destination = dst.copy(accountId = src.accountId, currency = src.currency, amount = src.amount),
+                    transferRate = newRate
+                )
+            }
+
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }

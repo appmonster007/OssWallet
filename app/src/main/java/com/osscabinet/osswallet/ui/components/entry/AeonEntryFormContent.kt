@@ -69,7 +69,6 @@ fun AeonEntryContextRow(
         )
 
         if (isTransfer) {
-            // Target selection (TO)
             val toAccount = targetAccountSelector?.selection
             val toIcon = getAccountIconByName(toAccount?.icon)
             val toColor = parseAccountColor(toAccount?.colorHex) ?: AppColors.primary

@@ -21,9 +21,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -49,18 +47,6 @@ fun AeonTransactionList(
     revealedCardIds: List<String> = emptyList(),
     hasStickyHeader: Boolean = true
 ) {
-    val layers = LocalAeonHaze.current
-    val itemHazeModifier = remember(layers, hasStickyHeader) {
-        if (layers != null) {
-            layers.states.take(3).foldIndexed(Modifier as Modifier) { index, mod, state ->
-                // Skip Overlay layer (index 1) if sticky headers are enabled,
-                // as content does not flow under the top app bar pills in that mode.
-                if (hasStickyHeader && index == 1) mod
-                else mod.aeonHazeSource(state)
-            }
-        } else Modifier
-    }
-
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
@@ -101,11 +87,7 @@ fun AeonTransactionList(
                 val icon = getIconByName(record.categoryIcon)
                 val iconBg = Color(record.categoryColor)
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(itemHazeModifier)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     SwipeableTransactionItem(
                         record = record,
                         isRevealed = revealedCardIds.contains(record.id),

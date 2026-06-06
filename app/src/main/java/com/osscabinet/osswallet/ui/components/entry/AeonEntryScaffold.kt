@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -32,7 +31,6 @@ import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -60,7 +58,7 @@ fun AeonEntryScaffold(
     // Standardized offset for floating pill architecture
     val totalTopPadding = statusBarPadding + topBarHeight + 8.dp
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = containerColor) { hazeLayers ->
         Box(modifier = modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent,
@@ -73,11 +71,7 @@ fun AeonEntryScaffold(
                 ) {
                     ContourBackground()
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         content(
                             PaddingValues(
                                 top = totalTopPadding,

@@ -97,27 +97,32 @@ object GlassTokens {
 
 /**
  * Semantic depth levels for the glassmorphism hierarchy.
- * depth 0: Blurs Background, sources all levels >= 1
- * depth 1: Blurs Background+Surface, sources all levels >= 2
- * depth 2: Blurs Background+Surface+Overlay, sources all levels >= 3
+ *
+ * The AeonHazeProvider background Box is the sole hazeSource for all three states.
+ * GlassSurface elements are pure consumers — they apply hazeEffect only.
+ *
+ * Explicit hazeSource on non-glass content containers (e.g. a cards Column, an OSM map)
+ * is allowed only when those containers are SIBLINGS of their hazeEffect consumers.
  */
 object HazeLayer {
-    /** Layer 1: Elements sitting on the screen background (cards, headers). */
+    /** Blurs the static screen background. Used by cards, form action cards, header cards. */
     const val Surface = 0
 
-    /** Layer 2: Elements sitting on top of everything else (navigation pill, modals). */
+    /** Blurs background + any explicitly registered surface-level content (e.g. card columns).
+     *  Used by nav pill, top bar pills, search dropdowns. */
     const val Overlay = 1
 
-    /** Layer 3: Global system-level overlays (navigation drawer). */
+    /** Blurs all visible screen content captured via NavHost hazeSource in OssWalletNavGraph.
+     *  Used by the navigation drawer only. */
     const val Drawer = 2
 }
 
 /**
  * Container for the app's unified haze hierarchy.
- * Supports up to 10 layers of overlapping glass.
+ * Three states cover all semantic depths: Surface, Overlay, Drawer.
  */
 data class AeonHazeLayers(
-    val states: List<HazeState> = List(10) { HazeState() }
+    val states: List<HazeState> = List(5) { HazeState() }
 )
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }

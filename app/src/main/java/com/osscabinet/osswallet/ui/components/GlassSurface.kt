@@ -56,10 +56,10 @@ fun Modifier.aeonHazeSource(state: HazeState?): Modifier = if (state != null) {
 
 /**
  * Standardized Haze infrastructure for all Aeon screens.
- * Enforces an N-Layer Glass Architecture automatically:
  *
- * Each layer blurs everything below it and registers itself as a source for everything above it.
- * Level 0: Static Background (Color + Contours) captured for all higher states.
+ * Always creates a fresh [AeonHazeLayers] pool — each screen owns its own capture state.
+ * The background Box is the sole hazeSource registrar for all depth levels.
+ * GlassSurface elements are pure consumers (hazeEffect only).
  */
 @Composable
 fun AeonHazeProvider(
@@ -67,14 +67,12 @@ fun AeonHazeProvider(
     drawContours: Boolean = true,
     content: @Composable (AeonHazeLayers) -> Unit
 ) {
-    val existing = LocalAeonHaze.current
-    val hazeLayers = remember(existing) { existing ?: AeonHazeLayers() }
+    val hazeLayers = remember { AeonHazeLayers() }
 
     CompositionLocalProvider(LocalAeonHaze provides hazeLayers) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Level 0: Static Background Capture
-            // We register the background as a source for EVERY state in the pool.
-            val sourceModifier = hazeLayers.states.fold(Modifier as Modifier) { mod, state ->
+            // Static background: sole hazeSource for Surface, Overlay, and Drawer states.
+            val sourceModifier = hazeLayers.states.take(3).fold(Modifier as Modifier) { mod, state ->
                 mod.aeonHazeSource(state)
             }
 
@@ -98,12 +96,12 @@ fun AeonHazeProvider(
 
 /**
  * Canonical glass surface shell for the Aeon design system.
- * Implements auto-incrementing depth for N-layer glass stacking.
+ * Pure hazeEffect consumer — never registers as hazeSource.
  *
  * @param hazeLayer The semantic depth of this surface. If null, uses [LocalHazeDepth].
  *                  Surface (0) blurs background.
- *                  Overlay (1) blurs background + Surface.
- *                  Drawer (2) blurs background + Surface + Overlay.
+ *                  Overlay (1) blurs background + any explicitly registered surface content.
+ *                  Drawer (2) blurs all screen content (captured via NavHost hazeSource).
  */
 @Composable
 fun GlassSurface(
@@ -143,18 +141,11 @@ fun GlassSurface(
     val effectiveSpotAlpha = if (isDark) spotShadowAlpha else spotShadowAlpha * 1.5f
     val effectiveShadowElevation = shadowElevation ?: config.shadowElevation.dp
 
-    // 1. BLUR LOGIC: Blur the state assigned to this depth.
+    // Blur the state assigned to this depth. GlassSurface is a pure consumer — no hazeSource.
     val effectiveHazeState = hazeState ?: layers?.states?.getOrNull(depth)
 
-    // 2. SOURCE LOGIC: Register this surface as a source for EVERY state at a higher depth.
-    val sourceModifier = if (layers != null && depth >= 0) {
-        layers.states.drop(depth + 1).fold(Modifier as Modifier) { mod, state ->
-            mod.aeonHazeSource(state)
-        }
-    } else Modifier
-
     Box(
-        modifier = modifier.then(sourceModifier),
+        modifier = modifier,
         propagateMinConstraints = true
     ) {
         // Shadow on its own RenderNode

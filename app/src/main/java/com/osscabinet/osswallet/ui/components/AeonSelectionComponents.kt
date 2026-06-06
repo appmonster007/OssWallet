@@ -26,7 +26,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -77,7 +76,7 @@ fun AeonSelectionScreen(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    AeonHazeProvider(backgroundColor = containerColor) { hazeLayers ->
+    AeonHazeProvider(backgroundColor = containerColor) { _ ->
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
@@ -104,12 +103,7 @@ fun AeonSelectionScreen(
             },
             contentWindowInsets = WindowInsets.systemBars
         ) { padding ->
-            // Fix: Capture content area as source, but simplified to avoid recursive freeze
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 content(
                     PaddingValues(
                         top = padding.calculateTopPadding() + 8.dp,

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -46,7 +47,6 @@ fun SharedWalletScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(AppColors.screenBackground)
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
                     ContourBackground()
 
@@ -54,6 +54,7 @@ fun SharedWalletScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .statusBarsPadding()
+                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(top = AeonSize.D64.value)
                             .padding(32.dp),
                         contentAlignment = Alignment.Center

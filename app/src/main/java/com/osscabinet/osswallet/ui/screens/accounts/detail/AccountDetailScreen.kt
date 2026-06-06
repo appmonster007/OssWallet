@@ -84,6 +84,7 @@ import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
@@ -314,7 +315,7 @@ fun AccountDetailScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .statusBarsPadding()
-                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(bottom = screenPadding.calculateBottomPadding())
                     ) {
                         when (val state = uiState) {

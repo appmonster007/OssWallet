@@ -68,6 +68,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -285,7 +286,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .statusBarsPadding()
-                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(bottom = innerPadding.calculateBottomPadding())
                     ) {
                         // Context indicator banner (if view focus is applied)

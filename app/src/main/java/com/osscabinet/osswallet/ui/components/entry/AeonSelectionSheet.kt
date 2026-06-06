@@ -78,7 +78,7 @@ fun <T, ID> AeonSelectionSheet(
     val filteredIds = remember(filteredItems, idMapper) { filteredItems.map(idMapper).toSet() }
     val dims = AeonTheme.dimensions
 
-    AeonFullScreenDialog(onDismissRequest = onDismiss) {
+    val content = @Composable {
         AeonSelectionScreen(
             title = title,
             onBack = onDismiss,
@@ -191,6 +191,14 @@ fun <T, ID> AeonSelectionSheet(
 
                 footerContent?.invoke(this)
             }
+        }
+    }
+
+    if (androidx.compose.ui.platform.LocalInspectionMode.current) {
+        content()
+    } else {
+        AeonFullScreenDialog(onDismissRequest = onDismiss) {
+            content()
         }
     }
 }

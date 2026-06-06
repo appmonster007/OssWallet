@@ -43,18 +43,27 @@ fun AeonFullScreenDialog(
     onDismissRequest: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
-        )
-    ) {
+    if (androidx.compose.ui.platform.LocalInspectionMode.current) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = AppColors.background
         ) {
             content()
+        }
+    } else {
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = AppColors.background
+            ) {
+                content()
+            }
         }
     }
 }
@@ -87,24 +96,30 @@ fun AeonSelectionScreen(
             Scaffold(
                 containerColor = Color.Transparent,
                 topBar = {
-                    AeonTopAppBar(
-                        modifier = Modifier.background(Color.Transparent),
-                        left = AeonTopBarSection(
-                            content = {
-                                AeonTopBarNavTitlePill(
-                                    title = title,
-                                    onBackClick = onBack
-                                )
-                            }
-                        ),
-                        right = AeonTopBarSection(
-                            content = {
-                                AeonTopBarActionPill(actions = actions)
-                            }
+                    Box {
+                        AeonTopAppBar(
+                            modifier = Modifier.background(Color.Transparent),
+                            left = AeonTopBarSection(
+                                content = {
+                                    AeonTopBarNavTitlePill(
+                                        title = title,
+                                        onBackClick = onBack
+                                    )
+                                }
+                            ),
+                            right = AeonTopBarSection(
+                                content = {
+                                    AeonTopBarActionPill(actions = actions)
+                                }
+                            )
                         )
-                    )
+                    }
                 },
-                bottomBar = bottomBar,
+                bottomBar = {
+                    Box {
+                        bottomBar()
+                    }
+                },
                 contentWindowInsets = WindowInsets.systemBars // Let scaffold handle system bars
             ) { padding ->
                 Box(

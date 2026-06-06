@@ -98,6 +98,9 @@ fun TransactionFormBody(
                     }
                     onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                 },
+                onSwapClick = if (state.isTransfer &&
+                    (state.source.accountId != null || state.destination.accountId != null))
+                    ({ onEvent(TransactionEntryEvent.SwapAccounts) }) else null,
                 accountId = state.selectedAccount?.id,
                 errors = state.errors
             )
@@ -151,7 +154,7 @@ fun TransactionFormBody(
                             isError = state.hasError(EntryField.TARGET_ACCOUNT)
                         )
                     } else null,
-                    isSplitMode = state.isSplitMode,
+                        isSplitMode = state.isSplitMode,
                     splitCount = state.splits.size,
                     onSplitClick = { onEvent(TransactionEntryEvent.ShowSplitSheet(true)) }
                 )

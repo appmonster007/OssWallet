@@ -686,6 +686,24 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
+            is TransactionEntryEvent.SwapAccounts -> update { state ->
+                if (!state.isTransfer) return@update state
+                val src = state.source
+                val dst = state.destination
+                val effectiveDstAmount = dst.amount.ifBlank {
+                    src.amountValue.multiply(state.exchangeRate)
+                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                }
+                val newRate = if (state.exchangeRate.signum() != 0)
+                    java.math.BigDecimal.ONE.divide(state.exchangeRate, 8, java.math.RoundingMode.HALF_UP)
+                else java.math.BigDecimal.ONE
+                state.copy(
+                    source = src.copy(accountId = dst.accountId, currency = dst.currency, amount = effectiveDstAmount),
+                    destination = dst.copy(accountId = src.accountId, currency = src.currency, amount = src.amount),
+                    exchangeRate = newRate
+                )
+            }
+
             // Navigation
             is TransactionEntryEvent.TriggerNavigation -> update { it.copy(navTriggered = true) }
             is TransactionEntryEvent.ClearNavigationTrigger -> update { it.copy(navTriggered = false) }

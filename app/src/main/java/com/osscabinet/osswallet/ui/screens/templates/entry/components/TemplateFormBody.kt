@@ -96,6 +96,9 @@ fun TemplateFormBody(
                 targetAccountId = state.targetAccountId,
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
+                onSwapClick = if (state.isTransfer &&
+                    (state.accountId != null || state.targetAccountId != null))
+                    ({ onEvent(TemplateEntryEvent.SwapAccounts) }) else null,
                 accountId = state.accountId,
                 errors = state.errors
             )

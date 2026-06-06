@@ -119,6 +119,9 @@ fun PlannedPaymentFormBody(
                 targetAccountId = state.targetAccountId,
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
+                onSwapClick = if (state.isTransfer &&
+                    (state.selectedAccountId != null || state.targetAccountId != null))
+                    ({ onEvent(PlannedPaymentEntryEvent.SwapAccounts) }) else null,
                 accountId = state.selectedAccountId,
                 errors = state.errors
             )

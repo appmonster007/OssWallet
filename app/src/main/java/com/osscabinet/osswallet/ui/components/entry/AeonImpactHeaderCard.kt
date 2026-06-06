@@ -33,8 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.AmountEditingSide
-import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
@@ -80,16 +78,24 @@ fun AeonImpactHeaderCard(
     onExchangeRateClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
+    onSwapClick: (() -> Unit)? = null,
     accountId: String? = null,
     errors: Set<EntryField> = emptySet()
 ) {
     val isTransfer = transactionType == TransactionType.TRANSFER
-    val isAmountPositive = Category.isAnyTransferInflow(categoryId ?: 0) || transactionType == TransactionType.INCOME
     val amountPrefix = when {
         transactionType == TransactionType.EXPENSE -> "-"
         transactionType == TransactionType.INCOME -> "+"
         isTransfer -> "-" // Source is always Giver in transfer
         else -> ""
+    }
+    // Type selector highlight colour: reflects the direction of money relative to wallet accounts.
+    // Outside source → income green; Outside target → expense red; Wallet↔Wallet → neutral transfer blue.
+    val typeSelectorColor = when {
+        !isTransfer -> Color(transactionType.colorHex.toColorInt())
+        accountId?.isBlank() == true -> Color(TransactionType.INCOME.colorHex.toColorInt())
+        targetAccountId?.isBlank() == true -> Color(TransactionType.EXPENSE.colorHex.toColorInt())
+        else -> Color(TransactionType.TRANSFER.colorHex.toColorInt())
     }
 
     val types = TransactionType.entries.map {
@@ -132,8 +138,9 @@ fun AeonImpactHeaderCard(
         onExchangeRateClick = onExchangeRateClick,
         isSplitMode = isSplitMode,
         onSplitClick = onSplitClick,
+        onSwapClick = onSwapClick,
         accountId = accountId,
-        isAmountPositive = isAmountPositive,
+        typeSelectorColor = typeSelectorColor,
         amountPrefix = amountPrefix,
         errors = errors
     )
@@ -159,8 +166,9 @@ fun <T> AeonImpactHeaderCard(
     onExchangeRateClick: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
+    onSwapClick: (() -> Unit)? = null,
     accountId: String? = null,
-    isAmountPositive: Boolean = false,
+    typeSelectorColor: Color? = null,
     amountPrefix: String = "",
     errors: Set<EntryField> = emptySet()
 ) {
@@ -185,7 +193,7 @@ fun <T> AeonImpactHeaderCard(
                     selectedType = selectedType,
                     onTypeSelected = onTypeSelected,
                     types = types,
-                    selectedColor = activeAmountColor,
+                    selectedColor = typeSelectorColor ?: activeAmountColor,
                     itemWidth = (AeonTheme.dimensions.spacingXl * 3f)
                 )
 
@@ -200,8 +208,9 @@ fun <T> AeonImpactHeaderCard(
             val isOutsideToWallet  = isOutsideSource && !targetAccountId.isNullOrBlank()
 
             val primaryAmount = if (isOutsideToWallet && target != null) target else source
-            val primaryPrefix  = if (isOutsideToWallet) "+" else amountPrefix
-            val primaryColor   = if (isOutsideToWallet) (target?.color ?: AppColors.contentPrimary) else activeAmountColor
+            // Any outside-source transfer is "money coming in" — use income styling even before target is picked
+            val primaryPrefix  = if (isOutsideSource) "+" else amountPrefix
+            val primaryColor   = if (isOutsideSource) (target?.color ?: AppColors.contentPrimary) else activeAmountColor
 
             // Show when: not a transfer, OR source is outside wallet (target amount or entry placeholder),
             // OR source has content/label (standard wallet source)
@@ -220,14 +229,19 @@ fun <T> AeonImpactHeaderCard(
                         isError = primaryAmount.isError || errors.contains(EntryField.AMOUNT)
                     )
 
-                    if (onSplitClick != null && !isTransfer) {
+                    val overlayClick = when {
+                        onSplitClick != null && !isTransfer -> onSplitClick
+                        onSwapClick != null && isTransfer -> onSwapClick
+                        else -> null
+                    }
+                    if (overlayClick != null) {
                         Row(
                             modifier = Modifier.padding(end = AeonTheme.dimensions.spacingSm),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
                         ) {
                             IconButton(
-                                onClick = onSplitClick,
+                                onClick = overlayClick,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                             ) {
                                 Box(
@@ -235,17 +249,21 @@ fun <T> AeonImpactHeaderCard(
                                         .size(AeonTheme.dimensions.iconSizeLg)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isSplitMode) AppColors.primary.copy(alpha = 0.12f)
+                                            if (isSplitMode && !isTransfer) AppColors.primary.copy(alpha = 0.12f)
                                             else AppColors.transparent
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        Icons.AutoMirrored.Rounded.CallSplit,
-                                        contentDescription = "Split Transaction",
+                                        if (isTransfer) Icons.Rounded.SwapHoriz
+                                        else Icons.AutoMirrored.Rounded.CallSplit,
+                                        contentDescription = if (isTransfer) "Swap accounts" else "Split Transaction",
                                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                        tint = if (isSplitMode) AppColors.primary
-                                        else AppColors.contentSecondary.copy(alpha = 0.4f)
+                                        tint = when {
+                                            isTransfer -> AppColors.contentSecondary.copy(alpha = 0.4f)
+                                            isSplitMode -> AppColors.primary
+                                            else -> AppColors.contentSecondary.copy(alpha = 0.4f)
+                                        }
                                     )
                                 }
                             }
@@ -254,7 +272,11 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && bothWalletAccounts && target != null) {
+            val showRateChip = isTransfer && bothWalletAccounts && target != null
+                && (source.currency != target.currency
+                    || transferRate.compareTo(BigDecimal.ONE) != 0)
+
+            if (showRateChip) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 Surface(

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -58,11 +59,12 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import android.graphics.Color as AndroidColor
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 fun AppDrawerContent(
+    drawerHazeState: HazeState,
     currentProfile: Profile?,
     nonArchivedAccounts: List<Account>,
     starredTemplates: List<Template>,
@@ -94,7 +96,7 @@ fun AppDrawerContent(
             .width(280.dp)
             .fillMaxHeight(),
         shape = drawerShape,
-        hazeLayer = HazeLayer.Drawer,
+        hazeState = drawerHazeState,
         hazeStyle = glassStyle,
         fallbackColor = AppColors.drawerSurface,
         shadowElevation = 16.dp,
@@ -436,6 +438,7 @@ fun AppDrawerContentPreview() {
 
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         AppDrawerContent(
+            drawerHazeState = remember { dev.chrisbanes.haze.HazeState() },
             currentProfile = mockProfile,
             nonArchivedAccounts = mockAccounts,
             starredTemplates = emptyList(),

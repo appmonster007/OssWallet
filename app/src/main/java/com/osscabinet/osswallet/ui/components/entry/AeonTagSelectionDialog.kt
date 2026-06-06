@@ -60,14 +60,12 @@ import com.osscabinet.ossWallet.ui.components.AeonColorSelection
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.delay
@@ -124,12 +122,11 @@ fun AeonTagSelectionDialog(
     ) {
         val glassEnabled = LocalGlassmorphismEnabled.current
         val dims = AeonTheme.dimensions
-        AeonHazeProvider { hazeLayers ->
+        AeonHazeProvider { _ ->
             GlassSurface(
                 modifier = Modifier
                     .widthIn(max = 720.dp)
-                    .wrapContentHeight()
-                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay]),
+                    .wrapContentHeight(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                 hazeStyle = GlassTokens.popupStyle(),
                 fallbackColor = AppColors.surfaceContainerHigh,
@@ -374,12 +371,11 @@ fun AeonTagCreateDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        AeonHazeProvider { hazeLayers ->
+        AeonHazeProvider { _ ->
             GlassSurface(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
-                    .wrapContentHeight()
-                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay]),
+                    .wrapContentHeight(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                 hazeStyle = GlassTokens.popupStyle(),
                 fallbackColor = AppColors.surfaceContainerHigh,

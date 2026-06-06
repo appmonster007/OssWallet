@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.runtime.remember
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
@@ -38,13 +37,11 @@ import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -123,18 +120,6 @@ fun RecentActivitiesScreen(
             }
         }
 
-        val layers = LocalAeonHaze.current
-        val itemHazeModifier = remember(layers, hasStickyHeader) {
-            if (layers != null) {
-                layers.states.take(3).foldIndexed(Modifier as Modifier) { index, mod, state ->
-                    // Skip Overlay layer (index 1) if sticky headers are enabled,
-                    // as content does not flow under the top app bar pills in that mode.
-                    if (hasStickyHeader && index == 1) mod
-                    else mod.aeonHazeSource(state)
-                }
-            } else Modifier
-        }
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -183,11 +168,7 @@ fun RecentActivitiesScreen(
                         val icon = getIconByName(record.categoryIcon)
                         val iconBg = Color(record.categoryColor)
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(itemHazeModifier)
-                        ) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
                         SwipeableTransactionItem(
                             record = record,
                             isRevealed = revealedCardIds.contains(record.id),

@@ -7,7 +7,6 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -15,9 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
@@ -93,7 +91,7 @@ fun OssWalletNavGraph(
     // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
     val resolvedDestination = startDestination ?: return
 
-    val rootHazeLayers = remember { AeonHazeLayers() }
+    val drawerHazeState = remember { HazeState() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var isDrawerNavigating by remember { mutableStateOf(false) }
@@ -134,14 +132,14 @@ fun OssWalletNavGraph(
         }
     }
 
-    CompositionLocalProvider(LocalAeonHaze provides rootHazeLayers) {
-        ModalNavigationDrawer(
+    ModalNavigationDrawer(
             drawerState = drawerState,
             // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
             // and background scrim taps to close automatically and robustly.
             gesturesEnabled = true,
             drawerContent = {
                 AppDrawerContent(
+                    drawerHazeState = drawerHazeState,
                     currentProfile = currentProfile,
                     nonArchivedAccounts = nonArchivedAccounts,
                     starredTemplates = starredTemplates,
@@ -196,14 +194,7 @@ fun OssWalletNavGraph(
                 )
             }
         ) {
-            // Register NavHost content as a source for Drawer (Level 3) and above.
-            // This ensures the global drawer can blur everything on the screen.
-            // We skip sourcing Overlay (Level 2) here to avoid recursion with the pills.
-            // Task: Use aeonHazeSource to avoid crashing in Haze 1.7.2 when children have blurs.
-            val navSourceModifier = rootHazeLayers.states.drop(2).fold(Modifier as Modifier) { mod, state ->
-                mod.aeonHazeSource(state)
-            }
-            Box(modifier = Modifier.fillMaxSize().then(navSourceModifier)) {
+            Box(modifier = Modifier.fillMaxSize().aeonHazeSource(drawerHazeState)) {
                 NavHost(
                     navController = navController,
                     startDestination = resolvedDestination
@@ -241,5 +232,4 @@ fun OssWalletNavGraph(
                 scope.launch { drawerState.close() }
             }
         }
-    } // CompositionLocalProvider
 }

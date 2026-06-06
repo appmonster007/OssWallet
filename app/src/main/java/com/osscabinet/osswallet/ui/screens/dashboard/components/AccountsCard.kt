@@ -35,6 +35,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
+import com.osscabinet.ossWallet.ui.components.AeonLazyRow
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardLarge
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
@@ -132,7 +133,7 @@ fun AccountsCard(
                 }
             }
         } else {
-            LazyRow(
+            AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 4.dp)
             ) {

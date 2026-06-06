@@ -147,6 +147,7 @@ data class CurrencyBalancesCardConfig(
     override val order: Int = 1,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "scroll",
+    val gridColumns: Int = 3,
     val showBaseConversion: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {

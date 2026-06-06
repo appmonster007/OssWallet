@@ -51,6 +51,14 @@ interface CardUpdateHandler {
             }
         }
     }
+
+    fun updateCardCurrencyBalancesGridColumns(cardId: String, columns: Int) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is CurrencyBalancesCardConfig) config.copy(gridColumns = columns) else config
+            }
+        }
+    }
     
     fun updateCardCurrencyBalancesShowBaseConversion(cardId: String, show: Boolean) {
         cardUpdateScope.launch {

@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -76,7 +77,7 @@ fun AeonEntryScaffold(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                     ) {
                         content(
                             PaddingValues(

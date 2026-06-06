@@ -61,6 +61,7 @@ import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -204,7 +205,7 @@ fun AccountListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = innerPadding.calculateBottomPadding())
                         .background(AppColors.screenBackground)
                         .graphicsLayer(clip = false),

@@ -48,6 +48,14 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 
 /**
+ * Safe wrapper for [hazeSource] that prevents recursive drawing crashes in Haze 1.7.2+.
+ * Always uses zIndex = -1f to exclude the glass nodes themselves from the capture process.
+ */
+fun Modifier.aeonHazeSource(state: HazeState?): Modifier = if (state != null) {
+    this.hazeSource(state, zIndex = -1f)
+} else this
+
+/**
  * Standardized Haze infrastructure for all Aeon screens.
  * Enforces an N-Layer Glass Architecture automatically:
  *
@@ -68,7 +76,7 @@ fun AeonHazeProvider(
             // Level 0: Static Background Capture
             // We register the background as a source for EVERY state in the pool.
             val sourceModifier = hazeLayers.states.fold(Modifier as Modifier) { mod, state ->
-                mod.hazeSource(state)
+                mod.aeonHazeSource(state)
             }
 
             Box(
@@ -140,7 +148,7 @@ fun GlassSurface(
     // 2. SOURCE LOGIC: Register this surface as a source for EVERY state at a higher depth.
     val sourceModifier = if (layers != null && depth >= 0) {
         layers.states.drop(depth + 1).fold(Modifier as Modifier) { mod, state ->
-            mod.hazeSource(state)
+            mod.aeonHazeSource(state)
         }
     } else Modifier
 

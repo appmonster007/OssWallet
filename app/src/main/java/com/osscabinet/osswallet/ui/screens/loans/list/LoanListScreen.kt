@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanStatus
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -84,7 +85,7 @@ fun LoanListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(AppColors.screenBackground)
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
                     ContourBackground()
 

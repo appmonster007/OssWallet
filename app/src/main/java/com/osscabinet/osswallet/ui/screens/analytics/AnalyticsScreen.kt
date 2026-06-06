@@ -43,6 +43,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
@@ -144,7 +145,7 @@ fun AnalyticsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = innerPadding.calculateBottomPadding())
                 ) {
                     when (val state = uiState) {

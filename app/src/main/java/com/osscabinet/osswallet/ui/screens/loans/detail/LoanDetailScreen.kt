@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -213,7 +214,7 @@ fun LoanDetailContent(
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
-                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = paddingValues.calculateBottomPadding())
                 ) {
                     HorizontalPager(

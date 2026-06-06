@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import kotlinx.coroutines.isActive
 
@@ -412,7 +413,7 @@ fun CardReorderableListPreview() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(dragModifier),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                     color = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {

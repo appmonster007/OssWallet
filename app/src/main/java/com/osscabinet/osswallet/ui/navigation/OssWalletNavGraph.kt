@@ -17,7 +17,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import dev.chrisbanes.haze.hazeSource
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.Modifier
@@ -136,109 +136,110 @@ fun OssWalletNavGraph(
 
     CompositionLocalProvider(LocalAeonHaze provides rootHazeLayers) {
         ModalNavigationDrawer(
-        drawerState = drawerState,
-        // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
-        // and background scrim taps to close automatically and robustly.
-        gesturesEnabled = true,
-        drawerContent = {
-            AppDrawerContent(
-                currentProfile = currentProfile,
-                nonArchivedAccounts = nonArchivedAccounts,
-                starredTemplates = starredTemplates,
-                selectedDestination = selectedRoute,
-                onDashboardClick = {
-                    navController.navigateToDashboard(topLevel = true) {
-                        popUpTo<DashboardRoute> { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onRecordsClick = {
-                    navController.navigateToRecords(filter = TransactionFilter(), topLevel = true) {
-                        popUpTo<DashboardRoute> { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onAnalyticsClick = {
-                    navController.navigate(AnalyticsRoute) {
-                        popUpTo<DashboardRoute> { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onExchangeRatesClick = {
-                    navController.navigate(ExchangeRatesRoute) {
-                        popUpTo<DashboardRoute> { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                onSettingsClick = { navController.navigate(SettingsRoute) },
-                onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
-                onTemplateClick = { template ->
-                    vms.transactionViewModel.setTemplatePrefill(template.id)
-                    navController.navigate(TransactionEntryRoute())
-                },
-                onPlannedPaymentsClick = { navController.navigate(PlannedPaymentListRoute) },
-                onBudgetsClick = { navController.navigate(BudgetListRoute) },
-                onLoansClick = { navController.navigate(LoanListRoute) },
-                onNavigate = { action ->
-                    if (!isDrawerNavigating) {
-                        isDrawerNavigating = true
-                        scope.launch {
-                            drawerState.close()
-                            action()
-                            isDrawerNavigating = false
+            drawerState = drawerState,
+            // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
+            // and background scrim taps to close automatically and robustly.
+            gesturesEnabled = true,
+            drawerContent = {
+                AppDrawerContent(
+                    currentProfile = currentProfile,
+                    nonArchivedAccounts = nonArchivedAccounts,
+                    starredTemplates = starredTemplates,
+                    selectedDestination = selectedRoute,
+                    onDashboardClick = {
+                        navController.navigateToDashboard(topLevel = true) {
+                            popUpTo<DashboardRoute> { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                    }
-                }
-            )
-        }
-    ) {
-        // Register NavHost content as a source for Drawer (Level 3) and above.
-        // This ensures the global drawer can blur everything on the screen.
-        // We skip sourcing Overlay (Level 2) here to avoid recursion with the pills.
-        val navSourceModifier = rootHazeLayers.states.drop(2).fold(Modifier as Modifier) { mod, state ->
-            mod.hazeSource(state)
-        }
-        Box(modifier = Modifier.fillMaxSize().then(navSourceModifier)) {
-        NavHost(
-            navController = navController,
-            startDestination = resolvedDestination
-        ) {
-            composable<OnboardingRoute>(
-                enterTransition = { FadeEnterTransitionSpec },
-                exitTransition = { FadeExitTransitionSpec },
-                popEnterTransition = { FadeEnterTransitionSpec },
-                popExitTransition = { FadeExitTransitionSpec }
-            ) {
-                val onboardingViewModel: OnboardingViewModel = hiltViewModel()
-                OnboardingScreen(
-                    viewModel = onboardingViewModel,
-                    actions = OnboardingActions(
-                        onComplete = {
-                            navController.navigate(DashboardRoute()) {
-                                popUpTo<OnboardingRoute> { inclusive = true }
+                    },
+                    onRecordsClick = {
+                        navController.navigateToRecords(filter = TransactionFilter(), topLevel = true) {
+                            popUpTo<DashboardRoute> { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onAnalyticsClick = {
+                        navController.navigate(AnalyticsRoute) {
+                            popUpTo<DashboardRoute> { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onExchangeRatesClick = {
+                        navController.navigate(ExchangeRatesRoute) {
+                            popUpTo<DashboardRoute> { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onSettingsClick = { navController.navigate(SettingsRoute) },
+                    onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
+                    onTemplateClick = { template ->
+                        vms.transactionViewModel.setTemplatePrefill(template.id)
+                        navController.navigate(TransactionEntryRoute())
+                    },
+                    onPlannedPaymentsClick = { navController.navigate(PlannedPaymentListRoute) },
+                    onBudgetsClick = { navController.navigate(BudgetListRoute) },
+                    onLoansClick = { navController.navigate(LoanListRoute) },
+                    onNavigate = { action ->
+                        if (!isDrawerNavigating) {
+                            isDrawerNavigating = true
+                            scope.launch {
+                                drawerState.close()
+                                action()
+                                isDrawerNavigating = false
                             }
                         }
-                    )
+                    }
                 )
             }
+        ) {
+            // Register NavHost content as a source for Drawer (Level 3) and above.
+            // This ensures the global drawer can blur everything on the screen.
+            // We skip sourcing Overlay (Level 2) here to avoid recursion with the pills.
+            // Task: Use aeonHazeSource to avoid crashing in Haze 1.7.2 when children have blurs.
+            val navSourceModifier = rootHazeLayers.states.drop(2).fold(Modifier as Modifier) { mod, state ->
+                mod.aeonHazeSource(state)
+            }
+            Box(modifier = Modifier.fillMaxSize().then(navSourceModifier)) {
+                NavHost(
+                    navController = navController,
+                    startDestination = resolvedDestination
+                ) {
+                    composable<OnboardingRoute>(
+                        enterTransition = { FadeEnterTransitionSpec },
+                        exitTransition = { FadeExitTransitionSpec },
+                        popEnterTransition = { FadeEnterTransitionSpec },
+                        popExitTransition = { FadeExitTransitionSpec }
+                    ) {
+                        val onboardingViewModel: OnboardingViewModel = hiltViewModel()
+                        OnboardingScreen(
+                            viewModel = onboardingViewModel,
+                            actions = OnboardingActions(
+                                onComplete = {
+                                    navController.navigate(DashboardRoute()) {
+                                        popUpTo<OnboardingRoute> { inclusive = true }
+                                    }
+                                }
+                            )
+                        )
+                    }
 
-            primaryTabsGraph(navController, drawerState, scope, vms)
-            settingsGraph(navController, vms)
-            accountsGraph(navController, vms)
-            transactionsGraph(navController, vms)
-            planningGraph(navController, vms)
-        }
-        } // hazeSource Box
+                    primaryTabsGraph(navController, drawerState, scope, vms)
+                    settingsGraph(navController, vms)
+                    accountsGraph(navController, vms)
+                    transactionsGraph(navController, vms)
+                    planningGraph(navController, vms)
+                }
+            }
 
-        // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
-        // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
-        BackHandler(enabled = drawerState.isOpen) {
-            scope.launch { drawerState.close() }
+            // Registered AFTER NavHost so it has higher LIFO priority than NavHost's internal
+            // PredictiveBackHandler — ensures back press closes the drawer before popping routes.
+            BackHandler(enabled = drawerState.isOpen) {
+                scope.launch { drawerState.close() }
+            }
         }
-    }
     } // CompositionLocalProvider
 }

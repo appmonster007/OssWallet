@@ -135,8 +135,7 @@ fun AccountsCard(
         } else {
             AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 4.dp),
-                itemWidthRatio = 0.5f
+                contentPadding = PaddingValues(bottom = 4.dp)
             ) {
                 items(accounts) { account ->
                     AccountItemWrapper(
@@ -147,7 +146,7 @@ fun AccountsCard(
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
                         filter = config.filter,
-                        modifier = Modifier.fillParentMaxWidth(0.5f)
+                        modifier = Modifier.width(180.dp)
                     )
                 }
                 if (config.showAddAccountCard) {
@@ -156,7 +155,7 @@ fun AccountsCard(
                             baseCurrency = baseCurrency,
                             onClick = callbacks.onManageClick,
                             gridColumns = 2,
-                            modifier = Modifier.fillParentMaxWidth(0.5f)
+                            modifier = Modifier.width(180.dp)
                         )
                     }
                 }

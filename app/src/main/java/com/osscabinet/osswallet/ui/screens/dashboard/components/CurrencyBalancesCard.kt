@@ -129,8 +129,7 @@ fun CurrencyBalancesCard(
         } else {
             AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 4.dp),
-                itemWidthRatio = 0.45f
+                contentPadding = PaddingValues(bottom = 4.dp)
             ) {
                 items(currencyTotals) { item ->
                     CurrencyBalanceItem(
@@ -144,8 +143,7 @@ fun CurrencyBalancesCard(
                                 item.currency,
                                 config.filter.timelineRange
                             )
-                        },
-                        modifier = Modifier.fillParentMaxWidth(0.45f)
+                        }
                     )
                 }
             }
@@ -225,14 +223,14 @@ fun CurrencyBalanceItem(
             )
 
             Text(
-                formatAuto(amount, curr, shorten = !isLarge),
+                formatAuto(amount, curr),
                 style = style,
                 maxLines = 1
             )
 
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatAuto(inBase, baseCurrency, shorten = !isLarge)}",
+                    "≈ ${formatAuto(inBase, baseCurrency)}",
                     style = AppTextStyles.caption,
                     color = AppColors.contentSecondary,
                     maxLines = 1

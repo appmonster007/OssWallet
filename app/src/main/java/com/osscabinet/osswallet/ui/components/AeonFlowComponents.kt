@@ -43,14 +43,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -355,14 +360,28 @@ fun AeonLazyRow(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     snap: Boolean = true,
-    itemWidthRatio: Float = 0.8f,
     content: LazyListScope.() -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+
+    // Observe the layout info to get the size of the first item dynamically
+    val firstItemWidth = remember(state) {
+        derivedStateOf {
+            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let {
+                with(density) { it.toDp() }
+            } ?: 0.dp
+        }
+    }.value
 
     BoxWithConstraints(modifier = modifier) {
         val containerWidth = maxWidth
-        val sidePadding = (containerWidth * (1f - itemWidthRatio)) / 2
+        val sidePadding = if (firstItemWidth > 0.dp) {
+            (containerWidth - firstItemWidth) / 2
+        } else {
+            0.dp
+        }
 
         val flingBehavior = if (snap) {
             rememberSnapFlingBehavior(lazyListState = state, snapPosition = SnapPosition.Center)
@@ -395,8 +414,8 @@ fun AeonLazyRow(
             modifier = Modifier.fillMaxWidth(),
             state = state,
             contentPadding = PaddingValues(
-                start = sidePadding + contentPadding.calculateStartPadding(LayoutDirection.Ltr),
-                end = sidePadding + contentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                start = sidePadding + contentPadding.calculateStartPadding(layoutDirection),
+                end = sidePadding + contentPadding.calculateEndPadding(layoutDirection),
                 top = contentPadding.calculateTopPadding(),
                 bottom = contentPadding.calculateBottomPadding()
             ),

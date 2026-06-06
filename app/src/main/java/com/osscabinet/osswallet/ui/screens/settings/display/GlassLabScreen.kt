@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -69,7 +70,6 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun GlassLabScreen(
@@ -186,7 +186,7 @@ fun GlassLabContent(
                                             Column(
                                                 modifier = Modifier
                                                     .fillMaxSize()
-                                                    .hazeSource(innerHaze.states[0])
+                                                    .aeonHazeSource(innerHaze.states[0])
                                                     .padding(16.dp),
                                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {

@@ -34,7 +34,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.

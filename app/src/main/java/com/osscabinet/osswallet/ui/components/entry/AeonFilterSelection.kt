@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,9 +36,11 @@ import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
@@ -84,15 +84,15 @@ fun AeonFilterSelection(
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(dims.spacingLg))
 
-                    Surface(
-                        onClick = { onFilterSelected(null); onDismiss() },
+                    GlassSurface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
-                        color = AppColors.primaryContainer,
-                        border = BorderStroke(
-                            1.dp,
-                            AppColors.primary
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        hazeStyle = GlassTokens.cardStyle(),
+                        fallbackColor = AppColors.primaryContainer,
+                        borderColor = AppColors.primary,
+                        borderAlpha = 0.5f
                     ) {
                         Row(
                             modifier = Modifier.padding(dims.spacingLg),
@@ -118,19 +118,16 @@ fun AeonFilterSelection(
                     contentPadding = PaddingValues(bottom = dims.spacingXl)
                 ) {
                     items(filtered) { filter ->
-                        Card(
-                            onClick = { onFilterSelected(filter.id); onDismiss() },
+                        val isSelected = filter.id == selectedFilterId
+                        GlassSurface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onFilterSelected(filter.id); onDismiss() },
                             shape = RoundedCornerShape(dims.componentCornerRadius),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (filter.id == selectedFilterId)
-                                    AppColors.primaryContainer
-                                else
-                                    AppColors.surfaceContainerLow
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (filter.id == selectedFilterId) AppColors.primary else AppColors.outlineVariant
-                            )
+                            hazeStyle = GlassTokens.cardStyle(),
+                            fallbackColor = if (isSelected) AppColors.primaryContainer else AppColors.surfaceContainerLow,
+                            borderColor = if (isSelected) AppColors.primary else AppColors.outlineVariant,
+                            borderAlpha = if (isSelected) 0.5f else 0.1f
                         ) {
                             Row(
                                 modifier = Modifier.padding(dims.spacingLg),
@@ -154,7 +151,8 @@ fun AeonFilterSelection(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         filter.name,
-                                        style = AppTextStyles.managementItemTitle
+                                        style = AppTextStyles.managementItemTitle,
+                                        color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                                     )
                                     val detailText = buildString {
                                         if (filter.filter.categoryIds.isEmpty()) append("All Categories")
@@ -168,10 +166,10 @@ fun AeonFilterSelection(
                                     Text(
                                         detailText,
                                         style = AppTextStyles.caption,
-                                        color = AppColors.contentSecondary
+                                        color = if (isSelected) AppColors.primary.copy(alpha = 0.7f) else AppColors.contentSecondary
                                     )
                                 }
-                                if (filter.id == selectedFilterId) {
+                                if (isSelected) {
                                     Icon(
                                         Icons.Rounded.FilterList,
                                         contentDescription = null,

@@ -49,10 +49,9 @@ import dev.chrisbanes.haze.hazeSource
 
 /**
  * Safe wrapper for [hazeSource] that prevents recursive drawing crashes in Haze 1.7.2+.
- * Always uses zIndex = -1f to exclude the glass nodes themselves from the capture process.
  */
 fun Modifier.aeonHazeSource(state: HazeState?): Modifier = if (state != null) {
-    this.hazeSource(state, zIndex = -1f)
+    this.hazeSource(state)
 } else this
 
 /**
@@ -188,9 +187,7 @@ fun GlassSurface(
                     else Modifier
                 )
         ) {
-            CompositionLocalProvider(LocalHazeDepth provides depth + 1) {
-                content()
-            }
+            content()
         }
     }
 }

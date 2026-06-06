@@ -36,10 +36,12 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -164,14 +166,13 @@ fun <T> AeonImpactHeaderCard(
 ) {
     val activeAmountColor = source.color ?: AppColors.primary
 
-    Surface(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = AppColors.cardSurface,
-        border = BorderStroke(
-            (AeonTheme.dimensions.spacingXs / 8),
-            AppColors.divider.copy(alpha = 0.15f)
-        ),
+        hazeStyle = GlassTokens.cardStyle(),
+        fallbackColor = AppColors.cardSurface,
+        borderColor = AppColors.divider.copy(alpha = 0.15f),
+        borderAlpha = 0.1f,
         shadowElevation = 0.dp
     ) {
         Column(

@@ -99,6 +99,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.android.gms.location.LocationServices
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonOSMMap
@@ -119,7 +120,6 @@ import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -491,7 +491,7 @@ private fun AeonLocationSelectionContent(
             // ── 1. Map ────────────────────────────────────────────────────────
             AeonOSMMap(
                 modifier = Modifier.fillMaxSize()
-                    .then(if (glassEnabled) Modifier.hazeSource(hazeLayers.states[HazeLayer.Overlay]) else Modifier),
+                    .then(if (glassEnabled) Modifier.aeonHazeSource(hazeLayers.states[HazeLayer.Overlay]) else Modifier),
                 center = mapCenter,
                 zoom = mapZoom,
                 selectedPoint = selectedPoint,

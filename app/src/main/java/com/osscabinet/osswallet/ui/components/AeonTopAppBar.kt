@@ -75,7 +75,6 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 
 /**
  * Standard configuration for a discrete section of the AeonTopAppBar.
@@ -756,7 +755,7 @@ fun AeonTopAppBarPreview(
                     // We only need the first few layers for Top Bar previews.
                     val sourceModifier = if (finalGlassEnabled) {
                         hazeLayers.states.take(3).fold(Modifier as Modifier) { mod, state ->
-                            mod.hazeSource(state)
+                            mod.aeonHazeSource(state)
                         }
                     } else Modifier
 

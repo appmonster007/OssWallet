@@ -38,6 +38,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -46,7 +47,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -130,7 +130,7 @@ fun RecentActivitiesScreen(
                     // Skip Overlay layer (index 1) if sticky headers are enabled,
                     // as content does not flow under the top app bar pills in that mode.
                     if (hasStickyHeader && index == 1) mod
-                    else mod.hazeSource(state)
+                    else mod.aeonHazeSource(state)
                 }
             } else Modifier
         }

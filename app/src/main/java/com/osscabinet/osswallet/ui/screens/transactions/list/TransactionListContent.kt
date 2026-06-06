@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
@@ -38,7 +39,6 @@ import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsUiState
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
@@ -73,7 +73,7 @@ fun TransactionListContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding() // Avoid bleeding into status bar icons
-                    .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                     .let { baseModifier ->
                         if (recordsSettings.stickyHeaders) {
                             baseModifier.padding(top = pillHeight)

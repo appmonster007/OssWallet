@@ -12,8 +12,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -28,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -48,39 +47,52 @@ fun AeonSearchField(
         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
 
     if (showBorder) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = fieldModifier,
-            placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary) },
-            trailingIcon = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                contentDescription = "Clear search",
-                                modifier = Modifier.size(20.dp),
-                                tint = AppColors.contentSecondary
-                            )
-                        }
-                    }
-                    trailingAction?.invoke()
-                }
-            },
-            singleLine = true,
-            textStyle = AppTextStyles.formFieldValue,
+        GlassSurface(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AppColors.primary,
-                unfocusedBorderColor = AppColors.outline,
-                focusedContainerColor = AppColors.surfaceContainerLow,
-                unfocusedContainerColor = AppColors.surfaceContainerLow,
-                cursorColor = AppColors.primary
+            hazeStyle = GlassTokens.popupStyle(),
+            fallbackColor = AppColors.surfaceContainerLow,
+            borderColor = AppColors.outline.copy(alpha = 0.1f)
+        ) {
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = fieldModifier,
+                placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.Search,
+                        contentDescription = null,
+                        tint = AppColors.contentSecondary
+                    )
+                },
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { onQueryChange("") }) {
+                                Icon(
+                                    Icons.Rounded.Close,
+                                    contentDescription = "Clear search",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = AppColors.contentSecondary
+                                )
+                            }
+                        }
+                        trailingAction?.invoke()
+                    }
+                },
+                singleLine = true,
+                textStyle = AppTextStyles.formFieldValue,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = AppColors.transparent,
+                    unfocusedContainerColor = AppColors.transparent,
+                    disabledContainerColor = AppColors.transparent,
+                    focusedIndicatorColor = AppColors.transparent,
+                    unfocusedIndicatorColor = AppColors.transparent,
+                    cursorColor = AppColors.primary
+                )
             )
-        )
+        }
     } else {
         TextField(
             value = query,

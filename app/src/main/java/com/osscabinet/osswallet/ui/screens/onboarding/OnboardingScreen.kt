@@ -85,6 +85,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCur
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -96,7 +97,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import dev.chrisbanes.haze.hazeSource
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -264,7 +264,7 @@ fun OnboardingContent(
                         state = pagerState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .padding(paddingValues),
                         beyondViewportPageCount = 1,
                         userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting

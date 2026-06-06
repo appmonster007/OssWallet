@@ -59,10 +59,12 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonColorSelection
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.util.isDark
@@ -119,13 +121,15 @@ fun AeonTagSelectionDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        GlassSurface(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-            color = AppColors.surfaceContainerHigh,
-            tonalElevation = 6.dp
+            hazeStyle = GlassTokens.popupStyle(),
+            fallbackColor = AppColors.surfaceContainerHigh,
+            borderColor = AppColors.outlineVariant.copy(alpha = 0.2f),
+            shadowElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -170,16 +174,14 @@ fun AeonTagSelectionDialog(
                                 enter = fadeIn() + expandVertically(),
                                 exit = fadeOut() + shrinkVertically()
                             ) {
-                                Surface(
+                                GlassSurface(
                                     modifier = Modifier
                                         .fillMaxWidth(0.85f)
                                         .heightIn(max = 250.dp),
                                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                    color = AppColors.surfaceContainerHighest,
-                                    border = BorderStroke(
-                                        1.dp,
-                                        AppColors.outlineVariant
-                                    )
+                                    hazeStyle = GlassTokens.popupStyle(),
+                                    fallbackColor = AppColors.surfaceContainerHighest,
+                                    borderColor = AppColors.outlineVariant.copy(alpha = 0.2f)
                                 ) {
                                     Column(
                                         modifier = Modifier

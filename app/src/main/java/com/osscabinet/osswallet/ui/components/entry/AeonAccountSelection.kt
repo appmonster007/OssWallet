@@ -1,19 +1,14 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Public
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -27,12 +22,8 @@ fun AeonAccountSelection(
     onDismiss: () -> Unit,
     mode: AeonSelectMode = AeonSelectMode.SINGLE,
     title: String = "Select Account",
-    allowOutsideWallet: Boolean = false,
     description: String? = null
 ) {
-    val tertiaryColor = AppColors.tertiary
-    val dims = AeonTheme.dimensions
-
     AeonSelectionSheet(
         title = title,
         onDismiss = onDismiss,
@@ -44,40 +35,18 @@ fun AeonAccountSelection(
         mode = mode,
         iconMapper = { getAccountIconByName(it.icon) },
         colorMapper = { Color(android.graphics.Color.parseColor(it.colorHex)) },
-        detailMapper = { it.currencyCode },
+        detailMapper = { it.currencyCode.ifBlank { "External" } },
         searchPlaceholder = "Search accounts...",
-        headerContent = {
-            if (description != null) {
+        headerContent = if (description != null) {
+            {
                 Text(
                     text = description,
                     style = AppTextStyles.formFieldNote,
                     color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(bottom = dims.spacingSm)
+                    modifier = Modifier
                 )
             }
-
-            if (allowOutsideWallet) {
-                AeonHybridSelector(
-                    items = listOf(null),
-                    mode = mode,
-                    selectedIds = if (selectedAccountIds.contains("")) setOf(null) else emptySet<String?>(),
-                    onSelectionChange = {
-                        onSelectionChange(setOf(""))
-                        if (mode == AeonSelectMode.SINGLE) onDismiss()
-                    },
-                    idMapper = { null },
-                    labelMapper = { "Outside of Wallet" },
-                    detailMapper = { "External transfer" },
-                    iconMapper = { Icons.Rounded.Public },
-                    colorMapper = { tertiaryColor }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = dims.spacingSm),
-                    thickness = (dims.spacingXs / 8),
-                    color = AppColors.outlineVariant
-                )
-            }
-        }
+        } else null
     )
 }
 
@@ -87,6 +56,7 @@ fun AeonAccountSelectionPreview() {
     OssWalletTheme {
         AeonAccountSelection(
             accounts = listOf(
+                Account.OUTSIDE_WALLET,
                 Account(
                     id = "1",
                     name = "Savings",

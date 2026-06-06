@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -91,6 +92,13 @@ data class PlannedPaymentEntryState(
     val targetCurrency: String get() = destination.currency
     val selectedCategoryId: Long get() = source.categoryId
 
+    val selectedAccount: Account? get() =
+        accounts.find { it.id == selectedAccountId }
+            ?: if (selectedAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val targetAccount: Account? get() =
+        accounts.find { it.id == targetAccountId }
+            ?: if (targetAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
     val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
@@ -110,12 +118,14 @@ data class PlannedPaymentEntryState(
             if (name.isBlank()) add(EntryField.NAME)
             if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
             if (isTransfer) {
-                if (selectedAccountId == null && targetAccountId == null) {
+                if (selectedAccountId == null) add(EntryField.ACCOUNT)
+                if (targetAccountId == null) add(EntryField.TARGET_ACCOUNT)
+                if (selectedAccountId?.isBlank() == true && targetAccountId?.isBlank() == true) {
                     add(EntryField.ACCOUNT)
                     add(EntryField.TARGET_ACCOUNT)
                 }
             } else {
-                if (selectedAccountId == null) add(EntryField.ACCOUNT)
+                if (selectedAccountId.isNullOrBlank()) add(EntryField.ACCOUNT)
             }
         }
 

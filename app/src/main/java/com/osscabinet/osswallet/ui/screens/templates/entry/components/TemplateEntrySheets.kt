@@ -5,6 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
@@ -39,34 +40,29 @@ fun TemplateEntrySheets(
     }
 
     if (state.showAccountSheet) {
-        // Filter out Target account
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.targetAccountId || state.targetAccountId == null 
-        }
+        val baseList = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
+                       else state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.targetAccountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
             selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
-            title = "Select Account",
-            allowOutsideWallet = state.isTransfer && state.targetAccountId != null
+            title = "Select Account"
         )
     }
 
     if (state.showTargetAccountSheet) {
-        // Filter out Source account
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.accountId || state.accountId == null 
-        }
+        val baseList = listOf(Account.OUTSIDE_WALLET) + state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.accountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
             selectedAccountIds = state.selectedTargetAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetTargetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },
-            title = stringResource(R.string.target_account_selection_title),
-            allowOutsideWallet = state.accountId != null
+            title = stringResource(R.string.target_account_selection_title)
         )
     }
 

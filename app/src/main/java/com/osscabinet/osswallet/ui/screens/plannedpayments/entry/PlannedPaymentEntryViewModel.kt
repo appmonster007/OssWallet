@@ -78,15 +78,22 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     templateRepository.getAllTemplates(),
                     tagRepository.getAllTags()
                 ) { accounts, categories, templates, tags ->
-                    _state.update {
-                        it.copy(
+                    _state.update { current ->
+                        val defaultSource = if (!current.isEditMode && current.source.accountId == null && accounts.isNotEmpty()) {
+                            current.source.copy(
+                                accountId = accounts.first().id,
+                                currency = accounts.first().currencyCode
+                            )
+                        } else current.source
+                        current.copy(
                             accounts = accounts,
                             categories = categories,
                             templates = templates,
                             availableTags = tags,
                             uniquePayees = uniquePayees,
                             uniqueNotes = uniqueNotes,
-                            currentProfileId = profileId
+                            currentProfileId = profileId,
+                            source = defaultSource
                         )
                     }
                 }
@@ -148,13 +155,17 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             } else {
                 val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant()
                     .toEpochMilli()
-                _state.update {
-                    it.copy(
+                _state.update { current ->
+                    val firstAccount = current.accounts.firstOrNull()
+                    current.copy(
                         isEditMode = false,
                         plannedPaymentId = null,
                         startDateMillis = now,
                         endDateMillis = now,
-                        source = it.source.copy(accountId = null)
+                        source = current.source.copy(
+                            accountId = firstAccount?.id,
+                            currency = firstAccount?.currencyCode ?: current.source.currency
+                        )
                     )
                 }
             }

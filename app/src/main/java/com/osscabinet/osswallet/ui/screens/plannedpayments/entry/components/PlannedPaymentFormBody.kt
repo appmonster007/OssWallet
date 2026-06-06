@@ -163,7 +163,7 @@ fun PlannedPaymentFormBody(
                 AeonEntryContextRow(
                     isTransfer = state.transactionType == TransactionType.TRANSFER,
                     accountSelector = AeonSelectorState(
-                        selection = state.accounts.find { it.id == state.selectedAccountId },
+                        selection = state.selectedAccount,
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
                         isError = state.hasError(EntryField.ACCOUNT)
                     ),
@@ -176,7 +176,7 @@ fun PlannedPaymentFormBody(
                     } else null,
                     targetAccountSelector = if (state.transactionType == TransactionType.TRANSFER) {
                         AeonSelectorState(
-                            selection = state.accounts.find { it.id == state.targetAccountId },
+                            selection = state.targetAccount,
                             onClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },
                             isError = state.hasError(EntryField.TARGET_ACCOUNT)
                         )

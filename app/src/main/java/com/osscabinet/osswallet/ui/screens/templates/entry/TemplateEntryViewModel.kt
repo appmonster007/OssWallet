@@ -73,13 +73,20 @@ class TemplateEntryViewModel @Inject constructor(
                     val payees = transactionUseCases.getUniquePayees(profileId)
                     val notes = transactionUseCases.getUniqueNotes(profileId)
 
-                    _state.update {
-                        it.copy(
+                    _state.update { current ->
+                        val defaultSource = if (!current.isEditMode && current.source.accountId == null && accounts.isNotEmpty()) {
+                            current.source.copy(
+                                accountId = accounts.first().id,
+                                currency = accounts.first().currencyCode
+                            )
+                        } else current.source
+                        current.copy(
                             accounts = accounts,
                             categories = categories,
                             allTags = tags,
                             uniquePayees = payees,
-                            uniqueNotes = notes
+                            uniqueNotes = notes,
+                            source = defaultSource
                         )
                     }
                 }
@@ -123,7 +130,16 @@ class TemplateEntryViewModel @Inject constructor(
                 }
                 updateCategoryName()
             } else {
-                _state.update { it.copy(isEditMode = false, templateId = null) }
+                _state.update { current ->
+                    val firstAccount = current.accounts.firstOrNull()
+                    current.copy(
+                        isEditMode = false,
+                        templateId = null,
+                        source = if (firstAccount != null && current.source.accountId == null) {
+                            current.source.copy(accountId = firstAccount.id, currency = firstAccount.currencyCode)
+                        } else current.source
+                    )
+                }
             }
             return
         }

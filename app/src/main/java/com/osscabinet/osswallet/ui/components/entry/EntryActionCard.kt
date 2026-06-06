@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -76,24 +77,35 @@ fun EntryActionCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed && enabled) 0.98f else 1f, label = "cardScale")
 
-    // Luminance-based contrast: dark text on light backgrounds, white on dark
-    val contentColor = remember(isSelected, selectedColor) {
-        if (isSelected) {
-            if (selectedColor.luminance() > 0.4f) Color(0xFF1A1A1A) else Color.White
-        } else Color.Unspecified
+    val glassEnabled = LocalGlassmorphismEnabled.current
+
+    // When glassmorphism is enabled we avoid painting large solid fills with the
+    // selected color. Instead we surface the accent via borders and icon containers
+    // while keeping the card's glass background. When glass is disabled we keep the
+    // classic filled selected style.
+    val isFilledSelected = isSelected && !glassEnabled
+
+    // Accent foreground when painting a filled background (white/dark based on luminance)
+    val filledAccentContent = remember(selectedColor) {
+        if (selectedColor.luminance() > 0.4f) Color(0xFF1A1A1A) else Color.White
     }
 
     val backgroundColor by animateColorAsState(
-        if (isSelected) selectedColor 
-        else if (com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current) AppColors.insetSurface.copy(alpha = 0.4f)
-        else AppColors.surfaceContainerLow,
+        targetValue = when {
+            isFilledSelected -> selectedColor
+            glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
+            else -> AppColors.surfaceContainerLow
+        },
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) selectedColor 
-        else if (com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled.current) Color.White.copy(alpha = 0.1f)
-        else AppColors.outlineVariant.copy(alpha = 0.5f),
+        targetValue = when {
+            isSelected && glassEnabled -> selectedColor.copy(alpha = 0.5f)
+            isSelected -> selectedColor
+            glassEnabled -> Color.White.copy(alpha = 0.1f)
+            else -> AppColors.outlineVariant.copy(alpha = 0.5f)
+        },
         label = "borderColor"
     )
 
@@ -133,7 +145,14 @@ fun EntryActionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected) AppColors.transparent else iconContainerColor,
+                // If selected and glass is enabled, show a subtle tinted container. If
+                // selected and glass is disabled, the card itself is filled so make the
+                // icon container transparent to avoid a double chip.
+                color = when {
+                    isSelected && glassEnabled -> selectedColor.copy(alpha = 0.12f)
+                    isSelected && !glassEnabled -> AppColors.transparent
+                    else -> iconContainerColor
+                },
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -141,7 +160,14 @@ fun EntryActionCard(
                         icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                        tint = if (isSelected) contentColor else iconTint
+                        // Icon tint uses filledAccentContent when the card is a solid
+                        // fill (for contrast), otherwise we tint with the accent color so
+                        // it reads against the glass background.
+                        tint = when {
+                            isSelected && isFilledSelected -> filledAccentContent
+                            isSelected -> selectedColor
+                            else -> iconTint
+                        }
                     )
                 }
             }
@@ -155,8 +181,9 @@ fun EntryActionCard(
                         text = label,
                         style = AppTextStyles.overlineLabel,
                         color = when {
-                            isSelected -> contentColor
                             isError -> AppColors.error
+                            isSelected && isFilledSelected -> filledAccentContent
+                            isSelected -> selectedColor
                             else -> AppColors.contentSecondary
                         }
                     )
@@ -173,7 +200,11 @@ fun EntryActionCard(
                 Text(
                     text = value,
                     style = AppTextStyles.managementItemTitle,
-                    color = if (isSelected) contentColor else AppColors.contentPrimary,
+                    color = when {
+                        isSelected && isFilledSelected -> filledAccentContent
+                        isSelected -> selectedColor
+                        else -> AppColors.contentPrimary
+                    },
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
@@ -191,7 +222,8 @@ fun EntryActionCard(
                         trailingIcon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected) contentColor
+                        tint = if (isSelected && isFilledSelected) filledAccentContent
+                        else if (isSelected) selectedColor
                         else AppColors.contentSecondary
                     )
                 }

@@ -192,19 +192,32 @@ fun <T> AeonImpactHeaderCard(
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
             }
 
-            if (showAmount && (!isTransfer || source.value.isNotEmpty() || source.label != null)) {
+            // "" = outside wallet explicitly chosen; null = not yet selected — semantically distinct
+            val isOutsideSource    = isTransfer && accountId?.isBlank() == true
+            val isOutsideTarget    = isTransfer && targetAccountId?.isBlank() == true
+            val bothWalletAccounts = isTransfer && !accountId.isNullOrBlank() && !targetAccountId.isNullOrBlank()
+            // Outside→Wallet: source is outside wallet AND target is a real wallet account (non-null, non-blank)
+            val isOutsideToWallet  = isOutsideSource && !targetAccountId.isNullOrBlank()
+
+            val primaryAmount = if (isOutsideToWallet && target != null) target else source
+            val primaryPrefix  = if (isOutsideToWallet) "+" else amountPrefix
+            val primaryColor   = if (isOutsideToWallet) (target?.color ?: AppColors.contentPrimary) else activeAmountColor
+
+            // Show when: not a transfer, OR source is outside wallet (target amount or entry placeholder),
+            // OR source has content/label (standard wallet source)
+            if (showAmount && (!isTransfer || isOutsideSource || source.value.isNotEmpty() || source.label != null)) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                     EntryAmountDisplay(
-                        amount = source.value,
-                        currency = source.currency,
-                        onCurrencyClick = source.onCurrencyClick,
-                        onAmountClick = source.onValueClick,
-                        amountColor = activeAmountColor,
-                        supportedCurrencies = source.supportedCurrencies,
+                        amount = primaryAmount.value,
+                        currency = primaryAmount.currency,
+                        onCurrencyClick = primaryAmount.onCurrencyClick,
+                        onAmountClick = primaryAmount.onValueClick,
+                        amountColor = primaryColor,
+                        supportedCurrencies = primaryAmount.supportedCurrencies,
                         showCurrency = true,
-                        label = source.label,
-                        prefix = amountPrefix,
-                        isError = source.isError || errors.contains(EntryField.AMOUNT)
+                        label = primaryAmount.label,
+                        prefix = primaryPrefix,
+                        isError = primaryAmount.isError || errors.contains(EntryField.AMOUNT)
                     )
 
                     if (onSplitClick != null && !isTransfer) {
@@ -241,7 +254,7 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && accountId != null && targetAccountId != null && target != null) {
+            if (isTransfer && bothWalletAccounts && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 Surface(
@@ -278,7 +291,7 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && target != null) {
+            if (isTransfer && bothWalletAccounts && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 val displayTargetAmount = target.value.ifBlank {

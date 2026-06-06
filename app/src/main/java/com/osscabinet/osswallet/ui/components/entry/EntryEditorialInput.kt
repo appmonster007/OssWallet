@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -175,7 +176,12 @@ fun EntryEditorialInput(
                             value = value,
                             onValueChange = onValueChange,
                             enabled = enabled,
-                            textStyle = AppTextStyles.formFieldValue,
+                            // Ensure text color matches the current theme (adapt to light/dark/amoled)
+                            textStyle = AppTextStyles.formFieldValue.copy(
+                                color = if (enabled) AppColors.contentPrimary else AppColors.contentSecondary
+                            ),
+                            // Cursor should match the text color for visual consistency
+                            cursorBrush = SolidColor(if (enabled) AppColors.contentPrimary else AppColors.contentSecondary),
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
                                 imeAction = ImeAction.Next

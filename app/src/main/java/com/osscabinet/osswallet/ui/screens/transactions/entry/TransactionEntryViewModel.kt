@@ -523,7 +523,7 @@ class TransactionEntryViewModel @Inject constructor(
                         it.copy(
                             source = it.source.copy(
                                 accountId = newAccId,
-                                currency = event.account?.currencyCode ?: it.selectedCurrency
+                                currency = event.account?.currencyCode?.ifBlank { null } ?: it.selectedCurrency
                             )
                         )
                     }

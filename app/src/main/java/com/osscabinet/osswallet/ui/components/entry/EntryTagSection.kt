@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 
 /**
  * Reusable tag selection section for entry screens.
@@ -88,12 +89,13 @@ fun EntryTagSection(
         }
 
         // Selected Tags
+        val glassEnabled = LocalGlassmorphismEnabled.current
         resolvedTags.forEach { tag ->
             val tagColor = if (tag.colorHex != -1) Color(tag.colorHex) else AppColors.primary
 
             Surface(
                 shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
-                color = tagColor.copy(alpha = 0.12f),
+                color = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
                 border = BorderStroke(1.dp, tagColor.copy(alpha = 0.4f)),
                 modifier = Modifier.height(32.dp)
             ) {

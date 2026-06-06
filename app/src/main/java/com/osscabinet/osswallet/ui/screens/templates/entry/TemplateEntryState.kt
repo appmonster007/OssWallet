@@ -76,8 +76,12 @@ data class TemplateEntryState(
     val currency: String get() = source.currency
     val targetCurrency: String get() = destination.currency
 
-    val selectedAccount: Account? get() = accounts.find { it.id == accountId }
-    val selectedTargetAccount: Account? get() = accounts.find { it.id == targetAccountId }
+    val selectedAccount: Account? get() =
+        accounts.find { it.id == accountId }
+            ?: if (accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val selectedTargetAccount: Account? get() =
+        accounts.find { it.id == targetAccountId }
+            ?: if (targetAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
     val selectedCategory: Category? get() = categories.find { it.id == categoryId }
 
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME

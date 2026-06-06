@@ -12,4 +12,16 @@ data class Account(
     val allowedCurrencies: List<String> = emptyList(),
     val isArchived: Boolean = false,
     val displayOrder: Int = 0
-)
+) {
+    companion object {
+        // Sentinel representing the external counterparty in a transfer (id = "" by convention).
+        val OUTSIDE_WALLET = Account(
+            id = "",
+            name = "Outside of Wallet",
+            currencyCode = "",
+            structureType = AccountStructureType.OTHER,
+            colorHex = "#607D8B",
+            icon = "Public"
+        )
+    }
+}

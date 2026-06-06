@@ -98,9 +98,13 @@ data class TransactionEntryState(
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
     val selectedCategoryId: Long get() = source.categoryId
-    val selectedAccount: Account? get() = accounts.find { it.id == source.accountId }
+    val selectedAccount: Account? get() =
+        accounts.find { it.id == source.accountId }
+            ?: if (source.accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
     val selectedCurrency: String get() = source.currency
-    val targetAccount: Account? get() = accounts.find { it.id == destination.accountId }
+    val targetAccount: Account? get() =
+        accounts.find { it.id == destination.accountId }
+            ?: if (destination.accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
     val targetCurrency: String get() = destination.currency
 
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
@@ -121,13 +125,16 @@ data class TransactionEntryState(
 
             // Account validation
             if (isTransfer) {
-                // For transfers, at least one side must be a wallet account
-                if (selectedAccount == null && targetAccount == null) {
+                // Both sides must be explicitly chosen (null = not yet selected)
+                if (source.accountId == null) add(EntryField.ACCOUNT)
+                if (destination.accountId == null) add(EntryField.TARGET_ACCOUNT)
+                // Wallet minimum: both sides can't be outside wallet
+                if (source.accountId?.isBlank() == true && destination.accountId?.isBlank() == true) {
                     add(EntryField.ACCOUNT)
                     add(EntryField.TARGET_ACCOUNT)
                 }
             } else {
-                if (selectedAccount == null) add(EntryField.ACCOUNT)
+                if (source.accountId.isNullOrBlank()) add(EntryField.ACCOUNT)
             }
 
             // Split validation

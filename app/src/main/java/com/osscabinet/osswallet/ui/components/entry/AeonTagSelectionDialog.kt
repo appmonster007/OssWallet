@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -60,6 +61,7 @@ import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -113,14 +115,19 @@ fun AeonTagSelectionDialog(
         trimmed.isNotEmpty() && allAvailableTags.any { it.name.equals(trimmed, ignoreCase = true) }
     }
 
+    // Use platform default dialog width so this appears as a centered dialog on large
+    // screens instead of occupying the full window. Previously this was set to false
+    // which caused the dialog content to expand to full-screen on some devices.
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = true)
     ) {
+        val glassEnabled = LocalGlassmorphismEnabled.current
+        val dims = AeonTheme.dimensions
         AeonHazeProvider { hazeLayers ->
             GlassSurface(
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
+                    .widthIn(max = 720.dp)
                     .wrapContentHeight()
                     .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay]),
                 shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
@@ -130,8 +137,8 @@ fun AeonTagSelectionDialog(
                 shadowElevation = 6.dp
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.padding(dims.cardPadding),
+                    verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
                 ) {
                     Text(
                         text = stringResource(R.string.tag_selection_title),
@@ -142,9 +149,9 @@ fun AeonTagSelectionDialog(
                     var searchFieldHeight by remember { mutableIntStateOf(0) }
                     val density = LocalDensity.current
 
-                    Box(modifier = Modifier.fillMaxWidth()) {
+                     Box(modifier = Modifier.fillMaxWidth()) {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .onGloballyPositioned {
@@ -158,61 +165,61 @@ fun AeonTagSelectionDialog(
                             )
                         }
 
-                        Popup(
-                            alignment = Alignment.TopStart,
-                            offset = IntOffset(
-                                0,
-                                searchFieldHeight + with(density) { 4.dp.roundToPx() })
-                        ) {
-                            Column {
-                                AnimatedVisibility(
-                                    visible = searchQuery.isNotEmpty() || currentSelection.isEmpty(),
-                                    enter = fadeIn() + expandVertically(),
-                                    exit = fadeOut() + shrinkVertically()
-                                ) {
-                                    GlassSurface(
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.85f)
-                                            .heightIn(max = 250.dp),
-                                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                        hazeStyle = GlassTokens.popupStyle(),
-                                        fallbackColor = AppColors.surfaceContainerHighest,
-                                        borderColor = AppColors.outlineVariant.copy(alpha = 0.2f)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .padding(vertical = 4.dp)
-                                                .verticalScroll(rememberScrollState())
-                                        ) {
+                         Popup(
+                             alignment = Alignment.TopStart,
+                             offset = IntOffset(
+                                 0,
+                                 searchFieldHeight + with(density) { dims.spacingXs.roundToPx() })
+                         ) {
+                             Column {
+                                 AnimatedVisibility(
+                                     visible = searchQuery.isNotEmpty() || currentSelection.isEmpty(),
+                                     enter = fadeIn() + expandVertically(),
+                                     exit = fadeOut() + shrinkVertically()
+                                 ) {
+                                     GlassSurface(
+                                         modifier = Modifier
+                                             .widthIn(max = 560.dp)
+                                             .heightIn(max = 250.dp),
+                                         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                         hazeStyle = GlassTokens.popupStyle(),
+                                         fallbackColor = AppColors.surfaceContainerHighest,
+                                         borderColor = AppColors.outlineVariant.copy(alpha = 0.2f)
+                                     ) {
+                                         Column(
+                                             modifier = Modifier
+                                                 .padding(vertical = dims.spacingXs)
+                                                 .verticalScroll(rememberScrollState())
+                                         ) {
                                             val trimmed = searchQuery.trim()
                                             if (trimmed.isNotBlank() && !exactMatchExists && allowCreation) {
-                                                TextButton(
-                                                    onClick = { showCreateDialog = true },
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(horizontal = 8.dp),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                                    ) {
-                                                        Icon(
-                                                            Icons.Rounded.Add,
-                                                            null,
-                                                            tint = AppColors.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                        Text(
-                                                            stringResource(
-                                                                R.string.tag_create_new,
-                                                                trimmed
-                                                            ),
-                                                            color = AppColors.primary,
-                                                            style = AppTextStyles.listItemTitle
-                                                        )
-                                                    }
-                                                }
+                                                 TextButton(
+                                                     onClick = { showCreateDialog = true },
+                                                     modifier = Modifier.fillMaxWidth()
+                                                 ) {
+                                                     Row(
+                                                         modifier = Modifier
+                                                             .fillMaxWidth()
+                                                             .padding(horizontal = dims.spacingMd),
+                                                         verticalAlignment = Alignment.CenterVertically,
+                                                         horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+                                                     ) {
+                                                         Icon(
+                                                             Icons.Rounded.Add,
+                                                             null,
+                                                             tint = AppColors.primary,
+                                                             modifier = Modifier.size(dims.iconSizeSm)
+                                                         )
+                                                         Text(
+                                                             stringResource(
+                                                                 R.string.tag_create_new,
+                                                                 trimmed
+                                                             ),
+                                                             color = AppColors.primary,
+                                                             style = AppTextStyles.listItemTitle
+                                                         )
+                                                     }
+                                                 }
                                             }
 
                                             filteredTags.forEach { tag ->
@@ -231,24 +238,24 @@ fun AeonTagSelectionDialog(
                                                     },
                                                     modifier = Modifier.fillMaxWidth()
                                                 ) {
-                                                    Row(
+                                                        Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .padding(horizontal = 8.dp),
+                                                            .padding(horizontal = dims.spacingMd),
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
                                                     ) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .size(12.dp)
+                                                                .size(dims.iconSizeXs)
                                                                 .background(
-                                                                    Color(tag.colorHex),
+                                                                        Color(tag.colorHex),
                                                                     RoundedCornerShape(2.dp)
                                                                 )
                                                         )
                                                         Text(
                                                             tag.name,
-                                                            color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
+                                                                color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
                                                             style = AppTextStyles.listItemTitle,
                                                             modifier = Modifier.weight(1f)
                                                         )
@@ -257,7 +264,7 @@ fun AeonTagSelectionDialog(
                                                                 Icons.Rounded.Check,
                                                                 null,
                                                                 tint = AppColors.primary,
-                                                                modifier = Modifier.size(16.dp)
+                                                                modifier = Modifier.size(dims.iconSizeSm)
                                                             )
                                                         }
                                                     }
@@ -302,7 +309,7 @@ fun AeonTagSelectionDialog(
                                     },
                                     shape = RoundedCornerShape(8.dp),
                                     colors = InputChipDefaults.inputChipColors(
-                                        selectedContainerColor = tagColor.copy(alpha = 0.12f),
+                                        selectedContainerColor = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
                                         selectedLabelColor = tagColor,
                                         selectedTrailingIconColor = tagColor
                                     ),

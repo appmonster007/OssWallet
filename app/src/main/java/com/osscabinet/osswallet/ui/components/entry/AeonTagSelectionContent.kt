@@ -70,6 +70,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.TagPresetColors
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +90,7 @@ fun AeonTagSelectionContent(
     var isManagementMode by remember { mutableStateOf(!isSelectionModeEnabled) }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
+    val glassEnabled = LocalGlassmorphismEnabled.current
 
     // Track newly added tags locally for immediate feedback
     var localTags by remember { mutableStateOf(emptyList<Tag>()) }
@@ -202,7 +204,7 @@ fun AeonTagSelectionContent(
                                 },
                                 shape = RoundedCornerShape(dims.spacingMd),
                                 colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = tagColor.copy(alpha = 0.12f),
+                                    selectedContainerColor = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
                                     selectedLabelColor = tagColor,
                                     selectedTrailingIconColor = tagColor
                                 ),

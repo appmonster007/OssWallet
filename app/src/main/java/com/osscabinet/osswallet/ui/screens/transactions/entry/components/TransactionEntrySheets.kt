@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
@@ -60,47 +61,41 @@ fun TransactionEntrySheets(
 
     // Account Selection
     if (state.showAccountSheet) {
-        val sourceSelectedIds = state.selectedAccount?.id?.let { setOf(it) }
-            ?: if (state.isTransfer && state.source.accountId == null) setOf("") else emptySet()
-            
-        // Filter out Target account if it's already selected and not "Outside"
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.destination.accountId || state.destination.accountId == null 
-        }
+        val baseList = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
+                       else state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.destination.accountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
-            selectedAccountIds = sourceSelectedIds,
+            selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
-                    onEvent(TransactionEntryEvent.SetAccount(state.accounts.find { it.id == id }))
+                    val account = state.accounts.find { it.id == id }
+                        ?: Account.OUTSIDE_WALLET.takeIf { id.isBlank() }
+                    onEvent(TransactionEntryEvent.SetAccount(account))
                 }
             },
-            onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) },
-            // Only allow Outside if Target is managed
-            allowOutsideWallet = state.isTransfer && state.destination.accountId != null
+            onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) }
         )
     }
 
     // Target Account Selection (for transfers)
     if (state.showTargetAccountSheet) {
-        // Filter out Source account if it's already selected and not "Outside"
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.selectedAccount?.id || state.selectedAccount?.id == null 
-        }
+        val baseList = listOf(Account.OUTSIDE_WALLET) + state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.source.accountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
             selectedAccountIds = state.targetAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
-                    onEvent(TransactionEntryEvent.SetTargetAccount(state.accounts.find { it.id == id }))
+                    val account = state.accounts.find { it.id == id }
+                        ?: Account.OUTSIDE_WALLET.takeIf { id.isBlank() }
+                    onEvent(TransactionEntryEvent.SetTargetAccount(account))
                 }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
-            title = stringResource(R.string.target_account_selection_title),
-            // Only allow Outside if Source is managed
-            allowOutsideWallet = state.source.accountId != null
+            title = stringResource(R.string.target_account_selection_title)
         )
     }
 

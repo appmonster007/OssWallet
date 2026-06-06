@@ -44,11 +44,11 @@ object TransactionEntryService {
             when (newType) {
                 TransactionType.INCOME -> {
                     // INCOME is positive impact. In a transfer, the Target side (destination) was receiving.
-                    if (currentDestination.accountId != null) currentDestination else currentSource
+                    if (!currentDestination.accountId.isNullOrBlank()) currentDestination else currentSource
                 }
                 else -> {
                     // EXPENSE is negative impact. In a transfer, the Source side was giving.
-                    if (currentSource.accountId != null) currentSource else currentDestination
+                    if (!currentSource.accountId.isNullOrBlank()) currentSource else currentDestination
                 }
             }
         } else {
@@ -61,8 +61,10 @@ object TransactionEntryService {
         when (newType) {
             TransactionType.TRANSFER -> {
                 if (oldType == TransactionType.INCOME) {
-                    // Refinement: Income account was receiving money, so it moves to Target (Receiver).
+                    // Income account was receiving money → moves to Target (Receiver).
+                    // Source defaults to Outside Wallet if a real income account was selected.
                     newSource = TransactionSide(
+                        accountId = if (!primarySide.accountId.isNullOrBlank()) "" else null,
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = primarySide.amount,
                         currency = primarySide.currency
@@ -71,12 +73,14 @@ object TransactionEntryService {
                         categoryId = Category.SYSTEM_TRANSFER_INFLOW
                     )
                 } else {
-                    // Expense account was giving money, so it remains the Source.
+                    // Expense account was giving money → remains the Source.
+                    // Target defaults to Outside Wallet if a real expense account was selected.
                     newSource = primarySide.copy(
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
                     )
                     newDestination = TransactionSide(
+                        accountId = if (!primarySide.accountId.isNullOrBlank()) "" else null,
                         categoryId = Category.SYSTEM_TRANSFER_INFLOW,
                         currency = primarySide.currency
                     )

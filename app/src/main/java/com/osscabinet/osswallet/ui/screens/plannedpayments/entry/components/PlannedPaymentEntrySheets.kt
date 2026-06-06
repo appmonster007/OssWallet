@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
@@ -76,33 +77,28 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showAccountSheet) {
-        // Filter out Target account
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.targetAccountId || state.targetAccountId == null 
-        }
+        val baseList = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
+                       else state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.targetAccountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
             selectedAccountIds = state.selectedAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetAccountId(ids.firstOrNull())) },
-            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
-            allowOutsideWallet = state.isTransfer && state.targetAccountId != null
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) }
         )
     }
 
     if (state.showTargetAccountSheet) {
-        // Filter out Source account
-        val filteredAccounts = state.accounts.filter { 
-            it.id != state.selectedAccountId || state.selectedAccountId == null 
-        }
+        val baseList = listOf(Account.OUTSIDE_WALLET) + state.accounts
+        val filteredAccounts = baseList.filter { it.id != state.selectedAccountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
             selectedAccountIds = state.targetAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },
-            title = stringResource(R.string.target_account_selection_title),
-            allowOutsideWallet = state.selectedAccountId != null
+            title = stringResource(R.string.target_account_selection_title)
         )
     }
 

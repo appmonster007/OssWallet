@@ -62,8 +62,14 @@ fun TransactionEntrySheets(
     if (state.showAccountSheet) {
         val sourceSelectedIds = state.selectedAccount?.id?.let { setOf(it) }
             ?: if (state.isTransfer && state.source.accountId == null) setOf("") else emptySet()
+            
+        // Filter out Target account if it's already selected and not "Outside"
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.destination.accountId || state.destination.accountId == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts,
+            accounts = filteredAccounts,
             selectedAccountIds = sourceSelectedIds,
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
@@ -71,14 +77,20 @@ fun TransactionEntrySheets(
                 }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowAccountSheet(false)) },
+            // Only allow Outside if Target is managed
             allowOutsideWallet = state.isTransfer && state.destination.accountId != null
         )
     }
 
     // Target Account Selection (for transfers)
     if (state.showTargetAccountSheet) {
+        // Filter out Source account if it's already selected and not "Outside"
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.selectedAccount?.id || state.selectedAccount?.id == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts.filter { it.id != state.selectedAccount?.id },
+            accounts = filteredAccounts,
             selectedAccountIds = state.targetAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids ->
                 ids.firstOrNull()?.let { id ->
@@ -87,6 +99,7 @@ fun TransactionEntrySheets(
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false)) },
             title = stringResource(R.string.target_account_selection_title),
+            // Only allow Outside if Source is managed
             allowOutsideWallet = state.source.accountId != null
         )
     }

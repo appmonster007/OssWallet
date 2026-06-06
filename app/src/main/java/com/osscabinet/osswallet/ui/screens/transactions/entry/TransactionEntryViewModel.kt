@@ -174,9 +174,7 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             if (isOpenedAsReceiver) {
-                // Flip for display consistency (Giver above, Receiver below)
-                // transaction is the Receiver, so its accountId goes to bottom slot (targetAcc)
-                // and its targetAccountId goes to top slot (selectedAcc)
+                // Flip for display consistency: Giver on top, Receiver on bottom
                 targetAcc = selectedAcc
                 selectedAcc = accounts.find { it.id == transaction.targetAccountId }
                 currentCurrency = transaction.targetCurrency ?: transaction.currency
@@ -188,19 +186,17 @@ class TransactionEntryViewModel @Inject constructor(
                             .divide(transaction.transferRate, 8, java.math.RoundingMode.HALF_UP)
                             .stripTrailingZeros().toPlainString()
                     } else ""
-                categoryId =
-                    if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
             } else {
-                // transaction is the Giver (amount < 0), so its accountId is already in selectedAcc (top slot)
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =
                     linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
                         ?: transaction.amount.abs().multiply(transaction.transferRate)
                             .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                             .toPlainString()
-                categoryId =
-                    if (Category.isInitialBalance(transaction.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
             }
+            // Semantic Normalization: Source is Outflow, Destination is Inflow
+            categoryId = if (Category.isInitialBalance(transaction.categoryId)) 
+                Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
         } else {
             amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
         }
@@ -507,12 +503,20 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetAccount -> {
                 val s = _state.value
-                val blocked = event.account == null && s.isTransfer && s.destination.accountId == null
-                if (!blocked) {
+                val newAccId = event.account?.id
+                
+                // Identity Exclusion & Wallet Minimum Rule
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = true,
+                    newAccountId = newAccId,
+                    otherSideAccountId = s.destination.accountId
+                )
+                
+                if (isValid || !s.isTransfer) {
                     update {
                         it.copy(
                             source = it.source.copy(
-                                accountId = event.account?.id,
+                                accountId = newAccId,
                                 currency = event.account?.currencyCode ?: it.selectedCurrency
                             )
                         )
@@ -528,12 +532,20 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetTargetAccount -> {
                 val s = _state.value
-                val blocked = event.account == null && s.isTransfer && s.source.accountId == null
-                if (!blocked) {
+                val newAccId = event.account?.id
+                
+                // Identity Exclusion & Wallet Minimum Rule
+                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
+                    isSourceSide = false,
+                    newAccountId = newAccId,
+                    otherSideAccountId = s.source.accountId
+                )
+                
+                if (isValid) {
                     update {
                         it.copy(
                             destination = it.destination.copy(
-                                accountId = event.account?.id,
+                                accountId = newAccId,
                                 currency = event.account?.currencyCode ?: it.targetCurrency
                             )
                         )

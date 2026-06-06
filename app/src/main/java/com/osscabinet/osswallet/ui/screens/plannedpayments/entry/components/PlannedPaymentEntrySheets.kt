@@ -76,8 +76,13 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showAccountSheet) {
+        // Filter out Target account
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.targetAccountId || state.targetAccountId == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts,
+            accounts = filteredAccounts,
             selectedAccountIds = state.selectedAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false)) },
@@ -86,8 +91,13 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showTargetAccountSheet) {
+        // Filter out Source account
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.selectedAccountId || state.selectedAccountId == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts,
+            accounts = filteredAccounts,
             selectedAccountIds = state.targetAccountId?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(ids.firstOrNull())) },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false)) },

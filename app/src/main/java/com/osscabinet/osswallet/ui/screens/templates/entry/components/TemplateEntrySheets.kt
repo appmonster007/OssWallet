@@ -39,8 +39,13 @@ fun TemplateEntrySheets(
     }
 
     if (state.showAccountSheet) {
+        // Filter out Target account
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.targetAccountId || state.targetAccountId == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts,
+            accounts = filteredAccounts,
             selectedAccountIds = state.selectedAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowAccountSheet(false)) },
@@ -50,8 +55,13 @@ fun TemplateEntrySheets(
     }
 
     if (state.showTargetAccountSheet) {
+        // Filter out Source account
+        val filteredAccounts = state.accounts.filter { 
+            it.id != state.accountId || state.accountId == null 
+        }
+
         AeonAccountSelection(
-            accounts = state.accounts,
+            accounts = filteredAccounts,
             selectedAccountIds = state.selectedTargetAccount?.id?.let { setOf(it) } ?: emptySet(),
             onSelectionChange = { ids -> onEvent(TemplateEntryEvent.SetTargetAccount(ids.firstOrNull())) },
             onDismiss = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false)) },

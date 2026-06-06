@@ -87,7 +87,7 @@ fun TransactionFormBody(
                     isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
                 ),
                 categoryId = state.selectedCategoryId,
-                showAmount = state.selectedAccount != null || (state.isTransfer && state.targetAccount != null),
+                showAmount = true,
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },

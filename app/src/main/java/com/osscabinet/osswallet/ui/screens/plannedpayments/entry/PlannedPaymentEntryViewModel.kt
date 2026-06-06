@@ -56,6 +56,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     private val _state = MutableStateFlow(PlannedPaymentEntryState())
     val state: StateFlow<PlannedPaymentEntryState> = _state.asStateFlow()
 
+    private var lastInitParams: Pair<Long?, PlannedPaymentPrefillDTO?>? = null
+
     init {
         loadInitialData()
         viewModelScope.launch {
@@ -93,6 +95,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     }
 
     fun initialize(plannedPaymentId: Long? = null, prefill: PlannedPaymentPrefillDTO? = null) {
+        if (lastInitParams == (plannedPaymentId to prefill)) return
+        if (lastInitParams?.second != null && prefill == null) return
+        lastInitParams = plannedPaymentId to prefill
+
         if (plannedPaymentId == null) {
             if (prefill != null) {
                 val template = prefill.template

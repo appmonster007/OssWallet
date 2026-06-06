@@ -91,10 +91,18 @@ fun NavGraphBuilder.planningGraph(
         popExitTransition = { PopExitTransitionSpec }
     ) { backStackEntry ->
         val route = backStackEntry.toRoute<PlannedPaymentEntryRoute>()
+        val prefill by vms.transactionViewModel.plannedPaymentPrefill.collectAsStateWithLifecycle()
         val entryViewModel: PlannedPaymentEntryViewModel = hiltViewModel()
+        
         PlannedPaymentEntryScreen(
-            config = PlannedPaymentEntryConfig(plannedPaymentId = route.plannedPaymentId.takeIf { it != -1L }),
-            actions = PlannedPaymentEntryActions(onBackClick = { navController.popBackStack() }),
+            config = PlannedPaymentEntryConfig(
+                plannedPaymentId = route.plannedPaymentId.takeIf { it != -1L },
+                prefill = prefill
+            ),
+            actions = PlannedPaymentEntryActions(
+                onBackClick = { navController.popBackStack() },
+                onDispose = { vms.transactionViewModel.clearPlannedPaymentPrefill() }
+            ),
             viewModel = entryViewModel
         )
     }

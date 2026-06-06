@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -38,7 +39,8 @@ data class PlannedPaymentEntryConfig(
  * Grouped actions for the Planned Payment Entry screen.
  */
 data class PlannedPaymentEntryActions(
-    val onBackClick: () -> Unit
+    val onBackClick: () -> Unit,
+    val onDispose: () -> Unit = {}
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +52,12 @@ fun PlannedPaymentEntryScreen(
 ) {
     LaunchedEffect(config.plannedPaymentId, config.prefill) {
         viewModel.initialize(config.plannedPaymentId, config.prefill)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            actions.onDispose()
+        }
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()

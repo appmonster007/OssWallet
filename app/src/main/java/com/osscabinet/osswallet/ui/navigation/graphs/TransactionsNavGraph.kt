@@ -71,7 +71,11 @@ fun NavGraphBuilder.transactionsGraph(
             ),
             actions = TransactionEntryActions(
                 onBackClick = { navController.popBackStack() },
-                onDispose = { vms.transactionViewModel.clearPrefillDto() }
+                onDispose = { 
+                    vms.transactionViewModel.clearPrefillDto() 
+                    vms.transactionViewModel.clearTemplatePrefill()
+                    vms.transactionViewModel.clearPlannedPaymentPrefill()
+                }
             )
         )
     }
@@ -124,9 +128,7 @@ fun NavGraphBuilder.transactionsGraph(
         val route = backStackEntry.toRoute<TemplateEntryRoute>()
         val prefill by vms.transactionViewModel.templatePrefill.collectAsStateWithLifecycle()
         val entryViewModel: TemplateEntryViewModel = hiltViewModel()
-        LaunchedEffect(prefill) {
-            if (prefill != null) vms.transactionViewModel.clearTemplatePrefill()
-        }
+        
         TemplateEntryScreen(
             viewModel = entryViewModel,
             config = TemplateEntryConfig(
@@ -134,7 +136,8 @@ fun NavGraphBuilder.transactionsGraph(
                 prefill = prefill
             ),
             actions = TemplateEntryActions(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onDispose = { vms.transactionViewModel.clearTemplatePrefill() }
             )
         )
     }

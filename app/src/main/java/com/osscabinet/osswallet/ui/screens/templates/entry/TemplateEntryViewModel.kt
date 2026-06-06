@@ -51,6 +51,8 @@ class TemplateEntryViewModel @Inject constructor(
     private val _state = MutableStateFlow(TemplateEntryState())
     val state: StateFlow<TemplateEntryState> = _state.asStateFlow()
 
+    private var lastInitParams: Pair<Long?, TemplatePrefillDTO?>? = null
+
     init {
         loadInitialData()
         viewModelScope.launch {
@@ -86,6 +88,10 @@ class TemplateEntryViewModel @Inject constructor(
     }
 
     fun initialize(templateId: Long? = null, prefill: TemplatePrefillDTO? = null) {
+        if (lastInitParams == (templateId to prefill)) return
+        if (lastInitParams?.second != null && prefill == null) return
+        lastInitParams = templateId to prefill
+
         if (templateId == null) {
             if (prefill != null) {
                 _state.update {

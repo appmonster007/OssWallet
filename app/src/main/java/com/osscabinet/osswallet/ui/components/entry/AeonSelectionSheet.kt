@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Deselect
@@ -70,12 +70,12 @@ fun <T, ID> AeonSelectionSheet(
     var query by rememberSaveable { mutableStateOf("") }
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    val filteredItems = remember(query, items) {
+    val filteredItems = remember(query, items, labelMapper) {
         if (query.isBlank()) items
         else items.filter { labelMapper(it).contains(query, ignoreCase = true) }
     }
 
-    val filteredIds = remember(filteredItems) { filteredItems.map(idMapper).toSet() }
+    val filteredIds = remember(filteredItems, idMapper) { filteredItems.map(idMapper).toSet() }
     val dims = AeonTheme.dimensions
 
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
@@ -127,58 +127,63 @@ fun <T, ID> AeonSelectionSheet(
                     placeholder = searchPlaceholder
                 )
 
-                Box(modifier = Modifier.weight(1f, fill = false)) {
-                    Column(
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                Box(modifier = Modifier.weight(1f)) {
+                    LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         if (filteredItems.isEmpty() && query.isNotBlank()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(dims.spacing2xl),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = emptyMessage ?: "No matches found for \"$query\"",
-                                    style = AppTextStyles.listItemTitle,
-                                    color = AppColors.contentSecondary
-                                )
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(dims.spacing2xl),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = emptyMessage ?: "No matches found for \"$query\"",
+                                        style = AppTextStyles.listItemTitle,
+                                        color = AppColors.contentSecondary
+                                    )
+                                }
                             }
                         } else {
-                            if (isHierarchical && parentIdMapper != null) {
-                                AeonHierarchicalHybridSelector(
-                                    items = if (query.isBlank()) items else filteredItems,
-                                    mode = mode,
-                                    selectedIds = selectedIds,
-                                    onSelectionChange = { ids ->
-                                        onSelectionChange(ids)
-                                        if (mode == AeonSelectMode.SINGLE) onDismiss()
-                                    },
-                                    idMapper = idMapper,
-                                    labelMapper = labelMapper,
-                                    parentIdMapper = parentIdMapper,
-                                    iconMapper = iconMapper,
-                                    colorMapper = colorMapper,
-                                    noneLabel = noneLabel,
-                                    noneIcon = noneIcon,
-                                    startExpanded = startExpanded
-                                )
+                            if (isHierarchical && parentIdMapper != null && query.isBlank()) {
+                                item(key = "hierarchy_root") {
+                                    AeonHierarchicalHybridSelector(
+                                        items = items,
+                                        mode = mode,
+                                        selectedIds = selectedIds,
+                                        onSelectionChange = { ids ->
+                                            onSelectionChange(ids)
+                                            if (mode == AeonSelectMode.SINGLE) onDismiss()
+                                        },
+                                        idMapper = idMapper,
+                                        labelMapper = labelMapper,
+                                        parentIdMapper = parentIdMapper,
+                                        iconMapper = iconMapper,
+                                        colorMapper = colorMapper,
+                                        noneLabel = noneLabel,
+                                        noneIcon = noneIcon,
+                                        startExpanded = startExpanded
+                                    )
+                                }
                             } else {
-                                AeonHybridSelector(
-                                    items = filteredItems,
-                                    mode = mode,
-                                    selectedIds = selectedIds,
-                                    onSelectionChange = { ids ->
-                                        onSelectionChange(ids)
-                                        if (mode == AeonSelectMode.SINGLE) onDismiss()
-                                    },
-                                    idMapper = idMapper,
-                                    labelMapper = labelMapper,
-                                    iconMapper = iconMapper,
-                                    colorMapper = colorMapper,
-                                    detailMapper = detailMapper
-                                )
+                                items(filteredItems) { item ->
+                                    AeonHybridSelector(
+                                        items = listOf(item),
+                                        mode = mode,
+                                        selectedIds = selectedIds,
+                                        onSelectionChange = { ids ->
+                                            onSelectionChange(ids)
+                                            if (mode == AeonSelectMode.SINGLE) onDismiss()
+                                        },
+                                        idMapper = idMapper,
+                                        labelMapper = labelMapper,
+                                        iconMapper = iconMapper,
+                                        colorMapper = colorMapper,
+                                        detailMapper = detailMapper
+                                    )
+                                }
                             }
                         }
                     }

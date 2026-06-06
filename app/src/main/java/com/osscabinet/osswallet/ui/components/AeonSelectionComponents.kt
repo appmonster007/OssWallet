@@ -73,56 +73,55 @@ fun AeonSelectionScreen(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val topBarHeight = AeonSize.D64.value
-    val totalTopPadding = statusBarPadding + topBarHeight + 16.dp
+    // We use windowInsetsPadding for the top bar to handle status bar correctly
+    // And use a fixed offset for the content to prevent jumping
 
     AeonHazeProvider { hazeLayers ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(containerColor)
+        ) {
+            ContourBackground()
+
             Scaffold(
                 containerColor = Color.Transparent,
+                topBar = {
+                    AeonTopAppBar(
+                        modifier = Modifier.background(Color.Transparent),
+                        left = AeonTopBarSection(
+                            content = {
+                                AeonTopBarNavTitlePill(
+                                    title = title,
+                                    onBackClick = onBack
+                                )
+                            }
+                        ),
+                        right = AeonTopBarSection(
+                            content = {
+                                AeonTopBarActionPill(actions = actions)
+                            }
+                        )
+                    )
+                },
                 bottomBar = bottomBar,
-                contentWindowInsets = WindowInsets(0, 0, 0, 0)
+                contentWindowInsets = WindowInsets.systemBars // Let scaffold handle system bars
             ) { padding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(containerColor)
+                        .hazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .padding(top = padding.calculateTopPadding() + 16.dp) // Use scaffold's top padding
                 ) {
-                    ContourBackground()
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .hazeSource(hazeLayers.states[HazeLayer.Overlay])
-                    ) {
-                        content(
-                            PaddingValues(
-                                top = totalTopPadding,
-                                bottom = padding.calculateBottomPadding() + 24.dp,
-                                start = 0.dp,
-                                end = 0.dp
-                            )
+                    content(
+                        PaddingValues(
+                            bottom = padding.calculateBottomPadding() + 24.dp,
+                            start = 0.dp,
+                            end = 0.dp
                         )
-                    }
+                    )
                 }
             }
-
-            AeonTopAppBar(
-                left = AeonTopBarSection(
-                    content = {
-                        AeonTopBarNavTitlePill(
-                            title = title,
-                            onBackClick = onBack
-                        )
-                    }
-                ),
-                right = AeonTopBarSection(
-                    content = {
-                        AeonTopBarActionPill(actions = actions)
-                    }
-                )
-            )
         }
     }
 }

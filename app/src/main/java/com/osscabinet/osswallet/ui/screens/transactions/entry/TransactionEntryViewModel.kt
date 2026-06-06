@@ -54,6 +54,7 @@ class TransactionEntryViewModel @Inject constructor(
     val state: StateFlow<TransactionEntryState> = _state.asStateFlow()
 
     private var initialTimestamp: Long = System.currentTimeMillis()
+    private var lastInitParams: Any? = null
 
     init {
         viewModelScope.launch {
@@ -73,6 +74,11 @@ class TransactionEntryViewModel @Inject constructor(
         initialTemplateId: Long? = null,
         prefillDto: TransactionPrefillDTO? = null
     ) {
+        val params = listOf(transactionId, accountId, initialType, initialTemplateId, prefillDto)
+        if (lastInitParams == params) return
+        if (prefillDto == null && (lastInitParams as? List<*>)?.get(4) != null) return
+        lastInitParams = params
+
         viewModelScope.launch {
             initialTimestamp = System.currentTimeMillis()
 

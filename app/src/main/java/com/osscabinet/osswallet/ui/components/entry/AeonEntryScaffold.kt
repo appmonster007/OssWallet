@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,7 +27,6 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -64,23 +62,15 @@ fun AeonEntryScaffold(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(containerColor)
-                ) {
-                    ContourBackground()
-
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        content(
-                            PaddingValues(
-                                top = totalTopPadding,
-                                bottom = innerPadding.calculateBottomPadding() + 24.dp,
-                                start = 0.dp,
-                                end = 0.dp
-                            )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    content(
+                        PaddingValues(
+                            top = totalTopPadding,
+                            bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                            start = 0.dp,
+                            end = 0.dp
                         )
-                    }
+                    )
                 }
             }
 

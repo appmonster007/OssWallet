@@ -42,7 +42,6 @@ import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.filters.FilterViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -59,7 +58,7 @@ fun FilterListScreen(
 ) {
     val filters by viewModel.allFilters.collectAsStateWithLifecycle()
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent,
@@ -74,11 +73,8 @@ fun FilterListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     if (filters.isEmpty()) {
                         Box(
                             modifier = Modifier

@@ -410,39 +410,41 @@ fun AccountDetailScreen(
                                             }
                                         }
                                     }
-                                    UnifiedPillNavigation(
-                                        selectedTab = pagerState.currentPage,
-                                        onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                                        tabs = tabs,
-                                        fabPaddingBottom = 16.dp + navigationBarHeight,
-                                        isFabExpanded = isFabExpanded,
-                                        onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
-                                        onFabClick = {
-                                            if (!expandableFabEnabled) {
-                                                navigate { actions.onAddTransactionClick(config.accountId, TransactionType.EXPENSE, null) }
-                                            }
-                                        },
-                                        fabMenu = if (expandableFabEnabled) {
-                                            {
-                                                TransactionFabMenu(
-                                                    isExpanded = isFabExpanded,
-                                                    templates = allTemplates,
-                                                    categories = categories,
-                                                    onAddClick = { type, templateId ->
-                                                        isFabExpanded = false
-                                                        navigate { actions.onAddTransactionClick(config.accountId, type, templateId) }
-                                                    }
-                                                )
-                                            }
-                                        } else null
-                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // 2. Top Bar Layer (Layer 3 - Floating Pills)
+                // 2. Pill Navigation Layer (sibling of Scaffold — must be outside hazeSource content)
+                UnifiedPillNavigation(
+                    selectedTab = pagerState.currentPage,
+                    onTabSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                    tabs = tabs,
+                    fabPaddingBottom = 16.dp + navigationBarHeight,
+                    isFabExpanded = isFabExpanded,
+                    onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
+                    onFabClick = {
+                        if (!expandableFabEnabled) {
+                            navigate { actions.onAddTransactionClick(config.accountId, TransactionType.EXPENSE, null) }
+                        }
+                    },
+                    fabMenu = if (expandableFabEnabled) {
+                        {
+                            TransactionFabMenu(
+                                isExpanded = isFabExpanded,
+                                templates = allTemplates,
+                                categories = categories,
+                                onAddClick = { type, templateId ->
+                                    isFabExpanded = false
+                                    navigate { actions.onAddTransactionClick(config.accountId, type, templateId) }
+                                }
+                            )
+                        }
+                    } else null
+                )
+
+                // 3. Top Bar Layer (Layer 3 - Floating Pills)
                 AeonTopAppBar(
                     left = AeonTopBarSection(
                         content = {

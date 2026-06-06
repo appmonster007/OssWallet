@@ -77,7 +77,6 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -200,7 +199,7 @@ fun ExchangeRatesScreen(
         )
     }
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
@@ -208,11 +207,8 @@ fun ExchangeRatesScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     Column(
                         modifier = Modifier
                             .fillMaxSize()

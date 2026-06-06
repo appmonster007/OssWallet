@@ -25,7 +25,6 @@ import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -37,18 +36,12 @@ fun SharedWalletScreen(
     viewModel: SharedWalletViewModel,
     actions: SharedWalletActions
 ) {
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
             ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColors.screenBackground)
-                ) {
-                    ContourBackground()
-
+                Box(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

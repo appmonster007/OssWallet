@@ -42,7 +42,6 @@ import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -75,7 +74,7 @@ fun LoanListScreen(
     val active = loans.filter { it.status == LoanStatus.ACTIVE }
     val settled = loans.filter { it.status == LoanStatus.SETTLED }
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
@@ -83,11 +82,8 @@ fun LoanListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     if (loans.isEmpty()) {
                         Box(
                             modifier = Modifier

@@ -61,7 +61,6 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -278,18 +277,12 @@ fun MainDisplaySettings(
         }
     }
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
             ) { innerPadding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColors.screenBackground)
-                ) {
-                    ContourBackground()
-
+                Box(modifier = Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()

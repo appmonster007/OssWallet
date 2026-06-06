@@ -48,7 +48,6 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -68,7 +67,7 @@ fun SettingsScreen(
 
     val scrollState = rememberScrollState()
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent
@@ -76,11 +75,8 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AppColors.screenBackground)
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    ContourBackground()
-
                     Column(
                         modifier = Modifier
                             .fillMaxSize()

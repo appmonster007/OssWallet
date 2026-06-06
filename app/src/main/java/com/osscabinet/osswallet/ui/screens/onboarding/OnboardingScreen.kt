@@ -89,7 +89,6 @@ import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -134,7 +133,7 @@ fun OnboardingContent(
     val pagerState = rememberPagerState { totalSteps }
     val scope = rememberCoroutineScope()
 
-    AeonHazeProvider { hazeLayers ->
+    AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent,
@@ -253,13 +252,7 @@ fun OnboardingContent(
                     }
                 }
             ) { paddingValues ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(AppColors.screenBackground)
-                ) {
-                    ContourBackground()
-
+                Box(modifier = Modifier.fillMaxSize()) {
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier

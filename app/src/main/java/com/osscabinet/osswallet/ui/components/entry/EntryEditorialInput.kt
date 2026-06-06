@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -113,18 +114,19 @@ fun EntryEditorialInput(
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             hazeStyle = GlassTokens.cardStyle(),
             fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
-            borderColor = if (isFocused) AppColors.primary else if (isFlush) null else AppColors.outlineVariant.copy(alpha = 0.2f),
-            borderAlpha = if (isFocused) 0.5f else 0.1f,
-            borderWidth = if (isFocused) 1.dp else 0.5.dp,
+            borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
+            borderAlpha = if (isFocused) 0.5f else if (isFlush) 0f else 0.1f,
+            borderWidth = if (isFocused) 1.dp else if (isFlush) 0.dp else 0.5.dp,
             shadowElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(
                         horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding,
                         vertical = if (isFlush) AeonTheme.dimensions.spacingMd else AeonTheme.dimensions.cardPadding
                     ),
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     shape = CircleShape,

@@ -56,6 +56,7 @@ fun AeonSearchField(
 
     if (showBorder) {
         GlassSurface(
+            modifier = fieldModifier,
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             hazeStyle = GlassTokens.popupStyle(),
             fallbackColor = AppColors.surfaceContainerLow,
@@ -66,7 +67,7 @@ fun AeonSearchField(
             TextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = fieldModifier,
+                modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
                 leadingIcon = {
                     Icon(

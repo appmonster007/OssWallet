@@ -77,54 +77,47 @@ fun AeonSelectionScreen(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    AeonHazeProvider { hazeLayers ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(containerColor)
-        ) {
-            ContourBackground()
-
-            Scaffold(
-                containerColor = Color.Transparent,
-                topBar = {
-                    AeonTopAppBar(
-                        left = AeonTopBarSection(
-                            content = {
-                                AeonTopBarNavTitlePill(
-                                    title = title,
-                                    onBackClick = onBack
-                                )
-                            }
-                        ),
-                        right = AeonTopBarSection(
-                            content = {
-                                AeonTopBarActionPill(actions = actions)
-                            }
-                        )
+    AeonHazeProvider(backgroundColor = containerColor) { hazeLayers ->
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                AeonTopAppBar(
+                    left = AeonTopBarSection(
+                        content = {
+                            AeonTopBarNavTitlePill(
+                                title = title,
+                                onBackClick = onBack
+                            )
+                        }
+                    ),
+                    right = AeonTopBarSection(
+                        content = {
+                            AeonTopBarActionPill(actions = actions)
+                        }
                     )
-                },
-                bottomBar = {
-                    Box {
-                        bottomBar()
-                    }
-                },
-                contentWindowInsets = WindowInsets.systemBars
-            ) { padding ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
-                ) {
-                    content(
-                        PaddingValues(
-                            top = padding.calculateTopPadding() + 8.dp,
-                            bottom = padding.calculateBottomPadding() + 24.dp,
-                            start = 0.dp,
-                            end = 0.dp
-                        )
-                    )
+                )
+            },
+            bottomBar = {
+                Box {
+                    bottomBar()
                 }
+            },
+            contentWindowInsets = WindowInsets.systemBars
+        ) { padding ->
+            // Fix: Capture content area as source, but simplified to avoid recursive freeze
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+            ) {
+                content(
+                    PaddingValues(
+                        top = padding.calculateTopPadding() + 8.dp,
+                        bottom = padding.calculateBottomPadding() + 24.dp,
+                        start = 0.dp,
+                        end = 0.dp
+                    )
+                )
             }
         }
     }

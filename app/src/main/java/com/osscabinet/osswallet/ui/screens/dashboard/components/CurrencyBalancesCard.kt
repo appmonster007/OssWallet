@@ -129,7 +129,8 @@ fun CurrencyBalancesCard(
         } else {
             AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 4.dp)
+                contentPadding = PaddingValues(bottom = 4.dp),
+                itemWidthRatio = 0.45f
             ) {
                 items(currencyTotals) { item ->
                     CurrencyBalanceItem(
@@ -143,7 +144,8 @@ fun CurrencyBalancesCard(
                                 item.currency,
                                 config.filter.timelineRange
                             )
-                        }
+                        },
+                        modifier = Modifier.fillParentMaxWidth(0.45f)
                     )
                 }
             }

@@ -1,7 +1,10 @@
 package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -335,6 +338,7 @@ fun AeonFlowBadge(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AeonLazyRow(
     modifier: Modifier = Modifier,
@@ -342,6 +346,7 @@ fun AeonLazyRow(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
+    snap: Boolean = true,
     content: LazyListScope.() -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -351,12 +356,19 @@ fun AeonLazyRow(
         }
     }
 
+    val flingBehavior = if (snap) {
+        rememberSnapFlingBehavior(lazyListState = state)
+    } else {
+        ScrollableDefaults.flingBehavior()
+    }
+
     LazyRow(
         modifier = modifier,
         state = state,
         contentPadding = contentPadding,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
+        flingBehavior = flingBehavior,
         content = content
     )
 }

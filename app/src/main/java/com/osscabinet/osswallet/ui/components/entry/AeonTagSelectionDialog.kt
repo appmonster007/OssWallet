@@ -383,13 +383,15 @@ fun AeonTagCreateDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        GlassSurface(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
-            color = AppColors.surfaceContainerHigh,
-            tonalElevation = 6.dp
+            hazeStyle = GlassTokens.popupStyle(),
+            fallbackColor = AppColors.surfaceContainerHigh,
+            borderColor = AppColors.outlineVariant.copy(alpha = 0.2f),
+            shadowElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),

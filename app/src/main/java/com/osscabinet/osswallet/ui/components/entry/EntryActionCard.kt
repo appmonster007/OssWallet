@@ -1,8 +1,10 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -94,6 +96,11 @@ fun EntryActionCard(
         label = "borderColor"
     )
 
+    val borderWidth by animateDpAsState(
+        targetValue = if (isSelected) 1.5.dp else 1.dp,
+        label = "borderWidth"
+    )
+
     GlassSurface(
         modifier = modifier
             .height(72.dp)
@@ -101,7 +108,11 @@ fun EntryActionCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clickable(enabled = enabled) {
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                enabled = enabled
+            ) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
@@ -110,6 +121,7 @@ fun EntryActionCard(
         fallbackColor = backgroundColor,
         borderColor = borderColor,
         borderAlpha = if (isSelected) 0.5f else 0.1f,
+        borderWidth = borderWidth,
         shadowElevation = 0.dp
     ) {
         Row(

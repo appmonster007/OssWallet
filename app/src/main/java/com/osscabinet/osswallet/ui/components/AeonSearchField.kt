@@ -16,10 +16,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,8 +47,11 @@ fun AeonSearchField(
     showBorder: Boolean = true,
     trailingAction: @Composable (() -> Unit)? = null
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+    
     val fieldModifier = modifier
         .fillMaxWidth()
+        .onFocusChanged { isFocused = it.isFocused }
         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
 
     if (showBorder) {
@@ -51,7 +59,9 @@ fun AeonSearchField(
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             hazeStyle = GlassTokens.popupStyle(),
             fallbackColor = AppColors.surfaceContainerLow,
-            borderColor = AppColors.outline.copy(alpha = 0.1f)
+            borderColor = if (isFocused) AppColors.primary else AppColors.outline.copy(alpha = 0.1f),
+            borderAlpha = if (isFocused) 0.5f else 0.1f,
+            borderWidth = if (isFocused) 1.dp else 0.5.dp
         ) {
             TextField(
                 value = query,

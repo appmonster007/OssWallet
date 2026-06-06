@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -76,12 +77,6 @@ fun AeonSelectionScreen(
     bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val topBarHeight = AeonSize.D64.value
-    
-    // Standardized offset for floating pill architecture
-    val totalTopPadding = statusBarPadding + topBarHeight + 8.dp
-
     AeonHazeProvider { hazeLayers ->
         Box(
             modifier = Modifier
@@ -92,12 +87,29 @@ fun AeonSelectionScreen(
 
             Scaffold(
                 containerColor = Color.Transparent,
+                topBar = {
+                    AeonTopAppBar(
+                        left = AeonTopBarSection(
+                            content = {
+                                AeonTopBarNavTitlePill(
+                                    title = title,
+                                    onBackClick = onBack
+                                )
+                            }
+                        ),
+                        right = AeonTopBarSection(
+                            content = {
+                                AeonTopBarActionPill(actions = actions)
+                            }
+                        )
+                    )
+                },
                 bottomBar = {
                     Box {
                         bottomBar()
                     }
                 },
-                contentWindowInsets = WindowInsets(0, 0, 0, 0)
+                contentWindowInsets = WindowInsets.systemBars
             ) { padding ->
                 Box(
                     modifier = Modifier
@@ -106,7 +118,7 @@ fun AeonSelectionScreen(
                 ) {
                     content(
                         PaddingValues(
-                            top = totalTopPadding,
+                            top = padding.calculateTopPadding() + 8.dp,
                             bottom = padding.calculateBottomPadding() + 24.dp,
                             start = 0.dp,
                             end = 0.dp
@@ -114,22 +126,6 @@ fun AeonSelectionScreen(
                     )
                 }
             }
-
-            AeonTopAppBar(
-                left = AeonTopBarSection(
-                    content = {
-                        AeonTopBarNavTitlePill(
-                            title = title,
-                            onBackClick = onBack
-                        )
-                    }
-                ),
-                right = AeonTopBarSection(
-                    content = {
-                        AeonTopBarActionPill(actions = actions)
-                    }
-                )
-            )
         }
     }
 }

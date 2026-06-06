@@ -1,6 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,15 +86,20 @@ fun AeonFilterSelection(
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(dims.spacingLg))
 
+                    val createInteractionSource = remember { MutableInteractionSource() }
                     GlassSurface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onFilterSelected(null); onDismiss() },
+                            .clickable(
+                                interactionSource = createInteractionSource,
+                                indication = LocalIndication.current
+                            ) { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
                         hazeStyle = GlassTokens.cardStyle(),
                         fallbackColor = AppColors.primaryContainer,
                         borderColor = AppColors.primary,
-                        borderAlpha = 0.5f
+                        borderAlpha = 0.5f,
+                        borderWidth = 1.dp
                     ) {
                         Row(
                             modifier = Modifier.padding(dims.spacingLg),
@@ -119,15 +126,20 @@ fun AeonFilterSelection(
                 ) {
                     items(filtered) { filter ->
                         val isSelected = filter.id == selectedFilterId
+                        val interactionSource = remember { MutableInteractionSource() }
                         GlassSurface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onFilterSelected(filter.id); onDismiss() },
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = LocalIndication.current
+                                ) { onFilterSelected(filter.id); onDismiss() },
                             shape = RoundedCornerShape(dims.componentCornerRadius),
                             hazeStyle = GlassTokens.cardStyle(),
                             fallbackColor = if (isSelected) AppColors.primaryContainer else AppColors.surfaceContainerLow,
                             borderColor = if (isSelected) AppColors.primary else AppColors.outlineVariant,
-                            borderAlpha = if (isSelected) 0.5f else 0.1f
+                            borderAlpha = if (isSelected) 0.5f else 0.1f,
+                            borderWidth = if (isSelected) 1.dp else 0.5.dp
                         ) {
                             Row(
                                 modifier = Modifier.padding(dims.spacingLg),

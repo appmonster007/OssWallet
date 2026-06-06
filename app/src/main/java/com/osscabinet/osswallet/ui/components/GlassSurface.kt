@@ -118,6 +118,7 @@ fun GlassSurface(
     spotShadowAlpha: Float = 0.2f,
     borderColor: Color? = null,
     borderAlpha: Float? = null,
+    borderWidth: Dp? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val isDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -135,6 +136,7 @@ fun GlassSurface(
         AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f) // definition boost
     }
     val effectiveBorderColor = borderColor ?: glassRimColor
+    val effectiveBorderWidth = borderWidth ?: 0.5.dp
 
     // Theme-aware shadow intensity
     val effectiveAmbientAlpha = if (isDark) ambientShadowAlpha else ambientShadowAlpha * 1.5f
@@ -183,7 +185,7 @@ fun GlassSurface(
                 )
                 .then(
                     if (glassEnabled && effectiveHazeState != null)
-                        Modifier.border(0.5.dp, effectiveBorderColor, shape)
+                        Modifier.border(effectiveBorderWidth, effectiveBorderColor, shape)
                     else Modifier
                 )
         ) {

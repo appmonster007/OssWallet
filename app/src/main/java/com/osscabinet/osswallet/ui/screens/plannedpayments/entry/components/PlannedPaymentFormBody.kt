@@ -115,7 +115,7 @@ fun PlannedPaymentFormBody(
                     label = "PAYMENT NAME",
                     isError = state.hasError(EntryField.NAME)
                 ),
-                showAmount = state.selectedAccountId != null || (state.isTransfer && state.targetAccountId != null),
+                showAmount = true,
                 targetAccountId = state.targetAccountId,
                 transferRate = state.transferRate,
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },

@@ -311,48 +311,18 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val oldType = _state.value.transactionType
                 val newType = event.type
                 _state.update { state ->
-                    val isTransferToNormal =
-                        oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
-
-                    val primarySide = if (isTransferToNormal && state.isTransferInflow) {
-                        state.destination
-                    } else {
-                        state.source
-                    }
+                    val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                        oldType = oldType,
+                        newType = newType,
+                        currentSource = state.source,
+                        currentDestination = state.destination,
+                        isSplitMode = false // Planned payments don't support split mode yet
+                    )
 
                     state.copy(
-                        transactionType = newType,
-                        source = primarySide.copy(
-                            amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs()
-                                .stripTrailingZeros().toPlainString(),
-
-                            accountId = when {
-                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> null
-                                else -> primarySide.accountId
-                            },
-
-                            categoryId = when {
-                                newType != TransactionType.TRANSFER && Category.isTransfer(state.selectedCategoryId) -> Category.SYSTEM_UNKNOWN
-                                newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> Category.SYSTEM_TRANSFER_INFLOW
-                                newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> Category.SYSTEM_TRANSFER_OUTFLOW
-                                newType == TransactionType.TRANSFER -> state.selectedCategoryId.takeIf {
-                                    Category.isTransfer(
-                                        it
-                                    )
-                                } ?: Category.SYSTEM_TRANSFER_OUTFLOW
-
-                                else -> state.selectedCategoryId
-                            }
-                        ),
-
-                        destination = when {
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.INCOME -> primarySide.copy(
-                                categoryId = Category.SYSTEM_TRANSFER_INFLOW
-                            )
-                            newType == TransactionType.TRANSFER && oldType == TransactionType.EXPENSE -> TransactionSide()
-                            newType == TransactionType.TRANSFER -> state.destination
-                            else -> TransactionSide()
-                        }
+                        transactionType = result.newType,
+                        source = result.source,
+                        destination = result.destination
                     )
                 }
                 if (newType == TransactionType.TRANSFER) {

@@ -86,8 +86,7 @@ fun AeonImpactHeaderCard(
     val amountPrefix = when {
         transactionType == TransactionType.EXPENSE -> "-"
         transactionType == TransactionType.INCOME -> "+"
-        isTransfer && isAmountPositive -> "+"
-        isTransfer && !isAmountPositive -> "-"
+        isTransfer -> "-" // Source is always Giver in transfer
         else -> ""
     }
 
@@ -191,7 +190,7 @@ fun <T> AeonImpactHeaderCard(
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingXl))
             }
 
-            if (showAmount && (!isTransfer || accountId != null)) {
+            if (showAmount && (!isTransfer || source.value.isNotEmpty() || source.label != null)) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                     EntryAmountDisplay(
                         amount = source.value,
@@ -202,7 +201,7 @@ fun <T> AeonImpactHeaderCard(
                         supportedCurrencies = source.supportedCurrencies,
                         showCurrency = true,
                         label = source.label,
-                        prefix = if (isTransfer && amountPrefix.isEmpty()) "-" else amountPrefix,
+                        prefix = amountPrefix,
                         isError = source.isError || errors.contains(EntryField.AMOUNT)
                     )
 
@@ -277,7 +276,7 @@ fun <T> AeonImpactHeaderCard(
                 }
             }
 
-            if (isTransfer && targetAccountId != null && target != null) {
+            if (isTransfer && target != null) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
                 val displayTargetAmount = target.value.ifBlank {
@@ -293,7 +292,7 @@ fun <T> AeonImpactHeaderCard(
                     amountColor = target.color ?: AppColors.contentPrimary.copy(alpha = 0.8f),
                     supportedCurrencies = target.supportedCurrencies.ifEmpty { source.supportedCurrencies },
                     label = target.label,
-                    prefix = if (isTransfer && amountPrefix.isEmpty()) "+" else if (isTransfer) (if (amountPrefix == "+") "-" else "+") else amountPrefix,
+                    prefix = "+", // Target is always Receiver in transfer
                     isError = target.isError || (isTransfer && errors.contains(EntryField.AMOUNT))
                 )
             }

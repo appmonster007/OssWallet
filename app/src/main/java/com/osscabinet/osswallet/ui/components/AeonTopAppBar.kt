@@ -62,8 +62,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -535,33 +533,85 @@ fun AppBarIconButton(
 }
 
 /**
- * Matrix of theme and glass variations for Aeon previews.
+ * Interactive wrapper for Aeon Top Bar previews.
+ * Provides toggles for Theme and Glass mode.
  */
-data class AeonPreviewState(
-    val theme: String,
-    val glass: Boolean,
-    val name: String
+@Composable
+fun AeonTopBarInteractivePreviewWrapper(
+    content: @Composable () -> Unit
 ) {
-    override fun toString(): String = name
+    var theme by remember { mutableStateOf("Dark") }
+    var glassEnabled by remember { mutableStateOf(true) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Control Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF1A1A1A))
+                .padding(vertical = 8.dp, horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "PREVIEW MODE",
+                style = TextStyle(
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            )
+            
+            Spacer(Modifier.weight(1f))
+
+            // Theme Toggle
+            PreviewToggleButton(
+                text = theme.uppercase(),
+                onClick = {
+                    theme = when (theme) {
+                        "Light" -> "Dark"
+                        "Dark" -> "Amoled"
+                        else -> "Light"
+                    }
+                }
+            )
+
+            // Glass Toggle
+            PreviewToggleButton(
+                text = if (glassEnabled) "GLASS: ON" else "GLASS: OFF",
+                onClick = { glassEnabled = !glassEnabled }
+            )
+        }
+
+        AeonTopAppBarPreview(theme = theme, glassEnabled = glassEnabled) {
+            content()
+        }
+    }
 }
 
-class AeonPreviewProvider : PreviewParameterProvider<AeonPreviewState> {
-    override val values = sequenceOf(
-        AeonPreviewState("Light", true, "Light Glass"),
-        AeonPreviewState("Light", false, "Light Solid"),
-        AeonPreviewState("Dark", true, "Dark Glass"),
-        AeonPreviewState("Dark", false, "Dark Solid"),
-        AeonPreviewState("Amoled", true, "Amoled Glass"),
-        AeonPreviewState("Amoled", false, "Amoled Solid")
-    )
+@Composable
+private fun PreviewToggleButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = text,
+            style = TextStyle(color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(group = "Aeon Top Bar", showBackground = true)
+@Preview(name = "Standard Layout", group = "Aeon Top Bar", showBackground = true)
 @Composable
-fun PreviewStandardTopAppBar(
-    @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
-) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
+fun PreviewStandardTopAppBar() = AeonTopBarInteractivePreviewWrapper {
     AeonTopAppBar(
         left = AeonTopBarSection(
             content = {
@@ -583,11 +633,9 @@ fun PreviewStandardTopAppBar(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(group = "Aeon Top Bar", showBackground = true)
+@Preview(name = "Search Center", group = "Aeon Top Bar", showBackground = true)
 @Composable
-fun PreviewSearchCenterTopAppBar(
-    @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
-) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
+fun PreviewSearchCenterTopAppBar() = AeonTopBarInteractivePreviewWrapper {
     AeonTopAppBar(
         left = AeonTopBarSection(
             content = { AeonTopBarNavPill(onBackClick = {}) }
@@ -605,11 +653,9 @@ fun PreviewSearchCenterTopAppBar(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(group = "Aeon Top Bar", showBackground = true)
+@Preview(name = "Custom Modular", group = "Aeon Top Bar", showBackground = true)
 @Composable
-fun PreviewCustomModularTopAppBar(
-    @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
-) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
+fun PreviewCustomModularTopAppBar() = AeonTopBarInteractivePreviewWrapper {
     AeonTopAppBar(
         left = AeonTopBarSection(
             content = {
@@ -637,11 +683,9 @@ fun PreviewCustomModularTopAppBar(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(group = "Aeon Top Bar", showBackground = true)
+@Preview(name = "Back Title", group = "Aeon Top Bar", showBackground = true)
 @Composable
-fun PreviewBackTitleTopAppBar(
-    @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
-) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
+fun PreviewBackTitleTopAppBar() = AeonTopBarInteractivePreviewWrapper {
     AeonTopAppBar(
         left = AeonTopBarSection(
             content = {
@@ -655,11 +699,9 @@ fun PreviewBackTitleTopAppBar(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(group = "Aeon Top Bar", showBackground = true)
+@Preview(name = "Search Actions", group = "Aeon Top Bar", showBackground = true)
 @Composable
-fun PreviewSearchActionsTopAppBar(
-    @PreviewParameter(AeonPreviewProvider::class) state: AeonPreviewState
-) = AeonTopAppBarPreview(theme = state.theme, glassEnabled = state.glass) {
+fun PreviewSearchActionsTopAppBar() = AeonTopBarInteractivePreviewWrapper {
     AeonTopAppBar(
         left = AeonTopBarSection(
             content = { AeonTopBarNavPill(onBackClick = {}) }

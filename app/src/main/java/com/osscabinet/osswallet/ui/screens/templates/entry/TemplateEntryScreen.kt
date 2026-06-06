@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.templates.entry
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -21,6 +22,12 @@ fun TemplateEntryScreen(
 ) {
     LaunchedEffect(config.templateId, config.prefill) {
         viewModel.initialize(config.templateId, config.prefill)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            actions.onDispose()
+        }
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -80,5 +87,6 @@ data class TemplateEntryConfig(
 )
 
 data class TemplateEntryActions(
-    val onBackClick: () -> Unit
+    val onBackClick: () -> Unit,
+    val onDispose: () -> Unit = {}
 )

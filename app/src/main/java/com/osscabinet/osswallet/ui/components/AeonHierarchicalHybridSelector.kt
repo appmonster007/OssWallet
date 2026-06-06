@@ -107,7 +107,9 @@ fun <T, ID> AeonHierarchicalHybridSelector(
     onAddChildClick: (T) -> Unit = {},
     startExpanded: Boolean = true
 ) {
-    val rootItems = items.filter { parentIdMapper(it) == null }.sortedBy { labelMapper(it) }
+    val rootItems = remember(items, parentIdMapper, labelMapper) {
+        items.filter { parentIdMapper(it) == null }.sortedBy { labelMapper(it) }
+    }
 
     Column(
         modifier = modifier,
@@ -219,8 +221,10 @@ private fun <T, ID> RecursiveHybridNode(
     startExpanded: Boolean
 ) {
     val itemId = idMapper(item)
-    val children = allItems.filter { parentIdMapper(it) == itemId }.sortedBy { labelMapper(it) }
-    var expanded by remember {
+    val children = remember(itemId, allItems, parentIdMapper, labelMapper) {
+        allItems.filter { parentIdMapper(it) == itemId }.sortedBy { labelMapper(it) }
+    }
+    var expanded by remember(itemId, startExpanded) {
         mutableStateOf(
             startExpanded && (selectedIds.contains(itemId) ||
                 selectedIds.any { id ->

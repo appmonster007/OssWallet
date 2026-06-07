@@ -65,7 +65,8 @@ fun CalculatorNumpad(
     amount: String,
     onAmountChange: (String) -> Unit,
     onDone: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    allowSigned: Boolean = false
 ) {
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
@@ -74,12 +75,14 @@ fun CalculatorNumpad(
 
     LaunchedEffect(amount) {
         if (state.tokens.isEmpty()) {
-            val amountNum = amount.toBigDecimalOrNull()?.abs()
-            if (amountNum != null && amountNum != BigDecimal.ZERO) {
-                val initialTokens = listOf(Token.Number(amountNum.stripTrailingZeros().toPlainString()))
+            val amountNum = amount.toBigDecimalOrNull()
+            val processedAmount = if (allowSigned) amountNum else amountNum?.abs()
+
+            if (processedAmount != null && processedAmount != BigDecimal.ZERO) {
+                val initialTokens = listOf(Token.Number(processedAmount.stripTrailingZeros().toPlainString()))
                 state = state.copy(
                     tokens = initialTokens,
-                    display = amountNum.stripTrailingZeros().toPlainString()
+                    display = processedAmount.stripTrailingZeros().toPlainString()
                 )
             }
         }

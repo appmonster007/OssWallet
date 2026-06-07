@@ -86,7 +86,7 @@ fun PlannedPaymentEntryScreen(
             state = state,
             onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
-            modifier = Modifier.padding(innerPadding)
+            contentPadding = innerPadding
         )
 
         PlannedPaymentEntrySheets(

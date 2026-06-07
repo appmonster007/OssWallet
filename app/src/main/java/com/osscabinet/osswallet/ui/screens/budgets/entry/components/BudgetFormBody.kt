@@ -4,8 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -72,17 +76,19 @@ fun BudgetFormBody(
     state: BudgetEntryState,
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (BudgetEntryEvent) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
     val dims = AeonTheme.dimensions
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+                .padding(horizontal = dims.screenPadding),
             verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Primary Identity (Name & Limit)
             AeonImpactHeaderCard(
                 transactionType = if (state.selectedTrackTypes.contains(TransactionType.EXPENSE)) TransactionType.EXPENSE else TransactionType.INCOME,
@@ -382,6 +388,7 @@ fun BudgetFormBody(
                     )
                 }
             }
+            Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
         BudgetEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)

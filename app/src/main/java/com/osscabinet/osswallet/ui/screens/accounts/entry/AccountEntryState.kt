@@ -4,6 +4,11 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
 
+enum class BalanceUpdateMode {
+    INITIAL_BALANCE,
+    RECORD
+}
+
 data class AccountEntryState(
     val accountName: String = "",
     val structureType: AccountStructureType = AccountStructureType.SAVINGS,
@@ -13,6 +18,13 @@ data class AccountEntryState(
     val selectedIconName: String = "AccountBalance",
     val accentColorHex: String = "#004D5F",
     val currentBalance: BigDecimal = BigDecimal.ZERO,
+
+    // Balance Update Flow
+    val systemClosingBalances: Map<String, BigDecimal> = emptyMap(),
+    val showBalanceUpdateSheet: Boolean = false,
+    val balanceUpdateCurrency: String? = null,
+    val balanceUpdateMode: BalanceUpdateMode = BalanceUpdateMode.RECORD,
+    val balanceUpdateInputAmount: String = "0",
 
     // UI State
     val showStructureSheet: Boolean = false,

@@ -60,30 +60,65 @@ class AccountEntryViewModel @Inject constructor(
                 settingsRepository.currentProfileId.flatMapLatest { profileId ->
                     transactionRepository.getAllTransactions(profileId)
                 },
-                computationRepository.exchangeRates
-            ) { defaultCurrency, transactions, exchangeRates ->
-                val accountId = _state.value.accountId
-                val currentBalance = if (_state.value.isEditMode && accountId != null) {
-                    AggregationService.calculateAccountBalance(
-                        accountId = accountId,
-                        allTransactions = transactions,
-                        accountCurrency = _state.value.primaryCurrency,
-                        exchangeRates = exchangeRates
-                    )
-                } else BigDecimal.ZERO
+                computationRepository.exchangeRates,
+                _state
+            ) { defaultCurrency, transactions, exchangeRates, state ->
+                val accountId = state.accountId
+                val now = System.currentTimeMillis()
 
-                val currencyUsageMap = if (_state.value.isEditMode && accountId != null) {
-                    transactions.filter { it.accountId == accountId }
-                        .groupBy { it.currency }
-                        .mapValues { it.value.isNotEmpty() }
-                } else emptyMap()
+                if (accountId == null) {
+                    _state.update {
+                        it.copy(
+                            defaultCurrency = defaultCurrency,
+                            exchangeRates = exchangeRates
+                        )
+                    }
+                    return@combine
+                }
+
+                // 1. Get all transactions for this account up to now
+                val accountTransactions = transactions.filter { it.accountId == accountId && it.timestamp <= now }
+                
+                // 2. Calculate current database state using reusable domain service
+                val dbSummaries = AggregationService.calculateSummaryByCurrency(accountTransactions)
+                
+                // 3. Identify the database's "Initial Balance" components
+                val dbInitialBalances = accountTransactions
+                    .filter { Category.isInitialBalance(it.categoryId) }
+                    .groupBy { it.currency }
+                    .mapValues { entry -> entry.value.sumOf { it.amount } }
+
+                // 4. Compute projected closing balances for all relevant currencies
+                // Projected = (DB Total) - (DB Initial) + (UI Initial) + (UI Pending Deltas)
+                val allRelevantCurrencies = (dbSummaries.keys + state.initialBalances.keys + state.pendingAdjustmentDeltas.keys).toSet()
+                
+                val projectedClosingBalances = allRelevantCurrencies.associateWith { currency ->
+                    val dbTotal = dbSummaries[currency]?.totalAmount ?: BigDecimal.ZERO
+                    val dbInitial = dbInitialBalances[currency] ?: BigDecimal.ZERO
+                    val uiInitial = state.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val uiPending = state.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO
+                    
+                    dbTotal - dbInitial + uiInitial + uiPending
+                }
+
+                // 5. Calculate account-level net balance in primary currency
+                val currentBalance = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalInCurrency(
+                    projectedClosingBalances,
+                    state.primaryCurrency,
+                    exchangeRates
+                )
+
+                val currencyUsageMap = accountTransactions
+                    .groupBy { it.currency }
+                    .mapValues { it.value.isNotEmpty() }
 
                 _state.update {
                     it.copy(
                         defaultCurrency = defaultCurrency,
                         exchangeRates = exchangeRates,
                         currentBalance = currentBalance,
-                        currencyUsageMap = currencyUsageMap
+                        currencyUsageMap = currencyUsageMap,
+                        systemClosingBalances = projectedClosingBalances
                     )
                 }
             }.collect()
@@ -166,6 +201,76 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }
             is AccountEntryEvent.SetColor -> _state.update { it.copy(accentColorHex = event.color) }
+
+            is AccountEntryEvent.OpenBalanceUpdate -> {
+                val currency = event.currency
+                val currentProjectedTotal = _state.value.systemClosingBalances[currency] ?: BigDecimal.ZERO
+
+                _state.update {
+                    it.copy(
+                        showBalanceUpdateSheet = true,
+                        balanceUpdateCurrency = currency,
+                        balanceUpdateInputAmount = currentProjectedTotal.stripTrailingZeros().toPlainString(),
+                        balanceUpdateMode = BalanceUpdateMode.RECORD
+                    )
+                }
+            }
+
+            is AccountEntryEvent.SetBalanceUpdateMode -> _state.update { it.copy(balanceUpdateMode = event.mode) }
+            is AccountEntryEvent.SetBalanceUpdateAmount -> _state.update { it.copy(balanceUpdateInputAmount = event.amount) }
+            is AccountEntryEvent.OpenCalculatorForUpdate -> {
+                val currency = _state.value.balanceUpdateCurrency
+                if (currency != null) {
+                    _state.update {
+                        it.copy(
+                            showCalculator = true,
+                            activeBalanceCurrency = currency,
+                            calculatorOriginalValue = it.balanceUpdateInputAmount
+                        )
+                    }
+                }
+            }
+
+            is AccountEntryEvent.ConfirmBalanceUpdate -> {
+                val s = _state.value
+                val currency = s.balanceUpdateCurrency
+                if (currency != null) {
+                    val newUserTotal = s.balanceUpdateInputAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val currentProjectedTotal = s.systemClosingBalances[currency] ?: BigDecimal.ZERO
+                    val totalAdjustmentNeeded = newUserTotal - currentProjectedTotal
+
+                    if (s.balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE) {
+                        val currentInitial = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val newOpening = currentInitial + totalAdjustmentNeeded
+                        _state.update {
+                            it.copy(
+                                initialBalances = it.initialBalances + (currency to newOpening.stripTrailingZeros()
+                                    .toPlainString()),
+                                showBalanceUpdateSheet = false,
+                                balanceUpdateCurrency = null
+                            )
+                        }
+                    } else {
+                        val pendingDelta = s.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO
+                        val newPendingDelta = pendingDelta + totalAdjustmentNeeded
+                        _state.update {
+                            it.copy(
+                                pendingAdjustmentDeltas = it.pendingAdjustmentDeltas + (currency to newPendingDelta),
+                                showBalanceUpdateSheet = false,
+                                balanceUpdateCurrency = null
+                            )
+                        }
+                    }
+                }
+            }
+
+            is AccountEntryEvent.CloseBalanceUpdate -> _state.update {
+                it.copy(
+                    showBalanceUpdateSheet = false,
+                    balanceUpdateCurrency = null
+                )
+            }
+
             is AccountEntryEvent.ShowStructureSheet -> _state.update { it.copy(showStructureSheet = event.show) }
             is AccountEntryEvent.ShowIconSheet -> _state.update { it.copy(showIconSheet = event.show) }
             is AccountEntryEvent.ShowColorSheet -> _state.update { it.copy(showColorSheet = event.show) }

@@ -5,17 +5,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -33,7 +32,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
@@ -52,7 +51,6 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
-import com.osscabinet.ossWallet.ui.components.entry.EntryAmountDisplay
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
@@ -197,38 +195,50 @@ fun AccountFormBody(
                 }
             }
 
-            // DETAIL: Initial balances with Calculator integration
+            // DETAIL: Closing balances with Update integration
             if (state.allowedCurrencies.isNotEmpty()) {
                 EntrySection(
-                    title = if (state.isEditMode) "ACCOUNT BALANCES" else "INITIAL BALANCES",
+                    title = "ACCOUNT BALANCES",
                     icon = Icons.Rounded.AccountBalanceWallet
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
+                        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         state.allowedCurrencies.forEach { currencyCode ->
-                            val requester = remember { BringIntoViewRequester() }
-                            val balanceStr = state.initialBalances[currencyCode] ?: "0"
-                            val balanceBD = balanceStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                            val isNegative = balanceBD.signum() < 0
+                            val displayBalance = state.systemClosingBalances[currencyCode] ?: BigDecimal.ZERO
+                            val isNegative = displayBalance.signum() < 0
 
-                            EntryAmountDisplay(
-                                amount = balanceBD.abs().stripTrailingZeros().toPlainString(),
-                                currency = currencyCode,
-                                onCurrencyClick = { onEvent(AccountEntryEvent.SetPrimaryCurrency(it)) },
-                                onAmountClick = { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) },
-                                amountColor = if (isNegative) AppColors.negative else accentColor,
-                                label = if (state.primaryCurrency == currencyCode) "PRIMARY BALANCE" else "BALANCE",
-                                prefix = if (isNegative) "-" else "+",
-                                supportedCurrencies = state.allowedCurrencies.toList(),
-                                modifier = Modifier.bringIntoViewRequester(requester)
-                            )
+                            Surface(
+                                onClick = { onEvent(AccountEntryEvent.OpenBalanceUpdate(currencyCode)) },
+                                shape = RoundedCornerShape(20.dp),
+                                color = AppColors.recessedSurface,
+                                border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.15f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = currencyCode,
+                                            style = AppTextStyles.overlineLabel,
+                                            color = AppColors.contentSecondary
+                                        )
+                                        Text(
+                                            text = displayBalance.abs().stripTrailingZeros().toPlainString(),
+                                            style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
+                                            color = if (isNegative) AppColors.negative else accentColor
+                                        )
+                                    }
 
-                            // Smart scroll when this currency becomes active in calculator
-                            LaunchedEffect(state.showCalculator, state.activeBalanceCurrency) {
-                                if (state.showCalculator && (state.activeBalanceCurrency == currencyCode)) {
-                                    requester.bringIntoView()
+                                    Icon(
+                                        imageVector = Icons.Rounded.Edit,
+                                        contentDescription = "Edit Balance",
+                                        modifier = Modifier.size(20.dp),
+                                        tint = AppColors.contentSecondary.copy(alpha = 0.5f)
+                                    )
                                 }
                             }
                         }
@@ -270,6 +280,7 @@ fun AccountFormBody(
             }
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacing2xl))
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 

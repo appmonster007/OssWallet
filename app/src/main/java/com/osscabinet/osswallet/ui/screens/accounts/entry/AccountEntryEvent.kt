@@ -11,6 +11,14 @@ sealed class AccountEntryEvent {
     data class SetIcon(val icon: String) : AccountEntryEvent()
     data class SetColor(val color: String) : AccountEntryEvent()
 
+    // Balance Update Flow
+    data class OpenBalanceUpdate(val currency: String) : AccountEntryEvent()
+    data class SetBalanceUpdateMode(val mode: BalanceUpdateMode) : AccountEntryEvent()
+    data class SetBalanceUpdateAmount(val amount: String) : AccountEntryEvent()
+    data object OpenCalculatorForUpdate : AccountEntryEvent()
+    data object ConfirmBalanceUpdate : AccountEntryEvent()
+    data object CloseBalanceUpdate : AccountEntryEvent()
+
     data class ShowStructureSheet(val show: Boolean) : AccountEntryEvent()
     data class ShowIconSheet(val show: Boolean) : AccountEntryEvent()
     data class ShowColorSheet(val show: Boolean) : AccountEntryEvent()

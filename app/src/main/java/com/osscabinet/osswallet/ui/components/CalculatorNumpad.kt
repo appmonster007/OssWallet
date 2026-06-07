@@ -41,7 +41,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
@@ -53,12 +52,11 @@ import com.osscabinet.ossWallet.ui.calculator.calculatorReducer
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 /**
- * Enhanced Financial Expression Engine UI.
- * Redesigned to follow the "Architect Slate" design specification.
+ * Stateful wrapper for the Financial Expression Engine.
+ * Manages its own [CalculatorState] and [ExpressionEvaluator].
  */
 @Composable
 fun CalculatorNumpad(
@@ -66,11 +64,11 @@ fun CalculatorNumpad(
     onAmountChange: (String) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
-    allowSigned: Boolean = false
+    allowSigned: Boolean = false,
+    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
 ) {
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
-
     val evaluator = remember { ExpressionEvaluator() }
 
     LaunchedEffect(amount) {
@@ -94,102 +92,154 @@ fun CalculatorNumpad(
         }
     }
 
-    fun handleAction(action: CalculatorAction) {
+    val onAction: (CalculatorAction) -> Unit = { action ->
         state = calculatorReducer(state, action, evaluator)
     }
 
+    val onSaveInternal = {
+        val finalState = if (!state.isCalculated) {
+            calculatorReducer(state, CalculatorAction.Equals, evaluator)
+        } else state
+
+        state = finalState
+        if (!finalState.isError) {
+            onAmountChange(finalState.display)
+            onDone()
+        }
+    }
+
+    CalculatorScaffold(
+        modifier = modifier.padding(horizontal = 20.dp),
+        display = {
+            if (header != null) {
+                header(state, onSaveInternal, { showHistory = true })
+            } else {
+                CalculatorDefaults.StandardDisplay(
+                    state = state,
+                    onSave = onSaveInternal,
+                    onHistory = { showHistory = true }
+                )
+            }
+        },
+        keys = {
+            CalculatorDefaults.StandardKeys(onAction = onAction)
+        },
+        historyOverlay = {
+            if (showHistory) {
+                CalculatorHistorySheet(
+                    history = state.history,
+                    onItemSelect = {
+                        onAction(CalculatorAction.LoadFromHistory(it))
+                        showHistory = false
+                    },
+                    onClearHistory = { onAction(CalculatorAction.ClearHistory) },
+                    onDismiss = { showHistory = false }
+                )
+            }
+        }
+    )
+}
+
+/**
+ * High-level layout component for the Calculator.
+ * Standardizes the spatial arrangement of slots.
+ */
+@Composable
+fun CalculatorScaffold(
+    display: @Composable () -> Unit,
+    keys: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    topSlot: (@Composable () -> Unit)? = null,
+    historyOverlay: @Composable () -> Unit = {}
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Display area
+        topSlot?.invoke()
+        display()
+        keys()
+    }
+    historyOverlay()
+}
+
+/**
+ * Standardized building blocks for the Calculator.
+ */
+object CalculatorDefaults {
+
+    @Composable
+    fun StandardDisplay(
+        state: CalculatorState,
+        onSave: () -> Unit,
+        onHistory: () -> Unit,
+        modifier: Modifier = Modifier
+    ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(28.dp),
             color = AppColors.recessedSurface,
-            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
-            modifier = Modifier.fillMaxWidth()
+            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
+            modifier = modifier.fillMaxWidth()
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp)) {
                 CalculatorDisplay(
                     expression = state.displayExpression,
                     result = state.display,
                     ghostResult = state.ghostResult,
                     isError = state.isError,
-                    onSave = {
-                        val finalState = if (!state.isCalculated) {
-                            calculatorReducer(state, CalculatorAction.Equals, evaluator)
-                        } else state
-
-                        state = finalState
-                        if (!finalState.isError) {
-                            onAmountChange(finalState.display)
-                            onDone()
-                        }
-                    }
+                    onSave = onSave
                 )
 
                 IconButton(
-                    onClick = { showHistory = true },
+                    onClick = onHistory,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(8.dp)
+                        .size(28.dp)
                 ) {
                     Icon(
                         Icons.Rounded.History,
                         contentDescription = "Show History",
-                        tint = AppColors.primary.copy(alpha = 0.6f),
-                        modifier = Modifier.size(20.dp)
+                        tint = AppColors.contentSecondary.copy(alpha = 0.4f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
         }
-
-        // Keys
-        CalculatorKeys(
-            onNumberPress = { handleAction(CalculatorAction.AppendNumber(it)) },
-            onOperatorPress = { handleAction(CalculatorAction.AppendOperator(it)) },
-            onParenthesisToggle = { handleAction(CalculatorAction.AppendParenthesis(' ')) },
-            onClearPress = { handleAction(CalculatorAction.Clear) },
-            onBackspacePress = { handleAction(CalculatorAction.Backspace) },
-            onEqualsPress = {
-                handleAction(CalculatorAction.Equals)
-                if (!state.isError) {
-                    onAmountChange(state.display)
-                }
-            },
-            onPercentPress = { handleAction(CalculatorAction.Percent) }
-        )
     }
 
-    if (showHistory) {
-        CalculatorHistorySheet(
-            history = state.history,
-            onItemSelect = {
-                handleAction(CalculatorAction.LoadFromHistory(it))
-                showHistory = false
-            },
-            onClearHistory = { handleAction(CalculatorAction.ClearHistory) },
-            onDismiss = { showHistory = false }
+    @Composable
+    fun StandardKeys(
+        onAction: (CalculatorAction) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        CalculatorKeys(
+            onNumberPress = { onAction(CalculatorAction.AppendNumber(it)) },
+            onOperatorPress = { onAction(CalculatorAction.AppendOperator(it)) },
+            onParenthesisToggle = { onAction(CalculatorAction.AppendParenthesis(' ')) },
+            onClearPress = { onAction(CalculatorAction.Clear) },
+            onBackspacePress = { onAction(CalculatorAction.Backspace) },
+            onEqualsPress = { onAction(CalculatorAction.Equals) },
+            onPercentPress = { onAction(CalculatorAction.Percent) },
+            modifier = modifier
         )
     }
 }
 
 @Composable
-private fun CalculatorDisplay(
+fun CalculatorDisplay(
     expression: String,
     result: String,
     ghostResult: String,
     isError: Boolean,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val displayResult = result.replace("-", "−")
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -197,33 +247,31 @@ private fun CalculatorDisplay(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.End
         ) {
-            // Expression line
             if (expression.isNotEmpty()) {
                 Text(
                     text = expression,
                     style = AppTextStyles.listItemTitle.copy(
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.5.sp,
+                        fontSize = 14.sp
                     ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                    color = AppColors.contentSecondary.copy(alpha = 0.5f),
                     textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            // Result line
             Text(
                 text = displayResult,
                 style = AppTextStyles.heroAmount.copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = (-1).sp,
-                    fontSize = 42.sp
+                    letterSpacing = (-1.5).sp,
+                    fontSize = 44.sp
                 ),
                 color = if (isError) AppColors.error else AppColors.contentPrimary,
                 textAlign = TextAlign.End,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Ghost Result
             if (ghostResult.isNotEmpty() && ghostResult != result) {
                 Text(
                     text = ghostResult.replace("-", "−"),
@@ -235,20 +283,20 @@ private fun CalculatorDisplay(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(20.dp))
 
         Surface(
             onClick = onSave,
             shape = CircleShape,
             color = AppColors.primary,
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(52.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Rounded.Done,
                     contentDescription = "Confirm amount",
                     tint = ColorOnDark,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -256,19 +304,20 @@ private fun CalculatorDisplay(
 }
 
 @Composable
-private fun CalculatorKeys(
+fun CalculatorKeys(
     onNumberPress: (String) -> Unit,
     onOperatorPress: (Char) -> Unit,
     onParenthesisToggle: () -> Unit,
     onClearPress: () -> Unit,
     onBackspacePress: () -> Unit,
     onEqualsPress: () -> Unit,
-    onPercentPress: () -> Unit
+    onPercentPress: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true)
             CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true)
@@ -278,7 +327,7 @@ private fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f))
             CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f))
@@ -288,7 +337,7 @@ private fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f))
             CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f))
@@ -298,7 +347,7 @@ private fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f))
             CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f))
@@ -308,7 +357,7 @@ private fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f))
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f))
@@ -319,7 +368,7 @@ private fun CalculatorKeys(
 }
 
 @Composable
-private fun CalculatorKey(
+fun CalculatorKey(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -343,13 +392,10 @@ private fun CalculatorKey(
 
     Surface(
         onClick = onClick,
-        modifier = modifier.height(68.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(64.dp),
+        shape = RoundedCornerShape(22.dp),
         color = backgroundColor,
-        border = if (!isAccent) BorderStroke(
-            0.5.dp,
-            AppColors.divider.copy(alpha = 0.15f)
-        ) else null,
+        border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)) else null,
         shadowElevation = 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -357,7 +403,7 @@ private fun CalculatorKey(
                 Icon(
                     Icons.AutoMirrored.Rounded.Backspace,
                     contentDescription = "Backspace",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(22.dp),
                     tint = textColor
                 )
             } else {
@@ -400,10 +446,7 @@ private fun CalculatorHistorySheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "History",
-                    style = AppTextStyles.heroAmount
-                )
+                Text("History", style = AppTextStyles.heroAmount)
                 if (history.isNotEmpty()) {
                     TextButton(onClick = onClearHistory) {
                         Text(
@@ -421,9 +464,7 @@ private fun CalculatorHistorySheet(
 
             if (history.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -446,9 +487,7 @@ private fun CalculatorHistorySheet(
                             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text(
@@ -467,55 +506,5 @@ private fun CalculatorHistorySheet(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalculatorNumpadPreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            CalculatorNumpad(
-                amount = "125.50",
-                onAmountChange = { },
-                onDone = {}
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalculatorDisplayPreview() {
-    OssWalletTheme {
-        Surface(
-            modifier = Modifier.padding(16.dp),
-            color = AppColors.recessedSurface,
-            shape = RoundedCornerShape(24.dp)
-        ) {
-            CalculatorDisplay(
-                expression = "50 + 75.50",
-                result = "125.50",
-                ghostResult = "125.50",
-                isError = false,
-                onSave = {}
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalculatorHistorySheetPreview() {
-    OssWalletTheme {
-        CalculatorHistorySheet(
-            history = listOf(
-                CalculationHistoryItem("100 + 25", "125"),
-                CalculationHistoryItem("200 * 1.05", "210")
-            ),
-            onItemSelect = {},
-            onClearHistory = {},
-            onDismiss = {}
-        )
     }
 }

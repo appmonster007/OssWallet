@@ -114,7 +114,7 @@ fun <T> EntryTypeSelector(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onTypeSelected(type)
                             },
                         contentAlignment = Alignment.Center
@@ -126,7 +126,7 @@ fun <T> EntryTypeSelector(
                                 alpha = 0.6f
                             ),
                             modifier = Modifier
-                                .size(26.dp)
+                                .size(24.dp)
                                 .graphicsLayer(scaleX = scale, scaleY = scale)
                         )
                     }

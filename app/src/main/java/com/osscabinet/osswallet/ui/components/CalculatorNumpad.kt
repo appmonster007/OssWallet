@@ -19,8 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Percent
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +45,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
@@ -109,7 +117,7 @@ fun CalculatorNumpad(
     }
 
     CalculatorScaffold(
-        modifier = modifier.padding(horizontal = 20.dp),
+        modifier = modifier.padding(horizontal = 24.dp),
         display = {
             if (header != null) {
                 header(state, onSaveInternal, { showHistory = true })
@@ -156,7 +164,7 @@ fun CalculatorScaffold(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         topSlot?.invoke()
         display()
@@ -367,6 +375,58 @@ fun CalculatorKeys(
     }
 }
 
+private val DivideIcon: ImageVector by lazy {
+    ImageVector.Builder("Divide", 24.dp, 24.dp, 24f, 24f).apply {
+        // top dot
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(13.75f, 5.5f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 12f, 7.25f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 10.25f, 5.5f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 12f, 3.75f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 13.75f, 5.5f)
+            close()
+        }
+        // horizontal bar
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(4f, 11f)
+            lineTo(20f, 11f)
+            lineTo(20f, 13f)
+            lineTo(4f, 13f)
+            close()
+        }
+        // bottom dot
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(13.75f, 18.5f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 12f, 20.25f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 10.25f, 18.5f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 12f, 16.75f)
+            arcTo(1.75f, 1.75f, 0f, false, true, 13.75f, 18.5f)
+            close()
+        }
+    }.build()
+}
+
+private val EqualsIcon: ImageVector by lazy {
+    ImageVector.Builder("Equals", 24.dp, 24.dp, 24f, 24f).apply {
+        // top bar
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(4f, 8.5f)
+            lineTo(20f, 8.5f)
+            lineTo(20f, 11f)
+            lineTo(4f, 11f)
+            close()
+        }
+        // bottom bar
+        path(fill = SolidColor(Color.Black)) {
+            moveTo(4f, 13f)
+            lineTo(20f, 13f)
+            lineTo(20f, 15.5f)
+            lineTo(4f, 15.5f)
+            close()
+        }
+    }.build()
+}
+
 @Composable
 fun CalculatorKey(
     label: String,
@@ -392,17 +452,27 @@ fun CalculatorKey(
 
     Surface(
         onClick = onClick,
-        modifier = modifier.height(64.dp),
-        shape = RoundedCornerShape(22.dp),
+        modifier = modifier.height(68.dp),
+        shape = RoundedCornerShape(24.dp),
         color = backgroundColor,
         border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)) else null,
         shadowElevation = 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
-            if (label == "⌫") {
+            val iconVector: ImageVector? = when (label) {
+                "⌫" -> Icons.AutoMirrored.Rounded.Backspace
+                "÷" -> DivideIcon
+                "×" -> Icons.Rounded.Close
+                "−" -> Icons.Rounded.Remove
+                "+" -> Icons.Rounded.Add
+                "=" -> EqualsIcon
+                "%" -> Icons.Rounded.Percent
+                else -> null
+            }
+            if (iconVector != null) {
                 Icon(
-                    Icons.AutoMirrored.Rounded.Backspace,
-                    contentDescription = "Backspace",
+                    imageVector = iconVector,
+                    contentDescription = label,
                     modifier = Modifier.size(22.dp),
                     tint = textColor
                 )
@@ -410,7 +480,7 @@ fun CalculatorKey(
                 Text(
                     text = label,
                     style = AppTextStyles.screenTitle.copy(
-                        fontWeight = if (isOperator || isAccent) FontWeight.Bold else FontWeight.SemiBold,
+                        fontWeight = FontWeight.SemiBold,
                         letterSpacing = if (label.length > 1) 0.sp else 0.5.sp,
                         fontSize = if (label.length > 1) 16.sp else 24.sp
                     ),

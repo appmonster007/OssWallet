@@ -51,22 +51,19 @@ fun AeonCalculatorSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(horizontal = dims.spacingXl)
                 .padding(bottom = dims.spacing2xl)
         ) {
             if (title != null) {
                 Text(
                     text = title,
                     style = AppTextStyles.cardSectionTitle,
-                    modifier = Modifier.padding(bottom = dims.spacingLg, start = dims.spacingSm)
+                    modifier = Modifier.padding(bottom = dims.spacingLg, start = dims.spacingXl)
                 )
             }
 
             CalculatorNumpad(
                 amount = currentAmount,
-                onAmountChange = { amount ->
-                    onAmountChanged(amount)
-                },
+                onAmountChange = onAmountChanged,
                 onDone = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             )

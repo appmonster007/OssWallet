@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.BlurOff
 import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Circle
+import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -312,8 +313,9 @@ fun DesignLabContent(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Icon(
                                         when (previewMode) {
-                                            "Light" -> Icons.Rounded.LightMode
-                                            else    -> Icons.Rounded.DarkMode
+                                            "Light"  -> Icons.Rounded.LightMode
+                                            "Amoled" -> Icons.Rounded.Contrast
+                                            else     -> Icons.Rounded.DarkMode
                                         },
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
@@ -322,35 +324,34 @@ fun DesignLabContent(
                                 }
                             }
 
-                            // Preview box — 240dp tall, token-contextual mock inside
+                            // Preview box — token-contextual mock inside
                             Surface(
-                                modifier = Modifier.fillMaxWidth().height(240.dp),
+                                modifier = Modifier.fillMaxWidth().height(260.dp),
                                 shape = RoundedCornerShape(24.dp),
                                 color = Color.Transparent,
                                 border = BorderStroke(
                                     1.dp,
-                                    if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant
+                                    // Evaluated outside OssWalletPreviewTheme scope — use explicit
+                                    // values driven by isDarkPreview rather than AppColors.
+                                    if (isDarkPreview) Color.White.copy(alpha = 0.10f)
+                                    else Color.Black.copy(alpha = 0.10f)
                                 )
                             ) {
-                                // Override all visual locals so the preview reflects Design Lab
-                                // controls instantly — no DataStore round-trip required.
+                                // OssWalletPreviewTheme provides LocalAppColorScheme, LocalThemeMode,
+                                // and MaterialTheme colors for the selected preview palette without
+                                // triggering window/status-bar side effects.
+                                com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme(theme = previewMode) {
                                 CompositionLocalProvider(
                                     LocalConfiguration provides previewConfig,
-                                    LocalThemeMode provides com.osscabinet.ossWallet.domain.formatter.ThemeMode(
-                                        isDarkTheme = isDarkPreview,
-                                        isAmoled = previewMode == "Amoled"
-                                    ),
                                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
                                     LocalContourLinesEnabled provides contourLinesEnabled,
                                     LocalContourBgVersion provides contourBgVersion,
                                     LocalRandomizeContourEachLoad provides randomizeContourEachLoad,
                                 ) {
                                 AeonHazeProvider(
-                                    backgroundColor = when (previewMode) {
-                                        "Amoled" -> Color.Black
-                                        "Dark"   -> Color(0xFF121212)
-                                        else     -> AppColors.surfaceContainerLow
-                                    },
+                                    // AppColors.screenBackground now resolves to the M3 background
+                                    // token from the preview palette (Light/Dark/Amoled).
+                                    backgroundColor = AppColors.screenBackground,
                                     drawContours = contourLinesEnabled
                                 ) { innerHaze ->
                                     // hazeSource is on the background Column; the mock is its
@@ -434,6 +435,7 @@ fun DesignLabContent(
                                     }
                                 }
                                 } // CompositionLocalProvider
+                                } // OssWalletPreviewTheme
                             }
                         }
                     }

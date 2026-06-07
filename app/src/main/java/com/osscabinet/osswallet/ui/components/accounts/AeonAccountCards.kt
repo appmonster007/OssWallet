@@ -62,13 +62,13 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
+import com.osscabinet.ossWallet.ui.theme.LocalCardSurfaceHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import com.osscabinet.ossWallet.ui.util.toColorInt
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
 import java.math.BigDecimal
 
 /**
@@ -96,21 +96,19 @@ fun AeonAccountCardSmall(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
     val glassSettings = LocalGlassSettings.current
+    val cardSurfaceHaze = LocalCardSurfaceHaze.current
+    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        hazeLayer = HazeLayer.Surface,
-        hazeStyle = HazeStyle(
-            tint = HazeTint(
-                containerColor.copy(
-                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
-                )
-            ),
-            blurRadius = glassSettings.card.blurRadius.dp,
-            noiseFactor = glassSettings.card.noiseFactor
+        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = glassSettings.card,
+            bgColor = containerColor,
+            isDark = isDark
         ),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
@@ -185,21 +183,19 @@ fun AeonAccountCardMedium(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
     val glassSettings = LocalGlassSettings.current
+    val cardSurfaceHaze = LocalCardSurfaceHaze.current
+    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        hazeLayer = HazeLayer.Surface,
-        hazeStyle = HazeStyle(
-            tint = HazeTint(
-                containerColor.copy(
-                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
-                )
-            ),
-            blurRadius = glassSettings.card.blurRadius.dp,
-            noiseFactor = glassSettings.card.noiseFactor
+        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = glassSettings.card,
+            bgColor = containerColor,
+            isDark = isDark
         ),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
@@ -312,6 +308,8 @@ fun AeonAccountCardLarge(
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
     val glassSettings = LocalGlassSettings.current
+    val cardSurfaceHaze = LocalCardSurfaceHaze.current
+    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
@@ -319,15 +317,11 @@ fun AeonAccountCardLarge(
             .clickable { onClick() }
             .onSizeChanged { cardSize = it },
         shape = RoundedCornerShape(32.dp),
-        hazeLayer = HazeLayer.Surface,
-        hazeStyle = HazeStyle(
-            tint = HazeTint(
-                containerColor.copy(
-                    alpha = if (isDark) glassSettings.card.darkAlpha else glassSettings.card.lightAlpha
-                )
-            ),
-            blurRadius = glassSettings.card.blurRadius.dp,
-            noiseFactor = glassSettings.card.noiseFactor
+        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = glassSettings.card,
+            bgColor = containerColor,
+            isDark = isDark
         ),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,

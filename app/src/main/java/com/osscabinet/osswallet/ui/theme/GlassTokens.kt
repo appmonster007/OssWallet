@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -151,6 +152,10 @@ data class AeonHazeLayers(
 )
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
+
+/** Non-null inside [AeonExpressiveCard] — carries the card's own glass surface as a hazeSource
+ *  so that nested account card items can blur the card surface (glass-on-glass). */
+val LocalCardSurfaceHaze = compositionLocalOf<HazeState?> { null }
 
 val LocalGlassSettings = staticCompositionLocalOf { GlassSettings() }
 

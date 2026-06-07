@@ -101,6 +101,7 @@ fun EntryEditorialInput(
         modifier = modifier.fillMaxWidth()
     ) {
         val interactionSource = remember { MutableInteractionSource() }
+        val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
         GlassSurface(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
@@ -117,8 +118,8 @@ fun EntryEditorialInput(
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
             fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
-            borderAlpha = if (isFocused) 0.5f else if (isFlush) 0f else 0.1f,
-            borderWidth = if (isFocused) 1.dp else if (isFlush) 0.dp else 0.5.dp,
+            borderAlpha = when { isFlush -> 0f; isFocused -> config.borderAlpha; else -> config.borderAlpha * 0.2f },
+            borderWidth = when { isFlush -> 0.dp; isFocused -> config.borderWidth.dp; else -> (config.borderWidth * 0.5f).dp },
         ) {
             Row(
                 modifier = Modifier

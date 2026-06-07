@@ -107,8 +107,9 @@ fun EntryActionCard(
         label = "borderColor"
     )
 
+    val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
     val borderWidth by animateDpAsState(
-        targetValue = if (isSelected) 1.5.dp else 1.dp,
+        targetValue = if (isSelected) config.borderWidth.dp else (config.borderWidth * 0.5f).dp,
         label = "borderWidth"
     )
 
@@ -132,7 +133,7 @@ fun EntryActionCard(
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = backgroundColor,
         borderColor = borderColor,
-        borderAlpha = if (isSelected) 0.5f else 0.1f,
+        borderAlpha = if (isSelected) config.borderAlpha else config.borderAlpha * 0.2f,
         borderWidth = borderWidth,
     ) {
         // Glass-mode color wash: renders on top of the haze blur, behind all content.

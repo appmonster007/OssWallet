@@ -45,6 +45,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
 
 @Composable
@@ -256,21 +257,22 @@ fun AeonFlowCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = color.applyAeonTint(mode)
+    val isDark = mode.isDarkTheme
     val glassSettings = LocalGlassSettings.current
-    val isDarkTheme = LocalThemeMode.current.isDarkTheme
 
     GlassSurface(
         modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        glassVariant = GlassVariant.Item,
+        glassVariant = GlassVariant.Card,
         hazeStyle = GlassTokens.createHazeStyle(
-            config = glassSettings.item,
-            bgColor = color.copy(alpha = 0.15f),
-            isDark = isDarkTheme,
+            config = glassSettings.card,
+            bgColor = containerColor,
+            isDark = isDark,
         ),
-        fallbackColor = color.copy(alpha = 0.12f),
-        borderColor = color.copy(alpha = 0.3f),
-        borderWidth = 1.dp,
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -288,7 +290,7 @@ fun AeonFlowCard(
                         letterSpacing = 1.sp,
                         fontSize = 9.sp
                     ),
-                    color = color.copy(alpha = 0.8f)
+                    color = contentColor.copy(alpha = 0.8f)
                 )
                 AeonFlowBadge(
                     totalInBase,

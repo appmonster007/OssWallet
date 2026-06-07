@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
@@ -23,6 +24,53 @@ object GlassVariant {
     const val Sheet = "sheet"
     const val Popup = "popup"
     const val Item = "item"
+}
+
+/**
+ * Extension to allow granular updates to a [HazeStyle].
+ *
+ * This function allows replacing the [bgColor] while automatically preserving the
+ * existing transparency (alpha), blur, and noise settings from the current style.
+ * It also supports full overrides via [config].
+ *
+ * @param config The design token config to pull values from (blur, alpha, noise).
+ * @param isDark Required if [config] is provided to determine light/dark alpha.
+ * @param bgColor Explicit background color for the tint.
+ * @param alpha Explicit alpha override (0.0 to 1.0).
+ * @param blurRadius Explicit blur radius override.
+ * @param noiseFactor Explicit noise factor override.
+ */
+fun HazeStyle.copyStyle(
+    config: GlassStyleConfig? = null,
+    isDark: Boolean? = null,
+    bgColor: Color? = null,
+    alpha: Float? = null,
+    blurRadius: Dp? = null,
+    noiseFactor: Float? = null,
+): HazeStyle {
+    // 1. Resolve current state
+    val currentTint = this.tints.firstOrNull() ?: HazeTint(Color.Unspecified)
+
+    // 2. Resolve Base Color: RGB from bgColor, or fallback to current tint's color
+    val baseColor = bgColor ?: currentTint.color
+
+    // 3. Resolve Alpha: Explicit alpha > Config alpha (if isDark provided) > current tint's alpha
+    val resolvedAlpha = alpha
+        ?: if (config != null && isDark != null) {
+            if (isDark) config.glass.darkAlpha else config.glass.lightAlpha
+        } else {
+            // Keep the transparency level of the current style when only changing color
+            currentTint.color.alpha
+        }
+
+    val newTint = HazeTint(baseColor.copy(alpha = resolvedAlpha))
+
+    return this.copy(
+        tints = listOf(newTint),
+        blurRadius = blurRadius ?: config?.glass?.blurRadius?.dp ?: this.blurRadius,
+        noiseFactor = noiseFactor ?: config?.glass?.noiseFactor ?: this.noiseFactor,
+        fallbackTint = newTint
+    )
 }
 
 /**

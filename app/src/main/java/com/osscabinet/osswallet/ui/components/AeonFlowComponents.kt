@@ -74,6 +74,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
@@ -444,6 +445,33 @@ fun AeonLazyRow(
 }
 
 // ── PREVIEWS ─────────────────────────────────────────────────────────────
+
+@ThemePreviews
+@Composable
+fun AeonFlowBadgePreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AeonFlowBadge(
+                amount = BigDecimal("1500.00"),
+                type = CashFlowType.INCOME,
+                currency = "USD"
+            )
+            AeonFlowBadge(
+                amount = BigDecimal("850.50"),
+                type = CashFlowType.EXPENSE,
+                currency = "USD"
+            )
+            AeonFlowBadge(
+                amount = BigDecimal("1234567.89"),
+                type = CashFlowType.INCOME,
+                currency = "EUR"
+            )
+        }
+    }
+}
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable

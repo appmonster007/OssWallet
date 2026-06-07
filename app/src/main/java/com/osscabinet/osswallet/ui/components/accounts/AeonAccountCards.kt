@@ -61,9 +61,6 @@ import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import com.osscabinet.ossWallet.ui.theme.LocalCardSurfaceHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -96,15 +93,12 @@ fun AeonAccountCardSmall(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
     val glassSettings = LocalGlassSettings.current
-    val cardSurfaceHaze = LocalCardSurfaceHaze.current
-    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
         hazeStyle = GlassTokens.createHazeStyle(
             config = glassSettings.card,
             bgColor = containerColor,
@@ -183,15 +177,12 @@ fun AeonAccountCardMedium(
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
     val glassSettings = LocalGlassSettings.current
-    val cardSurfaceHaze = LocalCardSurfaceHaze.current
-    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
         hazeStyle = GlassTokens.createHazeStyle(
             config = glassSettings.card,
             bgColor = containerColor,
@@ -308,8 +299,6 @@ fun AeonAccountCardLarge(
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
     val glassSettings = LocalGlassSettings.current
-    val cardSurfaceHaze = LocalCardSurfaceHaze.current
-    val layers = LocalAeonHaze.current
 
     GlassSurface(
         modifier = modifier
@@ -317,7 +306,6 @@ fun AeonAccountCardLarge(
             .clickable { onClick() }
             .onSizeChanged { cardSize = it },
         shape = RoundedCornerShape(32.dp),
-        hazeState = cardSurfaceHaze ?: layers?.states?.getOrNull(HazeLayer.Surface),
         hazeStyle = GlassTokens.createHazeStyle(
             config = glassSettings.card,
             bgColor = containerColor,

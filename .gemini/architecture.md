@@ -88,7 +88,7 @@ Adding a new `CardType` requires updating ALL of the following in order. Missing
 7. `ui/components/cards/CardCallbacks.kt` — add `data class Xxx(...) : CardCallbacks()`
 8. `ui/components/cards/CardWithCallbacks.kt` — add `data class Xxx(...)  : CardWithCallbacks()`
 9. `ui/components/cards/CardUiBridge.kt` — add branch in `rememberCardWithCallbacks()` for both the compute branch (`is XxxCardConfig ->`) and the pair branch (`is CardRenderData.Xxx && config is XxxCardConfig ->`)
-10. `ui/dashboard/components/XxxCard.kt` — NEW FILE: the Compose composable for this card
+10. `ui/dashboard/components/XxxCard.kt` — NEW FILE: the Compose composable for this card; use `AeonExpressiveCard` as the shell — glass wiring is handled automatically
 11. `ui/components/cards/UnifiedCardRenderer.kt` — add `is CardWithCallbacks.Xxx -> XxxCard(...)`
 12. `data/repository/CardRepositoryImpl.kt` — add `is XxxCardConfig -> card.copy(order = index)` in ALL THREE `reorder*` `when` blocks (dashboard, accountDetail, accountsView)
 13. `ui/viewmodel/CardLayoutViewModel.kt` — add `CardType.XXX ->` branch in `addDashboardCard()` `when` block

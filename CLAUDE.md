@@ -87,7 +87,7 @@ Single-activity (`MainActivity`). All routes are in `ui/navigation/OssWalletNavG
 
 ## Dashboard Card System
 
-Cards use a registry-based plugin architecture. **Adding a new `CardType` requires updating exactly 15 files in order** — missing any causes a silent runtime crash on card reorder (not a compile error):
+Cards use a registry-based plugin architecture. **Adding a new `CardType` requires updating exactly 15 files in order** — missing any causes a silent runtime crash on card reorder (not a compile error). See `docs/guides/adding-new-card.md` for full step-by-step examples.
 
 1. `domain/card/CardType.kt` — add enum entry
 2. `domain/model/settings/CardConfig.kt` — add `@Serializable data class XxxCardConfig : CardConfig()`
@@ -120,8 +120,13 @@ All reusable UI components are prefixed `Aeon` and live in `ui/components/`. Che
 | Text inputs | `AeonInputs.kt` |
 | Dialogs | `AeonAlertDialog.kt` |
 | Charts | `ui/components/visualization/charts/Aeon*Chart.kt` |
+| Glass surfaces | `GlassSurface.kt` — `GlassSurface`, `AeonGlassHost`, `AeonHazeProvider`, `AeonGlassSheet` |
 
 Color tokens live in `ui/theme/Color.kt` — never hardcode hex values in composables. Color layering rules are in `.gemini/color-usage-guide.md`.
+
+### Glass / Glassmorphism
+
+All glass surfaces use `GlassSurface` — never write `hazeEffect` inline. Dashboard card composables use `AeonExpressiveCard` as their shell, which wraps `GlassSurface + AeonGlassHost` automatically. To make a glass container blurable by its children, wrap its content in `AeonGlassHost`. Full details in `.gemini/glassmorphism.md`.
 
 ---
 
@@ -178,4 +183,5 @@ The `.gemini/` directory contains detailed directives consulted when making arch
 - `.gemini/coding.md` — Kotlin style, coroutines, error handling, naming conventions
 - `.gemini/database.md` — entity checklist, migration template, DAO patterns, SQLCipher rules
 - `.gemini/design-ui.md` — Aeon components, card rendering, Glance constraints, recomposition checklist
+- `.gemini/glassmorphism.md` — glass effect architecture, `AeonHazeProvider`, `AeonGlassHost`, `GlassSurface`, patterns and pitfalls
 - `.gemini/testing.md` — test structure, fake repository pattern, coverage expectations

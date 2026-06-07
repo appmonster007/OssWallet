@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +46,7 @@ fun TemplateFormBody(
     state: TemplateEntryState,
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
     onEvent: (TemplateEntryEvent) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
     val sourceCurrencies = remember(state.accountId, state.accounts, state.shortlistedCurrencies) {
@@ -55,17 +60,15 @@ fun TemplateFormBody(
             ?: CurrencyService.getAllCurrencies()
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding,
-                    vertical = AeonTheme.dimensions.spacingLg
-                ),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
                 transactionType = state.transactionType,
@@ -190,6 +193,7 @@ fun TemplateFormBody(
                     )
                 }
             )
+            Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
     }
 }

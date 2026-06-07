@@ -4,8 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -70,6 +74,7 @@ fun LoanFormBody(
     state: LoanEntryState,
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<Transaction>>,
     onEvent: (LoanEntryEvent) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
     val amountColor = if (state.loanType == LoanType.LENT) AppColors.primary else WarningColor
@@ -77,14 +82,15 @@ fun LoanFormBody(
     val formatter =
         remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = dims.screenPadding, vertical = dims.spacingLg),
+                .padding(horizontal = dims.screenPadding),
             verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             AeonImpactHeaderCard(
                 selectedType = state.loanType,
                 onTypeSelected = { onEvent(LoanEntryEvent.SetLoanType(it)) },
@@ -392,6 +398,7 @@ fun LoanFormBody(
                     isFlush = true
                 )
             }
+            Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
         LoanEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)

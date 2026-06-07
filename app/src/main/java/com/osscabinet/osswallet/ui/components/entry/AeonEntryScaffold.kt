@@ -3,10 +3,8 @@ package com.osscabinet.ossWallet.ui.components.entry
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Done
@@ -50,12 +48,7 @@ fun AeonEntryScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val topBarHeight = AeonSize.D64.value
-    
-    // Standardized offset for floating pill architecture
-    val totalTopPadding = statusBarPadding + topBarHeight + 8.dp
-
     AeonHazeProvider(backgroundColor = containerColor) { hazeLayers ->
         Box(modifier = modifier.fillMaxSize()) {
             Scaffold(
@@ -65,7 +58,7 @@ fun AeonEntryScaffold(
                 Box(modifier = Modifier.fillMaxSize()) {
                     content(
                         PaddingValues(
-                            top = totalTopPadding,
+                            top = topBarHeight + 8.dp,
                             bottom = innerPadding.calculateBottomPadding() + 24.dp,
                             start = 0.dp,
                             end = 0.dp

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.entry
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,7 +64,7 @@ fun BudgetEntryScreen(
             state = state,
             onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
-            modifier = Modifier.padding(innerPadding)
+            contentPadding = innerPadding
         )
     }
 }

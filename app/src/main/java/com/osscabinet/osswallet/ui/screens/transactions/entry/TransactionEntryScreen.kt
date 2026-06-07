@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import android.Manifest
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -94,7 +93,7 @@ fun TransactionEntryScreen(
             state = state,
             onEvent = viewModel::onEvent,
             onSearch = viewModel::searchTransactions,
-            modifier = Modifier.padding(innerPadding)
+            contentPadding = innerPadding
         )
     }
 }

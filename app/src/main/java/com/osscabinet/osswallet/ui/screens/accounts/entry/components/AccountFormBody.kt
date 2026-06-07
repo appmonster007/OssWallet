@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -67,6 +69,7 @@ import com.osscabinet.ossWallet.ui.util.icon
 fun AccountFormBody(
     state: AccountEntryState,
     onEvent: (AccountEntryEvent) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier,
     onDeleteClick: (() -> Unit)? = null
 ) {
@@ -94,17 +97,15 @@ fun AccountFormBody(
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding,
-                    vertical = AeonTheme.dimensions.spacingLg
-                ),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Interactive Hero Identity
             AeonHeroHeader(
                 title = state.accountName,
@@ -291,6 +292,7 @@ fun AccountFormBody(
             }
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacing2xl))
+            Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
         // Selection Screens / Sheets (Kept only for fallback or specific sub-selections if needed)

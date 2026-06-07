@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,6 +50,7 @@ fun TransactionFormBody(
     state: TransactionEntryState,
     onEvent: (TransactionEntryEvent) -> Unit,
     onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
+    contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
     val targetCurrencies = remember(state.targetAccount, state.fullProviderCurrencies) {
@@ -53,17 +58,15 @@ fun TransactionFormBody(
             ?: state.fullProviderCurrencies.ifEmpty { emptyList() }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding,
-                    vertical = AeonTheme.dimensions.spacingLg
-                ),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
+            Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Header card containing transaction type selector and amount input
             AeonImpactHeaderCard(
                 transactionType = state.transactionType,
@@ -222,6 +225,7 @@ fun TransactionFormBody(
                     )
                 }
             )
+            Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
         // Bottom sheets and dialogs

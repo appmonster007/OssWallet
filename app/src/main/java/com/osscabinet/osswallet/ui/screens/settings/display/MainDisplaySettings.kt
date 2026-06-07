@@ -21,8 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Block
-import androidx.compose.material.icons.rounded.BlurOff
-import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.CurrencyExchange
@@ -32,6 +30,7 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SettingsSuggest
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -75,14 +74,13 @@ import com.osscabinet.ossWallet.ui.theme.HazeLayer
 fun MainDisplaySettings(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit,
-    onNavigateToAdvancedGlass: () -> Unit
+    onNavigateToDesignLab: () -> Unit
 ) {
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
     val cardAnimationEnabled by viewModel.cardAnimationEnabled.collectAsStateWithLifecycle()
     val expandableFabEnabled by viewModel.expandableFabEnabled.collectAsStateWithLifecycle()
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
-    val glassmorphismEnabled by viewModel.glassmorphismEnabled.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
 
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -314,23 +312,18 @@ fun MainDisplaySettings(
                                 icon = Icons.Rounded.FontDownload,
                                 onClick = { showFontDialog = true }
                             )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-                                thickness = 0.5.dp,
-                                color = AppColors.divider.copy(alpha = 0.5f)
-                            )
-                            EntrySwitchRow(
-                                label = "Glass Effect",
-                                subtitle = if (glassmorphismEnabled) "Frosted blur on headers" else "Solid surface on headers",
-                                icon = if (glassmorphismEnabled) Icons.Rounded.BlurOn else Icons.Rounded.BlurOff,
-                                checked = glassmorphismEnabled,
-                                onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
-                                onClick = onNavigateToAdvancedGlass,
-                                isFlush = false
+                        }
+
+                        AeonSettingsSection("VISUAL EFFECTS") {
+                            AeonSettingsItem(
+                                title = "Design Lab",
+                                subtitle = "Customize glass, surfaces, background and more",
+                                icon = Icons.Rounded.Tune,
+                                onClick = onNavigateToDesignLab
                             )
                         }
 
-                        AeonSettingsSection("ANIMATIONS & INTERFACE") {
+                        AeonSettingsSection("INTERFACE") {
                             EntrySwitchRow(
                                 label = "Card Animations",
                                 subtitle = if (cardAnimationEnabled) "Animate cards on screen load" else "Disable card animations",

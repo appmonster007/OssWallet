@@ -12,12 +12,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.osscabinet.ossWallet.ui.screens.settings.display.AdvancedGlassSettings
 import com.osscabinet.ossWallet.ui.screens.settings.display.DesignLabScreen
 import com.osscabinet.ossWallet.ui.screens.settings.display.MainDisplaySettings
 
 enum class DisplaySubScreen {
-    MAIN, ADVANCED_GLASS, DESIGN_LAB
+    MAIN, DESIGN_LAB
 }
 
 @Composable
@@ -45,22 +44,14 @@ fun DisplaySettingsScreen(
                 MainDisplaySettings(
                     viewModel = viewModel,
                     onBackClick = actions.onBackClick,
-                    onNavigateToAdvancedGlass = { currentScreen = DisplaySubScreen.ADVANCED_GLASS }
-                )
-            }
-            DisplaySubScreen.ADVANCED_GLASS -> {
-                BackHandler { currentScreen = DisplaySubScreen.MAIN }
-                AdvancedGlassSettings(
-                    viewModel = viewModel,
-                    onBack = { currentScreen = DisplaySubScreen.MAIN },
-                    onNavigateToGlassLab = { currentScreen = DisplaySubScreen.DESIGN_LAB }
+                    onNavigateToDesignLab = { currentScreen = DisplaySubScreen.DESIGN_LAB }
                 )
             }
             DisplaySubScreen.DESIGN_LAB -> {
-                BackHandler { currentScreen = DisplaySubScreen.ADVANCED_GLASS }
+                BackHandler { currentScreen = DisplaySubScreen.MAIN }
                 DesignLabScreen(
                     viewModel = viewModel,
-                    onBack = { currentScreen = DisplaySubScreen.ADVANCED_GLASS }
+                    onBack = { currentScreen = DisplaySubScreen.MAIN }
                 )
             }
         }

@@ -102,11 +102,11 @@ fun AeonAccountCardSmall(
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         hazeStyle = GlassTokens.createHazeStyle(
-            config = glassSettings.card,
+            config = glassSettings.item,
             bgColor = containerColor,
             isDark = isDark
         ),
-        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Item,
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),
     ) {
@@ -186,11 +186,11 @@ fun AeonAccountCardMedium(
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         hazeStyle = GlassTokens.createHazeStyle(
-            config = glassSettings.card,
+            config = glassSettings.item,
             bgColor = containerColor,
             isDark = isDark
         ),
-        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Item,
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),
     ) {
@@ -309,11 +309,11 @@ fun AeonAccountCardLarge(
             .onSizeChanged { cardSize = it },
         shape = RoundedCornerShape(32.dp),
         hazeStyle = GlassTokens.createHazeStyle(
-            config = glassSettings.card,
+            config = glassSettings.item,
             bgColor = containerColor,
             isDark = isDark
         ),
-        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Item,
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),
     ) {

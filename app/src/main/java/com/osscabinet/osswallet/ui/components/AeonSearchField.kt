@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -55,12 +56,12 @@ fun AeonSearchField(
         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
 
     if (showBorder) {
-        val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup)
+        val config = GlassTokens.configForVariant(GlassVariant.Popup)
         GlassSurface(
             modifier = fieldModifier,
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             hazeStyle = GlassTokens.popupStyle(),
-            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
+            glassVariant = GlassVariant.Popup,
             fallbackColor = AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else AppColors.outline.copy(alpha = 0.1f),
             borderAlpha = if (isFocused) config.surface.borderAlpha else config.surface.borderAlpha * 0.2f,

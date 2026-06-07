@@ -1,10 +1,14 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +24,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,15 +51,24 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.ContourBackground
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -255,11 +269,9 @@ private fun FlowBadge(
     GlassSurface(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        glassVariant = GlassVariant.Card,
-        hazeStyle = GlassTokens.createHazeStyle(
-            config = LocalGlassSettings.current.card,
+        glassVariant = GlassVariant.Item,
+        hazeStyle = GlassTokens.itemStyle(isDark).copyStyle(
             bgColor = containerColor,
-            isDark = isDark,
         ),
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),
@@ -375,7 +387,52 @@ private fun NetWorthSettingsSheet(
     }
 }
 
-@Preview(showBackground = true)
+@ThemePreviews
+@Composable
+@Preview(heightDp = 360)
+fun NetWorthCardGlassPreview() {
+    val currentMetrics = NetWorthMetrics(
+        netWorth = BigDecimal("15250.75"),
+        cashFlow = CashFlowResult(
+            totalIncomeInBase = BigDecimal("4500.00"),
+            totalExpensesInBase = BigDecimal("2350.50"),
+            totalTransfersInBase = BigDecimal.ZERO,
+            netInBase = BigDecimal("2149.50"),
+            breakdown = emptyList(),
+            filteredTransactions = emptyList()
+        )
+    )
+    val previousMetrics = NetWorthMetrics(
+        netWorth = BigDecimal("14100.25"),
+        cashFlow = CashFlowResult(
+            totalIncomeInBase = BigDecimal("4200.00"),
+            totalExpensesInBase = BigDecimal("2100.00"),
+            totalTransfersInBase = BigDecimal.ZERO,
+            netInBase = BigDecimal("2100.00"),
+            breakdown = emptyList(),
+            filteredTransactions = emptyList()
+        )
+    )
+
+    OssWalletTheme {
+        AeonHazeProvider(drawContours = true) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(400.dp)
+            ) {
+                NetWorthCard(
+                    currentMetrics = currentMetrics,
+                    previousMetrics = previousMetrics,
+                    baseCurrency = "USD",
+                    config = NetWorthCardConfig(cardId = "net_worth", showComparison = true)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun NetWorthCardPreview() {
     val currentMetrics = NetWorthMetrics(

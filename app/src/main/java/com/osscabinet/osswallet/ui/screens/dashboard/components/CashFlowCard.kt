@@ -45,6 +45,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
 
@@ -265,11 +266,9 @@ fun AeonFlowCard(
     GlassSurface(
         modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        glassVariant = GlassVariant.Card,
-        hazeStyle = GlassTokens.createHazeStyle(
-            config = glassSettings.card,
-            bgColor = containerColor,
-            isDark = isDark,
+        glassVariant = GlassVariant.Item,
+        hazeStyle = GlassTokens.itemStyle(isDark).copyStyle(
+            bgColor = containerColor
         ),
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),

@@ -379,23 +379,22 @@ fun DesignLabContent(
                                             }
                                         }
 
+                                        val previewBgColor = when (selectedToken) {
+                                            "Pill" -> AppColors.componentOnCard
+                                            "Card" -> AppColors.cardSurface
+                                            "Sheet" -> AppColors.sheetSurface
+                                            "Popup" -> AppColors.popupSurface
+                                            "Item" -> AppColors.componentOnCard
+                                            else -> AppColors.cardSurfaceProminent
+                                        }
+
                                         val previewHazeStyle = GlassTokens.createHazeStyle(
                                             config = currentConfig,
-                                            bgColor = when (selectedToken) {
-                                                "Pill" -> AppColors.componentOnCard
-                                                "Card" -> AppColors.cardSurface
-                                                "Sheet" -> AppColors.sheetSurface
-                                                "Popup" -> AppColors.popupSurface
-                                                "Item" -> AppColors.componentOnCard
-                                                else -> AppColors.cardSurfaceProminent
-                                            },
+                                            bgColor = previewBgColor,
                                             isDark = isDarkPreview
                                         )
-                                        val fallback = when (previewMode) {
-                                            "Amoled" -> Color.Black.copy(alpha = 0.4f)
-                                            "Dark"   -> Color.Black.copy(alpha = 0.2f)
-                                            else     -> Color.White.copy(alpha = 0.2f)
-                                        }
+
+                                        val fallback = previewBgColor
                                         val contentTint = if (isDarkPreview) Color.White else AppColors.contentPrimary
 
                                         // Token-contextual mock — sibling of hazeSource Column
@@ -432,6 +431,11 @@ fun DesignLabContent(
                                                 "Popup" -> PopupMock(
                                                     innerHaze.states[0], previewHazeStyle,
                                                     variantConstant, fallback, contentTint
+                                                )
+                                                "Item" -> ItemMock(
+                                                    innerHaze.states[0], previewHazeStyle,
+                                                    variantConstant, fallback, contentTint,
+                                                    isDarkPreview
                                                 )
                                             }
                                         }
@@ -956,6 +960,56 @@ private fun PopupMock(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Box(modifier = Modifier.size(14.dp).background(tint.copy(alpha = 0.2f), CircleShape))
                         Box(modifier = Modifier.height(3.dp).width(90.dp).background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp)))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ItemMock(
+    hazeState: HazeState,
+    itemHazeStyle: dev.chrisbanes.haze.HazeStyle,
+    variant: String,
+    itemFallback: Color,
+    tint: Color,
+    isDark: Boolean
+) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // Mock a card containing items to show "glass-on-glass"
+        GlassSurface(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .height(140.dp),
+            shape = RoundedCornerShape(24.dp),
+            hazeState = hazeState,
+            hazeStyle = GlassTokens.cardStyle(isDark),
+            glassVariant = GlassVariant.Card,
+            fallbackColor = AppColors.cardSurface
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                repeat(2) {
+                    GlassSurface(
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        hazeState = hazeState,
+                        hazeStyle = itemHazeStyle,
+                        glassVariant = variant,
+                        fallbackColor = itemFallback
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(modifier = Modifier.size(24.dp).background(tint.copy(alpha = 0.2f), CircleShape))
+                            Box(modifier = Modifier.height(4.dp).weight(1f).background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp)))
+                            Box(modifier = Modifier.size(40.dp, 16.dp).background(tint.copy(alpha = 0.2f), RoundedCornerShape(8.dp)))
+                        }
                     }
                 }
             }

@@ -225,8 +225,7 @@ fun AccountFormBody(
                                 modifier = Modifier
                                     .weight(1f)
                                     .bringIntoViewRequester(requester)
-                                    .clickable { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) },
-                                enabled = false
+                                    .clickable { onEvent(AccountEntryEvent.OpenCalculator(currencyCode)) }
                             )
 
                             Surface(

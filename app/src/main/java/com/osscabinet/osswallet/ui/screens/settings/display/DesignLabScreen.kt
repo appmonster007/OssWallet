@@ -90,7 +90,11 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion
+import com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import dev.chrisbanes.haze.HazeState
@@ -299,9 +303,17 @@ fun DesignLabContent(
                                     if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant
                                 )
                             ) {
+                                // Override all visual locals so the preview reflects Design Lab
+                                // controls instantly — no DataStore round-trip required.
+                                CompositionLocalProvider(
+                                    LocalGlassmorphismEnabled provides glassmorphismEnabled,
+                                    LocalContourLinesEnabled provides contourLinesEnabled,
+                                    LocalContourBgVersion provides contourBgVersion,
+                                    LocalRandomizeContourEachLoad provides randomizeContourEachLoad,
+                                ) {
                                 AeonHazeProvider(
                                     backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
-                                    drawContours = true
+                                    drawContours = contourLinesEnabled
                                 ) { innerHaze ->
                                     Box(
                                         modifier = Modifier.fillMaxSize().aeonHazeSource(innerHaze.states[0])
@@ -376,6 +388,7 @@ fun DesignLabContent(
                                         }
                                     }
                                 }
+                                } // CompositionLocalProvider
                             }
                         }
                     }

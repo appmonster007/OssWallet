@@ -83,6 +83,8 @@ fun AeonFilterSelection(
                     placeholder = "Search filters..."
                 )
 
+                val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
+
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(dims.spacingLg))
 
@@ -99,8 +101,8 @@ fun AeonFilterSelection(
                         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
                         fallbackColor = AppColors.primaryContainer,
                         borderColor = AppColors.primary,
-                        borderAlpha = 0.5f,
-                        borderWidth = 1.dp,
+                        borderAlpha = config.borderAlpha,
+                        borderWidth = config.borderWidth.dp,
                     ) {
                         Row(
                             modifier = Modifier
@@ -142,8 +144,8 @@ fun AeonFilterSelection(
                             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
                             fallbackColor = if (isSelected) AppColors.primaryContainer else AppColors.surfaceContainerLow,
                             borderColor = if (isSelected) AppColors.primary else AppColors.outlineVariant,
-                            borderAlpha = if (isSelected) 0.5f else 0.1f,
-                            borderWidth = if (isSelected) 1.dp else 0.5.dp,
+                            borderAlpha = if (isSelected) config.borderAlpha else config.borderAlpha * 0.2f,
+                            borderWidth = if (isSelected) config.borderWidth.dp else (config.borderWidth * 0.5f).dp,
                         ) {
                             Row(
                                 modifier = Modifier

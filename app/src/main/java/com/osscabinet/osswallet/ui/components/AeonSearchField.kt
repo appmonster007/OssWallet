@@ -55,6 +55,7 @@ fun AeonSearchField(
         .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
 
     if (showBorder) {
+        val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup)
         GlassSurface(
             modifier = fieldModifier,
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
@@ -62,8 +63,8 @@ fun AeonSearchField(
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
             fallbackColor = AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else AppColors.outline.copy(alpha = 0.1f),
-            borderAlpha = if (isFocused) 0.5f else 0.1f,
-            borderWidth = if (isFocused) 1.dp else 0.5.dp,
+            borderAlpha = if (isFocused) config.borderAlpha else config.borderAlpha * 0.2f,
+            borderWidth = if (isFocused) config.borderWidth.dp else (config.borderWidth * 0.5f).dp,
         ) {
             TextField(
                 value = query,

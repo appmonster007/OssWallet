@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -61,14 +62,17 @@ import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
+import com.osscabinet.ossWallet.ui.theme.LocalCardSurfaceHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.HazeState
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -140,6 +144,8 @@ fun AeonExpressiveCard(
         subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
     }
 
+    val innerCardHaze = remember { HazeState() }
+
     GlassSurface(
         modifier = modifier.graphicsLayer { scaleX = scale; scaleY = scale },
         shape = cardShape,
@@ -173,6 +179,15 @@ fun AeonExpressiveCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
+            // Captures the card's rendered glass surface so nested account cards can
+            // use it as a hazeEffect source (glass-on-glass). Must be declared before
+            // content so it sits below in draw order and satisfies the Haze sibling constraint.
+            androidx.compose.foundation.layout.Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .aeonHazeSource(innerCardHaze)
+            )
+
             if (backgroundIcon != null) {
                 Icon(
                     imageVector = backgroundIcon,
@@ -186,6 +201,7 @@ fun AeonExpressiveCard(
                 )
             }
 
+            CompositionLocalProvider(LocalCardSurfaceHaze provides innerCardHaze) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -276,6 +292,7 @@ fun AeonExpressiveCard(
 
                 content()
             }
+            } // CompositionLocalProvider
         }
     }
     }

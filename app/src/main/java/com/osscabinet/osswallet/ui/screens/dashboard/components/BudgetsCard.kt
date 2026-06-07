@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -40,8 +41,10 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @Composable
@@ -130,10 +133,11 @@ private fun BudgetProgressRow(
         BudgetAlertLevel.NONE -> PositiveAmountColor
     }
 
-    Surface(
-        onClick = onClick,
-        color = AppColors.cardSurfaceProminent, // Level 2: Sub-Section Unit
-        shape = RoundedCornerShape(24.dp)
+    GlassSurface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.cardSurfaceProminent,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

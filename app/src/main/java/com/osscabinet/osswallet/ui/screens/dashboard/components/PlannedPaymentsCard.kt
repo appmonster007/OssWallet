@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +29,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,9 +59,11 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import java.math.BigDecimal
@@ -284,7 +284,7 @@ private fun PlannedPaymentRow(
         else -> AppColors.error
     }
 
-    Surface(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
@@ -302,12 +302,11 @@ private fun PlannedPaymentRow(
                 )
             },
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.15f)
+        glassVariant = GlassVariant.Item,
+        fallbackColor = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.15f)
         else AppColors.onPanelSurface,
-        border = if (isOverdue) BorderStroke(
-            0.5.dp,
-            AppColors.error.copy(alpha = 0.2f)
-        ) else null
+        borderColor = if (isOverdue) AppColors.error.copy(alpha = 0.2f) else null,
+        borderWidth = if (isOverdue) 0.5.dp else null,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),

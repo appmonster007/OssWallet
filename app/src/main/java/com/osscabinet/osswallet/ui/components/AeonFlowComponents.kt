@@ -63,9 +63,13 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -332,12 +336,17 @@ fun AeonFlowBadge(
     onClick: (() -> Unit)? = null
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
-    Surface(
-        color = color.copy(alpha = 0.15f),
-        contentColor = color,
+    GlassSurface(
+        modifier = if (onClick != null) modifier.clickable { onClick() } else modifier,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.4f)),
-        modifier = if (onClick != null) modifier.clickable { onClick() } else modifier
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = LocalGlassSettings.current.item,
+            bgColor = color.copy(alpha = 0.15f),
+            isDark = LocalThemeMode.current.isDarkTheme,
+        ),
+        fallbackColor = color.copy(alpha = 0.15f),
+        borderColor = color.copy(alpha = 0.4f),
+        borderWidth = 1.dp,
     ) {
         Text(
             text = formatAuto(amount, currency, shorten = true).trim(),
@@ -346,7 +355,8 @@ fun AeonFlowBadge(
                 fontWeight = FontWeight.Black,
                 fontSize = 8.sp,
                 fontFeatureSettings = "tnum"
-            )
+            ),
+            color = color,
         )
     }
 }

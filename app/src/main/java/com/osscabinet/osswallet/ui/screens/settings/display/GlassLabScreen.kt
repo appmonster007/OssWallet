@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,7 +99,7 @@ fun GlassLabContent(
     val themeMode = LocalThemeMode.current
     var selectedToken by remember { mutableStateOf("Standard") }
     var isDarkPreview by remember(themeMode.isDarkTheme) { mutableStateOf(themeMode.isDarkTheme) }
-    val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup")
+    val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup", "Item")
 
     val currentConfig = when (selectedToken) {
         "Drawer" -> glassSettings.drawer
@@ -106,6 +107,7 @@ fun GlassLabContent(
         "Card" -> glassSettings.card
         "Sheet" -> glassSettings.sheet
         "Popup" -> glassSettings.popup
+        "Item" -> glassSettings.item
         else -> glassSettings.standard
     }
 
@@ -206,6 +208,7 @@ fun GlassLabContent(
                                                         "Card" -> AppColors.cardSurface
                                                         "Sheet" -> AppColors.sheetSurface
                                                         "Popup" -> AppColors.popupSurface
+                                                        "Item" -> AppColors.componentOnCard
                                                         else -> AppColors.cardSurfaceProminent
                                                     },
                                                     isDark = isDarkPreview
@@ -271,6 +274,7 @@ fun GlassLabContent(
                                             "Card" -> Icons.Rounded.Dashboard
                                             "Sheet" -> Icons.Rounded.KeyboardArrowUp
                                             "Popup" -> Icons.Rounded.PictureInPicture
+                                            "Item" -> Icons.Rounded.GridView
                                             else -> Icons.Rounded.Layers
                                         }
 

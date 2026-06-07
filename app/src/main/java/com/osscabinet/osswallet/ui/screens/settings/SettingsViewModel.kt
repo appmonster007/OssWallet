@@ -284,6 +284,7 @@ class SettingsViewModel @Inject constructor(
                     "Card" -> current.copy(card = update(current.card))
                     "Sheet" -> current.copy(sheet = update(current.sheet))
                     "Popup" -> current.copy(popup = update(current.popup))
+                    "Item" -> current.copy(item = update(current.item))
                     else -> current
                 }
             }
@@ -307,6 +308,7 @@ class SettingsViewModel @Inject constructor(
                     "Card" -> current.copy(card = defaults.card)
                     "Sheet" -> current.copy(sheet = defaults.sheet)
                     "Popup" -> current.copy(popup = defaults.popup)
+                    "Item" -> current.copy(item = defaults.item)
                     else -> current
                 }
             }
@@ -323,6 +325,7 @@ class SettingsViewModel @Inject constructor(
                 "Card" -> defaults.card
                 "Sheet" -> defaults.sheet
                 "Popup" -> defaults.popup
+                "Item" -> defaults.item
                 else -> return@launch
             }
 
@@ -412,6 +415,20 @@ class SettingsViewModel @Inject constructor(
                             else -> current.popup
                         }
                     }
+                    "Item" -> {
+                        when (parameter) {
+                            "blurRadius" -> current.item.copy(blurRadius = defaultStyle.blurRadius)
+                            "lightAlpha" -> current.item.copy(lightAlpha = defaultStyle.lightAlpha)
+                            "darkAlpha" -> current.item.copy(darkAlpha = defaultStyle.darkAlpha)
+                            "noiseFactor" -> current.item.copy(noiseFactor = defaultStyle.noiseFactor)
+                            "shadowElevation" -> current.item.copy(shadowElevation = defaultStyle.shadowElevation)
+                            "borderAlpha" -> current.item.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.item.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.item.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.item.copy(borderWidth = defaultStyle.borderWidth)
+                            else -> current.item
+                        }
+                    }
                     else -> return@updateGlassSettings current
                 }
 
@@ -422,6 +439,7 @@ class SettingsViewModel @Inject constructor(
                     "Card" -> current.copy(card = updatedStyle)
                     "Sheet" -> current.copy(sheet = updatedStyle)
                     "Popup" -> current.copy(popup = updatedStyle)
+                    "Item" -> current.copy(item = updatedStyle)
                     else -> current
                 }
             }

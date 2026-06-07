@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -36,8 +34,10 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -203,11 +203,11 @@ fun CurrencyBalanceItem(
     val style = if (isLarge) AppTextStyles.heroAmount else AppTextStyles.cardSecondaryAmount
     val verticalPadding = if (isLarge) 16.dp else 12.dp
 
-    Surface(
+    GlassSurface(
+        modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = AppColors.surfaceContainerLow,
-        border = BorderStroke(1.dp, AppColors.outlineVariant),
-        modifier = modifier.clickable { onClick() }
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.surfaceContainerLow,
     ) {
         Column(
             modifier = Modifier

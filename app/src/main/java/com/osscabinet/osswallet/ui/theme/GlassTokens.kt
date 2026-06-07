@@ -22,6 +22,7 @@ object GlassVariant {
     const val Drawer = "drawer"
     const val Sheet = "sheet"
     const val Popup = "popup"
+    const val Item = "item"
 }
 
 /**
@@ -88,6 +89,16 @@ object GlassTokens {
         isDark = isDark
     )
 
+    /**
+     * Glass-on-glass items nested inside cards (budget rows, loan rows, flow badges, etc).
+     */
+    @Composable
+    fun itemStyle(isDark: Boolean = isSystemInDarkTheme()): HazeStyle = createHazeStyle(
+        config = LocalGlassSettings.current.item,
+        bgColor = AppColors.componentOnCard,
+        isDark = isDark
+    )
+
     @Composable
     fun config(hazeLayer: Int): GlassStyleConfig {
         val settings = LocalGlassSettings.current
@@ -107,6 +118,7 @@ object GlassTokens {
             GlassVariant.Drawer  -> s.drawer
             GlassVariant.Sheet   -> s.sheet
             GlassVariant.Popup   -> s.popup
+            GlassVariant.Item    -> s.item
             else                 -> s.standard
         }
     }

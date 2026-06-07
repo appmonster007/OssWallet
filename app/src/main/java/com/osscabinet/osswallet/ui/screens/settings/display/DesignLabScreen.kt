@@ -146,7 +146,16 @@ fun DesignLabContent(
 ) {
     val themeMode = LocalThemeMode.current
     var selectedToken by remember { mutableStateOf("Standard") }
-    var isDarkPreview by remember(themeMode.isDarkTheme) { mutableStateOf(themeMode.isDarkTheme) }
+    var previewMode by remember {
+        mutableStateOf(
+            when {
+                themeMode.isAmoled -> "Amoled"
+                themeMode.isDarkTheme -> "Dark"
+                else -> "Light"
+            }
+        )
+    }
+    val isDarkPreview = previewMode != "Light"
     var showContourDialog by remember { mutableStateOf(false) }
     val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup")
 
@@ -244,6 +253,17 @@ fun DesignLabContent(
         }
     }
 
+    val baseConfig = LocalConfiguration.current
+    val previewConfig = remember(isDarkPreview, baseConfig) {
+        android.content.res.Configuration(baseConfig).apply {
+            uiMode = (uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                if (isDarkPreview)
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+                else
+                    android.content.res.Configuration.UI_MODE_NIGHT_NO
+        }
+    }
+
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { _ ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(containerColor = Color.Transparent) { innerPadding ->
@@ -276,16 +296,25 @@ fun DesignLabContent(
                                 )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.clickable { isDarkPreview = !isDarkPreview }
+                                    modifier = Modifier.clickable {
+                                        previewMode = when (previewMode) {
+                                            "Light" -> "Dark"
+                                            "Dark"  -> "Amoled"
+                                            else    -> "Light"
+                                        }
+                                    }
                                 ) {
                                     Text(
-                                        if (isDarkPreview) "DARK" else "LIGHT",
+                                        previewMode.uppercase(),
                                         style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
                                         color = AppColors.contentSecondary
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Icon(
-                                        if (isDarkPreview) Icons.Rounded.DarkMode else Icons.Rounded.LightMode,
+                                        when (previewMode) {
+                                            "Light" -> Icons.Rounded.LightMode
+                                            else    -> Icons.Rounded.DarkMode
+                                        },
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
                                         tint = AppColors.primary
@@ -306,13 +335,22 @@ fun DesignLabContent(
                                 // Override all visual locals so the preview reflects Design Lab
                                 // controls instantly — no DataStore round-trip required.
                                 CompositionLocalProvider(
+                                    LocalConfiguration provides previewConfig,
+                                    LocalThemeMode provides com.osscabinet.ossWallet.domain.formatter.ThemeMode(
+                                        isDarkTheme = isDarkPreview,
+                                        isAmoled = previewMode == "Amoled"
+                                    ),
                                     LocalGlassmorphismEnabled provides glassmorphismEnabled,
                                     LocalContourLinesEnabled provides contourLinesEnabled,
                                     LocalContourBgVersion provides contourBgVersion,
                                     LocalRandomizeContourEachLoad provides randomizeContourEachLoad,
                                 ) {
                                 AeonHazeProvider(
-                                    backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
+                                    backgroundColor = when (previewMode) {
+                                        "Amoled" -> Color.Black
+                                        "Dark"   -> Color(0xFF121212)
+                                        else     -> AppColors.surfaceContainerLow
+                                    },
                                     drawContours = contourLinesEnabled
                                 ) { innerHaze ->
                                     // hazeSource is on the background Column; the mock is its
@@ -349,7 +387,11 @@ fun DesignLabContent(
                                             },
                                             isDark = isDarkPreview
                                         )
-                                        val fallback = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
+                                        val fallback = when (previewMode) {
+                                            "Amoled" -> Color.Black.copy(alpha = 0.4f)
+                                            "Dark"   -> Color.Black.copy(alpha = 0.2f)
+                                            else     -> Color.White.copy(alpha = 0.2f)
+                                        }
                                         val contentTint = if (isDarkPreview) Color.White else AppColors.contentPrimary
 
                                         // Token-contextual mock — sibling of hazeSource Column

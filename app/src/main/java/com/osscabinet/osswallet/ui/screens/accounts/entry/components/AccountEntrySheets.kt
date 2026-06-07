@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
@@ -77,7 +78,7 @@ fun AccountEntrySheets(
                     .wrapContentHeight()
                     .padding(vertical = 16.dp),
                 shape = RoundedCornerShape(32.dp),
-                color = AppColors.panelSurface,
+                color = AppColors.cardSurface,
                 tonalElevation = 8.dp
             ) {
                 Column(
@@ -132,7 +133,7 @@ fun AccountEntrySheets(
                     .fillMaxWidth(0.94f)
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(32.dp),
-                color = AppColors.panelSurface,
+                color = AppColors.cardSurface,
                 tonalElevation = 12.dp
             ) {
                 val currentBaseTotal = state.systemClosingBalances[currency] ?: BigDecimal.ZERO
@@ -149,7 +150,7 @@ fun AccountEntrySheets(
                         allowSigned = true,
                         onAmountChange = { onEvent(AccountEntryEvent.SetBalanceUpdateAmount(it)) },
                         onDone = { onEvent(AccountEntryEvent.ConfirmBalanceUpdate) },
-                        header = { calcState, _, onHistory ->
+                        header = { calcState, onSave, onHistory ->
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -198,6 +199,18 @@ fun AccountEntrySheets(
                                                 color = AppColors.contentSecondary,
                                                 modifier = Modifier.align(Alignment.Center)
                                             )
+
+                                            IconButton(
+                                                onClick = onSave,
+                                                modifier = Modifier.align(Alignment.TopEnd).size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Rounded.Check,
+                                                    contentDescription = "Confirm",
+                                                    tint = selectedColor,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
                                         }
 
                                         Spacer(modifier = Modifier.size(12.dp))
@@ -239,7 +252,7 @@ fun AccountEntrySheets(
                                             }
 
                                             Icon(
-                                                imageVector = Icons.Rounded.Check,
+                                                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(14.dp),
                                                 tint = AppColors.divider.copy(alpha = 0.6f)

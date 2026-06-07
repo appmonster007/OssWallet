@@ -19,13 +19,11 @@ class RecentActivitiesCardComputer : CardDataComputer<RecentActivitiesCardConfig
     override suspend fun compute(input: CardInput, config: RecentActivitiesCardConfig): CardRenderData.RecentActivities {
         val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
 
-        // Compute running balances for the specific account(s) involved in the filter
-        // If no accounts are filtered, we show all active accounts.
-        val targetAccountIds = mergedFilter.accountIds.ifEmpty {
-            input.accounts.filter { !it.isArchived }.map { it.id }.toSet()
-        }
+        // Compute running balances for the specific account(s) involved in the filter.
+        // If no accounts are filtered, default to all active (non-archived) accounts.
+        val targetAccountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
 
-        val allTransactions = input.transactions
+        val allTransactions = input.transactionsFor(mergedFilter)
             .asSequence()
             .sortedBy { it.timestamp }
             .groupBy { it.accountId }

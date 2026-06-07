@@ -170,9 +170,13 @@ class DashboardViewModel @Inject constructor(
                     val loanPayments =
                         args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
 
+                    val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                    val activeTransactions = allTransactions.filter { it.accountId in activeAccountIds }
+
                     val baseInput = CardInput(
                         profileId = profileId,
-                        transactions = allTransactions,
+                        transactions = activeTransactions,
+                        allProfileTransactions = allTransactions,
                         accounts = accounts,
                         categories = categories,
                         tags = tags,
@@ -193,10 +197,8 @@ class DashboardViewModel @Inject constructor(
                             input = baseInput
                         )
 
-                        // Compute transactionsWithBalance
-                        val activeAccountIds =
-                            accounts.asSequence().filter { !it.isArchived }.map { it.id }.toSet()
-                        val transactionsWithBalance = allTransactions
+                        // Compute transactionsWithBalance for active accounts only
+                        val transactionsWithBalance = activeTransactions
                             .asSequence()
                             .sortedBy { it.timestamp }
                             .groupBy { it.accountId }
@@ -228,7 +230,6 @@ class DashboardViewModel @Inject constructor(
                                     )
                                 }
                             }
-                            .filter { it.transaction.accountId in activeAccountIds }
                             .toList()
 
                         val now = System.currentTimeMillis()

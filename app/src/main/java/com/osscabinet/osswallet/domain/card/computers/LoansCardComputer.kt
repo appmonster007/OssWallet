@@ -33,8 +33,11 @@ class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans
                     (mergedFilter.currencies.isEmpty() || loan.currency in mergedFilter.currencies)
         }
 
+        val effectiveFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val allTransactions = input.allProfileTransactions.ifEmpty { input.transactions }
-        val filteredTx = TransactionFilterService.filter(allTransactions, mergedFilter)
+        val filteredTx = TransactionFilterService.filter(allTransactions, effectiveFilter)
 
         val items = filtered.take(config.maxItems).map { loan ->
             LoanService.buildSummaryFromTransactions(

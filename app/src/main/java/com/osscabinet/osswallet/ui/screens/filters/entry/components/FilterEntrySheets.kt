@@ -50,11 +50,15 @@ fun FilterEntrySheets(
     }
 
     if (state.showAccountSheet) {
+        val activeAccountIds = state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
         AeonAccountSelection(
             accounts = state.accounts,
-            selectedAccountIds = state.selectedAccountIds,
+            selectedAccountIds = state.selectedAccountIds.ifEmpty { activeAccountIds },
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetAccountIds(ids))
+                // Store empty to mean "all active accounts"; only persist when user picks a
+                // non-default set (e.g. includes archived or is a subset of active accounts).
+                val effectiveIds = if (ids == activeAccountIds) emptySet() else ids
+                onEvent(FilterEntryEvent.SetAccountIds(effectiveIds))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowAccountSheet(false)) },
             mode = AeonSelectMode.MULTI,

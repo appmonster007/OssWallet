@@ -166,12 +166,15 @@ class TransactionViewModel @Inject constructor(
                 ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
+                    // includeArchived = true so the base list covers all accounts;
+                    // filtering to active-only happens downstream in transactionsWithBalance.
                     transactionUseCases.getRecentTransactions(
                         allTransactions = allTransactions,
                         accounts = accounts,
                         exchangeRates = rates,
                         limit = Int.MAX_VALUE,
-                        excludeFuture = false
+                        excludeFuture = false,
+                        includeArchived = true
                     )
                 }
             }.stateIn(
@@ -183,9 +186,14 @@ class TransactionViewModel @Inject constructor(
     val transactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter
-        ) { absoluteTxs, currentFilter ->
-            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, currentFilter)
+            recordsFilter,
+            accounts
+        ) { absoluteTxs, currentFilter, allAccounts ->
+            val activeIds = allAccounts.filter { !it.isArchived }.map { it.id }.toSet()
+            val effectiveFilter = currentFilter.copy(
+                accountIds = currentFilter.accountIds.ifEmpty { activeIds }
+            )
+            TransactionFilterService.filterTransactionsWithBalance(absoluteTxs, effectiveFilter)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -195,12 +203,16 @@ class TransactionViewModel @Inject constructor(
     val scopedHistoryWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter.map { it.timelineRange }.distinctUntilChanged()
-        ) { absoluteTxs, timelineRange ->
-            val (_, endTime) = TimelineService.getDateRange(timelineRange)
+            recordsFilter,
+            accounts
+        ) { absoluteTxs, currentFilter, allAccounts ->
+            val activeIds = allAccounts.filter { !it.isArchived }.map { it.id }.toSet()
+            val effectiveAccountIds = currentFilter.accountIds.ifEmpty { activeIds }
+            val (_, endTime) = TimelineService.getDateRange(currentFilter.timelineRange)
 
-            if (endTime == null) absoluteTxs
-            else absoluteTxs.filter { it.transaction.timestamp <= endTime }
+            absoluteTxs
+                .filter { it.transaction.accountId in effectiveAccountIds }
+                .let { if (endTime == null) it else it.filter { tx -> tx.transaction.timestamp <= endTime } }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

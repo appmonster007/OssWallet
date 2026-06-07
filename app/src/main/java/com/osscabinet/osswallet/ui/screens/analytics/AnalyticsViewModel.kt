@@ -160,9 +160,12 @@ class AnalyticsViewModel @Inject constructor(
             if (state !is AnalyticsUiState.Success) {
                 return@combine emptyMap()
             }
+            val activeAccountIds = state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
+            val activeTransactions = state.allTransactions.filter { it.accountId in activeAccountIds }
             val input = CardInput(
                 profileId = state.profileId,
-                transactions = state.allTransactions,
+                transactions = activeTransactions,
+                allProfileTransactions = state.allTransactions,
                 accounts = state.accounts,
                 categories = state.allCategories,
                 exchangeRates = state.exchangeRates,

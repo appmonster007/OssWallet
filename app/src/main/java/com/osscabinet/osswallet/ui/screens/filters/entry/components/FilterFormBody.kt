@@ -132,7 +132,7 @@ fun FilterFormBody(
                         icon = getAccountIconByName(accountObj?.icon),
                         label = "ACCOUNTS",
                         value = when {
-                            state.selectedAccountIds.isEmpty() || (state.accounts.isNotEmpty() && (state.selectedAccountIds.size == state.accounts.size)) -> "All Accounts"
+                            state.selectedAccountIds.isEmpty() -> "All Active Accounts"
                             accountObj != null -> accountObj.name
                             else -> "${state.selectedAccountIds.size} Selected"
                         },

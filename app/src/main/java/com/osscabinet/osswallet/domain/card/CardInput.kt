@@ -43,8 +43,31 @@ data class CardInput(
     val categoryHierarchy: CategoryHierarchyCache = CategoryHierarchyCache.Empty
 ) {
     /**
-     * Derived property that determines if the inherited filter's timeline 
+     * Derived property that determines if the inherited filter's timeline
      * is authoritative based on the screen context and user settings.
      */
     val screenOwnsTimeline: Boolean get() = screenContext.ownsTimeline(commonFilterEnabled)
+
+    val effectiveAccounts: List<Account>
+        get() = accounts.filter { !it.isArchived }
+
+    val effectiveAccountIds: Set<String>
+        get() = effectiveAccounts.map { it.id }.toSet()
+
+    /**
+     * Returns the correct transaction source for a given filter.
+     *
+     * When the filter explicitly includes archived account IDs, we need the full unfiltered
+     * transaction list (allProfileTransactions) so archived transactions are present.
+     * Otherwise, the pre-filtered active-account list (transactions) is used.
+     */
+    fun transactionsFor(filter: TransactionFilter): List<Transaction> {
+        if (filter.accountIds.isEmpty()) return transactions
+        val archivedIds = accounts.filter { it.isArchived }.map { it.id }.toSet()
+        return if (filter.accountIds.any { it in archivedIds }) {
+            allProfileTransactions.ifEmpty { transactions }
+        } else {
+            transactions
+        }
+    }
 }

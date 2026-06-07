@@ -41,8 +41,9 @@ class CategoryPieChartCardComputer :
             transactionTypes = resolvedTypes
         )
 
-        // Single-pass filter against all transactions
-        val filteredTx = TransactionFilterService.filter(input.transactions, finalFilter)
+        // Single-pass filter against the correct transaction source (includes archived if explicitly selected)
+        val txSource = input.transactionsFor(finalFilter)
+        val filteredTx = TransactionFilterService.filter(txSource, finalFilter)
 
         // Step 4: Compute previous period transactions if comparison is enabled
         val previousTx: List<Transaction>? =
@@ -52,7 +53,7 @@ class CategoryPieChartCardComputer :
                     val prevFilter = finalFilter.copy(
                         timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                     )
-                    TransactionFilterService.filter(input.transactions, prevFilter)
+                    TransactionFilterService.filter(txSource, prevFilter)
                 } else null
             } else null
 

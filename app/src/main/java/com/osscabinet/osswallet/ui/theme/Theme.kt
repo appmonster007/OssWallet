@@ -202,3 +202,30 @@ fun OssWalletTheme(
         )
     }
 }
+
+/**
+ * Lightweight theme wrapper for in-screen previews (Design Lab, Glass Lab, etc.).
+ * Provides the correct [LocalAppColorScheme], [LocalThemeMode], and [MaterialTheme] colors
+ * for [theme] without triggering status-bar or window side effects.
+ * Always uses static palettes — dynamic color is intentionally not applied.
+ */
+@Composable
+fun OssWalletPreviewTheme(
+    theme: String,
+    content: @Composable () -> Unit,
+) {
+    val colorScheme = when (theme) {
+        "Amoled" -> AmoledColorScheme
+        "Dark"   -> DarkColorScheme
+        else     -> LightColorScheme
+    }
+    val themeMode = remember(theme) {
+        ThemeHelper.getThemeMode(theme, theme != "Light")
+    }
+    CompositionLocalProvider(
+        LocalAppColorScheme provides colorScheme,
+        LocalThemeMode provides themeMode,
+    ) {
+        MaterialTheme(colorScheme = colorScheme, content = content)
+    }
+}

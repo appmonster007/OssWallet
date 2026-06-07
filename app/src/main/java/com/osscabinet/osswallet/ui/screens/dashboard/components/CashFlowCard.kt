@@ -38,7 +38,10 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -253,12 +256,21 @@ fun AeonFlowCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
+    val glassSettings = LocalGlassSettings.current
+    val isDarkTheme = LocalThemeMode.current.isDarkTheme
 
     GlassSurface(
         modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
         glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.surfaceContainerLow,
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = glassSettings.item,
+            bgColor = color.copy(alpha = 0.15f),
+            isDark = isDarkTheme,
+        ),
+        fallbackColor = color.copy(alpha = 0.12f),
+        borderColor = color.copy(alpha = 0.3f),
+        borderWidth = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

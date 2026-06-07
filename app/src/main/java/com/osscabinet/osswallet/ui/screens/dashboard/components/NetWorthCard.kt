@@ -48,8 +48,11 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -248,7 +251,14 @@ private fun FlowBadge(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.insetSurface,
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = LocalGlassSettings.current.item,
+            bgColor = color.copy(alpha = 0.15f),
+            isDark = LocalThemeMode.current.isDarkTheme,
+        ),
+        fallbackColor = color.copy(alpha = 0.12f),
+        borderColor = color.copy(alpha = 0.3f),
+        borderWidth = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(

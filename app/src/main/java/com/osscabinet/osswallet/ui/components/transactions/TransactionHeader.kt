@@ -85,11 +85,8 @@ fun TransactionHeader(
         shape = glassShape,
         hazeLayer = HazeLayer.Surface,
         hazeStyle = glassStyle,
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Standard,
         fallbackColor = AppColors.cardSurfaceProminent,
-        shadowElevation = AeonSize.D12.value,
-        ambientShadowAlpha = 0.06f,
-        spotShadowAlpha = 0.12f,
-        borderColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.6f)
     ) {
         Column(
             modifier = Modifier.padding(

@@ -110,10 +110,9 @@ fun GlassSurface(
     hazeState: HazeState? = null,
     hazeLayer: Int? = null,
     hazeStyle: HazeStyle = GlassTokens.style(),
+    glassVariant: String? = null,
     fallbackColor: Color = AppColors.cardSurfaceProminent,
     shadowElevation: Dp? = null,
-    ambientShadowAlpha: Float = 0.1f,
-    spotShadowAlpha: Float = 0.2f,
     borderColor: Color? = null,
     borderAlpha: Float? = null,
     borderWidth: Dp? = null,
@@ -123,22 +122,21 @@ fun GlassSurface(
     val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
-    val config = GlassTokens.config(depth)
+    val config = if (glassVariant != null) GlassTokens.configForVariant(glassVariant) else GlassTokens.config(depth)
 
     // Default glass rim that catches light at the edges
     val effectiveBorderAlpha = borderAlpha ?: config.borderAlpha
     val glassRimColor = if (isDark) {
         Color.White.copy(alpha = effectiveBorderAlpha)
     } else {
-        // In light mode, we use a more defined border to prevent blending
-        AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f) // definition boost
+        AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f)
     }
     val effectiveBorderColor = borderColor ?: glassRimColor
-    val effectiveBorderWidth = borderWidth ?: 0.5.dp
+    val effectiveBorderWidth = borderWidth ?: config.borderWidth.dp
 
-    // Theme-aware shadow intensity
-    val effectiveAmbientAlpha = if (isDark) ambientShadowAlpha else ambientShadowAlpha * 1.5f
-    val effectiveSpotAlpha = if (isDark) spotShadowAlpha else spotShadowAlpha * 1.5f
+    // Theme-aware shadow intensity — reads from config, independent of glass toggle
+    val effectiveAmbientAlpha = if (isDark) config.ambientShadowAlpha else config.ambientShadowAlpha * 1.5f
+    val effectiveSpotAlpha = if (isDark) config.spotShadowAlpha else config.spotShadowAlpha * 1.5f
     val effectiveShadowElevation = shadowElevation ?: config.shadowElevation.dp
 
     // Blur the state assigned to this depth. GlassSurface is a pure consumer — no hazeSource.
@@ -148,8 +146,8 @@ fun GlassSurface(
         modifier = modifier,
         propagateMinConstraints = true
     ) {
-        // Shadow on its own RenderNode
-        if (glassEnabled && effectiveShadowElevation > 0.dp) {
+        // Shadow — always rendered when elevation > 0, independent of glass toggle
+        if (effectiveShadowElevation > 0.dp) {
             Spacer(
                 modifier = Modifier
                     .matchParentSize()
@@ -162,7 +160,7 @@ fun GlassSurface(
                     }
             )
         }
-        
+
         // Background layer (Blur/Glass) + Content Container
         Box(
             modifier = Modifier
@@ -174,8 +172,9 @@ fun GlassSurface(
                         Modifier.background(fallbackColor, shape)
                     }
                 )
+                // Border — always rendered when alpha > 0, independent of glass toggle
                 .then(
-                    if (glassEnabled && effectiveHazeState != null)
+                    if (effectiveBorderAlpha > 0f)
                         Modifier.border(effectiveBorderWidth, effectiveBorderColor, shape)
                     else Modifier
                 )
@@ -231,6 +230,7 @@ fun AeonGlassSheet(
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                     hazeLayer = hazeLayer,
                     hazeStyle = GlassTokens.sheetStyle(),
+                    glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Sheet,
                     fallbackColor = AppColors.sheetSurface,
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {

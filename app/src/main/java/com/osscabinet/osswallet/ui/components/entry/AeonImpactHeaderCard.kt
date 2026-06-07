@@ -178,11 +178,8 @@ fun <T> AeonImpactHeaderCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = AppColors.cardSurface,
-        borderColor = AppColors.divider.copy(alpha = 0.15f),
-        borderAlpha = 0.1f,
-        borderWidth = (AeonTheme.dimensions.spacingXs / 8),
-        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),

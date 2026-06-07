@@ -98,11 +98,8 @@ fun AppDrawerContent(
         shape = drawerShape,
         hazeState = drawerHazeState,
         hazeStyle = glassStyle,
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Drawer,
         fallbackColor = AppColors.drawerSurface,
-        shadowElevation = 16.dp,
-        ambientShadowAlpha = 0.08f,
-        spotShadowAlpha = 0.18f,
-        borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.50f)
     ) {
         Column(
             modifier = Modifier

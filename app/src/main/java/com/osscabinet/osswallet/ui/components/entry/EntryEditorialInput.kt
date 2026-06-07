@@ -114,11 +114,11 @@ fun EntryEditorialInput(
                 },
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             hazeStyle = GlassTokens.cardStyle(),
+            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
             fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
             borderAlpha = if (isFocused) 0.5f else if (isFlush) 0f else 0.1f,
             borderWidth = if (isFocused) 1.dp else if (isFlush) 0.dp else 0.5.dp,
-            shadowElevation = 0.dp
         ) {
             Row(
                 modifier = Modifier

@@ -49,10 +49,9 @@ fun EntrySection(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = if (glassEnabled) AppColors.surfaceContainerLow.copy(alpha = 0.6f) else AppColors.surfaceContainerLow,
         borderColor = if (glassEnabled) AppColors.outlineVariant.copy(alpha = 0.2f) else AppColors.outlineVariant,
-        borderWidth = 1.dp,
-        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier

@@ -129,11 +129,11 @@ fun EntryActionCard(
             },
         shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = backgroundColor,
         borderColor = borderColor,
         borderAlpha = if (isSelected) 0.5f else 0.1f,
         borderWidth = borderWidth,
-        shadowElevation = 0.dp
     ) {
         // Glass-mode color wash: renders on top of the haze blur, behind all content.
         // Gives the same full-color appearance as the solid fill in non-glass mode.

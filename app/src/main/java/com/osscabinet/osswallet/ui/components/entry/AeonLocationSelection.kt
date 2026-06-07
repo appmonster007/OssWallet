@@ -539,11 +539,8 @@ private fun AeonLocationSelectionContent(
                     shape = RoundedCornerShape(dims.containerCornerRadius),
                     hazeLayer = HazeLayer.Overlay,
                     hazeStyle = GlassTokens.popupStyle(),
+                    glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
                     fallbackColor = cardSurface,
-                    shadowElevation = 12.dp,
-                    ambientShadowAlpha = 0.06f,
-                    spotShadowAlpha = 0.16f,
-                    borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f),
                 ) {
                     LazyColumn(contentPadding = PaddingValues(vertical = dims.spacingSm)) {
                         if (searchQuery.isBlank() && recentLocations.isNotEmpty()) {
@@ -649,8 +646,8 @@ private fun AeonLocationSelectionContent(
                     ),
                     hazeLayer = HazeLayer.Overlay,
                     hazeStyle = GlassTokens.sheetStyle(),
+                    glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Sheet,
                     fallbackColor = cardSurface,
-                    borderColor = if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.35f),
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
 

@@ -96,10 +96,11 @@ fun AeonFilterSelection(
                             ) { onFilterSelected(null); onDismiss() },
                         shape = RoundedCornerShape(dims.componentCornerRadius),
                         hazeStyle = GlassTokens.cardStyle(),
+                        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
                         fallbackColor = AppColors.primaryContainer,
                         borderColor = AppColors.primary,
                         borderAlpha = 0.5f,
-                        borderWidth = 1.dp
+                        borderWidth = 1.dp,
                     ) {
                         Row(
                             modifier = Modifier
@@ -138,10 +139,11 @@ fun AeonFilterSelection(
                                 ) { onFilterSelected(filter.id); onDismiss() },
                             shape = RoundedCornerShape(dims.componentCornerRadius),
                             hazeStyle = GlassTokens.cardStyle(),
+                            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
                             fallbackColor = if (isSelected) AppColors.primaryContainer else AppColors.surfaceContainerLow,
                             borderColor = if (isSelected) AppColors.primary else AppColors.outlineVariant,
                             borderAlpha = if (isSelected) 0.5f else 0.1f,
-                            borderWidth = if (isSelected) 1.dp else 0.5.dp
+                            borderWidth = if (isSelected) 1.dp else 0.5.dp,
                         ) {
                             Row(
                                 modifier = Modifier

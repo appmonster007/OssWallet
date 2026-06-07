@@ -12,6 +12,18 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 
 /**
+ * Named variant identifiers for per-variant glass/surface design tokens.
+ */
+object GlassVariant {
+    const val Standard = "standard"
+    const val Card = "card"
+    const val Pill = "pill"
+    const val Drawer = "drawer"
+    const val Sheet = "sheet"
+    const val Popup = "popup"
+}
+
+/**
  * Design tokens for glassmorphism effects using the Haze library.
  */
 object GlassTokens {
@@ -80,8 +92,21 @@ object GlassTokens {
         val settings = LocalGlassSettings.current
         return when (hazeLayer) {
             HazeLayer.Drawer -> settings.drawer
-            HazeLayer.Overlay -> settings.pill // Approximation for overlay
+            HazeLayer.Overlay -> settings.pill
             else -> settings.standard
+        }
+    }
+
+    @Composable
+    fun configForVariant(variant: String): GlassStyleConfig {
+        val s = LocalGlassSettings.current
+        return when (variant) {
+            GlassVariant.Card    -> s.card
+            GlassVariant.Pill    -> s.pill
+            GlassVariant.Drawer  -> s.drawer
+            GlassVariant.Sheet   -> s.sheet
+            GlassVariant.Popup   -> s.popup
+            else                 -> s.standard
         }
     }
 

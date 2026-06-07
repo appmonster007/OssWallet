@@ -112,8 +112,9 @@ fun AeonAccountCardSmall(
             blurRadius = glassSettings.card.blurRadius.dp,
             noiseFactor = glassSettings.card.noiseFactor
         ),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
-        borderColor = contentColor.copy(alpha = 0.1f)
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -200,8 +201,9 @@ fun AeonAccountCardMedium(
             blurRadius = glassSettings.card.blurRadius.dp,
             noiseFactor = glassSettings.card.noiseFactor
         ),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
-        borderColor = contentColor.copy(alpha = 0.1f)
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -327,8 +329,9 @@ fun AeonAccountCardLarge(
             blurRadius = glassSettings.card.blurRadius.dp,
             noiseFactor = glassSettings.card.noiseFactor
         ),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
-        borderColor = contentColor.copy(alpha = 0.1f)
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Box(modifier = Modifier.fillMaxWidth()) {

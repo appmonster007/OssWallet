@@ -208,8 +208,8 @@ fun AdvancedGlassSettings(
                                     color = AppColors.divider.copy(alpha = 0.5f)
                                 )
                                 AeonSettingsItem(
-                                    title = "Glass Lab",
-                                    subtitle = "Fine-tune blur and opacity for each layer",
+                                    title = "Design Lab",
+                                    subtitle = "Fine-tune glass, shadow and border for each surface",
                                     icon = Icons.Rounded.Tune,
                                     onClick = onNavigateToGlassLab
                                 )

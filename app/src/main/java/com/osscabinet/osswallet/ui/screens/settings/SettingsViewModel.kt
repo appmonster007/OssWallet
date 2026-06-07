@@ -336,6 +336,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.standard.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.standard.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.standard.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.standard.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.standard.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.standard.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.standard
                         }
                     }
@@ -347,6 +350,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.drawer.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.drawer.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.drawer.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.drawer.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.drawer.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.drawer.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.drawer
                         }
                     }
@@ -358,6 +364,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.pill.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.pill.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.pill.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.pill.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.pill.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.pill.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.pill
                         }
                     }
@@ -369,6 +378,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.card.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.card.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.card.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.card.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.card.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.card.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.card
                         }
                     }
@@ -380,6 +392,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.sheet.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.sheet.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.sheet.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.sheet.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.sheet.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.sheet.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.sheet
                         }
                     }
@@ -391,6 +406,9 @@ class SettingsViewModel @Inject constructor(
                             "noiseFactor" -> current.popup.copy(noiseFactor = defaultStyle.noiseFactor)
                             "shadowElevation" -> current.popup.copy(shadowElevation = defaultStyle.shadowElevation)
                             "borderAlpha" -> current.popup.copy(borderAlpha = defaultStyle.borderAlpha)
+                            "ambientShadowAlpha" -> current.popup.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
+                            "spotShadowAlpha" -> current.popup.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
+                            "borderWidth" -> current.popup.copy(borderWidth = defaultStyle.borderWidth)
                             else -> current.popup
                         }
                     }

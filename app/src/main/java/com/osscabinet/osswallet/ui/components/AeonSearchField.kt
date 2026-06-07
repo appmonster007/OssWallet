@@ -59,10 +59,11 @@ fun AeonSearchField(
             modifier = fieldModifier,
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             hazeStyle = GlassTokens.popupStyle(),
+            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
             fallbackColor = AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else AppColors.outline.copy(alpha = 0.1f),
             borderAlpha = if (isFocused) 0.5f else 0.1f,
-            borderWidth = if (isFocused) 1.dp else 0.5.dp
+            borderWidth = if (isFocused) 1.dp else 0.5.dp,
         ) {
             TextField(
                 value = query,

@@ -80,8 +80,8 @@ fun <T> EntryTypeSelector(
         modifier = Modifier.height(44.dp),
         shape = RoundedCornerShape(32.dp),
         hazeStyle = GlassTokens.pillStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
         fallbackColor = AppColors.recessedSurface,
-        borderColor = AppColors.divider.copy(alpha = 0.15f)
     ) {
         Box(modifier = Modifier.padding(4.dp)) {
             Box(

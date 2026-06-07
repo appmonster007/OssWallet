@@ -102,10 +102,11 @@ fun EntrySelectionCard(
             },
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = backgroundColor,
         borderColor = borderColor,
         borderAlpha = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) 0.5f else 0.1f,
-        borderWidth = borderWidth
+        borderWidth = borderWidth,
     ) {
         Row(
             modifier = Modifier

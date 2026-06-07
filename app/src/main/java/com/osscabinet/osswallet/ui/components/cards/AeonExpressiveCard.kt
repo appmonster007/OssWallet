@@ -145,11 +145,12 @@ fun AeonExpressiveCard(
         shape = cardShape,
         hazeLayer = HazeLayer.Surface,
         hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
         borderColor = when {
             isWarning || accentColor != null -> Color.Transparent
-            else -> null // Uses default glass rim
-        }
+            else -> null
+        },
     ) {
     Card(
         modifier = Modifier

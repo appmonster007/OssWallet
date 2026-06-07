@@ -129,9 +129,8 @@ fun AeonTagSelectionDialog(
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                 hazeStyle = GlassTokens.popupStyle(),
+                glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
                 fallbackColor = AppColors.surfaceContainerHigh,
-                borderColor = AppColors.outlineVariant.copy(alpha = 0.2f),
-                shadowElevation = 6.dp
             ) {
                 Column(
                     modifier = Modifier.padding(dims.cardPadding),
@@ -378,9 +377,8 @@ fun AeonTagCreateDialog(
                     .wrapContentHeight(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
                 hazeStyle = GlassTokens.popupStyle(),
+                glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
                 fallbackColor = AppColors.surfaceContainerHigh,
-                borderColor = AppColors.outlineVariant.copy(alpha = 0.2f),
-                shadowElevation = 6.dp
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),

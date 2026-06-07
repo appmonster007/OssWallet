@@ -257,8 +257,8 @@ fun TransactionFilterPill(
             shape = RoundedCornerShape(corner),
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
+            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
             fallbackColor = surfaceColor,
-            shadowElevation = elevation
         ) {
             Column(Modifier.fillMaxSize()) {
                 Box(

@@ -203,8 +203,8 @@ fun PillNavigationBar(
             shape = CircleShape,
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
+            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
             fallbackColor = AppColors.componentOnCard,
-            shadowElevation = AeonSize.D8.value
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Sliding Selection Indicator

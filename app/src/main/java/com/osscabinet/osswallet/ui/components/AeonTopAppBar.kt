@@ -186,8 +186,8 @@ fun AeonTopBarPill(
         shape = CircleShape,
         hazeLayer = hazeLayer,
         hazeStyle = GlassTokens.pillStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
         fallbackColor = AppColors.componentOnCard,
-        shadowElevation = AeonSize.D8.value,
         modifier = modifier.height(AeonTopBarDefaults.PillHeight)
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
@@ -480,9 +480,8 @@ fun AeonTopBarDropdown(
                 shape = RoundedCornerShape(AeonSize.D16.value),
                 hazeLayer = HazeLayer.Overlay,
                 hazeStyle = GlassTokens.popupStyle(),
+                glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
                 fallbackColor = cardSurface,
-                shadowElevation = AeonSize.D12.value,
-                borderColor = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f),
             ) {
                 Column(modifier = Modifier.padding(vertical = AeonSize.D8.value)) {
                     options.forEachIndexed { index, option ->

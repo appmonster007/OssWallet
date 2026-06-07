@@ -45,8 +45,10 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -242,10 +244,11 @@ private fun FlowBadge(
     onClick: () -> Unit = {},
     previousAmount: BigDecimal? = null
 ) {
-    Surface(
+    GlassSurface(
         modifier = modifier.clickable(onClick = onClick),
-        color = AppColors.insetSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.insetSurface,
     ) {
         Column(
             modifier = Modifier.padding(

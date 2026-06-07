@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,8 +37,10 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -142,11 +145,11 @@ private fun LoanSummaryRow(
             .coerceIn(0f, 1f)
     else 0f
 
-    Surface(
-        onClick = onClick,
-        color = AppColors.sheetSurface,
+    GlassSurface(
+        modifier = Modifier.clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.sheetSurface,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

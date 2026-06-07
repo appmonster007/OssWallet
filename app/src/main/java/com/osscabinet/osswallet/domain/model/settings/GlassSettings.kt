@@ -22,5 +22,6 @@ data class GlassSettings(
     val pill: GlassStyleConfig = GlassStyleConfig(12f, 0.45f, 0.65f, 0f, 12f, 0.30f, 0.08f, 0.15f, 0.5f),
     val card: GlassStyleConfig = GlassStyleConfig(6f, 0.40f, 0.60f, 0f, 8f, 0.15f, 0.10f, 0.20f, 0.5f),
     val sheet: GlassStyleConfig = GlassStyleConfig(14f, 0.52f, 0.78f, 0f, 12f, 0.15f, 0.08f, 0.15f, 0.5f),
-    val popup: GlassStyleConfig = GlassStyleConfig(8f, 0.38f, 0.55f, 0f, 6f, 0.25f, 0.08f, 0.15f, 0.5f)
+    val popup: GlassStyleConfig = GlassStyleConfig(8f, 0.38f, 0.55f, 0f, 6f, 0.25f, 0.08f, 0.15f, 0.5f),
+    val item: GlassStyleConfig = GlassStyleConfig(4f, 0.25f, 0.50f, 0f, 3f, 0.10f, 0.05f, 0.10f, 0.5f)
 )

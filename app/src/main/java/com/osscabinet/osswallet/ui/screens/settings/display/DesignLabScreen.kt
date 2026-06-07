@@ -158,7 +158,7 @@ fun DesignLabContent(
     }
     val isDarkPreview = previewMode != "Light"
     var showContourDialog by remember { mutableStateOf(false) }
-    val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup")
+    val tokens = listOf("Standard", "Drawer", "Pill", "Card", "Sheet", "Popup", "Item")
 
     val currentConfig = when (selectedToken) {
         "Drawer" -> glassSettings.drawer
@@ -166,6 +166,7 @@ fun DesignLabContent(
         "Card" -> glassSettings.card
         "Sheet" -> glassSettings.sheet
         "Popup" -> glassSettings.popup
+        "Item" -> glassSettings.item
         else -> glassSettings.standard
     }
 
@@ -175,6 +176,7 @@ fun DesignLabContent(
         "Card" -> GlassVariant.Card
         "Sheet" -> GlassVariant.Sheet
         "Popup" -> GlassVariant.Popup
+        "Item" -> GlassVariant.Item
         else -> GlassVariant.Standard
     }
 
@@ -384,6 +386,7 @@ fun DesignLabContent(
                                                 "Card" -> AppColors.cardSurface
                                                 "Sheet" -> AppColors.sheetSurface
                                                 "Popup" -> AppColors.popupSurface
+                                                "Item" -> AppColors.componentOnCard
                                                 else -> AppColors.cardSurfaceProminent
                                             },
                                             isDark = isDarkPreview

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,8 +35,10 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -254,11 +254,11 @@ fun AeonFlowCard(
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
 
-    Surface(
-        color = AppColors.surfaceContainerLow,
+    GlassSurface(
+        modifier = modifier.clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
-        modifier = modifier.clickable { onClick() }
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.surfaceContainerLow,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

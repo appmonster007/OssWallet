@@ -68,11 +68,13 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
 
@@ -336,17 +338,21 @@ fun AeonFlowBadge(
     onClick: (() -> Unit)? = null
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = color.applyAeonTint(mode)
+    val isDark = mode.isDarkTheme
+
     GlassSurface(
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier,
         shape = RoundedCornerShape(8.dp),
+        glassVariant = GlassVariant.Card, // Using card variant for consistent glass morphism
         hazeStyle = GlassTokens.createHazeStyle(
-            config = LocalGlassSettings.current.item,
-            bgColor = color.copy(alpha = 0.15f),
-            isDark = LocalThemeMode.current.isDarkTheme,
+            config = LocalGlassSettings.current.card,
+            bgColor = containerColor,
+            isDark = isDark,
         ),
-        fallbackColor = color.copy(alpha = 0.15f),
-        borderColor = color.copy(alpha = 0.4f),
-        borderWidth = 1.dp,
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         Text(
             text = formatAuto(amount, currency, shorten = true).trim(),
@@ -356,7 +362,7 @@ fun AeonFlowBadge(
                 fontSize = 8.sp,
                 fontFeatureSettings = "tnum"
             ),
-            color = color,
+            color = contentColor,
         )
     }
 }

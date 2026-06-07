@@ -54,6 +54,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.applyAeonTint
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -247,18 +248,21 @@ private fun FlowBadge(
     onClick: () -> Unit = {},
     previousAmount: BigDecimal? = null
 ) {
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = color.applyAeonTint(mode)
+    val isDark = mode.isDarkTheme
+
     GlassSurface(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        glassVariant = GlassVariant.Item,
+        glassVariant = GlassVariant.Card,
         hazeStyle = GlassTokens.createHazeStyle(
-            config = LocalGlassSettings.current.item,
-            bgColor = color.copy(alpha = 0.15f),
-            isDark = LocalThemeMode.current.isDarkTheme,
+            config = LocalGlassSettings.current.card,
+            bgColor = containerColor,
+            isDark = isDark,
         ),
-        fallbackColor = color.copy(alpha = 0.12f),
-        borderColor = color.copy(alpha = 0.3f),
-        borderWidth = 1.dp,
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         Column(
             modifier = Modifier.padding(
@@ -283,7 +287,7 @@ private fun FlowBadge(
                             fontSize = 10.sp,
                             letterSpacing = 0.5.sp
                         ),
-                        color = AppColors.contentSecondary
+                        color = contentColor.copy(alpha = 0.6f)
                     )
                 }
                 if (previousAmount != null) {
@@ -300,7 +304,7 @@ private fun FlowBadge(
                                 if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                 contentDescription = null,
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                                tint = color
+                                tint = contentColor
                             )
                             Text(
                                 text = "${if (change.signum() > 0) "+" else ""}$percentage%",
@@ -308,7 +312,7 @@ private fun FlowBadge(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 10.sp
                                 ),
-                                color = color
+                                color = contentColor
                             )
                         }
                     }
@@ -320,7 +324,7 @@ private fun FlowBadge(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
-                color = color
+                color = contentColor
             )
         }
     }

@@ -125,10 +125,13 @@ object GlassTokens {
 
     @Composable
     fun createHazeStyle(config: GlassStyleConfig, bgColor: Color, isDark: Boolean): HazeStyle {
+        val tintAlpha = if (isDark) config.glass.darkAlpha else config.glass.lightAlpha
         return HazeStyle(
-            tint = HazeTint(bgColor.copy(alpha = if (isDark) config.glass.darkAlpha else config.glass.lightAlpha)),
+            backgroundColor = bgColor.copy(alpha = 1f),
+            tint = HazeTint(bgColor.copy(alpha = tintAlpha)),
             blurRadius = config.glass.blurRadius.dp,
             noiseFactor = config.glass.noiseFactor,
+            fallbackTint = HazeTint(bgColor.copy(alpha = tintAlpha)),
         )
     }
 }

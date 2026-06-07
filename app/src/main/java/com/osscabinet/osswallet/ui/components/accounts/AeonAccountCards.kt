@@ -57,10 +57,12 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -596,6 +598,170 @@ fun AeonAccountCardsPreview() {
                 incomeInAccountCurrency = BigDecimal("500.00"),
                 expenseInAccountCurrency = BigDecimal("100.00")
             )
+        }
+    }
+}
+
+private fun glassPreviewAccounts() = Triple(
+    Account(id = "1", name = "Main Savings", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, colorHex = "#4CAF50", icon = "Savings"),
+    Account(id = "2", name = "Checking", currencyCode = "EUR", structureType = AccountStructureType.BANK, colorHex = "#2196F3", icon = "AccountBalance"),
+    Account(id = "3", name = "Portfolio", currencyCode = "USD", structureType = AccountStructureType.INVESTMENT, colorHex = "#9C27B0", icon = "ShowChart")
+)
+
+@Preview(showBackground = true, name = "Glass – Light")
+@Composable
+fun AeonAccountCardsGlassLightPreview() {
+    val (savings, checking, portfolio) = glassPreviewAccounts()
+    OssWalletTheme(theme = "Light") {
+        // hazeEffect is a GPU operation that Compose Preview can't execute — it renders as white.
+        // Disabling glass shows the fallback tinted colors instead, which is useful for layout review.
+        CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
+            AeonHazeProvider { _ ->
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardSmall(
+                            account = savings,
+                            balance = BigDecimal("12345.67"),
+                            balanceInBase = BigDecimal("12345.67"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardSmall(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    AeonAccountCardMedium(
+                        account = portfolio,
+                        balance = BigDecimal("48320.00"),
+                        balanceInBase = BigDecimal("48320.00"),
+                        baseCurrency = "USD",
+                        onClick = {}
+                    )
+                    AeonAccountCardLarge(
+                        account = savings,
+                        balance = BigDecimal("12345.67"),
+                        balanceInBase = BigDecimal("12345.67"),
+                        baseCurrency = "USD",
+                        onClick = {},
+                        incomeInAccountCurrency = BigDecimal("5200.00"),
+                        expenseInAccountCurrency = BigDecimal("1840.50"),
+                        cardNumber = "•••• 4921"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Glass – Dark")
+@Composable
+fun AeonAccountCardsGlassDarkPreview() {
+    val (savings, checking, portfolio) = glassPreviewAccounts()
+    OssWalletTheme(theme = "Dark") {
+        CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
+            AeonHazeProvider { _ ->
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardSmall(
+                            account = savings,
+                            balance = BigDecimal("12345.67"),
+                            balanceInBase = BigDecimal("12345.67"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardSmall(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    AeonAccountCardMedium(
+                        account = portfolio,
+                        balance = BigDecimal("48320.00"),
+                        balanceInBase = BigDecimal("48320.00"),
+                        baseCurrency = "USD",
+                        onClick = {}
+                    )
+                    AeonAccountCardLarge(
+                        account = savings,
+                        balance = BigDecimal("12345.67"),
+                        balanceInBase = BigDecimal("12345.67"),
+                        baseCurrency = "USD",
+                        onClick = {},
+                        incomeInAccountCurrency = BigDecimal("5200.00"),
+                        expenseInAccountCurrency = BigDecimal("1840.50"),
+                        cardNumber = "•••• 4921"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Glass – AMOLED")
+@Composable
+fun AeonAccountCardsGlassAmoledPreview() {
+    val (savings, checking, portfolio) = glassPreviewAccounts()
+    OssWalletTheme(theme = "Amoled") {
+        CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
+            AeonHazeProvider { _ ->
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardSmall(
+                            account = savings,
+                            balance = BigDecimal("12345.67"),
+                            balanceInBase = BigDecimal("12345.67"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardSmall(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    AeonAccountCardMedium(
+                        account = portfolio,
+                        balance = BigDecimal("48320.00"),
+                        balanceInBase = BigDecimal("48320.00"),
+                        baseCurrency = "USD",
+                        onClick = {}
+                    )
+                    AeonAccountCardLarge(
+                        account = savings,
+                        balance = BigDecimal("12345.67"),
+                        balanceInBase = BigDecimal("12345.67"),
+                        baseCurrency = "USD",
+                        onClick = {},
+                        incomeInAccountCurrency = BigDecimal("5200.00"),
+                        expenseInAccountCurrency = BigDecimal("1840.50"),
+                        cardNumber = "•••• 4921"
+                    )
+                }
+            }
         }
     }
 }

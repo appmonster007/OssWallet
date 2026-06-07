@@ -86,9 +86,13 @@ fun AeonGlassHost(
         LocalHazeDepth provides LocalHazeDepth.current + 1,
     ) {
         Box(modifier = modifier) {
-            // First child (lowest Z-order) → captures whatever the parent GlassSurface rendered.
-            // matchParentSize() defers sizing to the other children in this Box.
-            Spacer(Modifier.matchParentSize().aeonHazeSource(surfaceHaze))
+            // Solid background so surfaceHaze captures real pixels for nested GlassSurface items to blur.
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .aeonHazeSource(surfaceHaze)
+                    .background(AppColors.cardSurface)
+            )
             content()
         }
     }

@@ -180,7 +180,7 @@ fun AeonFilterSelection(
 
                                         append(" • ")
 
-                                        if (filter.filter.accountIds.isEmpty()) append("All Accounts")
+                                        if (filter.filter.accountIds.isEmpty()) append("All Active")
                                         else append("${filter.filter.accountIds.size} Accounts")
                                     }
                                     Text(

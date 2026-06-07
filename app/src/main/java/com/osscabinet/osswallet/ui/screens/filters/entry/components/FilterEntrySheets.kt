@@ -5,6 +5,8 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.runtime.Composable
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
@@ -28,13 +30,16 @@ fun FilterEntrySheets(
     onEvent: (FilterEntryEvent) -> Unit
 ) {
     if (state.showTypeSheet) {
+        val allTypes = TransactionType.entries.toSet()
         AeonSelectionSheet(
             title = "Transaction Types",
             onDismiss = { onEvent(FilterEntryEvent.ShowTypeSheet(false)) },
             items = TransactionType.entries,
-            selectedIds = state.selectedTransactionTypes,
+            // Empty selection means "all types" — resolve to full set so all appear checked
+            selectedIds = state.selectedTransactionTypes.ifEmpty { allTypes },
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetTransactionTypes(ids))
+                // Collapse "all selected" or "nothing" back to empty (= no type filter)
+                onEvent(FilterEntryEvent.SetTransactionTypes(if (ids == allTypes || ids.isEmpty()) emptySet() else ids))
             },
             idMapper = { it },
             labelMapper = { it.displayName },
@@ -50,13 +55,15 @@ fun FilterEntrySheets(
     }
 
     if (state.showAccountSheet) {
+        // Show ALL accounts (active + archived). Empty selection resolves to active accounts only,
+        // so archived appear unchecked by default — user can opt in by checking them.
         val activeAccountIds = state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
         AeonAccountSelection(
             accounts = state.accounts,
             selectedAccountIds = state.selectedAccountIds.ifEmpty { activeAccountIds },
             onSelectionChange = { ids ->
-                // Store empty to mean "all active accounts"; only persist when user picks a
-                // non-default set (e.g. includes archived or is a subset of active accounts).
+                // Store empty to mean "all active accounts"; only persist an explicit set when the
+                // user picks a non-default set (subset of active, or includes archived accounts).
                 val effectiveIds = if (ids == activeAccountIds) emptySet() else ids
                 onEvent(FilterEntryEvent.SetAccountIds(effectiveIds))
             },
@@ -67,11 +74,13 @@ fun FilterEntrySheets(
     }
 
     if (state.showCategorySheet) {
+        val allCategoryIds = state.categories.map { it.id }.toSet()
         AeonCategorySelection(
             categories = state.categories,
-            selectedCategoryIds = state.selectedCategoryIds,
+            // Empty selection means "all categories" — resolve so all appear checked
+            selectedCategoryIds = state.selectedCategoryIds.ifEmpty { allCategoryIds },
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetCategoryIds(ids))
+                onEvent(FilterEntryEvent.SetCategoryIds(if (ids == allCategoryIds || ids.isEmpty()) emptySet() else ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowCategorySheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -81,10 +90,12 @@ fun FilterEntrySheets(
     }
 
     if (state.showPaymentMethodSheet) {
+        val allMethods = PaymentMethod.entries.toSet()
         AeonPaymentMethodSelection(
-            selectedMethods = state.selectedPaymentMethods,
+            // Empty selection means "any method" — resolve so all appear checked
+            selectedMethods = state.selectedPaymentMethods.ifEmpty { allMethods },
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetPaymentMethods(ids))
+                onEvent(FilterEntryEvent.SetPaymentMethods(if (ids == allMethods || ids.isEmpty()) emptySet() else ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowPaymentMethodSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -93,10 +104,12 @@ fun FilterEntrySheets(
     }
 
     if (state.showStatusSheet) {
+        val allStatuses = TransactionStatus.entries.toSet()
         AeonStatusSelection(
-            selectedStatuses = state.selectedStatuses,
+            // Empty selection means "all statuses" — resolve so all appear checked
+            selectedStatuses = state.selectedStatuses.ifEmpty { allStatuses },
             onSelectionChange = { ids ->
-                if (ids.isNotEmpty()) onEvent(FilterEntryEvent.SetStatuses(ids))
+                onEvent(FilterEntryEvent.SetStatuses(if (ids == allStatuses || ids.isEmpty()) emptySet() else ids))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowStatusSheet(false)) },
             mode = AeonSelectMode.MULTI,
@@ -132,15 +145,20 @@ fun FilterEntrySheets(
     }
 
     if (state.showCurrencySheet) {
+        // The shortlisted currencies are the currencies relevant to the user's accounts/transactions.
+        // When selection is empty (= all), pre-select the shortlist so the user sees what "all" means.
+        val shortlisted = state.shortlistedCurrencies
         AeonCurrencySelection(
-            selectedCurrencies = state.selectedCurrencies,
+            selectedCurrencies = state.selectedCurrencies.ifEmpty { shortlisted.toSet() },
             onSelectionChange = { ids ->
-                onEvent(FilterEntryEvent.SetCurrencies(ids))
+                // Collapse back to empty when the user selects all shortlisted currencies (or nothing)
+                val effectiveIds = if (ids == shortlisted.toSet() || ids.isEmpty()) emptySet() else ids
+                onEvent(FilterEntryEvent.SetCurrencies(effectiveIds))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowCurrencySheet(false)) },
             mode = AeonSelectMode.MULTI,
             title = "Filter Currencies",
-            currencies = state.shortlistedCurrencies.ifEmpty { null }
+            currencies = shortlisted.ifEmpty { null }
         )
     }
 

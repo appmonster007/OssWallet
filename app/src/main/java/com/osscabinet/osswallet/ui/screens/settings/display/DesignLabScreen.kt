@@ -640,37 +640,37 @@ fun DesignLabContent(
                                     Column {
                                         TuningSliderRow(
                                             label = "Blur Radius",
-                                            value = currentConfig.blurRadius,
+                                            value = currentConfig.glass.blurRadius,
                                             range = 0f..40f,
-                                            valueDisplay = "${currentConfig.blurRadius.toInt()}dp",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(blurRadius = v) } },
+                                            valueDisplay = "${currentConfig.glass.blurRadius.toInt()}dp",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(blurRadius = v)) } },
                                             onReset = { onResetParameter(selectedToken, "blurRadius") }
                                         )
                                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                         TuningSliderRow(
                                             label = "Light Alpha",
-                                            value = currentConfig.lightAlpha,
+                                            value = currentConfig.glass.lightAlpha,
                                             range = 0f..1f,
-                                            valueDisplay = "${(currentConfig.lightAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(lightAlpha = v) } },
+                                            valueDisplay = "${(currentConfig.glass.lightAlpha * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(lightAlpha = v)) } },
                                             onReset = { onResetParameter(selectedToken, "lightAlpha") }
                                         )
                                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                         TuningSliderRow(
                                             label = "Dark Alpha",
-                                            value = currentConfig.darkAlpha,
+                                            value = currentConfig.glass.darkAlpha,
                                             range = 0f..1f,
-                                            valueDisplay = "${(currentConfig.darkAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(darkAlpha = v) } },
+                                            valueDisplay = "${(currentConfig.glass.darkAlpha * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(darkAlpha = v)) } },
                                             onReset = { onResetParameter(selectedToken, "darkAlpha") }
                                         )
                                         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                         TuningSliderRow(
                                             label = "Noise Factor",
-                                            value = currentConfig.noiseFactor,
+                                            value = currentConfig.glass.noiseFactor,
                                             range = 0f..1f,
-                                            valueDisplay = "${(currentConfig.noiseFactor * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(noiseFactor = v) } },
+                                            valueDisplay = "${(currentConfig.glass.noiseFactor * 100).toInt()}%",
+                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(noiseFactor = v)) } },
                                             onReset = { onResetParameter(selectedToken, "noiseFactor") }
                                         )
                                     }
@@ -697,46 +697,46 @@ fun DesignLabContent(
                                 Column {
                                     TuningSliderRow(
                                         label = "Shadow Elevation",
-                                        value = currentConfig.shadowElevation,
+                                        value = currentConfig.surface.shadowElevation,
                                         range = 0f..32f,
-                                        valueDisplay = "${currentConfig.shadowElevation.toInt()}dp",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(shadowElevation = v) } },
+                                        valueDisplay = "${currentConfig.surface.shadowElevation.toInt()}dp",
+                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(shadowElevation = v)) } },
                                         onReset = { onResetParameter(selectedToken, "shadowElevation") }
                                     )
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                     TuningSliderRow(
                                         label = "Ambient Shadow Alpha",
-                                        value = currentConfig.ambientShadowAlpha,
+                                        value = currentConfig.surface.ambientShadowAlpha,
                                         range = 0f..0.4f,
-                                        valueDisplay = "${(currentConfig.ambientShadowAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(ambientShadowAlpha = v) } },
+                                        valueDisplay = "${(currentConfig.surface.ambientShadowAlpha * 100).toInt()}%",
+                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(ambientShadowAlpha = v)) } },
                                         onReset = { onResetParameter(selectedToken, "ambientShadowAlpha") }
                                     )
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                     TuningSliderRow(
                                         label = "Spot Shadow Alpha",
-                                        value = currentConfig.spotShadowAlpha,
+                                        value = currentConfig.surface.spotShadowAlpha,
                                         range = 0f..0.4f,
-                                        valueDisplay = "${(currentConfig.spotShadowAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(spotShadowAlpha = v) } },
+                                        valueDisplay = "${(currentConfig.surface.spotShadowAlpha * 100).toInt()}%",
+                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(spotShadowAlpha = v)) } },
                                         onReset = { onResetParameter(selectedToken, "spotShadowAlpha") }
                                     )
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                     TuningSliderRow(
                                         label = "Border Alpha",
-                                        value = currentConfig.borderAlpha,
+                                        value = currentConfig.surface.borderAlpha,
                                         range = 0f..1f,
-                                        valueDisplay = "${(currentConfig.borderAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(borderAlpha = v) } },
+                                        valueDisplay = "${(currentConfig.surface.borderAlpha * 100).toInt()}%",
+                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(borderAlpha = v)) } },
                                         onReset = { onResetParameter(selectedToken, "borderAlpha") }
                                     )
                                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
                                     TuningSliderRow(
                                         label = "Border Width",
-                                        value = currentConfig.borderWidth,
+                                        value = currentConfig.surface.borderWidth,
                                         range = 0f..3f,
-                                        valueDisplay = "${"%.1f".format(currentConfig.borderWidth)}dp",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(borderWidth = v) } },
+                                        valueDisplay = "${"%.1f".format(currentConfig.surface.borderWidth)}dp",
+                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(borderWidth = v)) } },
                                         onReset = { onResetParameter(selectedToken, "borderWidth") }
                                     )
                                 }

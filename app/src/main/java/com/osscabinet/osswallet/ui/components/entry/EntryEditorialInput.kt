@@ -118,8 +118,8 @@ fun EntryEditorialInput(
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
             fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
-            borderAlpha = when { isFlush -> 0f; isFocused -> config.borderAlpha; else -> config.borderAlpha * 0.2f },
-            borderWidth = when { isFlush -> 0.dp; isFocused -> config.borderWidth.dp; else -> (config.borderWidth * 0.5f).dp },
+            borderAlpha = when { isFlush -> 0f; isFocused -> config.surface.borderAlpha; else -> config.surface.borderAlpha * 0.2f },
+            borderWidth = when { isFlush -> 0.dp; isFocused -> config.surface.borderWidth.dp; else -> (config.surface.borderWidth * 0.5f).dp },
         ) {
             Row(
                 modifier = Modifier

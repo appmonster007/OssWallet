@@ -165,19 +165,19 @@ fun GlassSurface(
     val config = if (glassVariant != null) GlassTokens.configForVariant(glassVariant) else GlassTokens.config(depth)
 
     // Default glass rim that catches light at the edges
-    val effectiveBorderAlpha = borderAlpha ?: config.borderAlpha
+    val effectiveBorderAlpha = borderAlpha ?: config.surface.borderAlpha
     val glassRimColor = if (isDark) {
         Color.White.copy(alpha = effectiveBorderAlpha)
     } else {
         AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f)
     }
     val effectiveBorderColor = borderColor ?: glassRimColor
-    val effectiveBorderWidth = borderWidth ?: config.borderWidth.dp
+    val effectiveBorderWidth = borderWidth ?: config.surface.borderWidth.dp
 
     // Theme-aware shadow intensity — reads from config, independent of glass toggle
-    val effectiveAmbientAlpha = if (isDark) config.ambientShadowAlpha else config.ambientShadowAlpha * 1.5f
-    val effectiveSpotAlpha = if (isDark) config.spotShadowAlpha else config.spotShadowAlpha * 1.5f
-    val effectiveShadowElevation = shadowElevation ?: config.shadowElevation.dp
+    val effectiveAmbientAlpha = if (isDark) config.surface.ambientShadowAlpha else config.surface.ambientShadowAlpha * 1.5f
+    val effectiveSpotAlpha = if (isDark) config.surface.spotShadowAlpha else config.surface.spotShadowAlpha * 1.5f
+    val effectiveShadowElevation = shadowElevation ?: config.surface.shadowElevation.dp
 
     // Priority: explicit param → nearest AeonGlassHost ancestor → screen-level background.
     // LocalParentGlassHaze is null outside any AeonGlassHost, so screen-level cards are unaffected.

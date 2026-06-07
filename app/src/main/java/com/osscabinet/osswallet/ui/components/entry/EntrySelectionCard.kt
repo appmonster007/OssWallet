@@ -86,7 +86,7 @@ fun EntrySelectionCard(
     val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
     val isActiveSelection = isSelected && selectionMode != EntrySelectionMode.MANAGEMENT
     val borderWidth by animateDpAsState(
-        targetValue = if (isActiveSelection) config.borderWidth.dp else (config.borderWidth * 0.5f).dp,
+        targetValue = if (isActiveSelection) config.surface.borderWidth.dp else (config.surface.borderWidth * 0.5f).dp,
         label = "borderWidth"
     )
 
@@ -107,7 +107,7 @@ fun EntrySelectionCard(
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = backgroundColor,
         borderColor = borderColor,
-        borderAlpha = if (isActiveSelection) config.borderAlpha else config.borderAlpha * 0.2f,
+        borderAlpha = if (isActiveSelection) config.surface.borderAlpha else config.surface.borderAlpha * 0.2f,
         borderWidth = borderWidth,
     ) {
         Row(

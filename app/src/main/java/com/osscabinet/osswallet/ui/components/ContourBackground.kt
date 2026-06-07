@@ -32,9 +32,8 @@ fun ContourBackground(
     modifier: Modifier = Modifier,
     version: Int = LocalContourBgVersion.current,
 ) {
-    val glassEnabled = LocalGlassmorphismEnabled.current
     val contoursEnabled = LocalContourLinesEnabled.current
-    if (!glassEnabled || !contoursEnabled) return
+    if (!contoursEnabled) return
 
     when (version) {
         1 -> CleanContours(modifier)

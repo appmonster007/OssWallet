@@ -63,8 +63,8 @@ fun AeonSearchField(
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
             fallbackColor = AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else AppColors.outline.copy(alpha = 0.1f),
-            borderAlpha = if (isFocused) config.borderAlpha else config.borderAlpha * 0.2f,
-            borderWidth = if (isFocused) config.borderWidth.dp else (config.borderWidth * 0.5f).dp,
+            borderAlpha = if (isFocused) config.surface.borderAlpha else config.surface.borderAlpha * 0.2f,
+            borderWidth = if (isFocused) config.surface.borderWidth.dp else (config.surface.borderWidth * 0.5f).dp,
         ) {
             TextField(
                 value = query,

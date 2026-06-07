@@ -127,10 +127,12 @@ object GlassTokens {
     fun createHazeStyle(config: GlassStyleConfig, bgColor: Color, isDark: Boolean): HazeStyle {
         val tintAlpha = if (isDark) config.glass.darkAlpha else config.glass.lightAlpha
         return HazeStyle(
-            backgroundColor = bgColor.copy(alpha = 1f),
+            // backgroundColor intentionally omitted (transparent) — an opaque base would
+            // paint over the blur and make the surface look solid.
             tint = HazeTint(bgColor.copy(alpha = tintAlpha)),
             blurRadius = config.glass.blurRadius.dp,
             noiseFactor = config.glass.noiseFactor,
+            // fallbackTint kicks in when GPU blur is unavailable (older hardware / software rendering).
             fallbackTint = HazeTint(bgColor.copy(alpha = tintAlpha)),
         )
     }

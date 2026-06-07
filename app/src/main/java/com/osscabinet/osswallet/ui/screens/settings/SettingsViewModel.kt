@@ -330,106 +330,28 @@ class SettingsViewModel @Inject constructor(
             }
 
             settingsRepository.updateGlassSettings { current ->
-                val updatedStyle = when (style) {
-                    "Standard" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.standard.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.standard.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.standard.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.standard.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.standard.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.standard.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.standard.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.standard.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.standard.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.standard
-                        }
-                    }
-                    "Drawer" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.drawer.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.drawer.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.drawer.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.drawer.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.drawer.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.drawer.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.drawer.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.drawer.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.drawer.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.drawer
-                        }
-                    }
-                    "Pill" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.pill.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.pill.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.pill.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.pill.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.pill.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.pill.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.pill.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.pill.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.pill.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.pill
-                        }
-                    }
-                    "Card" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.card.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.card.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.card.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.card.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.card.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.card.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.card.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.card.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.card.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.card
-                        }
-                    }
-                    "Sheet" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.sheet.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.sheet.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.sheet.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.sheet.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.sheet.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.sheet.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.sheet.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.sheet.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.sheet.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.sheet
-                        }
-                    }
-                    "Popup" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.popup.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.popup.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.popup.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.popup.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.popup.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.popup.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.popup.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.popup.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.popup.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.popup
-                        }
-                    }
-                    "Item" -> {
-                        when (parameter) {
-                            "blurRadius" -> current.item.copy(blurRadius = defaultStyle.blurRadius)
-                            "lightAlpha" -> current.item.copy(lightAlpha = defaultStyle.lightAlpha)
-                            "darkAlpha" -> current.item.copy(darkAlpha = defaultStyle.darkAlpha)
-                            "noiseFactor" -> current.item.copy(noiseFactor = defaultStyle.noiseFactor)
-                            "shadowElevation" -> current.item.copy(shadowElevation = defaultStyle.shadowElevation)
-                            "borderAlpha" -> current.item.copy(borderAlpha = defaultStyle.borderAlpha)
-                            "ambientShadowAlpha" -> current.item.copy(ambientShadowAlpha = defaultStyle.ambientShadowAlpha)
-                            "spotShadowAlpha" -> current.item.copy(spotShadowAlpha = defaultStyle.spotShadowAlpha)
-                            "borderWidth" -> current.item.copy(borderWidth = defaultStyle.borderWidth)
-                            else -> current.item
-                        }
-                    }
+                val currentStyle = when (style) {
+                    "Standard" -> current.standard
+                    "Drawer" -> current.drawer
+                    "Pill" -> current.pill
+                    "Card" -> current.card
+                    "Sheet" -> current.sheet
+                    "Popup" -> current.popup
+                    "Item" -> current.item
                     else -> return@updateGlassSettings current
+                }
+
+                val updatedStyle = when (parameter) {
+                    "blurRadius" -> currentStyle.copy(glass = currentStyle.glass.copy(blurRadius = defaultStyle.glass.blurRadius))
+                    "lightAlpha" -> currentStyle.copy(glass = currentStyle.glass.copy(lightAlpha = defaultStyle.glass.lightAlpha))
+                    "darkAlpha" -> currentStyle.copy(glass = currentStyle.glass.copy(darkAlpha = defaultStyle.glass.darkAlpha))
+                    "noiseFactor" -> currentStyle.copy(glass = currentStyle.glass.copy(noiseFactor = defaultStyle.glass.noiseFactor))
+                    "shadowElevation" -> currentStyle.copy(surface = currentStyle.surface.copy(shadowElevation = defaultStyle.surface.shadowElevation))
+                    "borderAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(borderAlpha = defaultStyle.surface.borderAlpha))
+                    "ambientShadowAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(ambientShadowAlpha = defaultStyle.surface.ambientShadowAlpha))
+                    "spotShadowAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(spotShadowAlpha = defaultStyle.surface.spotShadowAlpha))
+                    "borderWidth" -> currentStyle.copy(surface = currentStyle.surface.copy(borderWidth = defaultStyle.surface.borderWidth))
+                    else -> currentStyle
                 }
 
                 when (style) {

@@ -315,12 +315,15 @@ fun DesignLabContent(
                                     backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
                                     drawContours = contourLinesEnabled
                                 ) { innerHaze ->
-                                    Box(
-                                        modifier = Modifier.fillMaxSize().aeonHazeSource(innerHaze.states[0])
-                                    ) {
-                                        // Background texture
+                                    // hazeSource is on the background Column; the mock is its
+                                    // sibling — hazeEffect must never be a descendant of hazeSource
+                                    // for the same state (Haze 1.7.2+ constraint).
+                                    Box(modifier = Modifier.fillMaxSize()) {
                                         Column(
-                                            modifier = Modifier.fillMaxSize().padding(16.dp),
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .aeonHazeSource(innerHaze.states[0])
+                                                .padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
                                             repeat(10) {
@@ -349,7 +352,7 @@ fun DesignLabContent(
                                         val fallback = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
                                         val contentTint = if (isDarkPreview) Color.White else AppColors.contentPrimary
 
-                                        // Token-contextual mock, animated on switch
+                                        // Token-contextual mock — sibling of hazeSource Column
                                         AnimatedContent(
                                             targetState = selectedToken,
                                             transitionSpec = {

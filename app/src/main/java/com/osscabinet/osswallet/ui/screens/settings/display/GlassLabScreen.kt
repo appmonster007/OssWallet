@@ -70,6 +70,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
 
 @Composable
 fun GlassLabScreen(
@@ -172,60 +173,65 @@ fun GlassLabContent(
                                     color = Color.Transparent,
                                     border = BorderStroke(1.dp, if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant)
                                 ) {
-                                    AeonHazeProvider(
-                                        backgroundColor = if (isDarkPreview) Color(0xFF121212) else AppColors.surfaceContainerLow,
-                                        drawContours = true
-                                    ) { innerHaze ->
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                            // Background pattern to see the blur clearly
-                                            Column(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .aeonHazeSource(innerHaze.states[0])
-                                                    .padding(16.dp),
-                                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                                            ) {
-                                                repeat(8) {
-                                                    Text(
-                                                        "GLASSMORPHISM PREVIEW TEXT ".repeat(2),
-                                                        style = AppTextStyles.caption.copy(
-                                                            color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.2f),
-                                                            letterSpacing = 2.sp
+                                    OssWalletPreviewTheme(theme = if (isDarkPreview) "Dark" else "Light") {
+                                        AeonHazeProvider(
+                                            backgroundColor = AppColors.screenBackground,
+                                            drawContours = true
+                                        ) { innerHaze ->
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                // Background pattern to see the blur clearly
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .aeonHazeSource(innerHaze.states[0])
+                                                        .padding(16.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    repeat(8) {
+                                                        Text(
+                                                            "GLASSMORPHISM PREVIEW TEXT ".repeat(2),
+                                                            style = AppTextStyles.caption.copy(
+                                                                color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.2f),
+                                                                letterSpacing = 2.sp
+                                                            )
                                                         )
+                                                    }
+                                                }
+
+                                                val previewBgColor = when (selectedToken) {
+                                                    "Pill" -> AppColors.componentOnCard
+                                                    "Card" -> AppColors.cardSurface
+                                                    "Sheet" -> AppColors.sheetSurface
+                                                    "Popup" -> AppColors.popupSurface
+                                                    "Item" -> AppColors.componentOnCard
+                                                    else -> AppColors.cardSurfaceProminent
+                                                }
+
+                                                // The Glass layer on top
+                                                GlassSurface(
+                                                    modifier = Modifier.size(280.dp, 100.dp),
+                                                    shape = RoundedCornerShape(20.dp),
+                                                    hazeState = innerHaze.states[0],
+                                                    hazeStyle = GlassTokens.createHazeStyle(
+                                                        config = currentConfig,
+                                                        bgColor = previewBgColor,
+                                                        isDark = isDarkPreview
+                                                    ),
+                                                    glassVariant = selectedToken.lowercase(),
+                                                    shadowElevation = currentConfig.surface.shadowElevation.dp,
+                                                    borderAlpha = currentConfig.surface.borderAlpha,
+                                                    fallbackColor = previewBgColor
+                                                ) {
+                                                    Text(
+                                                        selectedToken.uppercase(),
+                                                        style = AppTextStyles.managementItemTitle.copy(
+                                                            letterSpacing = 2.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (isDarkPreview) Color.White else AppColors.contentPrimary
+                                                        ),
+                                                        modifier = Modifier.align(Alignment.Center)
                                                     )
                                                 }
-                                            }
-
-                                            // The Glass layer on top
-                                            GlassSurface(
-                                                modifier = Modifier.size(280.dp, 100.dp),
-                                                shape = RoundedCornerShape(20.dp),
-                                                hazeState = innerHaze.states[0],
-                                                hazeStyle = GlassTokens.createHazeStyle(
-                                                    config = currentConfig,
-                                                    bgColor = when (selectedToken) {
-                                                        "Pill" -> AppColors.componentOnCard
-                                                        "Card" -> AppColors.cardSurface
-                                                        "Sheet" -> AppColors.sheetSurface
-                                                        "Popup" -> AppColors.popupSurface
-                                                        "Item" -> AppColors.componentOnCard
-                                                        else -> AppColors.cardSurfaceProminent
-                                                    },
-                                                    isDark = isDarkPreview
-                                                ),
-                                                shadowElevation = currentConfig.surface.shadowElevation.dp,
-                                                borderAlpha = currentConfig.surface.borderAlpha,
-                                                fallbackColor = (if (isDarkPreview) Color.Black else Color.White).copy(alpha = 0.2f)
-                                            ) {
-                                                Text(
-                                                    selectedToken.uppercase(),
-                                                    style = AppTextStyles.managementItemTitle.copy(
-                                                        letterSpacing = 2.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isDarkPreview) Color.White else AppColors.contentPrimary
-                                                    ),
-                                                    modifier = Modifier.align(Alignment.Center)
-                                                )
                                             }
                                         }
                                     }

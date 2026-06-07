@@ -54,9 +54,11 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
@@ -105,11 +107,15 @@ fun FilterFields(
     // Sheets for multi-selection
     when (activeSheet) {
         "Accounts" -> {
+            // Show ALL accounts (active + archived). Empty selection = all active by default,
+            // so archived appear unchecked — user can check them to opt in.
+            val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
             AeonAccountSelection(
                 accounts = accounts,
-                selectedAccountIds = filter.accountIds.toSet(),
+                selectedAccountIds = filter.accountIds.ifEmpty { activeAccountIds },
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(accountIds = ids.toSet()))
+                    val effectiveIds = if (ids == activeAccountIds) emptySet() else ids
+                    onFilterChange(filter.copy(accountIds = effectiveIds))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -118,11 +124,12 @@ fun FilterFields(
         }
 
         "Categories" -> {
+            val allCategoryIds = allCategories.map { it.id }.toSet()
             AeonCategorySelection(
                 categories = allCategories,
-                selectedCategoryIds = filter.categoryIds.toSet(),
+                selectedCategoryIds = filter.categoryIds.ifEmpty { allCategoryIds },
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(categoryIds = ids.toSet()))
+                    onFilterChange(filter.copy(categoryIds = if (ids == allCategoryIds || ids.isEmpty()) emptySet() else ids))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -139,13 +146,14 @@ fun FilterFields(
                     }
                 }.distinct().sorted()
             }
+            val availableSet = availableCurrencies.toSet()
             AeonSelectionSheet(
                 title = "Filter Currencies",
                 onDismiss = { activeSheet = null },
                 items = availableCurrencies,
-                selectedIds = filter.currencies.toSet(),
+                selectedIds = filter.currencies.ifEmpty { availableSet },
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(currencies = ids.toSet()))
+                    onFilterChange(filter.copy(currencies = if (ids == availableSet || ids.isEmpty()) emptySet() else ids))
                 },
                 idMapper = { it },
                 labelMapper = { it },
@@ -154,10 +162,11 @@ fun FilterFields(
         }
 
         "PaymentMethods" -> {
+            val allMethods = PaymentMethod.entries.toSet()
             AeonPaymentMethodSelection(
-                selectedMethods = filter.paymentMethods.toSet(),
+                selectedMethods = filter.paymentMethods.ifEmpty { allMethods },
                 onSelectionChange = { methods ->
-                    onFilterChange(filter.copy(paymentMethods = methods.toSet()))
+                    onFilterChange(filter.copy(paymentMethods = if (methods == allMethods || methods.isEmpty()) emptySet() else methods))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -166,10 +175,11 @@ fun FilterFields(
         }
 
         "Statuses" -> {
+            val allStatuses = TransactionStatus.entries.toSet()
             AeonStatusSelection(
-                selectedStatuses = filter.statuses.toSet(),
+                selectedStatuses = filter.statuses.ifEmpty { allStatuses },
                 onSelectionChange = { statuses ->
-                    onFilterChange(filter.copy(statuses = statuses.toSet()))
+                    onFilterChange(filter.copy(statuses = if (statuses == allStatuses || statuses.isEmpty()) emptySet() else statuses))
                 },
                 onDismiss = { activeSheet = null },
                 mode = AeonSelectMode.MULTI,
@@ -178,13 +188,14 @@ fun FilterFields(
         }
 
         "Types" -> {
+            val allTypes = TransactionType.entries.toSet()
             AeonSelectionSheet(
                 title = "Transaction Types",
                 onDismiss = { activeSheet = null },
                 items = TransactionType.entries,
-                selectedIds = filter.transactionTypes.toSet(),
+                selectedIds = filter.transactionTypes.ifEmpty { allTypes },
                 onSelectionChange = { ids ->
-                    onFilterChange(filter.copy(transactionTypes = ids.toSet()))
+                    onFilterChange(filter.copy(transactionTypes = if (ids == allTypes || ids.isEmpty()) emptySet() else ids))
                 },
                 idMapper = { it },
                 labelMapper = { it.displayName },
@@ -343,7 +354,15 @@ fun FilterFields(
                         label = "ACCOUNTS",
                         value = if (isAccountLocked) {
                             filter.accountIds.mapNotNull { accountMap[it] }.joinToString(", ")
-                        } else if (filter.accountIds.isEmpty()) "All" else "${filter.accountIds.size} Selected",
+                        } else {
+                            val activeIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                            when {
+                                filter.accountIds.isEmpty() || filter.accountIds == activeIds -> "All Active"
+                                filter.accountIds.size == accounts.size -> "All Accounts"
+                                filter.accountIds.size == 1 -> accountMap[filter.accountIds.first()] ?: "1 Account"
+                                else -> "${filter.accountIds.size} Accounts"
+                            }
+                        },
                         isSelected = filter.accountIds.isNotEmpty(),
                         enabled = !isAccountLocked,
                         modifier = Modifier.weight(1f),

@@ -126,16 +126,20 @@ fun FilterFormBody(
                         modifier = Modifier.weight(1f)
                     )
 
+                    val activeAccountIds = state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
                     val accountObj =
                         if (state.selectedAccountIds.size == 1) state.accounts.find { it.id == state.selectedAccountIds.first() } else null
+                    val accountLabel = when {
+                        state.selectedAccountIds.isEmpty() ||
+                            state.selectedAccountIds == activeAccountIds -> "All Active"
+                        state.selectedAccountIds.size == state.accounts.size -> "All Accounts"
+                        accountObj != null -> accountObj.name
+                        else -> "${state.selectedAccountIds.size} Accounts"
+                    }
                     EntryActionCard(
                         icon = getAccountIconByName(accountObj?.icon),
                         label = "ACCOUNTS",
-                        value = when {
-                            state.selectedAccountIds.isEmpty() -> "All Active Accounts"
-                            accountObj != null -> accountObj.name
-                            else -> "${state.selectedAccountIds.size} Selected"
-                        },
+                        value = accountLabel,
                         onClick = { onEvent(FilterEntryEvent.ShowAccountSheet(show = true)) },
                         modifier = Modifier.weight(1f)
                     )

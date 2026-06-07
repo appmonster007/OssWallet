@@ -254,6 +254,7 @@ class DashboardViewModel @Inject constructor(
                             DashboardUiState.Success(
                                 profileId = profileId,
                                 accounts = accounts.filter { !it.isArchived },
+                                allAccounts = accounts,
                                 cardDataMap = cardDataMap,
                                 allTransactions = allTransactions,
                                 recentActivitiesState = TransactionListState(
@@ -330,7 +331,8 @@ sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
         val profileId: Int,
-        val accounts: List<Account>,
+        val accounts: List<Account>,          // active (non-archived) — for dashboard account cards
+        val allAccounts: List<Account> = emptyList(), // all accounts including archived — for filter pickers
         val cardDataMap: Map<String, CardRenderData>,
         val allTransactions: List<Transaction>,
         val recentActivitiesState: TransactionListState,

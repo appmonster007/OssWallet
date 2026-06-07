@@ -713,7 +713,7 @@ fun DashboardGlanceTab(
         CardInput(
             profileId = state.profileId,
             transactions = state.allTransactions,
-            accounts = state.accounts,
+            accounts = state.allAccounts.ifEmpty { state.accounts },
             categories = state.allCategories,
             tags = state.allTags,
             exchangeRates = state.exchangeRates,
@@ -745,7 +745,7 @@ fun DashboardGlanceTab(
         ),
         animateCards = cardAnimationEnabled,
         filterContext = FilterSelectionContext(
-            accounts = state.accounts,
+            accounts = state.allAccounts.ifEmpty { state.accounts },
             allCategories = state.allCategories,
             allTags = state.allTags,
             savedFilters = savedFilters,

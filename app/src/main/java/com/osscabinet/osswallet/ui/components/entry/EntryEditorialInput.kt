@@ -57,6 +57,8 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 
 /**
  * Editorial-style text input with icon and label for entry screens.
@@ -114,12 +116,13 @@ fun EntryEditorialInput(
                     if (enabled) focusRequester.requestFocus()
                 },
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            hazeStyle = GlassTokens.cardStyle(),
+            hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp) else GlassTokens.cardStyle(),
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
             fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
             borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
             borderAlpha = when { isFlush -> 0f; isFocused -> config.surface.borderAlpha; else -> config.surface.borderAlpha * 0.2f },
             borderWidth = when { isFlush -> 0.dp; isFocused -> config.surface.borderWidth.dp; else -> (config.surface.borderWidth * 0.5f).dp },
+            shadowElevation = if (isFlush) 0.dp else null
         ) {
             Row(
                 modifier = Modifier

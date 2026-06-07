@@ -65,7 +65,8 @@ class TransactionUseCases(
         precision: Int = CurrencyService.precision,
         limit: Int = 20,
         days: Int = 7,
-        excludeFuture: Boolean = true
+        excludeFuture: Boolean = true,
+        includeArchived: Boolean = false
     ): List<TransactionWithBalance> {
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
@@ -104,7 +105,7 @@ class TransactionUseCases(
                     )
                 }
             }
-            .filter { it.transaction.accountId in nonArchivedAccountIds }
+            .let { list -> if (includeArchived) list else list.filter { it.transaction.accountId in nonArchivedAccountIds } }
             .sortedByDescending { it.transaction.timestamp }
 
         if (limit == Int.MAX_VALUE) return transactionsWithBalance

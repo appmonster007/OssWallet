@@ -29,8 +29,11 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             config.filterRules,
             input.screenOwnsTimeline
         )
+        val effectiveFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val allTransactions = input.allProfileTransactions.ifEmpty { input.transactions }
-        val filteredTx = TransactionFilterService.filter(allTransactions, mergedFilter)
+        val filteredTx = TransactionFilterService.filter(allTransactions, effectiveFilter)
 
         val baseBudgets = if (config.showArchived) input.budgets
         else input.budgets.filter { !it.isArchived }

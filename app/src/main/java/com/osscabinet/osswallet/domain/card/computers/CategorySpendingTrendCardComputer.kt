@@ -43,8 +43,9 @@ class CategorySpendingTrendCardComputer :
         // Build category nature lookup from full categories list
         val categoryNatureById = input.categories.associate { it.id to it.nature }
 
-        // Single-pass filter
-        val filteredTx = TransactionFilterService.filter(input.transactions, mergedFilter)
+        // Single-pass filter against the correct transaction source (includes archived if explicitly selected)
+        val txSource = input.transactionsFor(mergedFilter)
+        val filteredTx = TransactionFilterService.filter(txSource, mergedFilter)
 
         // Cap at today — future buckets always show 0
         val now = System.currentTimeMillis()

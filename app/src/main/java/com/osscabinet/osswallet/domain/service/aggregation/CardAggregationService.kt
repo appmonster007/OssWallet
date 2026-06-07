@@ -29,8 +29,11 @@ object CardAggregationService {
         input: CardInput,
         config: NetWorthCardConfig
     ): CardRenderData.NetWorth {
-        val currentFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        
+        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val currentFilter = rawFilter.copy(
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
+
         // For absolute balances, we need cumulative totals up to the end of the period
         val balanceFilter = currentFilter.toBalanceFilter()
         
@@ -97,7 +100,10 @@ object CardAggregationService {
         input: CardInput,
         config: CashFlowCardConfig
     ): CardRenderData.CashFlow {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = rawFilter.copy(
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val result = computeCashFlowResult(queryService, profileId, input, mergedFilter)
 
         return CardRenderData.CashFlow(
@@ -158,7 +164,10 @@ object CardAggregationService {
         input: CardInput,
         config: CurrencyBalancesCardConfig
     ): CardRenderData.CurrencyBalances {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = rawFilter.copy(
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val balanceFilter = mergedFilter.toBalanceFilter()
 
         val summariesByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, balanceFilter)
@@ -182,13 +191,16 @@ object CardAggregationService {
         input: CardInput,
         config: AccountsCardConfig
     ): CardRenderData.Accounts {
-        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val mergedFilter = rawFilter.copy(
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val balanceFilter = mergedFilter.toBalanceFilter()
 
         val summariesByAccountAndCurrency = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, balanceFilter)
             .getOrDefault(emptyMap())
 
-        val accountStats = input.accounts.associate { account ->
+        val accountStats = input.effectiveAccounts.associate { account ->
             val currencySummaries = summariesByAccountAndCurrency[account.id] ?: emptyMap()
             
             // Multi-currency aware aggregation for the account
@@ -220,7 +232,7 @@ object CardAggregationService {
 
         return CardRenderData.Accounts(
             config,
-            input.accounts,
+            input.effectiveAccounts,
             accountStats,
             input.baseCurrency,
             "light"

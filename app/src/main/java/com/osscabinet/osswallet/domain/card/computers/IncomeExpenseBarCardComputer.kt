@@ -42,8 +42,11 @@ class IncomeExpenseBarCardComputer(
             config.filterRules,
             input.screenOwnsTimeline
         )
-        val mergedFilter = if (rawFilter.categoryIds.isEmpty()) rawFilter
-        else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
+        val withCategories = if (rawFilter.categoryIds.isEmpty()) rawFilter
+            else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
+        val mergedFilter = withCategories.copy(
+            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
             mergedFilter.timelineRange,
             input.transactions

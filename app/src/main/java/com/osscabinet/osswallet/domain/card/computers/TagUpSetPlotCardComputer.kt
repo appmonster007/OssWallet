@@ -46,11 +46,14 @@ class TagUpSetPlotCardComputer(
         input: CardInput,
         config: TagUpSetPlotCardConfig
     ): CardRenderData.TagUpSetPlot {
-        val mergedFilter = resolveEffectiveFilter(
+        val rawFilter = resolveEffectiveFilter(
             input.filter,
             config.filter,
             config.filterRules,
             input.screenOwnsTimeline
+        )
+        val mergedFilter = rawFilter.copy(
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val profileId = input.profileId
         val baseCurrency = input.displayCurrency

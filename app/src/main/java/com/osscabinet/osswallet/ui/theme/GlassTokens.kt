@@ -153,9 +153,10 @@ data class AeonHazeLayers(
 
 val LocalAeonHaze = staticCompositionLocalOf<AeonHazeLayers?> { null }
 
-/** Non-null inside [AeonExpressiveCard] — carries the card's own glass surface as a hazeSource
- *  so that nested account card items can blur the card surface (glass-on-glass). */
-val LocalCardSurfaceHaze = compositionLocalOf<HazeState?> { null }
+/** Non-null inside [AeonGlassHost]. Always carries the **nearest** glass surface as a
+ *  hazeSource — automatically scoped by nesting depth via CompositionLocal shadowing.
+ *  Reading this from any depth always gives the immediately enclosing glass surface. */
+val LocalParentGlassHaze = compositionLocalOf<HazeState?> { null }
 
 val LocalGlassSettings = staticCompositionLocalOf { GlassSettings() }
 

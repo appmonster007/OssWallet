@@ -1,13 +1,23 @@
-# Developer Guide: Adding a New Card
+# Developer Guide: Adding a New Dashboard Card
 
-This guide explains how to add a new card to the redesigned card system. The system follows the **Open-Closed Principle (OCP)**, meaning you can add new card types by extending existing registries without modifying core orchestration logic.
+This guide covers all 15 required steps to add a new card to the OssWallet card system. The system follows the **Open-Closed Principle**: new card types are added by extending registries — the orchestration layer (`UnifiedCardRenderer`, `CardComputerRegistry`, `CardUiBridge`) never requires changes to its core logic.
+
+**Do not skip steps.** Missing any of the 15 entries causes a silent runtime crash on card reorder, not a compile error. Complete them in order.
+
+---
+
+## Files You Will Create (2 new files)
+
+| File | Purpose |
+|------|---------|
+| `domain/card/computers/DummyCardComputer.kt` | Pure Kotlin — computes render data from `CardInput` |
+| `ui/dashboard/components/DummyCard.kt` | Compose composable — renders the card in the UI |
 
 ---
 
 ## Step 1: Define the Card Type
-Add a new entry to the `CardType` enum. This acts as the unique identifier for the card system.
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/domain/card/CardType.kt`
+**File:** `domain/card/CardType.kt`
 
 ```kotlin
 enum class CardType(val serialName: String, val displayName: String, val description: String) {
@@ -16,10 +26,13 @@ enum class CardType(val serialName: String, val displayName: String, val descrip
 }
 ```
 
-## Step 2: Create the Configuration Model
-Define the settings your card requires. This model must extend `CardConfig` and be `@Serializable`.
+---
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/domain/model/settings/CardConfig.kt`
+## Step 2: Create the Configuration Model
+
+**File:** `domain/model/settings/CardConfig.kt`
+
+The config stores user-facing settings (display preferences, filters, etc.). Every field must have a default value.
 
 ```kotlin
 @Serializable
@@ -30,18 +43,23 @@ data class DummyCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    val customMessage: String = "Hello World" // Card-specific setting
+    override val filter: TransactionFilter = TransactionFilter(),
+    override val filterRules: FilterRules = FilterRules(),
+    val customMessage: String = "Hello World"  // card-specific setting
 ) : CardConfig()
 ```
 
-## Step 3: Define the Render Data
-Define the output of the card's computation. This is the UI-ready data that the renderer will consume.
+---
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/domain/card/CardRenderData.kt`
+## Step 3: Define the Render Data
+
+**File:** `domain/card/CardRenderData.kt`
+
+The render data is the UI-ready output of the computer. Keep it flat — no business logic, no repositories.
 
 ```kotlin
 sealed class CardRenderData {
-    // ... existing data classes
+    // ... existing entries
     data class Dummy(
         val config: DummyCardConfig,
         val processedMessage: String
@@ -49,27 +67,30 @@ sealed class CardRenderData {
 }
 ```
 
-## Step 4: Implement the Computer Strategy
-Create a pure function that transforms `CardInput` (raw financial data) into your `CardRenderData`.
+---
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/domain/card/computers/DummyCardComputer.kt`
+## Step 4: Implement the Computer
+
+**NEW FILE:** `domain/card/computers/DummyCardComputer.kt`
+
+A pure function from `(CardInput, DummyCardConfig) → CardRenderData.Dummy`. No Android imports. No side effects.
 
 ```kotlin
 class DummyCardComputer : CardDataComputer<DummyCardConfig, CardRenderData.Dummy> {
     override val supportedType = CardType.DUMMY
 
     override fun compute(input: CardInput, config: DummyCardConfig): CardRenderData.Dummy {
-        // Perform heavy calculations here using input.transactions, input.accounts, etc.
-        val message = "${config.customMessage} - Precision is ${input.precision}"
+        val message = "${config.customMessage} — precision: ${input.precision}"
         return CardRenderData.Dummy(config, message)
     }
 }
 ```
 
-## Step 5: Register the Computer
-Add your new computer implementation to the `CardComputerRegistry`.
+---
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/domain/card/CardComputerRegistry.kt`
+## Step 5: Register the Computer
+
+**File:** `domain/card/CardComputerRegistry.kt`
 
 ```kotlin
 val DEFAULT = CardComputerRegistry(
@@ -80,57 +101,229 @@ val DEFAULT = CardComputerRegistry(
 )
 ```
 
-## Step 6: Update the UI Bridge
-Map your new configuration to the registry computation and define the callbacks.
+---
 
-**File:** `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/CardUiBridge.kt`
+## Step 6: Add the Config Update Handler
 
-```kotlin
-// Inside rememberCardWithCallbacks
-val renderData = when (config) {
-    // ...
-    is DummyCardConfig -> registry.compute(CardType.DUMMY, input, config)
-}
-
-val callbacks = when (config) {
-    // ...
-    is DummyCardConfig -> CardCallbacks.Analytics( // Reuse or create a typed callback
-        onUpdate = { /* update logic */ },
-        onDelete = { onDelete(config.cardId) },
-        onRecordsClick = onRecordsClick
-    )
-}
-```
-
-## Step 7: Define the Rendering Logic
-Add the Composable representation of your card to the `UnifiedCardRenderer`.
-
-**File:** `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/UnifiedCardRenderer.kt`
+**File:** `domain/card/CardUpdateHandler.kt`
 
 ```kotlin
-@Composable
-fun UnifiedCardRenderer(...) {
-    when (renderData) {
-        // ...
-        is CardRenderData.Dummy -> {
-             Card(modifier = modifier) {
-                 Text(
-                     text = renderData.processedMessage, 
-                     modifier = Modifier.padding(16.dp),
-                     style = MaterialTheme.typography.bodyLarge
-                 )
-             }
-        }
-    }
+fun updateCardDummyConfig(cardId: String, config: DummyCardConfig) {
+    // persist config change — follows existing pattern in this file
 }
-
 ```
 
 ---
 
-## Benefits of this Architecture
+## Step 7: Add the Callbacks Type
 
-1.  **Type Safety**: The `CardDataComputer` interface ensures that a specific configuration type always produces the expected render data type.
-2.  **Automatic Caching**: New cards automatically benefit from the caching layer in `CardComputerRegistry` without any additional code.
-3.  **ViewModel Decoupling**: Screens and ViewModels do not need to know about the internal logic of your card. Adding a card requires zero changes to `DashboardViewModel` or `AnalyticsViewModel`.
-4.  **Testability**: Each `CardDataComputer` is a pure function, making it trivial to unit test with various `CardInput` scenarios.
+**File:** `ui/components/cards/CardCallbacks.kt`
+
+Defines the UI events this card can emit.
+
+```kotlin
+sealed class CardCallbacks {
+    // ... existing
+    data class Dummy(
+        val onUpdate: (DummyCardConfig) -> Unit,
+        val onDelete: () -> Unit,
+    ) : CardCallbacks()
+}
+```
+
+---
+
+## Step 8: Add the CardWithCallbacks Type
+
+**File:** `ui/components/cards/CardWithCallbacks.kt`
+
+Pairs render data with callbacks for the renderer.
+
+```kotlin
+sealed class CardWithCallbacks {
+    // ... existing
+    data class Dummy(
+        val renderData: CardRenderData.Dummy,
+        val callbacks: CardCallbacks.Dummy,
+    ) : CardWithCallbacks()
+}
+```
+
+---
+
+## Step 9: Wire the UI Bridge
+
+**File:** `ui/components/cards/CardUiBridge.kt`
+
+Add **two** branches inside `rememberCardWithCallbacks()`:
+
+```kotlin
+// Compute branch (inside the `when (config)` block):
+is DummyCardConfig -> registry.compute(CardType.DUMMY, input, config)
+
+// Pair branch (inside the `when { renderData is ... && config is ... }` block):
+renderData is CardRenderData.Dummy && config is DummyCardConfig ->
+    CardWithCallbacks.Dummy(
+        renderData = renderData,
+        callbacks = CardCallbacks.Dummy(
+            onUpdate = { updatedConfig -> updateHandler.updateCardDummyConfig(config.cardId, updatedConfig) },
+            onDelete = { onDelete(config.cardId) },
+        )
+    )
+```
+
+---
+
+## Step 10: Create the Card Composable
+
+**NEW FILE:** `ui/dashboard/components/DummyCard.kt`
+
+Use `AeonExpressiveCard` as the shell — it provides the glass surface, shadow, border, header row, timeline selector, and filter button automatically. Do not call `GlassSurface` or `AeonGlassHost` directly in card composables.
+
+```kotlin
+@Composable
+fun DummyCard(
+    cardWithCallbacks: CardWithCallbacks.Dummy,
+    modifier: Modifier = Modifier,
+    showTitle: Boolean = false,
+) {
+    val data = cardWithCallbacks.renderData
+    val callbacks = cardWithCallbacks.callbacks
+
+    AeonExpressiveCard(
+        title = data.config.title,
+        modifier = modifier,
+        icon = Icons.Rounded.Info,
+        showSettingsButton = false,
+    ) {
+        // content() lambda — already inside AeonGlassHost, so children that use
+        // GlassSurface internally will automatically blur this card surface.
+        Text(
+            text = data.processedMessage,
+            style = AppTextStyles.body,
+            color = AppColors.contentPrimary,
+        )
+    }
+}
+```
+
+**Glass behaviour is automatic.** `AeonExpressiveCard` wraps `GlassSurface → Card → AeonGlassHost`. Any `GlassSurface` inside `content {}` blurs the card surface via `LocalParentGlassHaze`. Screen-level blur is resolved via `LocalAeonHaze[HazeLayer.Surface]`. No glass wiring needed in the card composable.
+
+See `.gemini/glassmorphism.md` — Pattern A for details.
+
+---
+
+## Step 11: Register in UnifiedCardRenderer
+
+**File:** `ui/components/cards/UnifiedCardRenderer.kt`
+
+```kotlin
+@Composable
+fun UnifiedCardRenderer(cardWithCallbacks: CardWithCallbacks, modifier: Modifier) {
+    when (cardWithCallbacks) {
+        // ... existing
+        is CardWithCallbacks.Dummy -> DummyCard(
+            cardWithCallbacks = cardWithCallbacks,
+            modifier = modifier,
+        )
+    }
+}
+```
+
+---
+
+## Step 12: Update CardRepositoryImpl
+
+**File:** `data/repository/CardRepositoryImpl.kt`
+
+Add a branch in **all three** `reorder*` `when` blocks (dashboard, accountDetail, accountsView):
+
+```kotlin
+// In reorderDashboardCards(), reorderAccountDetailCards(), reorderAccountsViewCards():
+is DummyCardConfig -> card.copy(order = index)
+```
+
+Missing any of the three blocks causes a silent crash when the user reorders cards.
+
+---
+
+## Step 13: Update CardLayoutViewModel
+
+**File:** `ui/viewmodel/CardLayoutViewModel.kt`
+
+```kotlin
+fun addDashboardCard(type: CardType) {
+    val config = when (type) {
+        // ... existing
+        CardType.DUMMY -> DummyCardConfig(cardId = generateId())
+    }
+    // ...
+}
+```
+
+---
+
+## Step 14: Add Navigation Routes (if the card opens new screens)
+
+**File:** `ui/navigation/Screen.kt`
+
+Skip this step if the card opens no new screens.
+
+```kotlin
+object DummyDetail : Screen("dummy_detail/{id}") {
+    fun createRoute(id: Long) = "dummy_detail/$id"
+    val argId = navArgument("id") { type = NavType.LongType }
+}
+```
+
+---
+
+## Step 15: Wire New Screens in the Nav Graph (if applicable)
+
+**File:** `ui/navigation/OssWalletNavGraph.kt`
+
+Skip this step if step 14 was skipped.
+
+```kotlin
+composable(
+    route = Screen.DummyDetail.route,
+    arguments = listOf(Screen.DummyDetail.argId)
+) { backStack ->
+    val id = backStack.arguments?.getLong("id") ?: return@composable
+    DummyDetailScreen(id = id, onBack = { navController.popBackStack() })
+}
+```
+
+---
+
+## Verification Checklist
+
+```bash
+# Compile check — most missing steps produce compile errors after this refactor
+./gradlew assembleDebug
+
+# Confirm no unhandled when branches (these would be runtime crashes)
+./gradlew testDebugUnitTest
+```
+
+**Manual checks on device/emulator:**
+- [ ] Card appears in the "Add card" sheet
+- [ ] Card renders on dashboard with correct glass effect (screen background blurs through)
+- [ ] Card header, subtitle, and content render correctly
+- [ ] Filter button (if enabled) opens filter sheet and applies correctly
+- [ ] Reordering cards (long-press drag) doesn't crash
+- [ ] Deleting card removes it cleanly
+- [ ] Glass Effect toggle in settings degrades card to solid surface correctly
+- [ ] Card renders correctly in Light, Dark, and AMOLED themes
+
+---
+
+## Architecture Benefits
+
+| Property | How it's achieved |
+|----------|------------------|
+| **Type safety** | `CardDataComputer<Config, RenderData>` interface ensures config/render-data pairing |
+| **Automatic caching** | `CardComputerRegistry` caches computed render data without any per-card code |
+| **ViewModel decoupling** | `DashboardViewModel` and `AnalyticsViewModel` need zero changes |
+| **Testability** | `DummyCardComputer.compute()` is a pure function — test it with plain JUnit4, no Android runtime |
+| **Glass automatic** | `AeonExpressiveCard` handles all glass wiring; card composables are pure UI |

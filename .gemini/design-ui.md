@@ -52,7 +52,31 @@ All reusable UI components use the `Aeon` prefix and live in `ui/components/`:
        showTitle: Boolean = false
    )
    ```
-5. Reuse the existing `CardHeader` composable for the title + filter chip row + overflow menu.
+5. Use `AeonExpressiveCard` as the shell for all dashboard card composables — it provides the glass surface, shadow, border rim, header row, icon, timeline selector, and filter button. Do not call `GlassSurface` or `AeonGlassHost` directly inside a card composable.
+6. The `content {}` lambda passed to `AeonExpressiveCard` is already inside an `AeonGlassHost`. Any `GlassSurface` inside `content {}` automatically blurs the card surface via `LocalParentGlassHaze`.
+7. Full 15-step card creation guide with code examples: `docs/guides/adding-new-card.md`.
+
+---
+
+## Glass Surfaces
+
+All glass surfaces use `GlassSurface` from `ui/components/GlassSurface.kt`. Never write `hazeEffect` or the two-sibling haze pattern inline.
+
+**Three-tier architecture (summary):**
+- `AeonHazeProvider` — wraps each screen; provides the blurred background as a source for all depth levels
+- `AeonGlassHost` — wraps a glass container's content so children's `GlassSurface` composables blur it instead of the screen background
+- `GlassSurface` — pure consumer; resolves which source to blur via `explicit hazeState → LocalParentGlassHaze → LocalAeonHaze[depth]`
+
+**Rules:**
+- Use `GlassVariant.*` constants with `GlassSurface` to select the correct style and tokens.
+- Wrap screen content in `AeonHazeProvider` — once per screen entry point, never inside cards or list items.
+- Wrap a glass container's content in `AeonGlassHost` when children will render nested `GlassSurface` composables.
+- `AeonExpressiveCard` already includes `AeonGlassHost` internally — do not add it again.
+- `AeonGlassSheet` already includes `AeonGlassHost` internally — use it for all in-hierarchy bottom sheets.
+- For bottom sheets use `AeonGlassSheet`, not `ModalBottomSheet` — the latter opens a new window and loses access to the Haze source.
+- `LocalGlassmorphismEnabled` propagates globally from `MainActivity`; `GlassSurface` degrades to `fallbackColor` automatically when disabled.
+
+Full details, patterns, and pitfalls: `.gemini/glassmorphism.md`.
 
 ---
 

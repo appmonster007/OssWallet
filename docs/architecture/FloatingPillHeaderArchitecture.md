@@ -39,8 +39,8 @@ This architecture replaces the traditional solid/full-width blurred Top Bar with
 *   **Decoupled from Scaffold**: DO NOT use `Scaffold(topBar = { AeonTopAppBar(...) })`. This pattern reserves vertical space and prevents the "Flow-Under" aesthetic.
 *   **Floating Overlay**: Treat `AeonTopAppBar` as a floating overlay within a root `Box`. It sits on the highest Z-index (Layer 3).
 *   **Background**: 100% Transparent.
-*   **Pills**: Navigation/Title and Actions are contained in separate `GlassSurface` components with `CircleShape`.
-*   **Depth**: Uses `HazeLayer.Overlay` (Depth 1) to blur content.
+*   **Pills**: Navigation/Title and Actions are contained in separate `GlassSurface` components with `CircleShape`, using `glassVariant = GlassVariant.Pill` and `hazeLayer = HazeLayer.Overlay`.
+*   **Depth**: Uses `HazeLayer.Overlay` (Depth 1) — blurs background + any surface-level content registered as a Haze source. `AeonHazeProvider` at the screen level pre-registers the `HazeLayer.Overlay` source; pills are pure `hazeEffect` consumers via `LocalAeonHaze`.
 
 ### 2. Dual-Mode Layout Logic
 The application supports two layout behaviors based on the `stickyHeaders` setting:
@@ -49,13 +49,13 @@ The application supports two layout behaviors based on the `stickyHeaders` setti
 *   **Container**: The `LazyColumn` container is **not** padded at the top (`Modifier.fillMaxSize()`).
 *   **Padding**: `contentPadding` is used to apply a top offset (`Status Bar + 64dp`) so the first items are not obscured when the list is at rest.
 *   **Scrolling**: As the user scrolls, content flows **under** the status bar and floating pills.
-*   **Haze**: The content layer registers itself as a source for `HazeLayer.Overlay` (Depth 1), allowing the glass pills to blur the scrolling content.
+*   **Haze**: `AeonHazeProvider` at the screen level provides the `HazeLayer.Overlay` source. In flow-under mode, the scrolling content column should additionally register with `aeonHazeSource(layers.states[HazeLayer.Overlay])` so that the cards themselves become part of what the pills blur as content scrolls past. This gives the pills a richer, content-aware blur instead of just the static background.
 
 #### B. Sticky Mode (ON) - "Boundary-Respected" Aesthetic
 *   **Container**: The `LazyColumn` container is **padded** from the top using `Modifier.padding(top = totalHeaderHeight)`.
 *   **Padding**: `contentPadding.top` is set to `0.dp` because the container itself provides the necessary clearance.
 *   **Scrolling**: Content is strictly confined to the area below the floating pills. Sticky headers "stick" at the very top of the list container, which aligns perfectly with the bottom of the pill zone.
-*   **Haze**: The content layer **must NOT** register itself as a source for `HazeLayer.Overlay` (Depth 1). Since content never flows under the pills, registering it would cause incorrect blur artifacts or unnecessary computation.
+*   **Haze**: No additional `hazeSource` registration needed for the content column. `AeonHazeProvider`'s screen background source is sufficient — content never flows under the pills so only the static background bleeds through.
 
 ### 3. Header Height Constants
 *   **Standard Top Bar**: 64dp (`AeonSize.D64`).
@@ -64,7 +64,8 @@ The application supports two layout behaviors based on the `stickyHeaders` setti
 ## Acceptance Criteria
 1.  **Non-Scaffold implementation**: The header is an overlay in a `Box`, not a `Scaffold` slot.
 2.  **Mode Awareness**: The layout correctly toggles between container-padding (Sticky ON) and content-padding (Sticky OFF).
-3.  **Haze Logic**: Content registers for Depth 1 blur **only** when `stickyHeaders` is OFF.
-4.  **Floating Pills**: Separate glass pills for navigation/title and actions.
+3.  **Haze Logic**: In flow-under mode, content column additionally registers with `AeonHazeProvider`'s `HazeLayer.Overlay` source. In sticky mode, no extra source registration is needed.
+4.  **Floating Pills**: Separate glass pills for navigation/title and actions, using `GlassVariant.Pill`.
 5.  **Sticky Alignment**: Headers stick exactly at the bottom boundary of the 64dp + status bar zone.
 6.  **Visual Continuity**: In Flow-Under mode, content is visible through the gaps between pills and the status bar area.
+7.  **Glass toggle**: Pills degrade to `fallbackColor` when "Glass Effect" is disabled in settings — no custom toggle code needed; `LocalGlassmorphismEnabled` propagates automatically.

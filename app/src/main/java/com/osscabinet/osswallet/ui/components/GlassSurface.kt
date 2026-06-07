@@ -42,6 +42,8 @@ import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalHazeDepth
+import com.osscabinet.ossWallet.ui.theme.LocalParentGlassHaze
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
@@ -53,6 +55,44 @@ import dev.chrisbanes.haze.hazeSource
 fun Modifier.aeonHazeSource(state: HazeState?): Modifier = if (state != null) {
     this.hazeSource(state)
 } else this
+
+/**
+ * Captures the current glass surface as a [hazeSource] and propagates it to all
+ * descendant [GlassSurface] composables via [LocalParentGlassHaze].
+ *
+ * Place this around the *content area* of any glass surface that wants to be
+ * blurable by its children. Nesting is unlimited — each level shadows
+ * [LocalParentGlassHaze] for its subtree so children always resolve the nearest ancestor.
+ *
+ * Usage:
+ * ```
+ * GlassSurface(...) {
+ *     AeonGlassHost {
+ *         // nested GlassSurface composables here automatically blur this surface
+ *     }
+ * }
+ * ```
+ */
+@Composable
+fun AeonGlassHost(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val surfaceHaze = remember { HazeState() }
+    // CompositionLocalProvider outside the Box so content() receives BoxScope from the Box
+    // and can use align(), matchParentSize(), etc. without an extra wrapper layer.
+    CompositionLocalProvider(
+        LocalParentGlassHaze provides surfaceHaze,
+        LocalHazeDepth provides LocalHazeDepth.current + 1,
+    ) {
+        Box(modifier = modifier) {
+            // First child (lowest Z-order) → captures whatever the parent GlassSurface rendered.
+            // matchParentSize() defers sizing to the other children in this Box.
+            Spacer(Modifier.matchParentSize().aeonHazeSource(surfaceHaze))
+            content()
+        }
+    }
+}
 
 /**
  * Standardized Haze infrastructure for all Aeon screens.
@@ -118,7 +158,7 @@ fun GlassSurface(
     borderWidth: Dp? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val isDark = LocalThemeMode.current.isDarkTheme
     val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
@@ -139,8 +179,11 @@ fun GlassSurface(
     val effectiveSpotAlpha = if (isDark) config.spotShadowAlpha else config.spotShadowAlpha * 1.5f
     val effectiveShadowElevation = shadowElevation ?: config.shadowElevation.dp
 
-    // Blur the state assigned to this depth. GlassSurface is a pure consumer — no hazeSource.
-    val effectiveHazeState = hazeState ?: layers?.states?.getOrNull(depth)
+    // Priority: explicit param → nearest AeonGlassHost ancestor → screen-level background.
+    // LocalParentGlassHaze is null outside any AeonGlassHost, so screen-level cards are unaffected.
+    val effectiveHazeState = hazeState
+        ?: LocalParentGlassHaze.current
+        ?: layers?.states?.getOrNull(depth)
 
     Box(
         modifier = modifier,
@@ -233,24 +276,26 @@ fun AeonGlassSheet(
                     glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Sheet,
                     fallbackColor = AppColors.sheetSurface,
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        // Standard Drag Handle
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                    AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            // Standard Drag Handle
                             Box(
                                 modifier = Modifier
-                                    .size(width = 36.dp, height = 4.dp)
-                                    .background(
-                                        AppColors.outlineVariant.copy(alpha = 0.3f),
-                                        RoundedCornerShape(2.dp)
-                                    )
-                            )
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 36.dp, height = 4.dp)
+                                        .background(
+                                            AppColors.outlineVariant.copy(alpha = 0.3f),
+                                            RoundedCornerShape(2.dp)
+                                        )
+                                )
+                            }
+                            content()
                         }
-                        content()
                     }
                 }
             }

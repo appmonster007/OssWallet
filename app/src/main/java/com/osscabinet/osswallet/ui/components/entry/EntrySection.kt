@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -53,39 +54,41 @@ fun EntrySection(
         fallbackColor = if (glassEnabled) AppColors.surfaceContainerLow.copy(alpha = 0.6f) else AppColors.surfaceContainerLow,
         borderColor = if (glassEnabled) AppColors.outlineVariant.copy(alpha = 0.2f) else AppColors.outlineVariant,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(AeonTheme.dimensions.cardPadding),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-        ) {
-            // Section Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(AeonTheme.dimensions.cardPadding),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.12f),
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
+                // Section Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = AppColors.primary
-                        )
+                    Surface(
+                        shape = CircleShape,
+                        color = AppColors.primary.copy(alpha = 0.12f),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                tint = AppColors.primary
+                            )
+                        }
                     }
+                    Text(
+                        text = title.uppercase(),
+                        style = AppTextStyles.sectionOverline,
+                        color = AppColors.contentSecondary
+                    )
                 }
-                Text(
-                    text = title.uppercase(),
-                    style = AppTextStyles.sectionOverline,
-                    color = AppColors.contentSecondary
-                )
-            }
 
-            content()
+                content()
+            }
         }
     }
 }

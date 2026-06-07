@@ -76,13 +76,19 @@ fun CalculatorNumpad(
     LaunchedEffect(amount) {
         if (state.tokens.isEmpty()) {
             val amountNum = amount.toBigDecimalOrNull()
-            val processedAmount = if (allowSigned) amountNum else amountNum?.abs()
+            val finalAmount = if (allowSigned) amountNum else amountNum?.abs()
 
-            if (processedAmount != null && processedAmount != BigDecimal.ZERO) {
-                val initialTokens = listOf(Token.Number(processedAmount.stripTrailingZeros().toPlainString()))
+            if (finalAmount != null && finalAmount != BigDecimal.ZERO) {
+                val isNegative = finalAmount.signum() < 0
+                val absValue = finalAmount.abs().stripTrailingZeros().toPlainString()
+                val initialTokens = if (isNegative) {
+                    listOf(Token.UnaryMinus, Token.Number(absValue))
+                } else {
+                    listOf(Token.Number(absValue))
+                }
                 state = state.copy(
                     tokens = initialTokens,
-                    display = processedAmount.stripTrailingZeros().toPlainString()
+                    display = finalAmount.stripTrailingZeros().toPlainString()
                 )
             }
         }

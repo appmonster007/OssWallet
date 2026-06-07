@@ -121,14 +121,10 @@ fun AccountEntrySheets(
                     .padding(bottom = 32.dp)
             ) {
                 CalculatorNumpad(
-                    amount = state.initialBalances[activeCurrency]?.let {
-                        it.toBigDecimalOrNull()?.abs()?.stripTrailingZeros()?.toPlainString() ?: "0"
-                    } ?: "0",
-                    onAmountChange = { magnitude ->
-                        val currentSigned = state.initialBalances[activeCurrency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                        val isNegative = currentSigned.signum() < 0
-                        val newSigned = if (isNegative && magnitude.isNotEmpty() && magnitude != "0") "-$magnitude" else magnitude
-                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, newSigned))
+                    amount = state.initialBalances[activeCurrency] ?: "0",
+                    allowSigned = true,
+                    onAmountChange = { signedValue ->
+                        onEvent(AccountEntryEvent.SetInitialBalance(activeCurrency, signedValue))
                     },
                     onDone = {
                         val newSigned = state.initialBalances[activeCurrency] ?: ""

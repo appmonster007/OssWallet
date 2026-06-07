@@ -42,7 +42,13 @@ class AccountEntryViewModel @Inject constructor(
         loadInitialData()
         viewModelScope.launch {
             effectiveShortlistedCurrencies.collect { currencies ->
-                _state.update { it.copy(shortlistedCurrencies = currencies) }
+                val popularAssets = setOf(
+                    "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY",
+                    "KRW", "INR", "BRL", "RUB", "MXN", "SGD", "HKD", "TRY",
+                    "SEK", "NOK", "NZD", "ZAR"
+                )
+                val refinedShortlist = currencies.filter { it.uppercase() in popularAssets }
+                _state.update { it.copy(shortlistedCurrencies = refinedShortlist) }
             }
         }
     }
@@ -156,12 +162,6 @@ class AccountEntryViewModel @Inject constructor(
                         initialBalances = it.initialBalances.toMutableMap()
                             .apply { put(event.currency, event.balance) })
                 }
-            }
-
-            is AccountEntryEvent.ToggleInitialBalanceDirection -> _state.update {
-                val current = it.initialBalances[event.currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val toggled = current.negate()
-                it.copy(initialBalances = it.initialBalances + (event.currency to toggled.toPlainString()))
             }
 
             is AccountEntryEvent.SetIcon -> _state.update { it.copy(selectedIconName = event.icon) }

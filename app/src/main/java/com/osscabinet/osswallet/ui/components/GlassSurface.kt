@@ -57,45 +57,24 @@ fun Modifier.aeonHazeSource(state: HazeState?): Modifier = if (state != null) {
 } else this
 
 /**
- * Captures the current glass surface as a [hazeSource] and propagates it to all
- * descendant [GlassSurface] composables via [LocalParentGlassHaze].
+ * Structural host for nested [GlassSurface] composables inside a glass card.
  *
- * Place this around the *content area* of any glass surface that wants to be
- * blurable by its children. Nesting is unlimited — each level shadows
- * [LocalParentGlassHaze] for its subtree so children always resolve the nearest ancestor.
+ * Does NOT increment [LocalHazeDepth] and does NOT intercept [LocalParentGlassHaze].
+ * All nested [GlassSurface] items resolve to [LocalAeonHaze]'s [HazeState] at depth 0,
+ * which is the only state that reliably captures pixels in [AeonHazeProvider].
  *
- * Usage:
- * ```
- * GlassSurface(...) {
- *     AeonGlassHost {
- *         // nested GlassSurface composables here automatically blur this surface
- *     }
- * }
- * ```
+ * Why depth is not incremented: [AeonHazeProvider] registers multiple [HazeState]s via
+ * stacked [hazeSource] modifiers on one Box. In Haze 1.7.2 only the outermost modifier
+ * (states[0]) captures pixels — subsequent states in the chain are empty. Incrementing
+ * depth to 1 would route nested items to an empty states[1] → transparent hazeEffect →
+ * bright white artifact on light backgrounds.
  */
 @Composable
 fun AeonGlassHost(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val surfaceHaze = remember { HazeState() }
-    // CompositionLocalProvider outside the Box so content() receives BoxScope from the Box
-    // and can use align(), matchParentSize(), etc. without an extra wrapper layer.
-    CompositionLocalProvider(
-        LocalParentGlassHaze provides surfaceHaze,
-        LocalHazeDepth provides LocalHazeDepth.current + 1,
-    ) {
-        Box(modifier = modifier) {
-            // Solid background so surfaceHaze captures real pixels for nested GlassSurface items to blur.
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .aeonHazeSource(surfaceHaze)
-                    .background(AppColors.cardSurface)
-            )
-            content()
-        }
-    }
+    Box(modifier = modifier, content = content)
 }
 
 /**

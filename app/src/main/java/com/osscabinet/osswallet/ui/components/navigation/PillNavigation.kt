@@ -9,6 +9,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.material3.ripple
@@ -145,33 +146,29 @@ fun UnifiedPillNavigation(
                     )
 
                     val haptic = LocalHapticFeedback.current
-                    GlassSurface(
+                    FloatingActionButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
+                        },
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .size(48.dp)
                             .graphicsLayer { rotationZ = rotation }
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(bounded = true, color = AppColors.onPrimary)
-                            ) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                            },
+                            .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+                        containerColor = AppColors.primary,
+                        contentColor = AppColors.onPrimary,
                         shape = CircleShape,
-                        hazeLayer = HazeLayer.Overlay,
-                        hazeStyle = GlassTokens.pillStyle(),
-                        glassVariant = GlassVariant.Pill,
-                        fallbackColor = AppColors.primary,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 2.dp
+                        )
                     ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(
-                                imageVector = fabIcon,
-                                contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
-                                modifier = Modifier.size(24.dp),
-                                tint = AppColors.onPrimary
-                            )
-                        }
+                        Icon(
+                            imageVector = fabIcon,
+                            contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }

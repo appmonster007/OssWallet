@@ -2,16 +2,22 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -47,14 +53,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.isDark
 
@@ -115,54 +126,76 @@ fun <T, ID> AeonHierarchicalHybridSelector(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        val dims = AeonTheme.dimensions
+        val haptic = LocalHapticFeedback.current
+
         // Special "None" option for Parent Selection mode
-        if (mode == AeonSelectMode.PARENT && noneLabel != null) {
+        if ((mode == AeonSelectMode.PARENT) && (noneLabel != null)) {
             val isNoneSelected = selectedIds.isEmpty()
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "noneScale")
+
             val backgroundColor by animateColorAsState(
-                if (isNoneSelected) AppColors.primaryContainer
+                if (isNoneSelected) AppColors.primary.copy(alpha = 0.15f)
                 else AppColors.surfaceContainerLow,
                 label = "noneBgColor"
             )
             val borderColor by animateColorAsState(
                 if (isNoneSelected) AppColors.primary
-                else AppColors.outlineVariant,
+                else AppColors.outlineVariant.copy(alpha = 0.6f),
                 label = "noneBorderColor"
             )
-            val borderWidth by androidx.compose.animation.core.animateDpAsState(
-                if (isNoneSelected) 1.5.dp else 0.5.dp,
+            val borderWidth by animateDpAsState(
+                if (isNoneSelected) 1.5.dp else 1.dp,
                 label = "noneBorderWidth"
             )
 
-            Surface(
-                onClick = { onParentSelected(null) },
-                shape = RoundedCornerShape(12.dp),
-                color = backgroundColor,
-                border = BorderStroke(borderWidth, borderColor),
-                modifier = Modifier.fillMaxWidth()
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .scale(scale)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current
+                    ) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onParentSelected(null)
+                    },
+                shape = RoundedCornerShape(dims.componentCornerRadius),
+                hazeStyle = GlassTokens.itemStyle(),
+                glassVariant = GlassVariant.Item,
+                fallbackColor = backgroundColor,
+                borderColor = borderColor,
+                borderWidth = borderWidth,
+                shadowElevation = if (isNoneSelected) 2.dp else 0.dp,
             ) {
                 Row(
-                    modifier = Modifier.padding(AeonTheme.dimensions.listPadding),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 72.dp)
+                        .padding(horizontal = dims.cardPadding, vertical = dims.spacingMd),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(modifier = Modifier.width(24.dp))
                     Surface(
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
+                        modifier = Modifier.size(dims.iconSizeLg),
                         shape = CircleShape,
-                        color = AppColors.surfaceContainerHigh
+                        color = AppColors.surfaceContainerHigh.copy(alpha = if (isNoneSelected) 0.25f else 0.12f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 noneIcon,
                                 contentDescription = null,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                tint = AppColors.contentSecondary
+                                modifier = Modifier.size(dims.iconSizeMd),
+                                tint = if (isNoneSelected) AppColors.primary else AppColors.contentSecondary
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
+                    Spacer(modifier = Modifier.width(dims.spacingLg))
                     Text(
                         noneLabel,
-                        style = if (isNoneSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
+                        style = AppTextStyles.listItemTitle,
                         color = if (isNoneSelected) AppColors.primary else AppColors.contentPrimary,
                         modifier = Modifier.weight(1f)
                     )
@@ -171,7 +204,7 @@ fun <T, ID> AeonHierarchicalHybridSelector(
                             Icons.Rounded.CheckCircle,
                             contentDescription = "Selected",
                             tint = AppColors.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(dims.iconSizeMd)
                         )
                     }
                 }
@@ -233,19 +266,7 @@ private fun <T, ID> RecursiveHybridNode(
         )
     }
 
-    // M3 tonal container logic
-    val backgroundColor = if (depth % 2 == 0) {
-        AppColors.surfaceContainerLow
-    } else {
-        AppColors.surfaceContainerHigh
-    }
-
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = backgroundColor,
-        border = BorderStroke(0.5.dp, AppColors.outlineVariant),
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
         Column {
             HybridSelectItem(
                 item = item,
@@ -341,7 +362,11 @@ private fun <T, ID> HybridSelectItem(
     onAddChildClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val haptic = LocalHapticFeedback.current
+    val dims = AeonTheme.dimensions
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "itemScale")
 
     // Resolve item color first so it can drive all selection-state animations.
     val icon = iconMapper(item)
@@ -349,130 +374,149 @@ private fun <T, ID> HybridSelectItem(
     val isActiveSelection = isSelected && mode != AeonSelectMode.MANAGEMENT
 
     val backgroundColor by animateColorAsState(
-        if (isActiveSelection) color.copy(alpha = 0.08f)
+        if (isActiveSelection) color.copy(alpha = 0.15f)
         else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
         if (isActiveSelection) color
-        else AppColors.outlineVariant,
+        else AppColors.outlineVariant.copy(alpha = 0.6f),
         label = "borderColor"
     )
 
-    val borderWidth by androidx.compose.animation.core.animateDpAsState(
-        if (isActiveSelection) 1.5.dp else 0.5.dp,
+    val borderWidth by animateDpAsState(
+        if (isActiveSelection) 1.5.dp else 1.dp,
         label = "borderWidth"
     )
 
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
-        shape = RoundedCornerShape(12.dp),
-        color = backgroundColor,
-        border = BorderStroke(borderWidth, borderColor),
-        modifier = Modifier.fillMaxWidth()
+    val contentAlpha = if (isActiveSelection) 1f else 0.85f
+
+    GlassSurface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+        shape = RoundedCornerShape(dims.componentCornerRadius),
+        hazeStyle = GlassTokens.itemStyle(),
+        glassVariant = GlassVariant.Item,
+        fallbackColor = backgroundColor,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+        shadowElevation = if (isActiveSelection) 2.dp else 0.dp,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AeonTheme.dimensions.listPadding),
+                .defaultMinSize(minHeight = 72.dp)
+                .padding(horizontal = dims.cardPadding, vertical = dims.spacingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left side: Expansion Control
             if (hasChildren) {
-                IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onToggleExpand, modifier = Modifier.size(dims.iconSizeMd)) {
                     Icon(
                         if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
+                        modifier = Modifier.size(dims.iconSizeMd),
                         tint = AppColors.contentSecondary
                     )
                 }
             } else {
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(dims.iconSizeMd))
             }
 
             Spacer(modifier = Modifier.width(6.dp))
 
             // Item Icon — always in the item's own color; alpha increases slightly when selected.
             Surface(
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
+                modifier = Modifier.size(dims.iconSizeLg),
                 shape = CircleShape,
-                color = color.copy(alpha = if (isActiveSelection) 0.2f else 0.12f)
+                color = color.copy(alpha = if (isActiveSelection) 0.25f else 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (icon != null) {
                         Icon(
                             icon,
                             contentDescription = null,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                            modifier = Modifier.size(dims.iconSizeMd),
                             tint = color
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
+            Spacer(modifier = Modifier.width(dims.spacingLg))
 
             // Item Label
             Text(
                 labelMapper(item),
-                style = if (isSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
+                style = AppTextStyles.listItemTitle,
                 color = if (isActiveSelection) color else AppColors.contentPrimary,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .alpha(contentAlpha)
             )
 
             // Right side: Selection Indicator / Management Controls
-            when (mode) {
-                AeonSelectMode.SINGLE, AeonSelectMode.PARENT -> {
-                    if (isSelected) {
-                        Icon(
-                            Icons.Rounded.CheckCircle,
-                            contentDescription = "Selected",
-                            tint = color,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-                AeonSelectMode.MULTI -> {
-                    Switch(
-                        checked = isSelected,
-                        onCheckedChange = {
-                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onClick()
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = color,
-                            checkedTrackColor = color.copy(alpha = 0.3f),
-                            checkedBorderColor = color,
-                            uncheckedThumbColor = AppColors.switchThumbOff,
-                            uncheckedTrackColor = AppColors.switchTrackOff,
-                            uncheckedBorderColor = AppColors.outline
-                        )
-                    )
-                }
-
-                AeonSelectMode.MANAGEMENT -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        IconButton(onClick = onAddChildClick, modifier = Modifier.size(32.dp)) {
+            Box(
+                modifier = Modifier.defaultMinSize(minWidth = dims.iconSizeMd),
+                contentAlignment = Alignment.Center
+            ) {
+                when (mode) {
+                    AeonSelectMode.SINGLE, AeonSelectMode.PARENT -> {
+                        if (isSelected) {
                             Icon(
-                                Icons.Rounded.Add,
-                                contentDescription = "Add child",
-                                modifier = Modifier.size(20.dp),
-                                tint = AppColors.primary
+                                Icons.Rounded.CheckCircle,
+                                contentDescription = "Selected",
+                                tint = color,
+                                modifier = Modifier.size(dims.iconSizeMd)
                             )
                         }
-                        IconButton(onClick = onEditClick, modifier = Modifier.size(32.dp)) {
-                            Icon(
-                                Icons.Rounded.Edit,
-                                contentDescription = "Edit",
-                                modifier = Modifier.size(18.dp),
-                                tint = AppColors.contentSecondary
+                    }
+
+                    AeonSelectMode.MULTI -> {
+                        Switch(
+                            checked = isSelected,
+                            onCheckedChange = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onClick()
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = color,
+                                checkedTrackColor = color.copy(alpha = 0.3f),
+                                checkedBorderColor = color,
+                                uncheckedThumbColor = AppColors.switchThumbOff,
+                                uncheckedTrackColor = AppColors.switchTrackOff,
+                                uncheckedBorderColor = AppColors.outline
                             )
+                        )
+                    }
+
+                    AeonSelectMode.MANAGEMENT -> {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            IconButton(onClick = onAddChildClick, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = "Add child",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = AppColors.primary
+                                )
+                            }
+                            IconButton(onClick = onEditClick, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    Icons.Rounded.Edit,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = AppColors.contentSecondary
+                                )
+                            }
                         }
                     }
                 }

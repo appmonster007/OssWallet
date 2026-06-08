@@ -65,6 +65,7 @@ import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -333,12 +334,12 @@ fun AeonTagSelectionContent(
                             )
                         }
 
-                        EntrySelectionCard(
+                        AeonSelectionCard(
                             icon = Icons.AutoMirrored.Rounded.Label,
                             label = tag.name,
                             isSelected = isSelected,
                             iconColor = Color(tag.colorHex),
-                            selectionMode = if (isManagementMode) EntrySelectionMode.MANAGEMENT else EntrySelectionMode.SINGLE,
+                            selectionMode = if (isManagementMode) AeonSelectMode.MANAGEMENT else AeonSelectMode.SINGLE,
                             onClick = {
                                 if (isManagementMode) {
                                     // In management mode, clicking selects for delete/edit? 

@@ -18,8 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionCard
-import com.osscabinet.ossWallet.ui.components.entry.EntrySelectionMode
+import com.osscabinet.ossWallet.ui.components.entry.AeonSelectionCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
@@ -54,7 +53,7 @@ fun <T, ID> AeonHybridSelector(
             val id = idMapper(item)
             val isSelected = id in selectedIds
 
-            EntrySelectionCard(
+            AeonSelectionCard(
                 icon = iconMapper(item) ?: Icons.Rounded.Category,
                 label = labelMapper(item),
                 detail = detailMapper(item),
@@ -77,10 +76,10 @@ fun <T, ID> AeonHybridSelector(
                     }
                 },
                 selectionMode = when (mode) {
-                    AeonSelectMode.SINGLE -> EntrySelectionMode.SINGLE
-                    AeonSelectMode.MULTI -> EntrySelectionMode.MULTI
-                    AeonSelectMode.MANAGEMENT -> EntrySelectionMode.MANAGEMENT
-                    else -> EntrySelectionMode.SINGLE
+                    AeonSelectMode.SINGLE -> AeonSelectMode.SINGLE
+                    AeonSelectMode.MULTI -> AeonSelectMode.MULTI
+                    AeonSelectMode.MANAGEMENT -> AeonSelectMode.MANAGEMENT
+                    else -> AeonSelectMode.SINGLE
                 },
                 trailingContent = if (mode == AeonSelectMode.MANAGEMENT) {
                     {

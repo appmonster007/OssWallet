@@ -115,6 +115,7 @@ fun AeonSelectionCard(
         fallbackColor = backgroundColor,
         borderColor = borderColor,
         borderWidth = borderWidth,
+
         shadowElevation = if (isActiveSelection) 2.dp else 0.dp,
     ) {
         Row(

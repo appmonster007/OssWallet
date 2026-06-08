@@ -3,15 +3,22 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
+import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
+import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.BackupScheduler
+import com.osscabinet.ossWallet.domain.service.CsvImportService
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
@@ -42,7 +49,9 @@ class SettingsViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val backupRepository: BackupRepository,
     private val currencyRepository: CurrencyRepository,
-    private val providerRegistry: ExchangeRateProviderRegistry
+    private val providerRegistry: ExchangeRateProviderRegistry,
+    private val backupScheduler: BackupScheduler,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     val currency: StateFlow<String> = settingsRepository.currency
@@ -130,11 +139,36 @@ class SettingsViewModel @Inject constructor(
     private val _backupMessage = Channel<String>()
     val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
 
+    val autoBackupConfig: StateFlow<AutoBackupConfig> = settingsDataStore.autoBackupConfig
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AutoBackupConfig())
+
+    private val _recentBackups = MutableStateFlow<List<BackupMeta>>(emptyList())
+    val recentBackups: StateFlow<List<BackupMeta>> = _recentBackups
+
     init {
         viewModelScope.launch {
             val providerId = settingsRepository.currencyProvider.first()
             val provider = providerRegistry.getProvider(providerId)
             _availableCurrencies.value = provider.fetchSupportedCurrencies()
+        }
+        viewModelScope.launch { refreshRecentBackups() }
+    }
+
+    private suspend fun refreshRecentBackups() {
+        _recentBackups.value = backupRepository.listPrivateBackups()
+    }
+
+    fun updateAutoBackupConfig(config: AutoBackupConfig) {
+        viewModelScope.launch {
+            settingsDataStore.saveAutoBackupConfig(config)
+            backupScheduler.schedule(config)
+        }
+    }
+
+    fun deleteBackup(id: String) {
+        viewModelScope.launch {
+            backupRepository.deleteBackup(id)
+            refreshRecentBackups()
         }
     }
 
@@ -386,17 +420,21 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun exportBackup(uri: Uri, type: BackupType) {
+    fun exportBackup(uri: Uri, type: BackupType, scope: BackupScope = BackupScope.ALL_PROFILES) {
         viewModelScope.launch {
-            backupRepository.exportData(uri.toString(), type)
-            _backupMessage.send("Backup exported successfully")
+            val result = backupRepository.exportData(uri.toString(), type, scope)
+            _backupMessage.send(if (result.isSuccess) "Backup exported successfully" else "Export failed: ${result.exceptionOrNull()?.message}")
         }
     }
 
-    fun importBackup(uri: Uri, type: BackupType) {
+    fun importBackup(uri: Uri, type: BackupType, entities: Set<RestorableEntity>? = null) {
         viewModelScope.launch {
-            backupRepository.importData(uri.toString(), type)
-            _backupMessage.send("Backup imported successfully")
+            val result = if (entities != null && entities.size < RestorableEntity.entries.size) {
+                backupRepository.importDataSelective(uri.toString(), type, entities)
+            } else {
+                backupRepository.importData(uri.toString(), type)
+            }
+            _backupMessage.send(if (result.isSuccess) "Backup imported successfully" else "Import failed: ${result.exceptionOrNull()?.message}")
         }
     }
 

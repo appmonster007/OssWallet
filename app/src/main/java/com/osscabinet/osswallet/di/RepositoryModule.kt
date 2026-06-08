@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.data.repository.BudgetRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CardRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.CategoryRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.ComputationRepositoryImpl
+import com.osscabinet.ossWallet.data.service.BackupSchedulerImpl
+import com.osscabinet.ossWallet.data.service.CsvImportServiceImpl
 import com.osscabinet.ossWallet.data.repository.CurrencyRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.FilterRepositoryImpl
 import com.osscabinet.ossWallet.data.repository.LoanRepositoryImpl
@@ -22,6 +24,8 @@ import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.service.BackupScheduler
+import com.osscabinet.ossWallet.domain.service.CsvImportService
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
@@ -105,4 +109,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindComputationRepository(impl: ComputationRepositoryImpl): ComputationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBackupScheduler(impl: BackupSchedulerImpl): BackupScheduler
+
+    @Binds
+    @Singleton
+    abstract fun bindCsvImportService(impl: CsvImportServiceImpl): CsvImportService
 }

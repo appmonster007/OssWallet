@@ -134,6 +134,11 @@ data object SmartSuggestionsRoute
 @Serializable
 data object OpenInWebRoute
 
+// ── Import ────────────────────────────────────────────────────────────────────
+
+@Serializable
+data object CsvImportRoute
+
 // ── Misc ──────────────────────────────────────────────────────────────────────
 
 @Serializable

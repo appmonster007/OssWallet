@@ -10,6 +10,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.material3.ripple
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -449,29 +451,38 @@ fun FabMenuItem(
                 )
             }
             
-            SmallFloatingActionButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                },
-                modifier = Modifier.size(44.dp),
-                interactionSource = interactionSource,
-                containerColor = if (iconColor != null) {
-                    val themeMode = LocalThemeMode.current
-                    when {
-                        themeMode.isAmoled -> iconColor.copy(alpha = 0.18f)
-                        themeMode.isDarkTheme -> iconColor.copy(alpha = 0.25f)
-                        else -> iconColor
-                    }
-                } else AppColors.secondaryContainer,
-                contentColor = if (iconColor != null) {
-                    val themeMode = LocalThemeMode.current
-                    if (themeMode.isDarkTheme || themeMode.isAmoled) iconColor else Color.White
-                } else AppColors.onSecondaryContainer,
+            val themeMode = LocalThemeMode.current
+            val resolvedIconTint = if (iconColor != null) {
+                if (themeMode.isDarkTheme || themeMode.isAmoled) iconColor else Color.White
+            } else AppColors.onSecondaryContainer
+            val glassFallback = if (iconColor != null) {
+                when {
+                    themeMode.isAmoled -> iconColor.copy(alpha = 0.18f)
+                    themeMode.isDarkTheme -> iconColor.copy(alpha = 0.25f)
+                    else -> iconColor
+                }
+            } else AppColors.secondaryContainer
+
+            GlassSurface(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(bounded = true, color = resolvedIconTint)
+                    ) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onClick()
+                    },
                 shape = CircleShape,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+                hazeLayer = HazeLayer.Overlay,
+                hazeStyle = GlassTokens.pillStyle(),
+                glassVariant = GlassVariant.Pill,
+                fallbackColor = glassFallback,
             ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = resolvedIconTint)
+                }
             }
         }
     }

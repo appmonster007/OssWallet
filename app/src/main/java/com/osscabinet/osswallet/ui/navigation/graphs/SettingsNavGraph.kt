@@ -1,11 +1,17 @@
 package com.osscabinet.ossWallet.ui.navigation.graphs
 
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
+import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
+import com.osscabinet.ossWallet.ui.navigation.CsvImportRoute
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
+import com.osscabinet.ossWallet.ui.navigation.FilterListRoute
 import com.osscabinet.ossWallet.ui.navigation.OpenInWebRoute
+import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.PopEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.PopExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.SettingsCurrencyRoute
@@ -16,14 +22,11 @@ import com.osscabinet.ossWallet.ui.navigation.SettingsSecurityRoute
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.navigation.ShortlistedCurrenciesRoute
 import com.osscabinet.ossWallet.ui.navigation.SmartSuggestionsRoute
-import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
-import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
-import com.osscabinet.ossWallet.ui.navigation.FilterListRoute
-import com.osscabinet.ossWallet.ui.navigation.PlannedPaymentEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TagListRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateEntryRoute
 import com.osscabinet.ossWallet.ui.navigation.TemplateListRoute
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.osscabinet.ossWallet.ui.screens.import_csv.CsvImportScreen
+import com.osscabinet.ossWallet.ui.screens.import_csv.CsvImportViewModel
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebActions
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebScreen
 import com.osscabinet.ossWallet.ui.screens.openinweb.OpenInWebViewModel
@@ -123,7 +126,8 @@ fun NavGraphBuilder.settingsGraph(
         DataManagementScreen(
             viewModel = vms.settingsViewModel,
             actions = DataManagementActions(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onNavigateToCsvImport = { navController.navigate(CsvImportRoute) }
             )
         )
     }
@@ -155,6 +159,19 @@ fun NavGraphBuilder.settingsGraph(
                 onAcceptAsPlannedPayment = { navController.navigate(PlannedPaymentEntryRoute()) },
                 onBackClick = { navController.popBackStack() }
             )
+        )
+    }
+
+    composable<CsvImportRoute>(
+        enterTransition = { EnterTransitionSpec },
+        exitTransition = { ExitTransitionSpec },
+        popEnterTransition = { PopEnterTransitionSpec },
+        popExitTransition = { PopExitTransitionSpec }
+    ) {
+        val vm: CsvImportViewModel = hiltViewModel()
+        CsvImportScreen(
+            viewModel = vm,
+            onNavigateBack = { navController.popBackStack() }
         )
     }
 

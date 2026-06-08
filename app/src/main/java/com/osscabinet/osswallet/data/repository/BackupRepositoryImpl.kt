@@ -41,14 +41,18 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
+import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
+import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.model.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -80,7 +84,7 @@ class BackupRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : BackupRepository {
 
-    override suspend fun exportData(uriString: String, type: BackupType): Result<Unit> =
+    override suspend fun exportData(uriString: String, type: BackupType, scope: BackupScope): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
                 val uri = uriString.toUri()
@@ -88,6 +92,7 @@ class BackupRepositoryImpl @Inject constructor(
                     when (type) {
                         BackupType.CSV_ZIP -> createZipBackup(outputStream)
                         BackupType.SQLITE -> exportSqlite(outputStream)
+                        BackupType.FLAT_CSV -> exportFlatCsv(outputStream, scope)
                     }
                 }
                 Result.success(Unit)
@@ -95,6 +100,42 @@ class BackupRepositoryImpl @Inject constructor(
                 Result.failure(e)
             }
         }
+
+    private suspend fun exportFlatCsv(outputStream: OutputStream, scope: BackupScope) {
+        val currentProfileId = settingsDataStore.currentProfileId.first()
+        val transactions = if (scope == BackupScope.SINGLE_PROFILE)
+            transactionDao.getAllTransactionsSync().filter { it.profileId == currentProfileId }
+        else
+            transactionDao.getAllTransactionsSync()
+
+        val writer = outputStream.bufferedWriter()
+        writer.write("date,account,category,type,amount,currency,payee,note,payment_type,warranty_months,labels,is_transfer\n")
+        transactions.forEach { tx ->
+            val warrantyMonths = tx.warrantyExpiration?.let {
+                val months = ((it - tx.timestamp) / (1000L * 60 * 60 * 24 * 30)).toInt()
+                months.coerceAtLeast(0)
+            } ?: 0
+            val isTransfer = tx.transactionType == TransactionType.TRANSFER
+            val tags = tx.tags.joinToString("|")
+            val row = listOf(
+                tx.timestamp.toString(),
+                tx.accountId ?: "",
+                tx.categoryId.toString(),
+                tx.transactionType.name,
+                tx.amount.toPlainString(),
+                tx.currency,
+                tx.payee?.replace(",", ";") ?: "",
+                tx.note?.replace(",", ";") ?: "",
+                tx.paymentMethod.name,
+                warrantyMonths.toString(),
+                tags.replace(",", ";"),
+                isTransfer.toString()
+            )
+            writer.write(row.joinToString(","))
+            writer.newLine()
+        }
+        writer.flush()
+    }
 
     private suspend fun createZipBackup(outputStream: OutputStream) {
         val zos = java.util.zip.ZipOutputStream(outputStream)
@@ -474,6 +515,7 @@ class BackupRepositoryImpl @Inject constructor(
                     when (type) {
                         BackupType.CSV_ZIP -> restoreZipBackup(inputStream)
                         BackupType.SQLITE -> restoreSqliteBackup(inputStream)
+                        BackupType.FLAT_CSV -> throw UnsupportedOperationException("FLAT_CSV import not supported via importData; use importDataSelective or a dedicated importer")
                     }
                 }
                 Result.success(Unit)
@@ -950,5 +992,103 @@ class BackupRepositoryImpl @Inject constructor(
                 nextUpdate = p["nextUpdate"]?.toLongOrNull() ?: 0
             )
         })
+    }
+
+    override suspend fun importDataSelective(
+        uriString: String,
+        type: BackupType,
+        entities: Set<RestorableEntity>
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val uri = uriString.toUri()
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                when (type) {
+                    BackupType.CSV_ZIP -> restoreZipBackupSelective(inputStream, entities)
+                    else -> throw UnsupportedOperationException("Selective restore only supported for CSV_ZIP")
+                }
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun restoreZipBackupSelective(inputStream: InputStream, entities: Set<RestorableEntity>) {
+        val tempDir = File(context.cacheDir, "restore_temp_selective")
+        tempDir.deleteRecursively()
+        tempDir.mkdirs()
+
+        ZipInputStream(inputStream).use { zis ->
+            var entry = zis.nextEntry
+            while (entry != null) {
+                val file = File(tempDir, entry.name)
+                FileOutputStream(file).use { fos -> zis.copyTo(fos) }
+                entry = zis.nextEntry
+            }
+        }
+
+        database.withTransaction {
+            if (RestorableEntity.PROFILES in entities) { profileDao.clearAll(); restoreProfiles(File(tempDir, "profiles.csv")) }
+            if (RestorableEntity.ACCOUNTS in entities) { accountDao.clearAll(); restoreAccounts(File(tempDir, "accounts.csv")) }
+            if (RestorableEntity.CATEGORIES in entities) { categoryDao.clearAll(); restoreCategories(File(tempDir, "categories.csv")) }
+            if (RestorableEntity.TRANSACTIONS in entities) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(File(tempDir, "transactions.csv")); restoreLinks(File(tempDir, "transaction_links.csv")) }
+            if (RestorableEntity.BUDGETS in entities) { budgetDao.clearAll(); restoreBudgets(File(tempDir, "budgets.csv")) }
+            if (RestorableEntity.TEMPLATES in entities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
+            if (RestorableEntity.PLANNED_PAYMENTS in entities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
+            if (RestorableEntity.TAGS in entities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
+            if (RestorableEntity.LOANS in entities) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(File(tempDir, "loans.csv")); restoreLoanPayments(File(tempDir, "loan_payments.csv")) }
+            if (RestorableEntity.FILTERS in entities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
+            if (RestorableEntity.CURRENCY_RATES in entities) { restoreCurrencyRates(File(tempDir, "currency_rates.csv")) }
+        }
+        tempDir.deleteRecursively()
+    }
+
+    override suspend fun exportToPrivateStorage(scope: BackupScope): Result<String> =
+        withContext(Dispatchers.IO) {
+            try {
+                val dir = File(context.filesDir, "backups").apply { mkdirs() }
+                val scopeSuffix = if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"
+                val fileName = "osswallet_backup_${System.currentTimeMillis()}${scopeSuffix}.zip"
+                val file = File(dir, fileName)
+                FileOutputStream(file).use { createZipBackup(it) }
+                Result.success(file.absolutePath)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    override suspend fun listPrivateBackups(): List<BackupMeta> = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, "backups")
+        if (!dir.exists()) return@withContext emptyList()
+        dir.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") }
+            ?.sortedByDescending { it.lastModified() }
+            ?.map { f ->
+                BackupMeta(
+                    id = f.name,
+                    path = f.absolutePath,
+                    createdAt = f.lastModified(),
+                    sizeBytes = f.length(),
+                    scope = if (f.name.contains("_profile")) BackupScope.SINGLE_PROFILE else BackupScope.ALL_PROFILES
+                )
+            } ?: emptyList()
+    }
+
+    override suspend fun deleteBackup(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val file = File(context.filesDir, "backups/$id")
+            if (file.exists()) file.delete()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun pruneOldBackups(maxRetained: Int) {
+        withContext(Dispatchers.IO) {
+            val backups = listPrivateBackups()
+            if (backups.size > maxRetained) {
+                backups.drop(maxRetained).forEach { deleteBackup(it.id) }
+            }
+        }
     }
 }

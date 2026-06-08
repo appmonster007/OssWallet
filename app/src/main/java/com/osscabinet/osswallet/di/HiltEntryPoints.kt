@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.di
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -20,6 +21,13 @@ interface WidgetDataLoaderEntryPoint {
     fun databaseQueryService(): DatabaseQueryService
     fun categoryRepository(): CategoryRepository
     fun accountRepository(): AccountRepository
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AutoBackupWorkerEntryPoint {
+    fun backupRepository(): BackupRepository
+    fun settingsDataStore(): SettingsDataStore
 }
 
 @EntryPoint

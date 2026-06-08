@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
@@ -53,6 +54,7 @@ class SettingsDataStore(private val context: Context) {
         val CONTOUR_LINES_ENABLED_KEY = booleanPreferencesKey("contour_lines_enabled")
         val RANDOMIZE_CONTOUR_EACH_LOAD_KEY = booleanPreferencesKey("randomize_contour_each_load")
         val GLASS_SETTINGS_KEY = stringPreferencesKey("glass_settings")
+        val AUTO_BACKUP_CONFIG_KEY = stringPreferencesKey("auto_backup_config")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -176,6 +178,12 @@ class SettingsDataStore(private val context: Context) {
 
     val randomizeContourEachLoad: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[RANDOMIZE_CONTOUR_EACH_LOAD_KEY] ?: true
+    }
+
+    val autoBackupConfig: Flow<AutoBackupConfig> = context.dataStore.data.map { prefs ->
+        prefs[AUTO_BACKUP_CONFIG_KEY]?.let {
+            try { Json.decodeFromString<AutoBackupConfig>(it) } catch (_: Exception) { AutoBackupConfig() }
+        } ?: AutoBackupConfig()
     }
 
     val glassSettings: Flow<GlassSettings> = context.dataStore.data.map { preferences ->
@@ -373,6 +381,12 @@ class SettingsDataStore(private val context: Context) {
                 }
             } ?: GlassSettings()
             preferences[GLASS_SETTINGS_KEY] = Json.encodeToString(update(current))
+        }
+    }
+
+    suspend fun saveAutoBackupConfig(config: AutoBackupConfig) {
+        context.dataStore.edit { prefs ->
+            prefs[AUTO_BACKUP_CONFIG_KEY] = Json.encodeToString(config)
         }
     }
 

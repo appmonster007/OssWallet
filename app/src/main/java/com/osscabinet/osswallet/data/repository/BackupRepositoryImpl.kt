@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.model.*
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -520,6 +521,7 @@ class BackupRepositoryImpl @Inject constructor(
                 }
                 Result.success(Unit)
             } catch (e: Exception) {
+                Log.e("BackupRepo", "importData failed", e)
                 Result.failure(e)
             }
         }
@@ -591,6 +593,7 @@ class BackupRepositoryImpl @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("BackupRepo", "importDataSelective failed", e)
             Result.failure(e)
         }
     }
@@ -620,33 +623,43 @@ class BackupRepositoryImpl @Inject constructor(
         }
 
         database.withTransaction {
-            profileDao.clearAll()
-            accountDao.clearAll()
-            categoryDao.clearAll()
-            transactionDao.clearAll()
+            // Clear in dependency order: children before parents to satisfy FK constraints.
+            // transactions.categoryId has ON DELETE RESTRICT — transactions must be cleared
+            // before categories. transaction_links and loan_payments reference transactions.
             transactionLinkDao.clearAll()
-            budgetDao.clearAll()
-            templateDao.clearAll()
-            plannedPaymentDao.clearAll()
-            plannedPaymentOccurrenceDao.clearAll()
-            tagDao.clearAll()
-            loanDao.clearAll()
+            transactionDao.clearAllCrossRefs()
             loanPaymentDao.clearAll()
+            plannedPaymentOccurrenceDao.clearAll()
+            transactionDao.clearAll()
+            templateDao.clearAll()
+            budgetDao.clearAll()
+            loanDao.clearAll()
+            plannedPaymentDao.clearAll()
+            accountDao.clearAll()
             filterDao.clearAll()
+            tagDao.clearAll()
+            categoryDao.clearAll()
+            profileDao.clearAll()
 
+            // Restore in strict parent-before-child order to satisfy all FK constraints.
+            // filters must precede budgets (budgets.filterId → filters.id) and
+            // loans (loans.filterId → filters.id).
+            // templates must precede planned_payments (planned_payments.templateId → templates.id).
+            // planned_payments must precede planned_payment_occurrences.
+            // loans must precede loan_payments.
             restoreProfiles(File(tempDir, "profiles.csv"))
             restoreAccounts(File(tempDir, "accounts.csv"))
             restoreCategories(File(tempDir, "categories.csv"))
+            restoreTags(File(tempDir, "tags.csv"))
+            restoreFilters(File(tempDir, "filters.csv"))
+            restoreTemplates(File(tempDir, "templates.csv"))
             restoreTransactions(File(tempDir, "transactions.csv"))
             restoreLinks(File(tempDir, "transaction_links.csv"))
             restoreBudgets(File(tempDir, "budgets.csv"))
-            restoreTemplates(File(tempDir, "templates.csv"))
-            restorePlannedPayments(File(tempDir, "planned_payments.csv"))
-            restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv"))
-            restoreTags(File(tempDir, "tags.csv"))
             restoreLoans(File(tempDir, "loans.csv"))
             restoreLoanPayments(File(tempDir, "loan_payments.csv"))
-            restoreFilters(File(tempDir, "filters.csv"))
+            restorePlannedPayments(File(tempDir, "planned_payments.csv"))
+            restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv"))
             restoreCurrencyRates(File(tempDir, "currency_rates.csv"))
         }
         tempDir.deleteRecursively()
@@ -1028,16 +1041,19 @@ class BackupRepositoryImpl @Inject constructor(
         }
 
         database.withTransaction {
+            // Restore in strict parent-before-child order to satisfy all FK constraints.
+            // filters must precede budgets and loans; templates must precede planned_payments;
+            // planned_payments must precede occurrences; loans must precede loan_payments.
             if (RestorableEntity.PROFILES in entities) { profileDao.clearAll(); restoreProfiles(File(tempDir, "profiles.csv")) }
             if (RestorableEntity.ACCOUNTS in entities) { accountDao.clearAll(); restoreAccounts(File(tempDir, "accounts.csv")) }
             if (RestorableEntity.CATEGORIES in entities) { categoryDao.clearAll(); restoreCategories(File(tempDir, "categories.csv")) }
+            if (RestorableEntity.TAGS in entities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
+            if (RestorableEntity.FILTERS in entities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
+            if (RestorableEntity.TEMPLATES in entities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
             if (RestorableEntity.TRANSACTIONS in entities) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(File(tempDir, "transactions.csv")); restoreLinks(File(tempDir, "transaction_links.csv")) }
             if (RestorableEntity.BUDGETS in entities) { budgetDao.clearAll(); restoreBudgets(File(tempDir, "budgets.csv")) }
-            if (RestorableEntity.TEMPLATES in entities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
-            if (RestorableEntity.PLANNED_PAYMENTS in entities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
-            if (RestorableEntity.TAGS in entities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
             if (RestorableEntity.LOANS in entities) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(File(tempDir, "loans.csv")); restoreLoanPayments(File(tempDir, "loan_payments.csv")) }
-            if (RestorableEntity.FILTERS in entities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
+            if (RestorableEntity.PLANNED_PAYMENTS in entities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
             if (RestorableEntity.CURRENCY_RATES in entities) { restoreCurrencyRates(File(tempDir, "currency_rates.csv")) }
         }
         tempDir.deleteRecursively()

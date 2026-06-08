@@ -113,10 +113,11 @@ class PlannedPaymentViewModel @Inject constructor(
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate
             )
-            val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
-            transactionManager.confirmPlannedPaymentTransaction(
-                paymentId = payment.id,
-                transactionId = transactionId,
+            transactionManager.handleSaveTransaction(
+                existingTransaction = null,
+                request = request,
+                profileId = profileId,
+                sourcePlannedPaymentId = payment.id,
                 scheduledDate = occurrence.scheduledDate
             )
         }
@@ -161,10 +162,11 @@ class PlannedPaymentViewModel @Inject constructor(
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate
             )
-            val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
-            transactionManager.confirmPlannedPaymentTransaction(
-                paymentId = payment.id,
-                transactionId = transactionId,
+            val transactionId = transactionManager.handleSaveTransaction(
+                existingTransaction = null,
+                request = request,
+                profileId = profileId,
+                sourcePlannedPaymentId = payment.id,
                 scheduledDate = scheduledDate
             )
             _lastUndoAction.value = UndoAction.ConfirmUndo(payment, scheduledDate, transactionId)

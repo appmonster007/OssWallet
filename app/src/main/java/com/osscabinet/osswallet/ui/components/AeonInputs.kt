@@ -7,17 +7,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Surface
@@ -35,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -153,6 +158,53 @@ fun CurrencySelector(
             }
         }
 
+    }
+}
+
+@Composable
+fun AeonStepperField(
+    value: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
+    min: Int = 1,
+    max: Int = Int.MAX_VALUE,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = AppColors.sheetSurface,
+        modifier = modifier.height(40.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = onDecrement,
+                enabled = value > min,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Remove,
+                    contentDescription = "Decrease",
+                    tint = if (value > min) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
+                )
+            }
+            Text(
+                text = "$value",
+                style = AppTextStyles.transactionTitle.copy(textAlign = TextAlign.Center),
+                modifier = Modifier.widthIn(min = 28.dp),
+                textAlign = TextAlign.Center
+            )
+            IconButton(
+                onClick = onIncrement,
+                enabled = value < max,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = "Increase",
+                    tint = if (value < max) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
+                )
+            }
+        }
     }
 }
 

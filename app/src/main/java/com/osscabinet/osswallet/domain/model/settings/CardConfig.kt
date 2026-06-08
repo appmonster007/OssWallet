@@ -284,7 +284,7 @@ data class PlannedPaymentsCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    val daysAhead: Int = 30,
+    @kotlinx.serialization.Transient val daysAhead: Int = 30,
     val maxItems: Int = 5,
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
@@ -465,7 +465,7 @@ fun CardConfig.withClearedFilter(): CardConfig = when (this) {
     is CategoryPieChartCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))
     is CategoryTreemapCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))
     is AccountHeroCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true)))
-    is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))
+    is PlannedPaymentsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = false)))
     is BudgetsCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))
     is LoansCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))
     is RecentActivitiesCardConfig -> copy(filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)))

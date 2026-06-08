@@ -143,28 +143,33 @@ fun UnifiedPillNavigation(
                     )
 
                     val haptic = LocalHapticFeedback.current
-                    FloatingActionButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                        },
+                    GlassSurface(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .size(48.dp)
-                            .graphicsLayer { rotationZ = rotation },
-                        containerColor = AppColors.primary,
-                        contentColor = AppColors.onPrimary,
+                            .graphicsLayer { rotationZ = rotation }
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(bounded = true, color = AppColors.onPrimary)
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
+                            },
                         shape = CircleShape,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 6.dp,
-                            pressedElevation = 2.dp
-                        )
+                        hazeLayer = HazeLayer.Overlay,
+                        hazeStyle = GlassTokens.pillStyle(),
+                        glassVariant = GlassVariant.Pill,
+                        fallbackColor = AppColors.primary,
                     ) {
-                        Icon(
-                            imageVector = fabIcon,
-                            contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
-                            modifier = Modifier.size(24.dp)
-                        )
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = fabIcon,
+                                contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
+                                modifier = Modifier.size(24.dp),
+                                tint = AppColors.onPrimary
+                            )
+                        }
                     }
                 }
             }
@@ -444,12 +449,6 @@ fun FabMenuItem(
                 )
             }
             
-            val resolvedIconColor = iconColor ?: AppColors.onSecondaryContainer
-            val fabContainerColor = if (iconColor != null) {
-                iconColor.copy(alpha = 0.15f)
-            } else {
-                AppColors.secondaryContainer
-            }
             SmallFloatingActionButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -457,8 +456,18 @@ fun FabMenuItem(
                 },
                 modifier = Modifier.size(44.dp),
                 interactionSource = interactionSource,
-                containerColor = fabContainerColor,
-                contentColor = resolvedIconColor,
+                containerColor = if (iconColor != null) {
+                    val themeMode = LocalThemeMode.current
+                    when {
+                        themeMode.isAmoled -> iconColor.copy(alpha = 0.18f)
+                        themeMode.isDarkTheme -> iconColor.copy(alpha = 0.25f)
+                        else -> iconColor
+                    }
+                } else AppColors.secondaryContainer,
+                contentColor = if (iconColor != null) {
+                    val themeMode = LocalThemeMode.current
+                    if (themeMode.isDarkTheme || themeMode.isAmoled) iconColor else Color.White
+                } else AppColors.onSecondaryContainer,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {

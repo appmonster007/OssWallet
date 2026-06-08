@@ -203,12 +203,14 @@ class TransactionViewModel @Inject constructor(
     val scopedHistoryWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            recordsFilter,
+            // Only recompute when timeline or account scope changes, not on text query/amount changes.
+            recordsFilter.map { it.timelineRange to it.accountIds }.distinctUntilChanged(),
             accounts
-        ) { absoluteTxs, currentFilter, allAccounts ->
+        ) { absoluteTxs, filterKey, allAccounts ->
+            val (timelineRange, accountIds) = filterKey
             val activeIds = allAccounts.filter { !it.isArchived }.map { it.id }.toSet()
-            val effectiveAccountIds = currentFilter.accountIds.ifEmpty { activeIds }
-            val (_, endTime) = TimelineService.getDateRange(currentFilter.timelineRange)
+            val effectiveAccountIds = accountIds.ifEmpty { activeIds }
+            val (_, endTime) = TimelineService.getDateRange(timelineRange)
 
             absoluteTxs
                 .filter { it.transaction.accountId in effectiveAccountIds }

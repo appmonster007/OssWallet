@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -17,7 +18,8 @@ import java.math.BigDecimal
             childColumns = ["categoryId"],
             onDelete = ForeignKey.RESTRICT
         )
-    ]
+    ],
+    indices = [Index(value = ["categoryId"])]
 )
 data class TemplateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

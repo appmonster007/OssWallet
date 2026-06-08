@@ -346,12 +346,15 @@ fun TransactionFabMenu(
     }
 
     displayTemplates.forEachIndexed { index, template ->
-        val icon = getIconByName(categoryMap[template.categoryId]?.iconName)
+        val category = categoryMap[template.categoryId]
+        val icon = getIconByName(category?.iconName)
+        val iconColor = category?.colorHex?.let { Color(it) }
         FabMenuItem(
             visible = isExpanded,
             label = template.name,
             icon = icon,
             index = index,
+            iconColor = iconColor,
             onClick = { onAddClick(template.transactionType, template.id) }
         )
     }
@@ -391,6 +394,7 @@ fun FabMenuItem(
     label: String,
     icon: ImageVector,
     index: Int,
+    iconColor: Color? = null,
     onClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -440,6 +444,12 @@ fun FabMenuItem(
                 )
             }
             
+            val resolvedIconColor = iconColor ?: AppColors.onSecondaryContainer
+            val fabContainerColor = if (iconColor != null) {
+                iconColor.copy(alpha = 0.15f)
+            } else {
+                AppColors.secondaryContainer
+            }
             SmallFloatingActionButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -447,8 +457,8 @@ fun FabMenuItem(
                 },
                 modifier = Modifier.size(44.dp),
                 interactionSource = interactionSource,
-                containerColor = AppColors.secondaryContainer,
-                contentColor = AppColors.onSecondaryContainer,
+                containerColor = fabContainerColor,
+                contentColor = resolvedIconColor,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
             ) {

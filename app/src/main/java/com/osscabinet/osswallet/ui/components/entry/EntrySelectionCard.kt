@@ -91,6 +91,7 @@ fun EntrySelectionCard(
         label = "borderWidth"
     )
 
+    val dims = AeonTheme.dimensions
     val interactionSource = remember { MutableInteractionSource() }
 
     GlassSurface(
@@ -103,7 +104,7 @@ fun EntrySelectionCard(
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        shape = RoundedCornerShape(dims.spacingMd),
         hazeStyle = GlassTokens.cardStyle(),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = backgroundColor,
@@ -114,25 +115,25 @@ fun EntrySelectionCard(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(AeonTheme.dimensions.cardPadding),
+                .padding(dims.listPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 shape = CircleShape,
                 color = iconColor.copy(alpha = if (isActiveSelection) 0.2f else 0.12f),
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
+                modifier = Modifier.size(dims.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        modifier = Modifier.size(dims.iconSizeSm),
                         tint = iconColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.width(dims.spacingMd))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(

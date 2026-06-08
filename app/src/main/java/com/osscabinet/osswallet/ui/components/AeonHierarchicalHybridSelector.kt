@@ -113,7 +113,7 @@ fun <T, ID> AeonHierarchicalHybridSelector(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // Special "None" option for Parent Selection mode
         if (mode == AeonSelectMode.PARENT && noneLabel != null) {
@@ -135,18 +135,18 @@ fun <T, ID> AeonHierarchicalHybridSelector(
 
             Surface(
                 onClick = { onParentSelected(null) },
-                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                shape = RoundedCornerShape(12.dp),
                 color = backgroundColor,
                 border = BorderStroke(borderWidth, borderColor),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                    modifier = Modifier.padding(AeonTheme.dimensions.listPadding),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Spacer(modifier = Modifier.width(32.dp))
+                    Spacer(modifier = Modifier.width(24.dp))
                     Surface(
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
                         shape = CircleShape,
                         color = AppColors.surfaceContainerHigh
                     ) {
@@ -159,7 +159,7 @@ fun <T, ID> AeonHierarchicalHybridSelector(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                     Text(
                         noneLabel,
                         style = if (isNoneSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
@@ -241,7 +241,7 @@ private fun <T, ID> RecursiveHybridNode(
     }
 
     Surface(
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        shape = RoundedCornerShape(12.dp),
         color = backgroundColor,
         border = BorderStroke(0.5.dp, AppColors.outlineVariant),
         modifier = Modifier.fillMaxWidth()
@@ -287,9 +287,9 @@ private fun <T, ID> RecursiveHybridNode(
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(top = 8.dp)
-                        .padding(bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(top = 6.dp)
+                        .padding(bottom = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     children.forEach { child ->
                         key(idMapper(child)) {
@@ -370,7 +370,7 @@ private fun <T, ID> HybridSelectItem(
             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
             onClick()
         },
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        shape = RoundedCornerShape(12.dp),
         color = backgroundColor,
         border = BorderStroke(borderWidth, borderColor),
         modifier = Modifier.fillMaxWidth()
@@ -378,27 +378,28 @@ private fun <T, ID> HybridSelectItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AeonTheme.dimensions.cardPadding),
+                .padding(AeonTheme.dimensions.listPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left side: Expansion Control
             if (hasChildren) {
-                IconButton(onClick = onToggleExpand, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onToggleExpand, modifier = Modifier.size(24.dp)) {
                     Icon(
                         if (isExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                         contentDescription = null,
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
                         tint = AppColors.contentSecondary
                     )
                 }
             } else {
-                Spacer(modifier = Modifier.width(32.dp))
+                Spacer(modifier = Modifier.width(24.dp))
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             // Item Icon — always in the item's own color; alpha increases slightly when selected.
             Surface(
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
                 shape = CircleShape,
                 color = color.copy(alpha = if (isActiveSelection) 0.2f else 0.12f)
             ) {
@@ -414,7 +415,7 @@ private fun <T, ID> HybridSelectItem(
                 }
             }
 
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
 
             // Item Label
             Text(

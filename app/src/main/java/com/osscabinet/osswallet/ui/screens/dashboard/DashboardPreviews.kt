@@ -69,8 +69,8 @@ fun DashboardGlanceTabPreview() {
             onStatusChange = { _, _ -> },
             onDeleteTransaction = {},
             onFullSwipeRight = {},
-            onQuickConfirm = {},
-            onQuickSkip = {},
+            onQuickConfirm = { _, _ -> },
+            onQuickSkip = { _, _ -> },
             onAddTag = { _, _ -> },
             onReorderCards = {},
             onRemoveCard = {}

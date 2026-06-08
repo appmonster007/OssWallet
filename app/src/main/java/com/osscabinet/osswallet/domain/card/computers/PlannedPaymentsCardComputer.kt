@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 
 class PlannedPaymentsCardComputer :
     CardDataComputer<PlannedPaymentsCardConfig, CardRenderData.PlannedPayments> {
@@ -34,14 +35,19 @@ class PlannedPaymentsCardComputer :
                     (mergedFilter.tags.isEmpty() || pp.tags.any { it in mergedFilter.tags })
         }
 
-        // Honor excludeFuture toggle if it's part of the card/screen filter.
-        // If excludeFuture is true, we only show overdue payments (which are technically in the past).
-        val overdue = PlannedPaymentService.getOverdue(filteredPayments, now)
+        val (rangeStart, rangeEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)
 
-        val allUpcoming = if (mergedFilter.timelineRange.excludeFuture) emptyList() else PlannedPaymentService.generateUpcoming(
+        // Overdue: past-due payments, optionally bounded by the timeline start so stale items
+        // outside the selected range are not surfaced.
+        val overdue = PlannedPaymentService.getOverdue(filteredPayments, now).let { all ->
+            if (rangeStart != null) all.filter { it.schedule.nextDueDate >= rangeStart } else all
+        }
+
+        // Upcoming: from now up to the timeline end date; null (AllTime) caps at 365 days.
+        val allUpcoming = PlannedPaymentService.generateUpcoming(
             payments = filteredPayments,
             fromDate = now,
-            daysAhead = config.daysAhead
+            toDate = rangeEnd
         )
 
         // Strip items that are already in overdue from the upcoming list
@@ -52,7 +58,7 @@ class PlannedPaymentsCardComputer :
             PlannedPaymentsViewMode.BOTH -> overdue to upcomingNonOverdue.take(config.maxItems)
             PlannedPaymentsViewMode.FUTURE_ONLY -> {
                 // One nearest upcoming occurrence per active payment schedule
-                val futureOnly = if (mergedFilter.timelineRange.excludeFuture) emptyList() else input.plannedPayments
+                val futureOnly = input.plannedPayments
                     .filter { it.status == PlannedPaymentStatus.ACTIVE }
                     .mapNotNull { payment ->
                         allUpcoming.firstOrNull { it.plannedPayment.id == payment.id && !it.isOverdue }

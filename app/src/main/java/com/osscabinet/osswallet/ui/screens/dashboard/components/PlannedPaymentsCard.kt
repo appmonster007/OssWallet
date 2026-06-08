@@ -53,6 +53,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -207,50 +208,19 @@ private fun PlannedPaymentsSettingsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Look-ahead window", style = AppTextStyles.transactionTitle)
+                    Text("Max items", style = AppTextStyles.transactionTitle)
                     Text(
-                        "${config.daysAhead} days",
+                        "Showing up to ${config.maxItems} payments",
                         style = AppTextStyles.caption,
                         color = AppColors.contentSecondary
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(7, 14, 30, 60).forEach { days ->
-                        FilterChip(
-                            selected = config.daysAhead == days,
-                            onClick = { onUpdate(config.copy(daysAhead = days)) },
-                            label = {
-                                Text(
-                                    "${days}d",
-                                    style = AppTextStyles.transactionSwipeAction
-                                )
-                            }
-                        )
-                    }
-                }
-            }
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.3f),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Max items", style = AppTextStyles.transactionTitle)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(3, 5, 7, 10).forEach { n ->
-                        FilterChip(
-                            selected = config.maxItems == n,
-                            onClick = { onUpdate(config.copy(maxItems = n)) },
-                            label = { Text("$n", style = AppTextStyles.transactionSwipeAction) }
-                        )
-                    }
-                }
+                AeonStepperField(
+                    value = config.maxItems,
+                    onDecrement = { onUpdate(config.copy(maxItems = (config.maxItems - 1).coerceAtLeast(1))) },
+                    onIncrement = { onUpdate(config.copy(maxItems = config.maxItems + 1)) },
+                    min = 1
+                )
             }
         }
     }

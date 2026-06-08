@@ -124,6 +124,28 @@ object PlannedPaymentService {
     }
 
     /**
+     * Generates upcoming payment occurrences in the window [fromDate, toDate].
+     * toDate = null means no upper bound; capped at 365 days from fromDate.
+     * Sorted by scheduledDate ascending.
+     */
+    fun generateUpcoming(
+        payments: List<PlannedPayment>,
+        fromDate: Long,
+        toDate: Long?
+    ): List<UpcomingPaymentItem> {
+        val windowEnd = toDate ?: (fromDate + 365L * 24 * 60 * 60 * 1000)
+        return payments.flatMap { payment ->
+            projectDates(payment, limitDate = windowEnd, minDate = payment.schedule.startDate).map { date ->
+                UpcomingPaymentItem(
+                    plannedPayment = payment,
+                    scheduledDate = date,
+                    isOverdue = date < fromDate
+                )
+            }
+        }.sortedBy { it.scheduledDate }
+    }
+
+    /**
      * Generates upcoming payment occurrences in the window [now, windowEnd].
      * Respects endDate; stops early for ONE_TIME payments.
      */

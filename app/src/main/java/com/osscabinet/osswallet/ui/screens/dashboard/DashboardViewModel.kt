@@ -309,6 +309,7 @@ class DashboardViewModel @Inject constructor(
                 existingTransaction = null,
                 request = request,
                 profileId = profileId,
+                sourcePlannedPaymentId = payment.id,
                 scheduledDate = scheduledDate
             )
         }

@@ -484,7 +484,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
             val profileId = settingsRepository.currentProfileId.first()
-            
+            val now = System.currentTimeMillis();
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
@@ -492,7 +492,7 @@ class TransactionViewModel @Inject constructor(
                 accountId = payment.accountId,
                 categoryId = payment.categoryId,
                 currency = payment.currency,
-                timestamp = scheduledDate,
+                timestamp = now,
                 tags = payment.tags,
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",

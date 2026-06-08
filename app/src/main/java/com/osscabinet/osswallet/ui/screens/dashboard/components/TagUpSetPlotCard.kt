@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
+import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -319,39 +320,12 @@ private fun TagUpSetSettingsSheet(
                             )
                         }
                     }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = AppColors.sheetSurface,
-                        modifier = Modifier.height(40.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Remove,
-                                    contentDescription = "Fewer",
-                                    tint = AppColors.primary
-                                )
-                            }
-                            Text(
-                                text = "${config.maxTags}",
-                                style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
-                            IconButton(
-                                onClick = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = "More",
-                                    tint = AppColors.primary
-                                )
-                            }
-                        }
-                    }
+                    AeonStepperField(
+                        value = config.maxTags,
+                        onDecrement = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
+                        onIncrement = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
+                        min = 1
+                    )
                 }
             }
             HorizontalDivider(
@@ -393,45 +367,12 @@ private fun TagUpSetSettingsSheet(
                             )
                         }
                     }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = AppColors.sheetSurface,
-                        modifier = Modifier.height(40.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = {
-                                    if (config.maxIntersections > 1) onUpdate(
-                                        config.copy(
-                                            maxIntersections = config.maxIntersections - 1
-                                        )
-                                    )
-                                },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Remove,
-                                    contentDescription = "Fewer",
-                                    tint = AppColors.primary
-                                )
-                            }
-                            Text(
-                                text = "${config.maxIntersections}",
-                                style = AppTextStyles.calculatorKey.copy(fontSize = 14.sp),
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
-                            IconButton(
-                                onClick = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Add,
-                                    contentDescription = "More",
-                                    tint = AppColors.primary
-                                )
-                            }
-                        }
-                    }
+                    AeonStepperField(
+                        value = config.maxIntersections,
+                        onDecrement = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                        onIncrement = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
+                        min = 1
+                    )
                 }
             }
             HorizontalDivider(

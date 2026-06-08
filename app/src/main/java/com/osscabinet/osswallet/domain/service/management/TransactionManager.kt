@@ -30,24 +30,26 @@ class TransactionManager(
         sourcePlannedPaymentId: Long? = null,
         scheduledDate: Long? = null
     ): Long = andRefresh {
-        val newId =
-            if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
-            else handleNormalSave(existingTransaction, request, profileId)
+        transactionUseCases.runAtomically {
+            val newId =
+                if (request.isTransfer) handleTransferSave(existingTransaction, request, profileId)
+                else handleNormalSave(existingTransaction, request, profileId)
 
-        // Manage links
-        if (existingTransaction != null) {
-            updateLinks(newId, linkedTransactionIds)
-        } else {
-            linkedTransactionIds.forEach { transactionUseCases.addTransactionLink(newId, it) }
-            clonedFromId?.let { transactionUseCases.addTransactionLink(newId, it) }
+            // Manage links
+            if (existingTransaction != null) {
+                updateLinks(newId, linkedTransactionIds)
+            } else {
+                linkedTransactionIds.forEach { transactionUseCases.addTransactionLink(newId, it) }
+                clonedFromId?.let { transactionUseCases.addTransactionLink(newId, it) }
+            }
+
+            // Planned Payment advancement — atomic with the transaction save
+            sourcePlannedPaymentId?.let { paymentId ->
+                confirmPlannedPaymentTransaction(paymentId, newId, scheduledDate ?: request.timestamp)
+            }
+
+            newId
         }
-
-        // Planned Payment side effects
-        sourcePlannedPaymentId?.let { paymentId ->
-            confirmPlannedPaymentTransaction(paymentId, newId, scheduledDate ?: request.timestamp)
-        }
-
-        newId
     }
 
     suspend fun handleSaveSplitTransactions(

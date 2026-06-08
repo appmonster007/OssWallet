@@ -56,8 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.ZoneId
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -95,7 +93,6 @@ private fun SwipeablePaymentItem(
     now: Long,
     isOverdue: Boolean,
     scheduledDate: Long? = null,
-    canConfirm: Boolean = true,
     onTap: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -109,7 +106,7 @@ private fun SwipeablePaymentItem(
         confirmValueChange = { value ->
             when (value) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    if (onConfirm != null && canConfirm) {
+                    if (onConfirm != null) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onConfirm()
                     }
@@ -132,7 +129,7 @@ private fun SwipeablePaymentItem(
 
     SwipeToDismissBox(
         state = dismissState,
-        enableDismissFromStartToEnd = onConfirm != null && canConfirm,
+        enableDismissFromStartToEnd = onConfirm != null,
         enableDismissFromEndToStart = onSkip != null,
         backgroundContent = {
             val direction = dismissState.dismissDirection
@@ -249,7 +246,6 @@ fun PlannedPaymentListContent(
 ) {
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val now = remember { System.currentTimeMillis() }
-    val today = remember { Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).toLocalDate() }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var pendingOverdueSkip by remember { mutableStateOf<Pair<PlannedPayment, Long>?>(null) }
@@ -379,7 +375,6 @@ fun PlannedPaymentListContent(
                                         payment = payment,
                                         now = now,
                                         isOverdue = true,
-                                        canConfirm = true,
                                         onTap = { onDetailClick(payment.id) },
                                         onEdit = { onEditClick(payment.id) },
                                         onDelete = { onDelete(payment.id) },
@@ -416,16 +411,11 @@ fun PlannedPaymentListContent(
                                         upcomingNonOverdue,
                                         key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
                                     ) { item ->
-                                        val scheduledDay = remember(item.scheduledDate) {
-                                            Instant.ofEpochMilli(item.scheduledDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                        }
-                                        val canConfirmToday = !scheduledDay.isAfter(today)
                                         SwipeablePaymentItem(
                                             payment = item.plannedPayment,
                                             now = now,
                                             isOverdue = false,
                                             scheduledDate = item.scheduledDate,
-                                            canConfirm = canConfirmToday,
                                             onTap = { onDetailClick(item.plannedPayment.id) },
                                             onEdit = { onEditClick(item.plannedPayment.id) },
                                             onDelete = { onDelete(item.plannedPayment.id) },
@@ -472,7 +462,6 @@ fun PlannedPaymentListContent(
                                         now = now,
                                         isOverdue = false,
                                         scheduledDate = payment.schedule.nextDueDate,
-                                        canConfirm = false,
                                         onTap = { onDetailClick(payment.id) },
                                         onEdit = { onEditClick(payment.id) },
                                         onDelete = { onDelete(payment.id) },

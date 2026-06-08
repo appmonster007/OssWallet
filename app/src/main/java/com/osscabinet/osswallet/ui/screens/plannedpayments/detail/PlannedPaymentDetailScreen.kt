@@ -713,7 +713,6 @@ private fun OccurrenceItem(
     val zone = ZoneId.systemDefault()
     val today = java.time.LocalDate.now(zone)
     val scheduledDay = Instant.ofEpochMilli(item.scheduledDate).atZone(zone).toLocalDate()
-    val canConfirmToday = !scheduledDay.isAfter(today)
     val daysUntil = ChronoUnit.DAYS.between(today, scheduledDay).toInt()
 
     val iconColor = if (item.isOverdue) AppColors.error else AppColors.secondary
@@ -787,38 +786,10 @@ private fun OccurrenceItem(
                                 Text("Skip", style = AppTextStyles.drawerItemLabel)
                             }
                         }
-                        if (canConfirmToday) {
-                            Surface(
-                                onClick = onConfirm,
-                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                color = AppColors.primary,
-                                modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Done,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp),
-                                        tint = ColorOnDark
-                                    )
-                                    Text(
-                                        "Confirm",
-                                        style = AppTextStyles.drawerItemLabel.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = ColorOnDark
-                                        )
-                                    )
-                                }
-                            }
-                        } else {
+                        if (daysUntil > 0) {
                             val hintLabel = when {
                                 daysUntil == 1 -> "Due tomorrow"
-                                daysUntil > 0 -> "Due in $daysUntil days"
-                                else -> "Due soon"
+                                else -> "Due in $daysUntil days"
                             }
                             Surface(
                                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
@@ -839,11 +810,35 @@ private fun OccurrenceItem(
                                     Text(
                                         hintLabel,
                                         style = AppTextStyles.transactionSwipeAction,
-                                        color = AppColors.contentSecondary.copy(
-                                            alpha = 0.5f
-                                        )
+                                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
                                     )
                                 }
+                            }
+                        }
+                        Surface(
+                            onClick = onConfirm,
+                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                            color = AppColors.primary,
+                            modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Done,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = ColorOnDark
+                                )
+                                Text(
+                                    "Confirm",
+                                    style = AppTextStyles.drawerItemLabel.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = ColorOnDark
+                                    )
+                                )
                             }
                         }
                     }

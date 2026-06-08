@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -50,7 +51,7 @@ fun EntryLocationRow(
 ) {
     Surface(
         onClick = onShowLocationSheet,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = AppColors.recessedSurface,
         border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.2f)),
         modifier = Modifier.fillMaxWidth()

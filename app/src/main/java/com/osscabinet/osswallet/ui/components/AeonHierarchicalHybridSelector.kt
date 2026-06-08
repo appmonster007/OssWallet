@@ -343,20 +343,25 @@ private fun <T, ID> HybridSelectItem(
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
+    // Resolve item color first so it can drive all selection-state animations.
+    val icon = iconMapper(item)
+    val color = colorMapper(item) ?: AppColors.primary
+    val isActiveSelection = isSelected && mode != AeonSelectMode.MANAGEMENT
+
     val backgroundColor by animateColorAsState(
-        if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primaryContainer
+        if (isActiveSelection) color.copy(alpha = 0.08f)
         else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary
+        if (isActiveSelection) color
         else AppColors.outlineVariant,
         label = "borderColor"
     )
 
     val borderWidth by androidx.compose.animation.core.animateDpAsState(
-        if (isSelected && mode != AeonSelectMode.MANAGEMENT) 1.5.dp else 0.5.dp,
+        if (isActiveSelection) 1.5.dp else 0.5.dp,
         label = "borderWidth"
     )
 
@@ -391,13 +396,11 @@ private fun <T, ID> HybridSelectItem(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Item Icon
-            val icon = iconMapper(item)
-            val color = colorMapper(item) ?: AppColors.primary
+            // Item Icon — always in the item's own color; alpha increases slightly when selected.
             Surface(
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
                 shape = CircleShape,
-                color = color.copy(alpha = 0.12f)
+                color = color.copy(alpha = if (isActiveSelection) 0.2f else 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (icon != null) {
@@ -417,7 +420,7 @@ private fun <T, ID> HybridSelectItem(
             Text(
                 labelMapper(item),
                 style = if (isSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
-                color = if (isSelected && mode != AeonSelectMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary,
+                color = if (isActiveSelection) color else AppColors.contentPrimary,
                 modifier = Modifier.weight(1f)
             )
 
@@ -428,7 +431,7 @@ private fun <T, ID> HybridSelectItem(
                         Icon(
                             Icons.Rounded.CheckCircle,
                             contentDescription = "Selected",
-                            tint = AppColors.primary,
+                            tint = color,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -442,9 +445,9 @@ private fun <T, ID> HybridSelectItem(
                             onClick()
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = AppColors.primary,
-                            checkedTrackColor = AppColors.switchTrackOn,
-                            checkedBorderColor = AppColors.primary,
+                            checkedThumbColor = color,
+                            checkedTrackColor = color.copy(alpha = 0.3f),
+                            checkedBorderColor = color,
                             uncheckedThumbColor = AppColors.switchThumbOff,
                             uncheckedTrackColor = AppColors.switchTrackOff,
                             uncheckedBorderColor = AppColors.outline

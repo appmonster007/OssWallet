@@ -223,7 +223,7 @@ class CsvImportServiceImpl @Inject constructor(
                             accountMap[em.unknownName.lowercase()] = id
                         }
                         EntityMapping.EntityType.CATEGORY -> {
-                            val mapId = em.existingId?.toLongOrNull() ?: 11000L
+                            val mapId = em.existingId?.toLongOrNull() ?: 1000L // 1000 = SystemCategory.OTHERS
                             categoryMap[em.unknownName.lowercase()] = mapId
                         }
                     }
@@ -264,7 +264,7 @@ class CsvImportServiceImpl @Inject constructor(
                         val accountId = accountMap[accountName.lowercase()]
                         if (accountId == null) { skipped++; return@forEachIndexed }
 
-                        val categoryId = categoryMap[categoryName.lowercase()] ?: 11000L
+                        val categoryId = categoryMap[categoryName.lowercase()] ?: 1000L // 1000 = SystemCategory.OTHERS
 
                         val txType = when {
                             isTransferStr.equals("true", ignoreCase = true) -> TransactionType.TRANSFER

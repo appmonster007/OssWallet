@@ -373,13 +373,14 @@ class DatabaseSeeder @Inject constructor(
     private data class TemplateSeedRow(
         val id: Long, val name: String, val categoryName: String, val amount: BigDecimal,
         val transactionType: TransactionType, val currency: String, val paymentMethod: PaymentMethod,
-        val payee: String, val note: String, val tags: String
+        val payee: String, val note: String, val tags: String, val accountId: String?
     ) {
         fun toEntity(categoryNameToId: Map<String, Long>) = TemplateEntity(
             name = name, categoryId = categoryNameToId[categoryName] ?: Category.SYSTEM_UNKNOWN,
             amount = amount, transactionType = transactionType, currency = currency,
             paymentMethod = paymentMethod, payee = payee, note = note,
-            tags = tags.split(",").filter { it.isNotBlank() }.toSet()
+            tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
+            accountId = accountId.takeIf { !it.isNullOrBlank() }
         )
         companion object {
             fun fromCsv(line: String): TemplateSeedRow {
@@ -394,7 +395,8 @@ class DatabaseSeeder @Inject constructor(
                     paymentMethod = PaymentMethod.fromString(p.getOrNull(6) ?: "Cash"),
                     payee = p.getOrNull(7) ?: "",
                     note = p.getOrNull(8) ?: "",
-                    tags = p.getOrNull(9) ?: ""
+                    tags = p.getOrNull(9) ?: "",
+                    accountId = p.getOrNull(10)?.takeIf { it.isNotBlank() }
                 )
             }
         }

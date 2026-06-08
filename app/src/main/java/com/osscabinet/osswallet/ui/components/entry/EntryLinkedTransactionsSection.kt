@@ -52,7 +52,7 @@ fun EntryLinkedTransactionsSection(
     onRemoveLink: (Long) -> Unit
 ) {
     Column(
-        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding),
+//        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Surface(

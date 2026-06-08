@@ -153,16 +153,6 @@ fun AeonEntryMetadataSection(
     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
         additionalTopContent?.invoke(this)
 
-        // Linked Transactions
-        EntryLinkedTransactionsSection(
-            linkedTransactions = state.linkedTransactions,
-            accounts = accounts,
-            categories = categories,
-            allTags = allTags,
-            onShowSheet = onShowLinkedTransactions,
-            onRemoveLink = onRemoveLink
-        )
-
         // Payment Method and Status row
         val statusColor = Color(android.graphics.Color.parseColor(state.status.colorHex))
         val statusIcon = AppIconMap[state.status.iconName] ?: Icons.Rounded.CheckCircle
@@ -177,6 +167,16 @@ fun AeonEntryMetadataSection(
             statusIcon = statusIcon,
             statusIconTint = statusColor,
             statusContainerColor = statusColor.copy(alpha = 0.12f)
+        )
+
+        // Linked Transactions
+        EntryLinkedTransactionsSection(
+            linkedTransactions = state.linkedTransactions,
+            accounts = accounts,
+            categories = categories,
+            allTags = allTags,
+            onShowSheet = onShowLinkedTransactions,
+            onRemoveLink = onRemoveLink
         )
 
         HorizontalDivider(

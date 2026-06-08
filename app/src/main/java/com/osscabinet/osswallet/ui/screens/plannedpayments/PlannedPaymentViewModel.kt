@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
@@ -16,12 +17,19 @@ import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed class UndoAction {
+    data class SkipUndo(val payment: PlannedPayment, val scheduledDate: Long) : UndoAction()
+    data class ConfirmUndo(val payment: PlannedPayment, val scheduledDate: Long, val transactionId: Long) : UndoAction()
+}
 
 @HiltViewModel
 class PlannedPaymentViewModel @Inject constructor(
@@ -35,6 +43,9 @@ class PlannedPaymentViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val currentProfileId: StateFlow<Int> = settingsRepository.currentProfileId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+    private val _lastUndoAction = MutableStateFlow<UndoAction?>(null)
+    val lastUndoAction: StateFlow<UndoAction?> = _lastUndoAction.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val plannedPayments: StateFlow<List<PlannedPayment>> = settingsRepository.currentProfileId
@@ -121,22 +132,98 @@ class PlannedPaymentViewModel @Inject constructor(
     }
 
     /** Confirm a payment directly from the list view (no pre-loaded occurrence needed). */
-    fun quickConfirm(
-        payment: PlannedPayment,
-        profileId: Int
-    ) {
-        val occurrence = PlannedPaymentOccurrence(
-            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.schedule.nextDueDate
-        )
-        confirmOccurrence(occurrence, payment, profileId)
+    fun quickConfirm(payment: PlannedPayment, profileId: Int) {
+        quickConfirmDate(payment, payment.schedule.nextDueDate, profileId)
+    }
+
+    /** Confirm a payment for a specific scheduledDate (used when the occurrence date differs from nextDueDate). */
+    fun quickConfirmDate(payment: PlannedPayment, scheduledDate: Long, profileId: Int) {
+        viewModelScope.launch {
+            val categories = categoryRepository.getAllCategoriesSync()
+            val categoryName = categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
+            val request = TransactionRequest(
+                name = categoryName,
+                amount = payment.amount,
+                transactionType = payment.transactionType,
+                accountId = payment.accountId ?: "",
+                currency = payment.currency,
+                categoryId = payment.categoryId,
+                tags = payment.tags,
+                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                timestamp = scheduledDate,
+                payee = payment.payee ?: "",
+                note = payment.note ?: "",
+                gpsLocation = payment.gpsLocation,
+                warrantyExpiration = payment.warrantyExpiration,
+                status = payment.transactionStatus,
+                isTransfer = payment.transactionType == TransactionType.TRANSFER,
+                targetAccountId = payment.targetAccountId,
+                targetCurrency = payment.targetCurrency,
+                transferRate = payment.transferRate
+            )
+            val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
+            transactionManager.confirmPlannedPaymentTransaction(
+                paymentId = payment.id,
+                transactionId = transactionId,
+                scheduledDate = scheduledDate
+            )
+            _lastUndoAction.value = UndoAction.ConfirmUndo(payment, scheduledDate, transactionId)
+        }
     }
 
     /** Skip the current instance of a payment directly from the list view. */
     fun quickSkip(payment: PlannedPayment) {
-        val occurrence = PlannedPaymentOccurrence(
-            id = 0, plannedPaymentId = payment.id, scheduledDate = payment.schedule.nextDueDate
-        )
-        skipOccurrence(occurrence, payment)
+        quickSkipDate(payment, payment.schedule.nextDueDate)
+    }
+
+    /** Skip a payment for a specific scheduledDate (used when the occurrence date differs from nextDueDate). */
+    fun quickSkipDate(payment: PlannedPayment, scheduledDate: Long) {
+        viewModelScope.launch {
+            transactionManager.skipPlannedPayment(paymentId = payment.id, scheduledDate = scheduledDate)
+            _lastUndoAction.value = UndoAction.SkipUndo(payment, scheduledDate)
+        }
+    }
+
+    fun undoLastAction() {
+        val action = _lastUndoAction.value ?: return
+        _lastUndoAction.value = null
+        viewModelScope.launch {
+            when (action) {
+                is UndoAction.SkipUndo -> {
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
+                    if (occ != null) {
+                        plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    }
+                    plannedPaymentRepository.update(
+                        action.payment.copy(
+                            schedule = action.payment.schedule.copy(
+                                nextDueDate = action.scheduledDate,
+                                lastTriggeredDate = action.payment.schedule.lastTriggeredDate
+                            )
+                        )
+                    )
+                }
+                is UndoAction.ConfirmUndo -> {
+                    transactionManager.deleteTransaction(action.transactionId)
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
+                    if (occ != null) {
+                        plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    }
+                    plannedPaymentRepository.update(
+                        action.payment.copy(
+                            schedule = action.payment.schedule.copy(
+                                nextDueDate = action.scheduledDate,
+                                lastTriggeredDate = action.payment.schedule.lastTriggeredDate
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearUndoAction() {
+        _lastUndoAction.value = null
     }
 
     fun getOccurrencesForPayment(paymentId: Long): Flow<List<PlannedPaymentOccurrence>> =

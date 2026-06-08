@@ -46,8 +46,8 @@ data class LoanActions(
 
 data class PaymentActions(
     val onClick: (Long) -> Unit = {},
-    val onConfirm: (Long) -> Unit = {},
-    val onSkip: (Long) -> Unit = {},
+    val onConfirm: (Long, Long) -> Unit = { _, _ -> },
+    val onSkip: (Long, Long) -> Unit = { _, _ -> },
     val onSeeAll: () -> Unit = {}
 )
 

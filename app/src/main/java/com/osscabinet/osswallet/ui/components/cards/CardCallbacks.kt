@@ -108,8 +108,8 @@ sealed class CardCallbacks {
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig) -> Unit = {},
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onItemClick: (Long) -> Unit = {},
-        val onConfirm: ((Long) -> Unit)? = null,
-        val onSkip: ((Long) -> Unit)? = null,
+        val onConfirm: ((Long, Long) -> Unit)? = null,
+        val onSkip: ((Long, Long) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}

@@ -145,8 +145,8 @@ fun PlannedPaymentsCard(
                     dateLabel = "OVERDUE",
                     isOverdue = true,
                     onClick = { callbacks.onItemClick(payment.id) },
-                    onConfirm = callbacks.onConfirm?.let { { it(payment.id) } },
-                    onSkip = callbacks.onSkip?.let { { it(payment.id) } }
+                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(payment.id, payment.schedule.nextDueDate) } },
+                    onSkip = callbacks.onSkip?.let { cb -> { cb(payment.id, payment.schedule.nextDueDate) } }
                 )
             }
 
@@ -159,8 +159,8 @@ fun PlannedPaymentsCard(
                     dateLabel = formatRelativeDate(item.scheduledDate, System.currentTimeMillis()),
                     isOverdue = false,
                     onClick = { callbacks.onItemClick(item.plannedPayment.id) },
-                    onConfirm = callbacks.onConfirm?.let { { it(item.plannedPayment.id) } },
-                    onSkip = callbacks.onSkip?.let { { it(item.plannedPayment.id) } }
+                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(item.plannedPayment.id, item.scheduledDate) } },
+                    onSkip = callbacks.onSkip?.let { cb -> { cb(item.plannedPayment.id, item.scheduledDate) } }
                 )
             }
         }

@@ -280,12 +280,11 @@ class DashboardViewModel @Inject constructor(
             initialValue = DashboardUiState.Loading
         )
 
-    fun quickConfirmById(id: Long) {
+    fun quickConfirmById(id: Long, scheduledDate: Long) {
         val state = uiState.value as? DashboardUiState.Success ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val scheduledDate = payment.schedule.nextDueDate
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
@@ -315,13 +314,13 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun quickSkipById(id: Long) {
+    fun quickSkipById(id: Long, scheduledDate: Long) {
         val state = uiState.value as? DashboardUiState.Success ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
         viewModelScope.launch {
             transactionManager.skipPlannedPayment(
                 paymentId = payment.id,
-                scheduledDate = payment.schedule.nextDueDate
+                scheduledDate = scheduledDate
             )
         }
     }

@@ -71,20 +71,21 @@ fun EntrySelectionCard(
 ) {
     val haptic = LocalHapticFeedback.current
 
+    val isActiveSelection = isSelected && selectionMode != EntrySelectionMode.MANAGEMENT
+
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primaryContainer
+        targetValue = if (isActiveSelection) iconColor.copy(alpha = 0.08f)
         else AppColors.surfaceContainerLow,
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected && (selectionMode != EntrySelectionMode.MANAGEMENT)) AppColors.primary
+        targetValue = if (isActiveSelection) iconColor
         else AppColors.outlineVariant,
         label = "borderColor"
     )
 
     val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
-    val isActiveSelection = isSelected && selectionMode != EntrySelectionMode.MANAGEMENT
     val borderWidth by animateDpAsState(
         targetValue = if (isActiveSelection) config.surface.borderWidth.dp else (config.surface.borderWidth * 0.5f).dp,
         label = "borderWidth"
@@ -118,9 +119,7 @@ fun EntrySelectionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary.copy(
-                    alpha = 0.2f
-                ) else iconColor.copy(alpha = 0.12f),
+                color = iconColor.copy(alpha = if (isActiveSelection) 0.2f else 0.12f),
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -128,7 +127,7 @@ fun EntrySelectionCard(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else iconColor
+                        tint = iconColor
                     )
                 }
             }
@@ -139,7 +138,7 @@ fun EntrySelectionCard(
                 Text(
                     text = label,
                     style = if (isSelected) AppTextStyles.managementItemTitle else AppTextStyles.listItemTitle,
-                    color = if (isSelected && selectionMode != EntrySelectionMode.MANAGEMENT) AppColors.primary else AppColors.contentPrimary
+                    color = if (isActiveSelection) iconColor else AppColors.contentPrimary
                 )
                 if (detail != null) {
                     Text(
@@ -159,7 +158,7 @@ fun EntrySelectionCard(
                             Icon(
                                 imageVector = Icons.Rounded.CheckCircle,
                                 contentDescription = "Selected",
-                                tint = AppColors.primary,
+                                tint = iconColor,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -173,9 +172,9 @@ fun EntrySelectionCard(
                                 onClick()
                             },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = AppColors.primary,
-                                checkedTrackColor = AppColors.switchTrackOn,
-                                checkedBorderColor = AppColors.primary,
+                                checkedThumbColor = iconColor,
+                                checkedTrackColor = iconColor.copy(alpha = 0.3f),
+                                checkedBorderColor = iconColor,
                                 uncheckedThumbColor = AppColors.switchThumbOff,
                                 uncheckedTrackColor = AppColors.switchTrackOff,
                                 uncheckedBorderColor = AppColors.outline

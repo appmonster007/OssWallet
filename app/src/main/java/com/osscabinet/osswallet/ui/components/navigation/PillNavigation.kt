@@ -1,7 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.navigation
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -11,22 +15,42 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.indication
-import androidx.compose.material3.ripple
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.SyncAlt
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.SyncAlt
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +70,19 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.theme.*
+import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
+import com.osscabinet.ossWallet.ui.theme.ColorScrimPill
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalAeonDimensions
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 /**
  * NavigationTab - Data class for navigation tab
@@ -186,13 +222,13 @@ fun PillNavigationBar(
     onDimClick: () -> Unit = {}
 ) {
     val dimensions = LocalAeonDimensions.current
-    
+
     // Grid constants derived from the Aeon Design System
     val spacing = dimensions.spacingSm // 8.dp (The base grid unit)
     val itemWidth = AeonSize.D56.value // Standard touch target width
     val barHeight = AeonSize.D56.value // Matches Material BottomAppBar height
     val indicatorHeight = AeonSize.D40.value // Leaves exactly 8dp (spacingSm) vertical padding
-    
+
     // Total width = (ItemWidth * Tabs) + (Spacing * (Tabs + 1))
     val barWidth = (itemWidth * tabs.size) + (spacing * (tabs.size + 1))
 
@@ -207,7 +243,7 @@ fun PillNavigationBar(
             shape = CircleShape,
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
-            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
+            glassVariant = GlassVariant.Pill,
             fallbackColor = AppColors.componentOnCard,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -297,7 +333,7 @@ fun PillNavigationItem(
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.88f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -325,9 +361,9 @@ fun PillNavigationItem(
         Icon(
             imageVector = if (selected) selectedIcon else icon,
             contentDescription = contentDescription,
-            tint = if (selected) 
-                AppColors.onSelectionContainer 
-            else 
+            tint = if (selected)
+                AppColors.onSelectionContainer
+            else
                 AppColors.contentSecondary.copy(alpha = 0.7f),
             modifier = Modifier.size(24.dp)
         )
@@ -364,7 +400,7 @@ fun TransactionFabMenu(
     }
 
     val baseIndex = displayTemplates.size
-    
+
     if (onAddAccountClick != null) {
         FabMenuItem(
             visible = isExpanded,
@@ -404,7 +440,7 @@ fun FabMenuItem(
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.94f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -412,12 +448,15 @@ fun FabMenuItem(
     )
 
     val staggerDelay = index * 40
-    
+
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { it / 2 }) + 
+        enter = slideInVertically(initialOffsetY = { it / 2 }) +
                 fadeIn(animationSpec = tween(200, delayMillis = staggerDelay)) +
-                scaleIn(initialScale = 0.8f, animationSpec = tween(200, delayMillis = staggerDelay)),
+                scaleIn(
+                    initialScale = 0.8f,
+                    animationSpec = tween(200, delayMillis = staggerDelay)
+                ),
         exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut() + scaleOut(targetScale = 0.8f),
         modifier = Modifier.graphicsLayer {
             scaleX = scale
@@ -429,15 +468,23 @@ fun FabMenuItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.wrapContentSize(unbounded = true)
         ) {
-            Surface(
-                color = AppColors.cardSurfaceProminent,
+            // Label Glass/Solid Surface
+            GlassSurface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = ripple()
+                    ) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onClick()
+                    },
                 shape = RoundedCornerShape(16.dp),
-                shadowElevation = 4.dp,
-                interactionSource = interactionSource,
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                }
+                hazeLayer = HazeLayer.Overlay,
+                hazeStyle = GlassTokens.popupStyle(),
+                glassVariant = GlassVariant.Popup,
+                fallbackColor = AppColors.cardSurfaceProminent,
+                shadowElevation = 4.dp
             ) {
                 Text(
                     text = label,
@@ -447,19 +494,34 @@ fun FabMenuItem(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            
-            val themeMode = LocalThemeMode.current
-            val resolvedIconTint = if (iconColor != null) {
-                if (themeMode.isDarkTheme || themeMode.isAmoled) iconColor else Color.White
-            } else AppColors.onSecondaryContainer
-            val glassFallback = if (iconColor != null) {
-                when {
-                    themeMode.isAmoled -> iconColor.copy(alpha = 0.18f)
-                    themeMode.isDarkTheme -> iconColor.copy(alpha = 0.25f)
-                    else -> iconColor
-                }
-            } else AppColors.secondaryContainer
 
+            val glassEnabled = LocalGlassmorphismEnabled.current
+            val themeMode = LocalThemeMode.current
+
+            // Resolve Icon Tint and Fallback Background based on mode
+            val (resolvedIconTint, glassFallback) = if (iconColor != null) {
+                if (glassEnabled) {
+                    // Glass Mode: Action color icon on translucent glass
+                    val fallback = when {
+                        themeMode.isAmoled -> iconColor.copy(alpha = 0.18f)
+                        themeMode.isDarkTheme -> iconColor.copy(alpha = 0.25f)
+                        else -> iconColor.copy(alpha = 0.20f)
+                    }
+                    Pair(iconColor, fallback)
+                } else {
+                    // Non-Glass Mode: High contrast white icon on solid action color
+                    Pair(Color.White, iconColor)
+                }
+            } else {
+                // Default colors (no category color)
+                if (glassEnabled) {
+                    Pair(AppColors.onSecondaryContainer, AppColors.secondaryContainer)
+                } else {
+                    Pair(AppColors.onPrimary, AppColors.primary)
+                }
+            }
+
+            // Icon Glass/Solid Surface
             GlassSurface(
                 modifier = Modifier
                     .size(44.dp)
@@ -473,12 +535,24 @@ fun FabMenuItem(
                     },
                 shape = CircleShape,
                 hazeLayer = HazeLayer.Overlay,
-                hazeStyle = GlassTokens.pillStyle(),
+                hazeStyle = if (glassEnabled && iconColor != null) {
+                    GlassTokens.pillStyle().copyStyle(
+                        bgColor = iconColor,
+                        alpha = if (themeMode.isDarkTheme) 0.15f else 0.25f
+                    )
+                } else {
+                    GlassTokens.pillStyle()
+                },
                 glassVariant = GlassVariant.Pill,
                 fallbackColor = glassFallback,
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = resolvedIconTint)
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = resolvedIconTint
+                    )
                 }
             }
         }
@@ -497,7 +571,9 @@ fun UnifiedPillNavigationPreview() {
     var isExpanded by remember { mutableStateOf(false) }
 
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(AppColors.background)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(AppColors.background)) {
             UnifiedPillNavigation(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
@@ -507,17 +583,17 @@ fun UnifiedPillNavigationPreview() {
                 onFabToggle = { isExpanded = it },
                 fabMenu = {
                     FabMenuItem(
-                        visible = isExpanded, 
-                        label = "Add Template", 
-                        icon = Icons.Rounded.Add, 
-                        index = 0, 
+                        visible = isExpanded,
+                        label = "Add Template",
+                        icon = Icons.Rounded.Add,
+                        index = 0,
                         onClick = { isExpanded = false }
                     )
                     FabMenuItem(
-                        visible = isExpanded, 
-                        label = "Transfer", 
+                        visible = isExpanded,
+                        label = "Transfer",
                         icon = Icons.Rounded.SyncAlt,
-                        index = 1, 
+                        index = 1,
                         onClick = { isExpanded = false }
                     )
                 }

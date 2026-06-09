@@ -589,7 +589,7 @@ class CsvImportServiceImpl @Inject constructor(
                                     name = finalName,
                                     currencyCode = profileBaseCurrency,
                                     structureType = "regular",
-                                    colorHex = "#607D8B",
+                                    colorHex = BRAND_ACCOUNT_COLORS.random(),
                                     icon = "wallet",
                                     allowedCurrencies = profileBaseCurrency,
                                     profileId = profileId,
@@ -604,12 +604,18 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
+                            val catColor = if (em.parentCategoryId == null) {
+                                BRAND_CATEGORY_COLORS.random()
+                            } else {
+                                existingCategoryEntities.find { it.id == em.parentCategoryId }?.colorHex
+                                    ?: BRAND_CATEGORY_COLORS.random()
+                            }
                             categoryDao.insertCategory(
                                 CategoryEntity(
                                     id = 0,
                                     name = em.unknownName,
                                     iconName = "Category",
-                                    colorHex = DEFAULT_CATEGORY_COLOR,
+                                    colorHex = catColor,
                                     isDefault = false,
                                     parentId = em.parentCategoryId
                                 )
@@ -1118,7 +1124,7 @@ class CsvImportServiceImpl @Inject constructor(
                             accountDao.upsertAccount(AccountEntity(
                                 id = id, name = finalName,
                                 currencyCode = profileBaseCurrency, structureType = "regular",
-                                colorHex = "#607D8B", icon = "wallet",
+                                colorHex = BRAND_ACCOUNT_COLORS.random(), icon = "wallet",
                                 allowedCurrencies = profileBaseCurrency,
                                 profileId = profileId, isArchived = false, displayOrder = 999
                             ))
@@ -1129,9 +1135,15 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
+                            val catColor = if (em.parentCategoryId == null) {
+                                BRAND_CATEGORY_COLORS.random()
+                            } else {
+                                existingCategoryEntities.find { it.id == em.parentCategoryId }?.colorHex
+                                    ?: BRAND_CATEGORY_COLORS.random()
+                            }
                             categoryDao.insertCategory(CategoryEntity(
                                 id = 0, name = em.unknownName, iconName = "Category",
-                                colorHex = DEFAULT_CATEGORY_COLOR, isDefault = false,
+                                colorHex = catColor, isDefault = false,
                                 parentId = em.parentCategoryId
                             ))
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
@@ -1409,7 +1421,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 AccountEntity(
                                     id = id, name = em.unknownName,
                                     currencyCode = profileBaseCurrency, structureType = "regular",
-                                    colorHex = "#607D8B", icon = "wallet",
+                                    colorHex = BRAND_ACCOUNT_COLORS.random(), icon = "wallet",
                                     allowedCurrencies = profileBaseCurrency,
                                     profileId = profileId, isArchived = false, displayOrder = 999
                                 )
@@ -1421,12 +1433,18 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
+                            val catColor = if (em.parentCategoryId == null) {
+                                BRAND_CATEGORY_COLORS.random()
+                            } else {
+                                existingCategories.values.find { it.id == em.parentCategoryId }?.colorHex
+                                    ?: BRAND_CATEGORY_COLORS.random()
+                            }
                             categoryDao.insertCategory(
                                 CategoryEntity(
                                     id = 0,
                                     name = em.unknownName,
                                     iconName = "Category",
-                                    colorHex = DEFAULT_CATEGORY_COLOR,
+                                    colorHex = catColor,
                                     isDefault = false,
                                     parentId = em.parentCategoryId
                                 )
@@ -1599,6 +1617,17 @@ class CsvImportServiceImpl @Inject constructor(
 
     companion object {
         private const val DEFAULT_TAG_COLOR: Int = 0xFF9E9E9E.toInt()
-        private const val DEFAULT_CATEGORY_COLOR: Int = 0xFF9E9E9E.toInt()
+
+        private val BRAND_CATEGORY_COLORS = listOf(
+            0xFF004D5F.toInt(), 0xFF1A237E.toInt(), 0xFF1B5E20.toInt(),
+            0xFFB71C1C.toInt(), 0xFF4A148C.toInt(), 0xFFE65100.toInt(),
+            0xFF006064.toInt(), 0xFF212121.toInt(), 0xFF795548.toInt(),
+            0xFF607D8B.toInt()
+        )
+
+        private val BRAND_ACCOUNT_COLORS = listOf(
+            "#004D5F", "#1A237E", "#1B5E20", "#B71C1C", "#4A148C",
+            "#E65100", "#006064", "#212121", "#795548", "#607D8B"
+        )
     }
 }

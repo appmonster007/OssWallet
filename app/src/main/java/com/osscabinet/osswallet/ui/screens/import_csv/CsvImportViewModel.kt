@@ -37,12 +37,13 @@ class CsvImportViewModel @Inject constructor(
 ) : ViewModel() {
 
     sealed class Step {
+        object SourceSelection : Step()
         object ColumnMapping : Step()
         object EntityMapping : Step()
         object Preview : Step()
     }
 
-    private val _step = MutableStateFlow<Step>(Step.ColumnMapping)
+    private val _step = MutableStateFlow<Step>(Step.SourceSelection)
     val step: StateFlow<Step> = _step
 
     private val _session = MutableStateFlow<CsvImportSession?>(null)
@@ -84,7 +85,7 @@ class CsvImportViewModel @Inject constructor(
             try {
                 val stream = context.contentResolver.openInputStream(uriString.toUri())!!
                 _session.value = csvImportService.parseHeaders(stream)
-                _step.value = Step.ColumnMapping
+                _step.value = Step.SourceSelection
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load file"
             } finally {
@@ -166,10 +167,16 @@ class CsvImportViewModel @Inject constructor(
         }
     }
 
-    fun resetToColumnMapping() {
+    fun confirmSourceApp(app: ImportSourceApp) {
+        applyPreset(app)
         _step.value = Step.ColumnMapping
+    }
+
+    fun resetToColumnMapping() {
+        _step.value = Step.SourceSelection
         _result.value = null
         _error.value = null
+        _preview.value = null
     }
 
     fun clearError() {

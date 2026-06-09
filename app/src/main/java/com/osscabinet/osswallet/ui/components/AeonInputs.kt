@@ -109,12 +109,12 @@ fun CurrencySelector(
                     placeholder = {
                         Text(
                             "Search...",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.caption,
                             color = AppColors.contentSecondary
                         )
                     },
                     singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppColors.contentPrimary),
+                    textStyle = AppTextStyles.caption.copy(color = AppColors.contentPrimary),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp, vertical = 4.dp),

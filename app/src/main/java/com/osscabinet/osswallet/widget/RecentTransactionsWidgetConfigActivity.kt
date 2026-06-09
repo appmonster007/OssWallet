@@ -15,17 +15,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,14 +28,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
+import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
-import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 class RecentTransactionsWidgetConfigActivity : ComponentActivity() {
@@ -110,75 +109,77 @@ private fun RecentTransactionsWidgetConfigScreen(
     onBack: () -> Unit
 ) {
     Scaffold(
+        containerColor = AppColors.screenBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("Recent Activities Widget") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            AeonTopAppBar(
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Recent Activities Widget",
+                            onBackClick = onBack
+                        )
                     }
-                }
+                )
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
             SectionHeader("Display Preference")
             Text(
                 "Choose what to show as the primary text for each transaction.",
-                style = MaterialTheme.typography.bodySmall,
+                style = AppTextStyles.caption,
                 color = AppColors.contentSecondary
             )
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 FilterChip(
                     selected = config.primaryDisplay == TransactionDisplayPreference.CATEGORY_FIRST,
                     onClick = { onConfigChange(config.copy(primaryDisplay = TransactionDisplayPreference.CATEGORY_FIRST)) },
-                    label = { Text("Category First") }
+                    label = { Text("Category First", style = AppTextStyles.chipLabel) }
                 )
                 FilterChip(
                     selected = config.primaryDisplay == TransactionDisplayPreference.NOTE_FIRST,
                     onClick = { onConfigChange(config.copy(primaryDisplay = TransactionDisplayPreference.NOTE_FIRST)) },
-                    label = { Text("Note First") }
+                    label = { Text("Note First", style = AppTextStyles.chipLabel) }
                 )
             }
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             SectionHeader("Transaction Limit")
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 listOf(5, 10, 15, 20).forEach { limit ->
                     FilterChip(
                         selected = config.limit == limit,
                         onClick = { onConfigChange(config.copy(limit = limit)) },
-                        label = { Text(limit.toString()) }
+                        label = { Text(limit.toString(), style = AppTextStyles.chipLabel) }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
 
-            Button(
+            AeonDashedButton(
                 onClick = onSave,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save Widget")
-            }
+                text = "Save Widget",
+                icon = Icons.Rounded.CheckCircle
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
     }
 }
@@ -187,7 +188,7 @@ private fun RecentTransactionsWidgetConfigScreen(
 private fun SectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
+        style = AppTextStyles.formSectionLabel,
         color = AppColors.primary
     )
 }

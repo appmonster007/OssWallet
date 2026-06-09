@@ -48,6 +48,13 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import androidx.compose.material.icons.rounded.CheckCircle
 
 @OptIn(ExperimentalMaterial3Api::class)
 class NetWorthWidgetConfigActivity : ComponentActivity() {
@@ -115,25 +122,28 @@ private fun NetWorthWidgetConfigScreen(
     onBack: () -> Unit
 ) {
     Scaffold(
+        containerColor = AppColors.screenBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("Net Worth Widget") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            AeonTopAppBar(
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Net Worth Widget",
+                            onBackClick = onBack
+                        )
                     }
-                }
+                )
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
             SectionHeader("Timeline")
             TimelineOptions(
@@ -141,7 +151,7 @@ private fun NetWorthWidgetConfigScreen(
                 onSelect = { onConfigChange(config.copy(timelineRange = it)) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             SectionHeader("Font Size")
             FontSizeOptions(
@@ -149,7 +159,7 @@ private fun NetWorthWidgetConfigScreen(
                 onSelect = { onConfigChange(config.copy(fontSize = it)) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             EntrySwitchRow(
                 label = "Show Comparison",
@@ -159,16 +169,15 @@ private fun NetWorthWidgetConfigScreen(
                 isFlush = true
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
-            Button(
+            AeonDashedButton(
                 onClick = onSave,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save Widget")
-            }
+                text = "Save Widget",
+                icon = Icons.Rounded.CheckCircle
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
     }
 }
@@ -177,7 +186,7 @@ private fun NetWorthWidgetConfigScreen(
 private fun SectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
+        style = AppTextStyles.formSectionLabel,
         color = AppColors.primary
     )
 }
@@ -234,7 +243,7 @@ private fun <T> ChipGroup(
             FilterChip(
                 selected = isSelected(label, value),
                 onClick = { onSelect(label, value) },
-                label = { Text(label, style = MaterialTheme.typography.labelMedium) }
+                label = { Text(label, style = AppTextStyles.chipLabel) }
             )
         }
     }

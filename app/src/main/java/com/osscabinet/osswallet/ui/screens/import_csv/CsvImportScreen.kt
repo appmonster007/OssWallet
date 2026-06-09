@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
@@ -183,6 +184,9 @@ fun CsvImportScreen(
                                         preview = preview,
                                         accounts = accounts.map { it.id to it.name },
                                         categories = categories.map { it.id.toString() to it.name },
+                                        rootCategories = categories
+                                            .filter { it.parentId == null && !Category.isSystemCategory(it.id) }
+                                            .map { it.id.toString() to it.name },
                                         onConfirmMappings = { mappings ->
                                             viewModel.setEntityMappings(mappings)
                                             viewModel.proceedFromEntityMapping()
@@ -613,9 +617,15 @@ private fun EntityMappingStep(
     preview: ImportPreview?,
     accounts: List<Pair<String, String>>,
     categories: List<Pair<String, String>>,
+    rootCategories: List<Pair<String, String>>,
     onConfirmMappings: (List<EntityMapping>) -> Unit
 ) {
     if (preview == null) return
+
+    // Parent picker options: "Root (no parent)" sentinel + all root categories
+    val parentOptions = remember(rootCategories) {
+        listOf("" to "Root (no parent)") + rootCategories
+    }
 
     val accountMappings = remember(preview.newAccounts) {
         mutableStateListOf(*preview.newAccounts.map {
@@ -627,15 +637,16 @@ private fun EntityMappingStep(
             EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
         }.toTypedArray())
     }
-    val parentSelections = remember(preview.newCategories) {
-        androidx.compose.runtime.mutableStateMapOf<Int, String?>()
-    }
-
-    // Blocking condition: custom category with "Create New" selected but no parent chosen
-    val hasUnresolvedCustomCategory = preview.newCategories.indices.any { i ->
-        preview.newCategories[i].isCustomCategory &&
-                categoryMappings.getOrNull(i)?.existingId == null &&
-                parentSelections[i] == null
+    // parentSelections: "" = root (no parent), non-empty = existing category ID string
+    val parentSelections = remember(preview.newCategories, rootCategories) {
+        val map = androidx.compose.runtime.mutableStateMapOf<Int, String>()
+        preview.newCategories.forEachIndexed { i, cat ->
+            val suggestedId = cat.suggestedParentName?.let { name ->
+                rootCategories.find { it.second.equals(name, ignoreCase = true) }?.first
+            }
+            map[i] = suggestedId ?: ""
+        }
+        map
     }
 
     Column(
@@ -644,14 +655,13 @@ private fun EntityMappingStep(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
-        // Stakes header
         Text(
             "Unrecognised accounts & categories",
             style = AppTextStyles.heroAmount,
             color = AppColors.contentPrimary
         )
         Text(
-            "These items appear in your file but don't exist in OssWallet. Map them to an existing item to keep your data organised, or leave as \"Create New\" to add them as new items.",
+            "Map to an existing item or create new. For new categories, choose a parent to nest it as a sub-category, or leave as \"Root\" to add it at the top level.",
             style = AppTextStyles.caption,
             color = AppColors.contentSecondary
         )
@@ -698,24 +708,17 @@ private fun EntityMappingStep(
                         selectedId = categoryMappings.getOrNull(index)?.existingId,
                         onSelect = { id -> categoryMappings[index] = categoryMappings[index].copy(existingId = id) }
                     )
-                    // Parent category picker for custom categories when "Create New" is selected
-                    if (category.isCustomCategory && categoryMappings.getOrNull(index)?.existingId == null) {
-                        val parentId = parentSelections[index]
-                        val isUnresolved = parentId == null
-                        Surface(
-                            color = if (isUnresolved) AppColors.errorContainer.copy(alpha = 0.1f) else AppColors.cardSurfaceRaised,
-                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                            border = if (isUnresolved) BorderStroke(1.dp, AppColors.error.copy(alpha = 0.5f)) else null,
-                            modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 4.dp)
-                        ) {
+                    // Parent picker appears for all "Create New" decisions
+                    if (categoryMappings.getOrNull(index)?.existingId == null) {
+                        Box(modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 3.dp)) {
                             EntityMappingRow(
-                                label = "Parent category (Required)",
+                                label = "Parent category",
                                 badgeText = null,
                                 chipText = null,
-                                options = categories,
-                                selectedId = parentId,
-                                onSelect = { id -> parentSelections[index] = id },
-                                isError = isUnresolved
+                                options = parentOptions,
+                                selectedId = parentSelections[index] ?: "",
+                                onSelect = { id -> parentSelections[index] = id ?: "" },
+                                showNullOption = false
                             )
                         }
                     }
@@ -725,10 +728,17 @@ private fun EntityMappingStep(
 
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
         AeonDashedButton(
-            onClick = { onConfirmMappings(accountMappings.toList() + categoryMappings.toList()) },
+            onClick = {
+                val resolvedCategoryMappings = categoryMappings.mapIndexed { i, em ->
+                    if (em.existingId == null) {
+                        val parentIdStr = parentSelections[i] ?: ""
+                        em.copy(parentCategoryId = parentIdStr.takeIf { it.isNotEmpty() }?.toLongOrNull())
+                    } else em
+                }
+                onConfirmMappings(accountMappings.toList() + resolvedCategoryMappings)
+            },
             text = "Continue to Preview",
-            icon = Icons.AutoMirrored.Rounded.ArrowForward,
-            enabled = !hasUnresolvedCustomCategory
+            icon = Icons.AutoMirrored.Rounded.ArrowForward
         )
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
     }
@@ -743,7 +753,8 @@ private fun EntityMappingRow(
     options: List<Pair<String, String>>,
     selectedId: String?,
     onSelect: (String?) -> Unit,
-    isError: Boolean = false
+    isError: Boolean = false,
+    showNullOption: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedName = selectedId?.let { id -> options.find { it.first == id }?.second } ?: "Create New"
@@ -830,10 +841,12 @@ private fun EntityMappingRow(
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     modifier = Modifier.widthIn(min = 160.dp)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Create New", style = AppTextStyles.caption) },
-                        onClick = { onSelect(null); expanded = false }
-                    )
+                    if (showNullOption) {
+                        DropdownMenuItem(
+                            text = { Text("Create New", style = AppTextStyles.caption) },
+                            onClick = { onSelect(null); expanded = false }
+                        )
+                    }
                     options.forEach { (id, name) ->
                         DropdownMenuItem(
                             text = { Text(name, style = AppTextStyles.caption) },

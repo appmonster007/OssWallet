@@ -941,7 +941,7 @@ private fun PreviewStep(
                             color = AppColors.onErrorContainer
                         )
                         Text(
-                            "Some transfer transactions are missing their counterpart. These will be imported as regular expenses or income.",
+                            "Some transfer transactions are missing their counterpart in this file. These will be imported as outside-wallet transfers (money sent to or received from outside OssWallet).",
                             style = AppTextStyles.caption,
                             color = AppColors.onErrorContainer
                         )

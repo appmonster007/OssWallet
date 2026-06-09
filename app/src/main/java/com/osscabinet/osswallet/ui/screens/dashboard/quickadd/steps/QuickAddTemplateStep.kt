@@ -6,7 +6,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,8 +27,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,9 +56,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
@@ -286,8 +295,8 @@ fun QuickAddTemplateStep(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         val parentColor = remember(currentParent.colorHex) {
-                                            Color(currentParent.colorHex or (0xFF shl 24).toInt())
-                                        }
+                                    Color(currentParent.colorHex or (0xFF shl 24))
+                                }
                                         Icon(
                                             getIconByName(currentParent.iconName),
                                             contentDescription = null,
@@ -360,45 +369,109 @@ fun QuickAddTemplateStep(
 
 @Composable
 private fun SegmentedToggle(showCategories: Boolean, onToggle: (Boolean) -> Unit) {
+    val haptics = LocalHapticFeedback.current
+    val dims = AeonTheme.dimensions
+
     GlassSurface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(dims.componentCornerRadius),
         glassVariant = GlassVariant.Item,
         fallbackColor = AppColors.recessedSurface
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .fillMaxSize()
+                .padding(dims.spacingXs)
         ) {
-            listOf(false to "Templates", true to "Categories").forEach { (isCategories, label) ->
-                val isSelected = showCategories == isCategories
-                val bgColor by animateColorAsState(
-                    targetValue = if (isSelected) AppColors.primary else Color.Transparent,
-                    label = "segBg$label"
+            val maxWidth = maxWidth
+            val itemWidth = maxWidth / 2
+
+            // Sliding Indicator
+            Box(
+                modifier = Modifier
+                    .padding(dims.spacingXs / 2)
+                    .width(itemWidth)
+                    .fillMaxHeight()
+                    .graphicsLayer {
+                        translationX = if (showCategories) itemWidth.toPx() else 0f
+                    }
+                    .background(AppColors.primary, RoundedCornerShape(dims.componentCornerRadius - 4.dp))
+            )
+
+            Row(modifier = Modifier.fillMaxSize()) {
+                // Templates Tab
+                SegmentedTab(
+                    label = "Templates",
+                    icon = Icons.Rounded.Dashboard,
+                    isSelected = !showCategories,
+                    onClick = {
+                        if (showCategories) {
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onToggle(false)
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-                val textColor by animateColorAsState(
-                    targetValue = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
-                    label = "segText$label"
+
+                // Categories Tab
+                SegmentedTab(
+                    label = "Categories",
+                    icon = Icons.Rounded.Category,
+                    isSelected = showCategories,
+                    onClick = {
+                        if (!showCategories) {
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onToggle(true)
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-                Surface(
-                    onClick = { onToggle(isCategories) },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    color = bgColor
-                ) {
-                    Text(
-                        text = label,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        textAlign = TextAlign.Center,
-                        style = AppTextStyles.formSwitchLabel,
-                        color = textColor
-                    )
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun SegmentedTab(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
+        label = "textColor"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius - 4.dp))
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+            )
+            Text(
+                text = label,
+                style = AppTextStyles.formSwitchLabel,
+                color = textColor
+            )
         }
     }
 }
@@ -414,7 +487,7 @@ private fun TemplateGridItem(
     val fallbackColor = AppColors.recessedSurface
     val bgColor = remember(category?.colorHex) {
         category?.colorHex
-            ?.let { Color(it or (0xFF shl 24).toInt()) }
+            ?.let { Color(it or (0xFF shl 24)) }
             ?: fallbackColor
     }
     val iconTint = remember(bgColor) { bgColor.darkenForIcon() }
@@ -473,7 +546,7 @@ private fun CategoryGridItem(
     onLongPress: (() -> Unit)?
 ) {
     val bgColor = remember(category.colorHex) {
-        Color(category.colorHex or (0xFF shl 24).toInt())
+        Color(category.colorHex or (0xFF shl 24))
     }
     val iconTint = remember(bgColor) { bgColor.darkenForIcon() }
     val primaryColor = AppColors.primary
@@ -522,7 +595,7 @@ private fun CategoryGridItem(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Rounded.KeyboardArrowRight,
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                 contentDescription = "Long press to see sub-categories",
                                 tint = AppColors.contentSecondary,
                                 modifier = Modifier.size(12.dp)

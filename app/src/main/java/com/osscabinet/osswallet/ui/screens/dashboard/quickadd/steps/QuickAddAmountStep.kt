@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,14 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -56,12 +58,14 @@ fun QuickAddAmountStep(
     }
 
     val uiScale = AeonTheme.uiScale
+    val columnSpacing = scaledDp(10f, uiScale, min = 7f)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(columnSpacing)
     ) {
         // Context badge: template or category
         val badgeCategory = template?.categoryId?.let { _ -> category } ?: category
@@ -80,7 +84,6 @@ fun QuickAddAmountStep(
                 scale = uiScale,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
-            Spacer(modifier = Modifier.height(scaledDp(8f, uiScale)))
         }
 
         // Currency dropdown — only when account has multiple currencies
@@ -90,14 +93,12 @@ fun QuickAddAmountStep(
                 onCurrencySelected = onCurrencySelected,
                 supportedCurrencies = currencies
             )
-            Spacer(modifier = Modifier.height(scaledDp(6f, uiScale)))
         } else if (currencies.size == 1) {
             Text(
                 text = currencies.first(),
                 style = AppTextStyles.formSwitchLabel,
                 color = AppColors.contentSecondary
             )
-            Spacer(modifier = Modifier.height(scaledDp(6f, uiScale)))
         }
 
         CalculatorNumpad(
@@ -106,8 +107,6 @@ fun QuickAddAmountStep(
             onDone = onDone,
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
@@ -173,6 +172,28 @@ private fun ContextBadge(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddAmountStep() {
+    val mockAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments", allowedCurrencies = listOf("USD", "EUR"))
+    val mockCategory = Category(1, "Food", "Restaurant", -16737025, false, null)
+    
+    OssWalletTheme {
+        Box(modifier = Modifier.background(AppColors.background)) {
+            QuickAddAmountStep(
+                amount = "123.45",
+                template = null,
+                category = mockCategory,
+                account = mockAccount,
+                selectedCurrency = "USD",
+                onCurrencySelected = {},
+                onAmountChange = {},
+                onDone = {}
+            )
         }
     }
 }

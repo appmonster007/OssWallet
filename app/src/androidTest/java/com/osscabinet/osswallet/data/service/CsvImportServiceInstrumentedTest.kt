@@ -15,7 +15,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
-import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -70,11 +69,11 @@ class CsvImportServiceInstrumentedTest {
     // ──────────────────────────────────────────────
 
     @Test
-    fun parseHeaders_budgetBakers_detectsSourceApp() = runBlocking {
+    fun parseHeaders_budgetBakers_detectsSemicolonDelimiter() = runBlocking {
         val csv = "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
 
-        assertEquals(ImportSourceApp.BUDGET_BAKERS, session.sourceApp)
+        assertEquals(null, session.sourceApp)
         assertEquals(';', session.delimiter)
     }
 
@@ -94,7 +93,7 @@ class CsvImportServiceInstrumentedTest {
         val csv = "date,account,amount,note\n2024-01-01,Checking,100.00,Test"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
 
-        assertEquals(ImportSourceApp.GENERIC, session.sourceApp)
+        assertEquals(null, session.sourceApp)
         assertEquals(',', session.delimiter)
     }
 

@@ -63,10 +63,6 @@ class CsvImportServiceImpl @Inject constructor(
         "warranty_in_month", "transfer", "payee", "labels"
     )
 
-    private val cashewDistinctiveHeaders = setOf(
-        "income", "category name", "subcategory name", "title"
-    )
-
     // ──────────────────────────────────────────────────────────────────────────
     // Date parsing helpers
     // ──────────────────────────────────────────────────────────────────────────
@@ -221,54 +217,27 @@ class CsvImportServiceImpl @Inject constructor(
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // parseHeaders — detect format, build column mapping
+    // parseHeaders — sniff delimiter, parse headers; sourceApp is chosen by the user
     // ──────────────────────────────────────────────────────────────────────────
 
     override suspend fun parseHeaders(inputStream: InputStream): CsvImportSession =
         withContext(Dispatchers.IO) {
             val bufferedReader = inputStream.bufferedReader()
-            val firstLineCheck = bufferedReader.readLine() ?: return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null)
+            val firstLine = bufferedReader.readLine()
+                ?: return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null)
 
-            val isBudgetBakers = firstLineCheck.contains(';') ||
-                budgetBakersHeaders.any { h -> firstLineCheck.lowercase().contains(h) }
-
-            if (isBudgetBakers) {
-                val format = buildBudgetBakersCsvFormat()
-                // Re-combine the first line with the rest since we already read one line
-                val remaining = firstLineCheck + "\n" + bufferedReader.readText()
-                val parser = CSVParser.parse(remaining.reader(), format)
-                val records = parser.records
-                if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), ImportSourceApp.BUDGET_BAKERS, ';')
-
+            if (firstLine.contains(';')) {
+                val remaining = firstLine + "\n" + bufferedReader.readText()
+                val records = CSVParser.parse(remaining.reader(), buildBudgetBakersCsvFormat()).records
+                if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ';')
                 val headers = records.first().toList().map { it.trim().lowercase() }
-                val previewRows = records.drop(1).take(5).map { rec -> rec.toList() }
-                val sourceApp = ImportSourceApp.BUDGET_BAKERS
-                val mapping = buildInitialMapping(headers, sourceApp)
-
-                CsvImportSession(headers, previewRows, mapping, sourceApp, ';')
+                val previewRows = records.drop(1).take(5).map { it.toList() }
+                CsvImportSession(headers, previewRows, emptyMap(), null, ';')
             } else {
-                val firstLineLower = firstLineCheck.lowercase()
-                val isCashew = cashewDistinctiveHeaders.count { h -> firstLineLower.contains(h) } >= 3
-
-                if (isCashew) {
-                    val format = buildBudgetBakersCsvFormat().builder().setDelimiter(',').build()
-                    val remaining = firstLineCheck + "\n" + bufferedReader.readText()
-                    val parser = CSVParser.parse(remaining.reader(), format)
-                    val records = parser.records
-                    if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), ImportSourceApp.CASHEW)
-                    val headers = records.first().toList().map { it.trim().lowercase() }
-                    val previewRows = records.drop(1).take(5).map { rec -> rec.toList() }
-                    CsvImportSession(headers, previewRows, buildInitialMapping(headers, ImportSourceApp.CASHEW), ImportSourceApp.CASHEW, ',')
-                } else {
-                    val delimiter = ','
-                    val headers = firstLineCheck.split(delimiter).map { it.trim().lowercase().replace("\"", "") }
-                    val sourceApp = ImportSourceApp.GENERIC
-                    val mapping = buildInitialMapping(headers, sourceApp)
-                    val previewRows = bufferedReader.readLines().take(5).map { row ->
-                        row.split(delimiter).map { c -> c.trim().replace("\"", "") }
-                    }
-                    CsvImportSession(headers, previewRows, mapping, sourceApp, delimiter)
-                }
+                val headers = firstLine.split(',').map { it.trim().lowercase().replace("\"", "") }
+                val previewRows = bufferedReader.readLines().take(5)
+                    .map { row -> row.split(',').map { it.trim().replace("\"", "") } }
+                CsvImportSession(headers, previewRows, emptyMap(), null, ',')
             }
         }
 

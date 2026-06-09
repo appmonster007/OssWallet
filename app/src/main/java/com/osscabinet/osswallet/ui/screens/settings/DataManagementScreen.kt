@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,9 +61,13 @@ import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
+import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
+import com.osscabinet.ossWallet.ui.components.AeonStepperField
+import com.osscabinet.ossWallet.ui.components.AeonTextField
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
@@ -200,29 +205,17 @@ fun DataManagementScreen(
         )
     }
 
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text("Delete All Data?") },
-            text = { Text("This action is permanent and cannot be undone. All your transactions, accounts, and settings will be wiped.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteConfirmDialog = false
-                        viewModel.deleteAllData()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = AppColors.error)
-                ) {
-                    Text("Delete Everything")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
+    AeonConfirmDeleteDialog(
+        show = showDeleteConfirmDialog,
+        title = "Delete All Data?",
+        message = "This action is permanent and cannot be undone. All your transactions, accounts, and settings will be wiped.",
+        onConfirm = {
+            showDeleteConfirmDialog = false
+            viewModel.deleteAllData()
+        },
+        onDismiss = { showDeleteConfirmDialog = false },
+        confirmButtonText = "Delete Everything"
+    )
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -270,109 +263,107 @@ fun DataManagementScreen(
                                 Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
                                     Text(
                                         text = "Backup Interval",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
-                                    Spacer(Modifier.height(8.dp))
+                                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        OutlinedTextField(
+                                        AeonTextField(
                                             value = autoBackupConfig.intervalHours.toString(),
                                             onValueChange = { v ->
                                                 v.toIntOrNull()?.let { hours ->
                                                     if (hours > 0) viewModel.updateAutoBackupConfig(autoBackupConfig.copy(intervalHours = hours))
                                                 }
                                             },
-                                            modifier = Modifier.width(80.dp),
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                            singleLine = true,
-                                            label = { Text("Hours") }
+                                            placeholder = "24",
+                                            modifier = Modifier.width(100.dp)
                                         )
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("hours", color = AppColors.contentSecondary, style = MaterialTheme.typography.bodySmall)
+                                        Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
+                                        Text("hours", color = AppColors.contentSecondary, style = AppTextStyles.caption)
                                     }
                                 }
 
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                                     thickness = 0.5.dp,
-                                    color = AppColors.divider.copy(alpha = 0.5f)
+                                    color = AppColors.divider.copy(alpha = 0.3f)
                                 )
 
                                 // Retention
                                 Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
                                     Text(
                                         text = "Keep Last N Backups",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
-                                    Spacer(Modifier.height(8.dp))
-                                    OutlinedTextField(
-                                        value = autoBackupConfig.maxRetained.toString(),
-                                        onValueChange = { v ->
-                                            v.toIntOrNull()?.let { n ->
-                                                if (n > 0) viewModel.updateAutoBackupConfig(autoBackupConfig.copy(maxRetained = n))
-                                            }
-                                        },
-                                        modifier = Modifier.width(80.dp),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        singleLine = true,
-                                        label = { Text("Count") }
+                                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
+                                    AeonStepperField(
+                                        value = autoBackupConfig.maxRetained,
+                                        onDecrement = { if (autoBackupConfig.maxRetained > 1) viewModel.updateAutoBackupConfig(autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained - 1)) },
+                                        onIncrement = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained + 1)) },
+                                        min = 1,
+                                        modifier = Modifier.width(140.dp)
                                     )
                                 }
 
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                                     thickness = 0.5.dp,
-                                    color = AppColors.divider.copy(alpha = 0.5f)
+                                    color = AppColors.divider.copy(alpha = 0.3f)
                                 )
 
                                 // Storage mode
                                 Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
                                     Text(
                                         text = "Storage Location",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
+                                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                                     AutoBackupConfig.StorageMode.entries.forEach { mode ->
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
+                                        val isSelected = autoBackupConfig.storageMode == mode
+                                        Surface(
+                                            onClick = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(storageMode = mode)) },
+                                            color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.1f) else Color.Transparent,
+                                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            RadioButton(
-                                                selected = autoBackupConfig.storageMode == mode,
-                                                onClick = {
-                                                    viewModel.updateAutoBackupConfig(autoBackupConfig.copy(storageMode = mode))
-                                                }
-                                            )
-                                            Text(
-                                                text = when (mode) {
-                                                    AutoBackupConfig.StorageMode.PRIVATE -> "Private (App Storage)"
-                                                    AutoBackupConfig.StorageMode.CUSTOM_FOLDER -> "Custom Folder"
-                                                    AutoBackupConfig.StorageMode.BOTH -> "Both"
-                                                },
-                                                color = AppColors.contentPrimary,
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                                            ) {
+                                                RadioButton(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        viewModel.updateAutoBackupConfig(autoBackupConfig.copy(storageMode = mode))
+                                                    }
+                                                )
+                                                Text(
+                                                    text = when (mode) {
+                                                        AutoBackupConfig.StorageMode.PRIVATE -> "Private (App Storage)"
+                                                        AutoBackupConfig.StorageMode.CUSTOM_FOLDER -> "Custom Folder"
+                                                        AutoBackupConfig.StorageMode.BOTH -> "Both"
+                                                    },
+                                                    color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
+                                                    style = AppTextStyles.listItemTitle
+                                                )
+                                            }
                                         }
                                     }
 
                                     if (autoBackupConfig.storageMode != AutoBackupConfig.StorageMode.PRIVATE) {
-                                        Spacer(Modifier.height(8.dp))
-                                        OutlinedButton(
-                                            onClick = { customFolderLauncher.launch(null) }
-                                        ) {
-                                            Icon(Icons.Rounded.Folder, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                text = if (autoBackupConfig.customFolderUri != null) "Change Folder" else "Choose Folder"
-                                            )
-                                        }
+                                        Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
+                                        AeonDashedButton(
+                                            onClick = { customFolderLauncher.launch(null) },
+                                            text = if (autoBackupConfig.customFolderUri != null) "Change Folder" else "Choose Folder",
+                                            icon = Icons.Rounded.Folder
+                                        )
                                         if (autoBackupConfig.customFolderUri != null) {
                                             Text(
                                                 text = autoBackupConfig.customFolderUri!!,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = AppTextStyles.caption,
                                                 color = AppColors.contentSecondary,
-                                                modifier = Modifier.padding(top = 4.dp)
+                                                modifier = Modifier.padding(top = 4.dp, start = 8.dp)
                                             )
                                         }
                                     }
@@ -381,36 +372,45 @@ fun DataManagementScreen(
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
                                     thickness = 0.5.dp,
-                                    color = AppColors.divider.copy(alpha = 0.5f)
+                                    color = AppColors.divider.copy(alpha = 0.3f)
                                 )
 
                                 // Notification preference
                                 Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
                                     Text(
                                         text = "Notifications",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
+                                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                                     AutoBackupConfig.NotifyMode.entries.forEach { mode ->
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
+                                        val isSelected = autoBackupConfig.notifyMode == mode
+                                        Surface(
+                                            onClick = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(notifyMode = mode)) },
+                                            color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.1f) else Color.Transparent,
+                                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            RadioButton(
-                                                selected = autoBackupConfig.notifyMode == mode,
-                                                onClick = {
-                                                    viewModel.updateAutoBackupConfig(autoBackupConfig.copy(notifyMode = mode))
-                                                }
-                                            )
-                                            Text(
-                                                text = when (mode) {
-                                                    AutoBackupConfig.NotifyMode.ALWAYS -> "Always"
-                                                    AutoBackupConfig.NotifyMode.FAILURE_ONLY -> "Failure Only"
-                                                    AutoBackupConfig.NotifyMode.NEVER -> "Never"
-                                                },
-                                                color = AppColors.contentPrimary,
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                                            ) {
+                                                RadioButton(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        viewModel.updateAutoBackupConfig(autoBackupConfig.copy(notifyMode = mode))
+                                                    }
+                                                )
+                                                Text(
+                                                    text = when (mode) {
+                                                        AutoBackupConfig.NotifyMode.ALWAYS -> "Always"
+                                                        AutoBackupConfig.NotifyMode.FAILURE_ONLY -> "Failure Only"
+                                                        AutoBackupConfig.NotifyMode.NEVER -> "Never"
+                                                    },
+                                                    color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
+                                                    style = AppTextStyles.listItemTitle
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -426,10 +426,10 @@ fun DataManagementScreen(
                                 Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
                                     Text(
                                         text = "Recent Backups",
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary
                                     )
-                                    Spacer(Modifier.height(8.dp))
+                                    Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
                                     recentBackups.forEach { backup ->
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -441,18 +441,18 @@ fun DataManagementScreen(
                                                 modifier = Modifier.size(20.dp),
                                                 tint = AppColors.contentSecondary
                                             )
-                                            Spacer(Modifier.width(8.dp))
+                                            Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = backup.id,
-                                                    style = MaterialTheme.typography.bodySmall,
+                                                    style = AppTextStyles.caption,
                                                     color = AppColors.contentPrimary
                                                 )
                                                 Text(
                                                     text = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
                                                         .format(Date(backup.createdAt)) +
                                                             " · ${backup.sizeBytes / 1024} KB",
-                                                    style = MaterialTheme.typography.labelSmall,
+                                                    style = AppTextStyles.metaLabel,
                                                     color = AppColors.contentSecondary
                                                 )
                                             }
@@ -465,7 +465,7 @@ fun DataManagementScreen(
                                                 )
                                             }
                                         }
-                                        Spacer(Modifier.height(8.dp))
+                                        Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                                     }
                                 }
                             }
@@ -535,30 +535,23 @@ private fun ExportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export Data") },
-        text = { Text("Select the format you want to export your data in.") },
+        title = { Text("Export Data", style = AppTextStyles.cardTitle) },
+        text = { Text("Select the format you want to export your data in.", style = AppTextStyles.caption) },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
-                Button(onClick = onExportZipAll, modifier = Modifier.fillMaxWidth()) {
-                    Text("ZIP - All Profiles")
-                }
-                OutlinedButton(onClick = onExportZipProfile, modifier = Modifier.fillMaxWidth()) {
-                    Text("ZIP - Current Profile")
-                }
-                OutlinedButton(onClick = onExportCsv, modifier = Modifier.fillMaxWidth()) {
-                    Text("Flat CSV (Transactions Only)")
-                }
-                OutlinedButton(onClick = onExportSqlite, modifier = Modifier.fillMaxWidth()) {
-                    Text("SQLite Database File")
-                }
+                AeonDashedButton(onClick = onExportZipAll, text = "ZIP - All Profiles", icon = Icons.Rounded.Folder)
+                AeonDashedButton(onClick = onExportZipProfile, text = "ZIP - Current Profile", icon = Icons.Rounded.Folder)
+                AeonDashedButton(onClick = onExportCsv, text = "Flat CSV", icon = Icons.Rounded.FileDownload)
+                AeonDashedButton(onClick = onExportSqlite, text = "SQLite Database", icon = Icons.Rounded.Backup)
+                
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
                 }
             }
         }
@@ -574,27 +567,22 @@ private fun ImportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Import / Migrate Data") },
-        text = { Text("Restore an OssWallet backup or import transactions from another app.") },
+        title = { Text("Import / Migrate Data", style = AppTextStyles.cardTitle) },
+        text = { Text("Restore an OssWallet backup or import transactions from another app.", style = AppTextStyles.caption) },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
-                Button(onClick = onImportZip, modifier = Modifier.fillMaxWidth()) {
-                    Text("ZIP of CSV Files (OssWallet)")
-                }
-                OutlinedButton(onClick = onImportSqlite, modifier = Modifier.fillMaxWidth()) {
-                    Text("SQLite Database")
-                }
-                OutlinedButton(onClick = onImportCsv, modifier = Modifier.fillMaxWidth()) {
-                    Text("Import from Another App (CSV)")
-                }
+                AeonDashedButton(onClick = onImportZip, text = "OssWallet Backup (ZIP)", icon = Icons.Rounded.CloudSync)
+                AeonDashedButton(onClick = onImportSqlite, text = "SQLite Database", icon = Icons.Rounded.Backup)
+                AeonDashedButton(onClick = onImportCsv, text = "Another App (CSV)", icon = Icons.Rounded.AutoAwesome)
+                
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel")
+                    Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
                 }
             }
         }
@@ -610,19 +598,23 @@ private fun RestorableEntitySelectorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Data to Restore") },
+        title = { Text("Select Data to Restore", style = AppTextStyles.cardTitle) },
         text = {
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = { onSelectionChanged(RestorableEntity.entries.toSet()) }) {
-                        Text("Select All")
-                    }
-                    TextButton(onClick = { onSelectionChanged(emptySet()) }) {
-                        Text("Deselect All")
-                    }
+                TextButton(
+                    onClick = { onSelectionChanged(RestorableEntity.entries.toSet()) }
+                ) {
+                    Text("Select All", style = AppTextStyles.buttonLabel, color = AppColors.primary)
+                }
+                TextButton(
+                    onClick = { onSelectionChanged(emptySet()) }
+                ) {
+                    Text("Deselect All", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+                }
                 }
                 RestorableEntity.entries.forEach { entity ->
                     Row(
@@ -639,7 +631,7 @@ private fun RestorableEntitySelectorDialog(
                         )
                         Text(
                             text = entity.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = AppTextStyles.listItemTitle,
                             color = AppColors.contentPrimary
                         )
                     }
@@ -647,12 +639,17 @@ private fun RestorableEntitySelectorDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onConfirm, enabled = selectedEntities.isNotEmpty()) {
-                Text("Restore Selected")
-            }
+            AeonDashedButton(
+                onClick = onConfirm,
+                enabled = selectedEntities.isNotEmpty(),
+                text = "Restore Selected",
+                icon = Icons.Rounded.CloudSync
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+            }
         }
     )
 }

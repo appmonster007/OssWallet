@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,8 +15,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -56,6 +57,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -80,6 +82,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalConfiguration
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
@@ -132,11 +135,31 @@ fun OnboardingContent(
     val totalSteps = if (uiState.showDebugSeedStep) 6 else 5
     val pagerState = rememberPagerState { totalSteps }
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 containerColor = Color.Transparent,
+                topBar = {
+                    AeonTopAppBar(
+                        left = AeonTopBarSection(
+                            content = {
+                                AeonTopBarNavTitlePill(
+                                    title = "Step ${pagerState.currentPage + 1} of $totalSteps",
+                                    onBackClick = if (pagerState.currentPage > 0) {
+                                        {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                            }
+                                        }
+                                    } else null
+                                )
+                            }
+                        )
+                    )
+                },
                 bottomBar = {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -155,14 +178,18 @@ fun OnboardingContent(
 
                             Row(
                                 modifier = Modifier
-                                    .padding(AeonTheme.dimensions.spacingXl)
+                                    .padding(
+                                        horizontal = AeonTheme.dimensions.spacingXl,
+                                        vertical = if (isSmallScreen) AeonTheme.dimensions.spacingLg else AeonTheme.dimensions.spacingXl
+                                    )
                                     .fillMaxWidth()
                                     .navigationBarsPadding(),
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
-                              ) {
+                            ) {
                                 // In Seed step, we don't use the standard NEXT button if they choose to seed
-                                val isSeedStep = uiState.showDebugSeedStep && pagerState.currentPage == 0
+                                val isSeedStep =
+                                    uiState.showDebugSeedStep && pagerState.currentPage == 0
 
                                 if (!isSeedStep) {
                                     Button(
@@ -176,17 +203,17 @@ fun OnboardingContent(
                                             }
                                         },
                                         enabled = !uiState.isCompleting && !uiState.isSeeding,
-                                        modifier = Modifier.height(56.dp),
+                                        modifier = Modifier.height(if (isSmallScreen) 48.dp else 56.dp),
                                         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = AppColors.primary,
                                             contentColor = AppColors.onPrimary
                                         ),
-                                        contentPadding = PaddingValues(horizontal = 24.dp)
+                                        contentPadding = PaddingValues(horizontal = if (isSmallScreen) 16.dp else 24.dp)
                                     ) {
                                         if (uiState.isCompleting) {
                                             CircularProgressIndicator(
-                                                modifier = Modifier.size(24.dp),
+                                                modifier = Modifier.size(20.dp),
                                                 color = AppColors.onPrimary,
                                                 strokeWidth = 2.dp
                                             )
@@ -195,54 +222,78 @@ fun OnboardingContent(
                                                 text = if (pagerState.currentPage < totalSteps - 1) "NEXT" else "GET STARTED",
                                                 style = AppTextStyles.drawerItemLabel.copy(
                                                     fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 1.sp
+                                                    letterSpacing = 1.sp,
+                                                    fontSize = if (isSmallScreen) 13.sp else 14.sp
                                                 )
                                             )
                                             Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
                                             Icon(
                                                 imageVector = if (pagerState.currentPage < totalSteps - 1) Icons.AutoMirrored.Rounded.ArrowForward else Icons.Rounded.Check,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
+                                                modifier = Modifier.size(if (isSmallScreen) 16.dp else 18.dp)
                                             )
                                         }
                                     }
                                 } else {
                                     // On Step 0 (Seed Step), we show skip or seed
-                                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                    ) {
                                         Button(
                                             onClick = {
                                                 scope.launch {
                                                     pagerState.animateScrollToPage(1)
                                                 }
                                             },
-                                            modifier = Modifier.height(56.dp),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(if (isSmallScreen) 48.dp else 56.dp),
                                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = AppColors.cardSurface,
                                                 contentColor = AppColors.contentPrimary
-                                            )
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 8.dp)
                                         ) {
-                                            Text("SKIP SEEDING", style = AppTextStyles.listSectionHeader)
+                                            Text(
+                                                "SKIP SEEDING",
+                                                style = AppTextStyles.listSectionHeader.copy(
+                                                    fontSize = if (isSmallScreen) 11.sp else 14.sp
+                                                ),
+                                                maxLines = 1,
+                                                textAlign = TextAlign.Center
+                                            )
                                         }
 
                                         Button(
                                             onClick = { onEvent(OnboardingEvent.SeedDataRequested) },
                                             enabled = !uiState.isSeeding,
-                                            modifier = Modifier.height(56.dp),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(if (isSmallScreen) 48.dp else 56.dp),
                                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = AppColors.primary,
                                                 contentColor = AppColors.onPrimary
-                                            )
+                                            ),
+                                            contentPadding = PaddingValues(horizontal = 8.dp)
                                         ) {
                                             if (uiState.isSeeding) {
                                                 CircularProgressIndicator(
-                                                    modifier = Modifier.size(24.dp),
+                                                    modifier = Modifier.size(20.dp),
                                                     color = AppColors.onPrimary,
                                                     strokeWidth = 2.dp
                                                 )
                                             } else {
-                                                Text("SEED DEBUG DATA", style = AppTextStyles.listSectionHeader)
+                                                Text(
+                                                    "SEED DEBUG DATA",
+                                                    style = AppTextStyles.listSectionHeader.copy(
+                                                        fontSize = if (isSmallScreen) 11.sp else 14.sp
+                                                    ),
+                                                    maxLines = 1,
+                                                    textAlign = TextAlign.Center
+                                                )
                                             }
                                         }
                                     }
@@ -252,125 +303,112 @@ fun OnboardingContent(
                     }
                 }
             ) { paddingValues ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    HorizontalPager(
-                        state = pagerState,
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .padding(paddingValues),
+                    beyondViewportPageCount = 1,
+                    userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting
+                ) { page ->
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
-                            .padding(paddingValues),
-                        beyondViewportPageCount = 1,
-                        userScrollEnabled = !uiState.isSeeding && !uiState.isCompleting
-                    ) { page ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = AeonTheme.dimensions.spacingXl)
-                        ) {
-                            val actualPage = if (uiState.showDebugSeedStep) page - 1 else page
+                            .padding(horizontal = AeonTheme.dimensions.spacingXl)
+                    ) {
+                        val actualPage = if (uiState.showDebugSeedStep) page - 1 else page
 
-                            if (uiState.showDebugSeedStep && page == 0) {
-                                SeedStep()
-                            } else {
-                                when (actualPage) {
-                                    0 -> WelcomeStep()
-                                    1 -> ProfileStep(
-                                        userName = uiState.userName,
-                                        onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
-                                    )
+                        if (uiState.showDebugSeedStep && page == 0) {
+                            SeedStep()
+                        } else {
+                            when (actualPage) {
+                                0 -> WelcomeStep()
+                                1 -> ProfileStep(
+                                    userName = uiState.userName,
+                                    onNameChanged = { onEvent(OnboardingEvent.UserNameChanged(it)) }
+                                )
 
-                                    2 -> ProviderStep(
-                                        selectedProviderId = uiState.selectedProviderId,
-                                        availableProviders = uiState.availableProviders,
-                                        onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
-                                    )
+                                2 -> ProviderStep(
+                                    selectedProviderId = uiState.selectedProviderId,
+                                    availableProviders = uiState.availableProviders,
+                                    onProviderSelected = { onEvent(OnboardingEvent.ProviderSelected(it)) }
+                                )
 
-                                    3 -> CurrenciesStep(
-                                        selectedCurrency = uiState.selectedCurrency,
-                                        shortlistedCurrencies = uiState.shortlistedCurrencies,
-                                        availableCurrencies = uiState.availableCurrencies,
-                                        onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
-                                        onShortlistChanged = {
-                                            onEvent(
-                                                OnboardingEvent.ShortlistedCurrenciesChanged(
-                                                    it
-                                                )
+                                3 -> CurrenciesStep(
+                                    selectedCurrency = uiState.selectedCurrency,
+                                    shortlistedCurrencies = uiState.shortlistedCurrencies,
+                                    availableCurrencies = uiState.availableCurrencies,
+                                    onCurrencySelected = { onEvent(OnboardingEvent.CurrencySelected(it)) },
+                                    onShortlistChanged = {
+                                        onEvent(
+                                            OnboardingEvent.ShortlistedCurrenciesChanged(
+                                                it
                                             )
-                                        }
-                                    )
+                                        )
+                                    }
+                                )
 
-                                    4 -> AppearanceStep(
-                                        selectedTheme = uiState.selectedTheme,
-                                        onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
-                                        selectedPrecision = uiState.decimalPrecision,
-                                        onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
-                                    )
-                                }
+                                4 -> AppearanceStep(
+                                    selectedTheme = uiState.selectedTheme,
+                                    onThemeSelected = { onEvent(OnboardingEvent.ThemeSelected(it)) },
+                                    selectedPrecision = uiState.decimalPrecision,
+                                    onPrecisionSelected = { onEvent(OnboardingEvent.PrecisionSelected(it)) }
+                                )
                             }
                         }
                     }
                 }
             }
-
-            AeonTopAppBar(
-                left = AeonTopBarSection(
-                    content = {
-                        AeonTopBarNavTitlePill(
-                            title = "Step ${pagerState.currentPage + 1} of $totalSteps",
-                            onBackClick = if (pagerState.currentPage > 0) {
-                                {
-                                    scope.launch {
-                                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                    }
-                                }
-                            } else null
-                        )
-                    }
-                )
-            )
         }
     }
 }
 
 @Composable
 private fun StepHeader(icon: ImageVector, title: String, description: String) {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 32.dp)
+            .padding(bottom = if (isSmallScreen) 16.dp else 32.dp)
     ) {
         Surface(
-            modifier = Modifier.size(64.dp),
-            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.size(if (isSmallScreen) 48.dp else 64.dp),
+            shape = RoundedCornerShape(if (isSmallScreen) 12.dp else 16.dp),
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(if (isSmallScreen) 24.dp else 32.dp),
                     tint = AppColors.primary
                 )
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 24.dp))
         Text(
             text = title,
-            style = AppTextStyles.heroAmount,
+            style = if (isSmallScreen) AppTextStyles.cardTitle else AppTextStyles.heroAmount,
             color = AppColors.contentPrimary
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 4.dp else 8.dp))
         Text(
             text = description,
-            style = AppTextStyles.listItemTitle,
+            style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary.copy(alpha = 0.7f),
-            lineHeight = 24.sp
+            lineHeight = if (isSmallScreen) 20.sp else 24.sp
         )
     }
 }
 
 @Composable
 private fun SeedStep() {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -378,9 +416,9 @@ private fun SeedStep() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
         Surface(
-            modifier = Modifier.size(120.dp),
+            modifier = Modifier.size(if (isSmallScreen) 80.dp else 120.dp),
             shape = CircleShape,
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
@@ -388,22 +426,22 @@ private fun SeedStep() {
                 Icon(
                     Icons.Rounded.BugReport,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(if (isSmallScreen) 40.dp else 64.dp),
                     tint = AppColors.primary
                 )
             }
         }
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 32.dp else 48.dp))
         Text(
             text = "Debug Mode Detected",
-            style = AppTextStyles.heroAmountDisplay,
+            style = if (isSmallScreen) AppTextStyles.heroAmount else AppTextStyles.heroAmountDisplay,
             color = AppColors.contentPrimary,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
         Text(
             text = "Would you like to seed the database with sample transactions, accounts, and budgets? This will skip the manual setup.",
-            style = AppTextStyles.listItemTitle,
+            style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -414,6 +452,9 @@ private fun SeedStep() {
 
 @Composable
 private fun WelcomeStep() {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -421,9 +462,9 @@ private fun WelcomeStep() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
         Surface(
-            modifier = Modifier.size(120.dp),
+            modifier = Modifier.size(if (isSmallScreen) 80.dp else 120.dp),
             shape = CircleShape,
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
@@ -431,22 +472,22 @@ private fun WelcomeStep() {
                 Icon(
                     Icons.Rounded.AccountBalanceWallet,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(if (isSmallScreen) 40.dp else 64.dp),
                     tint = AppColors.primary
                 )
             }
         }
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 32.dp else 48.dp))
         Text(
             text = "Welcome to OssWallet",
-            style = AppTextStyles.heroAmountDisplay,
+            style = if (isSmallScreen) AppTextStyles.heroAmount else AppTextStyles.heroAmountDisplay,
             color = AppColors.contentPrimary,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
         Text(
             text = "Your simple and secure personal finance manager. Let's get you set up in a few quick steps.",
-            style = AppTextStyles.listItemTitle,
+            style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -489,6 +530,9 @@ private fun ProviderStep(
     availableProviders: List<ExchangeRateProvider>,
     onProviderSelected: (String) -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
+
     Column(modifier = Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
         Column(
@@ -499,7 +543,7 @@ private fun ProviderStep(
             StepHeader(
                 icon = Icons.Rounded.Public,
                 title = "Rate Provider",
-                description = "Select a source for your currency exchange rates. Each provider supports a different set of currencies."
+                description = "Select a source for your currency exchange rates."
             )
 
             availableProviders.forEach { provider ->
@@ -516,14 +560,14 @@ private fun ProviderStep(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp)
+                        .padding(bottom = if (isSmallScreen) 8.dp else 12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(if (isSmallScreen) 12.dp else 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(if (isSmallScreen) 40.dp else 48.dp),
                             shape = CircleShape,
                             color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.recessedSurface
                         ) {
@@ -531,28 +575,31 @@ private fun ProviderStep(
                                 Icon(
                                     Icons.Rounded.Api,
                                     contentDescription = null,
-                                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary
+                                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary,
+                                    modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(if (isSmallScreen) 12.dp else 16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = provider.name,
-                                style = AppTextStyles.cardSectionTitle,
+                                style = if (isSmallScreen) AppTextStyles.managementItemTitle else AppTextStyles.cardSectionTitle,
                                 color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                             )
                             Text(
                                 text = provider.attribution,
                                 style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                                fontSize = if (isSmallScreen) 10.sp else 11.sp
                             )
                         }
                         if (isSelected) {
                             Icon(
                                 Icons.Rounded.CheckCircle,
                                 contentDescription = null,
-                                tint = AppColors.primary
+                                tint = AppColors.primary,
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp)
                             )
                         }
                     }
@@ -580,223 +627,266 @@ private fun CurrenciesStep(
     }
     val filteredCodes = remember(filteredCurrencies) { filteredCurrencies.map { it.code }.toSet() }
     val haptic = LocalHapticFeedback.current
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        StepHeader(
-            icon = Icons.Rounded.Payments,
-            title = "Currencies",
-            description = "Set your base currency and select others you use regularly."
-        )
+    // Suggested currencies for quick access
+    val suggestedCodes = listOf("USD", "EUR", "GBP", "JPY", "CNY", "INR", "CAD", "AUD")
+    val suggestedCurrencies = remember(availableCurrencies) {
+        availableCurrencies.filter { it.code in suggestedCodes }
+    }
 
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            placeholder = { Text("Search currencies...") },
-            leadingIcon = {
-                Icon(
-                    Icons.Rounded.Search,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 4.dp else 8.dp)
+    ) {
+        if (!isSmallScreen || searchQuery.isEmpty()) {
+            item {
+                StepHeader(
+                    icon = Icons.Rounded.Payments,
+                    title = "Currencies",
+                    description = if (isSmallScreen) "Pick your base and regular currencies." else "Set your base currency and select others you use regularly."
                 )
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(
-                            Icons.Rounded.Clear,
-                            contentDescription = "Clear",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            },
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = AppColors.cardSurface,
-                focusedContainerColor = AppColors.cardSurface,
-                unfocusedIndicatorColor = AppColors.divider.copy(alpha = 0.1f),
-                focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f)
-            )
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onShortlistChanged(shortlistedCurrencies + filteredCodes)
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColors.cardSurface,
-                    contentColor = AppColors.primary
-                )
-            ) {
-                Icon(
-                    Icons.Rounded.SelectAll,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("All", style = AppTextStyles.caption)
-            }
-            Button(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onShortlistChanged(shortlistedCurrencies - filteredCodes)
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColors.cardSurface,
-                    contentColor = AppColors.contentSecondary
-                )
-            ) {
-                Icon(
-                    Icons.Rounded.Deselect,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text("None", style = AppTextStyles.caption)
-            }
-            Button(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    val toggled = shortlistedCurrencies.toMutableSet()
-                    filteredCodes.forEach { code ->
-                        if (code in toggled) toggled.remove(code) else toggled.add(code)
-                    }
-                    onShortlistChanged(toggled)
-                },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AppColors.cardSurface,
-                    contentColor = AppColors.contentSecondary
-                )
-            ) {
-                Icon(Icons.Rounded.Flip, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Invert", style = AppTextStyles.caption)
             }
         }
 
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = AppColors.cardSurface,
-            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(filteredCurrencies, key = { it.code }) { metadata ->
-                    val isBase = metadata.code == selectedCurrency
-                    val isShortlisted = metadata.code in shortlistedCurrencies
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = if (isSmallScreen) 8.dp else 16.dp),
+                placeholder = {
+                    Text(
+                        "Search 150+ currencies...",
+                        style = AppTextStyles.caption,
+                        fontSize = if (isSmallScreen) 12.sp else 14.sp
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.Rounded.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(if (isSmallScreen) 18.dp else 20.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                Icons.Rounded.Clear,
+                                contentDescription = "Clear",
+                                modifier = Modifier.size(if (isSmallScreen) 16.dp else 18.dp)
+                            )
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = if (isSmallScreen) 14.sp else 16.sp
+                ),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = AppColors.cardSurface,
+                    focusedContainerColor = AppColors.cardSurface,
+                    unfocusedIndicatorColor = AppColors.divider.copy(alpha = 0.1f),
+                    focusedIndicatorColor = AppColors.primary.copy(alpha = 0.5f)
+                )
+            )
+        }
 
-                    Surface(
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = if (isSmallScreen) 4.dp else 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(
+                    Icons.Rounded.SelectAll to "All",
+                    Icons.Rounded.Deselect to "None",
+                    Icons.Rounded.Flip to "Invert"
+                ).forEach { (icon, label) ->
+                    Button(
                         onClick = {
-                            if (isBase) {
-                                // Already base, maybe show a hint?
-                            } else {
-                                onCurrencySelected(metadata.code)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            when (label) {
+                                "All" -> onShortlistChanged(shortlistedCurrencies + filteredCodes)
+                                "None" -> onShortlistChanged(shortlistedCurrencies - filteredCodes)
+                                "Invert" -> {
+                                    val toggled = shortlistedCurrencies.toMutableSet()
+                                    filteredCodes.forEach { code ->
+                                        if (code in toggled) toggled.remove(code) else toggled.add(code)
+                                    }
+                                    onShortlistChanged(toggled)
+                                }
                             }
                         },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isBase) AppColors.primary.copy(alpha = 0.08f) else AppColors.transparent,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        contentPadding = PaddingValues(horizontal = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AppColors.cardSurface,
+                            contentColor = if (label == "All") AppColors.primary else AppColors.contentSecondary
+                        )
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = CircleShape,
-                                color = if (isBase) AppColors.primary.copy(alpha = 0.2f) else AppColors.recessedSurface
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        getCurrencySymbol(metadata.code),
-                                        style = AppTextStyles.cardSectionTitle,
-                                        color = if (isBase) AppColors.primary else AppColors.contentSecondary
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        metadata.name,
-                                        style = AppTextStyles.listItemTitle.copy(fontWeight = if (isBase) FontWeight.Bold else FontWeight.SemiBold)
-                                    )
-                                    if (isBase) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Surface(
-                                            color = AppColors.primary.copy(alpha = 0.1f),
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                "BASE",
-                                                modifier = Modifier.padding(
-                                                    horizontal = 4.dp,
-                                                    vertical = 2.dp
-                                                ),
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                color = AppColors.primary
-                                            )
-                                        }
-                                    }
-                                }
-                                Text(
-                                    "${metadata.code} • ${metadata.country}",
-                                    style = AppTextStyles.transactionSwipeAction,
-                                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                                )
-                            }
-                            Checkbox(
-                                checked = isShortlisted,
-                                onCheckedChange = { checked ->
-                                    if (checked) {
-                                        onShortlistChanged(shortlistedCurrencies + metadata.code)
-                                    } else if (!isBase) {
-                                        onShortlistChanged(shortlistedCurrencies - metadata.code)
-                                    }
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = AppColors.primary,
-                                    uncheckedColor = AppColors.divider
-                                )
-                            )
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                        if (!isSmallScreen) {
+                            Spacer(Modifier.width(4.dp))
+                            Text(label, style = AppTextStyles.caption)
                         }
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+
+        if (searchQuery.isEmpty() && suggestedCurrencies.isNotEmpty()) {
+            item {
+                Text(
+                    "SUGGESTED",
+                    style = AppTextStyles.formSectionLabel,
+                    color = AppColors.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            items(suggestedCurrencies.chunked(if (isSmallScreen) 3 else 4)) { rowItems ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    rowItems.forEach { currency ->
+                        CurrencyTile(
+                            modifier = Modifier.weight(1f),
+                            metadata = currency,
+                            isBase = currency.code == selectedCurrency,
+                            isShortlisted = currency.code in shortlistedCurrencies,
+                            isSmallScreen = isSmallScreen,
+                            onSelectBase = { onCurrencySelected(it) },
+                            onToggleShortlist = { code, checked ->
+                                if (checked) onShortlistChanged(shortlistedCurrencies + code)
+                                else if (code != selectedCurrency) onShortlistChanged(shortlistedCurrencies - code)
+                            }
+                        )
+                    }
+                    // Fill empty slots in the row
+                    repeat(if (isSmallScreen) 3 - rowItems.size else 4 - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            item {
+                Text(
+                    "ALL CURRENCIES",
+                    style = AppTextStyles.formSectionLabel,
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+        }
+
+        items(filteredCurrencies.chunked(if (isSmallScreen) 3 else 4)) { rowItems ->
+            Row(
+                modifier = Modifier.padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowItems.forEach { currency ->
+                    CurrencyTile(
+                        modifier = Modifier.weight(1f),
+                        metadata = currency,
+                        isBase = currency.code == selectedCurrency,
+                        isShortlisted = currency.code in shortlistedCurrencies,
+                        isSmallScreen = isSmallScreen,
+                        onSelectBase = { onCurrencySelected(it) },
+                        onToggleShortlist = { code, checked ->
+                            if (checked) onShortlistChanged(shortlistedCurrencies + code)
+                            else if (code != selectedCurrency) onShortlistChanged(shortlistedCurrencies - code)
+                        }
+                    )
+                }
+                repeat(if (isSmallScreen) 3 - rowItems.size else 4 - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(scrollBottomPadding()))
+        }
+    }
+}
+
+@Composable
+private fun CurrencyTile(
+    metadata: CurrencyMetadata,
+    isBase: Boolean,
+    isShortlisted: Boolean,
+    isSmallScreen: Boolean,
+    onSelectBase: (String) -> Unit,
+    onToggleShortlist: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = { onSelectBase(metadata.code) },
+        shape = RoundedCornerShape(16.dp),
+        color = when {
+            isBase -> AppColors.primary.copy(alpha = 0.08f)
+            isShortlisted -> AppColors.cardSurface
+            else -> AppColors.cardSurface.copy(alpha = 0.4f)
+        },
+        border = BorderStroke(
+            width = if (isBase) 2.dp else 0.5.dp,
+            color = if (isBase) AppColors.primary else AppColors.divider.copy(alpha = 0.1f)
+        ),
+        modifier = modifier.height(if (isSmallScreen) 88.dp else 100.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    getCurrencySymbol(metadata.code),
+                    style = if (isSmallScreen) AppTextStyles.cardTitle else AppTextStyles.heroAmount,
+                    color = if (isBase) AppColors.primary else AppColors.contentPrimary
+                )
+                Text(
+                    metadata.code,
+                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                    fontSize = if (isSmallScreen) 10.sp else 11.sp,
+                    color = if (isBase) AppColors.primary else AppColors.contentSecondary
+                )
+            }
+
+            Checkbox(
+                checked = isShortlisted,
+                onCheckedChange = { onToggleShortlist(metadata.code, it) },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(if (isSmallScreen) 32.dp else 40.dp),
+                colors = CheckboxDefaults.colors(
+                    checkedColor = AppColors.primary,
+                    uncheckedColor = AppColors.divider.copy(alpha = 0.5f)
+                )
+            )
+
+            if (isBase) {
+                Surface(
+                    color = AppColors.primary,
+                    shape = RoundedCornerShape(topStart = 4.dp, bottomEnd = 0.dp),
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                ) {
+                    Text(
+                        "BASE",
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                        style = AppTextStyles.caption.copy(
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Black
+                        ),
+                        color = AppColors.onPrimary
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -807,6 +897,9 @@ private fun AppearanceStep(
     selectedPrecision: Int,
     onPrecisionSelected: (Int) -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenWidthDp < 360
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -818,8 +911,13 @@ private fun AppearanceStep(
             description = "Customize how OssWallet looks and handles your money."
         )
 
-        Text("APP THEME", style = AppTextStyles.formSectionLabel, color = AppColors.primary)
-        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            "APP THEME",
+            style = AppTextStyles.formSectionLabel,
+            color = AppColors.primary,
+            fontSize = if (isSmallScreen) 10.sp else 11.sp
+        )
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
         val themes = listOf(
             Triple("System", "Matches device", Icons.Rounded.SettingsSuggest),
@@ -848,19 +946,19 @@ private fun AppearanceStep(
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(if (isSmallScreen) 8.dp else 12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
                                 icon,
                                 contentDescription = null,
                                 tint = if (isSelected) AppColors.primary else AppColors.contentSecondary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(if (isSmallScreen) 4.dp else 8.dp))
                             Text(
                                 name,
-                                style = AppTextStyles.chipLabelBold,
+                                style = if (isSmallScreen) AppTextStyles.caption.copy(fontWeight = FontWeight.Bold) else AppTextStyles.chipLabelBold,
                                 color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                             )
                         }
@@ -869,10 +967,15 @@ private fun AppearanceStep(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 20.dp else 32.dp))
 
-        Text("DECIMAL PRECISION", style = AppTextStyles.formSectionLabel, color = AppColors.primary)
-        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            "DECIMAL PRECISION",
+            style = AppTextStyles.formSectionLabel,
+            color = AppColors.primary,
+            fontSize = if (isSmallScreen) 10.sp else 11.sp
+        )
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             listOf(2, 3).forEach { p ->
@@ -881,7 +984,7 @@ private fun AppearanceStep(
                     onClick = { onPrecisionSelected(p) },
                     modifier = Modifier
                         .weight(1f)
-                        .height(80.dp),
+                        .height(if (isSmallScreen) 64.dp else 80.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
                     border = BorderStroke(
@@ -898,12 +1001,13 @@ private fun AppearanceStep(
                     ) {
                         Text(
                             p.toString(),
-                            style = AppTextStyles.heroAmount,
+                            style = if (isSmallScreen) AppTextStyles.cardTitle else AppTextStyles.heroAmount,
                             color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                         )
                         Text(
                             "PLACES",
                             style = AppTextStyles.caption,
+                            fontSize = 9.sp,
                             color = if (isSelected) AppColors.primary.copy(alpha = 0.6f) else AppColors.contentSecondary.copy(
                                 alpha = 0.6f
                             )
@@ -913,7 +1017,7 @@ private fun AppearanceStep(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 24.dp))
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -921,7 +1025,7 @@ private fun AppearanceStep(
             color = AppColors.recessedSurface.copy(alpha = 0.5f)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(if (isSmallScreen) 12.dp else 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -929,14 +1033,14 @@ private fun AppearanceStep(
                     Icons.Rounded.Info,
                     contentDescription = null,
                     tint = AppColors.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(if (isSmallScreen) 14.dp else 16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Example: ${formatAuto(BigDecimal("1234.5678"), precision = selectedPrecision)}",
                     style = AppTextStyles.listItemTitle.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = if (isSmallScreen) 12.sp else 14.sp
                     ),
                     color = AppColors.contentPrimary
                 )
@@ -1034,5 +1138,142 @@ fun AppearanceStepPreview() {
                 onPrecisionSelected = {}
             )
         }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Welcome", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenWelcomePreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            WelcomeStep()
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Seed", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenSeedPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            SeedStep()
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Profile", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenProfilePreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            ProfileStep(userName = "John", onNameChanged = {})
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Currencies", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenCurrenciesPreview() {
+    val currencies = listOf(
+        CurrencyMetadata("USD", "United States Dollar", "United States"),
+        CurrencyMetadata("EUR", "Euro", "European Union"),
+        CurrencyMetadata("GBP", "British Pound", "United Kingdom"),
+        CurrencyMetadata("JPY", "Japanese Yen", "Japan")
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            CurrenciesStep(
+                selectedCurrency = "USD",
+                shortlistedCurrencies = setOf("USD", "EUR"),
+                availableCurrencies = currencies,
+                onCurrencySelected = {},
+                onShortlistChanged = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Provider", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenProviderPreview() {
+    val providers = listOf(
+        object : ExchangeRateProvider {
+            override val id = "exchangerate-api"
+            override val name = "ExchangeRate-API"
+            override val attribution = "Data from ExchangeRate-API"
+            override suspend fun fetchSupportedCurrencies() = emptyList<CurrencyMetadata>()
+            override suspend fun fetchRate(base: String, target: String): Result<Double> =
+                Result.success(1.0)
+
+            override suspend fun fetchAllRates(base: String): Result<Map<String, Double>> =
+                Result.success(emptyMap())
+
+            override suspend fun convertCurrencyAmount(
+                amount: Double,
+                from: String,
+                to: String
+            ): Result<Double> = Result.success(amount)
+        }
+    )
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            ProviderStep(
+                selectedProviderId = "exchangerate-api",
+                availableProviders = providers,
+                onProviderSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding - Appearance", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenAppearancePreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(AeonTheme.dimensions.spacingXl)) {
+            AppearanceStep(
+                selectedTheme = "System",
+                onThemeSelected = {},
+                selectedPrecision = 2,
+                onPrecisionSelected = {}
+            )
+        }
+    }
+}
+
+@Preview(name = "Small Screen Onboarding Full", device = "spec:width=320dp,height=533dp", showBackground = true)
+@Composable
+fun OnboardingSmallScreenFullPreview() {
+    OssWalletTheme {
+        OnboardingContent(
+            uiState = OnboardingState(
+                userName = "John Doe",
+                availableProviders = listOf(
+                    object : ExchangeRateProvider {
+                        override val id = "exchangerate-api"
+                        override val name = "ExchangeRate-API"
+                        override val attribution = "Data from ExchangeRate-API"
+                        override suspend fun fetchSupportedCurrencies() = emptyList<CurrencyMetadata>()
+                        override suspend fun fetchRate(base: String, target: String): Result<Double> =
+                            Result.success(1.0)
+
+                        override suspend fun fetchAllRates(base: String): Result<Map<String, Double>> =
+                            Result.success(emptyMap())
+
+                        override suspend fun convertCurrencyAmount(
+                            amount: Double,
+                            from: String,
+                            to: String
+                        ): Result<Double> = Result.success(amount)
+                    }
+                ),
+                availableCurrencies = listOf(
+                    CurrencyMetadata("USD", "United States Dollar", "United States"),
+                    CurrencyMetadata("EUR", "Euro", "European Union")
+                ),
+                showDebugSeedStep = true
+            ),
+            onEvent = {}
+        )
     }
 }

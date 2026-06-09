@@ -61,8 +61,8 @@ import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -161,6 +161,7 @@ fun CsvImportScreen(
                                     session = session,
                                     onLoadFile = { fileLauncher.launch("*/*") },
                                     onUpdateMapping = { field, col -> viewModel.updateMapping(field, col) },
+                                    onApplyPreset = { viewModel.applyPreset(it) },
                                     onNext = { viewModel.proceedFromColumnMapping(context) }
                                 )
 
@@ -206,6 +207,7 @@ private fun ColumnMappingStep(
     session: com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession?,
     onLoadFile: () -> Unit,
     onUpdateMapping: (OssWalletField, Int?) -> Unit,
+    onApplyPreset: (ImportSourceApp) -> Unit,
     onNext: () -> Unit
 ) {
     Column(
@@ -257,6 +259,22 @@ private fun ColumnMappingStep(
                         }
                     }
                 }
+            }
+
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
+
+            Text("Apply Preset", style = MaterialTheme.typography.labelMedium, color = AppColors.contentPrimary)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = session?.sourceApp == ImportSourceApp.BUDGET_BAKERS,
+                    onClick = { onApplyPreset(ImportSourceApp.BUDGET_BAKERS) },
+                    label = { Text("BudgetBakers") }
+                )
+                FilterChip(
+                    selected = session?.sourceApp == ImportSourceApp.GENERIC,
+                    onClick = { onApplyPreset(ImportSourceApp.GENERIC) },
+                    label = { Text("Generic") }
+                )
             }
 
             HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
@@ -341,7 +359,7 @@ private fun EntityMappingStep(
         mutableStateListOf(*preview.newAccounts.map { EntityMapping(it, null, EntityMapping.EntityType.ACCOUNT) }.toTypedArray())
     }
     val categoryMappings = remember(preview.newCategories) {
-        mutableStateListOf(*preview.newCategories.map { EntityMapping(it, null, EntityMapping.EntityType.CATEGORY) }.toTypedArray())
+        mutableStateListOf(*preview.newCategories.map { cat -> EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY) }.toTypedArray())
     }
 
     Column(
@@ -404,38 +422,90 @@ private fun EntityMappingStep(
 
         if (preview.newCategories.isNotEmpty()) {
             Text("Unknown Categories", style = MaterialTheme.typography.labelMedium, color = AppColors.contentPrimary)
-            preview.newCategories.forEachIndexed { index, name ->
+            // Local state for parent-category selection for custom categories
+            val parentSelections = remember(preview.newCategories) {
+                androidx.compose.runtime.mutableStateMapOf<Int, String?>()
+            }
+            preview.newCategories.forEachIndexed { index, category ->
                 var expanded by remember { mutableStateOf(false) }
+                var parentExpanded by remember { mutableStateOf(false) }
                 val mapping = categoryMappings.getOrNull(index)
                 val selectedName = mapping?.existingId?.let { id -> categories.find { it.first == id }?.second } ?: "Create New"
+                val labelText = if (category.envelopeId != null) "${category.name} (#${category.envelopeId})" else category.name
 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = AppColors.contentPrimary)
-                    Spacer(Modifier.width(8.dp))
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it },
-                        modifier = Modifier.weight(1.5f)
-                    ) {
-                        OutlinedTextField(
-                            value = selectedName,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.bodySmall
-                        )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            DropdownMenuItem(text = { Text("Create New") }, onClick = {
-                                categoryMappings[index] = categoryMappings[index].copy(existingId = null)
-                                expanded = false
-                            })
-                            categories.forEach { (id, catName) ->
-                                DropdownMenuItem(text = { Text(catName) }, onClick = {
-                                    categoryMappings[index] = categoryMappings[index].copy(existingId = id)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Text(labelText, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = AppColors.contentPrimary)
+                        Spacer(Modifier.width(8.dp))
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it },
+                            modifier = Modifier.weight(1.5f)
+                        ) {
+                            OutlinedTextField(
+                                value = selectedName,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodySmall
+                            )
+                            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                DropdownMenuItem(text = { Text("Create New") }, onClick = {
+                                    categoryMappings[index] = categoryMappings[index].copy(existingId = null)
                                     expanded = false
                                 })
+                                categories.forEach { (id, catName) ->
+                                    DropdownMenuItem(text = { Text(catName) }, onClick = {
+                                        categoryMappings[index] = categoryMappings[index].copy(existingId = id)
+                                        expanded = false
+                                    })
+                                }
+                            }
+                        }
+                    }
+                    if (category.isCustomCategory && mapping?.existingId == null) {
+                        val selectedParentName = parentSelections[index]
+                            ?.let { id -> categories.find { it.first == id }?.second } ?: "No Parent"
+                        Spacer(Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(start = 8.dp)
+                        ) {
+                            Text(
+                                "Parent category:",
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AppColors.contentSecondary
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            ExposedDropdownMenuBox(
+                                expanded = parentExpanded,
+                                onExpandedChange = { parentExpanded = it },
+                                modifier = Modifier.weight(1.5f)
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedParentName,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(parentExpanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodySmall
+                                )
+                                ExposedDropdownMenu(expanded = parentExpanded, onDismissRequest = { parentExpanded = false }) {
+                                    DropdownMenuItem(text = { Text("No Parent") }, onClick = {
+                                        parentSelections[index] = null
+                                        parentExpanded = false
+                                    })
+                                    categories.forEach { (id, catName) ->
+                                        DropdownMenuItem(text = { Text(catName) }, onClick = {
+                                            parentSelections[index] = id
+                                            parentExpanded = false
+                                        })
+                                    }
+                                }
                             }
                         }
                     }
@@ -485,6 +555,14 @@ private fun PreviewStep(
             Text("Duplicates: ${preview.duplicates.size}", style = MaterialTheme.typography.bodyMedium, color = AppColors.contentSecondary)
             if (preview.parseErrors.isNotEmpty()) {
                 Text("Errors: ${preview.parseErrors.size}", style = MaterialTheme.typography.bodyMedium, color = AppColors.error)
+            }
+            if (preview.unpairedTransferRows > 0) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "⚠ ${preview.unpairedTransferRows} transfer(s) have no matching pair — will be imported as income/expense",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarningColor
+                )
             }
         }
 

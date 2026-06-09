@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
@@ -50,8 +49,7 @@ class SettingsViewModel @Inject constructor(
     private val backupRepository: BackupRepository,
     private val currencyRepository: CurrencyRepository,
     private val providerRegistry: ExchangeRateProviderRegistry,
-    private val backupScheduler: BackupScheduler,
-    private val settingsDataStore: SettingsDataStore
+    private val backupScheduler: BackupScheduler
 ) : ViewModel() {
 
     val currency: StateFlow<String> = settingsRepository.currency
@@ -139,7 +137,7 @@ class SettingsViewModel @Inject constructor(
     private val _backupMessage = Channel<String>()
     val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
 
-    val autoBackupConfig: StateFlow<AutoBackupConfig> = settingsDataStore.autoBackupConfig
+    val autoBackupConfig: StateFlow<AutoBackupConfig> = settingsRepository.autoBackupConfig
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AutoBackupConfig())
 
     private val _recentBackups = MutableStateFlow<List<BackupMeta>>(emptyList())
@@ -160,7 +158,7 @@ class SettingsViewModel @Inject constructor(
 
     fun updateAutoBackupConfig(config: AutoBackupConfig) {
         viewModelScope.launch {
-            settingsDataStore.saveAutoBackupConfig(config)
+            settingsRepository.saveAutoBackupConfig(config)
             backupScheduler.schedule(config)
         }
     }

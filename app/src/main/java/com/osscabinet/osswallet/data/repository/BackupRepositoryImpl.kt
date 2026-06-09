@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.util.splitByComma
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.CategoryNature
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -89,9 +90,10 @@ class BackupRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val uri = uriString.toUri()
+                val currentProfileId = settingsDataStore.currentProfileId.first()
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     when (type) {
-                        BackupType.CSV_ZIP -> createZipBackup(outputStream)
+                        BackupType.CSV_ZIP -> createZipBackup(outputStream, scope, currentProfileId)
                         BackupType.SQLITE -> exportSqlite(outputStream)
                         BackupType.FLAT_CSV -> exportFlatCsv(outputStream, scope)
                     }
@@ -109,6 +111,9 @@ class BackupRepositoryImpl @Inject constructor(
         else
             transactionDao.getAllTransactionsSync()
 
+        val accountsById = accountDao.getAllAccountsSync().associateBy { it.id }
+        val categoriesById = categoryDao.getAllCategoriesSync().associateBy { it.id }
+
         val writer = outputStream.bufferedWriter()
         writer.write("date,account,category,type,amount,currency,payee,note,payment_type,warranty_months,labels,is_transfer\n")
         transactions.forEach { tx ->
@@ -120,8 +125,8 @@ class BackupRepositoryImpl @Inject constructor(
             val tags = tx.tags.joinToString("|")
             val row = listOf(
                 tx.timestamp.toString(),
-                tx.accountId ?: "",
-                tx.categoryId.toString(),
+                accountsById[tx.accountId]?.name ?: tx.accountId ?: "",
+                categoriesById[tx.categoryId]?.name ?: tx.categoryId.toString(),
                 tx.transactionType.name,
                 tx.amount.toPlainString(),
                 tx.currency,
@@ -138,13 +143,25 @@ class BackupRepositoryImpl @Inject constructor(
         writer.flush()
     }
 
-    private suspend fun createZipBackup(outputStream: OutputStream) {
+    private suspend fun createZipBackup(
+        outputStream: OutputStream,
+        scope: BackupScope = BackupScope.ALL_PROFILES,
+        currentProfileId: Int = 1
+    ) {
         val zos = java.util.zip.ZipOutputStream(outputStream)
+
+        val allProfiles = profileDao.getAllProfilesSync()
+        val profiles = if (scope == BackupScope.SINGLE_PROFILE)
+            allProfiles.filter { it.id == currentProfileId } else allProfiles
 
         writeCsvToZip(
             zos, "profiles.csv", listOf("id", "name", "baseCurrency", "type"),
-            profileDao.getAllProfilesSync()
-                .map { listOf(it.id, it.name, it.baseCurrency, it.type) })
+            profiles.map { listOf(it.id, it.name, it.baseCurrency, it.type) })
+
+        val allAccounts = accountDao.getAllAccountsSync()
+        val accounts = if (scope == BackupScope.SINGLE_PROFILE)
+            allAccounts.filter { it.profileId == currentProfileId } else allAccounts
+        val accountIds = accounts.map { it.id }.toSet()
 
         writeCsvToZip(
             zos,
@@ -161,7 +178,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "isArchived",
                 "displayOrder"
             ),
-            accountDao.getAllAccountsSync().map {
+            accounts.map {
                 listOf(
                     it.id,
                     it.name,
@@ -179,7 +196,7 @@ class BackupRepositoryImpl @Inject constructor(
         writeCsvToZip(
             zos,
             "categories.csv",
-            listOf("id", "name", "iconName", "colorHex", "isDefault", "parentId"),
+            listOf("id", "name", "iconName", "colorHex", "isDefault", "parentId", "nature"),
             categoryDao.getAllCategoriesSync().map {
                 listOf(
                     it.id,
@@ -187,9 +204,15 @@ class BackupRepositoryImpl @Inject constructor(
                     it.iconName,
                     it.colorHex,
                     it.isDefault,
-                    it.parentId
+                    it.parentId,
+                    it.nature.name
                 )
             })
+
+        val allTransactions = transactionDao.getAllTransactionsSync()
+        val transactions = if (scope == BackupScope.SINGLE_PROFILE)
+            allTransactions.filter { it.profileId == currentProfileId } else allTransactions
+        val transactionIds = transactions.map { it.id }.toSet()
 
         writeCsvToZip(
             zos,
@@ -217,7 +240,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "warrantyExpiration",
                 "status"
             ),
-            transactionDao.getAllTransactionsSync().map {
+            transactions.map {
                 listOf(
                     it.id,
                     it.name,
@@ -243,10 +266,19 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        val allLinks = transactionLinkDao.getAllLinksSync()
+        val links = if (scope == BackupScope.SINGLE_PROFILE)
+            allLinks.filter { it.transactionId in transactionIds && it.linkedTransactionId in transactionIds }
+        else allLinks
+
         writeCsvToZip(
             zos, "transaction_links.csv", listOf("id", "transactionId", "linkedTransactionId"),
-            transactionLinkDao.getAllLinksSync()
-                .map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
+            links.map { listOf(it.id, it.transactionId, it.linkedTransactionId) })
+
+        val allBudgets = budgetDao.getAllBudgetsSync()
+        val budgets = if (scope == BackupScope.SINGLE_PROFILE)
+            allBudgets.filter { it.budget.profileId == currentProfileId } else allBudgets
+        val budgetFilterIds = budgets.map { it.budget.filterId }.toSet()
 
         writeCsvToZip(
             zos,
@@ -262,7 +294,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "profileId",
                 "filterId"
             ),
-            budgetDao.getAllBudgetsSync().map {
+            budgets.map {
                 val b = it.budget
                 listOf(
                     b.id,
@@ -276,6 +308,11 @@ class BackupRepositoryImpl @Inject constructor(
                     b.filterId
                 )
             })
+
+        val allTemplates = templateDao.getAllTemplatesSync()
+        val templates = if (scope == BackupScope.SINGLE_PROFILE)
+            allTemplates.filter { it.profileId == currentProfileId } else allTemplates
+        val templateIds = templates.map { it.id }.toSet()
 
         writeCsvToZip(
             zos,
@@ -303,7 +340,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "profileId",
                 "transactionStatus"
             ),
-            templateDao.getAllTemplatesSync().map {
+            templates.map {
                 listOf(
                     it.id,
                     it.name,
@@ -329,13 +366,20 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        val allPlannedPayments = plannedPaymentDao.getAllPlannedPaymentsSync()
+        val plannedPayments = if (scope == BackupScope.SINGLE_PROFILE)
+            allPlannedPayments.filter { it.payment.profileId == currentProfileId &&
+                it.payment.templateId in templateIds }
+        else allPlannedPayments
+        val plannedPaymentIds = plannedPayments.map { it.payment.id }.toSet()
+
         writeCsvToZip(
             zos, "planned_payments.csv", listOf(
                 "id", "autoConfirm", "status", "profileId", "templateId",
                 "recurrenceType", "interval", "dayOfWeek", "dayOfMonth", "recurrenceCronExpression",
                 "startDate", "endDate", "nextDueDate", "lastTriggeredDate"
             ),
-            plannedPaymentDao.getAllPlannedPaymentsSync().map {
+            plannedPayments.map {
                 listOf(
                     it.payment.id,
                     it.payment.autoConfirm,
@@ -354,11 +398,15 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        val allOccurrences = plannedPaymentOccurrenceDao.getAllOccurrencesSync()
+        val occurrences = if (scope == BackupScope.SINGLE_PROFILE)
+            allOccurrences.filter { it.plannedPaymentId in plannedPaymentIds } else allOccurrences
+
         writeCsvToZip(
             zos,
             "planned_payment_occurrences.csv",
             listOf("id", "plannedPaymentId", "scheduledDate", "generatedTransactionId", "status"),
-            plannedPaymentOccurrenceDao.getAllOccurrencesSync().map {
+            occurrences.map {
                 listOf(
                     it.id,
                     it.plannedPaymentId,
@@ -371,6 +419,12 @@ class BackupRepositoryImpl @Inject constructor(
         writeCsvToZip(
             zos, "tags.csv", listOf("id", "name", "colorHex"),
             tagDao.getAllTagsSync().map { listOf(it.id, it.name, it.colorHex) })
+
+        val allLoans = loanDao.getAllLoansSync()
+        val loans = if (scope == BackupScope.SINGLE_PROFILE)
+            allLoans.filter { it.loan.profileId == currentProfileId } else allLoans
+        val loanIds = loans.map { it.loan.id }.toSet()
+        val loanFilterIds = loans.map { it.loan.filterId }.toSet()
 
         writeCsvToZip(
             zos,
@@ -391,7 +445,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "note",
                 "filterId"
             ),
-            loanDao.getAllLoansSync().map {
+            loans.map {
                 val l = it.loan
                 listOf(
                     l.id,
@@ -411,12 +465,21 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
+        val allLoanPayments = loanPaymentDao.getAllPaymentsSync()
+        val loanPayments = if (scope == BackupScope.SINGLE_PROFILE)
+            allLoanPayments.filter { it.loanId in loanIds } else allLoanPayments
+
         writeCsvToZip(
             zos,
             "loan_payments.csv",
             listOf("id", "loanId", "amount", "date", "transactionId", "note"),
-            loanPaymentDao.getAllPaymentsSync()
-                .map { listOf(it.id, it.loanId, it.amount, it.date, it.transactionId, it.note) })
+            loanPayments.map { listOf(it.id, it.loanId, it.amount, it.date, it.transactionId, it.note) })
+
+        val allFilters = filterDao.getAllFiltersSync()
+        val filters = if (scope == BackupScope.SINGLE_PROFILE) {
+            val scopedFilterIds = budgetFilterIds + loanFilterIds
+            allFilters.filter { it.id in scopedFilterIds }
+        } else allFilters
 
         writeCsvToZip(
             zos,
@@ -445,7 +508,7 @@ class BackupRepositoryImpl @Inject constructor(
                 "linkedTransactionIds",
                 "tags"
             ),
-            filterDao.getAllFiltersSync().map {
+            filters.map {
                 listOf(
                     it.id,
                     it.name,
@@ -548,8 +611,6 @@ class BackupRepositoryImpl @Inject constructor(
                 accountDao.clearAll()
                 filterDao.clearAll()
 
-                // 5. Clear infrastructure
-                tagDao.clearAll()
                 // 5. Clear infrastructure
                 tagDao.clearAll()
                 categoryDao.clearAll()
@@ -706,7 +767,9 @@ class BackupRepositoryImpl @Inject constructor(
                     iconName = p["iconName"] ?: p["icon"] ?: "",
                     colorHex = p["colorHex"]?.toIntOrNull() ?: 0,
                     isDefault = p["isDefault"]?.toBoolean() ?: false,
-                    parentId = p["parentId"]?.toLongOrNull()
+                    parentId = p["parentId"]?.toLongOrNull(),
+                    nature = p["nature"]?.let { runCatching { CategoryNature.valueOf(it) }.getOrNull() }
+                        ?: CategoryNature.WANT
                 )
             )
         }
@@ -1027,6 +1090,20 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreZipBackupSelective(inputStream: InputStream, entities: Set<RestorableEntity>) {
+        val safeEntities = entities.toMutableSet()
+        if (RestorableEntity.TRANSACTIONS in safeEntities && RestorableEntity.ACCOUNTS !in safeEntities) {
+            safeEntities.add(RestorableEntity.ACCOUNTS)
+        }
+        if (RestorableEntity.BUDGETS in safeEntities && RestorableEntity.FILTERS !in safeEntities) {
+            safeEntities.add(RestorableEntity.FILTERS)
+        }
+        if (RestorableEntity.LOANS in safeEntities && RestorableEntity.FILTERS !in safeEntities) {
+            safeEntities.add(RestorableEntity.FILTERS)
+        }
+        if (RestorableEntity.PLANNED_PAYMENTS in safeEntities && RestorableEntity.TEMPLATES !in safeEntities) {
+            safeEntities.add(RestorableEntity.TEMPLATES)
+        }
+
         val tempDir = File(context.cacheDir, "restore_temp_selective")
         tempDir.deleteRecursively()
         tempDir.mkdirs()
@@ -1044,17 +1121,17 @@ class BackupRepositoryImpl @Inject constructor(
             // Restore in strict parent-before-child order to satisfy all FK constraints.
             // filters must precede budgets and loans; templates must precede planned_payments;
             // planned_payments must precede occurrences; loans must precede loan_payments.
-            if (RestorableEntity.PROFILES in entities) { profileDao.clearAll(); restoreProfiles(File(tempDir, "profiles.csv")) }
-            if (RestorableEntity.ACCOUNTS in entities) { accountDao.clearAll(); restoreAccounts(File(tempDir, "accounts.csv")) }
-            if (RestorableEntity.CATEGORIES in entities) { categoryDao.clearAll(); restoreCategories(File(tempDir, "categories.csv")) }
-            if (RestorableEntity.TAGS in entities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
-            if (RestorableEntity.FILTERS in entities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
-            if (RestorableEntity.TEMPLATES in entities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
-            if (RestorableEntity.TRANSACTIONS in entities) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(File(tempDir, "transactions.csv")); restoreLinks(File(tempDir, "transaction_links.csv")) }
-            if (RestorableEntity.BUDGETS in entities) { budgetDao.clearAll(); restoreBudgets(File(tempDir, "budgets.csv")) }
-            if (RestorableEntity.LOANS in entities) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(File(tempDir, "loans.csv")); restoreLoanPayments(File(tempDir, "loan_payments.csv")) }
-            if (RestorableEntity.PLANNED_PAYMENTS in entities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
-            if (RestorableEntity.CURRENCY_RATES in entities) { restoreCurrencyRates(File(tempDir, "currency_rates.csv")) }
+            if (RestorableEntity.PROFILES in safeEntities) { profileDao.clearAll(); restoreProfiles(File(tempDir, "profiles.csv")) }
+            if (RestorableEntity.ACCOUNTS in safeEntities) { accountDao.clearAll(); restoreAccounts(File(tempDir, "accounts.csv")) }
+            if (RestorableEntity.CATEGORIES in safeEntities) { categoryDao.clearAll(); restoreCategories(File(tempDir, "categories.csv")) }
+            if (RestorableEntity.TAGS in safeEntities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
+            if (RestorableEntity.FILTERS in safeEntities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
+            if (RestorableEntity.TEMPLATES in safeEntities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
+            if (RestorableEntity.TRANSACTIONS in safeEntities) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(File(tempDir, "transactions.csv")); restoreLinks(File(tempDir, "transaction_links.csv")) }
+            if (RestorableEntity.BUDGETS in safeEntities) { budgetDao.clearAll(); restoreBudgets(File(tempDir, "budgets.csv")) }
+            if (RestorableEntity.LOANS in safeEntities) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(File(tempDir, "loans.csv")); restoreLoanPayments(File(tempDir, "loan_payments.csv")) }
+            if (RestorableEntity.PLANNED_PAYMENTS in safeEntities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
+            if (RestorableEntity.CURRENCY_RATES in safeEntities) { restoreCurrencyRates(File(tempDir, "currency_rates.csv")) }
         }
         tempDir.deleteRecursively()
     }
@@ -1062,11 +1139,12 @@ class BackupRepositoryImpl @Inject constructor(
     override suspend fun exportToPrivateStorage(scope: BackupScope): Result<String> =
         withContext(Dispatchers.IO) {
             try {
+                val currentProfileId = settingsDataStore.currentProfileId.first()
                 val dir = File(context.filesDir, "backups").apply { mkdirs() }
                 val scopeSuffix = if (scope == BackupScope.SINGLE_PROFILE) "_profile" else "_all"
                 val fileName = "osswallet_backup_${System.currentTimeMillis()}${scopeSuffix}.zip"
                 val file = File(dir, fileName)
-                FileOutputStream(file).use { createZipBackup(it) }
+                FileOutputStream(file).use { createZipBackup(it, scope, currentProfileId) }
                 Result.success(file.absolutePath)
             } catch (e: Exception) {
                 Result.failure(e)

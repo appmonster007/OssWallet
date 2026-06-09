@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -158,4 +159,37 @@ class CsvImportViewModel @Inject constructor(
     fun clearError() {
         _error.value = null
     }
+
+    fun applyPreset(sourceApp: ImportSourceApp) {
+        val session = _session.value ?: return
+        _session.value = session.copy(
+            mapping = buildInitialMapping(session.headers, sourceApp),
+            sourceApp = sourceApp
+        )
+    }
+
+    private fun buildInitialMapping(
+        headers: List<String>,
+        sourceApp: ImportSourceApp
+    ): Map<OssWalletField, Int?> {
+        return when (sourceApp) {
+            ImportSourceApp.BUDGET_BAKERS -> mapOf(
+                OssWalletField.DATE to headers.indexOfOrNull("date"),
+                OssWalletField.ACCOUNT to headers.indexOfOrNull("account"),
+                OssWalletField.CATEGORY to headers.indexOfOrNull("category"),
+                OssWalletField.AMOUNT to headers.indexOfOrNull("amount"),
+                OssWalletField.TYPE to headers.indexOfOrNull("type"),
+                OssWalletField.NOTE to headers.indexOfOrNull("note"),
+                OssWalletField.PAYEE to headers.indexOfOrNull("payee"),
+                OssWalletField.PAYMENT_TYPE to headers.indexOfOrNull("payment_type"),
+                OssWalletField.LABELS to headers.indexOfOrNull("labels"),
+                OssWalletField.WARRANTY_MONTHS to headers.indexOfOrNull("warranty_in_month"),
+                OssWalletField.IS_TRANSFER to headers.indexOfOrNull("transfer")
+            )
+            else -> OssWalletField.entries.associateWith { null }
+        }
+    }
+
+    private fun List<String>.indexOfOrNull(value: String): Int? =
+        indexOf(value).takeIf { it >= 0 }
 }

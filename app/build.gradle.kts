@@ -119,6 +119,8 @@ dependencies {
     // QR code generation
     implementation(libs.qrcode.kotlin.android)
     implementation(libs.haze)
+    implementation(libs.commons.csv)
+    implementation(libs.androidx.documentfile)
 
     // Hilt
     implementation(libs.hilt.android)

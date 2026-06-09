@@ -59,7 +59,8 @@ fun QuickAddAccountStep(
     transactionType: TransactionType,
     onAccountTapped: (String) -> Unit,
     onToggleType: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uiScale: Float = 1f
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var structureFilter by remember { mutableStateOf<AccountStructureType?>(null) }
@@ -80,11 +81,21 @@ fun QuickAddAccountStep(
     else
         Color(android.graphics.Color.parseColor(TransactionType.INCOME.colorHex))
 
+    val toggleVPad = (10f * uiScale).coerceIn(7f, 10f).dp
+    val toggleIconSize = (18f * uiScale).coerceIn(14f, 18f).dp
+    val columnSpacing = (10f * uiScale).coerceIn(7f, 10f).dp
+    val tileSize = (72f * uiScale).coerceIn(56f, 72f).dp
+    val tileCorner = (20f * uiScale).coerceIn(14f, 20f).dp
+    val tileIconSize = (28f * uiScale).coerceIn(20f, 28f).dp
+    val gridMinSize = (88f * uiScale).coerceIn(68f, 88f).dp
+    val gridSpacing = (8f * uiScale).coerceIn(6f, 8f).dp
+    val itemSpacing = (6f * uiScale).coerceIn(4f, 6f).dp
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(columnSpacing)
     ) {
         // Transaction type toggle
         GlassSurface(
@@ -101,7 +112,7 @@ fun QuickAddAccountStep(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = toggleVPad),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -110,7 +121,7 @@ fun QuickAddAccountStep(
                             Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
                         contentDescription = null,
                         tint = typeColor,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(toggleIconSize)
                     )
                     Text(
                         text = transactionType.displayName,
@@ -194,9 +205,9 @@ fun QuickAddAccountStep(
 
         // Account grid
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 88.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            columns = GridCells.Adaptive(minSize = gridMinSize),
+            verticalArrangement = Arrangement.spacedBy(gridSpacing),
+            horizontalArrangement = Arrangement.spacedBy(gridSpacing),
             contentPadding = PaddingValues(bottom = 4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -205,7 +216,11 @@ fun QuickAddAccountStep(
                     account = account,
                     isSelected = account.id == selectedAccountId,
                     transactionType = transactionType,
-                    onClick = { onAccountTapped(account.id) }
+                    onClick = { onAccountTapped(account.id) },
+                    tileSize = tileSize,
+                    tileCorner = tileCorner,
+                    tileIconSize = tileIconSize,
+                    itemSpacing = itemSpacing
                 )
             }
         }
@@ -217,7 +232,11 @@ private fun AccountGridItem(
     account: Account,
     isSelected: Boolean,
     transactionType: TransactionType,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tileSize: androidx.compose.ui.unit.Dp = 72.dp,
+    tileCorner: androidx.compose.ui.unit.Dp = 20.dp,
+    tileIconSize: androidx.compose.ui.unit.Dp = 28.dp,
+    itemSpacing: androidx.compose.ui.unit.Dp = 6.dp
 ) {
     val primaryColor = AppColors.primary
     val accountColor = remember(account.colorHex) {
@@ -234,11 +253,11 @@ private fun AccountGridItem(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(itemSpacing)
     ) {
         GlassSurface(
-            modifier = Modifier.size(72.dp),
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.size(tileSize),
+            shape = RoundedCornerShape(tileCorner),
             glassVariant = GlassVariant.Item,
             hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = accountColor, alpha = 0.15f),
             fallbackColor = accountColor.copy(alpha = 0.15f),
@@ -249,14 +268,14 @@ private fun AccountGridItem(
                 onClick = onClick,
                 modifier = Modifier.fillMaxSize(),
                 color = Color.Transparent,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(tileCorner)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = getAccountIconByName(account.icon),
                         contentDescription = account.name,
                         tint = accountColor,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(tileIconSize)
                     )
                 }
             }

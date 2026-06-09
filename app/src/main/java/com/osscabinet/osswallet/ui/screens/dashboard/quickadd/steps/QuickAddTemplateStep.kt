@@ -83,7 +83,8 @@ fun QuickAddTemplateStep(
     selectedCategoryId: Long?,
     onTemplateSelected: (Template) -> Unit,
     onCategorySelected: (Category) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uiScale: Float = 1f
 ) {
     var query by remember { mutableStateOf("") }
     var categoryQuery by remember { mutableStateOf("") }
@@ -101,14 +102,29 @@ fun QuickAddTemplateStep(
         }
     }
 
+    val columnSpacing = (10f * uiScale).coerceIn(7f, 10f).dp
+    val toggleHeight = (52f * uiScale).coerceIn(40f, 52f).dp
+    val tileSize = (72f * uiScale).coerceIn(56f, 72f).dp
+    val tileCorner = (20f * uiScale).coerceIn(14f, 20f).dp
+    val tileIconSize = (28f * uiScale).coerceIn(20f, 28f).dp
+    val gridMinSize = (88f * uiScale).coerceIn(68f, 88f).dp
+    val gridSpacing = (8f * uiScale).coerceIn(6f, 8f).dp
+    val itemSpacing = (6f * uiScale).coerceIn(4f, 6f).dp
+    val emptyHeightLg = (120f * uiScale).coerceIn(80f, 120f).dp
+    val emptyHeightSm = (80f * uiScale).coerceIn(60f, 80f).dp
+    val badgeSize = (16f * uiScale).coerceIn(12f, 16f).dp
+    val badgeIconSize = (10f * uiScale).coerceIn(8f, 10f).dp
+    val childBadgeSize = (16f * uiScale).coerceIn(12f, 16f).dp
+    val childArrowSize = (12f * uiScale).coerceIn(9f, 12f).dp
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(columnSpacing)
     ) {
         // Segmented toggle
-        SegmentedToggle(showCategories = showCategories, onToggle = { showCategories = it })
+        SegmentedToggle(showCategories = showCategories, onToggle = { showCategories = it }, height = toggleHeight)
 
         if (!showCategories) {
             // ── Template mode ──────────────────────────────────────────────────────
@@ -147,7 +163,7 @@ fun QuickAddTemplateStep(
 
             if (filtered.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    modifier = Modifier.fillMaxWidth().height(emptyHeightLg),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -158,9 +174,9 @@ fun QuickAddTemplateStep(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 88.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    columns = GridCells.Adaptive(minSize = gridMinSize),
+                    verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                     contentPadding = PaddingValues(bottom = 4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -173,7 +189,13 @@ fun QuickAddTemplateStep(
                             onClick = {
                                 keyboardController?.hide()
                                 onTemplateSelected(template)
-                            }
+                            },
+                            tileSize = tileSize,
+                            tileCorner = tileCorner,
+                            tileIconSize = tileIconSize,
+                            itemSpacing = itemSpacing,
+                            badgeSize = badgeSize,
+                            badgeIconSize = badgeIconSize
                         )
                     }
                 }
@@ -224,7 +246,7 @@ fun QuickAddTemplateStep(
                 }
                 if (searchResults.isEmpty()) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        modifier = Modifier.fillMaxWidth().height(emptyHeightLg),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -235,9 +257,9 @@ fun QuickAddTemplateStep(
                     }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 88.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        columns = GridCells.Adaptive(minSize = gridMinSize),
+                        verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                        horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                         contentPadding = PaddingValues(bottom = 4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -251,7 +273,15 @@ fun QuickAddTemplateStep(
                                 onLongPress = if (hasChildren) ({
                                     categoryQuery = ""
                                     categoryNavStack = categoryNavStack + category.id
-                                }) else null
+                                }) else null,
+                                tileSize = tileSize,
+                                tileCorner = tileCorner,
+                                tileIconSize = tileIconSize,
+                                itemSpacing = itemSpacing,
+                                badgeSize = badgeSize,
+                                badgeIconSize = badgeIconSize,
+                                childBadgeSize = childBadgeSize,
+                                childArrowSize = childArrowSize
                             )
                         }
                     }
@@ -327,7 +357,7 @@ fun QuickAddTemplateStep(
 
                         if (visibleItems.isEmpty()) {
                             Box(
-                                modifier = Modifier.fillMaxWidth().height(80.dp),
+                                modifier = Modifier.fillMaxWidth().height(emptyHeightSm),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -338,9 +368,9 @@ fun QuickAddTemplateStep(
                             }
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 88.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                columns = GridCells.Adaptive(minSize = gridMinSize),
+                                verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                                horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                                 contentPadding = PaddingValues(bottom = 4.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -353,7 +383,15 @@ fun QuickAddTemplateStep(
                                         onTap = { onCategorySelected(category) },
                                         onLongPress = if (hasChildren) ({
                                             categoryNavStack = categoryNavStack + category.id
-                                        }) else null
+                                        }) else null,
+                                        tileSize = tileSize,
+                                        tileCorner = tileCorner,
+                                        tileIconSize = tileIconSize,
+                                        itemSpacing = itemSpacing,
+                                        badgeSize = badgeSize,
+                                        badgeIconSize = badgeIconSize,
+                                        childBadgeSize = childBadgeSize,
+                                        childArrowSize = childArrowSize
                                     )
                                 }
                             }
@@ -368,14 +406,14 @@ fun QuickAddTemplateStep(
 }
 
 @Composable
-private fun SegmentedToggle(showCategories: Boolean, onToggle: (Boolean) -> Unit) {
+private fun SegmentedToggle(showCategories: Boolean, onToggle: (Boolean) -> Unit, height: androidx.compose.ui.unit.Dp = 52.dp) {
     val haptics = LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
 
     GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(height),
         shape = RoundedCornerShape(dims.componentCornerRadius),
         glassVariant = GlassVariant.Item,
         fallbackColor = AppColors.recessedSurface
@@ -481,7 +519,13 @@ private fun TemplateGridItem(
     template: Template,
     category: Category?,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    tileSize: androidx.compose.ui.unit.Dp = 72.dp,
+    tileCorner: androidx.compose.ui.unit.Dp = 20.dp,
+    tileIconSize: androidx.compose.ui.unit.Dp = 28.dp,
+    itemSpacing: androidx.compose.ui.unit.Dp = 6.dp,
+    badgeSize: androidx.compose.ui.unit.Dp = 16.dp,
+    badgeIconSize: androidx.compose.ui.unit.Dp = 10.dp
 ) {
     // Always derive color from category
     val fallbackColor = AppColors.recessedSurface
@@ -496,11 +540,11 @@ private fun TemplateGridItem(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(itemSpacing)
     ) {
         GlassSurface(
-            modifier = Modifier.size(72.dp),
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.size(tileSize),
+            shape = RoundedCornerShape(tileCorner),
             glassVariant = GlassVariant.Item,
             hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.18f),
             fallbackColor = bgColor.copy(alpha = 0.18f),
@@ -511,16 +555,16 @@ private fun TemplateGridItem(
                 onClick = onClick,
                 modifier = Modifier.fillMaxSize(),
                 color = Color.Transparent,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(tileCorner)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = getIconByName(category?.iconName),
                         contentDescription = template.name,
                         tint = iconTint,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(tileIconSize)
                     )
-                    if (isSelected) SelectedBadge(primaryColor, onPrimaryColor)
+                    if (isSelected) SelectedBadge(primaryColor, onPrimaryColor, badgeSize, badgeIconSize)
                 }
             }
         }
@@ -543,7 +587,15 @@ private fun CategoryGridItem(
     isSelected: Boolean,
     hasChildren: Boolean,
     onTap: () -> Unit,
-    onLongPress: (() -> Unit)?
+    onLongPress: (() -> Unit)?,
+    tileSize: androidx.compose.ui.unit.Dp = 72.dp,
+    tileCorner: androidx.compose.ui.unit.Dp = 20.dp,
+    tileIconSize: androidx.compose.ui.unit.Dp = 28.dp,
+    itemSpacing: androidx.compose.ui.unit.Dp = 6.dp,
+    badgeSize: androidx.compose.ui.unit.Dp = 16.dp,
+    badgeIconSize: androidx.compose.ui.unit.Dp = 10.dp,
+    childBadgeSize: androidx.compose.ui.unit.Dp = 16.dp,
+    childArrowSize: androidx.compose.ui.unit.Dp = 12.dp
 ) {
     val bgColor = remember(category.colorHex) {
         Color(category.colorHex or (0xFF shl 24))
@@ -554,11 +606,11 @@ private fun CategoryGridItem(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(itemSpacing)
     ) {
         GlassSurface(
-            modifier = Modifier.size(72.dp),
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.size(tileSize),
+            shape = RoundedCornerShape(tileCorner),
             glassVariant = GlassVariant.Item,
             hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.18f),
             fallbackColor = bgColor.copy(alpha = 0.18f),
@@ -573,24 +625,23 @@ private fun CategoryGridItem(
                         onLongClick = onLongPress
                     ),
                 color = Color.Transparent,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(tileCorner)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = getIconByName(category.iconName),
                         contentDescription = category.name,
                         tint = iconTint,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(tileIconSize)
                     )
-                    if (isSelected) SelectedBadge(primaryColor, onPrimaryColor)
-                    // Long-press hint badge (only for parents with children)
+                    if (isSelected) SelectedBadge(primaryColor, onPrimaryColor, badgeSize, badgeIconSize)
                     if (hasChildren && !isSelected) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(4.dp)
-                                .size(16.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                                .size(childBadgeSize)
+                                .clip(RoundedCornerShape(childBadgeSize / 2))
                                 .background(AppColors.contentSecondary.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -598,7 +649,7 @@ private fun CategoryGridItem(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                 contentDescription = "Long press to see sub-categories",
                                 tint = AppColors.contentSecondary,
-                                modifier = Modifier.size(12.dp)
+                                modifier = Modifier.size(childArrowSize)
                             )
                         }
                     }
@@ -618,7 +669,12 @@ private fun CategoryGridItem(
 }
 
 @Composable
-private fun SelectedBadge(primaryColor: Color, onPrimaryColor: Color) {
+private fun SelectedBadge(
+    primaryColor: Color,
+    onPrimaryColor: Color,
+    badgeSize: androidx.compose.ui.unit.Dp = 16.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 10.dp
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -627,8 +683,8 @@ private fun SelectedBadge(primaryColor: Color, onPrimaryColor: Color) {
     ) {
         Box(
             modifier = Modifier
-                .size(16.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(badgeSize)
+                .clip(RoundedCornerShape(badgeSize / 2))
                 .background(primaryColor),
             contentAlignment = Alignment.Center
         ) {
@@ -636,7 +692,7 @@ private fun SelectedBadge(primaryColor: Color, onPrimaryColor: Color) {
                 Icons.Rounded.Check,
                 contentDescription = null,
                 tint = onPrimaryColor,
-                modifier = Modifier.size(10.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
     }

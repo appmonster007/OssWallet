@@ -24,10 +24,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -39,7 +41,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
@@ -93,7 +94,8 @@ import com.osscabinet.ossWallet.ui.theme.WarningColor
 @Composable
 fun CsvImportScreen(
     viewModel: CsvImportViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToDashboard: () -> Unit
 ) {
     val context = LocalContext.current
     val step by viewModel.step.collectAsStateWithLifecycle()
@@ -123,7 +125,7 @@ fun CsvImportScreen(
     if (result != null) {
         ImportResultScreen(
             result = result!!,
-            onViewTransactions = onNavigateBack,
+            onViewTransactions = onNavigateToDashboard,
             onReviewMappings = { viewModel.resetToColumnMapping() },
             onBack = onNavigateBack
         )
@@ -460,71 +462,62 @@ private fun ColumnMappingStep(
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         val isBudgetBakers = session.sourceApp == ImportSourceApp.BUDGET_BAKERS
-            val isCashew = session.sourceApp == ImportSourceApp.CASHEW
+        val isCashew = session.sourceApp == ImportSourceApp.CASHEW
+        val hasPreset = isBudgetBakers || isCashew
 
-            // Auto-detect banner
-            val autoDetectedLabel = when {
-                isBudgetBakers -> "BudgetBakers file detected"
-                isCashew -> "Cashew file detected"
-                else -> null
-            }
-            if (autoDetectedLabel != null) {
-                Surface(
-                    color = AppColors.primaryContainer,
-                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            // Source app dropdown
+            var presetExpanded by remember { mutableStateOf(false) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+            ) {
+                Text(
+                    "Import as:",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+                Box {
+                    Surface(
+                        onClick = { presetExpanded = true },
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        color = AppColors.surfaceContainerLow,
+                        border = BorderStroke(1.dp, AppColors.outlineVariant)
                     ) {
-                        Icon(
-                            Icons.Rounded.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp).padding(top = 2.dp),
-                            tint = AppColors.primary
-                        )
-                        Column {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
                             Text(
-                                autoDetectedLabel,
-                                style = AppTextStyles.cardSectionTitle,
-                                color = AppColors.onPrimaryContainer
-                            )
-                            Text(
-                                "All columns have been mapped automatically. Review below or tap Continue.",
+                                session.sourceApp?.displayName ?: "Select app…",
                                 style = AppTextStyles.caption,
-                                color = AppColors.onPrimaryContainer
+                                color = if (session.sourceApp != null) AppColors.contentPrimary else AppColors.contentSecondary
+                            )
+                            Icon(
+                                imageVector = if (presetExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = AppColors.contentSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = presetExpanded,
+                        onDismissRequest = { presetExpanded = false },
+                        containerColor = AppColors.surfaceContainerHigh,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+                    ) {
+                        ImportSourceApp.entries.forEach { app ->
+                            DropdownMenuItem(
+                                text = { Text(app.displayName, style = AppTextStyles.caption) },
+                                onClick = {
+                                    onApplyPreset(app)
+                                    presetExpanded = false
+                                }
                             )
                         }
                     }
                 }
-            }
-
-            // Preset chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Preset:",
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary
-                )
-                FilterChip(
-                    selected = isBudgetBakers,
-                    onClick = { onApplyPreset(ImportSourceApp.BUDGET_BAKERS) },
-                    label = { Text("BudgetBakers") }
-                )
-                FilterChip(
-                    selected = isCashew,
-                    onClick = { onApplyPreset(ImportSourceApp.CASHEW) },
-                    label = { Text("Cashew") }
-                )
-                FilterChip(
-                    selected = session.sourceApp == ImportSourceApp.GENERIC,
-                    onClick = { onApplyPreset(ImportSourceApp.GENERIC) },
-                    label = { Text("Generic") }
-                )
             }
 
             AeonSectionHeader(
@@ -575,7 +568,7 @@ private fun ColumnMappingStep(
             HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             // Column mapping section
-            if ((isBudgetBakers || isCashew) && !customiseMappings) {
+            if (hasPreset && !customiseMappings) {
                 // Read-only mode for auto-detected BudgetBakers
                 Text(
                     "Column Mappings",
@@ -739,9 +732,33 @@ private fun EntityMappingStep(
 ) {
     if (preview == null) return
 
-    // Parent picker options: "Root (no parent)" sentinel + all root categories
-    val parentOptions = remember(rootCategories) {
-        listOf("" to "Root (no parent)") + rootCategories
+    data class LocalCategoryGroup(
+        val key: String, // parentName or "" for top-level
+        val parentName: String?, // null = top-level items
+        val items: List<Pair<Int, com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap>>
+    )
+
+    val categoryGroups = remember(preview.newCategories) {
+        preview.newCategories
+            .mapIndexed { i, cat -> i to cat }
+            .groupBy { (_, cat) -> cat.suggestedParentName ?: "" }
+            .entries
+            .map { (key, items) ->
+                LocalCategoryGroup(
+                    key = key,
+                    parentName = key.takeIf { it.isNotBlank() },
+                    items = items
+                )
+            }
+            .sortedWith(compareBy(nullsLast()) { it.parentName })
+    }
+
+    // "" = root-level items sentinel, non-empty = parentName
+    var activeCategoryGroupKey by remember { mutableStateOf<String?>(null) }
+
+    // parent group mappings: key=parentName \u2192 existingId (null = create new)
+    val parentGroupMappings = remember(preview.newCategories) {
+        androidx.compose.runtime.mutableStateMapOf<String, String?>()
     }
 
     val accountMappings = remember(preview.allCsvAccounts) {
@@ -758,17 +775,6 @@ private fun EntityMappingStep(
             EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
         }.toTypedArray())
     }
-    // parentSelections: "" = root (no parent), non-empty = existing category ID string
-    val parentSelections = remember(preview.newCategories, rootCategories) {
-        val map = androidx.compose.runtime.mutableStateMapOf<Int, String>()
-        preview.newCategories.forEachIndexed { i, cat ->
-            val suggestedId = cat.suggestedParentName?.let { name ->
-                rootCategories.find { it.second.equals(name, ignoreCase = true) }?.first
-            }
-            map[i] = suggestedId ?: ""
-        }
-        map
-    }
 
     Column(
         modifier = Modifier
@@ -776,118 +782,230 @@ private fun EntityMappingStep(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
-        Text(
-            "Accounts & Categories",
-            style = AppTextStyles.heroAmount,
-            color = AppColors.contentPrimary
-        )
-        Text(
-            "Map each account to an existing one, create new, or exclude it. Excluded accounts and all their transactions will be skipped. For new categories, choose a parent to nest it as a sub-category.",
-            style = AppTextStyles.caption,
-            color = AppColors.contentSecondary
-        )
-
-        if (preview.allCsvAccounts.isNotEmpty()) {
-            Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-            AeonSectionHeader(
-                title = "ACCOUNTS \u2014 ${preview.allCsvAccounts.size} found",
-                trailing = {
-                    TextButton(onClick = { accountMappings.indices.forEach { i -> accountMappings[i] = accountMappings[i].copy(existingId = null) } }) {
-                        Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
-                    }
-                }
+        if (activeCategoryGroupKey == null) {
+            // \u2500\u2500 Top-level view: accounts + category group list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            Text(
+                "Accounts & Categories",
+                style = AppTextStyles.heroAmount,
+                color = AppColors.contentPrimary
             )
-            preview.allCsvAccounts.forEachIndexed { index, acc ->
-                val em = accountMappings.getOrNull(index)
-                val isExcluded = em?.existingId == "__EXCLUDE__"
-                EntityMappingRow(
-                    label = acc.name,
-                    badgeText = if (isExcluded) "${acc.rowCount} rows skipped" else null,
-                    chipText = if (!isExcluded) acc.suggestedExistingName?.let { "matched: $it" } else null,
-                    options = accounts,
-                    selectedId = em?.existingId,
-                    onSelect = { id -> accountMappings[index] = accountMappings[index].copy(existingId = id) },
-                    showExcludeOption = true
+            Text(
+                "Map accounts and categories. Tap a category group to configure its mappings.",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary
+            )
+
+            if (preview.allCsvAccounts.isNotEmpty()) {
+                Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
+                AeonSectionHeader(
+                    title = "ACCOUNTS \u2014 ${preview.allCsvAccounts.size} found",
+                    trailing = {
+                        TextButton(onClick = {
+                            accountMappings.indices.forEach { i ->
+                                accountMappings[i] = accountMappings[i].copy(existingId = null)
+                            }
+                        }) {
+                            Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
+                        }
+                    }
                 )
-            }
-        }
-
-        if (preview.newCategories.isNotEmpty()) {
-            Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-            AeonSectionHeader(
-                title = "CATEGORIES \u2014 ${preview.newCategories.size} new",
-                trailing = {
-                    TextButton(onClick = { categoryMappings.indices.forEach { i -> categoryMappings[i] = categoryMappings[i].copy(existingId = null) } }) {
-                        Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
-                    }
-                }
-            )
-            // Group categories by parent \u2014 lets users map an entire parent group at once
-            val groupedCategories = preview.newCategories
-                .mapIndexed { i, cat -> i to cat }
-                .groupBy { (_, cat) -> cat.suggestedParentName ?: "" }
-                .entries.sortedBy { it.key }
-
-            groupedCategories.forEach { (parentName, indexedCats) ->
-                if (groupedCategories.size > 1) {
-                    val groupLabel = if (parentName.isBlank()) "OTHER" else parentName.uppercase()
-                    androidx.compose.material3.Text(
-                        groupLabel,
-                        style = AppTextStyles.overlineLabel,
-                        color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(
-                            top = AeonTheme.dimensions.spacingMd,
-                            bottom = 2.dp,
-                            start = 2.dp
-                        )
+                preview.allCsvAccounts.forEachIndexed { index, acc ->
+                    val em = accountMappings.getOrNull(index)
+                    val isExcluded = em?.existingId == "__EXCLUDE__"
+                    EntityMappingRow(
+                        label = acc.name,
+                        badgeText = if (isExcluded) "${acc.rowCount} rows skipped" else null,
+                        chipText = if (!isExcluded) acc.suggestedExistingName?.let { "matched: $it" } else null,
+                        options = accounts,
+                        selectedId = em?.existingId,
+                        onSelect = { id -> accountMappings[index] = accountMappings[index].copy(existingId = id) },
+                        showExcludeOption = true
                     )
                 }
-                indexedCats.forEach { (globalIdx, category) ->
-                    Column {
-                        EntityMappingRow(
-                            label = category.name,
-                            badgeText = null,
-                            chipText = category.envelopeId?.let { "#$it" },
-                            options = categories,
-                            selectedId = categoryMappings.getOrNull(globalIdx)?.existingId,
-                            onSelect = { id -> categoryMappings[globalIdx] = categoryMappings[globalIdx].copy(existingId = id) }
-                        )
-                        if (categoryMappings.getOrNull(globalIdx)?.existingId == null) {
-                            Box(modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 3.dp)) {
-                                EntityMappingRow(
-                                    label = "Parent category",
-                                    badgeText = null,
-                                    chipText = null,
-                                    options = parentOptions,
-                                    selectedId = parentSelections[globalIdx] ?: "",
-                                    onSelect = { id -> parentSelections[globalIdx] = id ?: "" },
-                                    showNullOption = false
+            }
+
+            if (categoryGroups.isNotEmpty()) {
+                Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
+                AeonSectionHeader(
+                    title = "CATEGORIES \u2014 ${preview.newCategories.size} new"
+                )
+
+                categoryGroups.forEach { group ->
+                    val mappedCount = group.items.count { (idx, _) ->
+                        categoryMappings.getOrNull(idx)?.existingId != null
+                    }
+                    val allMapped = mappedCount == group.items.size
+
+                    Surface(
+                        onClick = { activeCategoryGroupKey = group.key.ifEmpty { "__ROOT__" } },
+                        color = AppColors.cardSurface,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        border = BorderStroke(0.5.dp, AppColors.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(AeonTheme.dimensions.cardPadding),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = group.parentName ?: "Top-level categories",
+                                    style = AppTextStyles.listItemTitle,
+                                    color = AppColors.contentPrimary
+                                )
+                                Text(
+                                    text = if (group.items.size == 1) "1 category"
+                                           else "${group.items.size} categories",
+                                    style = AppTextStyles.caption,
+                                    color = AppColors.contentSecondary
                                 )
                             }
+                            Surface(
+                                color = if (allMapped) AppColors.primaryContainer else AppColors.accentContainer.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(50)
+                            ) {
+                                Text(
+                                    text = if (allMapped) "Mapped" else "$mappedCount/${group.items.size}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    style = AppTextStyles.chipLabel,
+                                    color = if (allMapped) AppColors.primary else AppColors.contentSecondary
+                                )
+                            }
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = AppColors.contentSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
             }
-        }
 
-        Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
-        AeonDashedButton(
-            onClick = {
-                val resolvedAccountMappings = accountMappings.map { em ->
-                    if (em.existingId == "__EXCLUDE__") em.copy(existingId = null, isExcluded = true) else em
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+            AeonDashedButton(
+                onClick = {
+                    val resolvedAccountMappings = accountMappings.map { em ->
+                        if (em.existingId == "__EXCLUDE__") em.copy(existingId = null, isExcluded = true) else em
+                    }
+                    val resolvedCategoryMappings = categoryMappings.mapIndexed { i, em ->
+                        val cat = preview.newCategories.getOrNull(i)
+                        val parentName = cat?.suggestedParentName
+                        if (em.existingId != null || parentName == null) {
+                            em
+                        } else {
+                            val parentExistingId = parentGroupMappings[parentName]
+                            if (parentExistingId != null) {
+                                em.copy(parentCategoryId = parentExistingId.toLongOrNull())
+                            } else {
+                                em.copy(parentCategoryName = parentName)
+                            }
+                        }
+                    }
+                    onConfirmMappings(resolvedAccountMappings + resolvedCategoryMappings)
+                },
+                text = "Continue to Preview",
+                icon = Icons.AutoMirrored.Rounded.ArrowForward
+            )
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+
+        } else {
+            // \u2500\u2500 Group detail view \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            val activeKey = activeCategoryGroupKey
+            val group = categoryGroups.find { g ->
+                (g.key.isEmpty() && activeKey == "__ROOT__") || g.key == activeKey
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Surface(
+                    onClick = { activeCategoryGroupKey = null },
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back",
+                            tint = AppColors.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            "Back",
+                            style = AppTextStyles.buttonLabel,
+                            color = AppColors.primary
+                        )
+                    }
                 }
-                val resolvedCategoryMappings = categoryMappings.mapIndexed { i, em ->
-                    if (em.existingId == null) {
-                        val parentIdStr = parentSelections[i] ?: ""
-                        em.copy(parentCategoryId = parentIdStr.takeIf { it.isNotEmpty() }?.toLongOrNull())
-                    } else em
+                Spacer(Modifier.weight(1f))
+                if (group != null) {
+                    Text(
+                        group.parentName ?: "Top-level",
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary
+                    )
                 }
-                onConfirmMappings(resolvedAccountMappings + resolvedCategoryMappings)
-            },
-            text = "Continue to Preview",
-            icon = Icons.AutoMirrored.Rounded.ArrowForward
-        )
-        Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+            }
+
+            if (group != null) {
+                // If this group has a named parent and no existing root match, let user map the parent
+                val parentName = group.parentName
+                if (parentName != null) {
+                    val existingRootMatch = rootCategories.find { it.second.equals(parentName, ignoreCase = true) }
+
+                    AeonSectionHeader(title = "PARENT CATEGORY")
+                    if (existingRootMatch != null && parentGroupMappings[parentName] == null) {
+                        // Pre-fill suggested match on first open
+                        parentGroupMappings[parentName] = existingRootMatch.first
+                    }
+                    EntityMappingRow(
+                        label = "\"$parentName\"",
+                        badgeText = null,
+                        chipText = existingRootMatch?.let { "matched: ${it.second}" },
+                        options = rootCategories,
+                        selectedId = parentGroupMappings[parentName],
+                        onSelect = { id -> parentGroupMappings[parentName] = id }
+                    )
+
+                    Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
+                }
+
+                AeonSectionHeader(
+                    title = if (parentName != null) "SUB-CATEGORIES" else "CATEGORIES"
+                )
+                group.items.forEach { (globalIdx, cat) ->
+                    EntityMappingRow(
+                        label = cat.name,
+                        badgeText = null,
+                        chipText = cat.envelopeId?.let { "#$it" },
+                        options = categories,
+                        selectedId = categoryMappings.getOrNull(globalIdx)?.existingId,
+                        onSelect = { id ->
+                            if (globalIdx < categoryMappings.size) {
+                                categoryMappings[globalIdx] = categoryMappings[globalIdx].copy(existingId = id)
+                            }
+                        }
+                    )
+                }
+
+                Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+                AeonDashedButton(
+                    onClick = { activeCategoryGroupKey = null },
+                    text = "Done with this group",
+                    icon = Icons.Rounded.CheckCircle
+                )
+                Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+            }
+        }
     }
 }
 

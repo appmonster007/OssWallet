@@ -45,9 +45,10 @@ enum class MissingEntityPolicy { AUTO_CREATE, SKIP }
 
 data class EntityMapping(
     val unknownName: String,
-    val existingId: String? = null,  // null = create new
+    val existingId: String? = null,   // null = create new
     val entityType: EntityType,
-    val parentCategoryId: Long? = null,  // for CATEGORY + create new: null = root
+    val parentCategoryId: Long? = null,    // existing DB parent ID
+    val parentCategoryName: String? = null, // new-root parent (resolved at import time via categoryMap)
     val isExcluded: Boolean = false
 ) {
     enum class EntityType { ACCOUNT, CATEGORY }

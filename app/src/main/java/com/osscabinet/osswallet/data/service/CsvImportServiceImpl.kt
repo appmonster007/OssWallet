@@ -234,9 +234,13 @@ class CsvImportServiceImpl @Inject constructor(
                 val previewRows = records.drop(1).take(5).map { it.toList() }
                 CsvImportSession(headers, previewRows, emptyMap(), null, ';')
             } else {
-                val headers = firstLine.split(',').map { it.trim().lowercase().replace("\"", "") }
-                val previewRows = bufferedReader.readLines().take(5)
-                    .map { row -> row.split(',').map { it.trim().replace("\"", "") } }
+                val commaFormat = CSVFormat.DEFAULT.builder()
+                    .setDelimiter(',').setQuote('"').setIgnoreEmptyLines(true).setTrim(true).build()
+                val remaining = firstLine + "\n" + bufferedReader.readText()
+                val records = CSVParser.parse(remaining.reader(), commaFormat).records
+                if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ',')
+                val headers = records.first().toList().map { it.trim().lowercase() }
+                val previewRows = records.drop(1).take(5).map { it.toList() }
                 CsvImportSession(headers, previewRows, emptyMap(), null, ',')
             }
         }
@@ -542,9 +546,21 @@ class CsvImportServiceImpl @Inject constructor(
             .map { it.unknownName.lowercase() }
             .toSet()
 
+        // Track colors of newly created root categories so subcategories can inherit them
+        val newCategoryColorMap = mutableMapOf<Long, Int>()
+
+        // Sort: accounts first, then root categories (no parent), then subcategories
+        val sortedMappings = entityMappings.sortedWith(compareBy { em ->
+            when {
+                em.entityType == EntityMapping.EntityType.ACCOUNT -> -1
+                em.parentCategoryId == null && em.parentCategoryName == null -> 0
+                else -> 1
+            }
+        })
+
         database.withTransaction {
             // Apply entity mappings (account / category decisions from the mapping step)
-            entityMappings.forEach { em ->
+            sortedMappings.forEach { em ->
                 when (em.entityType) {
                     EntityMapping.EntityType.ACCOUNT -> {
                         if (em.isExcluded) return@forEach
@@ -573,10 +589,15 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
-                            val catColor = if (em.parentCategoryId == null) {
-                                BRAND_CATEGORY_COLORS.random()
-                            } else {
-                                existingCategoryEntities.find { it.id == em.parentCategoryId }?.colorHex
+                            val resolvedParentId = em.parentCategoryId
+                                ?: em.parentCategoryName?.let { name ->
+                                    categoryMap[name.lowercase()]
+                                        ?: existingCategoryEntities.find { it.name.equals(name, ignoreCase = true) }?.id
+                                }
+                            val catColor = when {
+                                resolvedParentId == null -> BRAND_CATEGORY_COLORS.random()
+                                newCategoryColorMap.containsKey(resolvedParentId) -> newCategoryColorMap[resolvedParentId]!!
+                                else -> existingCategoryEntities.find { it.id == resolvedParentId }?.colorHex
                                     ?: BRAND_CATEGORY_COLORS.random()
                             }
                             categoryDao.insertCategory(
@@ -586,11 +607,13 @@ class CsvImportServiceImpl @Inject constructor(
                                     iconName = "Category",
                                     colorHex = catColor,
                                     isDefault = false,
-                                    parentId = em.parentCategoryId
+                                    parentId = resolvedParentId
                                 )
                             )
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = insertedId
+                            if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
                     }
                 }
@@ -1080,9 +1103,18 @@ class CsvImportServiceImpl @Inject constructor(
             .filter { it.entityType == EntityMapping.EntityType.ACCOUNT && it.isExcluded }
             .map { it.unknownName.lowercase() }.toSet()
 
+        val newCategoryColorMap = mutableMapOf<Long, Int>()
+        val sortedMappings = entityMappings.sortedWith(compareBy { em ->
+            when {
+                em.entityType == EntityMapping.EntityType.ACCOUNT -> -1
+                em.parentCategoryId == null && em.parentCategoryName == null -> 0
+                else -> 1
+            }
+        })
+
         database.withTransaction {
             // Apply entity mappings
-            entityMappings.forEach { em ->
+            sortedMappings.forEach { em ->
                 when (em.entityType) {
                     EntityMapping.EntityType.ACCOUNT -> {
                         if (em.isExcluded) return@forEach
@@ -1104,19 +1136,26 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
-                            val catColor = if (em.parentCategoryId == null) {
-                                BRAND_CATEGORY_COLORS.random()
-                            } else {
-                                existingCategoryEntities.find { it.id == em.parentCategoryId }?.colorHex
+                            val resolvedParentId = em.parentCategoryId
+                                ?: em.parentCategoryName?.let { name ->
+                                    categoryMap[name.lowercase()]
+                                        ?: existingCategoryEntities.find { it.name.equals(name, ignoreCase = true) }?.id
+                                }
+                            val catColor = when {
+                                resolvedParentId == null -> BRAND_CATEGORY_COLORS.random()
+                                newCategoryColorMap.containsKey(resolvedParentId) -> newCategoryColorMap[resolvedParentId]!!
+                                else -> existingCategoryEntities.find { it.id == resolvedParentId }?.colorHex
                                     ?: BRAND_CATEGORY_COLORS.random()
                             }
                             categoryDao.insertCategory(CategoryEntity(
                                 id = 0, name = em.unknownName, iconName = "Category",
                                 colorHex = catColor, isDefault = false,
-                                parentId = em.parentCategoryId
+                                parentId = resolvedParentId
                             ))
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = insertedId
+                            if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
                     }
                 }
@@ -1380,8 +1419,17 @@ class CsvImportServiceImpl @Inject constructor(
         var skipped = 0
         val errors = mutableListOf<ParseError>()
 
+        val newCategoryColorMap = mutableMapOf<Long, Int>()
+        val sortedMappings = entityMappings.sortedWith(compareBy { em ->
+            when {
+                em.entityType == EntityMapping.EntityType.ACCOUNT -> -1
+                em.parentCategoryId == null && em.parentCategoryName == null -> 0
+                else -> 1
+            }
+        })
+
         database.withTransaction {
-            entityMappings.forEach { em ->
+            sortedMappings.forEach { em ->
                 when (em.entityType) {
                     EntityMapping.EntityType.ACCOUNT -> {
                         val id = em.existingId ?: UUID.randomUUID().toString()
@@ -1402,10 +1450,15 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId != null) {
                             categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
                         } else {
-                            val catColor = if (em.parentCategoryId == null) {
-                                BRAND_CATEGORY_COLORS.random()
-                            } else {
-                                existingCategories.values.find { it.id == em.parentCategoryId }?.colorHex
+                            val resolvedParentId = em.parentCategoryId
+                                ?: em.parentCategoryName?.let { name ->
+                                    categoryMap[name.lowercase()]
+                                        ?: existingCategories.values.find { it.name.equals(name, ignoreCase = true) }?.id
+                                }
+                            val catColor = when {
+                                resolvedParentId == null -> BRAND_CATEGORY_COLORS.random()
+                                newCategoryColorMap.containsKey(resolvedParentId) -> newCategoryColorMap[resolvedParentId]!!
+                                else -> existingCategories.values.find { it.id == resolvedParentId }?.colorHex
                                     ?: BRAND_CATEGORY_COLORS.random()
                             }
                             categoryDao.insertCategory(
@@ -1415,11 +1468,13 @@ class CsvImportServiceImpl @Inject constructor(
                                     iconName = "Category",
                                     colorHex = catColor,
                                     isDefault = false,
-                                    parentId = em.parentCategoryId
+                                    parentId = resolvedParentId
                                 )
                             )
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = insertedId
+                            if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
                     }
                 }

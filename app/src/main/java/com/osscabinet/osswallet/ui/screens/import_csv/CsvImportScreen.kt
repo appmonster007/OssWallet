@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.import_csv
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -28,26 +30,25 @@ import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,21 +58,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
+import com.osscabinet.ossWallet.ui.components.AeonSectionHeader
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -127,7 +135,9 @@ fun CsvImportScreen(
             title = { Text("Something went wrong") },
             text = { Text(error ?: "") },
             confirmButton = {
-                TextButton(onClick = { viewModel.clearError() }) { Text("OK") }
+                TextButton(onClick = { viewModel.clearError() }) { 
+                    Text("OK", style = AppTextStyles.buttonLabel, color = AppColors.primary) 
+                }
             }
         )
     }
@@ -147,25 +157,19 @@ fun CsvImportScreen(
                             )
                             .padding(horizontal = AeonTheme.dimensions.screenPadding)
                     ) {
-                        // Step progress indicator
-                        LinearProgressIndicator(
-                            progress = { (stepIndex + 1) / 3f },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = AppColors.primary,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Step ${stepIndex + 1} of 3",
-                            style = AppTextStyles.chipLabel,
-                            color = AppColors.contentSecondary
-                        )
+                        StepProgressIndicator(stepIndex)
                         Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
 
                         // Content with loading overlay
                         Box(modifier = Modifier.fillMaxSize()) {
-                            // Step content — dimmed while loading
-                            Box(modifier = Modifier.alpha(if (isLoading) 0.4f else 1f)) {
-                                when (step) {
+                            if (isLoading && session == null) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = AppColors.primary)
+                                }
+                            } else {
+                                // Step content — dimmed while loading
+                                Box(modifier = Modifier.alpha(if (isLoading) 0.4f else 1f)) {
+                                    when (step) {
                                     is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
                                         session = session,
                                         fileLoadError = if (session == null) error else null,
@@ -193,6 +197,7 @@ fun CsvImportScreen(
                                     )
                                 }
                             }
+                        }
 
                             // Loading banner — bottom-docked, contextual message
                             if (isLoading) {
@@ -246,7 +251,7 @@ fun CsvImportScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnMappingStep(
-    session: com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession?,
+    session: CsvImportSession?,
     fileLoadError: String?,
     onLoadFile: () -> Unit,
     onUpdateMapping: (OssWalletField, Int?) -> Unit,
@@ -254,6 +259,13 @@ private fun ColumnMappingStep(
     onNext: () -> Unit,
     isLoading: Boolean
 ) {
+    var customiseMappings by remember { mutableStateOf(false) }
+
+    // Reset customization view when preset changes
+    LaunchedEffect(session?.sourceApp) {
+        customiseMappings = false
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -267,26 +279,22 @@ private fun ColumnMappingStep(
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
                 ) {
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingXl))
-                    Icon(
-                        Icons.Rounded.BrokenImage,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = AppColors.error
-                    )
-                    Text(
-                        "File could not be opened",
-                        style = AppTextStyles.heroAmount,
-                        color = AppColors.contentPrimary
+                    AeonHeroHeader(
+                        title = "File Error",
+                        subtitle = "Could not open CSV file",
+                        iconName = "BrokenImage",
+                        accentColorHex = "#E53935", // error color
+                        isLeftAligned = false
                     )
                     Text(
                         "The file may have been moved or is not a valid CSV. Try choosing a different file.",
                         style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
+                        color = AppColors.contentSecondary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg)
                     )
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
                     AeonDashedButton(
                         onClick = onLoadFile,
                         text = "Try Another File",
@@ -298,24 +306,21 @@ private fun ColumnMappingStep(
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                    verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl)
                 ) {
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingXl))
-                    Icon(
-                        Icons.Rounded.FileOpen,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = AppColors.contentSecondary
+                    AeonHeroHeader(
+                        title = "Import Transactions",
+                        subtitle = "Supports BudgetBakers and Generic CSV",
+                        iconName = "FileOpen",
+                        accentColorHex = "#004D5F", // brand primary
+                        isLeftAligned = false
                     )
                     Text(
-                        "Import your transactions",
-                        style = AppTextStyles.heroAmount,
-                        color = AppColors.contentPrimary
-                    )
-                    Text(
-                        "Supports BudgetBakers (Wallet) exports and any CSV with a header row.",
+                        "Supported formats include Wallet by BudgetBakers, Money Manager, and any CSV with a valid header row.",
                         style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg)
                     )
                     // Supported apps chips (informational)
                     Row(
@@ -335,7 +340,6 @@ private fun ColumnMappingStep(
                             }
                         }
                     }
-                    Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
                     AeonDashedButton(
                         onClick = onLoadFile,
                         text = "Choose CSV File",
@@ -345,7 +349,6 @@ private fun ColumnMappingStep(
             }
         } else {
             val isBudgetBakers = session.sourceApp == ImportSourceApp.BUDGET_BAKERS
-            var customiseMappings by remember { mutableStateOf(false) }
 
             // Auto-detect banner
             if (isBudgetBakers) {
@@ -402,15 +405,13 @@ private fun ColumnMappingStep(
                 )
             }
 
-            // Preview table
-            Text(
-                "Preview — first ${session.previewRows.size} rows",
-                style = AppTextStyles.formSectionLabel,
-                color = AppColors.contentSecondary
+            AeonSectionHeader(
+                title = "Preview \u2014 first ${session.previewRows.size} rows",
             )
             Surface(
                 color = AppColors.cardSurface,
-                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                border = BorderStroke(0.5.dp, AppColors.outlineVariant)
             ) {
                 Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     Column {
@@ -419,7 +420,7 @@ private fun ColumnMappingStep(
                             session.headers.forEach { header ->
                                 Text(
                                     text = header,
-                                    modifier = Modifier.width(120.dp).padding(horizontal = 8.dp, vertical = 6.dp),
+                                    modifier = Modifier.width(120.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                                     style = AppTextStyles.tableColumnHeader,
                                     color = AppColors.contentSecondary,
                                     maxLines = 1,
@@ -435,7 +436,7 @@ private fun ColumnMappingStep(
                                 row.forEach { cell ->
                                     Text(
                                         text = cell,
-                                        modifier = Modifier.width(120.dp).padding(horizontal = 8.dp, vertical = 6.dp),
+                                        modifier = Modifier.width(120.dp).padding(horizontal = 12.dp, vertical = 8.dp),
                                         style = AppTextStyles.caption,
                                         color = AppColors.contentSecondary,
                                         maxLines = 1,
@@ -487,7 +488,7 @@ private fun ColumnMappingStep(
                     }
                 }
                 TextButton(onClick = { customiseMappings = true }) {
-                    Text("Customise mappings", style = AppTextStyles.caption)
+                    Text("Customise mappings", style = AppTextStyles.buttonLabel, color = AppColors.primary)
                 }
             } else {
                 // Editable dropdown mapping
@@ -516,23 +517,46 @@ private fun ColumnMappingStep(
                                 color = AppColors.contentPrimary
                             )
                             Spacer(Modifier.width(8.dp))
-                            ExposedDropdownMenuBox(
-                                expanded = expanded,
-                                onExpandedChange = { expanded = it },
-                                modifier = Modifier.weight(1.5f)
-                            ) {
-                                OutlinedTextField(
-                                    value = selectedText,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                                    textStyle = AppTextStyles.caption,
-                                    singleLine = true
-                                )
-                                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            // Trigger selection box
+                            Box(modifier = Modifier.weight(1.5f)) {
+                                Surface(
+                                    onClick = { expanded = true },
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                    color = AppColors.surfaceContainerLow,
+                                    border = BorderStroke(1.dp, AppColors.outlineVariant),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = selectedText,
+                                            style = AppTextStyles.caption,
+                                            color = if (currentColIndex != null) AppColors.contentPrimary else AppColors.contentSecondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Icon(
+                                            imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                            contentDescription = null,
+                                            tint = AppColors.contentSecondary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false },
+                                    containerColor = AppColors.surfaceContainerHigh,
+                                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                                    modifier = Modifier.widthIn(min = 160.dp)
+                                ) {
                                     DropdownMenuItem(
-                                        text = { Text("Skip") },
+                                        text = { Text("Skip", style = AppTextStyles.caption) },
                                         onClick = {
                                             onUpdateMapping(field, null)
                                             expanded = false
@@ -540,7 +564,7 @@ private fun ColumnMappingStep(
                                     )
                                     session.headers.forEachIndexed { index, header ->
                                         DropdownMenuItem(
-                                            text = { Text(header) },  // no index prefix
+                                            text = { Text(header, style = AppTextStyles.caption) },
                                             onClick = {
                                                 onUpdateMapping(field, index)
                                                 expanded = false
@@ -550,14 +574,14 @@ private fun ColumnMappingStep(
                                 }
                             }
                         }
-                        // Helper text for ambiguous fields — only when not skipped
+                        // Helper text for ambiguous fields
                         val helperText = when (field) {
                             OssWalletField.IS_TRANSFER -> "Identifies paired transfer rows (e.g. credit card payments)"
                             OssWalletField.WARRANTY_MONTHS -> "Number of months warranty remaining on a purchased item"
                             OssWalletField.LABELS -> "Comma or pipe-separated tags attached to the transaction"
                             else -> null
                         }
-                        if (helperText != null && currentColIndex != null) {
+                        if (helperText != null) {
                             Text(
                                 helperText,
                                 style = AppTextStyles.caption,
@@ -586,7 +610,7 @@ private fun ColumnMappingStep(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EntityMappingStep(
-    preview: com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview?,
+    preview: ImportPreview?,
     accounts: List<Pair<String, String>>,
     categories: List<Pair<String, String>>,
     onConfirmMappings: (List<EntityMapping>) -> Unit
@@ -634,22 +658,14 @@ private fun EntityMappingStep(
 
         if (preview.newAccounts.isNotEmpty()) {
             Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "ACCOUNTS — ${preview.newAccounts.size} new",
-                    style = AppTextStyles.formSectionLabel,
-                    color = AppColors.contentSecondary
-                )
-                Row {
+            AeonSectionHeader(
+                title = "ACCOUNTS \u2014 ${preview.newAccounts.size} new",
+                trailing = {
                     TextButton(onClick = { accountMappings.indices.forEach { i -> accountMappings[i] = accountMappings[i].copy(existingId = null) } }) {
-                        Text("Create all new", style = AppTextStyles.caption)
+                        Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
                     }
                 }
-            }
+            )
             preview.newAccounts.forEachIndexed { index, name ->
                 EntityMappingRow(
                     label = name,
@@ -664,22 +680,14 @@ private fun EntityMappingStep(
 
         if (preview.newCategories.isNotEmpty()) {
             Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "CATEGORIES — ${preview.newCategories.size} new",
-                    style = AppTextStyles.formSectionLabel,
-                    color = AppColors.contentSecondary
-                )
-                Row {
+            AeonSectionHeader(
+                title = "CATEGORIES \u2014 ${preview.newCategories.size} new",
+                trailing = {
                     TextButton(onClick = { categoryMappings.indices.forEach { i -> categoryMappings[i] = categoryMappings[i].copy(existingId = null) } }) {
-                        Text("Create all new", style = AppTextStyles.caption)
+                        Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
                     }
                 }
-            }
+            )
             preview.newCategories.forEachIndexed { index, category ->
                 Column {
                     EntityMappingRow(
@@ -693,20 +701,21 @@ private fun EntityMappingStep(
                     // Parent category picker for custom categories when "Create New" is selected
                     if (category.isCustomCategory && categoryMappings.getOrNull(index)?.existingId == null) {
                         val parentId = parentSelections[index]
-                        val parentName = parentId?.let { id -> categories.find { it.first == id }?.second }
+                        val isUnresolved = parentId == null
                         Surface(
-                            color = AppColors.cardSurfaceRaised,
+                            color = if (isUnresolved) AppColors.errorContainer.copy(alpha = 0.1f) else AppColors.cardSurfaceRaised,
                             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                            border = if (isUnresolved) BorderStroke(1.dp, AppColors.error.copy(alpha = 0.5f)) else null,
                             modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 4.dp)
                         ) {
                             EntityMappingRow(
-                                label = "Parent category (required)",
+                                label = "Parent category (Required)",
                                 badgeText = null,
                                 chipText = null,
                                 options = categories,
                                 selectedId = parentId,
                                 onSelect = { id -> parentSelections[index] = id },
-                                isError = parentId == null
+                                isError = isUnresolved
                             )
                         }
                     }
@@ -784,29 +793,50 @@ private fun EntityMappingRow(
                 }
             }
             Spacer(Modifier.width(8.dp))
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                modifier = Modifier.weight(1.4f)
-            ) {
-                OutlinedTextField(
-                    value = selectedName,
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    textStyle = AppTextStyles.caption,
-                    singleLine = true,
-                    isError = isError
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Box(modifier = Modifier.weight(1.4f)) {
+                Surface(
+                    onClick = { expanded = true },
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    color = if (isError) AppColors.errorContainer.copy(alpha = 0.1f) else AppColors.surfaceContainerLow,
+                    border = BorderStroke(1.dp, if (isError) AppColors.error else AppColors.outlineVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = selectedName,
+                            style = AppTextStyles.caption,
+                            color = if (selectedId != null) AppColors.contentPrimary else AppColors.contentSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = AppColors.contentSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    containerColor = AppColors.surfaceContainerHigh,
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    modifier = Modifier.widthIn(min = 160.dp)
+                ) {
                     DropdownMenuItem(
-                        text = { Text("Create New") },
+                        text = { Text("Create New", style = AppTextStyles.caption) },
                         onClick = { onSelect(null); expanded = false }
                     )
                     options.forEach { (id, name) ->
                         DropdownMenuItem(
-                            text = { Text(name) },
+                            text = { Text(name, style = AppTextStyles.caption) },
                             onClick = { onSelect(id); expanded = false }
                         )
                     }
@@ -820,7 +850,7 @@ private fun EntityMappingRow(
 
 @Composable
 private fun PreviewStep(
-    preview: com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview?,
+    preview: ImportPreview?,
     onSetDuplicatePolicy: (DuplicatePolicy) -> Unit,
     onToggleDuplicate: (Int) -> Unit,
     onImport: () -> Unit,
@@ -845,25 +875,20 @@ private fun PreviewStep(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
-        // Summary card — 2×2 stat grid
-        Surface(
-            color = AppColors.cardSurface,
-            shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+        // Summary card
+        AeonExpressiveCard(
+            title = "Import Summary",
+            icon = Icons.Rounded.Info,
+            containerColor = AppColors.cardSurface,
         ) {
-            Column(modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
-                Text(
-                    "Import Summary",
-                    style = AppTextStyles.cardSectionTitle,
-                    color = AppColors.contentPrimary
-                )
-                Spacer(Modifier.height(AeonTheme.dimensions.spacingMd))
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     // Top-left: hero — effective import count
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             effectiveCount.toString(),
                             style = AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Bold),
-                            color = AppColors.contentPrimary
+                            color = AppColors.primary
                         )
                         Text(
                             "will be imported",
@@ -885,7 +910,6 @@ private fun PreviewStep(
                         )
                     }
                 }
-                Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                 Row(modifier = Modifier.fillMaxWidth()) {
                     // Bottom-left: duplicates
                     Column(modifier = Modifier.weight(1f)) {
@@ -959,44 +983,71 @@ private fun PreviewStep(
                 color = AppColors.contentSecondary
             )
             DuplicatePolicy.entries.forEach { policy ->
+                val (title, icon) = when (policy) {
+                    DuplicatePolicy.SKIP -> "Skip duplicates" to Icons.Rounded.Info
+                    DuplicatePolicy.IMPORT_BOTH -> "Import both" to Icons.Rounded.AutoAwesome
+                    DuplicatePolicy.REPLACE_EXISTING -> "Replace existing" to Icons.Rounded.Warning
+                }
+
                 val consequenceText = when (policy) {
                     DuplicatePolicy.SKIP -> "${preview.duplicates.size} existing transaction${if (preview.duplicates.size != 1) "s" else ""} will not be overwritten"
                     DuplicatePolicy.IMPORT_BOTH -> "Creates ${preview.duplicates.size} additional transaction${if (preview.duplicates.size != 1) "s" else ""} alongside existing ones"
                     DuplicatePolicy.REPLACE_EXISTING -> "${preview.duplicates.size} existing transaction${if (preview.duplicates.size != 1) "s" else ""} will be permanently updated"
                 }
+                val isSelected = duplicatePolicy == policy
                 val consequenceColor = if (policy == DuplicatePolicy.REPLACE_EXISTING) AppColors.error else AppColors.contentSecondary
-                Row(
-                    verticalAlignment = Alignment.Top,
+
+                Surface(
+                    onClick = {
+                        duplicatePolicy = policy
+                        onSetDuplicatePolicy(policy)
+                    },
+                    color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.15f) else AppColors.cardSurface,
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    border = if (isSelected) BorderStroke(1.dp, AppColors.accent) else BorderStroke(0.5.dp, AppColors.outlineVariant),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    RadioButton(
-                        selected = duplicatePolicy == policy,
-                        onClick = {
-                            duplicatePolicy = policy
-                            onSetDuplicatePolicy(policy)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = {
+                                duplicatePolicy = policy
+                                onSetDuplicatePolicy(policy)
+                            }
+                        )
+                        Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) AppColors.accent else AppColors.contentSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = title,
+                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                                color = if (isSelected) AppColors.contentPrimary else AppColors.contentSecondary
+                            )
+                            Text(
+                                consequenceText,
+                                style = AppTextStyles.caption,
+                                color = if (isSelected) AppColors.contentPrimary.copy(alpha = 0.8f) else consequenceColor
+                            )
                         }
-                    )
-                    Column(modifier = Modifier.padding(top = 12.dp)) {
-                        Text(
-                            text = when (policy) {
-                                DuplicatePolicy.SKIP -> "Skip duplicates"
-                                DuplicatePolicy.IMPORT_BOTH -> "Import both"
-                                DuplicatePolicy.REPLACE_EXISTING -> "Replace existing"
-                            },
-                            style = AppTextStyles.listItemTitle,
-                            color = AppColors.contentPrimary
-                        )
-                        Text(
-                            consequenceText,
-                            style = AppTextStyles.caption,
-                            color = consequenceColor
-                        )
                     }
                 }
             }
 
             TextButton(onClick = { showDuplicates = !showDuplicates }) {
-                Text(if (showDuplicates) "Hide Duplicates" else "Show ${preview.duplicates.size} Duplicates")
+                Text(
+                    if (showDuplicates) "Hide Duplicates" else "Show ${preview.duplicates.size} Duplicates",
+                    style = AppTextStyles.buttonLabel,
+                    color = AppColors.primary
+                )
             }
 
             AnimatedVisibility(visible = showDuplicates) {
@@ -1050,6 +1101,7 @@ private fun PreviewStep(
                 Text(
                     if (showErrors) "Hide ${preview.parseErrors.size} Errors"
                     else "Show ${preview.parseErrors.size} Parse Errors",
+                    style = AppTextStyles.buttonLabel,
                     color = AppColors.error
                 )
             }
@@ -1070,7 +1122,7 @@ private fun PreviewStep(
         AeonDashedButton(
             onClick = onImport,
             text = if (isLoading) "Importing…" else "Import $effectiveCount transaction${if (effectiveCount != 1) "s" else ""}",
-            icon = if (isLoading) Icons.Rounded.CheckCircle else Icons.Rounded.CheckCircle,
+            icon = Icons.Rounded.CheckCircle,
             enabled = effectiveCount > 0 && !isLoading
         )
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
@@ -1081,7 +1133,7 @@ private fun PreviewStep(
 
 @Composable
 private fun ImportResultScreen(
-    result: com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary,
+    result: ImportSummary,
     onViewTransactions: () -> Unit,
     onReviewMappings: () -> Unit,
     onBack: () -> Unit
@@ -1102,31 +1154,35 @@ private fun ImportResultScreen(
     ) {
         Spacer(Modifier.height(AeonTheme.dimensions.spacingXl))
 
-        val (icon, iconTint, headline, subLine) = when {
+        val (iconName, iconTint, headline, subLine) = when {
             isFullSuccess -> Quad(
-                Icons.Rounded.CheckCircle,
+                "CheckCircle",
                 AppColors.positive,
                 "Import complete",
                 "${result.imported} transaction${if (result.imported != 1) "s" else ""} added"
             )
             isPartial -> Quad(
-                Icons.Rounded.Warning,
+                "Warning",
                 WarningColor,
                 "Import finished with issues",
-                "${result.imported} added · ${result.errors.size} failed"
+                "${result.imported} added \u00b7 ${result.errors.size} failed"
             )
             else -> Quad(
-                Icons.Rounded.Info,
+                "Info",
                 AppColors.contentSecondary,
                 "Nothing was imported",
                 if (result.skipped > 0) "All rows already exist in OssWallet"
-                else "All rows failed to parse — check your column mappings"
+                else "All rows failed to parse \u2014 check your column mappings"
             )
         }
 
-        Icon(icon, contentDescription = null, modifier = Modifier.size(64.dp), tint = iconTint)
-        Text(headline, style = AppTextStyles.heroAmount, color = AppColors.contentPrimary)
-        Text(subLine, style = AppTextStyles.listItemTitle, color = AppColors.contentSecondary)
+        AeonHeroHeader(
+            title = headline,
+            subtitle = subLine,
+            iconName = iconName,
+            accentColorHex = String.format("#%06X", 0xFFFFFF and iconTint.toArgb()),
+            isLeftAligned = false
+        )
 
         if (result.skipped > 0 && !isZero) {
             Text(
@@ -1139,7 +1195,11 @@ private fun ImportResultScreen(
         if (isPartial) {
             var showErrors by remember { mutableStateOf(false) }
             TextButton(onClick = { showErrors = !showErrors }) {
-                Text(if (showErrors) "Hide errors" else "Show ${result.errors.size} errors", color = AppColors.error)
+                Text(
+                    if (showErrors) "Hide errors" else "Show ${result.errors.size} errors",
+                    style = AppTextStyles.buttonLabel,
+                    color = AppColors.error
+                )
             }
             AnimatedVisibility(visible = showErrors) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1167,14 +1227,50 @@ private fun ImportResultScreen(
         }
 
         TextButton(onClick = onBack) {
-            Text("Back to Settings", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+            Text("Back to Settings", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
         }
     }
 }
 
-// Helper for grouping 4 values without a data class
-private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
-private operator fun <A, B, C, D> Quad<A, B, C, D>.component1() = a
-private operator fun <A, B, C, D> Quad<A, B, C, D>.component2() = b
-private operator fun <A, B, C, D> Quad<A, B, C, D>.component3() = c
-private operator fun <A, B, C, D> Quad<A, B, C, D>.component4() = d
+@Composable
+private fun StepProgressIndicator(stepIndex: Int) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+        ) {
+            repeat(3) { index ->
+                val isActive = index == stepIndex
+                val isCompleted = index < stepIndex
+                val color = when {
+                    isActive -> AppColors.primary
+                    isCompleted -> AppColors.primary.copy(alpha = 0.6f)
+                    else -> AppColors.outlineVariant
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .background(color, RoundedCornerShape(2.dp))
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = when (stepIndex) {
+                0 -> "Step 1: Column Mapping"
+                1 -> "Step 2: Unrecognised Items"
+                else -> "Step 3: Review & Confirm"
+            },
+            style = AppTextStyles.overlineLabel,
+            color = AppColors.contentSecondary
+        )
+    }
+}
+
+// Helper for grouping 4 values
+data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
+operator fun <A, B, C, D> Quad<A, B, C, D>.component1() = a
+operator fun <A, B, C, D> Quad<A, B, C, D>.component2() = b
+operator fun <A, B, C, D> Quad<A, B, C, D>.component3() = c
+operator fun <A, B, C, D> Quad<A, B, C, D>.component4() = d

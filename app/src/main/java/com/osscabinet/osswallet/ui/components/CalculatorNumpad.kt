@@ -49,10 +49,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
+import com.osscabinet.ossWallet.ui.theme.scaledSp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import com.osscabinet.ossWallet.ui.calculator.CalculationHistoryItem
 import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
@@ -75,13 +77,11 @@ fun CalculatorNumpad(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
     allowSigned: Boolean = false,
-    maxHeightFraction: Float = 0.50f,
-    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit, displayScale: Float) -> Unit)? = null
+    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
 ) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val keyHeight = ((screenHeight * maxHeightFraction - 90.dp - 24.dp - 40.dp) / 5)
-        .coerceIn(44.dp, 68.dp)
-    val displayScale = (keyHeight.value / 68f).coerceIn(0.75f, 1.0f)
+    val uiScale = AeonTheme.uiScale
+    val keyHeight = scaledDp(68f, uiScale, min = 44f, max = 76f)
+    val displayScale = uiScale.coerceIn(0.75f, 1.12f)
 
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
@@ -128,7 +128,7 @@ fun CalculatorNumpad(
         modifier = modifier.padding(horizontal = 24.dp),
         display = {
             if (header != null) {
-                header(state, onSaveInternal, { showHistory = true }, displayScale)
+                header(state, onSaveInternal, { showHistory = true })
             } else {
                 CalculatorDefaults.StandardDisplay(
                     state = state,
@@ -195,11 +195,11 @@ object CalculatorDefaults {
         modifier: Modifier = Modifier,
         displayScale: Float = 1f
     ) {
-        val cornerRadius = (28f * displayScale).coerceIn(20f, 28f).dp
-        val hPad = (16f * displayScale).coerceIn(12f, 16f).dp
-        val vPad = (20f * displayScale).coerceIn(14f, 20f).dp
-        val historyContainerSize = (28f * displayScale).coerceIn(20f, 28f).dp
-        val historyIconSize = (18f * displayScale).coerceIn(13f, 18f).dp
+        val cornerRadius = scaledDp(28f, displayScale, min = 20f, max = 28f)
+        val hPad = scaledDp(16f, displayScale, min = 12f, max = 16f)
+        val vPad = scaledDp(20f, displayScale, min = 14f, max = 20f)
+        val historyContainerSize = scaledDp(28f, displayScale, min = 20f, max = 28f)
+        val historyIconSize = scaledDp(18f, displayScale, min = 13f, max = 18f)
 
         Surface(
             shape = RoundedCornerShape(cornerRadius),
@@ -265,11 +265,11 @@ fun CalculatorDisplay(
     displayScale: Float = 1f
 ) {
     val displayResult = result.replace("-", "−")
-    val resultFontSize = (44f * displayScale).coerceIn(33f, 44f).sp
-    val expressionFontSize = (14f * displayScale).coerceIn(11f, 14f).sp
-    val confirmButtonSize = (52f * displayScale).coerceIn(40f, 52f).dp
-    val confirmIconSize = (24f * displayScale).coerceIn(18f, 24f).dp
-    val spacerWidth = (20f * displayScale).coerceIn(12f, 20f).dp
+    val resultFontSize = scaledSp(44f, displayScale, min = 33f, max = 49f)
+    val expressionFontSize = scaledSp(14f, displayScale, min = 11f, max = 16f)
+    val confirmButtonSize = scaledDp(52f, displayScale, min = 40f, max = 58f)
+    val confirmIconSize = scaledDp(24f, displayScale, min = 18f, max = 27f)
+    val spacerWidth = scaledDp(20f, displayScale, min = 12f, max = 22f)
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -463,13 +463,13 @@ fun CalculatorKey(
     isAccent: Boolean = false,
     keyHeight: Dp = 68.dp
 ) {
-    val scaleFactor = (keyHeight.value / 68f).coerceIn(0f, 1f)
-    val cornerRadius = (24.dp.value * scaleFactor).coerceIn(12f, 24f).dp
-    val iconSize = (22f * scaleFactor).coerceIn(16f, 22f).dp
+    val scaleFactor = (keyHeight.value / 68f).coerceIn(0f, 1.5f)
+    val cornerRadius = scaledDp(24f, scaleFactor, min = 12f, max = 27f)
+    val iconSize = scaledDp(22f, scaleFactor, min = 16f, max = 25f)
     val labelFontSize = if (label.length > 1)
-        (16f * scaleFactor).coerceIn(11f, 16f).sp
+        scaledSp(16f, scaleFactor, min = 11f, max = 18f)
     else
-        (24f * scaleFactor).coerceIn(14f, 24f).sp
+        scaledSp(24f, scaleFactor, min = 14f, max = 27f)
 
     val backgroundColor = when {
         isAccent -> AppColors.primary

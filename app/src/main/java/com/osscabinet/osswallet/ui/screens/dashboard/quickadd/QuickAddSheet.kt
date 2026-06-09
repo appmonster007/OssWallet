@@ -43,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -55,8 +54,10 @@ import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAccountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAmountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddTemplateStep
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import java.math.BigDecimal
@@ -192,14 +193,13 @@ private fun QuickAddSheetContent(
     hideKeyboard: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp
-    val uiScale = (screenHeight / 860f).coerceIn(0.75f, 1.0f)
+    val uiScale = AeonTheme.uiScale
 
-    val navBtnSize = (36f * uiScale).coerceIn(28f, 36f).dp
-    val navIconSize = (18f * uiScale).coerceIn(14f, 18f).dp
-    val navVPad = (6f * uiScale).coerceIn(3f, 6f).dp
-    val dotActive = (8f * uiScale).coerceIn(6f, 8f).dp
-    val dotInactive = (6f * uiScale).coerceIn(5f, 6f).dp
+    val navBtnSize = scaledDp(36f, uiScale, min = 28f)
+    val navIconSize = scaledDp(18f, uiScale, min = 14f)
+    val navVPad = scaledDp(6f, uiScale, min = 3f)
+    val dotActive = scaledDp(8f, uiScale, min = 6f)
+    val dotInactive = scaledDp(6f, uiScale, min = 5f)
 
     val pagerState = rememberPagerState(pageCount = { TOTAL_STEPS })
 
@@ -347,8 +347,7 @@ private fun QuickAddSheetContent(
                         onCategorySelected = { category ->
                             hideKeyboard()
                             viewModel.onCategorySelected(category)
-                        },
-                        uiScale = uiScale
+                        }
                     )
 
                     STEP_ACCOUNT -> QuickAddAccountStep(
@@ -356,8 +355,7 @@ private fun QuickAddSheetContent(
                         selectedAccountId = state.selectedAccountId,
                         transactionType = state.transactionType,
                         onAccountTapped = { viewModel.onAccountTapped(it) },
-                        onToggleType = { viewModel.toggleTransactionType() },
-                        uiScale = uiScale
+                        onToggleType = { viewModel.toggleTransactionType() }
                     )
 
                     STEP_AMOUNT -> {

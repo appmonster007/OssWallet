@@ -50,6 +50,8 @@ import com.osscabinet.ossWallet.ui.screens.accounts.entry.BalanceUpdateMode
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.scaledDp
+import com.osscabinet.ossWallet.ui.theme.scaledSp
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
@@ -150,21 +152,22 @@ fun AccountEntrySheets(
                         allowSigned = true,
                         onAmountChange = { onEvent(AccountEntryEvent.SetBalanceUpdateAmount(it)) },
                         onDone = { onEvent(AccountEntryEvent.ConfirmBalanceUpdate) },
-                        header = { calcState, onSave, onHistory, displayScale ->
-                            val cardCorner = (28f * displayScale).coerceIn(20f, 28f).dp
-                            val cardHPad = (20f * displayScale).coerceIn(14f, 20f).dp
-                            val cardVPad = (24f * displayScale).coerceIn(16f, 24f).dp
-                            val iconBtnSize = (24f * displayScale).coerceIn(18f, 24f).dp
-                            val historyIconSize = (18f * displayScale).coerceIn(13f, 18f).dp
-                            val confirmIconSize = (20f * displayScale).coerceIn(15f, 20f).dp
-                            val amountFontSize = (44f * displayScale).coerceIn(33f, 44f).sp
-                            val deltaFontSize = (13f * displayScale).coerceIn(10f, 13f).sp
-                            val captionFontSize = (10f * displayScale).coerceIn(9f, 10f).sp
-                            val arrowIconSize = (14f * displayScale).coerceIn(11f, 14f).dp
-                            val trendIconSize = (11f * displayScale).coerceIn(9f, 11f).dp
-                            val afterHeaderSpacer = (12f * displayScale).coerceIn(8f, 12f).dp
-                            val afterAmountSpacer = (16f * displayScale).coerceIn(10f, 16f).dp
-                            val columnSpacing = (20f * displayScale).coerceIn(14f, 20f).dp
+                        header = { calcState, onSave, onHistory ->
+                            val displayScale = AeonTheme.uiScale
+                            val cardCorner = scaledDp(28f, displayScale, min = 20f)
+                            val cardHPad = scaledDp(20f, displayScale, min = 14f)
+                            val cardVPad = scaledDp(24f, displayScale, min = 16f)
+                            val iconBtnSize = scaledDp(24f, displayScale, min = 18f)
+                            val historyIconSize = scaledDp(18f, displayScale, min = 13f)
+                            val confirmIconSize = scaledDp(20f, displayScale, min = 15f)
+                            val amountFontSize = scaledSp(44f, displayScale, min = 33f)
+                            val deltaFontSize = scaledSp(13f, displayScale, min = 10f)
+                            val captionFontSize = scaledSp(10f, displayScale, min = 9f)
+                            val arrowIconSize = scaledDp(14f, displayScale, min = 11f)
+                            val trendIconSize = scaledDp(11f, displayScale, min = 9f)
+                            val afterHeaderSpacer = scaledDp(12f, displayScale, min = 8f)
+                            val afterAmountSpacer = scaledDp(16f, displayScale, min = 10f)
+                            val columnSpacing = scaledDp(20f, displayScale, min = 14f)
 
                             Column(
                                 modifier = Modifier.fillMaxWidth(),

@@ -55,6 +55,7 @@ class SettingsDataStore(private val context: Context) {
         val RANDOMIZE_CONTOUR_EACH_LOAD_KEY = booleanPreferencesKey("randomize_contour_each_load")
         val GLASS_SETTINGS_KEY = stringPreferencesKey("glass_settings")
         val AUTO_BACKUP_CONFIG_KEY = stringPreferencesKey("auto_backup_config")
+        val UI_DENSITY_KEY = stringPreferencesKey("ui_density")
     }
 
     val currency: Flow<String> = context.dataStore.data.map { preferences ->
@@ -388,6 +389,14 @@ class SettingsDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[AUTO_BACKUP_CONFIG_KEY] = Json.encodeToString(config)
         }
+    }
+
+    val uiDensity: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[UI_DENSITY_KEY] ?: com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name
+    }
+
+    suspend fun saveUiDensity(name: String) {
+        context.dataStore.edit { it[UI_DENSITY_KEY] = name }
     }
 
     suspend fun clearAll() {

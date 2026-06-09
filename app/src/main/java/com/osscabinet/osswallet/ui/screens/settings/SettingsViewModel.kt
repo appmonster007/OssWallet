@@ -103,6 +103,9 @@ class SettingsViewModel @Inject constructor(
     val glassSettings: StateFlow<GlassSettings> = settingsRepository.glassSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlassSettings())
 
+    val uiDensity: StateFlow<String> = settingsRepository.uiDensity
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name)
+
     val recentActivitiesBreakdown: StateFlow<Boolean> = settingsRepository.recentActivitiesBreakdown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
@@ -273,6 +276,12 @@ class SettingsViewModel @Inject constructor(
     fun setSelectedFont(fontName: String) {
         viewModelScope.launch {
             settingsRepository.saveSelectedFont(fontName)
+        }
+    }
+
+    fun setUiDensity(density: com.osscabinet.ossWallet.domain.model.settings.UiDensity) {
+        viewModelScope.launch {
+            settingsRepository.saveUiDensity(density.name)
         }
     }
 

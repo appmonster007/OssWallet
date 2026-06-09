@@ -70,6 +70,7 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
@@ -83,8 +84,7 @@ fun QuickAddTemplateStep(
     selectedCategoryId: Long?,
     onTemplateSelected: (Template) -> Unit,
     onCategorySelected: (Category) -> Unit,
-    modifier: Modifier = Modifier,
-    uiScale: Float = 1f
+    modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
     var categoryQuery by remember { mutableStateOf("") }
@@ -93,6 +93,7 @@ fun QuickAddTemplateStep(
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val uiScale = AeonTheme.uiScale
 
     LaunchedEffect(showCategories) {
         if (!showCategories) focusRequester.requestFocus()
@@ -102,20 +103,20 @@ fun QuickAddTemplateStep(
         }
     }
 
-    val columnSpacing = (10f * uiScale).coerceIn(7f, 10f).dp
-    val toggleHeight = (52f * uiScale).coerceIn(40f, 52f).dp
-    val tileSize = (72f * uiScale).coerceIn(56f, 72f).dp
-    val tileCorner = (20f * uiScale).coerceIn(14f, 20f).dp
-    val tileIconSize = (28f * uiScale).coerceIn(20f, 28f).dp
-    val gridMinSize = (88f * uiScale).coerceIn(68f, 88f).dp
-    val gridSpacing = (8f * uiScale).coerceIn(6f, 8f).dp
-    val itemSpacing = (6f * uiScale).coerceIn(4f, 6f).dp
-    val emptyHeightLg = (120f * uiScale).coerceIn(80f, 120f).dp
-    val emptyHeightSm = (80f * uiScale).coerceIn(60f, 80f).dp
-    val badgeSize = (16f * uiScale).coerceIn(12f, 16f).dp
-    val badgeIconSize = (10f * uiScale).coerceIn(8f, 10f).dp
-    val childBadgeSize = (16f * uiScale).coerceIn(12f, 16f).dp
-    val childArrowSize = (12f * uiScale).coerceIn(9f, 12f).dp
+    val columnSpacing = scaledDp(10f, uiScale, min = 7f)
+    val toggleHeight = scaledDp(52f, uiScale, min = 40f)
+    val tileSize = scaledDp(72f, uiScale, min = 56f)
+    val tileCorner = scaledDp(20f, uiScale, min = 14f)
+    val tileIconSize = scaledDp(28f, uiScale, min = 20f)
+    val gridMinSize = scaledDp(88f, uiScale, min = 68f)
+    val gridSpacing = scaledDp(8f, uiScale, min = 6f)
+    val itemSpacing = scaledDp(6f, uiScale, min = 4f)
+    val emptyHeightLg = scaledDp(120f, uiScale, min = 80f)
+    val emptyHeightSm = scaledDp(80f, uiScale, min = 60f)
+    val badgeSize = scaledDp(16f, uiScale, min = 12f)
+    val badgeIconSize = scaledDp(10f, uiScale, min = 8f)
+    val childBadgeSize = scaledDp(16f, uiScale, min = 12f)
+    val childArrowSize = scaledDp(12f, uiScale, min = 9f)
 
     Column(
         modifier = modifier

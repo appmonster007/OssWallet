@@ -664,35 +664,37 @@ class CsvImportServiceImpl @Inject constructor(
                     )
                     imported++
                 } else {
-                    // Unpaired transfer — import as EXPENSE/INCOME with "[outside wallet]" note
+                    // Unpaired transfer — import as an outside-wallet transfer
+                    // (TRANSFER type, targetAccountId=null = "Outside of Wallet" sentinel)
                     group.forEach { t ->
                         val accountId = accountMap[t.accountName.lowercase()]
                         if (accountId == null) { skipped++; return@forEach }
 
-                        val absAmount = t.baseAmount.abs()
-                        val txType = if (t.baseAmount < BigDecimal.ZERO) TransactionType.EXPENSE else TransactionType.INCOME
-                        val finalNote = if (t.note.isBlank()) "[outside wallet]" else "${t.note} [outside wallet]"
-                        val finalAmount = if (txType == TransactionType.EXPENSE) absAmount.negate() else absAmount
+                        val isOutflow = t.baseAmount < BigDecimal.ZERO
+                        val finalAmount = if (isOutflow) t.baseAmount.abs().negate() else t.baseAmount.abs()
+                        // Outflow: Wallet → Outside (TRANSFER_OUTFLOW category)
+                        // Inflow:  Outside → Wallet (TRANSFER_INFLOW category)
+                        val categoryId = if (isOutflow) 1006L else 1005L
 
                         val tagIds = resolveTagIds(t.tagNames, existingTagsList)
 
                         transactionDao.insertTransaction(
                             TransactionEntity(
                                 id = 0,
-                                name = t.note.ifBlank { if (txType == TransactionType.INCOME) "Income" else "Expense" }.take(50),
+                                name = t.note.ifBlank { "Transfer" }.take(50),
                                 amount = finalAmount,
                                 timestamp = t.timestamp,
                                 currency = t.currency,
-                                transactionType = txType,
+                                transactionType = TransactionType.TRANSFER,
                                 accountId = accountId,
-                                categoryId = 1000L,
+                                categoryId = categoryId,
                                 tags = tagIds,
                                 targetAccountId = null,
                                 targetCurrency = null,
                                 transferRate = BigDecimal.ONE,
                                 paymentMethod = t.paymentMethod,
                                 payee = t.row["payee"] ?: "",
-                                note = finalNote,
+                                note = t.note,
                                 sourcePlannedPaymentId = null,
                                 profileId = profileId,
                                 gpsLocation = buildGpsLocation(t.row),

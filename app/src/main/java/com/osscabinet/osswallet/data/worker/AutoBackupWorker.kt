@@ -29,8 +29,30 @@ class AutoBackupWorker(
         val result = backupRepo.exportToPrivateStorage()
         if (result.isSuccess) {
             backupRepo.pruneOldBackups(config.maxRetained)
-            if (config.notifyMode != com.osscabinet.ossWallet.domain.repository.AutoBackupConfig.NotifyMode.NEVER) {
+            if (config.notifyMode == com.osscabinet.ossWallet.domain.repository.AutoBackupConfig.NotifyMode.ALWAYS) {
                 notify(appContext, "Backup completed", "Your data has been backed up successfully.", false)
+            }
+            if (config.storageMode == com.osscabinet.ossWallet.domain.repository.AutoBackupConfig.StorageMode.CUSTOM_FOLDER ||
+                config.storageMode == com.osscabinet.ossWallet.domain.repository.AutoBackupConfig.StorageMode.BOTH) {
+                config.customFolderUri?.let { folderUri ->
+                    try {
+                        val docFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
+                            appContext, android.net.Uri.parse(folderUri)
+                        )
+                        val fileName = "osswallet_backup_${System.currentTimeMillis()}_all.zip"
+                        val newFile = docFolder?.createFile("application/zip", fileName)
+                        newFile?.uri?.let { fileUri ->
+                            appContext.contentResolver.openOutputStream(fileUri)?.use { os ->
+                                val privatePath = result.getOrNull()
+                                if (privatePath != null) {
+                                    java.io.FileInputStream(privatePath).use { it.copyTo(os) }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("AutoBackupWorker", "Failed to write to custom folder", e)
+                    }
+                }
             }
         } else {
             if (config.notifyMode != com.osscabinet.ossWallet.domain.repository.AutoBackupConfig.NotifyMode.NEVER) {

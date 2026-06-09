@@ -1,0 +1,104 @@
+envelope_id,bb_category_name,osswallet_category_name
+1000,Groceries,Food & Groceries
+1001,Restaurant fast-food,Food & Groceries
+1002,Bar cafe,Food & Groceries
+1003,Food & Drinks,Food & Groceries
+1004,Coffee tea,Food & Groceries
+1005,Bakery,Food & Groceries
+1006,Fast food,Food & Groceries
+1007,Alcohol,Food & Groceries
+2000,Clothes & shoes,Shopping
+2001,Accessories,Shopping
+2002,Health and beauty,Healthcare
+2003,Jewellery accessories,Shopping
+2004,Home essentials,Housing
+2005,Garden outdoor,Housing
+2006,Electronics accessories,Shopping
+2007,Gifts joy,Gifts
+2008,Stationery tools,Shopping
+2009,Charity donations,Gifts
+2010,Shopping,Shopping
+2011,Sport outdoor,Entertainment
+2012,Toys games,Entertainment
+2013,Books magazines,Education
+2014,Music movies,Entertainment
+2015,Pets,Others
+3000,Rent,Housing
+3001,Mortgage,Housing
+3002,Energy utilities,Housing
+3003,Water sewage,Housing
+3004,Home insurance,Housing
+3005,Maintenance repairs,Housing
+3006,Telephone internet,Utilities
+3007,TV streaming,Entertainment
+3008,Furniture,Housing
+3009,Security alarm,Housing
+4000,Public transport,Transport
+4001,Taxi,Transport
+4002,Long distance,Transport
+4003,Car insurance,Transport
+4004,Transportation,Transport
+4005,Fuel,Transport
+4006,Car maintenance,Transport
+4007,Car rental,Transport
+4008,Car payments,Transport
+4009,Parking fees,Transport
+5000,Travel,Travel
+5001,Parking,Transport
+5002,Flights,Travel
+5003,Accommodation,Travel
+5004,Visa fees,Travel
+5005,Travel insurance,Travel
+5006,Tourist attractions,Travel
+6000,Pharmacy,Healthcare
+6001,Wellness beauty,Healthcare
+6002,Doctor visits,Healthcare
+6003,Dentist,Healthcare
+6004,Hospital,Healthcare
+6005,Health insurance,Healthcare
+6006,Education development,Education
+6007,Tuition fees,Education
+6008,Books courses,Education
+6009,Holiday trips hotels,Travel
+6010,Sport fitness,Entertainment
+6011,Gym membership,Healthcare
+6012,Culture museums,Entertainment
+6013,Life & Entertainment,Entertainment
+6014,Concerts events,Entertainment
+6015,Cinema theater,Entertainment
+6016,Clubs bars,Entertainment
+6017,Social activities,Entertainment
+7000,Technology,Shopping
+7001,Computer accessories,Shopping
+7002,Mobile phone,Shopping
+7003,Software apps games,Shopping
+7004,Online subscriptions,Shopping
+8000,Banking fees,Fees & Charges
+8001,ATM fees,Fees & Charges
+8002,Interest charges,Fees & Charges
+8003,Tax,Fees & Charges
+8004,Insurance,Fees & Charges
+8005,Charges Fees,Fees & Charges
+8006,Fines penalties,Fees & Charges
+8007,Exchange fees,Fees & Charges
+9000,Investments,Investments
+9001,Stocks bonds,Investments
+9002,Financial investments,Investments
+9003,Real estate,Investments
+9004,Crypto,Investments
+9005,Savings,Investments
+9006,Retirement pension,Investments
+10000,Salary,Salary
+10001,Interests dividends,Investment Income
+10002,Business income,Other Income
+10003,Rental income,Other Income
+10004,Freelance,Other Income
+10005,Bonus,Salary
+10006,Checks coupons,Other Income
+10007,Gifts received,Other Income
+10008,Refunds,Other Income
+10009,Social benefits,Other Income
+10010,Pocket money,Other Income
+11000,Others,Others
+11001,Missing,Missing
+20001,TRANSFER,TRANSFER

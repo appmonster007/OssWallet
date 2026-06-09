@@ -59,6 +59,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/tmp/report_2026-06-08_063221.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

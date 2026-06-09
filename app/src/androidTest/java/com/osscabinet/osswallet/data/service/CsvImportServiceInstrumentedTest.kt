@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
+import com.osscabinet.ossWallet.data.service.BudgetBakersAssetLoader
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
@@ -50,8 +51,11 @@ class CsvImportServiceInstrumentedTest {
             accountDao = db.accountDao(),
             categoryDao = db.categoryDao(),
             transactionDao = db.transactionDao(),
+            tagDao = db.tagDao(),
+            profileDao = db.profileDao(),
             database = db,
-            settingsDataStore = settingsDataStore
+            settingsDataStore = settingsDataStore,
+            assetLoader = BudgetBakersAssetLoader(context)
         )
     }
 

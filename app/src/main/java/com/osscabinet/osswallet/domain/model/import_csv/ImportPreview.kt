@@ -15,13 +15,28 @@ data class ImportSummary(
     val errors: List<ParseError>
 )
 
+/**
+ * Represents a category that could not be automatically matched to an existing OssWallet
+ * category and requires manual mapping by the user.
+ *
+ * @param name The category name as it appears in the CSV (or mapped from envelope_id)
+ * @param envelopeId The BudgetBakers numeric envelope ID, if present — shown as a hint
+ * @param isCustomCategory True when the CSV row had custom_category=true (user-defined sub-category)
+ */
+data class CategoryToMap(
+    val name: String,
+    val envelopeId: Int? = null,
+    val isCustomCategory: Boolean = false
+)
+
 data class ImportPreview(
     val totalRows: Int,
     val validRows: Int,
     val duplicates: List<DuplicateGroup>,
     val newAccounts: List<String>,
-    val newCategories: List<String>,
-    val parseErrors: List<ParseError>
+    val newCategories: List<CategoryToMap>,
+    val parseErrors: List<ParseError>,
+    val unpairedTransferRows: Int = 0
 )
 
 enum class DuplicatePolicy { SKIP, IMPORT_BOTH, REPLACE_EXISTING }

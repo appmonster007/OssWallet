@@ -11,9 +11,16 @@ import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -30,6 +37,14 @@ class OssWalletApp : Application() {
 
     @Inject
     lateinit var widgetRefreshTrigger: WidgetRefreshTrigger
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var backupScheduler: BackupScheduler
+
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var widgetInvalidationObserver: WidgetInvalidationObserver? = null
 
@@ -49,6 +64,12 @@ class OssWalletApp : Application() {
 
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)
+
+        // Reschedule auto-backup on app startup so it survives device reboots and reinstalls
+        applicationScope.launch {
+            val config = settingsRepository.autoBackupConfig.first()
+            backupScheduler.schedule(config)
+        }
 
         // We don't auto-start the WebServerService here anymore to prevent the app 
         // from staying alive in the background unnecessarily. 

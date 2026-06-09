@@ -19,7 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -52,6 +54,9 @@ fun QuickAddAmountStep(
         } ?: emptyList()
     }
 
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val contextScale = (screenHeight / 860f).coerceIn(0.70f, 1.0f)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -72,9 +77,10 @@ fun QuickAddAmountStep(
                 prefix = badgePrefix,
                 label = badgeLabel,
                 category = badgeCategory,
+                scale = contextScale,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height((8.dp.value * contextScale).dp))
         }
 
         // Currency dropdown — only when account has multiple currencies
@@ -84,21 +90,22 @@ fun QuickAddAmountStep(
                 onCurrencySelected = onCurrencySelected,
                 supportedCurrencies = currencies
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height((6.dp.value * contextScale).dp))
         } else if (currencies.size == 1) {
             Text(
                 text = currencies.first(),
                 style = AppTextStyles.formSwitchLabel,
                 color = AppColors.contentSecondary
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height((6.dp.value * contextScale).dp))
         }
 
         CalculatorNumpad(
             amount = amount,
             onAmountChange = onAmountChange,
             onDone = onDone,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            maxHeightFraction = 0.42f
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -110,7 +117,8 @@ private fun ContextBadge(
     prefix: String,
     label: String,
     category: Category?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    scale: Float = 1.0f
 ) {
     val bgColor = remember(category?.colorHex) {
         category?.colorHex
@@ -118,23 +126,29 @@ private fun ContextBadge(
             ?: Color(0xFF6750A4.toInt()) // fallback purple
     }
 
+    val iconContainerSize: Dp = (28.dp.value * scale).coerceIn(20f, 28f).dp
+    val iconSize: Dp = (16.dp.value * scale).coerceIn(12f, 16f).dp
+    val cornerRadius: Dp = (12.dp.value * scale).coerceIn(8f, 12f).dp
+    val iconCornerRadius: Dp = (8.dp.value * scale).coerceIn(6f, 8f).dp
+    val horizontalPad: Dp = (10.dp.value * scale).coerceIn(8f, 10f).dp
+    val verticalPad: Dp = (6.dp.value * scale).coerceIn(4f, 6f).dp
+
     GlassSurface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(cornerRadius),
         glassVariant = GlassVariant.Item,
         hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.12f),
         fallbackColor = bgColor.copy(alpha = 0.12f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = horizontalPad, vertical = verticalPad),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Category icon in a small circle
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(iconContainerSize)
+                    .clip(RoundedCornerShape(iconCornerRadius))
                     .background(bgColor.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -142,7 +156,7 @@ private fun ContextBadge(
                     imageVector = getIconByName(category?.iconName),
                     contentDescription = null,
                     tint = bgColor,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(iconSize)
                 )
             }
 

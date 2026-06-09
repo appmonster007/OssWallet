@@ -202,6 +202,19 @@ class CsvImportViewModel @Inject constructor(
                 OssWalletField.WARRANTY_MONTHS to headers.indexOfOrNull("warranty_in_month"),
                 OssWalletField.IS_TRANSFER to headers.indexOfOrNull("transfer")
             )
+            ImportSourceApp.CASHEW -> mapOf(
+                OssWalletField.DATE      to headers.indexOfOrNull("date"),
+                OssWalletField.ACCOUNT   to headers.indexOfOrNull("account"),
+                OssWalletField.CATEGORY  to headers.indexOfOrNull("category name"),
+                OssWalletField.AMOUNT    to headers.indexOfOrNull("amount"),
+                OssWalletField.TYPE      to headers.indexOfOrNull("income"),
+                OssWalletField.NOTE      to headers.indexOfOrNull("note"),
+                OssWalletField.PAYEE     to null,
+                OssWalletField.PAYMENT_TYPE to null,
+                OssWalletField.LABELS    to null,
+                OssWalletField.WARRANTY_MONTHS to null,
+                OssWalletField.IS_TRANSFER to null
+            )
             else -> OssWalletField.entries.associateWith { null }
         }
     }

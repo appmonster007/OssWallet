@@ -12,17 +12,10 @@ data class ParseError(val rowIndex: Int, val reason: String)
 data class ImportSummary(
     val imported: Int,
     val skipped: Int,
-    val errors: List<ParseError>
+    val errors: List<ParseError>,
+    val transfersRerouted: Int = 0
 )
 
-/**
- * Represents a category that could not be automatically matched to an existing OssWallet
- * category and requires manual mapping by the user.
- *
- * @param name The category name as it appears in the CSV (or mapped from envelope_id)
- * @param envelopeId The BudgetBakers numeric envelope ID, if present — shown as a hint
- * @param isCustomCategory True when the CSV row had custom_category=true (user-defined sub-category)
- */
 data class CategoryToMap(
     val name: String,
     val envelopeId: Int? = null,
@@ -30,11 +23,18 @@ data class CategoryToMap(
     val suggestedParentName: String? = null
 )
 
+data class AccountToMap(
+    val name: String,
+    val suggestedExistingId: String?,
+    val suggestedExistingName: String?,
+    val rowCount: Int = 0
+)
+
 data class ImportPreview(
     val totalRows: Int,
     val validRows: Int,
     val duplicates: List<DuplicateGroup>,
-    val newAccounts: List<String>,
+    val allCsvAccounts: List<AccountToMap>,
     val newCategories: List<CategoryToMap>,
     val parseErrors: List<ParseError>,
     val unpairedTransferRows: Int = 0
@@ -47,7 +47,8 @@ data class EntityMapping(
     val unknownName: String,
     val existingId: String? = null,  // null = create new
     val entityType: EntityType,
-    val parentCategoryId: Long? = null  // for CATEGORY + create new: null = root
+    val parentCategoryId: Long? = null,  // for CATEGORY + create new: null = root
+    val isExcluded: Boolean = false
 ) {
     enum class EntityType { ACCOUNT, CATEGORY }
 }

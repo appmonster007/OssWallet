@@ -108,7 +108,7 @@ class CsvImportViewModel @Inject constructor(
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
                 val preview = csvImportService.generatePreview(session.value!!, stream)
                 _preview.value = preview
-                if (preview.newAccounts.isNotEmpty() || preview.newCategories.isNotEmpty()) {
+                if (preview.allCsvAccounts.isNotEmpty() || preview.newCategories.isNotEmpty()) {
                     _step.value = Step.EntityMapping
                 } else {
                     _step.value = Step.Preview

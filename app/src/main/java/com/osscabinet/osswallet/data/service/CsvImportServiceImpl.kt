@@ -8,13 +8,16 @@ import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.ProfileDao
 import com.osscabinet.ossWallet.data.local.dao.TagDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionDao
+import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup
@@ -49,7 +52,8 @@ class CsvImportServiceImpl @Inject constructor(
     private val profileDao: ProfileDao,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
-    private val assetLoader: BudgetBakersAssetLoader
+    private val assetLoader: BudgetBakersAssetLoader,
+    private val transactionLinkDao: TransactionLinkDao
 ) : CsvImportService {
 
     private val budgetBakersHeaders = setOf(
@@ -312,14 +316,16 @@ class CsvImportServiceImpl @Inject constructor(
         }
 
         val existingTxs = transactionDao.getAllTransactionsSync()
-        val existingAccounts = accountDao.getAllAccountsSync().map { it.name.lowercase() }.toSet()
+        val existingAccountsList = accountDao.getAllAccountsSync()
+        val existingAccountsByName = existingAccountsList.associateBy { it.name.lowercase() }
         val existingCategories = categoryDao.getAllCategoriesSync()
 
         val existingKeys = existingTxs.map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
 
-        val newAccounts = mutableSetOf<String>()
+        // Collect all unique account names and their row counts
+        val accountRowCounts = mutableMapOf<String, Int>()
         // key = category name (after mapping), to deduplicate
         val newCategoryMap = mutableMapOf<String, CategoryToMap>()
         val duplicates = mutableListOf<DuplicateGroup>()
@@ -338,8 +344,8 @@ class CsvImportServiceImpl @Inject constructor(
                 val timestamp = parseDate(dateStr)
                 val isTransfer = isTransferRow(row)
 
-                if (accountName.isNotBlank() && accountName.lowercase() !in existingAccounts) {
-                    newAccounts.add(accountName)
+                if (accountName.isNotBlank()) {
+                    accountRowCounts[accountName] = (accountRowCounts[accountName] ?: 0) + 1
                 }
 
                 // Unresolved category tracking
@@ -388,11 +394,21 @@ class CsvImportServiceImpl @Inject constructor(
         // Count unpaired transfer rows (groups with only one entry)
         val unpairedTransferRows = transferGroups.values.count { it.size == 1 }
 
+        val allCsvAccounts = accountRowCounts.map { (name, count) ->
+            val match = existingAccountsByName[name.lowercase()]
+            AccountToMap(
+                name = name,
+                suggestedExistingId = match?.id,
+                suggestedExistingName = match?.name,
+                rowCount = count
+            )
+        }.sortedBy { it.name }
+
         return ImportPreview(
             totalRows = rows.size,
             validRows = validRows,
             duplicates = duplicates,
-            newAccounts = newAccounts.toList(),
+            allCsvAccounts = allCsvAccounts,
             newCategories = newCategoryMap.values.toList(),
             parseErrors = parseErrors,
             unpairedTransferRows = unpairedTransferRows
@@ -459,7 +475,7 @@ class CsvImportServiceImpl @Inject constructor(
             totalRows = lines.size,
             validRows = validRows,
             duplicates = duplicates,
-            newAccounts = newAccounts.toList(),
+            allCsvAccounts = newAccounts.map { name -> AccountToMap(name = name, suggestedExistingId = null, suggestedExistingName = null) },
             newCategories = newCategories.map { CategoryToMap(name = it) },
             parseErrors = parseErrors,
             unpairedTransferRows = 0
@@ -518,19 +534,28 @@ class CsvImportServiceImpl @Inject constructor(
 
         var imported = 0
         var skipped = 0
+        var transfersRerouted = 0
         val errors = mutableListOf<ParseError>()
+
+        val excludedAccountNames = entityMappings
+            .filter { it.entityType == EntityMapping.EntityType.ACCOUNT && it.isExcluded }
+            .map { it.unknownName.lowercase() }
+            .toSet()
 
         database.withTransaction {
             // Apply entity mappings (account / category decisions from the mapping step)
             entityMappings.forEach { em ->
                 when (em.entityType) {
                     EntityMapping.EntityType.ACCOUNT -> {
+                        if (em.isExcluded) return@forEach
                         val id = em.existingId ?: UUID.randomUUID().toString()
                         if (em.existingId == null) {
+                            val conflictExists = existingAccountEntities.containsKey(em.unknownName.lowercase())
+                            val finalName = if (conflictExists) "${em.unknownName}-${randomAlphanumSuffix()}" else em.unknownName
                             accountDao.upsertAccount(
                                 AccountEntity(
                                     id = id,
-                                    name = em.unknownName,
+                                    name = finalName,
                                     currencyCode = profileBaseCurrency,
                                     structureType = "regular",
                                     colorHex = "#607D8B",
@@ -626,67 +651,178 @@ class CsvImportServiceImpl @Inject constructor(
 
             pairGroups.forEach { (_, group) ->
                 if (group.size == 2) {
-                    // Paired transfer: identify source (negative amount) vs target (positive amount)
-                    // using the signed `amount` column; ref_currency_amount is always positive.
                     val sourceEntry = group.firstOrNull { entry ->
                         (entry.row["amount"]?.replace(",", "")?.toBigDecimalOrNull()?.signum() ?: 1) < 0
                     } ?: group[0]
                     val targetEntry = group.firstOrNull { it != sourceEntry } ?: group[1]
 
-                    val sourceAccountId = accountMap[sourceEntry.accountName.lowercase()]
-                    val targetAccountId = accountMap[targetEntry.accountName.lowercase()]
+                    val sourceExcluded = sourceEntry.accountName.lowercase() in excludedAccountNames
+                    val targetExcluded = targetEntry.accountName.lowercase() in excludedAccountNames
 
-                    if (sourceAccountId == null || targetAccountId == null) {
-                        skipped += 2
-                        return@forEach
-                    }
-
-                    val absAmount = sourceEntry.baseAmount.abs()
-                    val dupKey = "${sourceEntry.timestamp / 60000}|${absAmount.toPlainString()}|${sourceEntry.note}"
-                    if (dupKey in existingKeys) {
-                        if (!handleDuplicate(duplicatePolicy, sourceEntry.idx, selectedDuplicateRowIndices)) {
+                    when {
+                        sourceExcluded && targetExcluded -> {
                             skipped += 2
                             return@forEach
                         }
+                        sourceExcluded -> {
+                            // Keep target side only → outside-wallet inflow
+                            val targetAccountId = accountMap[targetEntry.accountName.lowercase()]
+                            if (targetAccountId == null) { skipped++; return@forEach }
+                            val tagIds = resolveTagIds(targetEntry.tagNames, existingTagsList)
+                            transactionDao.insertTransaction(TransactionEntity(
+                                id = 0,
+                                name = targetEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = targetEntry.baseAmount.abs(),
+                                timestamp = targetEntry.timestamp,
+                                currency = targetEntry.currency,
+                                transactionType = TransactionType.TRANSFER,
+                                accountId = targetAccountId,
+                                categoryId = 1005L,
+                                tags = tagIds,
+                                targetAccountId = null,
+                                targetCurrency = null,
+                                transferRate = BigDecimal.ONE,
+                                paymentMethod = targetEntry.paymentMethod,
+                                payee = targetEntry.row["payee"] ?: "",
+                                note = targetEntry.note,
+                                sourcePlannedPaymentId = null,
+                                profileId = profileId,
+                                gpsLocation = buildGpsLocation(targetEntry.row),
+                                location = null,
+                                warrantyExpiration = targetEntry.warrantyExpiration,
+                                status = TransactionStatus.CLEARED
+                            ))
+                            imported++
+                            transfersRerouted++
+                        }
+                        targetExcluded -> {
+                            // Keep source side only → outside-wallet outflow
+                            val sourceAccountId = accountMap[sourceEntry.accountName.lowercase()]
+                            if (sourceAccountId == null) { skipped++; return@forEach }
+                            val absAmount = sourceEntry.baseAmount.abs()
+                            val dupKey = "${sourceEntry.timestamp / 60000}|${absAmount.toPlainString()}|${sourceEntry.note}"
+                            if (dupKey in existingKeys) {
+                                if (!handleDuplicate(duplicatePolicy, sourceEntry.idx, selectedDuplicateRowIndices)) {
+                                    skipped += 2; return@forEach
+                                }
+                            }
+                            val tagIds = resolveTagIds(sourceEntry.tagNames, existingTagsList)
+                            transactionDao.insertTransaction(TransactionEntity(
+                                id = 0,
+                                name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = absAmount.negate(),
+                                timestamp = sourceEntry.timestamp,
+                                currency = sourceEntry.currency,
+                                transactionType = TransactionType.TRANSFER,
+                                accountId = sourceAccountId,
+                                categoryId = 1006L,
+                                tags = tagIds,
+                                targetAccountId = null,
+                                targetCurrency = null,
+                                transferRate = BigDecimal.ONE,
+                                paymentMethod = sourceEntry.paymentMethod,
+                                payee = sourceEntry.row["payee"] ?: "",
+                                note = sourceEntry.note,
+                                sourcePlannedPaymentId = null,
+                                profileId = profileId,
+                                gpsLocation = buildGpsLocation(sourceEntry.row),
+                                location = null,
+                                warrantyExpiration = sourceEntry.warrantyExpiration,
+                                status = TransactionStatus.CLEARED
+                            ))
+                            imported++
+                            transfersRerouted++
+                        }
+                        else -> {
+                            // Both accounts present: 2 records + bi-directional link
+                            val sourceAccountId = accountMap[sourceEntry.accountName.lowercase()]
+                            val targetAccountId = accountMap[targetEntry.accountName.lowercase()]
+
+                            if (sourceAccountId == null || targetAccountId == null) {
+                                skipped += 2; return@forEach
+                            }
+
+                            val absAmount = sourceEntry.baseAmount.abs()
+                            val dupKey = "${sourceEntry.timestamp / 60000}|${absAmount.toPlainString()}|${sourceEntry.note}"
+                            if (dupKey in existingKeys) {
+                                if (!handleDuplicate(duplicatePolicy, sourceEntry.idx, selectedDuplicateRowIndices)) {
+                                    skipped += 2; return@forEach
+                                }
+                            }
+
+                            val tagIds = resolveTagIds(sourceEntry.tagNames + targetEntry.tagNames, existingTagsList)
+
+                            val transferRate = if (sourceEntry.currency != targetEntry.currency &&
+                                sourceEntry.baseAmount.compareTo(BigDecimal.ZERO) != 0) {
+                                targetEntry.baseAmount.abs().divide(sourceEntry.baseAmount.abs(), 8, RoundingMode.HALF_UP)
+                            } else BigDecimal.ONE
+
+                            val targetAmount = absAmount.multiply(transferRate)
+
+                            val sourceId = transactionDao._insertTransaction(TransactionEntity(
+                                id = 0,
+                                name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = absAmount.negate(),
+                                timestamp = sourceEntry.timestamp,
+                                currency = sourceEntry.currency,
+                                transactionType = TransactionType.TRANSFER,
+                                accountId = sourceAccountId,
+                                categoryId = 1006L,
+                                tags = tagIds,
+                                targetAccountId = targetAccountId,
+                                targetCurrency = targetEntry.currency,
+                                transferRate = transferRate,
+                                paymentMethod = sourceEntry.paymentMethod,
+                                payee = sourceEntry.row["payee"] ?: "",
+                                note = sourceEntry.note,
+                                sourcePlannedPaymentId = null,
+                                profileId = profileId,
+                                gpsLocation = buildGpsLocation(sourceEntry.row),
+                                location = sourceEntry.row["payee"]?.takeIf { it.isNotBlank() },
+                                warrantyExpiration = sourceEntry.warrantyExpiration,
+                                status = TransactionStatus.CLEARED
+                            ))
+
+                            val inverseRate = if (transferRate.compareTo(BigDecimal.ZERO) != 0)
+                                BigDecimal.ONE.divide(transferRate, 8, RoundingMode.HALF_UP) else BigDecimal.ONE
+
+                            val targetId = transactionDao._insertTransaction(TransactionEntity(
+                                id = 0,
+                                name = targetEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = targetAmount,
+                                timestamp = targetEntry.timestamp,
+                                currency = targetEntry.currency,
+                                transactionType = TransactionType.TRANSFER,
+                                accountId = targetAccountId,
+                                categoryId = 1005L,
+                                tags = tagIds,
+                                targetAccountId = sourceAccountId,
+                                targetCurrency = sourceEntry.currency,
+                                transferRate = inverseRate,
+                                paymentMethod = targetEntry.paymentMethod,
+                                payee = targetEntry.row["payee"] ?: "",
+                                note = targetEntry.note,
+                                sourcePlannedPaymentId = null,
+                                profileId = profileId,
+                                gpsLocation = buildGpsLocation(targetEntry.row),
+                                location = targetEntry.row["payee"]?.takeIf { it.isNotBlank() },
+                                warrantyExpiration = targetEntry.warrantyExpiration,
+                                status = TransactionStatus.CLEARED
+                            ))
+
+                            if (sourceId > 0 && targetId > 0) {
+                                transactionLinkDao.insertLinks(listOf(
+                                    TransactionLinkEntity(transactionId = sourceId, linkedTransactionId = targetId),
+                                    TransactionLinkEntity(transactionId = targetId, linkedTransactionId = sourceId)
+                                ))
+                            }
+                            imported += 2
+                        }
                     }
-
-                    val tagIds = resolveTagIds(sourceEntry.tagNames + targetEntry.tagNames, existingTagsList)
-
-                    val transferRate = if (sourceEntry.currency != targetEntry.currency &&
-                        sourceEntry.baseAmount.compareTo(BigDecimal.ZERO) != 0) {
-                        targetEntry.baseAmount.abs().divide(sourceEntry.baseAmount.abs(), 8, RoundingMode.HALF_UP)
-                    } else BigDecimal.ONE
-
-                    transactionDao.insertTransaction(
-                        TransactionEntity(
-                            id = 0,
-                            name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
-                            amount = absAmount,
-                            timestamp = sourceEntry.timestamp,
-                            currency = sourceEntry.currency,
-                            transactionType = TransactionType.TRANSFER,
-                            accountId = sourceAccountId,
-                            categoryId = 1000L, // system OTHERS — transfers have no meaningful category
-                            tags = tagIds,
-                            targetAccountId = targetAccountId,
-                            targetCurrency = targetEntry.currency,
-                            transferRate = transferRate,
-                            paymentMethod = sourceEntry.paymentMethod,
-                            payee = sourceEntry.row["payee"] ?: "",
-                            note = sourceEntry.note,
-                            sourcePlannedPaymentId = null,
-                            profileId = profileId,
-                            gpsLocation = buildGpsLocation(sourceEntry.row),
-                            location = sourceEntry.row["payee"]?.takeIf { it.isNotBlank() },
-                            warrantyExpiration = sourceEntry.warrantyExpiration,
-                            status = TransactionStatus.CLEARED
-                        )
-                    )
-                    imported++
                 } else {
-                    // Unpaired transfer — import as an outside-wallet transfer
-                    // (TRANSFER type, targetAccountId=null = "Outside of Wallet" sentinel)
+                    // Unpaired transfer — import as outside-wallet transfer, skip if excluded
                     group.forEach { t ->
+                        if (t.accountName.lowercase() in excludedAccountNames) { skipped++; return@forEach }
                         val accountId = accountMap[t.accountName.lowercase()]
                         if (accountId == null) { skipped++; return@forEach }
 
@@ -735,6 +871,7 @@ class CsvImportServiceImpl @Inject constructor(
             regularRows.forEachIndexed { listIdx, (idx, row) ->
                 try {
                     val accountName = row["account"] ?: ""
+                    if (accountName.lowercase() in excludedAccountNames) { skipped++; return@forEachIndexed }
                     val dateStr = row["date"] ?: ""
                     val note = row["note"] ?: ""
                     val payee = row["payee"] ?: ""
@@ -805,7 +942,7 @@ class CsvImportServiceImpl @Inject constructor(
             }
         }
 
-        return Result.success(ImportSummary(imported, skipped, errors))
+        return Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -1030,6 +1167,9 @@ class CsvImportServiceImpl @Inject constructor(
         DuplicatePolicy.IMPORT_BOTH -> true
         DuplicatePolicy.REPLACE_EXISTING -> rowIdx in selectedIndices
     }
+
+    private fun randomAlphanumSuffix(): String =
+        (('a'..'z') + ('0'..'9')).shuffled().take(6).joinToString("")
 
     companion object {
         private const val DEFAULT_TAG_COLOR: Int = 0xFF9E9E9E.toInt()

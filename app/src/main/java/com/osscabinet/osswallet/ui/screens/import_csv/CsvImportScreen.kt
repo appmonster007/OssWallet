@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
@@ -627,9 +628,13 @@ private fun EntityMappingStep(
         listOf("" to "Root (no parent)") + rootCategories
     }
 
-    val accountMappings = remember(preview.newAccounts) {
-        mutableStateListOf(*preview.newAccounts.map {
-            EntityMapping(it, null, EntityMapping.EntityType.ACCOUNT)
+    val accountMappings = remember(preview.allCsvAccounts) {
+        mutableStateListOf(*preview.allCsvAccounts.map { acc ->
+            EntityMapping(
+                unknownName = acc.name,
+                existingId = acc.suggestedExistingId,
+                entityType = EntityMapping.EntityType.ACCOUNT
+            )
         }.toTypedArray())
     }
     val categoryMappings = remember(preview.newCategories) {
@@ -656,34 +661,37 @@ private fun EntityMappingStep(
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         Text(
-            "Unrecognised accounts & categories",
+            "Accounts & Categories",
             style = AppTextStyles.heroAmount,
             color = AppColors.contentPrimary
         )
         Text(
-            "Map to an existing item or create new. For new categories, choose a parent to nest it as a sub-category, or leave as \"Root\" to add it at the top level.",
+            "Map each account to an existing one, create new, or exclude it. Excluded accounts and all their transactions will be skipped. For new categories, choose a parent to nest it as a sub-category.",
             style = AppTextStyles.caption,
             color = AppColors.contentSecondary
         )
 
-        if (preview.newAccounts.isNotEmpty()) {
+        if (preview.allCsvAccounts.isNotEmpty()) {
             Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
             AeonSectionHeader(
-                title = "ACCOUNTS \u2014 ${preview.newAccounts.size} new",
+                title = "ACCOUNTS \u2014 ${preview.allCsvAccounts.size} found",
                 trailing = {
                     TextButton(onClick = { accountMappings.indices.forEach { i -> accountMappings[i] = accountMappings[i].copy(existingId = null) } }) {
                         Text("Create all new", style = AppTextStyles.buttonLabel, color = AppColors.primary)
                     }
                 }
             )
-            preview.newAccounts.forEachIndexed { index, name ->
+            preview.allCsvAccounts.forEachIndexed { index, acc ->
+                val em = accountMappings.getOrNull(index)
+                val isExcluded = em?.existingId == "__EXCLUDE__"
                 EntityMappingRow(
-                    label = name,
-                    badgeText = null,
-                    chipText = null,
+                    label = acc.name,
+                    badgeText = if (isExcluded) "${acc.rowCount} rows skipped" else null,
+                    chipText = if (!isExcluded) acc.suggestedExistingName?.let { "matched: $it" } else null,
                     options = accounts,
-                    selectedId = accountMappings.getOrNull(index)?.existingId,
-                    onSelect = { id -> accountMappings[index] = accountMappings[index].copy(existingId = id) }
+                    selectedId = em?.existingId,
+                    onSelect = { id -> accountMappings[index] = accountMappings[index].copy(existingId = id) },
+                    showExcludeOption = true
                 )
             }
         }
@@ -729,13 +737,16 @@ private fun EntityMappingStep(
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
         AeonDashedButton(
             onClick = {
+                val resolvedAccountMappings = accountMappings.map { em ->
+                    if (em.existingId == "__EXCLUDE__") em.copy(existingId = null, isExcluded = true) else em
+                }
                 val resolvedCategoryMappings = categoryMappings.mapIndexed { i, em ->
                     if (em.existingId == null) {
                         val parentIdStr = parentSelections[i] ?: ""
                         em.copy(parentCategoryId = parentIdStr.takeIf { it.isNotEmpty() }?.toLongOrNull())
                     } else em
                 }
-                onConfirmMappings(accountMappings.toList() + resolvedCategoryMappings)
+                onConfirmMappings(resolvedAccountMappings + resolvedCategoryMappings)
             },
             text = "Continue to Preview",
             icon = Icons.AutoMirrored.Rounded.ArrowForward
@@ -754,10 +765,16 @@ private fun EntityMappingRow(
     selectedId: String?,
     onSelect: (String?) -> Unit,
     isError: Boolean = false,
-    showNullOption: Boolean = true
+    showNullOption: Boolean = true,
+    showExcludeOption: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedName = selectedId?.let { id -> options.find { it.first == id }?.second } ?: "Create New"
+    val isExcluded = selectedId == "__EXCLUDE__"
+    val selectedName = when {
+        isExcluded -> "Excluded"
+        selectedId != null -> options.find { it.first == selectedId }?.second ?: "Create New"
+        else -> "Create New"
+    }
 
     Surface(
         color = AppColors.cardSurface,
@@ -808,8 +825,16 @@ private fun EntityMappingRow(
                 Surface(
                     onClick = { expanded = true },
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = if (isError) AppColors.errorContainer.copy(alpha = 0.1f) else AppColors.surfaceContainerLow,
-                    border = BorderStroke(1.dp, if (isError) AppColors.error else AppColors.outlineVariant),
+                    color = when {
+                        isExcluded -> AppColors.error.copy(alpha = 0.08f)
+                        isError -> AppColors.errorContainer.copy(alpha = 0.1f)
+                        else -> AppColors.surfaceContainerLow
+                    },
+                    border = BorderStroke(1.dp, when {
+                        isExcluded -> AppColors.error.copy(alpha = 0.5f)
+                        isError -> AppColors.error
+                        else -> AppColors.outlineVariant
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -820,7 +845,11 @@ private fun EntityMappingRow(
                         Text(
                             text = selectedName,
                             style = AppTextStyles.caption,
-                            color = if (selectedId != null) AppColors.contentPrimary else AppColors.contentSecondary,
+                            color = when {
+                                isExcluded -> AppColors.error
+                                selectedId != null -> AppColors.contentPrimary
+                                else -> AppColors.contentSecondary
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
@@ -845,6 +874,12 @@ private fun EntityMappingRow(
                         DropdownMenuItem(
                             text = { Text("Create New", style = AppTextStyles.caption) },
                             onClick = { onSelect(null); expanded = false }
+                        )
+                    }
+                    if (showExcludeOption) {
+                        DropdownMenuItem(
+                            text = { Text("Exclude account", style = AppTextStyles.caption, color = AppColors.error) },
+                            onClick = { onSelect("__EXCLUDE__"); expanded = false }
                         )
                     }
                     options.forEach { (id, name) ->
@@ -1200,6 +1235,14 @@ private fun ImportResultScreen(
         if (result.skipped > 0 && !isZero) {
             Text(
                 "${result.skipped} duplicate row${if (result.skipped != 1) "s" else ""} were skipped",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary
+            )
+        }
+
+        if (result.transfersRerouted > 0) {
+            Text(
+                "${result.transfersRerouted} transfer${if (result.transfersRerouted != 1) "s" else ""} re-routed to outside-wallet",
                 style = AppTextStyles.caption,
                 color = AppColors.contentSecondary
             )

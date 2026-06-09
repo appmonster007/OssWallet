@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.scaledSp
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -83,6 +84,7 @@ fun AeonTransactionItem(
     isPlanned: Boolean = false,
     onClick: () -> Unit
 ) {
+    val uiScale = AeonTheme.uiScale
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
     val headerText = remember(isNoteHeader, showNote, note, showCategory, category) {
         if (isNoteHeader) (if (showNote) note else if (showCategory) category else "")
@@ -206,7 +208,7 @@ fun AeonTransactionItem(
                                     headerText,
                                     style = AppTextStyles.transactionTitle.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
+                                        fontSize = scaledSp(12f, uiScale)
                                     ),
                                     maxLines = if (isNoteHeader) Int.MAX_VALUE else 1,
                                     overflow = TextOverflow.Ellipsis
@@ -216,7 +218,7 @@ fun AeonTransactionItem(
                                 Text(
                                     account,
                                     style = AppTextStyles.transactionSwipeAction.copy(
-                                        fontSize = 10.sp,
+                                        fontSize = scaledSp(10f, uiScale),
                                         fontWeight = FontWeight.Medium
                                     ),
                                     color = AppColors.contentSecondary,
@@ -228,7 +230,7 @@ fun AeonTransactionItem(
                                 Text(
                                     bottomText,
                                     style = AppTextStyles.caption.copy(
-                                        fontSize = 11.sp
+                                        fontSize = scaledSp(11f, uiScale)
                                     ),
                                     color = AppColors.contentSecondary,
                                     modifier = Modifier.padding(top = 2.dp),
@@ -243,7 +245,7 @@ fun AeonTransactionItem(
                                 text = amount,
                                 style = AppTextStyles.listItemTitle.copy(
                                     fontWeight = FontWeight.Black,
-                                    fontSize = 13.sp,
+                                    fontSize = scaledSp(13f, uiScale),
                                     color = if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error
                                 )
                             )

@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Compact action chip for entry screens.
@@ -53,6 +54,7 @@ fun EntryActionChip(
     iconContainerColor: Color? = null,
 ) {
     val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "chipScale")
@@ -79,7 +81,7 @@ fun EntryActionChip(
         color = backgroundColor,
         border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),
         modifier = modifier
-            .height(48.dp)
+            .height(scaledDp(48f, uiScale))
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale

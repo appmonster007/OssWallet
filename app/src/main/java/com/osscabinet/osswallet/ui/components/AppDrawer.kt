@@ -59,6 +59,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import android.graphics.Color as AndroidColor
 import dev.chrisbanes.haze.HazeState
 
@@ -84,6 +85,7 @@ fun AppDrawerContent(
     onNavigate: (() -> Unit) -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
+    val uiScale = AeonTheme.uiScale
     val drawerShape = RoundedCornerShape(
         topEnd = AeonTheme.dimensions.cardCornerRadius,
         bottomEnd = AeonTheme.dimensions.cardCornerRadius
@@ -93,7 +95,7 @@ fun AppDrawerContent(
 
     GlassSurface(
         modifier = Modifier
-            .width(280.dp)
+            .width(scaledDp(280f, uiScale))
             .fillMaxHeight(),
         shape = drawerShape,
         hazeState = drawerHazeState,
@@ -297,7 +299,7 @@ fun AppDrawerContent(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(scaledDp(48f, uiScale)),
                             shape = RectangleShape,
                             colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
                         )

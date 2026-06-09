@@ -66,6 +66,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
@@ -268,8 +269,8 @@ fun PillNavigationBar(
     // Grid constants derived from the Aeon Design System
     val spacing = dimensions.spacingSm // 8.dp (The base grid unit)
     val itemWidth = AeonSize.D56.value // Standard touch target width
-    val barHeight = AeonSize.D56.value // Matches Material BottomAppBar height
-    val indicatorHeight = AeonSize.D40.value // Leaves exactly 8dp (spacingSm) vertical padding
+    val barHeight = AeonSize.D54.value // Matches Material BottomAppBar height
+    val indicatorHeight = barHeight - (2.times(spacing)) // Leaves exactly 8dp (spacingSm) vertical padding
 
     // Total width = (ItemWidth * Tabs) + (Spacing * (Tabs + 1))
     val barWidth = (itemWidth * tabs.size) + (spacing * (tabs.size + 1))
@@ -282,7 +283,7 @@ fun PillNavigationBar(
             modifier = Modifier
                 .width(barWidth)
                 .height(barHeight),
-            shape = CircleShape,
+            shape = RoundedCornerShape(barHeight/2),
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             glassVariant = GlassVariant.Pill,
@@ -307,7 +308,7 @@ fun PillNavigationBar(
                         .align(Alignment.CenterStart)
                         .background(
                             color = AppColors.primaryContainer,
-                            shape = CircleShape
+                            shape = RoundedCornerShape(indicatorHeight/2)
                         )
                 )
 

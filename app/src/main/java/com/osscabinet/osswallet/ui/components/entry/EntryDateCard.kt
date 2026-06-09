@@ -27,6 +27,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -45,6 +46,7 @@ fun EntryDateCard(
     placeholder: String = "Select Date",
     isFlush: Boolean = false
 ) {
+    val uiScale = AeonTheme.uiScale
     Surface(
         onClick = onClick,
         shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
@@ -54,8 +56,8 @@ fun EntryDateCard(
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = if (isFlush) 0.dp else 16.dp,
-                vertical = if (isFlush) AeonTheme.dimensions.spacingSm else 10.dp
+                horizontal = if (isFlush) 0.dp else scaledDp(16f, uiScale),
+                vertical = if (isFlush) AeonTheme.dimensions.spacingSm else scaledDp(10f, uiScale)
             ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -65,7 +67,7 @@ fun EntryDateCard(
                 modifier = Modifier.size(20.dp),
                 tint = AppColors.primary
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(scaledDp(12f, uiScale)))
             Column(modifier = Modifier.weight(1f)) {
                 val dateLabel = remember(dateMillis) {
                     if (dateMillis != null) {

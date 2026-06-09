@@ -41,10 +41,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Animated type selector for entry screens.
@@ -60,6 +62,7 @@ fun <T> EntryTypeSelector(
 ) {
     val selectedIndex = types.indexOfFirst { it.third == selectedType }.coerceAtLeast(0)
     val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
 
     val indicatorColor by animateColorAsState(
         targetValue = selectedColor,
@@ -77,7 +80,7 @@ fun <T> EntryTypeSelector(
     )
 
     GlassSurface(
-        modifier = Modifier.height(44.dp),
+        modifier = Modifier.height(scaledDp(44f, uiScale)),
         shape = RoundedCornerShape(32.dp),
         hazeStyle = GlassTokens.pillStyle(),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,

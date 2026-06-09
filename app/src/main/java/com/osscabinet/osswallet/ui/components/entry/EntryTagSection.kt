@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Reusable tag selection section for entry screens.
@@ -47,6 +48,7 @@ fun EntryTagSection(
     modifier: Modifier = Modifier,
     label: String = "ADD TAG"
 ) {
+    val uiScale = AeonTheme.uiScale
     val resolvedTags = remember(selectedNames, allAvailableTags) {
         selectedNames.map { name ->
             allAvailableTags.find { it.name.equals(name, ignoreCase = true) }
@@ -67,10 +69,10 @@ fun EntryTagSection(
             shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
             color = AppColors.surfaceContainerHigh,
             border = BorderStroke(1.dp, AppColors.outlineVariant),
-            modifier = Modifier.height(32.dp)
+            modifier = Modifier.height(scaledDp(32f, uiScale))
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 12.dp),
+                modifier = Modifier.padding(horizontal = scaledDp(12f, uiScale)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -79,7 +81,7 @@ fun EntryTagSection(
                     modifier = Modifier.size(14.dp),
                     tint = AppColors.primary
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(scaledDp(6f, uiScale)))
                 Text(
                     text = label,
                     style = AppTextStyles.tagLabel,
@@ -97,10 +99,10 @@ fun EntryTagSection(
                 shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
                 color = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
                 border = BorderStroke(1.dp, tagColor.copy(alpha = 0.4f)),
-                modifier = Modifier.height(32.dp)
+                modifier = Modifier.height(scaledDp(32f, uiScale))
             ) {
                 Row(
-                    modifier = Modifier.padding(start = 12.dp, end = 6.dp),
+                    modifier = Modifier.padding(start = scaledDp(12f, uiScale), end = scaledDp(6f, uiScale)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(

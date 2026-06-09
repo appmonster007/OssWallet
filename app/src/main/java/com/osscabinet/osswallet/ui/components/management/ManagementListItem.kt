@@ -31,9 +31,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Generic list item container for management screens.
@@ -52,6 +54,7 @@ fun ManagementListItem(
     additionalContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val uiScale = AeonTheme.uiScale
 
     Surface(
         onClick = onClick,
@@ -66,13 +69,13 @@ fun ManagementListItem(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(scaledDp(12f, uiScale)),
+            verticalArrangement = Arrangement.spacedBy(scaledDp(10f, uiScale))
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, uiScale))
             ) {
                 // Icon
                 Surface(

@@ -26,8 +26,10 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Standardized Scaffold for all Entry/Creation screens in OssWallet.
@@ -48,6 +50,7 @@ fun AeonEntryScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
     val topBarHeight = AeonSize.D64.value
     AeonHazeProvider(backgroundColor = containerColor) { hazeLayers ->
         Box(modifier = modifier.fillMaxSize()) {
@@ -58,8 +61,8 @@ fun AeonEntryScaffold(
                 Box(modifier = Modifier.fillMaxSize()) {
                     content(
                         PaddingValues(
-                            top = topBarHeight + 8.dp,
-                            bottom = innerPadding.calculateBottomPadding() + 24.dp,
+                            top = topBarHeight + scaledDp(8f, uiScale),
+                            bottom = innerPadding.calculateBottomPadding() + scaledDp(24f, uiScale),
                             start = 0.dp,
                             end = 0.dp
                         )

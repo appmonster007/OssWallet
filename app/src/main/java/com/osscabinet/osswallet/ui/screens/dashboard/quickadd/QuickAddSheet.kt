@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -191,6 +192,15 @@ private fun QuickAddSheetContent(
     hideKeyboard: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val uiScale = (screenHeight / 860f).coerceIn(0.75f, 1.0f)
+
+    val navBtnSize = (36f * uiScale).coerceIn(28f, 36f).dp
+    val navIconSize = (18f * uiScale).coerceIn(14f, 18f).dp
+    val navVPad = (6f * uiScale).coerceIn(3f, 6f).dp
+    val dotActive = (8f * uiScale).coerceIn(6f, 8f).dp
+    val dotInactive = (6f * uiScale).coerceIn(5f, 6f).dp
+
     val pagerState = rememberPagerState(pageCount = { TOTAL_STEPS })
 
     LaunchedEffect(state.currentStep) {
@@ -227,7 +237,7 @@ private fun QuickAddSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = navVPad),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Back button
@@ -235,14 +245,14 @@ private fun QuickAddSheetContent(
                 onClick = ::goBack,
                 shape = CircleShape,
                 color = AppColors.recessedSurface,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(navBtnSize)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Back",
                         tint = AppColors.contentSecondary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(navIconSize)
                     )
                 }
             }
@@ -257,7 +267,7 @@ private fun QuickAddSheetContent(
                     val isActive = pagerState.currentPage == index
                     Box(
                         modifier = Modifier
-                            .size(if (isActive) 8.dp else 6.dp)
+                            .size(if (isActive) dotActive else dotInactive)
                             .clip(CircleShape)
                             .background(
                                 if (isActive) AppColors.primary
@@ -279,12 +289,12 @@ private fun QuickAddSheetContent(
                     shape = CircleShape,
                     color = if (state.selectedAccountId != null) AppColors.primary
                     else AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(navBtnSize)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         if (state.isSaving) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(navIconSize),
                                 color = AppColors.onPrimary,
                                 strokeWidth = 2.dp
                             )
@@ -293,7 +303,7 @@ private fun QuickAddSheetContent(
                                 Icons.Rounded.Done,
                                 contentDescription = "Save",
                                 tint = AppColors.onPrimary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(navIconSize)
                             )
                         }
                     }
@@ -304,14 +314,14 @@ private fun QuickAddSheetContent(
                     shape = CircleShape,
                     color = if (canGoNext) AppColors.primary
                     else AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(navBtnSize)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowForward,
                             contentDescription = "Next",
                             tint = AppColors.onPrimary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(navIconSize)
                         )
                     }
                 }
@@ -337,7 +347,8 @@ private fun QuickAddSheetContent(
                         onCategorySelected = { category ->
                             hideKeyboard()
                             viewModel.onCategorySelected(category)
-                        }
+                        },
+                        uiScale = uiScale
                     )
 
                     STEP_ACCOUNT -> QuickAddAccountStep(
@@ -345,7 +356,8 @@ private fun QuickAddSheetContent(
                         selectedAccountId = state.selectedAccountId,
                         transactionType = state.transactionType,
                         onAccountTapped = { viewModel.onAccountTapped(it) },
-                        onToggleType = { viewModel.toggleTransactionType() }
+                        onToggleType = { viewModel.toggleTransactionType() },
+                        uiScale = uiScale
                     )
 
                     STEP_AMOUNT -> {

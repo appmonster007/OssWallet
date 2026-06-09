@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.osscabinet.ossWallet.ui.navigation.AccountListRoute
 import com.osscabinet.ossWallet.ui.navigation.CategoryListRoute
 import com.osscabinet.ossWallet.ui.navigation.CsvImportRoute
+import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterListRoute
@@ -171,7 +172,12 @@ fun NavGraphBuilder.settingsGraph(
         val vm: CsvImportViewModel = hiltViewModel()
         CsvImportScreen(
             viewModel = vm,
-            onNavigateBack = { navController.popBackStack() }
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToDashboard = {
+                navController.navigate(DashboardRoute()) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
         )
     }
 

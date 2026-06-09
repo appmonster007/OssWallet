@@ -50,6 +50,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Shared action card for entry screens.
@@ -74,6 +75,7 @@ fun EntryActionCard(
     onTrailingIconClick: (() -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed && enabled) 0.98f else 1f, label = "cardScale")
@@ -115,7 +117,7 @@ fun EntryActionCard(
 
     GlassSurface(
         modifier = modifier
-            .height(72.dp)
+            .height(scaledDp(72f, uiScale))
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale

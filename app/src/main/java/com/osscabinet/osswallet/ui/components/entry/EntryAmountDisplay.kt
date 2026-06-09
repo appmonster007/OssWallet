@@ -39,6 +39,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Standardized amount display with auto-resizing text and currency selector.
@@ -59,6 +60,7 @@ fun EntryAmountDisplay(
     isError: Boolean = false
 ) {
     val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = modifier
@@ -76,7 +78,7 @@ fun EntryAmountDisplay(
     ) {
         if (label != null) {
             Row(
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = scaledDp(8f, uiScale)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(

@@ -100,6 +100,8 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
+import com.osscabinet.ossWallet.ui.theme.scaledSp
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -137,6 +139,7 @@ fun OnboardingContent(
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -203,13 +206,13 @@ fun OnboardingContent(
                                             }
                                         },
                                         enabled = !uiState.isCompleting && !uiState.isSeeding,
-                                        modifier = Modifier.height(if (isSmallScreen) 48.dp else 56.dp),
+                                        modifier = Modifier.height(if (isSmallScreen) scaledDp(48f, uiScale) else scaledDp(56f, uiScale)),
                                         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = AppColors.primary,
                                             contentColor = AppColors.onPrimary
                                         ),
-                                        contentPadding = PaddingValues(horizontal = if (isSmallScreen) 16.dp else 24.dp)
+                                        contentPadding = PaddingValues(horizontal = if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(24f, uiScale))
                                     ) {
                                         if (uiState.isCompleting) {
                                             CircularProgressIndicator(
@@ -223,7 +226,7 @@ fun OnboardingContent(
                                                 style = AppTextStyles.drawerItemLabel.copy(
                                                     fontWeight = FontWeight.Bold,
                                                     letterSpacing = 1.sp,
-                                                    fontSize = if (isSmallScreen) 13.sp else 14.sp
+                                                    fontSize = if (isSmallScreen) scaledSp(13f, uiScale) else scaledSp(14f, uiScale)
                                                 )
                                             )
                                             Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
@@ -248,7 +251,7 @@ fun OnboardingContent(
                                             },
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .height(if (isSmallScreen) 48.dp else 56.dp),
+                                                .height(if (isSmallScreen) scaledDp(48f, uiScale) else scaledDp(56f, uiScale)),
                                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = AppColors.cardSurface,
@@ -271,7 +274,7 @@ fun OnboardingContent(
                                             enabled = !uiState.isSeeding,
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .height(if (isSmallScreen) 48.dp else 56.dp),
+                                                .height(if (isSmallScreen) scaledDp(48f, uiScale) else scaledDp(56f, uiScale)),
                                             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = AppColors.primary,
@@ -368,14 +371,15 @@ fun OnboardingContent(
 private fun StepHeader(icon: ImageVector, title: String, description: String) {
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = if (isSmallScreen) 16.dp else 32.dp)
+            .padding(bottom = if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(32f, uiScale))
     ) {
         Surface(
-            modifier = Modifier.size(if (isSmallScreen) 48.dp else 64.dp),
+            modifier = Modifier.size(if (isSmallScreen) scaledDp(48f, uiScale) else scaledDp(64f, uiScale)),
             shape = RoundedCornerShape(if (isSmallScreen) 12.dp else 16.dp),
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
@@ -388,18 +392,18 @@ private fun StepHeader(icon: ImageVector, title: String, description: String) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 24.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(24f, uiScale)))
         Text(
             text = title,
             style = if (isSmallScreen) AppTextStyles.cardTitle else AppTextStyles.heroAmount,
             color = AppColors.contentPrimary
         )
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 4.dp else 8.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(4f, uiScale) else scaledDp(8f, uiScale)))
         Text(
             text = description,
             style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary.copy(alpha = 0.7f),
-            lineHeight = if (isSmallScreen) 20.sp else 24.sp
+            lineHeight = if (isSmallScreen) scaledSp(20f, uiScale) else scaledSp(24f, uiScale)
         )
     }
 }
@@ -408,6 +412,7 @@ private fun StepHeader(icon: ImageVector, title: String, description: String) {
 private fun SeedStep() {
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = Modifier
@@ -416,9 +421,9 @@ private fun SeedStep() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(32f, uiScale)))
         Surface(
-            modifier = Modifier.size(if (isSmallScreen) 80.dp else 120.dp),
+            modifier = Modifier.size(if (isSmallScreen) scaledDp(80f, uiScale) else scaledDp(120f, uiScale)),
             shape = CircleShape,
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
@@ -431,20 +436,20 @@ private fun SeedStep() {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 32.dp else 48.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(32f, uiScale) else scaledDp(48f, uiScale)))
         Text(
             text = "Debug Mode Detected",
             style = if (isSmallScreen) AppTextStyles.heroAmount else AppTextStyles.heroAmountDisplay,
             color = AppColors.contentPrimary,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(16f, uiScale)))
         Text(
             text = "Would you like to seed the database with sample transactions, accounts, and budgets? This will skip the manual setup.",
             style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = scaledDp(16f, uiScale))
         )
         Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
@@ -454,6 +459,7 @@ private fun SeedStep() {
 private fun WelcomeStep() {
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = Modifier
@@ -462,9 +468,9 @@ private fun WelcomeStep() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(32f, uiScale)))
         Surface(
-            modifier = Modifier.size(if (isSmallScreen) 80.dp else 120.dp),
+            modifier = Modifier.size(if (isSmallScreen) scaledDp(80f, uiScale) else scaledDp(120f, uiScale)),
             shape = CircleShape,
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
@@ -477,20 +483,20 @@ private fun WelcomeStep() {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 32.dp else 48.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(32f, uiScale) else scaledDp(48f, uiScale)))
         Text(
             text = "Welcome to OssWallet",
             style = if (isSmallScreen) AppTextStyles.heroAmount else AppTextStyles.heroAmountDisplay,
             color = AppColors.contentPrimary,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(16f, uiScale)))
         Text(
             text = "Your simple and secure personal finance manager. Let's get you set up in a few quick steps.",
             style = if (isSmallScreen) AppTextStyles.caption else AppTextStyles.listItemTitle,
             color = AppColors.contentSecondary,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = scaledDp(16f, uiScale))
         )
         Spacer(modifier = Modifier.height(scrollBottomPadding()))
     }
@@ -532,6 +538,7 @@ private fun ProviderStep(
 ) {
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     Column(modifier = Modifier.fillMaxSize()) {
         val scrollState = rememberScrollState()
@@ -560,14 +567,14 @@ private fun ProviderStep(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = if (isSmallScreen) 8.dp else 12.dp)
+                        .padding(bottom = if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(12f, uiScale))
                 ) {
                     Row(
-                        modifier = Modifier.padding(if (isSmallScreen) 12.dp else 20.dp),
+                        modifier = Modifier.padding(if (isSmallScreen) scaledDp(12f, uiScale) else scaledDp(20f, uiScale)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(if (isSmallScreen) 40.dp else 48.dp),
+                            modifier = Modifier.size(if (isSmallScreen) scaledDp(40f, uiScale) else scaledDp(48f, uiScale)),
                             shape = CircleShape,
                             color = if (isSelected) AppColors.primary.copy(alpha = 0.15f) else AppColors.recessedSurface
                         ) {
@@ -580,7 +587,7 @@ private fun ProviderStep(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(if (isSmallScreen) 12.dp else 16.dp))
+                        Spacer(modifier = Modifier.width(if (isSmallScreen) scaledDp(12f, uiScale) else scaledDp(16f, uiScale)))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = provider.name,
@@ -591,7 +598,7 @@ private fun ProviderStep(
                                 text = provider.attribution,
                                 style = AppTextStyles.caption,
                                 color = AppColors.contentSecondary.copy(alpha = 0.6f),
-                                fontSize = if (isSmallScreen) 10.sp else 11.sp
+                                fontSize = if (isSmallScreen) scaledSp(10f, uiScale) else scaledSp(11f, uiScale)
                             )
                         }
                         if (isSelected) {
@@ -629,6 +636,7 @@ private fun CurrenciesStep(
     val haptic = LocalHapticFeedback.current
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     // Suggested currencies for quick access
     val suggestedCodes = listOf("USD", "EUR", "GBP", "JPY", "CNY", "INR", "CAD", "AUD")
@@ -638,7 +646,7 @@ private fun CurrenciesStep(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) 4.dp else 8.dp)
+        verticalArrangement = Arrangement.spacedBy(if (isSmallScreen) scaledDp(4f, uiScale) else scaledDp(8f, uiScale))
     ) {
         if (!isSmallScreen || searchQuery.isEmpty()) {
             item {
@@ -656,12 +664,12 @@ private fun CurrenciesStep(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = if (isSmallScreen) 8.dp else 16.dp),
+                    .padding(bottom = if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(16f, uiScale)),
                 placeholder = {
                     Text(
                         "Search 150+ currencies...",
                         style = AppTextStyles.caption,
-                        fontSize = if (isSmallScreen) 12.sp else 14.sp
+                        fontSize = if (isSmallScreen) scaledSp(12f, uiScale) else scaledSp(14f, uiScale)
                     )
                 },
                 leadingIcon = {
@@ -685,7 +693,7 @@ private fun CurrenciesStep(
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = if (isSmallScreen) 14.sp else 16.sp
+                    fontSize = if (isSmallScreen) scaledSp(14f, uiScale) else scaledSp(16f, uiScale)
                 ),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = AppColors.cardSurface,
@@ -700,8 +708,8 @@ private fun CurrenciesStep(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = if (isSmallScreen) 4.dp else 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(bottom = if (isSmallScreen) scaledDp(4f, uiScale) else scaledDp(8f, uiScale)),
+                horizontalArrangement = Arrangement.spacedBy(scaledDp(8f, uiScale)),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 listOf(
@@ -748,11 +756,11 @@ private fun CurrenciesStep(
                     "SUGGESTED",
                     style = AppTextStyles.formSectionLabel,
                     color = AppColors.primary,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = scaledDp(8f, uiScale))
                 )
             }
             items(suggestedCurrencies.chunked(if (isSmallScreen) 3 else 4)) { rowItems ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(scaledDp(8f, uiScale))) {
                     rowItems.forEach { currency ->
                         CurrencyTile(
                             modifier = Modifier.weight(1f),
@@ -778,15 +786,15 @@ private fun CurrenciesStep(
                     "ALL CURRENCIES",
                     style = AppTextStyles.formSectionLabel,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(top = scaledDp(16f, uiScale), bottom = scaledDp(8f, uiScale))
                 )
             }
         }
 
         items(filteredCurrencies.chunked(if (isSmallScreen) 3 else 4)) { rowItems ->
             Row(
-                modifier = Modifier.padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(vertical = scaledDp(4f, uiScale)),
+                horizontalArrangement = Arrangement.spacedBy(scaledDp(8f, uiScale))
             ) {
                 rowItems.forEach { currency ->
                     CurrencyTile(
@@ -836,7 +844,7 @@ private fun CurrencyTile(
             width = if (isBase) 2.dp else 0.5.dp,
             color = if (isBase) AppColors.primary else AppColors.divider.copy(alpha = 0.1f)
         ),
-        modifier = modifier.height(if (isSmallScreen) 88.dp else 100.dp)
+        modifier = modifier.height(if (isSmallScreen) scaledDp(88f, AeonTheme.uiScale) else scaledDp(100f, AeonTheme.uiScale))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -899,6 +907,7 @@ private fun AppearanceStep(
 ) {
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenWidthDp < 360
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = Modifier
@@ -915,9 +924,9 @@ private fun AppearanceStep(
             "APP THEME",
             style = AppTextStyles.formSectionLabel,
             color = AppColors.primary,
-            fontSize = if (isSmallScreen) 10.sp else 11.sp
+            fontSize = if (isSmallScreen) scaledSp(10f, uiScale) else scaledSp(11f, uiScale)
         )
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(12f, uiScale)))
 
         val themes = listOf(
             Triple("System", "Matches device", Icons.Rounded.SettingsSuggest),
@@ -928,8 +937,8 @@ private fun AppearanceStep(
 
         themes.chunked(2).forEach { chunk ->
             Row(
-                modifier = Modifier.padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(bottom = scaledDp(8f, uiScale)),
+                horizontalArrangement = Arrangement.spacedBy(scaledDp(8f, uiScale))
             ) {
                 chunk.forEach { (name, _, icon) ->
                     val isSelected = selectedTheme == name
@@ -946,7 +955,7 @@ private fun AppearanceStep(
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(if (isSmallScreen) 8.dp else 12.dp),
+                            modifier = Modifier.padding(if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(12f, uiScale)),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Icon(
@@ -955,7 +964,7 @@ private fun AppearanceStep(
                                 tint = if (isSelected) AppColors.primary else AppColors.contentSecondary,
                                 modifier = Modifier.size(if (isSmallScreen) 20.dp else 24.dp)
                             )
-                            Spacer(modifier = Modifier.height(if (isSmallScreen) 4.dp else 8.dp))
+                            Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(4f, uiScale) else scaledDp(8f, uiScale)))
                             Text(
                                 name,
                                 style = if (isSmallScreen) AppTextStyles.caption.copy(fontWeight = FontWeight.Bold) else AppTextStyles.chipLabelBold,
@@ -967,24 +976,24 @@ private fun AppearanceStep(
             }
         }
 
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 20.dp else 32.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(20f, uiScale) else scaledDp(32f, uiScale)))
 
         Text(
             "DECIMAL PRECISION",
             style = AppTextStyles.formSectionLabel,
             color = AppColors.primary,
-            fontSize = if (isSmallScreen) 10.sp else 11.sp
+            fontSize = if (isSmallScreen) scaledSp(10f, uiScale) else scaledSp(11f, uiScale)
         )
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 12.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(8f, uiScale) else scaledDp(12f, uiScale)))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(scaledDp(16f, uiScale))) {
             listOf(2, 3).forEach { p ->
                 val isSelected = selectedPrecision == p
                 Surface(
                     onClick = { onPrecisionSelected(p) },
                     modifier = Modifier
                         .weight(1f)
-                        .height(if (isSmallScreen) 64.dp else 80.dp),
+                        .height(if (isSmallScreen) scaledDp(64f, uiScale) else scaledDp(80f, uiScale)),
                     shape = RoundedCornerShape(16.dp),
                     color = if (isSelected) AppColors.primary.copy(alpha = 0.08f) else AppColors.cardSurface,
                     border = BorderStroke(
@@ -1017,7 +1026,7 @@ private fun AppearanceStep(
             }
         }
 
-        Spacer(modifier = Modifier.height(if (isSmallScreen) 16.dp else 24.dp))
+        Spacer(modifier = Modifier.height(if (isSmallScreen) scaledDp(16f, uiScale) else scaledDp(24f, uiScale)))
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -1025,7 +1034,7 @@ private fun AppearanceStep(
             color = AppColors.recessedSurface.copy(alpha = 0.5f)
         ) {
             Row(
-                modifier = Modifier.padding(if (isSmallScreen) 12.dp else 16.dp),
+                modifier = Modifier.padding(if (isSmallScreen) scaledDp(12f, uiScale) else scaledDp(16f, uiScale)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -1035,12 +1044,12 @@ private fun AppearanceStep(
                     tint = AppColors.primary,
                     modifier = Modifier.size(if (isSmallScreen) 14.dp else 16.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(scaledDp(8f, uiScale)))
                 Text(
                     text = "Example: ${formatAuto(BigDecimal("1234.5678"), precision = selectedPrecision)}",
                     style = AppTextStyles.listItemTitle.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = if (isSmallScreen) 12.sp else 14.sp
+                        fontSize = if (isSmallScreen) scaledSp(12f, uiScale) else scaledSp(14f, uiScale)
                     ),
                     color = AppColors.contentPrimary
                 )

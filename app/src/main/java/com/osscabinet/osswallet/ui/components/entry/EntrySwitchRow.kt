@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
  * Standardized row with an optional icon, label, and switch for entry screens and settings.
@@ -51,6 +52,7 @@ fun EntrySwitchRow(
     iconContainerColor: Color = AppColors.secondary.copy(alpha = 0.1f),
     iconTint: Color = AppColors.secondary
 ) {
+    val uiScale = AeonTheme.uiScale
     val horizontalPadding = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding
     val verticalPadding = if (isFlush) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.cardPadding
 
@@ -65,9 +67,9 @@ fun EntrySwitchRow(
             modifier = Modifier
                 .weight(1f)
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(start = horizontalPadding, top = verticalPadding, bottom = verticalPadding, end = 12.dp),
+                .padding(start = horizontalPadding, top = verticalPadding, bottom = verticalPadding, end = scaledDp(12f, uiScale)),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, uiScale))
         ) {
             if (icon != null) {
                 Surface(
@@ -116,7 +118,7 @@ fun EntrySwitchRow(
         // Switch area
         Box(
             modifier = Modifier
-                .padding(start = 12.dp, end = horizontalPadding)
+                .padding(start = scaledDp(12f, uiScale), end = horizontalPadding)
                 .padding(vertical = verticalPadding),
             contentAlignment = Alignment.Center
         ) {

@@ -17,6 +17,7 @@ enum class OssWalletField(val displayName: String) {
 enum class ImportSourceApp(val displayName: String) {
     BUDGET_BAKERS("Wallet by BudgetBakers"),
     MONEY_MANAGER("Money Manager"),
+    CASHEW("Cashew"),
     GENERIC("Generic CSV")
 }
 

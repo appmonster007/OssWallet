@@ -63,11 +63,16 @@ class CsvImportServiceImpl @Inject constructor(
         "warranty_in_month", "transfer", "payee", "labels"
     )
 
+    private val cashewDistinctiveHeaders = setOf(
+        "income", "category name", "subcategory name", "title"
+    )
+
     // ──────────────────────────────────────────────────────────────────────────
     // Date parsing helpers
     // ──────────────────────────────────────────────────────────────────────────
 
     private val dateFormats = listOf(
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US),
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US),
         SimpleDateFormat("yyyy-MM-dd", Locale.US),
         SimpleDateFormat("dd/MM/yyyy", Locale.US),
@@ -242,15 +247,28 @@ class CsvImportServiceImpl @Inject constructor(
 
                 CsvImportSession(headers, previewRows, mapping, sourceApp, ';')
             } else {
-                val delimiter = ','
-                val headers = firstLineCheck.split(delimiter).map { it.trim().lowercase().replace("\"", "") }
-                val sourceApp = ImportSourceApp.GENERIC
-                val mapping = buildInitialMapping(headers, sourceApp)
-                val previewRows = bufferedReader.readLines().take(5).map { row ->
-                    row.split(delimiter).map { c -> c.trim().replace("\"", "") }
-                }
+                val firstLineLower = firstLineCheck.lowercase()
+                val isCashew = cashewDistinctiveHeaders.count { h -> firstLineLower.contains(h) } >= 3
 
-                CsvImportSession(headers, previewRows, mapping, sourceApp, delimiter)
+                if (isCashew) {
+                    val format = buildBudgetBakersCsvFormat().builder().setDelimiter(',').build()
+                    val remaining = firstLineCheck + "\n" + bufferedReader.readText()
+                    val parser = CSVParser.parse(remaining.reader(), format)
+                    val records = parser.records
+                    if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), ImportSourceApp.CASHEW)
+                    val headers = records.first().toList().map { it.trim().lowercase() }
+                    val previewRows = records.drop(1).take(5).map { rec -> rec.toList() }
+                    CsvImportSession(headers, previewRows, buildInitialMapping(headers, ImportSourceApp.CASHEW), ImportSourceApp.CASHEW, ',')
+                } else {
+                    val delimiter = ','
+                    val headers = firstLineCheck.split(delimiter).map { it.trim().lowercase().replace("\"", "") }
+                    val sourceApp = ImportSourceApp.GENERIC
+                    val mapping = buildInitialMapping(headers, sourceApp)
+                    val previewRows = bufferedReader.readLines().take(5).map { row ->
+                        row.split(delimiter).map { c -> c.trim().replace("\"", "") }
+                    }
+                    CsvImportSession(headers, previewRows, mapping, sourceApp, delimiter)
+                }
             }
         }
 
@@ -271,6 +289,19 @@ class CsvImportServiceImpl @Inject constructor(
                 OssWalletField.LABELS to headers.indexOf("labels").takeIf { it >= 0 },
                 OssWalletField.WARRANTY_MONTHS to headers.indexOf("warranty_in_month").takeIf { it >= 0 },
                 OssWalletField.IS_TRANSFER to headers.indexOf("transfer").takeIf { it >= 0 }
+            )
+            ImportSourceApp.CASHEW -> mapOf(
+                OssWalletField.DATE      to headers.indexOf("date").takeIf { it >= 0 },
+                OssWalletField.ACCOUNT   to headers.indexOf("account").takeIf { it >= 0 },
+                OssWalletField.CATEGORY  to headers.indexOf("category name").takeIf { it >= 0 },
+                OssWalletField.AMOUNT    to headers.indexOf("amount").takeIf { it >= 0 },
+                OssWalletField.TYPE      to headers.indexOf("income").takeIf { it >= 0 },
+                OssWalletField.NOTE      to headers.indexOf("note").takeIf { it >= 0 },
+                OssWalletField.PAYEE     to null,
+                OssWalletField.PAYMENT_TYPE to null,
+                OssWalletField.LABELS    to null,
+                OssWalletField.WARRANTY_MONTHS to null,
+                OssWalletField.IS_TRANSFER to null
             )
             else -> OssWalletField.entries.associateWith { field ->
                 val guesses = when (field) {
@@ -299,10 +330,10 @@ class CsvImportServiceImpl @Inject constructor(
         session: CsvImportSession,
         inputStream: InputStream
     ): ImportPreview = withContext(Dispatchers.IO) {
-        if (session.sourceApp == ImportSourceApp.BUDGET_BAKERS) {
-            generateBudgetBakersPreview(session, inputStream)
-        } else {
-            generateGenericPreview(session, inputStream)
+        when (session.sourceApp) {
+            ImportSourceApp.BUDGET_BAKERS -> generateBudgetBakersPreview(session, inputStream)
+            ImportSourceApp.CASHEW -> generateCashewPreview(session, inputStream)
+            else -> generateGenericPreview(session, inputStream)
         }
     }
 
@@ -494,10 +525,10 @@ class CsvImportServiceImpl @Inject constructor(
         selectedDuplicateRowIndices: Set<Int>
     ): Result<ImportSummary> = withContext(Dispatchers.IO) {
         try {
-            if (session.sourceApp == ImportSourceApp.BUDGET_BAKERS) {
-                executeBudgetBakersImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)
-            } else {
-                executeGenericImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)
+            when (session.sourceApp) {
+                ImportSourceApp.BUDGET_BAKERS -> executeBudgetBakersImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)
+                ImportSourceApp.CASHEW -> executeCashewImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)
+                else -> executeGenericImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -935,6 +966,401 @@ class CsvImportServiceImpl @Inject constructor(
                             status = TransactionStatus.CLEARED
                         )
                     )
+                    imported++
+                } catch (e: Exception) {
+                    errors.add(ParseError(idx, e.message ?: "Row error"))
+                }
+            }
+        }
+
+        return Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Cashew-specific import
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private fun parseCashewRows(inputStream: InputStream): List<Map<String, String>> {
+        val format = CSVFormat.DEFAULT.builder()
+            .setDelimiter(',').setQuote('"')
+            .setIgnoreEmptyLines(true).setTrim(true).build()
+        val parser = CSVParser.parse(inputStream.bufferedReader(), format)
+        val records = parser.records
+        if (records.isEmpty()) return emptyList()
+        val headers = records.first().toList().map { it.trim().lowercase() }
+        return records.drop(1).map { rec ->
+            headers.mapIndexed { i, h -> h to (rec.get(i).ifEmpty { "" }) }.toMap()
+        }
+    }
+
+    private fun isCashewTransferRow(row: Map<String, String>): Boolean =
+        row["category name"]?.equals("Balance Correction", ignoreCase = true) == true
+
+    private fun cashewCombinedNote(row: Map<String, String>): String =
+        listOf(row["title"], row["note"]).filter { !it.isNullOrBlank() }.joinToString(" — ")
+
+    private suspend fun generateCashewPreview(
+        session: CsvImportSession,
+        inputStream: InputStream
+    ): ImportPreview {
+        val rows = parseCashewRows(inputStream)
+        if (rows.isEmpty()) return ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList())
+
+        val existingAccountsList = accountDao.getAllAccountsSync()
+        val existingAccountsByName = existingAccountsList.associateBy { it.name.lowercase() }
+        val existingCategories = categoryDao.getAllCategoriesSync()
+        val existingKeys = transactionDao.getAllTransactionsSync().map { tx ->
+            "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
+        }.toSet()
+
+        val accountRowCounts = mutableMapOf<String, Int>()
+        val newCategoryMap = mutableMapOf<String, CategoryToMap>() // key = "parent|leaf"
+        val duplicates = mutableListOf<DuplicateGroup>()
+        val parseErrors = mutableListOf<ParseError>()
+        var validRows = 0
+        val transferGroups = mutableMapOf<String, MutableList<Int>>()
+
+        rows.forEachIndexed { idx, row ->
+            try {
+                val accountName = row["account"] ?: ""
+                val amount = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val timestamp = parseDate(row["date"] ?: "")
+                val categoryName = row["category name"] ?: ""
+                val subcategoryName = row["subcategory name"] ?: ""
+                val combinedNote = cashewCombinedNote(row)
+                val isTransfer = isCashewTransferRow(row)
+
+                if (accountName.isNotBlank())
+                    accountRowCounts[accountName] = (accountRowCounts[accountName] ?: 0) + 1
+
+                if (!isTransfer && categoryName.isNotBlank()) {
+                    val leafName = subcategoryName.takeIf { it.isNotBlank() } ?: categoryName
+                    val parentHint = subcategoryName.takeIf { it.isNotBlank() }?.let { categoryName }
+                    val key = "$categoryName|$leafName"
+                    if (!newCategoryMap.containsKey(key)) {
+                        val resolved = existingCategories.find { it.name.equals(leafName, ignoreCase = true) }
+                        if (resolved == null) {
+                            newCategoryMap[key] = CategoryToMap(name = leafName, suggestedParentName = parentHint)
+                        }
+                    }
+                }
+
+                if (isTransfer) {
+                    val pairKey = "${timestamp / 60000}|${amount.abs().toPlainString()}"
+                    transferGroups.getOrPut(pairKey) { mutableListOf() }.add(idx)
+                }
+
+                val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$combinedNote"
+                if (dupKey in existingKeys) {
+                    duplicates.add(DuplicateGroup(dupKey, combinedNote, idx, row.values.toList()))
+                } else validRows++
+            } catch (e: Exception) {
+                parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
+            }
+        }
+
+        val allCsvAccounts = accountRowCounts.map { (name, count) ->
+            val match = existingAccountsByName[name.lowercase()]
+            AccountToMap(name, match?.id, match?.name, count)
+        }.sortedBy { it.name }
+
+        return ImportPreview(
+            totalRows = rows.size,
+            validRows = validRows,
+            duplicates = duplicates,
+            allCsvAccounts = allCsvAccounts,
+            newCategories = newCategoryMap.values.toList(),
+            parseErrors = parseErrors,
+            unpairedTransferRows = transferGroups.values.count { it.size == 1 }
+        )
+    }
+
+    private suspend fun executeCashewImport(
+        session: CsvImportSession,
+        inputStream: InputStream,
+        duplicatePolicy: DuplicatePolicy,
+        entityMappings: List<EntityMapping>,
+        selectedDuplicateRowIndices: Set<Int>
+    ): Result<ImportSummary> {
+        val profileId = settingsDataStore.currentProfileId.first()
+        val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
+        val rows = parseCashewRows(inputStream)
+
+        val existingAccountEntities = accountDao.getAllAccountsSync().associateBy { it.name.lowercase() }
+        val existingCategoryEntities = categoryDao.getAllCategoriesSync()
+        val existingKeys = transactionDao.getAllTransactionsSync().map { tx ->
+            "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
+        }.toSet()
+
+        val accountMap = existingAccountEntities.mapValues { it.value.id }.toMutableMap()
+        val categoryMap = existingCategoryEntities.associate { it.name.lowercase() to it.id }.toMutableMap()
+        val existingTagsList = tagDao.getAllTagsSync().toMutableList()
+
+        var imported = 0
+        var skipped = 0
+        var transfersRerouted = 0
+        val errors = mutableListOf<ParseError>()
+
+        val excludedAccountNames = entityMappings
+            .filter { it.entityType == EntityMapping.EntityType.ACCOUNT && it.isExcluded }
+            .map { it.unknownName.lowercase() }.toSet()
+
+        database.withTransaction {
+            // Apply entity mappings
+            entityMappings.forEach { em ->
+                when (em.entityType) {
+                    EntityMapping.EntityType.ACCOUNT -> {
+                        if (em.isExcluded) return@forEach
+                        val id = em.existingId ?: UUID.randomUUID().toString()
+                        if (em.existingId == null) {
+                            val conflictExists = existingAccountEntities.containsKey(em.unknownName.lowercase())
+                            val finalName = if (conflictExists) "${em.unknownName}-${randomAlphanumSuffix()}" else em.unknownName
+                            accountDao.upsertAccount(AccountEntity(
+                                id = id, name = finalName,
+                                currencyCode = profileBaseCurrency, structureType = "regular",
+                                colorHex = "#607D8B", icon = "wallet",
+                                allowedCurrencies = profileBaseCurrency,
+                                profileId = profileId, isArchived = false, displayOrder = 999
+                            ))
+                        }
+                        accountMap[em.unknownName.lowercase()] = id
+                    }
+                    EntityMapping.EntityType.CATEGORY -> {
+                        if (em.existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        } else {
+                            categoryDao.insertCategory(CategoryEntity(
+                                id = 0, name = em.unknownName, iconName = "Category",
+                                colorHex = DEFAULT_CATEGORY_COLOR, isDefault = false,
+                                parentId = em.parentCategoryId
+                            ))
+                            val inserted = categoryDao.getCategoryByName(em.unknownName)
+                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                        }
+                    }
+                }
+            }
+
+            data class IndexedRow(val idx: Int, val row: Map<String, String>)
+
+            val transferRows = mutableListOf<IndexedRow>()
+            val regularRows = mutableListOf<IndexedRow>()
+            rows.forEachIndexed { idx, row ->
+                if (isCashewTransferRow(row)) transferRows.add(IndexedRow(idx, row))
+                else regularRows.add(IndexedRow(idx, row))
+            }
+
+            data class ParsedCashewTransfer(
+                val idx: Int,
+                val row: Map<String, String>,
+                val accountName: String,
+                val timestamp: Long,
+                val note: String,
+                val baseAmount: BigDecimal,
+                val currency: String
+            )
+
+            val parsedTransfers = transferRows.mapNotNull { (idx, row) ->
+                try {
+                    ParsedCashewTransfer(
+                        idx = idx,
+                        row = row,
+                        accountName = row["account"] ?: return@mapNotNull null,
+                        timestamp = parseDate(row["date"] ?: ""),
+                        note = cashewCombinedNote(row),
+                        baseAmount = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                        currency = row["currency"] ?: profileBaseCurrency
+                    )
+                } catch (e: Exception) {
+                    errors.add(ParseError(idx, e.message ?: "Transfer parse error"))
+                    null
+                }
+            }
+
+            val pairGroups = parsedTransfers.groupBy { t ->
+                "${t.timestamp / 60000}|${t.baseAmount.abs().toPlainString()}"
+            }
+
+            pairGroups.forEach { (_, group) ->
+                if (group.size == 2) {
+                    val sourceEntry = group.firstOrNull { it.baseAmount.signum() < 0 } ?: group[0]
+                    val targetEntry = group.firstOrNull { it != sourceEntry } ?: group[1]
+
+                    val sourceExcluded = sourceEntry.accountName.lowercase() in excludedAccountNames
+                    val targetExcluded = targetEntry.accountName.lowercase() in excludedAccountNames
+
+                    when {
+                        sourceExcluded && targetExcluded -> { skipped += 2; return@forEach }
+                        sourceExcluded -> {
+                            val targetAccountId = accountMap[targetEntry.accountName.lowercase()]
+                            if (targetAccountId == null) { skipped++; return@forEach }
+                            transactionDao.insertTransaction(TransactionEntity(
+                                id = 0, name = targetEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = targetEntry.baseAmount.abs(), timestamp = targetEntry.timestamp,
+                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER,
+                                accountId = targetAccountId, categoryId = 1005L, tags = emptySet(),
+                                targetAccountId = null, targetCurrency = null, transferRate = BigDecimal.ONE,
+                                paymentMethod = PaymentMethod.MOBILE_PAYMENT, payee = "", note = targetEntry.note,
+                                sourcePlannedPaymentId = null, profileId = profileId,
+                                gpsLocation = null, location = null, warrantyExpiration = null,
+                                status = TransactionStatus.CLEARED
+                            ))
+                            imported++; transfersRerouted++
+                        }
+                        targetExcluded -> {
+                            val sourceAccountId = accountMap[sourceEntry.accountName.lowercase()]
+                            if (sourceAccountId == null) { skipped++; return@forEach }
+                            val absAmount = sourceEntry.baseAmount.abs()
+                            val dupKey = "${sourceEntry.timestamp / 60000}|${absAmount.toPlainString()}|${sourceEntry.note}"
+                            if (dupKey in existingKeys && !handleDuplicate(duplicatePolicy, sourceEntry.idx, selectedDuplicateRowIndices)) {
+                                skipped += 2; return@forEach
+                            }
+                            transactionDao.insertTransaction(TransactionEntity(
+                                id = 0, name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = absAmount.negate(), timestamp = sourceEntry.timestamp,
+                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER,
+                                accountId = sourceAccountId, categoryId = 1006L, tags = emptySet(),
+                                targetAccountId = null, targetCurrency = null, transferRate = BigDecimal.ONE,
+                                paymentMethod = PaymentMethod.MOBILE_PAYMENT, payee = "", note = sourceEntry.note,
+                                sourcePlannedPaymentId = null, profileId = profileId,
+                                gpsLocation = null, location = null, warrantyExpiration = null,
+                                status = TransactionStatus.CLEARED
+                            ))
+                            imported++; transfersRerouted++
+                        }
+                        else -> {
+                            val sourceAccountId = accountMap[sourceEntry.accountName.lowercase()]
+                            val targetAccountId = accountMap[targetEntry.accountName.lowercase()]
+                            if (sourceAccountId == null || targetAccountId == null) { skipped += 2; return@forEach }
+
+                            val absAmount = sourceEntry.baseAmount.abs()
+                            val dupKey = "${sourceEntry.timestamp / 60000}|${absAmount.toPlainString()}|${sourceEntry.note}"
+                            if (dupKey in existingKeys && !handleDuplicate(duplicatePolicy, sourceEntry.idx, selectedDuplicateRowIndices)) {
+                                skipped += 2; return@forEach
+                            }
+
+                            val transferRate = if (sourceEntry.currency != targetEntry.currency &&
+                                sourceEntry.baseAmount.compareTo(BigDecimal.ZERO) != 0) {
+                                targetEntry.baseAmount.abs().divide(sourceEntry.baseAmount.abs(), 8, RoundingMode.HALF_UP)
+                            } else BigDecimal.ONE
+                            val targetAmount = absAmount.multiply(transferRate)
+                            val inverseRate = if (transferRate.compareTo(BigDecimal.ZERO) != 0)
+                                BigDecimal.ONE.divide(transferRate, 8, RoundingMode.HALF_UP) else BigDecimal.ONE
+
+                            val sourceId = transactionDao._insertTransaction(TransactionEntity(
+                                id = 0, name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = absAmount.negate(), timestamp = sourceEntry.timestamp,
+                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER,
+                                accountId = sourceAccountId, categoryId = 1006L, tags = emptySet(),
+                                targetAccountId = targetAccountId, targetCurrency = targetEntry.currency,
+                                transferRate = transferRate, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+                                payee = "", note = sourceEntry.note, sourcePlannedPaymentId = null,
+                                profileId = profileId, gpsLocation = null,
+                                location = null, warrantyExpiration = null, status = TransactionStatus.CLEARED
+                            ))
+                            val targetId = transactionDao._insertTransaction(TransactionEntity(
+                                id = 0, name = targetEntry.note.ifBlank { "Transfer" }.take(50),
+                                amount = targetAmount, timestamp = targetEntry.timestamp,
+                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER,
+                                accountId = targetAccountId, categoryId = 1005L, tags = emptySet(),
+                                targetAccountId = sourceAccountId, targetCurrency = sourceEntry.currency,
+                                transferRate = inverseRate, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+                                payee = "", note = targetEntry.note, sourcePlannedPaymentId = null,
+                                profileId = profileId, gpsLocation = null,
+                                location = null, warrantyExpiration = null, status = TransactionStatus.CLEARED
+                            ))
+                            if (sourceId > 0 && targetId > 0) {
+                                transactionLinkDao.insertLinks(listOf(
+                                    TransactionLinkEntity(transactionId = sourceId, linkedTransactionId = targetId),
+                                    TransactionLinkEntity(transactionId = targetId, linkedTransactionId = sourceId)
+                                ))
+                            }
+                            imported += 2
+                        }
+                    }
+                } else {
+                    // Unpaired → outside-wallet transfer
+                    group.forEach { t ->
+                        if (t.accountName.lowercase() in excludedAccountNames) { skipped++; return@forEach }
+                        val accountId = accountMap[t.accountName.lowercase()]
+                        if (accountId == null) { skipped++; return@forEach }
+                        val isOutflow = t.baseAmount.signum() < 0
+                        val finalAmount = if (isOutflow) t.baseAmount.abs().negate() else t.baseAmount.abs()
+                        transactionDao.insertTransaction(TransactionEntity(
+                            id = 0, name = t.note.ifBlank { "Transfer" }.take(50),
+                            amount = finalAmount, timestamp = t.timestamp,
+                            currency = t.currency, transactionType = TransactionType.TRANSFER,
+                            accountId = accountId, categoryId = if (isOutflow) 1006L else 1005L,
+                            tags = emptySet(), targetAccountId = null, targetCurrency = null,
+                            transferRate = BigDecimal.ONE, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+                            payee = "", note = t.note, sourcePlannedPaymentId = null,
+                            profileId = profileId, gpsLocation = null,
+                            location = null, warrantyExpiration = null, status = TransactionStatus.CLEARED
+                        ))
+                        imported++
+                    }
+                }
+            }
+
+            // Regular (non-transfer) rows
+            regularRows.forEachIndexed { _, (idx, row) ->
+                try {
+                    val accountName = row["account"] ?: ""
+                    if (accountName.lowercase() in excludedAccountNames) { skipped++; return@forEachIndexed }
+
+                    val amountRaw = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val isIncome = row["income"]?.equals("true", ignoreCase = true) == true
+                    val finalAmount = if (isIncome) amountRaw.abs() else amountRaw.abs().negate()
+                    val txType = if (isIncome) TransactionType.INCOME else TransactionType.EXPENSE
+                    val combinedNote = cashewCombinedNote(row)
+                    val timestamp = parseDate(row["date"] ?: "")
+
+                    val dupKey = "${timestamp / 60000}|${amountRaw.abs().toPlainString()}|$combinedNote"
+                    if (dupKey in existingKeys) {
+                        if (!handleDuplicate(duplicatePolicy, idx, selectedDuplicateRowIndices)) {
+                            skipped++; return@forEachIndexed
+                        }
+                    }
+
+                    val accountId = accountMap[accountName.lowercase()]
+                    if (accountId == null) { skipped++; return@forEachIndexed }
+
+                    val subcategoryName = row["subcategory name"]?.takeIf { it.isNotBlank() }
+                    val categoryName = row["category name"] ?: ""
+                    val leafName = subcategoryName ?: categoryName
+                    val txName = leafName.ifBlank { "Transaction" }.take(50)
+
+                    val categoryId = existingCategoryEntities.find { it.name.equals(leafName, ignoreCase = true) }?.id
+                        ?: categoryMap[leafName.lowercase()]
+                        ?: 1000L
+
+                    val isRepetitive = row["type"]?.contains("repetitive", ignoreCase = true) == true
+                    val baseTagNames: Set<String> = if (isRepetitive) setOf("Planned") else emptySet()
+                    val tagIds = resolveTagIds(baseTagNames, existingTagsList)
+
+                    transactionDao.insertTransaction(TransactionEntity(
+                        id = 0,
+                        name = txName,
+                        amount = finalAmount,
+                        timestamp = timestamp,
+                        currency = row["currency"] ?: profileBaseCurrency,
+                        transactionType = txType,
+                        accountId = accountId,
+                        categoryId = categoryId,
+                        tags = tagIds,
+                        targetAccountId = null,
+                        targetCurrency = null,
+                        transferRate = BigDecimal.ONE,
+                        paymentMethod = PaymentMethod.MOBILE_PAYMENT,
+                        payee = "",
+                        note = combinedNote,
+                        sourcePlannedPaymentId = null,
+                        profileId = profileId,
+                        gpsLocation = null,
+                        location = null,
+                        warrantyExpiration = null,
+                        status = TransactionStatus.CLEARED
+                    ))
                     imported++
                 } catch (e: Exception) {
                     errors.add(ParseError(idx, e.message ?: "Row error"))

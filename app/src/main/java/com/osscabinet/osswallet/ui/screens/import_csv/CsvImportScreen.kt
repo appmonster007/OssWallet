@@ -354,9 +354,15 @@ private fun ColumnMappingStep(
             }
         } else {
             val isBudgetBakers = session.sourceApp == ImportSourceApp.BUDGET_BAKERS
+            val isCashew = session.sourceApp == ImportSourceApp.CASHEW
 
             // Auto-detect banner
-            if (isBudgetBakers) {
+            val autoDetectedLabel = when {
+                isBudgetBakers -> "BudgetBakers file detected"
+                isCashew -> "Cashew file detected"
+                else -> null
+            }
+            if (autoDetectedLabel != null) {
                 Surface(
                     color = AppColors.primaryContainer,
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
@@ -374,7 +380,7 @@ private fun ColumnMappingStep(
                         )
                         Column {
                             Text(
-                                "BudgetBakers file detected",
+                                autoDetectedLabel,
                                 style = AppTextStyles.cardSectionTitle,
                                 color = AppColors.onPrimaryContainer
                             )
@@ -402,6 +408,11 @@ private fun ColumnMappingStep(
                     selected = isBudgetBakers,
                     onClick = { onApplyPreset(ImportSourceApp.BUDGET_BAKERS) },
                     label = { Text("BudgetBakers") }
+                )
+                FilterChip(
+                    selected = isCashew,
+                    onClick = { onApplyPreset(ImportSourceApp.CASHEW) },
+                    label = { Text("Cashew") }
                 )
                 FilterChip(
                     selected = session.sourceApp == ImportSourceApp.GENERIC,
@@ -458,7 +469,7 @@ private fun ColumnMappingStep(
             HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             // Column mapping section
-            if (isBudgetBakers && !customiseMappings) {
+            if ((isBudgetBakers || isCashew) && !customiseMappings) {
                 // Read-only mode for auto-detected BudgetBakers
                 Text(
                     "Column Mappings",
@@ -706,28 +717,48 @@ private fun EntityMappingStep(
                     }
                 }
             )
-            preview.newCategories.forEachIndexed { index, category ->
-                Column {
-                    EntityMappingRow(
-                        label = category.name,
-                        badgeText = null,
-                        chipText = category.envelopeId?.let { "#$it" },
-                        options = categories,
-                        selectedId = categoryMappings.getOrNull(index)?.existingId,
-                        onSelect = { id -> categoryMappings[index] = categoryMappings[index].copy(existingId = id) }
+            // Group categories by parent \u2014 lets users map an entire parent group at once
+            val groupedCategories = preview.newCategories
+                .mapIndexed { i, cat -> i to cat }
+                .groupBy { (_, cat) -> cat.suggestedParentName ?: "" }
+                .entries.sortedBy { it.key }
+
+            groupedCategories.forEach { (parentName, indexedCats) ->
+                if (groupedCategories.size > 1) {
+                    val groupLabel = if (parentName.isBlank()) "OTHER" else parentName.uppercase()
+                    androidx.compose.material3.Text(
+                        groupLabel,
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(
+                            top = AeonTheme.dimensions.spacingMd,
+                            bottom = 2.dp,
+                            start = 2.dp
+                        )
                     )
-                    // Parent picker appears for all "Create New" decisions
-                    if (categoryMappings.getOrNull(index)?.existingId == null) {
-                        Box(modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 3.dp)) {
-                            EntityMappingRow(
-                                label = "Parent category",
-                                badgeText = null,
-                                chipText = null,
-                                options = parentOptions,
-                                selectedId = parentSelections[index] ?: "",
-                                onSelect = { id -> parentSelections[index] = id ?: "" },
-                                showNullOption = false
-                            )
+                }
+                indexedCats.forEach { (globalIdx, category) ->
+                    Column {
+                        EntityMappingRow(
+                            label = category.name,
+                            badgeText = null,
+                            chipText = category.envelopeId?.let { "#$it" },
+                            options = categories,
+                            selectedId = categoryMappings.getOrNull(globalIdx)?.existingId,
+                            onSelect = { id -> categoryMappings[globalIdx] = categoryMappings[globalIdx].copy(existingId = id) }
+                        )
+                        if (categoryMappings.getOrNull(globalIdx)?.existingId == null) {
+                            Box(modifier = Modifier.padding(start = AeonTheme.dimensions.spacingLg, top = 3.dp)) {
+                                EntityMappingRow(
+                                    label = "Parent category",
+                                    badgeText = null,
+                                    chipText = null,
+                                    options = parentOptions,
+                                    selectedId = parentSelections[globalIdx] ?: "",
+                                    onSelect = { id -> parentSelections[globalIdx] = id ?: "" },
+                                    showNullOption = false
+                                )
+                            }
                         }
                     }
                 }

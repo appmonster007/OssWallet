@@ -27,8 +27,12 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 @Composable
 fun QuickAddAmountStep(
@@ -114,43 +118,48 @@ private fun ContextBadge(
             ?: Color(0xFF6750A4.toInt()) // fallback purple
     }
 
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor.copy(alpha = 0.12f))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    GlassSurface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        glassVariant = GlassVariant.Item,
+        hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.12f),
+        fallbackColor = bgColor.copy(alpha = 0.12f)
     ) {
-        // Category icon in a small circle
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(bgColor.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = getIconByName(category?.iconName),
-                contentDescription = null,
-                tint = bgColor,
-                modifier = Modifier.size(16.dp)
-            )
-        }
+            // Category icon in a small circle
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(bgColor.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = getIconByName(category?.iconName),
+                    contentDescription = null,
+                    tint = bgColor,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
 
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(
-                text = prefix,
-                style = AppTextStyles.chartAxisLabel,
-                color = bgColor.copy(alpha = 0.7f)
-            )
-            Text(
-                text = label,
-                style = AppTextStyles.formSwitchLabel,
-                color = AppColors.contentPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = prefix,
+                    style = AppTextStyles.chartAxisLabel,
+                    color = bgColor.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = label,
+                    style = AppTextStyles.formSwitchLabel,
+                    color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

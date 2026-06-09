@@ -26,7 +26,8 @@ data class ImportSummary(
 data class CategoryToMap(
     val name: String,
     val envelopeId: Int? = null,
-    val isCustomCategory: Boolean = false
+    val isCustomCategory: Boolean = false,
+    val suggestedParentName: String? = null
 )
 
 data class ImportPreview(
@@ -45,7 +46,8 @@ enum class MissingEntityPolicy { AUTO_CREATE, SKIP }
 data class EntityMapping(
     val unknownName: String,
     val existingId: String? = null,  // null = create new
-    val entityType: EntityType
+    val entityType: EntityType,
+    val parentCategoryId: Long? = null  // for CATEGORY + create new: null = root
 ) {
     enum class EntityType { ACCOUNT, CATEGORY }
 }

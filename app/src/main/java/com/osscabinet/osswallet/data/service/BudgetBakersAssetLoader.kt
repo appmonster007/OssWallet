@@ -6,22 +6,28 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class MappedCategory(
+    val name: String,
+    val parentName: String?
+)
+
 @Singleton
 class BudgetBakersAssetLoader @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    val envelopeMap: Map<Int, String> by lazy { loadEnvelopeMap() }
+    val envelopeMap: Map<Int, MappedCategory> by lazy { loadEnvelopeMap() }
     val paymentTypeMap: Map<String, String> by lazy { loadPaymentTypeMap() }
 
-    private fun loadEnvelopeMap(): Map<Int, String> {
+    private fun loadEnvelopeMap(): Map<Int, MappedCategory> {
         return try {
-            val map = mutableMapOf<Int, String>()
+            val map = mutableMapOf<Int, MappedCategory>()
             context.assets.open("wallet-budgetbakers/envelope_map.csv").bufferedReader().forEachLine { line ->
                 if (line.startsWith("envelope_id") || line.isBlank()) return@forEachLine
                 val cols = line.split(",")
                 val id = cols.getOrNull(0)?.trim()?.toIntOrNull() ?: return@forEachLine
                 val ossName = cols.getOrNull(2)?.trim() ?: return@forEachLine
-                map[id] = ossName
+                val parentName = cols.getOrNull(3)?.trim()?.takeIf { it.isNotEmpty() }
+                map[id] = MappedCategory(ossName, parentName)
             }
             map
         } catch (e: Exception) {

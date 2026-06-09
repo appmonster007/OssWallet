@@ -113,9 +113,10 @@ fun CsvImportScreen(
     }
 
     val stepIndex = when (step) {
-        is CsvImportViewModel.Step.ColumnMapping -> 0
-        is CsvImportViewModel.Step.EntityMapping -> 1
-        is CsvImportViewModel.Step.Preview -> 2
+        is CsvImportViewModel.Step.SourceSelection -> 0
+        is CsvImportViewModel.Step.ColumnMapping   -> 1
+        is CsvImportViewModel.Step.EntityMapping   -> 2
+        is CsvImportViewModel.Step.Preview         -> 3
     }
 
     // Full-screen result state replaces the wizard
@@ -172,10 +173,14 @@ fun CsvImportScreen(
                                 // Step content — dimmed while loading
                                 Box(modifier = Modifier.alpha(if (isLoading) 0.4f else 1f)) {
                                     when (step) {
-                                    is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
+                                    is CsvImportViewModel.Step.SourceSelection -> SourceSelectionStep(
                                         session = session,
-                                        fileLoadError = if (session == null) error else null,
                                         onLoadFile = { fileLauncher.launch("*/*") },
+                                        onConfirm = { app -> viewModel.confirmSourceApp(app) },
+                                        fileLoadError = if (session == null) error else null
+                                    )
+                                    is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
+                                        session = session!!,
                                         onUpdateMapping = { field, col -> viewModel.updateMapping(field, col) },
                                         onApplyPreset = { viewModel.applyPreset(it) },
                                         onNext = { viewModel.proceedFromColumnMapping(context) },
@@ -251,24 +256,18 @@ fun CsvImportScreen(
     }
 }
 
-// ─── Step 1: Column Mapping ───────────────────────────────────────────────────
+// ─── Step 1: Source App Selection ────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ColumnMappingStep(
+private fun SourceSelectionStep(
     session: CsvImportSession?,
-    fileLoadError: String?,
     onLoadFile: () -> Unit,
-    onUpdateMapping: (OssWalletField, Int?) -> Unit,
-    onApplyPreset: (ImportSourceApp) -> Unit,
-    onNext: () -> Unit,
-    isLoading: Boolean
+    onConfirm: (ImportSourceApp) -> Unit,
+    fileLoadError: String?
 ) {
-    var customiseMappings by remember { mutableStateOf(false) }
-
-    // Reset customization view when preset changes
-    LaunchedEffect(session?.sourceApp) {
-        customiseMappings = false
+    var selected by remember(session?.sourceApp) {
+        mutableStateOf(session?.sourceApp ?: ImportSourceApp.GENERIC)
     }
 
     Column(
@@ -278,9 +277,7 @@ private fun ColumnMappingStep(
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         if (session == null) {
-            // Empty state
             if (fileLoadError != null) {
-                // Inline error state
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -290,7 +287,7 @@ private fun ColumnMappingStep(
                         title = "File Error",
                         subtitle = "Could not open CSV file",
                         iconName = "BrokenImage",
-                        accentColorHex = "#E53935", // error color
+                        accentColorHex = "#E53935",
                         isLeftAligned = false
                     )
                     Text(
@@ -307,7 +304,6 @@ private fun ColumnMappingStep(
                     )
                 }
             } else {
-                // Normal empty state
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -315,23 +311,22 @@ private fun ColumnMappingStep(
                 ) {
                     AeonHeroHeader(
                         title = "Import Transactions",
-                        subtitle = "Supports BudgetBakers and Generic CSV",
+                        subtitle = "Supports BudgetBakers, Cashew and Generic CSV",
                         iconName = "FileOpen",
-                        accentColorHex = "#004D5F", // brand primary
+                        accentColorHex = "#004D5F",
                         isLeftAligned = false
                     )
                     Text(
-                        "Supported formats include Wallet by BudgetBakers, Money Manager, and any CSV with a valid header row.",
+                        "Supported formats include Wallet by BudgetBakers, Cashew, Money Manager, and any CSV with a valid header row.",
                         style = AppTextStyles.caption,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         color = AppColors.contentSecondary,
                         modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingLg)
                     )
-                    // Supported apps chips (informational)
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
                     ) {
-                        listOf("BudgetBakers", "Money Manager", "Any CSV").forEach { label ->
+                        listOf("BudgetBakers", "Cashew", "Any CSV").forEach { label ->
                             Surface(
                                 color = AppColors.cardSurfaceRaised,
                                 shape = RoundedCornerShape(50)
@@ -353,7 +348,118 @@ private fun ColumnMappingStep(
                 }
             }
         } else {
-            val isBudgetBakers = session.sourceApp == ImportSourceApp.BUDGET_BAKERS
+            Text(
+                "Where is this file from?",
+                style = AppTextStyles.heroAmount,
+                color = AppColors.contentPrimary
+            )
+            Text(
+                "Select the app you exported from. OssWallet uses this to apply the right import rules.",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary
+            )
+
+            if (session.sourceApp != null && session.sourceApp != ImportSourceApp.GENERIC) {
+                Surface(
+                    color = AppColors.primaryContainer,
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                    ) {
+                        Icon(
+                            Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = AppColors.primary
+                        )
+                        Text(
+                            "Auto-detected as ${session.sourceApp.displayName}",
+                            style = AppTextStyles.caption,
+                            color = AppColors.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+            ImportSourceApp.entries.forEach { app ->
+                val isSelected = selected == app
+                Surface(
+                    onClick = { selected = app },
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    color = if (isSelected) AppColors.primaryContainer else AppColors.cardSurface,
+                    border = BorderStroke(
+                        if (isSelected) 1.5.dp else 0.5.dp,
+                        if (isSelected) AppColors.primary else AppColors.outlineVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(AeonTheme.dimensions.cardPadding),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                    ) {
+                        RadioButton(selected = isSelected, onClick = { selected = app })
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                app.displayName,
+                                style = AppTextStyles.listItemTitle,
+                                color = AppColors.contentPrimary
+                            )
+                            Text(
+                                when (app) {
+                                    ImportSourceApp.BUDGET_BAKERS -> "Wallet by BudgetBakers — semicolon-delimited"
+                                    ImportSourceApp.CASHEW        -> "Cashew — comma-delimited with subcategories"
+                                    ImportSourceApp.MONEY_MANAGER -> "Money Manager — standard CSV"
+                                    ImportSourceApp.GENERIC       -> "Any other CSV with a header row"
+                                },
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+            AeonDashedButton(
+                onClick = { onConfirm(selected) },
+                text = "Continue",
+                icon = Icons.AutoMirrored.Rounded.ArrowForward
+            )
+            Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
+        }
+    }
+}
+
+// ─── Step 2: Column Mapping ───────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ColumnMappingStep(
+    session: CsvImportSession,
+    onUpdateMapping: (OssWalletField, Int?) -> Unit,
+    onApplyPreset: (ImportSourceApp) -> Unit,
+    onNext: () -> Unit,
+    isLoading: Boolean
+) {
+    var customiseMappings by remember { mutableStateOf(false) }
+
+    // Reset customization view when preset changes
+    LaunchedEffect(session.sourceApp) {
+        customiseMappings = false
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        val isBudgetBakers = session.sourceApp == ImportSourceApp.BUDGET_BAKERS
             val isCashew = session.sourceApp == ImportSourceApp.CASHEW
 
             // Auto-detect banner
@@ -617,7 +723,6 @@ private fun ColumnMappingStep(
                 enabled = !isLoading
             )
             Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
-        }
     }
 }
 
@@ -1326,13 +1431,13 @@ private fun StepProgressIndicator(stepIndex: Int) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
         ) {
-            repeat(3) { index ->
+            repeat(4) { index ->
                 val isActive = index == stepIndex
                 val isCompleted = index < stepIndex
                 val color = when {
-                    isActive -> AppColors.primary
+                    isActive    -> AppColors.primary
                     isCompleted -> AppColors.primary.copy(alpha = 0.6f)
-                    else -> AppColors.outlineVariant
+                    else        -> AppColors.outlineVariant
                 }
                 Box(
                     modifier = Modifier
@@ -1345,9 +1450,10 @@ private fun StepProgressIndicator(stepIndex: Int) {
         Spacer(Modifier.height(8.dp))
         Text(
             text = when (stepIndex) {
-                0 -> "Step 1: Column Mapping"
-                1 -> "Step 2: Unrecognised Items"
-                else -> "Step 3: Review & Confirm"
+                0    -> "Step 1: Source App"
+                1    -> "Step 2: Column Mapping"
+                2    -> "Step 3: Accounts & Categories"
+                else -> "Step 4: Review & Confirm"
             },
             style = AppTextStyles.overlineLabel,
             color = AppColors.contentSecondary

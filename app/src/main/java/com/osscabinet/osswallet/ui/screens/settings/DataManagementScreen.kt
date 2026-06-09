@@ -474,8 +474,8 @@ fun DataManagementScreen(
                         // Section 2: Manual Backup
                         AeonSettingsSection("MANUAL BACKUP") {
                             AeonSettingsItem(
-                                title = "Import Backup",
-                                subtitle = "Restore your history from a file",
+                                title = "Import / Migrate Data",
+                                subtitle = "Restore from backup or import from another app",
                                 icon = Icons.Rounded.CloudSync,
                                 onClick = { showImportDialog = true }
                             )
@@ -574,8 +574,8 @@ private fun ImportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Import Data") },
-        text = { Text("Select the format of the backup file you want to import.") },
+        title = { Text("Import / Migrate Data") },
+        text = { Text("Restore an OssWallet backup or import transactions from another app.") },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -588,7 +588,7 @@ private fun ImportDialog(
                     Text("SQLite Database")
                 }
                 OutlinedButton(onClick = onImportCsv, modifier = Modifier.fillMaxWidth()) {
-                    Text("Generic CSV")
+                    Text("Import from Another App (CSV)")
                 }
                 TextButton(
                     onClick = onDismiss,

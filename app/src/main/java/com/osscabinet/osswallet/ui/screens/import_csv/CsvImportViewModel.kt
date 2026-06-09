@@ -54,6 +54,9 @@ class CsvImportViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _loadingMessage = MutableStateFlow<String?>(null)
+    val loadingMessage: StateFlow<String?> = _loadingMessage
+
     private val _result = MutableStateFlow<ImportSummary?>(null)
     val result: StateFlow<ImportSummary?> = _result
 
@@ -76,6 +79,7 @@ class CsvImportViewModel @Inject constructor(
         pendingUri = uriString
         viewModelScope.launch {
             _isLoading.value = true
+            _loadingMessage.value = "Reading file…"
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(uriString.toUri())!!
@@ -85,6 +89,7 @@ class CsvImportViewModel @Inject constructor(
                 _error.value = e.message ?: "Failed to load file"
             } finally {
                 _isLoading.value = false
+                _loadingMessage.value = null
             }
         }
     }
@@ -96,6 +101,8 @@ class CsvImportViewModel @Inject constructor(
     fun proceedFromColumnMapping(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
+            val rowCount = _session.value?.let { "Analysing ${it.previewRows.size}+ rows…" } ?: "Analysing rows…"
+            _loadingMessage.value = rowCount
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
@@ -110,6 +117,7 @@ class CsvImportViewModel @Inject constructor(
                 _error.value = e.message ?: "Failed to generate preview"
             } finally {
                 _isLoading.value = false
+                _loadingMessage.value = null
             }
         }
     }
@@ -137,6 +145,7 @@ class CsvImportViewModel @Inject constructor(
     fun executeImport(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
+            _loadingMessage.value = "Importing transactions…"
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
@@ -152,8 +161,15 @@ class CsvImportViewModel @Inject constructor(
                 _error.value = e.message ?: "Import failed"
             } finally {
                 _isLoading.value = false
+                _loadingMessage.value = null
             }
         }
+    }
+
+    fun resetToColumnMapping() {
+        _step.value = Step.ColumnMapping
+        _result.value = null
+        _error.value = null
     }
 
     fun clearError() {

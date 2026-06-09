@@ -17,18 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -44,9 +37,16 @@ import androidx.glance.appwidget.updateAll
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
+import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
+import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
-import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 class CashFlowWidgetConfigActivity : ComponentActivity() {
@@ -115,29 +115,32 @@ private fun CashFlowWidgetConfigScreen(
     onBack: () -> Unit
 ) {
     Scaffold(
+        containerColor = AppColors.screenBackground,
         topBar = {
-            TopAppBar(
-                title = { Text("Cash Flow Widget") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            AeonTopAppBar(
+                left = AeonTopBarSection(
+                    content = {
+                        AeonTopBarNavTitlePill(
+                            title = "Cash Flow Widget",
+                            onBackClick = onBack
+                        )
                     }
-                }
+                )
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
             Text(
                 text = "Timeline",
-                style = MaterialTheme.typography.titleSmall,
+                style = AppTextStyles.formSectionLabel,
                 color = AppColors.primary
             )
             CashFlowTimelineOptions(
@@ -145,17 +148,17 @@ private fun CashFlowWidgetConfigScreen(
                 onSelect = { onConfigChange(config.copy(timelineRange = it)) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             EntrySwitchRow(
                 label = "Show Base Conversion",
-                subtitle = "Show ≈ equivalent in base currency",
+                subtitle = "Show \u2248 equivalent in base currency",
                 checked = config.showBaseConversion,
                 onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) },
                 isFlush = true
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             EntrySwitchRow(
                 label = "Show Totals Row",
@@ -165,7 +168,7 @@ private fun CashFlowWidgetConfigScreen(
                 isFlush = true
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             EntrySwitchRow(
                 label = "Show Comparison",
@@ -175,16 +178,15 @@ private fun CashFlowWidgetConfigScreen(
                 isFlush = true
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
-            Button(
+            AeonDashedButton(
                 onClick = onSave,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Save Widget")
-            }
+                text = "Save Widget",
+                icon = Icons.Rounded.CheckCircle
+            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
     }
 }
@@ -208,14 +210,14 @@ private fun CashFlowTimelineOptions(
     )
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         options.forEach { (label, range) ->
             FilterChip(
                 selected = range == selected,
                 onClick = { onSelect(range) },
-                label = { Text(label, style = MaterialTheme.typography.labelMedium) }
+                label = { Text(label, style = AppTextStyles.chipLabel) }
             )
         }
     }

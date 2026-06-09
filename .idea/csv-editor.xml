@@ -59,6 +59,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/app/src/main/assets/wallet-budgetbakers/envelope_map.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/wallet-budgetbakers/payment_type_map.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/tmp/report_2026-06-08_063221.csv">
           <value>
             <Attribute>

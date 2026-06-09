@@ -62,6 +62,8 @@ class MainActivity : FragmentActivity() {
             val contourLinesEnabled by settingsRepository.contourLinesEnabled.collectAsStateWithLifecycle(initialValue = true)
             val randomizeContourEachLoad by settingsRepository.randomizeContourEachLoad.collectAsStateWithLifecycle(initialValue = true)
             val glassSettings by settingsRepository.glassSettings.collectAsStateWithLifecycle(initialValue = GlassSettings())
+            val uiDensityName by settingsRepository.uiDensity.collectAsStateWithLifecycle(initialValue = com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name)
+            val uiDensity = com.osscabinet.ossWallet.domain.model.settings.UiDensity.fromName(uiDensityName)
 
             LaunchedEffect(precision, numberingSystem) {
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
@@ -78,7 +80,8 @@ class MainActivity : FragmentActivity() {
             OssWalletTheme(
                 theme = theme,
                 fontName = selectedFont,
-                glassSettings = glassSettings
+                glassSettings = glassSettings,
+                uiDensity = uiDensity
             ) {
                 CompositionLocalProvider(
                     LocalGlassmorphismEnabled provides glassmorphismEnabled,

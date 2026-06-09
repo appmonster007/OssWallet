@@ -19,9 +19,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.runtime.staticCompositionLocalOf
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
+import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
@@ -131,11 +133,18 @@ private val AmoledColorScheme = darkColorScheme(
 /**
  * Helper object to access the custom theme properties.
  */
+val LocalUiScale = staticCompositionLocalOf { 1.0f }
+
 object AeonTheme {
     val dimensions: AeonDimensions
         @Composable
         @ReadOnlyComposable
         get() = LocalAeonDimensions.current
+
+    val uiScale: Float
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalUiScale.current
 }
 
 @Composable
@@ -144,6 +153,7 @@ fun OssWalletTheme(
     dynamicColor: Boolean = true,
     fontName: String = AppFont.DEFAULT.name,
     glassSettings: GlassSettings = GlassSettings(),
+    uiDensity: UiDensity = UiDensity.DEFAULT,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (theme) {
@@ -190,7 +200,8 @@ fun OssWalletTheme(
     }
 
     CompositionLocalProvider(
-        LocalAeonDimensions provides AeonDimensions(),
+        LocalAeonDimensions provides AeonDimensions().scaled(uiDensity.scale),
+        LocalUiScale provides uiDensity.scale,
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,
         LocalGlassSettings provides glassSettings

@@ -36,6 +36,7 @@ interface SettingsRepository {
     val randomizeContourEachLoad: Flow<Boolean>
     val glassSettings: Flow<GlassSettings>
     val autoBackupConfig: Flow<AutoBackupConfig>
+    val uiDensity: Flow<String>
 
     suspend fun saveCurrency(currency: String)
     suspend fun saveTheme(theme: String)
@@ -67,4 +68,5 @@ interface SettingsRepository {
     suspend fun saveRandomizeContourEachLoad(enabled: Boolean)
     suspend fun updateGlassSettings(update: (GlassSettings) -> GlassSettings)
     suspend fun saveAutoBackupConfig(config: AutoBackupConfig)
+    suspend fun saveUiDensity(name: String)
 }

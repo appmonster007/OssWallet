@@ -62,6 +62,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
+import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -83,8 +84,12 @@ fun MainDisplaySettings(
     val recentActivitiesBreakdown by viewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
 
+    val uiDensityName by viewModel.uiDensity.collectAsStateWithLifecycle()
+    val currentDensity = UiDensity.fromName(uiDensityName)
+
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
+    var showDensityDialog by remember { mutableStateOf(false) }
 
     if (showThemeDialog) {
         val themes = listOf("System", "Light", "Dark", "Amoled")
@@ -275,6 +280,105 @@ fun MainDisplaySettings(
         }
     }
 
+    if (showDensityDialog) {
+        Dialog(
+            onDismissRequest = { showDensityDialog = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val configuration = LocalConfiguration.current
+            val screenHeight = configuration.screenHeightDp.dp
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .heightIn(max = screenHeight * 0.85f),
+                shape = RoundedCornerShape(32.dp),
+                color = AppColors.sheetSurface,
+                tonalElevation = 6.dp
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(
+                        text = "UI Density",
+                        style = AppTextStyles.heroAmount.copy(
+                            fontWeight = FontWeight.Light,
+                            fontSize = 28.sp,
+                            color = AppColors.contentPrimary.copy(alpha = 0.8f)
+                        ),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Controls the size of buttons, icons, spacing and text throughout the app.",
+                        style = AppTextStyles.listItemSubtitle,
+                        color = AppColors.contentSecondary,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        UiDensity.entries.forEach { density ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.setUiDensity(density)
+                                        showDensityDialog = false
+                                    }
+                                    .padding(AeonTheme.dimensions.cardPadding),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Rounded.GridView,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
+                                )
+                                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(density.displayName, style = AppTextStyles.listItemTitle)
+                                    Text(
+                                        text = when (density) {
+                                            UiDensity.SMALL -> "Compact — more content visible"
+                                            UiDensity.MEDIUM -> "Slightly reduced sizing"
+                                            UiDensity.HIGH -> "Default sizing"
+                                            UiDensity.EXTRA_HIGH -> "Larger — easier to tap"
+                                        },
+                                        style = AppTextStyles.listItemSubtitle,
+                                        color = AppColors.contentSecondary
+                                    )
+                                }
+                                if (density == currentDensity) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        TextButton(onClick = { showDensityDialog = false }) {
+                            Text(
+                                "Close",
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
@@ -311,6 +415,17 @@ fun MainDisplaySettings(
                                 subtitle = AppFont.fromName(selectedFont).displayName,
                                 icon = Icons.Rounded.FontDownload,
                                 onClick = { showFontDialog = true }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "UI Density",
+                                subtitle = currentDensity.displayName,
+                                icon = Icons.Rounded.GridView,
+                                onClick = { showDensityDialog = true }
                             )
                         }
 

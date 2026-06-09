@@ -44,8 +44,10 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.copyStyle
@@ -59,11 +61,11 @@ fun QuickAddAccountStep(
     transactionType: TransactionType,
     onAccountTapped: (String) -> Unit,
     onToggleType: () -> Unit,
-    modifier: Modifier = Modifier,
-    uiScale: Float = 1f
+    modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var structureFilter by remember { mutableStateOf<AccountStructureType?>(null) }
+    val uiScale = AeonTheme.uiScale
 
     val structureTypes = remember(accounts) {
         accounts.map { it.structureType }.distinct().sortedBy { it.displayName }
@@ -81,15 +83,15 @@ fun QuickAddAccountStep(
     else
         Color(android.graphics.Color.parseColor(TransactionType.INCOME.colorHex))
 
-    val toggleVPad = (10f * uiScale).coerceIn(7f, 10f).dp
-    val toggleIconSize = (18f * uiScale).coerceIn(14f, 18f).dp
-    val columnSpacing = (10f * uiScale).coerceIn(7f, 10f).dp
-    val tileSize = (72f * uiScale).coerceIn(56f, 72f).dp
-    val tileCorner = (20f * uiScale).coerceIn(14f, 20f).dp
-    val tileIconSize = (28f * uiScale).coerceIn(20f, 28f).dp
-    val gridMinSize = (88f * uiScale).coerceIn(68f, 88f).dp
-    val gridSpacing = (8f * uiScale).coerceIn(6f, 8f).dp
-    val itemSpacing = (6f * uiScale).coerceIn(4f, 6f).dp
+    val toggleVPad = scaledDp(10f, uiScale, min = 7f)
+    val toggleIconSize = scaledDp(18f, uiScale, min = 14f)
+    val columnSpacing = scaledDp(10f, uiScale, min = 7f)
+    val tileSize = scaledDp(72f, uiScale, min = 56f)
+    val tileCorner = scaledDp(20f, uiScale, min = 14f)
+    val tileIconSize = scaledDp(28f, uiScale, min = 20f)
+    val gridMinSize = scaledDp(88f, uiScale, min = 68f)
+    val gridSpacing = scaledDp(8f, uiScale, min = 6f)
+    val itemSpacing = scaledDp(6f, uiScale, min = 4f)
 
     Column(
         modifier = modifier

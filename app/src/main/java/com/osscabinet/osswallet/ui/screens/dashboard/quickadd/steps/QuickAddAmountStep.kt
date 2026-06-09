@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +27,8 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -54,8 +55,7 @@ fun QuickAddAmountStep(
         } ?: emptyList()
     }
 
-    val screenHeight = LocalConfiguration.current.screenHeightDp
-    val contextScale = (screenHeight / 860f).coerceIn(0.70f, 1.0f)
+    val uiScale = AeonTheme.uiScale
 
     Column(
         modifier = modifier
@@ -77,10 +77,10 @@ fun QuickAddAmountStep(
                 prefix = badgePrefix,
                 label = badgeLabel,
                 category = badgeCategory,
-                scale = contextScale,
+                scale = uiScale,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
-            Spacer(modifier = Modifier.height((8.dp.value * contextScale).dp))
+            Spacer(modifier = Modifier.height(scaledDp(8f, uiScale)))
         }
 
         // Currency dropdown — only when account has multiple currencies
@@ -90,22 +90,21 @@ fun QuickAddAmountStep(
                 onCurrencySelected = onCurrencySelected,
                 supportedCurrencies = currencies
             )
-            Spacer(modifier = Modifier.height((6.dp.value * contextScale).dp))
+            Spacer(modifier = Modifier.height(scaledDp(6f, uiScale)))
         } else if (currencies.size == 1) {
             Text(
                 text = currencies.first(),
                 style = AppTextStyles.formSwitchLabel,
                 color = AppColors.contentSecondary
             )
-            Spacer(modifier = Modifier.height((6.dp.value * contextScale).dp))
+            Spacer(modifier = Modifier.height(scaledDp(6f, uiScale)))
         }
 
         CalculatorNumpad(
             amount = amount,
             onAmountChange = onAmountChange,
             onDone = onDone,
-            modifier = Modifier.fillMaxWidth(),
-            maxHeightFraction = 0.42f
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -126,12 +125,12 @@ private fun ContextBadge(
             ?: Color(0xFF6750A4.toInt()) // fallback purple
     }
 
-    val iconContainerSize: Dp = (28.dp.value * scale).coerceIn(20f, 28f).dp
-    val iconSize: Dp = (16.dp.value * scale).coerceIn(12f, 16f).dp
-    val cornerRadius: Dp = (12.dp.value * scale).coerceIn(8f, 12f).dp
-    val iconCornerRadius: Dp = (8.dp.value * scale).coerceIn(6f, 8f).dp
-    val horizontalPad: Dp = (10.dp.value * scale).coerceIn(8f, 10f).dp
-    val verticalPad: Dp = (6.dp.value * scale).coerceIn(4f, 6f).dp
+    val iconContainerSize: Dp = scaledDp(28f, scale, min = 20f)
+    val iconSize: Dp = scaledDp(16f, scale, min = 12f)
+    val cornerRadius: Dp = scaledDp(12f, scale, min = 8f)
+    val iconCornerRadius: Dp = scaledDp(8f, scale, min = 6f)
+    val horizontalPad: Dp = scaledDp(10f, scale, min = 8f)
+    val verticalPad: Dp = scaledDp(6f, scale, min = 4f)
 
     GlassSurface(
         modifier = modifier,

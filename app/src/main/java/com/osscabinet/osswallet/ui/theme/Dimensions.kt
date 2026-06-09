@@ -2,6 +2,9 @@ package com.osscabinet.ossWallet.ui.theme
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * AEON DESIGN LANGUAGE - DIMENSION SYSTEM
@@ -149,3 +152,45 @@ data class AeonDimensions(
  */
 
 val LocalAeonDimensions = staticCompositionLocalOf { AeonDimensions() }
+
+/**
+ * Scale a base Dp value by [scale], clamped to [min]..[max].
+ * Usage: scaledDp(72f, uiScale, min = 56f, max = 72f)
+ */
+fun scaledDp(base: Float, scale: Float, min: Float = base * 0.75f, max: Float = base): Dp =
+    (base * scale).coerceIn(min, max).dp
+
+/**
+ * Scale a base sp value by [scale], clamped to [min]..[max].
+ * Usage: scaledSp(44f, uiScale, min = 33f, max = 44f)
+ */
+fun scaledSp(base: Float, scale: Float, min: Float = base * 0.75f, max: Float = base): TextUnit =
+    (base * scale).coerceIn(min, max).sp
+
+fun AeonDimensions.scaled(factor: Float): AeonDimensions = copy(
+    screenPadding        = (screenPadding.value        * factor).dp,
+    cardPadding          = (cardPadding.value          * factor).dp,
+    chipPadding          = (chipPadding.value          * factor).dp,
+    listPadding          = (listPadding.value          * factor).dp,
+    gridPadding          = (gridPadding.value          * factor).dp,
+    spacingXs            = (spacingXs.value            * factor).dp,
+    spacingSm            = (spacingSm.value            * factor).dp,
+    spacingMd            = (spacingMd.value            * factor).dp,
+    spacingLg            = (spacingLg.value            * factor).dp,
+    spacingXl            = (spacingXl.value            * factor).dp,
+    spacing2xl           = (spacing2xl.value           * factor).dp,
+    spacing3xl           = (spacing3xl.value           * factor).dp,
+    iconSizeXs           = (iconSizeXs.value           * factor).dp,
+    iconSizeSm           = (iconSizeSm.value           * factor).dp,
+    iconSizeMd           = (iconSizeMd.value           * factor).dp,
+    iconSizeLg           = (iconSizeLg.value           * factor).dp,
+    iconSizeXl           = (iconSizeXl.value           * factor).dp,
+    iconSize2xl          = (iconSize2xl.value          * factor).dp,
+    iconSize3xl          = (iconSize3xl.value          * factor).dp,
+    cardCornerRadius     = (cardCornerRadius.value     * factor).dp,
+    dialogCornerRadius   = (dialogCornerRadius.value   * factor).dp,
+    containerCornerRadius= (containerCornerRadius.value* factor).dp,
+    componentCornerRadius= (componentCornerRadius.value* factor).dp,
+    chipCornerRadius     = (chipCornerRadius.value     * factor).dp,
+    buttonCornerRadius   = (buttonCornerRadius.value   * factor).dp,
+)

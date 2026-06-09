@@ -59,8 +59,12 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 @Composable
 fun QuickAddTemplateStep(
@@ -356,37 +360,44 @@ fun QuickAddTemplateStep(
 
 @Composable
 private fun SegmentedToggle(showCategories: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(AppColors.recessedSurface)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.recessedSurface
     ) {
-        listOf(false to "Templates", true to "Categories").forEach { (isCategories, label) ->
-            val isSelected = showCategories == isCategories
-            val bgColor by animateColorAsState(
-                targetValue = if (isSelected) AppColors.primary else Color.Transparent,
-                label = "segBg$label"
-            )
-            val textColor by animateColorAsState(
-                targetValue = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
-                label = "segText$label"
-            )
-            Surface(
-                onClick = { onToggle(isCategories) },
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
-                color = bgColor
-            ) {
-                Text(
-                    text = label,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    textAlign = TextAlign.Center,
-                    style = AppTextStyles.formSwitchLabel,
-                    color = textColor
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf(false to "Templates", true to "Categories").forEach { (isCategories, label) ->
+                val isSelected = showCategories == isCategories
+                val bgColor by animateColorAsState(
+                    targetValue = if (isSelected) AppColors.primary else Color.Transparent,
+                    label = "segBg$label"
                 )
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
+                    label = "segText$label"
+                )
+                Surface(
+                    onClick = { onToggle(isCategories) },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp),
+                    color = bgColor
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center,
+                        style = AppTextStyles.formSwitchLabel,
+                        color = textColor
+                    )
+                }
             }
         }
     }
@@ -414,13 +425,14 @@ private fun TemplateGridItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(bgColor.copy(alpha = 0.18f))
-                .then(if (isSelected) Modifier.border(2.dp, primaryColor, RoundedCornerShape(20.dp)) else Modifier),
-            contentAlignment = Alignment.Center
+        GlassSurface(
+            modifier = Modifier.size(72.dp),
+            shape = RoundedCornerShape(20.dp),
+            glassVariant = GlassVariant.Item,
+            hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.18f),
+            fallbackColor = bgColor.copy(alpha = 0.18f),
+            borderColor = if (isSelected) primaryColor else null,
+            borderWidth = if (isSelected) 2.dp else 0.dp
         ) {
             Surface(
                 onClick = onClick,
@@ -471,13 +483,14 @@ private fun CategoryGridItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(bgColor.copy(alpha = 0.18f))
-                .then(if (isSelected) Modifier.border(2.dp, primaryColor, RoundedCornerShape(20.dp)) else Modifier),
-            contentAlignment = Alignment.Center
+        GlassSurface(
+            modifier = Modifier.size(72.dp),
+            shape = RoundedCornerShape(20.dp),
+            glassVariant = GlassVariant.Item,
+            hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = bgColor, alpha = 0.18f),
+            fallbackColor = bgColor.copy(alpha = 0.18f),
+            borderColor = if (isSelected) primaryColor else null,
+            borderWidth = if (isSelected) 2.dp else 0.dp
         ) {
             Surface(
                 modifier = Modifier

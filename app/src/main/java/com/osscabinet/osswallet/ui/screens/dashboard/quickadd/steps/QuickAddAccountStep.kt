@@ -43,8 +43,12 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 
@@ -83,34 +87,42 @@ fun QuickAddAccountStep(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Transaction type toggle
-        Surface(
-            onClick = onToggleType,
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            color = typeColor.copy(alpha = 0.12f),
-            modifier = Modifier.fillMaxWidth()
+            glassVariant = GlassVariant.Item,
+            hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = typeColor, alpha = 0.12f),
+            fallbackColor = typeColor.copy(alpha = 0.12f)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Surface(
+                onClick = onToggleType,
+                shape = RoundedCornerShape(12.dp),
+                color = Color.Transparent,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = if (transactionType == TransactionType.EXPENSE)
-                        Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
-                    contentDescription = null,
-                    tint = typeColor,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = transactionType.displayName,
-                    style = AppTextStyles.formSwitchLabel,
-                    color = typeColor
-                )
-                Text(
-                    text = "· tap to switch",
-                    style = AppTextStyles.chartAxisLabel,
-                    color = typeColor.copy(alpha = 0.5f)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = if (transactionType == TransactionType.EXPENSE)
+                            Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
+                        contentDescription = null,
+                        tint = typeColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = transactionType.displayName,
+                        style = AppTextStyles.formSwitchLabel,
+                        color = typeColor
+                    )
+                    Text(
+                        text = "· tap to switch",
+                        style = AppTextStyles.chartAxisLabel,
+                        color = typeColor.copy(alpha = 0.5f)
+                    )
+                }
             }
         }
 
@@ -224,13 +236,14 @@ private fun AccountGridItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(accountColor.copy(alpha = 0.15f))
-                .border(2.dp, borderColor, RoundedCornerShape(20.dp)),
-            contentAlignment = Alignment.Center
+        GlassSurface(
+            modifier = Modifier.size(72.dp),
+            shape = RoundedCornerShape(20.dp),
+            glassVariant = GlassVariant.Item,
+            hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = accountColor, alpha = 0.15f),
+            fallbackColor = accountColor.copy(alpha = 0.15f),
+            borderColor = if (isSelected) borderColor else null,
+            borderWidth = if (isSelected) 2.dp else 0.dp
         ) {
             Surface(
                 onClick = onClick,

@@ -49,12 +49,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.ui.components.AeonGlassHost
+import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAccountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAmountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddTemplateStep
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import java.math.BigDecimal
 
 private const val STEP_TEMPLATE = 0
@@ -70,16 +73,12 @@ fun QuickAddSheet(
     viewModel: QuickAddViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val pagerState = rememberPagerState(pageCount = { TOTAL_STEPS })
+    val glassEnabled = LocalGlassmorphismEnabled.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
     // Reset state every time the sheet opens
     LaunchedEffect(Unit) { viewModel.reset() }
-
-    LaunchedEffect(state.currentStep) {
-        pagerState.animateScrollToPage(state.currentStep)
-    }
 
     LaunchedEffect(state.dismissSheet) {
         if (state.dismissSheet) onDismiss()
@@ -90,10 +89,123 @@ fun QuickAddSheet(
         focusManager.clearFocus()
     }
 
+    BackHandler {
+        when (state.currentStep) {
+            STEP_TEMPLATE -> {
+                hideKeyboard(); onDismiss()
+            }
+
+            else -> {
+                hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
+            }
+        }
+    }
+
+    if (glassEnabled) {
+        AeonGlassSheet(
+            onDismiss = onDismiss
+        ) {
+            QuickAddSheetContent(
+                state = state,
+                templates = templates,
+                categories = categories,
+                viewModel = viewModel,
+                hideKeyboard = ::hideKeyboard,
+                onDismiss = onDismiss
+            )
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Scrim
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ColorScrimDark)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { hideKeyboard(); onDismiss() }
+                    )
+            )
+
+            // Sheet
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(tween(300)) { it } + fadeIn(tween(300)),
+                exit = slideOutVertically(tween(250)) { it } + fadeOut(tween(250)),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {}
+                        ),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                    color = AppColors.cardSurface,
+                    tonalElevation = 4.dp,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // Drag handle
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp, bottom = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(40.dp)
+                                    .height(4.dp)
+                                    .clip(CircleShape)
+                                    .background(AppColors.divider.copy(alpha = 0.4f))
+                            )
+                        }
+
+                        QuickAddSheetContent(
+                            state = state,
+                            templates = templates,
+                            categories = categories,
+                            viewModel = viewModel,
+                            hideKeyboard = ::hideKeyboard,
+                            onDismiss = onDismiss
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickAddSheetContent(
+    state: QuickAddState,
+    templates: List<Template>,
+    categories: List<Category>,
+    viewModel: QuickAddViewModel,
+    hideKeyboard: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { TOTAL_STEPS })
+
+    LaunchedEffect(state.currentStep) {
+        pagerState.animateScrollToPage(state.currentStep)
+    }
+
     fun goBack() {
         when (state.currentStep) {
-            STEP_TEMPLATE -> { hideKeyboard(); onDismiss() }
-            else -> { hideKeyboard(); viewModel.goToStep(state.currentStep - 1) }
+            STEP_TEMPLATE -> {
+                hideKeyboard(); onDismiss()
+            }
+
+            else -> {
+                hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
+            }
         }
     }
 
@@ -102,231 +214,177 @@ fun QuickAddSheet(
         viewModel.goToStep(state.currentStep + 1)
     }
 
-    BackHandler { goBack() }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Back / step dots / next row
+        val canGoNext = when (state.currentStep) {
+            STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
+            STEP_ACCOUNT -> state.selectedAccountId != null
+            STEP_AMOUNT -> (state.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO) > BigDecimal.ZERO
+            else -> false
+        }
+        val isLastStep = state.currentStep == STEP_AMOUNT
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Scrim
-        Box(
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .background(ColorScrimDark)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { hideKeyboard(); onDismiss() }
-                )
-        )
-
-        // Sheet
-        AnimatedVisibility(
-            visible = true,
-            enter = slideInVertically(tween(300)) { it } + fadeIn(tween(300)),
-            exit = slideOutVertically(tween(250)) { it } + fadeOut(tween(250)),
-            modifier = Modifier.align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Back button
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .imePadding()
-                    .navigationBarsPadding()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {}
-                    ),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                color = AppColors.cardSurface,
-                tonalElevation = 4.dp,
-                shadowElevation = 8.dp
+                onClick = ::goBack,
+                shape = CircleShape,
+                color = AppColors.recessedSurface,
+                modifier = Modifier.size(36.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Drag handle
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 12.dp, bottom = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(40.dp)
-                                .height(4.dp)
-                                .clip(CircleShape)
-                                .background(AppColors.divider.copy(alpha = 0.4f))
-                        )
-                    }
-
-                    // Back / step dots / next row
-                    val canGoNext = when (state.currentStep) {
-                        STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
-                        STEP_ACCOUNT -> state.selectedAccountId != null
-                        STEP_AMOUNT -> (state.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO) > BigDecimal.ZERO
-                        else -> false
-                    }
-                    val isLastStep = state.currentStep == STEP_AMOUNT
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Back button
-                        Surface(
-                            onClick = ::goBack,
-                            shape = CircleShape,
-                            color = AppColors.recessedSurface,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = AppColors.contentSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-
-                        // Step dots centred
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            repeat(TOTAL_STEPS) { index ->
-                                val isActive = pagerState.currentPage == index
-                                Box(
-                                    modifier = Modifier
-                                        .size(if (isActive) 8.dp else 6.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (isActive) AppColors.primary
-                                            else AppColors.divider.copy(alpha = 0.4f)
-                                        )
-                                )
-                                if (index < TOTAL_STEPS - 1) Spacer(modifier = Modifier.width(6.dp))
-                            }
-                        }
-
-                        // Next / Save button
-                        if (isLastStep) {
-                            Surface(
-                                onClick = {
-                                    if (!state.isSaving && state.selectedAccountId != null) {
-                                        viewModel.saveTransaction(categories = categories, onSuccess = {})
-                                    }
-                                },
-                                shape = CircleShape,
-                                color = if (state.selectedAccountId != null) AppColors.primary
-                                else AppColors.divider.copy(alpha = 0.5f),
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    if (state.isSaving) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(18.dp),
-                                            color = AppColors.onPrimary,
-                                            strokeWidth = 2.dp
-                                        )
-                                    } else {
-                                        Icon(
-                                            Icons.Rounded.Done,
-                                            contentDescription = "Save",
-                                            tint = AppColors.onPrimary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Surface(
-                                onClick = { if (canGoNext) goNext() },
-                                shape = CircleShape,
-                                color = if (canGoNext) AppColors.primary
-                                else AppColors.divider.copy(alpha = 0.5f),
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.ArrowForward,
-                                        contentDescription = "Next",
-                                        tint = AppColors.onPrimary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    HorizontalPager(
-                        state = pagerState,
-                        userScrollEnabled = false,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { page ->
-                        when (page) {
-                            STEP_TEMPLATE -> QuickAddTemplateStep(
-                                templates = templates,
-                                categories = categories,
-                                selectedTemplateId = state.selectedTemplate?.id,
-                                selectedCategoryId = state.selectedCategoryId,
-                                onTemplateSelected = { template ->
-                                    hideKeyboard()
-                                    viewModel.onTemplateSelected(template)
-                                },
-                                onCategorySelected = { category ->
-                                    hideKeyboard()
-                                    viewModel.onCategorySelected(category)
-                                }
-                            )
-
-                            STEP_ACCOUNT -> QuickAddAccountStep(
-                                accounts = state.accounts,
-                                selectedAccountId = state.selectedAccountId,
-                                transactionType = state.transactionType,
-                                onAccountTapped = { viewModel.onAccountTapped(it) },
-                                onToggleType = { viewModel.toggleTransactionType() }
-                            )
-
-                            STEP_AMOUNT -> {
-                                val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
-                                val selectedCategory = categories.find { it.id == state.selectedCategoryId }
-                                QuickAddAmountStep(
-                                    amount = state.amountText,
-                                    template = state.selectedTemplate,
-                                    category = selectedCategory,
-                                    account = selectedAccount,
-                                    selectedCurrency = state.selectedCurrency,
-                                    onCurrencySelected = { viewModel.onCurrencySelected(it) },
-                                    onAmountChange = { viewModel.onAmountChanged(it) },
-                                    onDone = {
-                                        val amt = state.amountText.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO
-                                        if (amt > java.math.BigDecimal.ZERO && !state.isSaving) {
-                                            viewModel.saveTransaction(categories = categories, onSuccess = {})
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // Step label hint
-                    val stepLabel = when (state.currentStep) {
-                        STEP_TEMPLATE -> "Pick a template or category"
-                        STEP_ACCOUNT -> "Choose account & transaction type"
-                        STEP_AMOUNT -> "Enter amount"
-                        else -> ""
-                    }
-                    Text(
-                        text = stepLabel,
-                        style = AppTextStyles.chartAxisLabel,
-                        color = AppColors.contentSecondary.copy(alpha = 0.5f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Back",
+                        tint = AppColors.contentSecondary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
+
+            // Step dots centred
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(TOTAL_STEPS) { index ->
+                    val isActive = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .size(if (isActive) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (isActive) AppColors.primary
+                                else AppColors.divider.copy(alpha = 0.4f)
+                            )
+                    )
+                    if (index < TOTAL_STEPS - 1) Spacer(modifier = Modifier.width(6.dp))
+                }
+            }
+
+            // Next / Save button
+            if (isLastStep) {
+                Surface(
+                    onClick = {
+                        if (!state.isSaving && state.selectedAccountId != null) {
+                            viewModel.saveTransaction(categories = categories, onSuccess = {})
+                        }
+                    },
+                    shape = CircleShape,
+                    color = if (state.selectedAccountId != null) AppColors.primary
+                    else AppColors.divider.copy(alpha = 0.5f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        if (state.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = AppColors.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Rounded.Done,
+                                contentDescription = "Save",
+                                tint = AppColors.onPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Surface(
+                    onClick = { if (canGoNext) goNext() },
+                    shape = CircleShape,
+                    color = if (canGoNext) AppColors.primary
+                    else AppColors.divider.copy(alpha = 0.5f),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowForward,
+                            contentDescription = "Next",
+                            tint = AppColors.onPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
         }
+
+        AeonGlassHost {
+            HorizontalPager(
+                state = pagerState,
+                userScrollEnabled = false,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                when (page) {
+                    STEP_TEMPLATE -> QuickAddTemplateStep(
+                        templates = templates,
+                        categories = categories,
+                        selectedTemplateId = state.selectedTemplate?.id,
+                        selectedCategoryId = state.selectedCategoryId,
+                        onTemplateSelected = { template ->
+                            hideKeyboard()
+                            viewModel.onTemplateSelected(template)
+                        },
+                        onCategorySelected = { category ->
+                            hideKeyboard()
+                            viewModel.onCategorySelected(category)
+                        }
+                    )
+
+                    STEP_ACCOUNT -> QuickAddAccountStep(
+                        accounts = state.accounts,
+                        selectedAccountId = state.selectedAccountId,
+                        transactionType = state.transactionType,
+                        onAccountTapped = { viewModel.onAccountTapped(it) },
+                        onToggleType = { viewModel.toggleTransactionType() }
+                    )
+
+                    STEP_AMOUNT -> {
+                        val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
+                        val selectedCategory = categories.find { it.id == state.selectedCategoryId }
+                        QuickAddAmountStep(
+                            amount = state.amountText,
+                            template = state.selectedTemplate,
+                            category = selectedCategory,
+                            account = selectedAccount,
+                            selectedCurrency = state.selectedCurrency,
+                            onCurrencySelected = { viewModel.onCurrencySelected(it) },
+                            onAmountChange = { viewModel.onAmountChanged(it) },
+                            onDone = {
+                                val amt = state.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                                if (amt > BigDecimal.ZERO && !state.isSaving) {
+                                    viewModel.saveTransaction(categories = categories, onSuccess = {})
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // Step label hint
+        val stepLabel = when (state.currentStep) {
+            STEP_TEMPLATE -> "Pick a template or category"
+            STEP_ACCOUNT -> "Choose account & transaction type"
+            STEP_AMOUNT -> "Enter amount"
+            else -> ""
+        }
+        Text(
+            text = stepLabel,
+            style = AppTextStyles.chartAxisLabel,
+            color = AppColors.contentSecondary.copy(alpha = 0.5f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        )
     }
 }

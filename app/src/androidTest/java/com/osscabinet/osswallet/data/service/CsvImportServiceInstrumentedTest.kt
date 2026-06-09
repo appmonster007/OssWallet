@@ -55,7 +55,8 @@ class CsvImportServiceInstrumentedTest {
             profileDao = db.profileDao(),
             database = db,
             settingsDataStore = settingsDataStore,
-            assetLoader = BudgetBakersAssetLoader(context)
+            assetLoader = BudgetBakersAssetLoader(context),
+            transactionLinkDao = db.transactionLinkDao()
         )
     }
 
@@ -135,8 +136,9 @@ class CsvImportServiceInstrumentedTest {
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
         val preview = service.generatePreview(session, ByteArrayInputStream(csv.toByteArray()))
 
-        assertEquals(1, preview.newAccounts.size)
-        assertEquals("NewWallet", preview.newAccounts.first())
+        val newAccounts = preview.allCsvAccounts.filter { it.suggestedExistingId == null }
+        assertEquals(1, newAccounts.size)
+        assertEquals("NewWallet", newAccounts.first().name)
     }
 
     @Test

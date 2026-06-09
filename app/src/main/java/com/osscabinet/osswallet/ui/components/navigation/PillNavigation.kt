@@ -14,7 +14,9 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -106,6 +108,7 @@ fun UnifiedPillNavigation(
     onFabToggle: (Boolean) -> Unit = {},
     fabIcon: ImageVector = Icons.Rounded.Add,
     onFabClick: () -> Unit = {},
+    onFabLongPress: (() -> Unit)? = null,
     fabMenu: @Composable (ColumnScope.() -> Unit)? = null
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -182,29 +185,68 @@ fun UnifiedPillNavigation(
                     )
 
                     val haptic = LocalHapticFeedback.current
-                    FloatingActionButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .size(48.dp)
-                            .graphicsLayer { rotationZ = rotation }
-                            .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
-                        containerColor = AppColors.primary,
-                        contentColor = AppColors.onPrimary,
-                        shape = CircleShape,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 6.dp,
-                            pressedElevation = 2.dp
-                        )
-                    ) {
-                        Icon(
-                            imageVector = fabIcon,
-                            contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
-                            modifier = Modifier.size(24.dp)
-                        )
+                    if (onFabLongPress != null) {
+                        // Quick-add mode: tap → quick sheet, long press → full entry screen.
+                        // We build the FAB appearance manually so combinedClickable is the only
+                        // gesture handler (FloatingActionButton's internal Surface would consume
+                        // the click before combinedClickable could see it).
+                        @OptIn(ExperimentalFoundationApi::class)
+                        androidx.compose.material3.Surface(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(48.dp)
+                                .graphicsLayer { rotationZ = rotation }
+                                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
+                                .combinedClickable(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onFabClick()
+                                    },
+                                    onLongClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onFabLongPress()
+                                    }
+                                ),
+                            shape = CircleShape,
+                            color = AppColors.primary,
+                            contentColor = AppColors.onPrimary,
+                            shadowElevation = 6.dp,
+                            tonalElevation = 0.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = fabIcon,
+                                    contentDescription = "Add New",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        // Normal mode: FAB menu toggle (or direct navigate if no menu).
+                        FloatingActionButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (fabMenu != null) onFabToggle(!isFabExpanded) else onFabClick()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .size(48.dp)
+                                .graphicsLayer { rotationZ = rotation }
+                                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+                            containerColor = AppColors.primary,
+                            contentColor = AppColors.onPrimary,
+                            shape = CircleShape,
+                            elevation = FloatingActionButtonDefaults.elevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 2.dp
+                            )
+                        ) {
+                            Icon(
+                                imageVector = fabIcon,
+                                contentDescription = if (isFabExpanded) "Close Menu" else "Add New",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
             }

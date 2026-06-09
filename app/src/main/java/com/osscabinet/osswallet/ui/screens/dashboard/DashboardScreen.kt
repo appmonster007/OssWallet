@@ -97,6 +97,7 @@ import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
+import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddSheet
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
@@ -218,6 +219,7 @@ fun DashboardScreen(
 
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
+    var showQuickAddSheet by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
@@ -408,9 +410,12 @@ fun DashboardScreen(
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {
                         if (!expandableFabEnabled) {
-                            navigate { actions.onAddClick(TransactionType.EXPENSE, null) }
+                            showQuickAddSheet = true
                         }
                     },
+                    onFabLongPress = if (!expandableFabEnabled) ({
+                        navigate { actions.onAddClick(TransactionType.EXPENSE, null) }
+                    }) else null,
                     fabMenu = if (expandableFabEnabled) {
                         {
                             TransactionFabMenu(
@@ -426,7 +431,16 @@ fun DashboardScreen(
                     } else null
                 )
 
-                // 4. Filter Pill Layer (Overlay)
+                // 4. Quick Add Sheet (when FAB menu is disabled)
+                if (showQuickAddSheet) {
+                    QuickAddSheet(
+                        templates = allTemplates,
+                        categories = allCategories,
+                        onDismiss = { showQuickAddSheet = false }
+                    )
+                }
+
+                // 5. Filter Pill Layer (Overlay)
                 val pillRequest = filterPillController.activeRequest
                 if (pillRequest != null) {
                     TransactionFilterPill(

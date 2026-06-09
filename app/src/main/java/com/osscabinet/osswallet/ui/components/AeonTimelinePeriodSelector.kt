@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.AccessTimeFilled
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenu
@@ -393,8 +395,8 @@ private fun DateDisplayArea(
                     .size(22.dp)
             ) {
                 Icon(
-                    Icons.Default.Schedule,
-                    null,
+                    imageVector = if (currentRange.excludeFuture) Icons.Rounded.AccessTimeFilled else Icons.Rounded.AccessTime,
+                    contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = if (currentRange.excludeFuture) contentColor else inactiveContentColor
                 )
@@ -549,6 +551,29 @@ fun AeonTimelinePeriodSelectorPillPreview() {
                 inactiveContentColor = AppColors.onSelectionContainer,
                 currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
                 onRangeSelected = { }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AeonTimelinePeriodTogglePreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Exclude Future: TRUE (Filled Icon)")
+            AeonTimelinePeriodSelector(
+                currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = true),
+                onRangeSelected = {}
+            )
+
+            Text("Exclude Future: FALSE (Lined Icon)")
+            AeonTimelinePeriodSelector(
+                currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false),
+                onRangeSelected = {}
             )
         }
     }

@@ -290,10 +290,11 @@ fun QuickAddSheet(
 
                             STEP_AMOUNT -> {
                                 val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
+                                val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                                 QuickAddAmountStep(
                                     amount = state.amountText,
-                                    templateName = state.selectedTemplate?.name,
-                                    categoryName = categories.find { it.id == state.selectedCategoryId }?.name,
+                                    template = state.selectedTemplate,
+                                    category = selectedCategory,
                                     account = selectedAccount,
                                     selectedCurrency = state.selectedCurrency,
                                     onCurrencySelected = { viewModel.onCurrencySelected(it) },

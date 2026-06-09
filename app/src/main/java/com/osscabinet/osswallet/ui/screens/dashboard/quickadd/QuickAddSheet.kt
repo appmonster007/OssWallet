@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -105,7 +106,8 @@ fun QuickAddSheet(
 
     if (glassEnabled) {
         AeonGlassSheet(
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
+            modifier = Modifier.statusBarsPadding()
         ) {
             QuickAddSheetContent(
                 state = state,
@@ -140,7 +142,8 @@ fun QuickAddSheet(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .imePadding()
+                        .statusBarsPadding()
+//                        .imePadding()
                         .navigationBarsPadding()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },

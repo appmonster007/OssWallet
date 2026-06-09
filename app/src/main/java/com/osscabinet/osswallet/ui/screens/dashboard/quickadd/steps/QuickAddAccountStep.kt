@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,14 +18,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TrendingDown
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,13 +36,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.scaledDp
@@ -52,6 +53,9 @@ import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.copyStyle
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.rememberScrollState
 
 @Composable
@@ -83,9 +87,9 @@ fun QuickAddAccountStep(
     else
         Color(android.graphics.Color.parseColor(TransactionType.INCOME.colorHex))
 
-    val toggleVPad = scaledDp(10f, uiScale, min = 7f)
-    val toggleIconSize = scaledDp(18f, uiScale, min = 14f)
+    val toggleIconSize = 16.dp
     val columnSpacing = scaledDp(10f, uiScale, min = 7f)
+    val chipHeight = 32.dp
     val tileSize = scaledDp(72f, uiScale, min = 56f)
     val tileCorner = scaledDp(20f, uiScale, min = 14f)
     val tileIconSize = scaledDp(28f, uiScale, min = 20f)
@@ -93,80 +97,72 @@ fun QuickAddAccountStep(
     val gridSpacing = scaledDp(8f, uiScale, min = 6f)
     val itemSpacing = scaledDp(6f, uiScale, min = 4f)
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(columnSpacing)
-    ) {
-        // Transaction type toggle
-        GlassSurface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            glassVariant = GlassVariant.Item,
-            hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = typeColor, alpha = 0.12f),
-            fallbackColor = typeColor.copy(alpha = 0.12f)
-        ) {
-            Surface(
-                onClick = onToggleType,
-                shape = RoundedCornerShape(12.dp),
-                color = Color.Transparent,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = toggleVPad),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (transactionType == TransactionType.EXPENSE)
-                            Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
-                        contentDescription = null,
-                        tint = typeColor,
-                        modifier = Modifier.size(toggleIconSize)
-                    )
-                    Text(
-                        text = transactionType.displayName,
-                        style = AppTextStyles.formSwitchLabel,
-                        color = typeColor
-                    )
-                    Text(
-                        text = "· tap to switch",
-                        style = AppTextStyles.chartAxisLabel,
-                        color = typeColor.copy(alpha = 0.5f)
-                    )
-                }
-            }
-        }
+    // Calculate max height for 3 rows
+    val estimatedTextHeight = 20.dp
+    val rowHeight = tileSize + itemSpacing + estimatedTextHeight
+    val maxGridHeight = (rowHeight * 3.1f) + (gridSpacing * 2)
 
-        // Structure type filter chips
-        Row(
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val columns = ((maxWidth - 32.dp) / gridMinSize).toInt().coerceAtLeast(1)
+
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(columnSpacing)
         ) {
-            FilterChip(
-                selected = structureFilter == null,
-                onClick = { structureFilter = null },
-                label = { Text("All", style = AppTextStyles.chartAxisLabel) },
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Transaction type toggle
+            GlassSurface(
+                modifier = Modifier.height(chipHeight),
                 shape = RoundedCornerShape(10.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = AppColors.primary.copy(alpha = 0.15f),
-                    selectedLabelColor = AppColors.primary
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = structureFilter == null,
-                    selectedBorderColor = AppColors.primary.copy(alpha = 0.4f),
-                    borderColor = AppColors.divider.copy(alpha = 0.3f)
-                )
-            )
-            structureTypes.forEach { type ->
+                glassVariant = GlassVariant.Item,
+                hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = typeColor, alpha = 0.12f),
+                fallbackColor = typeColor.copy(alpha = 0.12f),
+                borderColor = typeColor.copy(alpha = 0.4f),
+                borderWidth = 1.dp
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxHeight(),
+                    onClick = onToggleType,
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color.Transparent,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (transactionType == TransactionType.EXPENSE)
+                                Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
+                            contentDescription = null,
+                            tint = typeColor,
+                            modifier = Modifier.size(toggleIconSize)
+                        )
+                        Text(
+                            text = transactionType.displayName,
+                            style = AppTextStyles.chartAxisLabel,
+                            color = typeColor
+                        )
+                    }
+                }
+            }
+
+            // Structure type filter chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 FilterChip(
-                    selected = structureFilter == type,
-                    onClick = { structureFilter = if (structureFilter == type) null else type },
-                    label = { Text(type.displayName, style = AppTextStyles.chartAxisLabel) },
+                    selected = structureFilter == null,
+                    onClick = { structureFilter = null },
+                    label = { Text("All", style = AppTextStyles.chartAxisLabel) },
                     shape = RoundedCornerShape(10.dp),
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = AppColors.primary.copy(alpha = 0.15f),
@@ -174,44 +170,41 @@ fun QuickAddAccountStep(
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
-                        selected = structureFilter == type,
+                        selected = structureFilter == null,
                         selectedBorderColor = AppColors.primary.copy(alpha = 0.4f),
                         borderColor = AppColors.divider.copy(alpha = 0.3f)
                     )
                 )
+                structureTypes.forEach { type ->
+                    FilterChip(
+                        selected = structureFilter == type,
+                        onClick = { structureFilter = if (structureFilter == type) null else type },
+                        label = { Text(type.displayName, style = AppTextStyles.chartAxisLabel) },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = AppColors.primary.copy(alpha = 0.15f),
+                            selectedLabelColor = AppColors.primary
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = structureFilter == type,
+                            selectedBorderColor = AppColors.primary.copy(alpha = 0.4f),
+                            borderColor = AppColors.divider.copy(alpha = 0.3f)
+                        )
+                    )
+                }
             }
         }
 
-        // Search bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Search accounts...", style = AppTextStyles.formFieldHint) },
-            leadingIcon = {
-                Icon(
-                    Icons.Rounded.Search,
-                    contentDescription = null,
-                    tint = AppColors.contentSecondary
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = AppColors.primary,
-                unfocusedBorderColor = AppColors.divider.copy(alpha = 0.3f),
-                focusedContainerColor = AppColors.recessedSurface,
-                unfocusedContainerColor = AppColors.recessedSurface
-            ),
-            singleLine = true
-        )
-
         // Account grid
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = gridMinSize),
+            columns = GridCells.Fixed(columns),
             verticalArrangement = Arrangement.spacedBy(gridSpacing),
             horizontalArrangement = Arrangement.spacedBy(gridSpacing),
             contentPadding = PaddingValues(bottom = 4.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxGridHeight)
         ) {
             items(filtered, key = { it.id }) { account ->
                 AccountGridItem(
@@ -226,6 +219,15 @@ fun QuickAddAccountStep(
                 )
             }
         }
+
+        // Search bar
+        AeonSearchField(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            placeholder = "Search accounts...",
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
     }
 }
 
@@ -291,5 +293,27 @@ private fun AccountGridItem(
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddAccountStep() {
+    val mockAccounts = listOf(
+        Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
+        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance"),
+        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, "#F44336", "CreditCard")
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.background(AppColors.background)) {
+            QuickAddAccountStep(
+                accounts = mockAccounts,
+                selectedAccountId = "1",
+                transactionType = TransactionType.EXPENSE,
+                onAccountTapped = {},
+                onToggleType = {}
+            )
+        }
     }
 }

@@ -11,25 +11,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -65,9 +62,12 @@ import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.scaledDp
@@ -105,7 +105,7 @@ fun QuickAddTemplateStep(
 
     val columnSpacing = scaledDp(10f, uiScale, min = 7f)
     val toggleHeight = scaledDp(52f, uiScale, min = 40f)
-    val tileSize = scaledDp(72f, uiScale, min = 56f)
+    val tileSize = scaledDp(60f, uiScale, min = 56f)
     val tileCorner = scaledDp(20f, uiScale, min = 14f)
     val tileIconSize = scaledDp(28f, uiScale, min = 20f)
     val gridMinSize = scaledDp(88f, uiScale, min = 68f)
@@ -118,42 +118,24 @@ fun QuickAddTemplateStep(
     val childBadgeSize = scaledDp(16f, uiScale, min = 12f)
     val childArrowSize = scaledDp(12f, uiScale, min = 9f)
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(columnSpacing)
-    ) {
+    // Calculate max height for 3 rows
+    val estimatedTextHeight = 20.dp
+    val rowHeight = tileSize + itemSpacing + estimatedTextHeight
+    val maxGridHeight = (rowHeight * 3.1f) + (gridSpacing * 2)
+
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val columns = ((maxWidth - 32.dp) / gridMinSize).toInt().coerceAtLeast(1)
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(columnSpacing)
+        ) {
         // Segmented toggle
         SegmentedToggle(showCategories = showCategories, onToggle = { showCategories = it }, height = toggleHeight)
 
         if (!showCategories) {
-            // ── Template mode ──────────────────────────────────────────────────────
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text("Search by name or note...", style = AppTextStyles.formFieldHint) },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AppColors.primary,
-                    unfocusedBorderColor = AppColors.divider.copy(alpha = 0.3f),
-                    focusedContainerColor = AppColors.recessedSurface,
-                    unfocusedContainerColor = AppColors.recessedSurface
-                ),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Search
-                ),
-                keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() })
-            )
-
             val filtered = remember(templates, query) {
                 if (query.isBlank()) templates.sortedByDescending { it.isStarred }
                 else templates.filter { t ->
@@ -164,7 +146,7 @@ fun QuickAddTemplateStep(
 
             if (filtered.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(emptyHeightLg),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -175,11 +157,13 @@ fun QuickAddTemplateStep(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = gridMinSize),
+                    columns = GridCells.Fixed(columns),
                     verticalArrangement = Arrangement.spacedBy(gridSpacing),
                     horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                     contentPadding = PaddingValues(bottom = 4.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = maxGridHeight)
                 ) {
                     items(filtered, key = { it.id }) { template ->
                         val category = categories.find { it.id == template.categoryId }
@@ -201,6 +185,15 @@ fun QuickAddTemplateStep(
                     }
                 }
             }
+
+            // Template search bar
+            AeonSearchField(
+                query = query,
+                onQueryChange = { query = it },
+                placeholder = "Search by name or note...",
+                modifier = Modifier.fillMaxWidth(),
+                focusRequester = focusRequester
+            )
         } else {
             // ── Category mode ──────────────────────────────────────────────────────
             val allUserCategories = remember(categories) {
@@ -215,30 +208,6 @@ fun QuickAddTemplateStep(
                 currentParentId?.let { pid -> allUserCategories.find { it.id == pid } }
             }
 
-            // Search bar
-            OutlinedTextField(
-                value = categoryQuery,
-                onValueChange = { categoryQuery = it },
-                placeholder = { Text("Search categories...", style = AppTextStyles.formFieldHint) },
-                leadingIcon = {
-                    Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AppColors.primary,
-                    unfocusedBorderColor = AppColors.divider.copy(alpha = 0.3f),
-                    focusedContainerColor = AppColors.recessedSurface,
-                    unfocusedContainerColor = AppColors.recessedSurface
-                ),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Search
-                ),
-                keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() })
-            )
-
             if (categoryQuery.isNotBlank()) {
                 // Flat search across all levels
                 val searchResults = remember(allUserCategories, categoryQuery) {
@@ -247,7 +216,7 @@ fun QuickAddTemplateStep(
                 }
                 if (searchResults.isEmpty()) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(emptyHeightLg),
+                        modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -258,11 +227,13 @@ fun QuickAddTemplateStep(
                     }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = gridMinSize),
+                        columns = GridCells.Fixed(columns),
                         verticalArrangement = Arrangement.spacedBy(gridSpacing),
                         horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                         contentPadding = PaddingValues(bottom = 4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = maxGridHeight)
                     ) {
                         items(searchResults, key = { it.id }) { category ->
                             val hasChildren = childrenMap[category.id]?.isNotEmpty() == true
@@ -300,7 +271,7 @@ fun QuickAddTemplateStep(
                     },
                     label = "categoryDrillDown"
                 ) { parentId ->
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(columnSpacing)) {
                         // Back header when drilled in
                         if (parentId != null && currentParent != null) {
                             Row(
@@ -369,11 +340,13 @@ fun QuickAddTemplateStep(
                             }
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = gridMinSize),
+                                columns = GridCells.Fixed(columns),
                                 verticalArrangement = Arrangement.spacedBy(gridSpacing),
                                 horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                                 contentPadding = PaddingValues(bottom = 4.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = maxGridHeight)
                             ) {
                                 items(visibleItems, key = { it.id }) { category ->
                                     val hasChildren = childrenMap[category.id]?.isNotEmpty() == true
@@ -400,9 +373,16 @@ fun QuickAddTemplateStep(
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(4.dp))
+            // Category search bar
+            AeonSearchField(
+                query = categoryQuery,
+                onQueryChange = { categoryQuery = it },
+                placeholder = "Search categories...",
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
     }
 }
 
@@ -673,8 +653,8 @@ private fun CategoryGridItem(
 private fun SelectedBadge(
     primaryColor: Color,
     onPrimaryColor: Color,
-    badgeSize: androidx.compose.ui.unit.Dp = 16.dp,
-    iconSize: androidx.compose.ui.unit.Dp = 10.dp
+    badgeSize: androidx.compose.ui.unit.Dp = 10.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 8.dp
 ) {
     Box(
         modifier = Modifier
@@ -709,3 +689,33 @@ private fun Color.darkenForIcon(): Color {
     hsv[2] = if (hsv[2] > 0.5f) hsv[2] - 0.3f else hsv[2] + 0.4f
     return Color(android.graphics.Color.HSVToColor(hsv))
 }
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddTemplateStep() {
+    val mockCategories = listOf(
+        Category(1, "Food", "Restaurant", -16737025, false, null),
+        Category(2, "Transport", "DirectionsBus", -16737025, false, null),
+        Category(3, "Health", "Favorite", -16737025, false, null)
+    )
+    val mockTemplates = listOf(
+        Template(1, "Lunch", 1, java.math.BigDecimal("15.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1"),
+        Template(2, "Uber", 2, java.math.BigDecimal("25.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1"),
+        Template(3, "Gym", 3, java.math.BigDecimal("50.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1")
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.background(AppColors.background)) {
+            QuickAddTemplateStep(
+                templates = mockTemplates,
+                categories = mockCategories,
+                selectedTemplateId = 1L,
+                selectedCategoryId = null,
+                onTemplateSelected = {},
+                onCategorySelected = {}
+            )
+        }
+    }
+}
+
+

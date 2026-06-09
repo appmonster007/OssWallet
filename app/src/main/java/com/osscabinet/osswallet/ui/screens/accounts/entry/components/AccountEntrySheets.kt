@@ -150,10 +150,25 @@ fun AccountEntrySheets(
                         allowSigned = true,
                         onAmountChange = { onEvent(AccountEntryEvent.SetBalanceUpdateAmount(it)) },
                         onDone = { onEvent(AccountEntryEvent.ConfirmBalanceUpdate) },
-                        header = { calcState, onSave, onHistory ->
+                        header = { calcState, onSave, onHistory, displayScale ->
+                            val cardCorner = (28f * displayScale).coerceIn(20f, 28f).dp
+                            val cardHPad = (20f * displayScale).coerceIn(14f, 20f).dp
+                            val cardVPad = (24f * displayScale).coerceIn(16f, 24f).dp
+                            val iconBtnSize = (24f * displayScale).coerceIn(18f, 24f).dp
+                            val historyIconSize = (18f * displayScale).coerceIn(13f, 18f).dp
+                            val confirmIconSize = (20f * displayScale).coerceIn(15f, 20f).dp
+                            val amountFontSize = (44f * displayScale).coerceIn(33f, 44f).sp
+                            val deltaFontSize = (13f * displayScale).coerceIn(10f, 13f).sp
+                            val captionFontSize = (10f * displayScale).coerceIn(9f, 10f).sp
+                            val arrowIconSize = (14f * displayScale).coerceIn(11f, 14f).dp
+                            val trendIconSize = (11f * displayScale).coerceIn(9f, 11f).dp
+                            val afterHeaderSpacer = (12f * displayScale).coerceIn(8f, 12f).dp
+                            val afterAmountSpacer = (16f * displayScale).coerceIn(10f, 16f).dp
+                            val columnSpacing = (20f * displayScale).coerceIn(14f, 20f).dp
+
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(columnSpacing),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 // 1. Mode Selector
@@ -167,7 +182,7 @@ fun AccountEntrySheets(
 
                                 // 2. Projection Card
                                 Surface(
-                                    shape = RoundedCornerShape(28.dp),
+                                    shape = RoundedCornerShape(cardCorner),
                                     color = AppColors.recessedSurface,
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
@@ -177,22 +192,22 @@ fun AccountEntrySheets(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 20.dp, vertical = 24.dp),
+                                            .padding(horizontal = cardHPad, vertical = cardVPad),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         Box(modifier = Modifier.fillMaxWidth()) {
                                             IconButton(
                                                 onClick = onHistory,
-                                                modifier = Modifier.align(Alignment.TopStart).size(24.dp)
+                                                modifier = Modifier.align(Alignment.TopStart).size(iconBtnSize)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.History,
                                                     contentDescription = "History",
                                                     tint = AppColors.contentSecondary.copy(alpha = 0.4f),
-                                                    modifier = Modifier.size(18.dp)
+                                                    modifier = Modifier.size(historyIconSize)
                                                 )
                                             }
-                                            
+
                                             Text(
                                                 text = currency,
                                                 style = AppTextStyles.overlineLabel,
@@ -202,27 +217,27 @@ fun AccountEntrySheets(
 
                                             IconButton(
                                                 onClick = onSave,
-                                                modifier = Modifier.align(Alignment.TopEnd).size(24.dp)
+                                                modifier = Modifier.align(Alignment.TopEnd).size(iconBtnSize)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.Check,
                                                     contentDescription = "Confirm",
                                                     tint = selectedColor,
-                                                    modifier = Modifier.size(20.dp)
+                                                    modifier = Modifier.size(confirmIconSize)
                                                 )
                                             }
                                         }
 
-                                        Spacer(modifier = Modifier.size(12.dp))
+                                        Spacer(modifier = Modifier.size(afterHeaderSpacer))
 
                                         // PROJECTED TOTAL
                                         val inputBD = calcState.display.toBigDecimalOrNull() ?: BigDecimal.ZERO
                                         val isNeg = inputBD.signum() < 0
-                                        
+
                                         Text(
                                             text = inputBD.abs().stripTrailingZeros().toPlainString(),
                                             style = AppTextStyles.heroAmount.copy(
-                                                fontSize = 44.sp,
+                                                fontSize = amountFontSize,
                                                 fontWeight = FontWeight.Bold,
                                                 letterSpacing = (-1.5).sp
                                             ),
@@ -230,7 +245,7 @@ fun AccountEntrySheets(
                                             textAlign = TextAlign.Center
                                         )
 
-                                        Spacer(modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.size(afterAmountSpacer))
 
                                         // CONTEXTUAL DELTA ROW
                                         Row(
@@ -241,12 +256,12 @@ fun AccountEntrySheets(
                                             Column(horizontalAlignment = Alignment.Start) {
                                                 Text(
                                                     text = currentBaseTotal.stripTrailingZeros().toPlainString(),
-                                                    style = AppTextStyles.chartTooltipValue.copy(fontSize = 13.sp),
+                                                    style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
                                                     color = AppColors.contentSecondary
                                                 )
                                                 Text(
                                                     text = "(Current)",
-                                                    style = AppTextStyles.caption.copy(fontSize = 10.sp),
+                                                    style = AppTextStyles.caption.copy(fontSize = captionFontSize),
                                                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                                                 )
                                             }
@@ -254,7 +269,7 @@ fun AccountEntrySheets(
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(14.dp),
+                                                modifier = Modifier.size(arrowIconSize),
                                                 tint = AppColors.divider.copy(alpha = 0.6f)
                                             )
 
@@ -265,19 +280,19 @@ fun AccountEntrySheets(
                                                     Icon(
                                                         if (isGain) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown,
                                                         contentDescription = null,
-                                                        modifier = Modifier.size(11.dp),
+                                                        modifier = Modifier.size(trendIconSize),
                                                         tint = if (isGain) AppColors.positive else AppColors.negative
                                                     )
                                                     Spacer(Modifier.size(4.dp))
                                                     Text(
                                                         text = (if (isGain) "+" else "") + delta.stripTrailingZeros().toPlainString(),
-                                                        style = AppTextStyles.chartTooltipValue.copy(fontSize = 13.sp),
+                                                        style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
                                                         color = if (isGain) AppColors.positive else AppColors.negative
                                                     )
                                                 }
                                                 Text(
                                                     text = "(Adjustment)",
-                                                    style = AppTextStyles.caption.copy(fontSize = 10.sp),
+                                                    style = AppTextStyles.caption.copy(fontSize = captionFontSize),
                                                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                                                 )
                                             }

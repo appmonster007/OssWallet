@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
@@ -73,8 +75,14 @@ fun CalculatorNumpad(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
     allowSigned: Boolean = false,
-    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
+    maxHeightFraction: Float = 0.50f,
+    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit, displayScale: Float) -> Unit)? = null
 ) {
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val keyHeight = ((screenHeight * maxHeightFraction - 90.dp - 24.dp - 40.dp) / 5)
+        .coerceIn(44.dp, 68.dp)
+    val displayScale = (keyHeight.value / 68f).coerceIn(0.75f, 1.0f)
+
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
     val evaluator = remember { ExpressionEvaluator() }
@@ -120,17 +128,18 @@ fun CalculatorNumpad(
         modifier = modifier.padding(horizontal = 24.dp),
         display = {
             if (header != null) {
-                header(state, onSaveInternal, { showHistory = true })
+                header(state, onSaveInternal, { showHistory = true }, displayScale)
             } else {
                 CalculatorDefaults.StandardDisplay(
                     state = state,
                     onSave = onSaveInternal,
-                    onHistory = { showHistory = true }
+                    onHistory = { showHistory = true },
+                    displayScale = displayScale
                 )
             }
         },
         keys = {
-            CalculatorDefaults.StandardKeys(onAction = onAction)
+            CalculatorDefaults.StandardKeys(onAction = onAction, keyHeight = keyHeight)
         },
         historyOverlay = {
             if (showHistory) {
@@ -183,34 +192,42 @@ object CalculatorDefaults {
         state: CalculatorState,
         onSave: () -> Unit,
         onHistory: () -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        displayScale: Float = 1f
     ) {
+        val cornerRadius = (28f * displayScale).coerceIn(20f, 28f).dp
+        val hPad = (16f * displayScale).coerceIn(12f, 16f).dp
+        val vPad = (20f * displayScale).coerceIn(14f, 20f).dp
+        val historyContainerSize = (28f * displayScale).coerceIn(20f, 28f).dp
+        val historyIconSize = (18f * displayScale).coerceIn(13f, 18f).dp
+
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(cornerRadius),
             color = AppColors.recessedSurface,
             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
             modifier = modifier.fillMaxWidth()
         ) {
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 20.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = hPad, vertical = vPad)) {
                 CalculatorDisplay(
                     expression = state.displayExpression,
                     result = state.display,
                     ghostResult = state.ghostResult,
                     isError = state.isError,
-                    onSave = onSave
+                    onSave = onSave,
+                    displayScale = displayScale
                 )
 
                 IconButton(
                     onClick = onHistory,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .size(28.dp)
+                        .size(historyContainerSize)
                 ) {
                     Icon(
                         Icons.Rounded.History,
                         contentDescription = "Show History",
                         tint = AppColors.contentSecondary.copy(alpha = 0.4f),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(historyIconSize)
                     )
                 }
             }
@@ -220,7 +237,8 @@ object CalculatorDefaults {
     @Composable
     fun StandardKeys(
         onAction: (CalculatorAction) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        keyHeight: Dp = 68.dp
     ) {
         CalculatorKeys(
             onNumberPress = { onAction(CalculatorAction.AppendNumber(it)) },
@@ -230,7 +248,8 @@ object CalculatorDefaults {
             onBackspacePress = { onAction(CalculatorAction.Backspace) },
             onEqualsPress = { onAction(CalculatorAction.Equals) },
             onPercentPress = { onAction(CalculatorAction.Percent) },
-            modifier = modifier
+            modifier = modifier,
+            keyHeight = keyHeight
         )
     }
 }
@@ -242,9 +261,15 @@ fun CalculatorDisplay(
     ghostResult: String,
     isError: Boolean,
     onSave: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    displayScale: Float = 1f
 ) {
     val displayResult = result.replace("-", "−")
+    val resultFontSize = (44f * displayScale).coerceIn(33f, 44f).sp
+    val expressionFontSize = (14f * displayScale).coerceIn(11f, 14f).sp
+    val confirmButtonSize = (52f * displayScale).coerceIn(40f, 52f).dp
+    val confirmIconSize = (24f * displayScale).coerceIn(18f, 24f).dp
+    val spacerWidth = (20f * displayScale).coerceIn(12f, 20f).dp
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -260,7 +285,7 @@ fun CalculatorDisplay(
                     text = expression,
                     style = AppTextStyles.listItemTitle.copy(
                         letterSpacing = 0.5.sp,
-                        fontSize = 14.sp
+                        fontSize = expressionFontSize
                     ),
                     color = AppColors.contentSecondary.copy(alpha = 0.5f),
                     textAlign = TextAlign.End,
@@ -273,7 +298,7 @@ fun CalculatorDisplay(
                 style = AppTextStyles.heroAmount.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-1.5).sp,
-                    fontSize = 44.sp
+                    fontSize = resultFontSize
                 ),
                 color = if (isError) AppColors.error else AppColors.contentPrimary,
                 textAlign = TextAlign.End,
@@ -291,20 +316,20 @@ fun CalculatorDisplay(
             }
         }
 
-        Spacer(modifier = Modifier.width(20.dp))
+        Spacer(modifier = Modifier.width(spacerWidth))
 
         Surface(
             onClick = onSave,
             shape = CircleShape,
             color = AppColors.primary,
-            modifier = Modifier.size(52.dp)
+            modifier = Modifier.size(confirmButtonSize)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.Rounded.Done,
                     contentDescription = "Confirm amount",
                     tint = ColorOnDark,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(confirmIconSize)
                 )
             }
         }
@@ -320,57 +345,58 @@ fun CalculatorKeys(
     onBackspacePress: () -> Unit,
     onEqualsPress: () -> Unit,
     onPercentPress: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    keyHeight: Dp = 68.dp
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true)
-            CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true)
-            CalculatorKey("%", onPercentPress, Modifier.weight(1f), isSpecial = true)
-            CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f), isOperator = true)
+            CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
+            CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
+            CalculatorKey("%", onPercentPress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
+            CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f))
-            CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f))
-            CalculatorKey("9", { onNumberPress("9") }, Modifier.weight(1f))
-            CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f), isOperator = true)
+            CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("9", { onNumberPress("9") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f))
-            CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f))
-            CalculatorKey("6", { onNumberPress("6") }, Modifier.weight(1f))
-            CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f), isOperator = true)
+            CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("6", { onNumberPress("6") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f))
-            CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f))
-            CalculatorKey("3", { onNumberPress("3") }, Modifier.weight(1f))
-            CalculatorKey("+", { onOperatorPress('+') }, Modifier.weight(1f), isOperator = true)
+            CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("3", { onNumberPress("3") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("+", { onOperatorPress('+') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f))
-            CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f))
-            CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true)
-            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = true)
+            CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
+            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = true, keyHeight = keyHeight)
         }
     }
 }
@@ -434,8 +460,17 @@ fun CalculatorKey(
     modifier: Modifier = Modifier,
     isOperator: Boolean = false,
     isSpecial: Boolean = false,
-    isAccent: Boolean = false
+    isAccent: Boolean = false,
+    keyHeight: Dp = 68.dp
 ) {
+    val scaleFactor = (keyHeight.value / 68f).coerceIn(0f, 1f)
+    val cornerRadius = (24.dp.value * scaleFactor).coerceIn(12f, 24f).dp
+    val iconSize = (22f * scaleFactor).coerceIn(16f, 22f).dp
+    val labelFontSize = if (label.length > 1)
+        (16f * scaleFactor).coerceIn(11f, 16f).sp
+    else
+        (24f * scaleFactor).coerceIn(14f, 24f).sp
+
     val backgroundColor = when {
         isAccent -> AppColors.primary
         isOperator -> AppColors.primary.copy(alpha = 0.08f)
@@ -452,8 +487,8 @@ fun CalculatorKey(
 
     Surface(
         onClick = onClick,
-        modifier = modifier.height(68.dp),
-        shape = RoundedCornerShape(24.dp),
+        modifier = modifier.height(keyHeight),
+        shape = RoundedCornerShape(cornerRadius),
         color = backgroundColor,
         border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)) else null,
         shadowElevation = 0.dp
@@ -473,7 +508,7 @@ fun CalculatorKey(
                 Icon(
                     imageVector = iconVector,
                     contentDescription = label,
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = textColor
                 )
             } else {
@@ -482,7 +517,7 @@ fun CalculatorKey(
                     style = AppTextStyles.screenTitle.copy(
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = if (label.length > 1) 0.sp else 0.5.sp,
-                        fontSize = if (label.length > 1) 16.sp else 24.sp
+                        fontSize = labelFontSize
                     ),
                     color = textColor
                 )

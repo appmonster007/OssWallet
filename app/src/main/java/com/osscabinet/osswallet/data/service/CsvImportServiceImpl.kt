@@ -172,7 +172,7 @@ class CsvImportServiceImpl @Inject constructor(
         val categoryText = row["category"] ?: ""
 
         // 1. Try envelope_id → mapped OssWallet name
-        val mappedName = envelopeId?.let { assetLoader.envelopeMap[it] }
+        val mappedName = envelopeId?.let { assetLoader.envelopeMap[it]?.name }
         if (!mappedName.isNullOrBlank() && mappedName != "TRANSFER") {
             val match = existingCats.find { it.name.equals(mappedName, ignoreCase = true) }
             if (match != null) return match.id
@@ -197,13 +197,18 @@ class CsvImportServiceImpl @Inject constructor(
      */
     private fun unresolvedCategoryName(row: Map<String, String>): String {
         val envelopeId = row["envelope_id"]?.toIntOrNull()
-        val mappedName = envelopeId?.let { assetLoader.envelopeMap[it] }
+        val mappedName = envelopeId?.let { assetLoader.envelopeMap[it]?.name }
         val categoryText = row["category"] ?: ""
         return when {
             !mappedName.isNullOrBlank() && mappedName != "TRANSFER" -> mappedName
             categoryText.isNotBlank() -> categoryText
             else -> "Unknown"
         }
+    }
+
+    private fun suggestedParentName(row: Map<String, String>): String? {
+        val envelopeId = row["envelope_id"]?.toIntOrNull()
+        return envelopeId?.let { assetLoader.envelopeMap[it]?.parentName }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -348,7 +353,8 @@ class CsvImportServiceImpl @Inject constructor(
                             newCategoryMap[displayName] = CategoryToMap(
                                 name = displayName,
                                 envelopeId = envelopeId,
-                                isCustomCategory = isCustom
+                                isCustomCategory = isCustom,
+                                suggestedParentName = suggestedParentName(row)
                             )
                         }
                     }
@@ -539,8 +545,22 @@ class CsvImportServiceImpl @Inject constructor(
                         accountMap[em.unknownName.lowercase()] = id
                     }
                     EntityMapping.EntityType.CATEGORY -> {
-                        val mapId = em.existingId?.toLongOrNull() ?: 1000L
-                        categoryMap[em.unknownName.lowercase()] = mapId
+                        if (em.existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        } else {
+                            categoryDao.insertCategory(
+                                CategoryEntity(
+                                    id = 0,
+                                    name = em.unknownName,
+                                    iconName = "Category",
+                                    colorHex = DEFAULT_CATEGORY_COLOR,
+                                    isDefault = false,
+                                    parentId = em.parentCategoryId
+                                )
+                            )
+                            val inserted = categoryDao.getCategoryByName(em.unknownName)
+                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                        }
                     }
                 }
             }
@@ -835,8 +855,22 @@ class CsvImportServiceImpl @Inject constructor(
                         accountMap[em.unknownName.lowercase()] = id
                     }
                     EntityMapping.EntityType.CATEGORY -> {
-                        val mapId = em.existingId?.toLongOrNull() ?: 1000L
-                        categoryMap[em.unknownName.lowercase()] = mapId
+                        if (em.existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        } else {
+                            categoryDao.insertCategory(
+                                CategoryEntity(
+                                    id = 0,
+                                    name = em.unknownName,
+                                    iconName = "Category",
+                                    colorHex = DEFAULT_CATEGORY_COLOR,
+                                    isDefault = false,
+                                    parentId = em.parentCategoryId
+                                )
+                            )
+                            val inserted = categoryDao.getCategoryByName(em.unknownName)
+                            categoryMap[em.unknownName.lowercase()] = inserted?.id ?: 1000L
+                        }
                     }
                 }
             }
@@ -998,7 +1032,7 @@ class CsvImportServiceImpl @Inject constructor(
     }
 
     companion object {
-        /** Default tag color (grey) stored as an Int, matching TagEntity.colorHex: Int */
         private const val DEFAULT_TAG_COLOR: Int = 0xFF9E9E9E.toInt()
+        private const val DEFAULT_CATEGORY_COLOR: Int = 0xFF9E9E9E.toInt()
     }
 }

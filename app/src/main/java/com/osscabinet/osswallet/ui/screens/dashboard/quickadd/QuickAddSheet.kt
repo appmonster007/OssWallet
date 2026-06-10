@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,12 +41,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
@@ -107,7 +113,9 @@ fun QuickAddSheet(
     if (glassEnabled) {
         AeonGlassSheet(
             onDismiss = onDismiss,
-            modifier = Modifier.statusBarsPadding()
+            modifier = Modifier
+                .statusBarsPadding()
+                .imePadding()
         ) {
             QuickAddSheetContent(
                 state = state,
@@ -115,7 +123,8 @@ fun QuickAddSheet(
                 categories = categories,
                 viewModel = viewModel,
                 hideKeyboard = ::hideKeyboard,
-                onDismiss = onDismiss
+                onDismiss = onDismiss,
+                onSettled = {}
             )
         }
     } else {
@@ -143,7 +152,7 @@ fun QuickAddSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-//                        .imePadding()
+                        .imePadding()
                         .navigationBarsPadding()
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -178,7 +187,8 @@ fun QuickAddSheet(
                             categories = categories,
                             viewModel = viewModel,
                             hideKeyboard = ::hideKeyboard,
-                            onDismiss = onDismiss
+                            onDismiss = onDismiss,
+                            onSettled = {}
                         )
                     }
                 }
@@ -194,8 +204,11 @@ private fun QuickAddSheetContent(
     categories: List<Category>,
     viewModel: QuickAddViewModel,
     hideKeyboard: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSettled: () -> Unit
 ) {
+    var isSheetSettled by remember { mutableStateOf(false) }
+    val windowInfo = LocalWindowInfo.current
     val uiScale = AeonTheme.uiScale
 
     val navBtnSize = scaledDp(36f, uiScale, min = 28f)
@@ -227,7 +240,22 @@ private fun QuickAddSheetContent(
         viewModel.goToStep(state.currentStep + 1)
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coords ->
+                if (!isSheetSettled) {
+                    val windowHeight = windowInfo.containerSize.height
+                    val selfHeight = coords.size.height
+                    val yInWindow = coords.positionInWindow().y
+                    // When the sheet reaches the bottom of the screen (or near it)
+                    if (yInWindow >= (windowHeight - selfHeight).toFloat() - 5f) {
+                        isSheetSettled = true
+                        onSettled()
+                    }
+                }
+            }
+    ) {
         // Back / step dots / next row
         val canGoNext = when (state.currentStep) {
             STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
@@ -343,6 +371,7 @@ private fun QuickAddSheetContent(
                         categories = categories,
                         selectedTemplateId = state.selectedTemplate?.id,
                         selectedCategoryId = state.selectedCategoryId,
+                        isSheetSettled = isSheetSettled,
                         onTemplateSelected = { template ->
                             hideKeyboard()
                             viewModel.onTemplateSelected(template)

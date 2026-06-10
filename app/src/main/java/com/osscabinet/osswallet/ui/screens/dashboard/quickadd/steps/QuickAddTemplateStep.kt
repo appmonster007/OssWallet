@@ -82,6 +82,7 @@ fun QuickAddTemplateStep(
     categories: List<Category>,
     selectedTemplateId: Long?,
     selectedCategoryId: Long?,
+    isSheetSettled: Boolean,
     onTemplateSelected: (Template) -> Unit,
     onCategorySelected: (Category) -> Unit,
     modifier: Modifier = Modifier
@@ -95,9 +96,10 @@ fun QuickAddTemplateStep(
     val keyboardController = LocalSoftwareKeyboardController.current
     val uiScale = AeonTheme.uiScale
 
-    LaunchedEffect(showCategories) {
-        if (!showCategories) focusRequester.requestFocus()
-        else {
+    LaunchedEffect(showCategories, isSheetSettled) {
+        if (!showCategories && isSheetSettled) {
+            focusRequester.requestFocus()
+        } else {
             categoryNavStack = emptyList()
             categoryQuery = ""
         }
@@ -711,6 +713,7 @@ fun PreviewQuickAddTemplateStep() {
                 categories = mockCategories,
                 selectedTemplateId = 1L,
                 selectedCategoryId = null,
+                isSheetSettled = true,
                 onTemplateSelected = {},
                 onCategorySelected = {}
             )

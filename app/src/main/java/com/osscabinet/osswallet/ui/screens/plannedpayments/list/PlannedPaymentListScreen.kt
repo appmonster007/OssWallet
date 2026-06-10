@@ -1,7 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.list
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -32,13 +38,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,12 +52,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
@@ -86,7 +93,6 @@ import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeablePaymentItem(
     payment: PlannedPayment,
@@ -102,96 +108,124 @@ private fun SwipeablePaymentItem(
     onSkip: (() -> Unit)? = null
 ) {
     val haptic = LocalHapticFeedback.current
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> onConfirm != null
-                SwipeToDismissBoxValue.EndToStart -> onSkip != null
-                else -> false
-            }
-        },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f }
+    val density = LocalDensity.current
+
+    // State is purely local (transient) to avoid loops on navigation return
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var isHapticTriggered by remember { mutableStateOf(false) }
+
+    val thresholdPx = with(density) { 80.dp.toPx() }
+    val maxDragPx = with(density) { 120.dp.toPx() }
+
+    val animatedOffset by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "swipeOffset"
     )
 
-    // Handle haptic feedback exactly when the threshold is crossed (the "trigger" point)
-    LaunchedEffect(dismissState.targetValue) {
-        val target = dismissState.targetValue
-        if (target == SwipeToDismissBoxValue.StartToEnd && onConfirm != null) {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        } else if (target == SwipeToDismissBoxValue.EndToStart && onSkip != null) {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        }
-    }
+    // Calculate progress for expressive visuals
+    val progress = (kotlin.math.abs(animatedOffset) / thresholdPx).coerceIn(0f, 1f)
 
-    // Handle the actual action execution once the swipe is completed/confirmed.
-    // This prevents multiple triggers because currentValue only changes after release/animation.
-    LaunchedEffect(dismissState.currentValue) {
-        val current = dismissState.currentValue
-        if (current != SwipeToDismissBoxValue.Settled) {
-            if (current == SwipeToDismissBoxValue.StartToEnd) {
-                onConfirm?.invoke()
-            } else if (current == SwipeToDismissBoxValue.EndToStart) {
-                onSkip?.invoke()
-            }
-            // Reset to settled state after the action is handled
-            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
-        }
-    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
+            .background(AppColors.cardSurface)
+    ) {
+        // Background Actions Layer
+        if (animatedOffset != 0f) {
+            val isConfirm = animatedOffset > 0
+            val color = if (isConfirm) AppColors.primary else WarningColor
 
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = onConfirm != null,
-        enableDismissFromEndToStart = onSkip != null,
-        backgroundContent = {
-            val direction = dismissState.dismissDirection
-            val isStartToEnd = direction == SwipeToDismissBoxValue.StartToEnd
-            val bgColor by animateColorAsState(
-                targetValue = when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> AppColors.primary.copy(alpha = 0.15f)
-                    SwipeToDismissBoxValue.EndToStart -> WarningColor.copy(alpha = 0.15f)
-                    else -> AppColors.cardSurface
-                },
-                label = "swipeBg"
-            )
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius))
-                    .background(bgColor)
+                    .matchParentSize()
+                    .background(color.copy(alpha = 0.15f * progress))
                     .padding(horizontal = AeonTheme.dimensions.spacingXl),
-                contentAlignment = if (isStartToEnd) Alignment.CenterStart else Alignment.CenterEnd
+                contentAlignment = if (isConfirm) Alignment.CenterStart else Alignment.CenterEnd
             ) {
-                when (direction) {
-                    SwipeToDismissBoxValue.StartToEnd -> Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = "Confirm",
-                        tint = AppColors.primary,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-                    )
-
-                    SwipeToDismissBoxValue.EndToStart -> Icon(
-                        Icons.Rounded.SkipNext,
-                        contentDescription = "Skip",
-                        tint = WarningColor,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-                    )
-
-                    else -> {}
-                }
+                Icon(
+                    imageVector = if (isConfirm) Icons.Rounded.CheckCircle else Icons.Rounded.SkipNext,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier
+                        .size(AeonTheme.dimensions.iconSizeLg)
+                        .graphicsLayer {
+                            scaleX = 0.8f + (0.2f * progress)
+                            scaleY = 0.8f + (0.2f * progress)
+                            alpha = progress
+                        }
+                )
             }
         }
-    ) {
-        PlannedPaymentListItem(
-            payment = payment,
-            now = now,
-            isOverdue = isOverdue,
-            scheduledDate = scheduledDate,
-            onTap = onTap,
-            onEdit = onEdit,
-            onDelete = onDelete,
-            onPause = onPause,
-            onResume = onResume
-        )
+
+        // Main Item Layer (Foreground)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+                .pointerInput(onConfirm, onSkip) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newOffset = offsetX + dragAmount
+                            
+                            // Apply constraints and resistance
+                            offsetX = when {
+                                newOffset > 0 && onConfirm == null -> 0f
+                                newOffset < 0 && onSkip == null -> 0f
+                                kotlin.math.abs(newOffset) > maxDragPx -> {
+                                    val sign = if (newOffset > 0) 1 else -1
+                                    sign * (maxDragPx + (kotlin.math.abs(newOffset) - maxDragPx) * 0.3f)
+                                }
+                                else -> newOffset
+                            }
+
+                            // Haptic trigger exactly once when crossing threshold
+                            if (kotlin.math.abs(offsetX) >= thresholdPx && !isHapticTriggered) {
+                                isHapticTriggered = true
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            } else if (kotlin.math.abs(offsetX) < thresholdPx) {
+                                isHapticTriggered = false
+                            }
+                        },
+                        onDragEnd = {
+                            val finalOffset = offsetX
+                            offsetX = 0f // Reset UI state
+                            isHapticTriggered = false
+                            
+                            // Commit action
+                            if (finalOffset >= thresholdPx) {
+                                onConfirm?.invoke()
+                            } else if (finalOffset <= -thresholdPx) {
+                                onSkip?.invoke()
+                            }
+                        },
+                        onDragCancel = {
+                            offsetX = 0f
+                            isHapticTriggered = false
+                        }
+                    )
+                },
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            color = AppColors.panelSurface,
+            tonalElevation = if (animatedOffset != 0f) 8.dp else 0.dp,
+            shadowElevation = if (animatedOffset != 0f) 4.dp else 0.dp
+        ) {
+            PlannedPaymentListItem(
+                payment = payment,
+                now = now,
+                isOverdue = isOverdue,
+                scheduledDate = scheduledDate,
+                onTap = onTap,
+                onEdit = onEdit,
+                onDelete = onDelete,
+                onPause = onPause,
+                onResume = onResume
+            )
+        }
     }
 }
 

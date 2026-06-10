@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -28,9 +27,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -57,8 +54,7 @@ fun QuickAddAmountStep(
         } ?: emptyList()
     }
 
-    val uiScale = AeonTheme.uiScale
-    val columnSpacing = scaledDp(10f, uiScale, min = 7f)
+    val columnSpacing = 7.dp
 
     Column(
         modifier = modifier
@@ -81,7 +77,6 @@ fun QuickAddAmountStep(
                 prefix = badgePrefix,
                 label = badgeLabel,
                 category = badgeCategory,
-                scale = uiScale,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
         }
@@ -116,8 +111,7 @@ private fun ContextBadge(
     prefix: String,
     label: String,
     category: Category?,
-    modifier: Modifier = Modifier,
-    scale: Float = 1.0f
+    modifier: Modifier = Modifier
 ) {
     val bgColor = remember(category?.colorHex) {
         category?.colorHex
@@ -125,12 +119,12 @@ private fun ContextBadge(
             ?: Color(0xFF6750A4.toInt()) // fallback purple
     }
 
-    val iconContainerSize: Dp = scaledDp(28f, scale, min = 20f)
-    val iconSize: Dp = scaledDp(16f, scale, min = 12f)
-    val cornerRadius: Dp = scaledDp(12f, scale, min = 8f)
-    val iconCornerRadius: Dp = scaledDp(8f, scale, min = 6f)
-    val horizontalPad: Dp = scaledDp(10f, scale, min = 8f)
-    val verticalPad: Dp = scaledDp(6f, scale, min = 4f)
+    val iconContainerSize = 20.dp
+    val iconSize = 12.dp
+    val cornerRadius = 8.dp
+    val iconCornerRadius = 6.dp
+    val horizontalPad = 8.dp
+    val verticalPad = 4.dp
 
     GlassSurface(
         modifier = modifier,

@@ -9,12 +9,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -46,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -70,12 +74,12 @@ import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.copyStyle
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickAddTemplateStep(
     templates: List<Template>,
@@ -88,45 +92,42 @@ fun QuickAddTemplateStep(
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
-    var categoryQuery by remember { mutableStateOf("") }
     var showCategories by rememberSaveable { mutableStateOf(false) }
     // Stack of category IDs representing the current drill-down path; empty = root
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val uiScale = AeonTheme.uiScale
+    val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(showCategories, isSheetSettled) {
-        if (!showCategories && isSheetSettled) {
-            focusRequester.requestFocus()
-        } else {
-            categoryNavStack = emptyList()
-            categoryQuery = ""
-        }
+    // Clear drill-down stack when user starts typing (flat search takes over)
+    LaunchedEffect(query) {
+        if (query.isNotBlank()) categoryNavStack = emptyList()
     }
 
-    val columnSpacing = scaledDp(10f, uiScale, min = 7f)
-    val toggleHeight = scaledDp(52f, uiScale, min = 40f)
-    val tileSize = scaledDp(60f, uiScale, min = 56f)
-    val tileCorner = scaledDp(20f, uiScale, min = 14f)
-    val tileIconSize = scaledDp(28f, uiScale, min = 20f)
-    val gridMinSize = scaledDp(88f, uiScale, min = 68f)
-    val gridSpacing = scaledDp(8f, uiScale, min = 6f)
-    val itemSpacing = scaledDp(6f, uiScale, min = 4f)
-    val emptyHeightLg = scaledDp(120f, uiScale, min = 80f)
-    val emptyHeightSm = scaledDp(80f, uiScale, min = 60f)
-    val badgeSize = scaledDp(16f, uiScale, min = 12f)
-    val badgeIconSize = scaledDp(10f, uiScale, min = 8f)
-    val childBadgeSize = scaledDp(16f, uiScale, min = 12f)
-    val childArrowSize = scaledDp(12f, uiScale, min = 9f)
+    LaunchedEffect(isSheetSettled) {
+        if (isSheetSettled) focusRequester.requestFocus()
+    }
 
-    // Calculate max height for 3 rows
-    val estimatedTextHeight = 20.dp
-    val rowHeight = tileSize + itemSpacing + estimatedTextHeight
-    val maxGridHeight = (rowHeight * 3.1f) + (gridSpacing * 2)
+    val columnSpacing  = 7.dp
+    val toggleHeight   = 40.dp
+    val tileSize       = 56.dp
+    val tileCorner     = 14.dp
+    val tileIconSize   = 20.dp
+    val gridSpacing    = 6.dp
+    val itemSpacing    = 4.dp
+    val emptyHeightSm  = 60.dp
+    val badgeSize      = 12.dp
+    val badgeIconSize  = 8.dp
+    val childBadgeSize = 12.dp
+    val childArrowSize = 9.dp
+
+    // 2-row max; 1 row while the keyboard is open so the sheet fits above it
+    val imeVisible = WindowInsets.isImeVisible
+    val rowHeight    = tileSize + itemSpacing + 20.dp
+    val maxGridHeight = if (imeVisible) rowHeight else (rowHeight * 2) + gridSpacing
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val columns = ((maxWidth - 32.dp) / gridMinSize).toInt().coerceAtLeast(1)
+        val numColumns = if (maxWidth > 400.dp) 5 else 4
 
         Column(
             modifier = Modifier
@@ -134,9 +135,7 @@ fun QuickAddTemplateStep(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(columnSpacing)
         ) {
-        // Segmented toggle
-        SegmentedToggle(showCategories = showCategories, onToggle = { showCategories = it }, height = toggleHeight)
-
+        // ── Grid content (above toggle) ────────────────────────────────────────
         if (!showCategories) {
             val filtered = remember(templates, query) {
                 if (query.isBlank()) templates.sortedByDescending { it.isStarred }
@@ -159,7 +158,7 @@ fun QuickAddTemplateStep(
                 }
             } else {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
+                    columns = GridCells.Fixed(numColumns),
                     verticalArrangement = Arrangement.spacedBy(gridSpacing),
                     horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                     contentPadding = PaddingValues(bottom = 4.dp),
@@ -173,10 +172,7 @@ fun QuickAddTemplateStep(
                             template = template,
                             category = category,
                             isSelected = template.id == selectedTemplateId,
-                            onClick = {
-                                keyboardController?.hide()
-                                onTemplateSelected(template)
-                            },
+                            onClick = { onTemplateSelected(template) },
                             tileSize = tileSize,
                             tileCorner = tileCorner,
                             tileIconSize = tileIconSize,
@@ -187,21 +183,11 @@ fun QuickAddTemplateStep(
                     }
                 }
             }
-
-            // Template search bar
-            AeonSearchField(
-                query = query,
-                onQueryChange = { query = it },
-                placeholder = "Search by name or note...",
-                modifier = Modifier.fillMaxWidth(),
-                focusRequester = focusRequester
-            )
         } else {
-            // ── Category mode ──────────────────────────────────────────────────────
+            // ── Category mode ──────────────────────────────────────────────────
             val allUserCategories = remember(categories) {
                 categories.filter { !Category.isSystemCategory(it.id) }
             }
-            // Map parentId (null = root) → children for multi-level drill-down
             val childrenMap = remember(allUserCategories) {
                 allUserCategories.groupBy { it.parentId }
             }
@@ -210,10 +196,10 @@ fun QuickAddTemplateStep(
                 currentParentId?.let { pid -> allUserCategories.find { it.id == pid } }
             }
 
-            if (categoryQuery.isNotBlank()) {
+            if (query.isNotBlank()) {
                 // Flat search across all levels
-                val searchResults = remember(allUserCategories, categoryQuery) {
-                    allUserCategories.filter { it.name.contains(categoryQuery, ignoreCase = true) }
+                val searchResults = remember(allUserCategories, query) {
+                    allUserCategories.filter { it.name.contains(query, ignoreCase = true) }
                         .sortedBy { it.name }
                 }
                 if (searchResults.isEmpty()) {
@@ -229,7 +215,7 @@ fun QuickAddTemplateStep(
                     }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(columns),
+                        columns = GridCells.Fixed(numColumns),
                         verticalArrangement = Arrangement.spacedBy(gridSpacing),
                         horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                         contentPadding = PaddingValues(bottom = 4.dp),
@@ -245,8 +231,10 @@ fun QuickAddTemplateStep(
                                 hasChildren = hasChildren,
                                 onTap = { onCategorySelected(category) },
                                 onLongPress = if (hasChildren) ({
-                                    categoryQuery = ""
+                                    query = ""
                                     categoryNavStack = categoryNavStack + category.id
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
                                 }) else null,
                                 tileSize = tileSize,
                                 tileCorner = tileCorner,
@@ -299,8 +287,8 @@ fun QuickAddTemplateStep(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
                                         val parentColor = remember(currentParent.colorHex) {
-                                    Color(currentParent.colorHex or (0xFF shl 24))
-                                }
+                                            Color(currentParent.colorHex or (0xFF shl 24))
+                                        }
                                         Icon(
                                             getIconByName(currentParent.iconName),
                                             contentDescription = null,
@@ -342,7 +330,7 @@ fun QuickAddTemplateStep(
                             }
                         } else {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(columns),
+                                columns = GridCells.Fixed(numColumns),
                                 verticalArrangement = Arrangement.spacedBy(gridSpacing),
                                 horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                                 contentPadding = PaddingValues(bottom = 4.dp),
@@ -359,6 +347,8 @@ fun QuickAddTemplateStep(
                                         onTap = { onCategorySelected(category) },
                                         onLongPress = if (hasChildren) ({
                                             categoryNavStack = categoryNavStack + category.id
+                                            keyboardController?.hide()
+                                            focusManager.clearFocus()
                                         }) else null,
                                         tileSize = tileSize,
                                         tileCorner = tileCorner,
@@ -375,15 +365,19 @@ fun QuickAddTemplateStep(
                     }
                 }
             }
-
-            // Category search bar
-            AeonSearchField(
-                query = categoryQuery,
-                onQueryChange = { categoryQuery = it },
-                placeholder = "Search categories...",
-                modifier = Modifier.fillMaxWidth()
-            )
         }
+
+        // ── Segmented toggle (below grid, above search bar) ────────────────────
+        SegmentedToggle(showCategories = showCategories, onToggle = { showCategories = it }, height = toggleHeight)
+
+        // ── Single shared search bar anchored to keyboard top ──────────────────
+        AeonSearchField(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = "Search ...",
+            modifier = Modifier.fillMaxWidth(),
+            focusRequester = focusRequester
+        )
     }
     }
 }

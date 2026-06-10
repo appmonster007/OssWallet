@@ -79,8 +79,7 @@ fun NavGraphBuilder.planningGraph(
                 },
                 onBackClick = { navController.popBackStack() }
             ),
-            viewModel = plannedPaymentViewModel,
-            transactionManager = vms.dashboardViewModel.transactionManager
+            viewModel = plannedPaymentViewModel
         )
     }
 

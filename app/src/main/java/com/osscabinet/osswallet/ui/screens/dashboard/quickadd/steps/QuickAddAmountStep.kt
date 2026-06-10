@@ -105,6 +105,7 @@ fun QuickAddAmountStep(
             amount = amount,
             onAmountChange = onAmountChange,
             onDone = onDone,
+            showDoneButton = false,
             modifier = Modifier.fillMaxWidth()
         )
     }

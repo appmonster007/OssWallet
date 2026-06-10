@@ -77,6 +77,7 @@ fun CalculatorNumpad(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
     allowSigned: Boolean = false,
+    showDoneButton: Boolean = true,
     header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
 ) {
     val uiScale = AeonTheme.uiScale
@@ -110,6 +111,15 @@ fun CalculatorNumpad(
 
     val onAction: (CalculatorAction) -> Unit = { action ->
         state = calculatorReducer(state, action, evaluator)
+
+        // SYNC: Update parent with evaluated value as user types to support external save buttons
+        val syncValue = if (state.isError) "0"
+        else if (state.ghostResult.isNotEmpty()) state.ghostResult
+        else state.display
+
+        if (!state.isError && syncValue.toBigDecimalOrNull() != null) {
+            onAmountChange(syncValue)
+        }
     }
 
     val onSaveInternal = {
@@ -134,12 +144,20 @@ fun CalculatorNumpad(
                     state = state,
                     onSave = onSaveInternal,
                     onHistory = { showHistory = true },
-                    displayScale = displayScale
+                    displayScale = displayScale,
+                    showDoneButton = showDoneButton
                 )
             }
         },
         keys = {
-            CalculatorDefaults.StandardKeys(onAction = onAction, keyHeight = keyHeight)
+            val hasExpression = state.tokens.any {
+                it is Token.Operator || it is Token.Parenthesis || it is Token.Percent
+            }
+            CalculatorDefaults.StandardKeys(
+                onAction = onAction,
+                keyHeight = keyHeight,
+                canEvaluate = hasExpression && !state.isCalculated
+            )
         },
         historyOverlay = {
             if (showHistory) {
@@ -193,7 +211,8 @@ object CalculatorDefaults {
         onSave: () -> Unit,
         onHistory: () -> Unit,
         modifier: Modifier = Modifier,
-        displayScale: Float = 1f
+        displayScale: Float = 1f,
+        showDoneButton: Boolean = true
     ) {
         val cornerRadius = scaledDp(28f, displayScale, min = 20f, max = 28f)
         val hPad = scaledDp(16f, displayScale, min = 12f, max = 16f)
@@ -214,7 +233,8 @@ object CalculatorDefaults {
                     ghostResult = state.ghostResult,
                     isError = state.isError,
                     onSave = onSave,
-                    displayScale = displayScale
+                    displayScale = displayScale,
+                    showDoneButton = showDoneButton
                 )
 
                 IconButton(
@@ -238,7 +258,8 @@ object CalculatorDefaults {
     fun StandardKeys(
         onAction: (CalculatorAction) -> Unit,
         modifier: Modifier = Modifier,
-        keyHeight: Dp = 68.dp
+        keyHeight: Dp = 68.dp,
+        canEvaluate: Boolean = false
     ) {
         CalculatorKeys(
             onNumberPress = { onAction(CalculatorAction.AppendNumber(it)) },
@@ -249,7 +270,8 @@ object CalculatorDefaults {
             onEqualsPress = { onAction(CalculatorAction.Equals) },
             onPercentPress = { onAction(CalculatorAction.Percent) },
             modifier = modifier,
-            keyHeight = keyHeight
+            keyHeight = keyHeight,
+            canEvaluate = canEvaluate
         )
     }
 }
@@ -262,7 +284,8 @@ fun CalculatorDisplay(
     isError: Boolean,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    displayScale: Float = 1f
+    displayScale: Float = 1f,
+    showDoneButton: Boolean = true
 ) {
     val displayResult = result.replace("-", "−")
     val resultFontSize = scaledSp(44f, displayScale, min = 33f, max = 49f)
@@ -316,21 +339,23 @@ fun CalculatorDisplay(
             }
         }
 
-        Spacer(modifier = Modifier.width(spacerWidth))
+        if (showDoneButton) {
+            Spacer(modifier = Modifier.width(spacerWidth))
 
-        Surface(
-            onClick = onSave,
-            shape = CircleShape,
-            color = AppColors.primary,
-            modifier = Modifier.size(confirmButtonSize)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Rounded.Done,
-                    contentDescription = "Confirm amount",
-                    tint = ColorOnDark,
-                    modifier = Modifier.size(confirmIconSize)
-                )
+            Surface(
+                onClick = onSave,
+                shape = CircleShape,
+                color = AppColors.primary,
+                modifier = Modifier.size(confirmButtonSize)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Rounded.Done,
+                        contentDescription = "Confirm amount",
+                        tint = ColorOnDark,
+                        modifier = Modifier.size(confirmIconSize)
+                    )
+                }
             }
         }
     }
@@ -346,9 +371,11 @@ fun CalculatorKeys(
     onEqualsPress: () -> Unit,
     onPercentPress: () -> Unit,
     modifier: Modifier = Modifier,
-    keyHeight: Dp = 68.dp
+    keyHeight: Dp = 68.dp,
+    canEvaluate: Boolean = false
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // ... (rows 1-4 omitted for brevity in targetContent match if possible, but I'll include them to be safe)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -396,7 +423,7 @@ fun CalculatorKeys(
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
-            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = true, keyHeight = keyHeight)
+            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = canEvaluate, keyHeight = keyHeight)
         }
     }
 }

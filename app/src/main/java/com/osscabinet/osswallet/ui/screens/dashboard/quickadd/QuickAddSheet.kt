@@ -186,7 +186,9 @@ fun QuickAddSheet(
                         glassVariant = GlassVariant.Sheet,
                         fallbackColor = AppColors.sheetSurface
                     ) {
-                        sheetBody()
+                        AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
+                            sheetBody()
+                        }
                     }
                 } else {
                     Surface(

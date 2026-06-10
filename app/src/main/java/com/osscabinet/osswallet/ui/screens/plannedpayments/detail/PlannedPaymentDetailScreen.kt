@@ -20,7 +20,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoFixHigh
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
@@ -38,6 +36,7 @@ import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -449,9 +448,9 @@ fun PlannedPaymentDetailContent(
                                         items(
                                             upcomingItems,
                                             key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                                            val matched_occurrence =
+                                            val matchedOccurrence =
                                                 occurrences.find { it.scheduledDate == item.scheduledDate }
-                                            val status = matched_occurrence?.status ?: OccurrenceStatus.PENDING
+                                            val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
                                             OccurrenceItem(
                                                 item = item,
                                                 status = status,
@@ -765,6 +764,36 @@ private fun OccurrenceItem(
                     style = AppTextStyles.transactionSwipeAction,
                     color = AppColors.contentSecondary.copy(alpha = 0.6f)
                 )
+                
+                val hintLabel = if (status == OccurrenceStatus.PENDING) {
+                    when {
+                        item.isOverdue -> "Overdue"
+                        daysUntil == 0 -> "Due today"
+                        daysUntil == 1 -> "Due tomorrow"
+                        daysUntil > 1 -> "Due in $daysUntil days"
+                        else -> null
+                    }
+                } else null
+                
+                if (hintLabel != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(top = 2.dp)
+                    ) {
+                        Icon(
+                            if (item.isOverdue) Icons.Rounded.Info else Icons.Rounded.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = if (item.isOverdue) AppColors.error.copy(alpha = 0.6f) else AppColors.contentSecondary.copy(alpha = 0.4f)
+                        )
+                        Text(
+                            hintLabel,
+                            style = AppTextStyles.caption.copy(fontSize = 10.sp),
+                            color = if (item.isOverdue) AppColors.error.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(alpha = 0.5f)
+                        )
+                    }
+                }
             }
             when (status) {
                 OccurrenceStatus.PENDING -> {
@@ -777,67 +806,29 @@ private fun OccurrenceItem(
                                 0.5.dp,
                                 AppColors.divider.copy(alpha = 0.2f)
                             ),
-                            modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
+                            modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
                         ) {
-                            Box(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Skip", style = AppTextStyles.drawerItemLabel)
-                            }
-                        }
-                        if (daysUntil > 0) {
-                            val hintLabel = when {
-                                daysUntil == 1 -> "Due tomorrow"
-                                else -> "Due in $daysUntil days"
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                color = AppColors.insetSurface.copy(alpha = 0.4f),
-                                modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                                ) {
-                                    Icon(
-                                        Icons.Rounded.Schedule,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(12.dp),
-                                        tint = AppColors.contentSecondary.copy(alpha = 0.4f)
-                                    )
-                                    Text(
-                                        hintLabel,
-                                        style = AppTextStyles.transactionSwipeAction,
-                                        color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                                    )
-                                }
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Rounded.SkipNext,
+                                    contentDescription = "Skip",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+                                )
                             }
                         }
                         Surface(
                             onClick = onConfirm,
                             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                             color = AppColors.primary,
-                            modifier = Modifier.height(AeonTheme.dimensions.spacing2xl)
+                            modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.spacingMd),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                            ) {
+                            Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    Icons.Rounded.Done,
-                                    contentDescription = null,
+                                    Icons.Rounded.CheckCircle,
+                                    contentDescription = "Confirm",
                                     modifier = Modifier.size(14.dp),
                                     tint = ColorOnDark
-                                )
-                                Text(
-                                    "Confirm",
-                                    style = AppTextStyles.drawerItemLabel.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = ColorOnDark
-                                    )
                                 )
                             }
                         }
@@ -1033,5 +1024,72 @@ fun PlannedPaymentDetailPreview() {
             onConfirmOccurrence = {},
             onSkipOccurrence = {}
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun OccurrenceItemPreview() {
+    val samplePayment = PlannedPayment(
+        id = 1L,
+        name = "Netflix Subscription",
+        amount = BigDecimal("15.99"),
+        currency = "USD",
+        transactionType = TransactionType.EXPENSE,
+        categoryId = 1L,
+        accountId = "acc_1",
+        payee = "Netflix",
+        note = "Monthly entertainment plan",
+        schedule = PaymentSchedule(
+            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
+            startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
+            nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
+        ),
+        paymentMethod = PaymentMethod.CREDIT_CARD,
+        profileId = 1,
+        transactionStatus = TransactionStatus.CLEARED
+    )
+
+    val sampleItem = UpcomingPaymentItem(
+        plannedPayment = samplePayment,
+        scheduledDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L,
+        isOverdue = false
+    )
+
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Pending")
+            OccurrenceItem(
+                item = sampleItem,
+                status = OccurrenceStatus.PENDING,
+                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                onConfirm = {},
+                onSkip = {}
+            )
+
+            Text("Overdue")
+            OccurrenceItem(
+                item = sampleItem.copy(
+                    isOverdue = true,
+                    scheduledDate = System.currentTimeMillis() - 1 * 24 * 60 * 60 * 1000L
+                ),
+                status = OccurrenceStatus.PENDING,
+                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                onConfirm = {},
+                onSkip = {}
+            )
+
+            Text("Confirmed")
+            OccurrenceItem(
+                item = sampleItem,
+                status = OccurrenceStatus.CONFIRMED,
+                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                onConfirm = {},
+                onSkip = {}
+            )
+        }
     }
 }

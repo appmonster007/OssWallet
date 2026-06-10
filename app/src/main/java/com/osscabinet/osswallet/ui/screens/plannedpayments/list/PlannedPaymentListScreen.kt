@@ -37,6 +37,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
-import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -105,27 +105,38 @@ private fun SwipeablePaymentItem(
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    if (onConfirm != null) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onConfirm()
-                    }
-                    false
-                }
-
-                SwipeToDismissBoxValue.EndToStart -> {
-                    if (onSkip != null) {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onSkip()
-                    }
-                    false
-                }
-
+                SwipeToDismissBoxValue.StartToEnd -> onConfirm != null
+                SwipeToDismissBoxValue.EndToStart -> onSkip != null
                 else -> false
             }
         },
         positionalThreshold = { totalDistance -> totalDistance * 0.4f }
     )
+
+    // Handle haptic feedback exactly when the threshold is crossed (the "trigger" point)
+    LaunchedEffect(dismissState.targetValue) {
+        val target = dismissState.targetValue
+        if (target == SwipeToDismissBoxValue.StartToEnd && onConfirm != null) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        } else if (target == SwipeToDismissBoxValue.EndToStart && onSkip != null) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
+
+    // Handle the actual action execution once the swipe is completed/confirmed.
+    // This prevents multiple triggers because currentValue only changes after release/animation.
+    LaunchedEffect(dismissState.currentValue) {
+        val current = dismissState.currentValue
+        if (current != SwipeToDismissBoxValue.Settled) {
+            if (current == SwipeToDismissBoxValue.StartToEnd) {
+                onConfirm?.invoke()
+            } else if (current == SwipeToDismissBoxValue.EndToStart) {
+                onSkip?.invoke()
+            }
+            // Reset to settled state after the action is handled
+            dismissState.snapTo(SwipeToDismissBoxValue.Settled)
+        }
+    }
 
     SwipeToDismissBox(
         state = dismissState,
@@ -200,15 +211,13 @@ data class PlannedPaymentListActions(
 @Composable
 fun PlannedPaymentListScreen(
     actions: PlannedPaymentListActions,
-    viewModel: PlannedPaymentViewModel,
-    transactionManager: TransactionManager
+    viewModel: PlannedPaymentViewModel
 ) {
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
 
     PlannedPaymentListContent(
         payments = payments,
-        profileId = profileId,
         onBackClick = actions.onBackClick,
         onAddClick = actions.onAddClick,
         onEditClick = actions.onEditClick,
@@ -232,7 +241,6 @@ fun PlannedPaymentListScreen(
 @Composable
 fun PlannedPaymentListContent(
     payments: List<PlannedPayment>,
-    profileId: Int,
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
@@ -691,7 +699,6 @@ private fun PlannedPaymentListPreview() {
     OssWalletTheme {
         PlannedPaymentListContent(
             payments = mockPayments,
-            profileId = 1,
             onBackClick = {},
             onAddClick = {},
             onEditClick = {},
@@ -702,5 +709,60 @@ private fun PlannedPaymentListPreview() {
             onConfirm = { _, _ -> },
             onSkip = { _, _ -> }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SwipeablePaymentItemPreview() {
+    val now = System.currentTimeMillis()
+    val mockPayment = PlannedPayment(
+        id = 1,
+        name = "Rent Payment",
+        amount = BigDecimal("1200.00"),
+        currency = "USD",
+        transactionType = TransactionType.EXPENSE,
+        categoryId = 1,
+        status = PlannedPaymentStatus.ACTIVE,
+        schedule = PaymentSchedule(
+            startDate = now,
+            nextDueDate = now + 86400000,
+            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1)
+        )
+    )
+
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Normal State")
+            SwipeablePaymentItem(
+                payment = mockPayment,
+                now = now,
+                isOverdue = false,
+                onTap = {},
+                onEdit = {},
+                onDelete = {},
+                onPause = {},
+                onResume = {},
+                onConfirm = {},
+                onSkip = {}
+            )
+            
+            Text("Overdue State")
+            SwipeablePaymentItem(
+                payment = mockPayment.copy(id = 2, name = "Electricity"),
+                now = now,
+                isOverdue = true,
+                onTap = {},
+                onEdit = {},
+                onDelete = {},
+                onPause = {},
+                onResume = {},
+                onConfirm = {},
+                onSkip = {}
+            )
+        }
     }
 }

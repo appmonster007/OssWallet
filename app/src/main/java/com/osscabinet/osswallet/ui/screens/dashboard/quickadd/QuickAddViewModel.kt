@@ -104,7 +104,8 @@ class QuickAddViewModel @Inject constructor(
                 it.copy(
                     selectedAccountId = accountId,
                     selectedCurrency = account?.currencyCode ?: it.selectedCurrency,
-                    transactionType = TransactionType.EXPENSE
+                    transactionType = TransactionType.EXPENSE,
+                    currentStep = 2
                 )
             }
         }

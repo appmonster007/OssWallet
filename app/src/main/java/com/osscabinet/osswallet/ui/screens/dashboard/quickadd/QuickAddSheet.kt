@@ -1,13 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,17 +19,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -57,15 +60,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
-import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAccountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAmountStep
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddTemplateStep
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.scaledDp
 import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import java.math.BigDecimal
 
@@ -110,60 +114,34 @@ fun QuickAddSheet(
         }
     }
 
-    if (glassEnabled) {
-        AeonGlassSheet(
-            onDismiss = onDismiss,
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Scrim: always covers full screen including behind keyboard
+        Box(
             modifier = Modifier
-                .statusBarsPadding()
-                .imePadding()
-        ) {
-            QuickAddSheetContent(
-                state = state,
-                templates = templates,
-                categories = categories,
-                viewModel = viewModel,
-                hideKeyboard = ::hideKeyboard,
-                onDismiss = onDismiss,
-                onSettled = {}
-            )
-        }
-    } else {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Scrim
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(ColorScrimDark)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { hideKeyboard(); onDismiss() }
-                    )
-            )
+                .fillMaxSize()
+                .background(ColorScrimDark)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { hideKeyboard(); onDismiss() }
+                )
+        )
 
-            // Sheet
+        // Anchor layer: shrinks when keyboard opens (manifest adjustResize)
+        // so the bottom-aligned sheet stays flush with the keyboard top
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+        ) {
             AnimatedVisibility(
                 visible = true,
                 enter = slideInVertically(tween(300)) { it } + fadeIn(tween(300)),
                 exit = slideOutVertically(tween(250)) { it } + fadeOut(tween(250)),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .imePadding()
-                        .navigationBarsPadding()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {}
-                        ),
-                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                    color = AppColors.cardSurface,
-                    tonalElevation = 4.dp,
-                    shadowElevation = 8.dp
-                ) {
+                val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                val sheetBody: @Composable () -> Unit = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         // Drag handle
                         Box(
@@ -192,6 +170,41 @@ fun QuickAddSheet(
                         )
                     }
                 }
+
+                if (glassEnabled) {
+                    GlassSurface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {}
+                            ),
+                        shape = sheetShape,
+                        hazeLayer = HazeLayer.Overlay,
+                        hazeStyle = GlassTokens.sheetStyle(),
+                        glassVariant = GlassVariant.Sheet,
+                        fallbackColor = AppColors.sheetSurface
+                    ) {
+                        sheetBody()
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {}
+                            ),
+                        shape = sheetShape,
+                        color = AppColors.cardSurface,
+                        tonalElevation = 4.dp,
+                        shadowElevation = 8.dp
+                    ) {
+                        sheetBody()
+                    }
+                }
             }
         }
     }
@@ -209,19 +222,12 @@ private fun QuickAddSheetContent(
 ) {
     var isSheetSettled by remember { mutableStateOf(false) }
     val windowInfo = LocalWindowInfo.current
-    val uiScale = AeonTheme.uiScale
 
-    val navBtnSize = scaledDp(36f, uiScale, min = 28f)
-    val navIconSize = scaledDp(18f, uiScale, min = 14f)
-    val navVPad = scaledDp(6f, uiScale, min = 3f)
-    val dotActive = scaledDp(8f, uiScale, min = 6f)
-    val dotInactive = scaledDp(6f, uiScale, min = 5f)
-
-    val pagerState = rememberPagerState(pageCount = { TOTAL_STEPS })
-
-    LaunchedEffect(state.currentStep) {
-        pagerState.animateScrollToPage(state.currentStep)
-    }
+    val navBtnSize  = 28.dp
+    val navIconSize = 14.dp
+    val navVPad     = 3.dp
+    val dotActive   = 6.dp
+    val dotInactive = 5.dp
 
     fun goBack() {
         when (state.currentStep) {
@@ -295,7 +301,7 @@ private fun QuickAddSheetContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(TOTAL_STEPS) { index ->
-                    val isActive = pagerState.currentPage == index
+                    val isActive = state.currentStep == index
                     Box(
                         modifier = Modifier
                             .size(if (isActive) dotActive else dotInactive)
@@ -360,12 +366,23 @@ private fun QuickAddSheetContent(
         }
 
         AeonGlassHost {
-            HorizontalPager(
-                state = pagerState,
-                userScrollEnabled = false,
-                modifier = Modifier.fillMaxWidth()
-            ) { page ->
-                when (page) {
+            AnimatedContent(
+                targetState = state.currentStep,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (slideInHorizontally(tween(280)) { it } + fadeIn(tween(200))).togetherWith(
+                            slideOutHorizontally(tween(280)) { -it } + fadeOut(tween(200))
+                        )
+                    } else {
+                        (slideInHorizontally(tween(280)) { -it } + fadeIn(tween(200))).togetherWith(
+                            slideOutHorizontally(tween(280)) { it } + fadeOut(tween(200))
+                        )
+                    }
+                },
+                label = "QuickAddStep"
+            ) { step ->
+                when (step) {
                     STEP_TEMPLATE -> QuickAddTemplateStep(
                         templates = templates,
                         categories = categories,
@@ -373,11 +390,9 @@ private fun QuickAddSheetContent(
                         selectedCategoryId = state.selectedCategoryId,
                         isSheetSettled = isSheetSettled,
                         onTemplateSelected = { template ->
-                            hideKeyboard()
                             viewModel.onTemplateSelected(template)
                         },
                         onCategorySelected = { category ->
-                            hideKeyboard()
                             viewModel.onCategorySelected(category)
                         }
                     )
@@ -386,7 +401,11 @@ private fun QuickAddSheetContent(
                         accounts = state.accounts,
                         selectedAccountId = state.selectedAccountId,
                         transactionType = state.transactionType,
-                        onAccountTapped = { viewModel.onAccountTapped(it) },
+                        isStepActive = state.currentStep == STEP_ACCOUNT,
+                        onAccountTapped = {
+                            hideKeyboard()
+                            viewModel.onAccountTapped(it)
+                        },
                         onToggleType = { viewModel.toggleTransactionType() }
                     )
 
@@ -409,6 +428,8 @@ private fun QuickAddSheetContent(
                             }
                         )
                     }
+
+                    else -> {}
                 }
             }
         }

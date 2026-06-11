@@ -433,7 +433,7 @@ object TimelineService {
             expenseBase = expenseBase,
             netBase = incomeBase.add(expenseBase),
             totalOpeningBalanceBase = totalOpeningBalanceBase,
-            totalClosingBalanceBase = totalClosingBalanceBase
+            totalClosingBalanceBase = totalClosingBalanceBase,
         )
     }
 
@@ -450,7 +450,8 @@ object TimelineService {
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         plannedPayments: List<UpcomingPaymentItem> = emptyList(),
-        precision: Int = this.precision
+        precision: Int = this.precision,
+        allTxnBreakdown: Boolean = true,
     ): List<TransactionGroup> {
         val accountMap = accounts.associateBy { it.id }
         val categoryMap = categories.associateBy { it.id }
@@ -545,6 +546,7 @@ object TimelineService {
 
         val sortedKeys = groupsMap.keys.sortedDescending()
 
+        val headerSource = if (allTxnBreakdown) absoluteHistory else transactions
         return sortedKeys.map { key ->
             val groupItems = groupsMap[key] ?: emptyList()
 
@@ -552,8 +554,7 @@ object TimelineService {
                 key = key,
                 headerData = getHeaderData(
                     groupKey = key,
-                    groupTransactions = transactions.filter { txWithBalance ->
-                        // Only confirmed transactions affect headers
+                    groupTransactions = headerSource.filter { txWithBalance ->
                         val dateString = when (groupingType) {
                             TransactionGroupingType.BY_DAY -> Instant.ofEpochMilli(txWithBalance.transaction.timestamp).atZone(systemZoneId).toLocalDate().toString()
                             TransactionGroupingType.BY_WEEK -> {
@@ -588,7 +589,7 @@ object TimelineService {
         val expenseBase: BigDecimal,
         val netBase: BigDecimal,
         val totalOpeningBalanceBase: BigDecimal,
-        val totalClosingBalanceBase: BigDecimal
+        val totalClosingBalanceBase: BigDecimal,
     )
 }
 

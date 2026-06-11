@@ -219,11 +219,30 @@ fun TransactionListTopAppBar(
                                 color = AppColors.divider.copy(alpha = 0.3f)
                             )
                             EntrySwitchRow(
+                                label = "Period Overview",
+                                subtitle = "Show full period totals regardless of active filter",
+                                icon = Icons.Rounded.CalendarMonth,
+                                enabled = recordsSettings.showCurrencyBreakdown,
+                                checked = recordsSettings.allTxnBreakdown,
+                                onCheckedChange = {
+                                    onUpdateRecordsSettings(
+                                        recordsSettings.copy(
+                                            allTxnBreakdown = it
+                                        )
+                                    )
+                                },
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            EntrySwitchRow(
                                 label = "Only Active Currencies",
                                 subtitle = "Hide zero balance currencies",
                                 icon = Icons.AutoMirrored.Rounded.Sort,
-                                enabled = recordsSettings.showCurrencyBreakdown,
-                                checked = recordsSettings.showOnlyActiveCurrencies,
+                                enabled = recordsSettings.showCurrencyBreakdown && recordsSettings.allTxnBreakdown,
+                                checked = !recordsSettings.allTxnBreakdown || recordsSettings.showOnlyActiveCurrencies,
                                 onCheckedChange = {
                                     onUpdateRecordsSettings(
                                         recordsSettings.copy(
@@ -241,7 +260,8 @@ fun TransactionListTopAppBar(
                                 label = "Opening Balance",
                                 subtitle = "Show balance at start of group",
                                 icon = Icons.Rounded.VerticalAlignTop,
-                                checked = recordsSettings.showHeaderOpeningBalance,
+                                enabled = recordsSettings.allTxnBreakdown,
+                                checked = recordsSettings.allTxnBreakdown && recordsSettings.showHeaderOpeningBalance,
                                 onCheckedChange = {
                                     onUpdateRecordsSettings(
                                         recordsSettings.copy(
@@ -259,7 +279,8 @@ fun TransactionListTopAppBar(
                                 label = "Closing Balance",
                                 subtitle = "Show balance at end of group",
                                 icon = Icons.Rounded.VerticalAlignBottom,
-                                checked = recordsSettings.showHeaderClosingBalance,
+                                enabled = recordsSettings.allTxnBreakdown,
+                                checked = recordsSettings.allTxnBreakdown && recordsSettings.showHeaderClosingBalance,
                                 onCheckedChange = {
                                     onUpdateRecordsSettings(
                                         recordsSettings.copy(

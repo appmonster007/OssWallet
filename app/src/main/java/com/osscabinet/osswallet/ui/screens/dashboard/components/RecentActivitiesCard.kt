@@ -89,6 +89,7 @@ fun RecentActivitiesCard(
             modifier = Modifier.height(300.dp),
             showHeader = false,
             showCurrencyBreakdown = config.showCurrencyBreakdown,
+            allTxnBreakdown = config.allTxnBreakdown,
             useNoteAsHeader = config.useNoteAsHeader,
             showHeaderOpeningBalance = config.showOpeningBalance,
             showHeaderClosingBalance = config.showClosingBalance,
@@ -267,13 +268,15 @@ private fun RecentActivitiesSettingsSheet(
         CardSettingsSection("Balances") {
             EntrySwitchRow(
                 label = "Show Opening Balance",
-                checked = config.showOpeningBalance,
+                enabled = config.allTxnBreakdown,
+                checked = config.allTxnBreakdown && config.showOpeningBalance,
                 onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
                 isFlush = true
             )
             EntrySwitchRow(
                 label = "Show Closing Balance",
-                checked = config.showClosingBalance,
+                enabled = config.allTxnBreakdown,
+                checked = config.allTxnBreakdown && config.showClosingBalance,
                 onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
                 isFlush = true
             )
@@ -281,6 +284,14 @@ private fun RecentActivitiesSettingsSheet(
                 label = "Show Currency Breakdown",
                 checked = config.showCurrencyBreakdown,
                 onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
+                isFlush = true
+            )
+            EntrySwitchRow(
+                label = "Period Overview",
+                subtitle = "Show full period totals regardless of active filter",
+                checked = config.allTxnBreakdown,
+                enabled = config.showCurrencyBreakdown,
+                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) },
                 isFlush = true
             )
         }

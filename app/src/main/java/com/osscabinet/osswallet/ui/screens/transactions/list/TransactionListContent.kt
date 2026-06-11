@@ -113,6 +113,7 @@ fun TransactionListContent(
                         showItemClosingBalance = recordsSettings.showItemClosingBalance,
                         showOnlyActiveCurrencies = recordsSettings.showOnlyActiveCurrencies,
                         showCurrencyBreakdown = recordsSettings.showCurrencyBreakdown,
+                        allTxnBreakdown = recordsSettings.allTxnBreakdown,
                         showAccount = recordsSettings.showAccount,
                         showCategory = recordsSettings.showCategory,
                         showNote = recordsSettings.showNote,

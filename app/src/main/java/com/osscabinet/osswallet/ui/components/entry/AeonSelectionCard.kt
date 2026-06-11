@@ -128,7 +128,7 @@ fun AeonSelectionCard(
             // Icon Container
             Surface(
                 shape = CircleShape,
-                color = iconColor.copy(alpha = if (isActiveSelection) 0.25f else 0.12f),
+                color = iconColor.copy(alpha = if (isActiveSelection) 0.30f else 0.18f),
                 modifier = Modifier.size(dims.iconSizeLg)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -151,7 +151,7 @@ fun AeonSelectionCard(
                 Text(
                     text = label,
                     style = AppTextStyles.listItemTitle,
-                    color = if (isActiveSelection) iconColor else AppColors.contentPrimary,
+                    color = AppColors.contentPrimary,
                     modifier = Modifier.alpha(contentAlpha),
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis

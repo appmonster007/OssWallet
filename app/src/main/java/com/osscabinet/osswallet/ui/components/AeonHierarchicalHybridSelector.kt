@@ -438,7 +438,7 @@ private fun <T, ID> HybridSelectItem(
             Surface(
                 modifier = Modifier.size(dims.iconSizeLg),
                 shape = CircleShape,
-                color = color.copy(alpha = if (isActiveSelection) 0.25f else 0.12f)
+                color = color.copy(alpha = if (isActiveSelection) 0.30f else 0.18f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     if (icon != null) {
@@ -458,7 +458,7 @@ private fun <T, ID> HybridSelectItem(
             Text(
                 labelMapper(item),
                 style = AppTextStyles.listItemTitle,
-                color = if (isActiveSelection) color else AppColors.contentPrimary,
+                color = AppColors.contentPrimary,
                 modifier = Modifier
                     .weight(1f)
                     .alpha(contentAlpha)

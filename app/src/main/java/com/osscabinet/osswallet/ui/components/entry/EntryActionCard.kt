@@ -119,7 +119,7 @@ fun EntryActionCard(
 
     GlassSurface(
         modifier = modifier
-            .height(scaledDp(72f, uiScale))
+            .height(scaledDp(64f, uiScale))
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -167,7 +167,7 @@ fun EntryActionCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.weight(1f)

@@ -170,13 +170,13 @@ private data class TransactionHeaderStyles(
             labelColumnWidth = AeonSize.D40.value,
             titleStyle = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Bold,
-                color = AppColors.border,
+                color = AppColors.contentPrimary,
                 fontSize = 8.sp,
                 letterSpacing = 1.sp,
             ),
             subtitleStyle = AppTextStyles.metaLabel.copy(
                 fontWeight = FontWeight.Medium,
-                color = AppColors.border,
+                color = AppColors.contentSecondary,
                 fontSize = 8.sp,
                 letterSpacing = 0.5.sp,
             ),
@@ -206,26 +206,69 @@ private data class TransactionHeaderStyles(
 
 @Preview(showBackground = true)
 @Composable
+fun TransactionHeaderMultiThemePreview() {
+    OssWalletTheme {
+        Column(modifier = Modifier.background(AppColors.background)) {
+            Text(
+                "Light Mode",
+                style = AppTextStyles.sectionOverline,
+                modifier = Modifier.padding(8.dp),
+                color = AppColors.contentPrimary
+            )
+            OssWalletTheme(theme = "Light") {
+                TransactionHeaderSample()
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Dark Mode",
+                style = AppTextStyles.sectionOverline,
+                modifier = Modifier.padding(8.dp),
+                color = AppColors.contentPrimary
+            )
+            OssWalletTheme(theme = "Dark") {
+                TransactionHeaderSample()
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Amoled Mode",
+                style = AppTextStyles.sectionOverline,
+                modifier = Modifier.padding(8.dp),
+                color = AppColors.contentPrimary
+            )
+            OssWalletTheme(theme = "Amoled") {
+                TransactionHeaderSample()
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionHeaderSample() {
+    TransactionHeader(
+        title = "Monday, Jan 22",
+        subtitle = "2 Transactions",
+        incomeByCurrency = mapOf("USD" to BigDecimal("150.00")),
+        expenseByCurrency = mapOf("USD" to BigDecimal("45.50"), "EUR" to BigDecimal("10.00")),
+        openingBalancesByCurrency = mapOf("USD" to BigDecimal("1200.00")),
+        closingBalancesByCurrency = mapOf("USD" to BigDecimal("1304.50")),
+        allCurrencies = listOf("USD", "EUR"),
+        incomeBase = BigDecimal("150.00"),
+        expenseBase = BigDecimal("56.50"),
+        netBase = BigDecimal("93.50"),
+        totalOpeningBalanceBase = BigDecimal("1200.00"),
+        totalClosingBalanceBase = BigDecimal("1293.50"),
+        baseCurrency = "USD",
+        showOpeningBalance = true,
+        showClosingBalance = true,
+        initiallyExpanded = true
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
 fun TransactionHeaderPreview() {
     OssWalletTheme {
-        TransactionHeader(
-            title = "Monday, Jan 22",
-            subtitle = "2 Transactions",
-            incomeByCurrency = mapOf("USD" to BigDecimal("150.00")),
-            expenseByCurrency = mapOf("USD" to BigDecimal("45.50"), "EUR" to BigDecimal("10.00")),
-            openingBalancesByCurrency = mapOf("USD" to BigDecimal("1200.00")),
-            closingBalancesByCurrency = mapOf("USD" to BigDecimal("1304.50")),
-            allCurrencies = listOf("USD", "EUR"),
-            incomeBase = BigDecimal("150.00"),
-            expenseBase = BigDecimal("56.50"),
-            netBase = BigDecimal("93.50"),
-            totalOpeningBalanceBase = BigDecimal("1200.00"),
-            totalClosingBalanceBase = BigDecimal("1293.50"),
-            baseCurrency = "USD",
-            showOpeningBalance = true,
-            showClosingBalance = true,
-            initiallyExpanded = true
-        )
+        TransactionHeaderSample()
     }
 }
 

@@ -66,6 +66,7 @@ fun AeonSettingsItem(
     color: Color = AppColors.contentPrimary,
     showChevron: Boolean = onClick != null && trailingContent == null
 ) {
+    val dims = AeonTheme.dimensions
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -76,12 +77,12 @@ fun AeonSettingsItem(
             modifier = Modifier
                 .weight(1f)
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(AeonTheme.dimensions.cardPadding),
+                .padding(dims.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
         ) {
             Surface(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(dims.iconSizeLg),
                 shape = CircleShape,
                 color = color.copy(alpha = 0.12f)
             ) {
@@ -104,15 +105,15 @@ fun AeonSettingsItem(
             VerticalDivider(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .padding(vertical = 12.dp)
+                    .padding(vertical = dims.spacingMd)
                     .width(0.5.dp),
                 color = AppColors.divider.copy(alpha = 0.3f)
             )
 
             Box(
                 modifier = Modifier
-                    .padding(start = 12.dp, end = AeonTheme.dimensions.cardPadding)
-                    .padding(vertical = AeonTheme.dimensions.cardPadding),
+                    .padding(start = dims.spacingMd, end = dims.cardPadding)
+                    .padding(vertical = dims.cardPadding),
                 contentAlignment = Alignment.Center
             ) {
                 if (trailingContent != null) {
@@ -122,7 +123,7 @@ fun AeonSettingsItem(
                         Icons.Rounded.ChevronRight,
                         contentDescription = null,
                         tint = AppColors.contentSecondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(dims.iconSizeMd)
                     )
                 }
             }

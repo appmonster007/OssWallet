@@ -60,6 +60,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
+import com.osscabinet.ossWallet.ui.components.management.AeonListItem
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -301,29 +302,19 @@ fun AccountManagementListItem(
         AppColors.primary
     }
     val contentColor = if (accountColor.isDark()) ColorOnDark else ColorOnLight
+    val accountIcon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .alpha(if (account.isArchived) 0.6f else 1f)
-            .clickable(enabled = isSelectionMode) { onSelect() },
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = when {
-            isDragging -> AppColors.selectionContainer.copy(alpha = 0.9f)
-            isSelected -> AppColors.selectionContainer.copy(alpha = 0.5f)
-            else -> AppColors.insetSurface.copy(alpha = 0.5f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (isSelected || isDragging) AppColors.primary else AppColors.insetSurface
-        ),
-        shadowElevation = if (isDragging) AeonTheme.dimensions.spacingSm else 0.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(AeonTheme.dimensions.spacingMd),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-        ) {
+    AeonListItem(
+        title = account.name,
+        subtitle = account.structureType.displayName,
+        icon = accountIcon,
+        iconTint = contentColor,
+        iconContainerColor = accountColor,
+        modifier = Modifier.alpha(if (account.isArchived) 0.6f else 1f),
+        onClick = if (isSelectionMode) onSelect else onAccountClick,
+        isSelected = isSelected,
+        isDragging = isDragging,
+        leadingContent = {
             if (isSelectionMode) {
                 Checkbox(
                     checked = isSelected,
@@ -337,68 +328,28 @@ fun AccountManagementListItem(
                     tint = AppColors.border
                 )
             }
-
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(AeonTheme.dimensions.spacingSm))
-                    .clickable(enabled = !isSelectionMode) { onAccountClick() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-            ) {
-                Surface(
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                    shape = CircleShape,
-                    color = accountColor
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                            tint = contentColor
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        account.name,
-                        style = AppTextStyles.managementItemTitle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        account.structureType.displayName,
-                        style = AppTextStyles.transactionSwipeAction,
-                        color = AppColors.border
+        },
+        trailingContent = {
+            Switch(
+                checked = !account.isArchived,
+                onCheckedChange = { onToggleArchive() },
+                modifier = Modifier.scale(0.7f),
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AppColors.primary,
+                    checkedTrackColor = AppColors.switchTrackOn,
+                    checkedBorderColor = AppColors.primary,
+                    uncheckedThumbColor = AppColors.switchThumbOff,
+                    uncheckedTrackColor = AppColors.switchTrackOff,
+                    uncheckedBorderColor = AppColors.outline
+                ),
+                thumbContent = {
+                    Icon(
+                        if (account.isArchived) Icons.Rounded.Archive else Icons.Rounded.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize)
                     )
                 }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(
-                    checked = !account.isArchived,
-                    onCheckedChange = { onToggleArchive() },
-                    modifier = Modifier.scale(0.7f),
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = AppColors.primary,
-                        checkedTrackColor = AppColors.switchTrackOn,
-                        checkedBorderColor = AppColors.primary,
-                        uncheckedThumbColor = AppColors.switchThumbOff,
-                        uncheckedTrackColor = AppColors.switchTrackOff,
-                        uncheckedBorderColor = AppColors.outline
-                    ),
-                    thumbContent = {
-                        Icon(
-                            if (account.isArchived) Icons.Rounded.Archive else Icons.Rounded.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                        )
-                    }
-                )
-            }
+            )
         }
-    }
+    )
 }

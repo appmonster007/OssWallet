@@ -36,8 +36,6 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -66,6 +64,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.management.AeonListItem
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -267,35 +266,20 @@ fun ReorderTemplateItem(
     template: Template,
     isDragging: Boolean = false
 ) {
-    Surface(
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        color = if (isDragging) AppColors.selectionContainer.copy(alpha = 0.9f)
-        else AppColors.insetSurface.copy(alpha = 0.3f),
-        border = if (isDragging) BorderStroke(1.dp, AppColors.primary) else null,
-        shadowElevation = if (isDragging) 8.dp else 0.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AeonTheme.dimensions.cardPadding),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    AeonListItem(
+        title = template.name,
+        icon = Icons.Rounded.Star,
+        iconTint = AppColors.primary,
+        isDragging = isDragging,
+        leadingContent = {
             Icon(
                 Icons.Rounded.DragHandle,
                 contentDescription = null,
                 tint = AppColors.border,
                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
             )
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Icon(Icons.Rounded.Star, contentDescription = null, tint = AppColors.primary)
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Text(
-                template.name,
-                modifier = Modifier.weight(1f),
-                style = AppTextStyles.screenSubTitle
-            )
         }
-    }
+    )
 }
 
 @Composable
@@ -314,78 +298,57 @@ fun TemplateItem(
         TransactionType.TRANSFER -> AccentBlue to Icons.Rounded.SwapHoriz
     }
 
-    Card(
+    AeonListItem(
+        title = template.name,
+        subtitle = categoryName,
+        icon = getIconByName(categoryIconName),
+        iconTint = AppColors.primary,
         onClick = onEdit,
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = AppColors.insetSurface.copy(alpha = 0.3f))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AeonTheme.dimensions.cardPadding),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl),
-                    shape = CircleShape,
-                    color = AppColors.primary.copy(alpha = 0.1f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = getIconByName(categoryIconName),
-                            contentDescription = null,
-                            tint = AppColors.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                Surface(
+        iconOverlay = {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = (-4).dp, y = 4.dp),
+                shape = CircleShape,
+                color = badgeColor,
+                border = BorderStroke(2.dp, AppColors.panelSurface)
+            ) {
+                Icon(
+                    imageVector = badgeIcon,
+                    contentDescription = null,
+                    tint = ColorOnDark,
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .offset(x = (-4).dp, y = 4.dp),
-                    shape = CircleShape,
-                    color = badgeColor,
-                    border = BorderStroke(2.dp, AppColors.panelSurface)
-                ) {
+                        .size(16.dp)
+                        .padding(2.dp)
+                )
+            }
+        },
+        trailingContent = {
+            Row {
+                IconButton(onClick = onCreatePlannedPayment) {
                     Icon(
-                        imageVector = badgeIcon,
-                        contentDescription = null,
-                        tint = ColorOnDark,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .padding(2.dp)
+                        imageVector = Icons.Rounded.Schedule,
+                        contentDescription = "Create Planned Payment",
+                        tint = AppColors.primary
+                    )
+                }
+                IconButton(onClick = onToggleStar) {
+                    Icon(
+                        imageVector = if (template.isStarred) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = "Star",
+                        tint = if (template.isStarred) AppColors.primary else AppColors.border
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Rounded.DeleteOutline,
+                        contentDescription = "Delete",
+                        tint = AppColors.error
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(template.name, style = AppTextStyles.cardSectionTitle)
-                Text(categoryName, style = AppTextStyles.caption, color = AppColors.border)
-            }
-            IconButton(onClick = onCreatePlannedPayment) {
-                Icon(
-                    imageVector = Icons.Rounded.Schedule,
-                    contentDescription = "Create Planned Payment",
-                    tint = AppColors.primary
-                )
-            }
-            IconButton(onClick = onToggleStar) {
-                Icon(
-                    imageVector = if (template.isStarred) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                    contentDescription = "Star",
-                    tint = if (template.isStarred) AppColors.primary else AppColors.border
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Rounded.DeleteOutline,
-                    contentDescription = "Delete",
-                    tint = AppColors.error
-                )
-            }
         }
-    }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -37,6 +37,9 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +47,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -98,6 +105,7 @@ import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -145,6 +153,24 @@ fun PlannedPaymentDetailScreen(
     val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
     val payment =
         remember(config.plannedPaymentId, payments) { payments.find { it.id == config.plannedPaymentId } }
+    val lastUndoAction by viewModel.lastUndoAction.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(lastUndoAction) {
+        val action = lastUndoAction ?: return@LaunchedEffect
+        val message = if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = "Undo",
+            duration = SnackbarDuration.Short
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            viewModel.undoLastAction()
+        } else {
+            viewModel.clearUndoAction()
+        }
+    }
 
     var hasLoadedInitially by remember { mutableStateOf(false) }
 
@@ -198,7 +224,8 @@ fun PlannedPaymentDetailScreen(
             )
         },
         onConfirmOccurrence = { date -> actions.onConfirmClick(payment.id, date) },
-        onSkipOccurrence = { viewModel.quickSkip(payment) }
+        onSkipOccurrence = { viewModel.quickSkip(payment) },
+        snackbarHostState = snackbarHostState
     )
 }
 
@@ -213,7 +240,8 @@ fun PlannedPaymentDetailContent(
     onEditClick: () -> Unit,
     onSaveAsTemplateClick: () -> Unit,
     onConfirmOccurrence: (Long?) -> Unit,
-    onSkipOccurrence: () -> Unit
+    onSkipOccurrence: () -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val scope = rememberCoroutineScope()
     val scheduleSummary = remember(payment) {
@@ -265,6 +293,7 @@ fun PlannedPaymentDetailContent(
     val targetAccount = remember(payment.targetAccountId, accounts) { accounts.find { it.id == payment.targetAccountId } }
 
     val pillHeight = AeonSize.D64.value
+    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -522,7 +551,17 @@ fun PlannedPaymentDetailContent(
                 showFab = false
             )
 
-            // 3. Top Bar Layer
+            // 3. Snackbar Layer (above navigation pill)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = pillHeight + navigationBarHeight + 8.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SnackbarHost(hostState = snackbarHostState)
+            }
+
+            // 4. Top Bar Layer
             AeonTopAppBar(
                 left = AeonTopBarSection(
                     content = {

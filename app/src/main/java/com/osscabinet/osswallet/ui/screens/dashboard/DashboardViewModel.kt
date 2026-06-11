@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -35,6 +36,7 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -94,6 +96,9 @@ class DashboardViewModel @Inject constructor(
     )
 
     private val _viewFocus = MutableStateFlow<ViewFocus>(ViewFocus())
+
+    private val _lastUndoAction = MutableStateFlow<UndoAction?>(null)
+    val lastUndoAction: StateFlow<UndoAction?> = _lastUndoAction.asStateFlow()
 
     fun initializeDashboardView(viewContext: DashboardViewContext) {
         _initialViewContext.value = viewContext
@@ -305,13 +310,14 @@ class DashboardViewModel @Inject constructor(
                 warrantyExpiration = payment.warrantyExpiration,
                 gpsLocation = payment.gpsLocation
             )
-            transactionManager.handleSaveTransaction(
+            val transactionId = transactionManager.handleSaveTransaction(
                 existingTransaction = null,
                 request = request,
                 profileId = profileId,
                 sourcePlannedPaymentId = payment.id,
                 scheduledDate = scheduledDate
             )
+            _lastUndoAction.value = UndoAction.ConfirmUndo(payment, scheduledDate, transactionId)
         }
     }
 
@@ -323,8 +329,35 @@ class DashboardViewModel @Inject constructor(
                 paymentId = payment.id,
                 scheduledDate = scheduledDate
             )
+            _lastUndoAction.value = UndoAction.SkipUndo(payment, scheduledDate)
         }
     }
+
+    fun undoLastPlannedPaymentAction() {
+        val action = _lastUndoAction.value ?: return
+        _lastUndoAction.value = null
+        viewModelScope.launch {
+            when (action) {
+                is UndoAction.SkipUndo -> {
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    plannedPaymentRepository.update(
+                        action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
+                    )
+                }
+                is UndoAction.ConfirmUndo -> {
+                    transactionManager.deleteTransaction(action.transactionId)
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    plannedPaymentRepository.update(
+                        action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearUndoAction() { _lastUndoAction.value = null }
 }
 
 sealed class DashboardUiState {

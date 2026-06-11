@@ -37,6 +37,7 @@ fun AeonTransactionList(
     showItemClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
     showCurrencyBreakdown: Boolean = true,
+    allTxnBreakdown: Boolean = true,
     showAccount: Boolean = true,
     showCategory: Boolean = true,
     showNote: Boolean = true,
@@ -68,9 +69,9 @@ fun AeonTransactionList(
                     totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
                     totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                     baseCurrency = baseCurrency,
-                    showOpeningBalance = showHeaderOpeningBalance,
-                    showClosingBalance = showHeaderClosingBalance,
-                    showOnlyActiveCurrencies = showOnlyActiveCurrencies,
+                    showOpeningBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderOpeningBalance,
+                    showClosingBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderClosingBalance,
+                    showOnlyActiveCurrencies = !allTxnBreakdown || showOnlyActiveCurrencies,
                     showCurrencyBreakdown = showCurrencyBreakdown
                 )
             }

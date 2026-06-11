@@ -78,7 +78,8 @@ class RecentActivitiesCardComputer : CardDataComputer<RecentActivitiesCardConfig
             categories = input.categories,
             allTags = input.tags,
             baseCurrency = input.displayCurrency,
-            exchangeRates = input.exchangeRates
+            exchangeRates = input.exchangeRates,
+            allTxnBreakdown = config.allTxnBreakdown,
         )
 
         return CardRenderData.RecentActivities(

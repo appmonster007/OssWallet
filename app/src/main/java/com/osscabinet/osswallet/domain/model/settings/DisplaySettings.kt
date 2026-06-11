@@ -19,6 +19,7 @@ data class TransactionSectionSettings(
     val groupBy: TransactionGroupingType = TransactionGroupingType.BY_WEEK,
     val showOnlyActiveCurrencies: Boolean = false,
     val showCurrencyBreakdown: Boolean = true,
+    val allTxnBreakdown: Boolean = true,
     val showAccount: Boolean = true,
     val showCategory: Boolean = true,
     val showNote: Boolean = true,

@@ -64,6 +64,7 @@ fun RecentActivitiesScreen(
     showItemOpeningBalance: Boolean = false,
     showItemClosingBalance: Boolean = true,
     showCurrencyBreakdown: Boolean = true,
+    allTxnBreakdown: Boolean = true,
     useNoteAsHeader: Boolean = false,
     showAccount: Boolean = true,
     showCategory: Boolean = true,
@@ -150,8 +151,9 @@ fun RecentActivitiesScreen(
                             totalOpeningBalanceBase = group.headerData.totalOpeningBalanceBase,
                             totalClosingBalanceBase = group.headerData.totalClosingBalanceBase,
                             baseCurrency = baseCurrency,
-                            showOpeningBalance = showHeaderOpeningBalance,
-                            showClosingBalance = showHeaderClosingBalance,
+                            showOpeningBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderOpeningBalance,
+                            showClosingBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderClosingBalance,
+                            showOnlyActiveCurrencies = !allTxnBreakdown,
                             showCurrencyBreakdown = showCurrencyBreakdown
                         )
                     }

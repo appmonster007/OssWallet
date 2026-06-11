@@ -302,7 +302,8 @@ class TransactionViewModel @Inject constructor(
                 allTags = tags,
                 baseCurrency = base,
                 exchangeRates = rates,
-                plannedPayments = planned
+                plannedPayments = planned,
+                allTxnBreakdown = settings.allTxnBreakdown,
             )
             TransactionListState(groups = groups, isEmpty = false)
         }.stateIn(

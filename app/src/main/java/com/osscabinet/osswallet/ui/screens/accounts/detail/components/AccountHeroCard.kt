@@ -122,7 +122,7 @@ fun AccountHeroCard(
                     color = contentColor.copy(alpha = 0.6f)
                 )
 
-                val amountText = formatAuto(balance, shorten = true)
+                val amountText = formatAuto(balance)
                 val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
                 val isSymbolLeft =
                     CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
@@ -161,8 +161,7 @@ fun AccountHeroCard(
                         text = "≈ ${
                             formatAuto(
                                 balanceInBase,
-                                baseCurrency,
-                                shorten = true
+                                baseCurrency
                             )
                         }",
                         style = AppTextStyles.transactionTitle.copy(

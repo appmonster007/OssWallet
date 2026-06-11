@@ -356,7 +356,7 @@ fun AeonFlowBadge(
         borderColor = contentColor.copy(alpha = 0.1f),
     ) {
         Text(
-            text = formatAuto(amount, currency, shorten = true).trim(),
+            text = formatAuto(amount, currency).trim(),
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.Black,

@@ -161,31 +161,93 @@ object CurrencyFormatter {
     /**
      * High-level formatting method that uses global settings.
      * Automatically applies separators, symbol position, and grouping based on [activeSystem].
+     *
+     * @param shortenThreshold Shorten only when the unshortened result exceeds this character
+     * count; the compact result is also reduced in precision to fit within the threshold.
+     * Defaults to 11. Pass -1 to disable auto-shortening entirely.
      */
     fun formatAuto(
         amount: BigDecimal?,
         currencyCode: String? = null,
-        shorten: Boolean = false,
-        precision: Int = this.precision
+        precision: Int = this.precision,
+        shortenThreshold: Int = 12
     ): String {
         return formatForSystem(
             amount = amount,
             system = activeSystem,
             currencyCode = currencyCode,
-            shorten = shorten,
-            precision = precision
+            shorten = false,
+            precision = precision,
+            shortenThreshold = shortenThreshold
         )
     }
 
     /**
      * Formatting with a specific system, useful for previews or overrides.
+     *
+     * @param shortenThreshold When set, shortening is applied only if the unshortened result
+     * exceeds this character count. The compact result is also constrained to fit within the
+     * threshold by reducing decimal places if necessary.
      */
     fun formatForSystem(
         amount: BigDecimal?,
         system: FormattingSystem,
         currencyCode: String? = null,
         shorten: Boolean = false,
-        precision: Int = this.precision
+        precision: Int = this.precision,
+        shortenThreshold: Int? = null
+    ): String {
+        val effectiveShorten = if (shortenThreshold == -1) {
+            false
+        } else if (shortenThreshold != null && !shorten) {
+            val unshortened = formatForSystemInternal(
+                amount = amount,
+                system = system,
+                currencyCode = currencyCode,
+                shorten = false,
+                precision = precision
+            )
+            unshortened.length > shortenThreshold
+        } else {
+            shorten
+        }
+
+        if (!effectiveShorten || shortenThreshold == null) {
+            return formatForSystemInternal(
+                amount = amount,
+                system = system,
+                currencyCode = currencyCode,
+                shorten = effectiveShorten,
+                precision = precision
+            )
+        }
+
+        // Shorten and reduce precision until the result fits within the threshold.
+        for (p in precision downTo 0) {
+            val candidate = formatForSystemInternal(
+                amount = amount,
+                system = system,
+                currencyCode = currencyCode,
+                shorten = true,
+                precision = p
+            )
+            if (candidate.length <= shortenThreshold) return candidate
+        }
+        return formatForSystemInternal(
+            amount = amount,
+            system = system,
+            currencyCode = currencyCode,
+            shorten = true,
+            precision = 0
+        )
+    }
+
+    private fun formatForSystemInternal(
+        amount: BigDecimal?,
+        system: FormattingSystem,
+        currencyCode: String?,
+        shorten: Boolean,
+        precision: Int
     ): String {
         return if (currencyCode != null) {
             formatCurrency(

@@ -54,10 +54,9 @@ fun AeonBudgetProgress(
                     "${
                         formatAuto(
                             current,
-                            baseCurrency,
-                            shorten = true
+                            baseCurrency
                         )
-                    } / ${formatAuto(total, baseCurrency, shorten = true)}",
+                    } / ${formatAuto(total, baseCurrency)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         color = AppColors.border
                     )

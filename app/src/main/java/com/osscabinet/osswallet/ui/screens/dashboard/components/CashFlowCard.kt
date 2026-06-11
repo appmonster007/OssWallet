@@ -226,7 +226,7 @@ internal fun AeonFlowBreakdownItem(
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                formatAuto(amount, curr, shorten = true),
+                formatAuto(amount, curr),
                 style = AppTextStyles.listItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
@@ -234,7 +234,7 @@ internal fun AeonFlowBreakdownItem(
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
-                    "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
+                    "≈ ${formatAuto(inBase, baseCurrency)}",
                     style = AppTextStyles.metaLabel.copy(
                         fontWeight = FontWeight.Medium
                     ),

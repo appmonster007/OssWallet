@@ -319,8 +319,7 @@ fun AeonPieChart(
                         formatAuto(
                             amount = total,
                             currencyCode = currency,
-                            precision = precision,
-                            shorten = true
+                            precision = precision
                         )
 
                     Text(

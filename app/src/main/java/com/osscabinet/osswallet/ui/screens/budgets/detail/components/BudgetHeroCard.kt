@@ -73,7 +73,7 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount = formatAuto(displayAmount, budget.currency, shorten = true)
+                        val amount = formatAuto(displayAmount, budget.currency)
                         val amountParts = amount.split(" ")
                         val amountText = amountParts.dropLast(1).joinToString(" ")
                         val symbolText = amountParts.lastOrNull() ?: ""
@@ -152,7 +152,7 @@ fun BudgetHeroCard(
                         text = "Limit: ${
                             formatAuto(
                                 budget.limitAmount,
-                                budget.currency, shorten = true
+                                budget.currency
                             )
                         }",
                         style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),

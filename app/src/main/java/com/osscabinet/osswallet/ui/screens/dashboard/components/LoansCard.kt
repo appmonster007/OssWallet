@@ -218,8 +218,7 @@ private fun LoanSummaryRow(
                     Text(
                         text = formatAuto(
                             summary.remainingBalance,
-                            summary.loan.currency,
-                            shorten = true
+                            summary.loan.currency
                         ),
                         style = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold

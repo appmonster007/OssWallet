@@ -102,7 +102,7 @@ fun TransactionHeader(
                 )
                 if (!showCurrencyBreakdown) {
                     Text(
-                        text = "∑ ${formatAuto(netBase, baseCurrency, shorten = true)}",
+                        text = "∑ ${formatAuto(netBase, baseCurrency)}",
                         style = styles.baseValueStyle,
                         color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
                         textAlign = TextAlign.Center,

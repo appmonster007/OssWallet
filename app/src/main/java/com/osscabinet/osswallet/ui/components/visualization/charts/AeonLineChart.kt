@@ -239,7 +239,7 @@ fun AeonLineChart(
                             strokeWidth = (dims.spacingXs / 8).toPx()
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick, shorten = true),
+                            formatAuto(tick),
                             leftPadding - dims.spacingMd.toPx(),
                             yPos + dims.spacingXs.toPx(),
                             labelPaint
@@ -604,8 +604,7 @@ fun AeonLineChart(
                                         text = formatAuto(
                                             amount = p.y,
                                             currencyCode = currency,
-                                            precision = precision,
-                                            shorten = true
+                                            precision = precision
                                         ),
                                         style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary

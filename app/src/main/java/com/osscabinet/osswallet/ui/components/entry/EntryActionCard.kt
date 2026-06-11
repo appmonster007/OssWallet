@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.ColorOnLight
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 
@@ -111,7 +112,7 @@ fun EntryActionCard(
         label = "borderColor"
     )
 
-    val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
+    val config = GlassTokens.configForVariant(GlassVariant.Card)
     val borderWidth by animateDpAsState(
         targetValue = if (isSelected) config.surface.borderWidth.dp else (config.surface.borderWidth * 0.5f).dp,
         label = "borderWidth"
@@ -119,7 +120,7 @@ fun EntryActionCard(
 
     GlassSurface(
         modifier = modifier
-            .height(scaledDp(64f, uiScale))
+            .height(64.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -134,10 +135,9 @@ fun EntryActionCard(
             },
         shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
-        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
+        glassVariant = GlassVariant.Card,
         fallbackColor = backgroundColor,
         borderColor = borderColor,
-        borderAlpha = if (isSelected) config.surface.borderAlpha else config.surface.borderAlpha * 0.2f,
         borderWidth = borderWidth,
     ) {
         // Glass-mode color wash: renders on top of the haze blur, behind all content.

@@ -1,10 +1,14 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -12,6 +16,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,8 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -41,28 +47,34 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
+import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 
 /**
- * Editorial-style text input with icon and label for entry screens.
- * Following the "Architect Slate" design specification.
+ * Editorial-style text input for entry forms.
+ * Rebuilt from scratch to ensure absolute parity with EntryActionCard design.
+ * Features glassmorphism, focus-aware borders, haptics, and auto-suggestions.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,18 +86,27 @@ fun EntryEditorialInput(
     modifier: Modifier = Modifier,
     suggestions: List<String> = emptyList(),
     maxLines: Int = 4,
-    placeholder: String = "Tap to enter...",
+    placeholder: String = "Enter text...",
     iconColor: Color = AppColors.primary,
     enabled: Boolean = true,
     isFlush: Boolean = false,
     isError: Boolean = false,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
+    // 1. STATE & ANIMATION
     var expanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
+    val glassEnabled = LocalGlassmorphismEnabled.current
 
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (isPressed && enabled) 0.98f else 1f, label = "cardScale")
+
+    // 2. SUGGESTION LOGIC
     val filteredSuggestions = remember(value, suggestions) {
         if (value.isBlank()) suggestions.take(5)
         else suggestions.filter {
@@ -97,60 +118,103 @@ fun EntryEditorialInput(
         expanded = isFocused && filteredSuggestions.isNotEmpty()
     }
 
+    // 3. COLOR & BORDER LOGIC (MATCHING EntryActionCard)
+    val backgroundColor by animateColorAsState(
+        targetValue = when {
+            isFlush -> AppColors.transparent
+            glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
+            else -> AppColors.surfaceContainerLow
+        },
+        label = "bgColor"
+    )
+
+    val borderColor by animateColorAsState(
+        targetValue = when {
+            isFlush -> Color.Transparent
+            isError -> AppColors.error
+            isFocused -> AppColors.primary
+            glassEnabled -> Color.White.copy(alpha = 0.1f)
+            else -> AppColors.outlineVariant.copy(alpha = 0.5f)
+        },
+        label = "borderColor"
+    )
+
+    val config = GlassTokens.configForVariant(GlassVariant.Card)
+    val borderWidth by animateDpAsState(
+        targetValue = when {
+            isFlush -> 0.dp
+            isFocused || isError -> config.surface.borderWidth.dp
+            else -> (config.surface.borderWidth * 0.5f).dp
+        },
+        label = "borderWidth"
+    )
+
+    // 4. UI STRUCTURE
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { },
         modifier = modifier.fillMaxWidth()
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
         GlassSurface(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = LocalIndication.current,
                     enabled = enabled
                 ) {
-                    if (enabled) focusRequester.requestFocus()
+                    if (enabled) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        focusRequester.requestFocus()
+                    }
                 },
-            shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
             hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp) else GlassTokens.cardStyle(),
-            glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
-            fallbackColor = if (isFlush) AppColors.transparent else AppColors.surfaceContainerLow,
-            borderColor = if (isFocused) AppColors.primary else if (isFlush) Color.Transparent else AppColors.outlineVariant.copy(alpha = 0.2f),
-            borderAlpha = when { isFlush -> 0f; isFocused -> config.surface.borderAlpha; else -> config.surface.borderAlpha * 0.2f },
-            borderWidth = when { isFlush -> 0.dp; isFocused -> config.surface.borderWidth.dp; else -> (config.surface.borderWidth * 0.5f).dp },
+            glassVariant = GlassVariant.Card,
+            fallbackColor = backgroundColor,
+            borderColor = borderColor,
+            borderWidth = borderWidth,
             shadowElevation = if (isFlush) 0.dp else null
         ) {
+            AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(
-                        horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding,
-                        vertical = if (isFlush) AeonTheme.dimensions.spacingMd else AeonTheme.dimensions.cardPadding
-                    ),
+                    .height(64.dp)
+                    .padding(horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // ICON CONTAINER (MATCHING EntryActionCard)
                 Surface(
                     shape = CircleShape,
                     color = iconColor.copy(alpha = 0.12f),
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconColor,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm)) // Precise spacing parity
 
-                Column(modifier = Modifier.weight(1f)) {
+                // CONTENT COLUMN
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = if (isFlush) 0.dp else AeonTheme.dimensions.spacingSm),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // LABEL (MATCHING EntryActionCard)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = label,
@@ -168,7 +232,10 @@ fun EntryEditorialInput(
                         }
                     }
 
-                    Box(modifier = Modifier.padding(top = 2.dp)) {
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // INPUT FIELD (STYLE MATCHING EntryActionCard'S VALUE)
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
@@ -180,11 +247,9 @@ fun EntryEditorialInput(
                             value = value,
                             onValueChange = onValueChange,
                             enabled = enabled,
-                            // Ensure text color matches the current theme (adapt to light/dark/amoled)
                             textStyle = AppTextStyles.formFieldValue.copy(
                                 color = if (enabled) AppColors.contentPrimary else AppColors.contentSecondary
                             ),
-                            // Cursor should match the text color for visual consistency
                             cursorBrush = SolidColor(if (enabled) AppColors.contentPrimary else AppColors.contentSecondary),
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
@@ -201,8 +266,10 @@ fun EntryEditorialInput(
                     additionalContent()
                 }
             }
+            }
         }
 
+        // SUGGESTIONS MENU
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },

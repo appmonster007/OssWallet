@@ -93,10 +93,6 @@ fun QuickAddSheet(
     // Reset state every time the sheet opens
     LaunchedEffect(Unit) { viewModel.reset() }
 
-    LaunchedEffect(state.dismissSheet) {
-        if (state.dismissSheet) onDismiss()
-    }
-
     fun hideKeyboard() {
         keyboardController?.hide()
         focusManager.clearFocus()
@@ -268,7 +264,7 @@ private fun QuickAddSheetContent(
         val canGoNext = when (state.currentStep) {
             STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
             STEP_ACCOUNT -> state.selectedAccountId != null
-            STEP_AMOUNT -> (state.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO) > BigDecimal.ZERO
+            STEP_AMOUNT -> state.amount > BigDecimal.ZERO
             else -> false
         }
         val isLastStep = state.currentStep == STEP_AMOUNT
@@ -321,8 +317,8 @@ private fun QuickAddSheetContent(
             if (isLastStep) {
                 Surface(
                     onClick = {
-                        if (!state.isSaving && state.selectedAccountId != null) {
-                            viewModel.saveTransaction(categories = categories, onSuccess = {})
+                        if (!state.isSaving) {
+                            viewModel.saveTransaction(categories = categories, onSuccess = onDismiss)
                         }
                     },
                     shape = CircleShape,
@@ -415,17 +411,16 @@ private fun QuickAddSheetContent(
                         val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
                         val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                         QuickAddAmountStep(
-                            amount = state.amountText,
+                            amount = state.amount,
                             template = state.selectedTemplate,
                             category = selectedCategory,
                             account = selectedAccount,
                             selectedCurrency = state.selectedCurrency,
                             onCurrencySelected = { viewModel.onCurrencySelected(it) },
-                            onAmountChange = { viewModel.onAmountChanged(it) },
+                            onAmountChange = viewModel::onAmountChanged,
                             onDone = {
-                                val amt = state.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                                if (amt > BigDecimal.ZERO && !state.isSaving) {
-                                    viewModel.saveTransaction(categories = categories, onSuccess = {})
+                                if (!state.isSaving) {
+                                    viewModel.saveTransaction(categories = categories, onSuccess = onDismiss)
                                 }
                             }
                         )

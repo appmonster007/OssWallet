@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -38,13 +39,13 @@ import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 @Composable
 fun QuickAddAmountStep(
-    amount: String,
+    amount: BigDecimal,
     template: Template?,
     category: Category?,
     account: Account?,
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
-    onAmountChange: (String) -> Unit,
+    onAmountChange: (BigDecimal) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -97,8 +98,8 @@ fun QuickAddAmountStep(
         }
 
         CalculatorNumpad(
-            amount = amount,
-            onAmountChange = onAmountChange,
+            amount = amount.stripTrailingZeros().toPlainString(),
+            onAmountChange = { onAmountChange(it.toBigDecimalOrNull() ?: BigDecimal.ZERO) },
             onDone = onDone,
             showDoneButton = false,
             modifier = Modifier.fillMaxWidth()
@@ -180,7 +181,7 @@ fun PreviewQuickAddAmountStep() {
     OssWalletTheme {
         Box(modifier = Modifier.background(AppColors.background)) {
             QuickAddAmountStep(
-                amount = "123.45",
+                amount = BigDecimal("123.45"),
                 template = null,
                 category = mockCategory,
                 account = mockAccount,

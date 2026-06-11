@@ -23,15 +23,14 @@ import javax.inject.Inject
 
 data class QuickAddState(
     val currentStep: Int = 0,
-    val amountText: String = "0",
+    val amount: BigDecimal = BigDecimal.ZERO,
     val selectedTemplate: Template? = null,
     val selectedCategoryId: Long? = null,
     val selectedAccountId: String? = null,
     val selectedCurrency: String = "",
     val transactionType: TransactionType = TransactionType.EXPENSE,
     val accounts: List<Account> = emptyList(),
-    val isSaving: Boolean = false,
-    val dismissSheet: Boolean = false
+    val isSaving: Boolean = false
 )
 
 @HiltViewModel
@@ -63,9 +62,7 @@ class QuickAddViewModel @Inject constructor(
                 selectedAccountId = template.accountId,
                 selectedCurrency = account?.currencyCode ?: template.currency,
                 transactionType = template.transactionType,
-                amountText = if (template.amount > BigDecimal.ZERO)
-                    template.amount.stripTrailingZeros().toPlainString()
-                else it.amountText,
+                amount = template.amount.abs(),
                 currentStep = 1
             )
         }
@@ -78,14 +75,14 @@ class QuickAddViewModel @Inject constructor(
                 selectedCategoryId = category.id,
                 selectedAccountId = null,
                 transactionType = TransactionType.EXPENSE,
-                amountText = "0",
+                amount = BigDecimal.ZERO,
                 currentStep = 1
             )
         }
     }
 
-    fun onAmountChanged(amount: String) {
-        _state.update { it.copy(amountText = amount) }
+    fun onAmountChanged(amount: BigDecimal) {
+        _state.update { it.copy(amount = amount) }
     }
 
     fun goToStep(step: Int) {
@@ -93,21 +90,13 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAccountTapped(accountId: String) {
-        val current = _state.value
-        if (current.selectedAccountId == accountId) {
-            val nextType = if (current.transactionType == TransactionType.EXPENSE)
-                TransactionType.INCOME else TransactionType.EXPENSE
-            _state.update { it.copy(transactionType = nextType) }
-        } else {
-            val account = current.accounts.find { it.id == accountId }
-            _state.update {
-                it.copy(
-                    selectedAccountId = accountId,
-                    selectedCurrency = account?.currencyCode ?: it.selectedCurrency,
-                    transactionType = TransactionType.EXPENSE,
-                    currentStep = 2
-                )
-            }
+        val account = _state.value.accounts.find { it.id == accountId }
+        _state.update {
+            it.copy(
+                selectedAccountId = accountId,
+                selectedCurrency = account?.currencyCode ?: it.selectedCurrency,
+                currentStep = 2
+            )
         }
     }
 
@@ -129,8 +118,9 @@ class QuickAddViewModel @Inject constructor(
     ) {
         val s = _state.value
         val accountId = s.selectedAccountId ?: return
-        val amount = s.amountText.toBigDecimalOrNull()?.abs() ?: return
+        val amount = s.amount
         if (amount <= BigDecimal.ZERO) return
+        val signedAmount = if (s.transactionType == TransactionType.INCOME) amount else amount.negate()
 
         val account = s.accounts.find { it.id == accountId } ?: return
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
@@ -146,7 +136,7 @@ class QuickAddViewModel @Inject constructor(
                         existingTransaction = null,
                         request = TransactionRequest(
                             name = name,
-                            amount = amount,
+                            amount = signedAmount,
                             transactionType = s.transactionType,
                             accountId = accountId,
                             currency = s.selectedCurrency.ifBlank { account.currencyCode },
@@ -160,7 +150,7 @@ class QuickAddViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                _state.update { it.copy(isSaving = false, dismissSheet = true) }
+                _state.update { it.copy(isSaving = false) }
                 onSuccess()
             }.onFailure {
                 _state.update { it.copy(isSaving = false) }
@@ -176,7 +166,6 @@ class QuickAddViewModel @Inject constructor(
     val canSave: Boolean
         get() {
             val s = _state.value
-            val amount = s.amountText.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            return s.selectedAccountId != null && amount > BigDecimal.ZERO
+            return s.selectedAccountId != null && s.amount > BigDecimal.ZERO
         }
 }

@@ -197,7 +197,7 @@ fun UnifiedPillNavigation(
                                 .align(Alignment.CenterEnd)
                                 .size(48.dp)
                                 .graphicsLayer { rotationZ = rotation }
-                                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape)
+                                .border(1.dp, AppColors.onPrimary.copy(alpha = 0.20f), CircleShape)
                                 .combinedClickable(
                                     onClick = {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -233,7 +233,7 @@ fun UnifiedPillNavigation(
                                 .align(Alignment.CenterEnd)
                                 .size(48.dp)
                                 .graphicsLayer { rotationZ = rotation }
-                                .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+                                .border(1.dp, AppColors.onPrimary.copy(alpha = 0.20f), CircleShape),
                             containerColor = AppColors.primary,
                             contentColor = AppColors.onPrimary,
                             shape = CircleShape,

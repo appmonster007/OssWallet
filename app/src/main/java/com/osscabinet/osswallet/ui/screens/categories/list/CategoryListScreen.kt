@@ -44,7 +44,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import com.osscabinet.ossWallet.ui.theme.OutlineLight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +54,7 @@ fun CategoryListScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedCategoryForEdit by remember { mutableStateOf<Category?>(null) }
+    val categoryFallbackColor = AppColors.outline
 
     BackHandler(enabled = showAddDialog || selectedCategoryForEdit != null) {
         showAddDialog = false
@@ -98,7 +98,7 @@ fun CategoryListScreen(
                         labelMapper = { it.name },
                         parentIdMapper = { it.parentId },
                         iconMapper = { AppIconMap[it.iconName] },
-                        colorMapper = { if (it.colorHex == -1) OutlineLight else Color(it.colorHex) },
+                        colorMapper = { if (it.colorHex == -1) categoryFallbackColor else Color(it.colorHex) },
                         onEditClick = { selectedCategoryForEdit = it },
                         onAddChildClick = { parent ->
                             selectedCategoryForEdit = Category(

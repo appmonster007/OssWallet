@@ -8,102 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 
-// ============================================================================
-// ARCHITECT SLATE COLOR PALETTE (MAXIMIZED TONAL CONTRAST)
-// Re-engineered for strict adherence to the Material 3 Expressive Tonal Loop.
-// 
-// Contrast Strategy:
-// Light: Pure White Base + Pronounced Slate Containers
-// Dark: Midnight Base + Elevated Charcoal Containers
-// ============================================================================
-
-// --- LIGHT THEME (Pristine Architect) ---
-
-val PrimaryLight = Color(0xFF4853A0)
-val OnPrimaryLight = Color(0xFFFFFFFF)
-val PrimaryContainerLight = Color(0xFFE0E0FF)
-val OnPrimaryContainerLight = Color(0xFF00006E)
-
-val SecondaryLight = Color(0xFF5B5D72)
-val OnSecondaryLight = Color(0xFFFFFFFF)
-val SecondaryContainerLight = Color(0xFFE0E1F9)
-val OnSecondaryContainerLight = Color(0xFF181A2C)
-
-val TertiaryLight = Color(0xFF5D5B7D)
-val OnTertiaryLight = Color(0xFFFFFFFF)
-val TertiaryContainerLight = Color(0xFFE3DFFF)
-val OnTertiaryContainerLight = Color(0xFF191836)
-
-val ErrorLight = Color(0xFFBA1A1A)
-val OnErrorLight = Color(0xFFFFFFFF)
-val ErrorContainerLight = Color(0xFFFFDAD6)
-val OnErrorContainerLight = Color(0xFF410002)
-
-// Refined Light Neutrals (Aligned with m3guide.md)
-val BackgroundLight = Color(0xFFF9F9FF) // N-98
-val OnBackgroundLight = Color(0xFF191C20) // N-10
-val SurfaceLight = Color(0xFFF9F9FF) // N-98
-val OnSurfaceLight = Color(0xFF191C20) // N-10
-
-val SurfaceVariantLight = Color(0xFFE1E2EC) // NV-90
-val OnSurfaceVariantLight = Color(0xFF44474F) // NV-30
-val OutlineLight = Color(0xFF74777F) // NV-50
-val OutlineVariantLight = Color(0xFFC4C6D0) // NV-80
-
-val InverseSurfaceLight = Color(0xFF2E3036) // N-20
-val InverseOnSurfaceLight = Color(0xFFF1F0F7) // N-95
-
-// Surface Container Family (M3 Solid-Color Roles)
-val SurfaceContainerLowestLight = Color(0xFFFFFFFF) // N-100
-val SurfaceContainerLowLight = Color(0xFFF3F3FA)    // N-96
-val SurfaceContainerLight = Color(0xFFEDEDF4)       // N-94
-val SurfaceContainerHighLight = Color(0xFFE7E7EE)    // N-92
-val SurfaceContainerHighestLight = Color(0xFFE1E2E9) // N-90
-
-// --- DARK THEME (Midnight Slate) ---
-
-val PrimaryDark = Color(0xFFC5CBEE)
-val OnPrimaryDark = Color(0xFF1A1A24)
-val PrimaryContainerDark = Color(0xFF303F90)
-val OnPrimaryContainerDark = Color(0xFFE0E0FF)
-
-val SecondaryDark = Color(0xFFC4C5DD)
-val OnSecondaryDark = Color(0xFF2D2F42)
-val SecondaryContainerDark = Color(0xFF434559)
-val OnSecondaryContainerDark = Color(0xFFE0E1F9)
-
-val TertiaryDark = Color(0xFFC6C2EA)
-val OnTertiaryDark = Color(0xFF2F2D4D)
-val TertiaryContainerDark = Color(0xFF454364)
-val OnTertiaryContainerDark = Color(0xFFE3DFFF)
-
-val ErrorDark = Color(0xFFFFB4AB)
-val OnErrorDark = Color(0xFF690005)
-val ErrorContainerDark = Color(0xFF93000A)
-val OnErrorContainerDark = Color(0xFFFFDAD6)
-
-// Refined Dark Neutrals (Aligned with m3guide.md)
-val BackgroundDark = Color(0xFF0E1015) // N-6
-val OnBackgroundDark = Color(0xFFE1E2E9) // N-90
-val SurfaceDark = Color(0xFF0E1015) // N-6
-val OnSurfaceDark = Color(0xFFE1E2E9) // N-90
-
-val SurfaceVariantDark = Color(0xFF44474F) // NV-30
-val OnSurfaceVariantDark = Color(0xFFC4C6D0) // NV-80
-val OutlineDark = Color(0xFF8E9099) // NV-60
-val OutlineVariantDark = Color(0xFF44474F) // NV-30
-
-val InverseSurfaceDark = Color(0xFFE1E2E9) // N-90
-val InverseOnSurfaceDark = Color(0xFF0E1015) // N-10
-
-// Surface Container Family (M3 Solid-Color Roles)
-val SurfaceContainerLowestDark = Color(0xFF0A0C10) // N-4
-val SurfaceContainerLowDark = Color(0xFF191C20)    // N-10
-val SurfaceContainerDark = Color(0xFF1D2024)       // N-12
-val SurfaceContainerHighDark = Color(0xFF272A2E)    // N-17
-val SurfaceContainerHighestDark = Color(0xFF323539) // N-22
-
-// --- AMOLED THEME (Midnight Slate) ---
+// --- AMOLED THEME ---
 
 val PrimaryAmoled = Color(0xFFDDE2FA)
 val OnPrimaryAmoled = Color(0xFF000000)
@@ -282,33 +187,33 @@ object AppColors {
     // Surfaces ordered from lowest to highest visual elevation.
     // Change one semantic value to retheme every instance of that surface role.
     //
-    //  recessedSurface      surfaceContainerLowest  sunken wells, inset inputs
-    //  inputSurface         surfaceContainerLow     text field backgrounds
-    //  cardSurface          surfaceContainerLow     standard card background
-    //  cardSurfaceRaised    surfaceContainer        slightly raised cards
-    //  sheetSurface         surfaceContainer        bottom sheets, dialogs
-    //  cardSurfaceProminent surfaceContainerHigh    elevated / highlighted cards
-    //  sheetSurfaceRaised   surfaceContainerHigh    raised sheet sections
-    //  componentOnCardSubtle surfaceContainerHigh   subtle chips on cards
-    //  componentOnCard      surfaceContainerHighest chips, tags on a card
-    //  panelSurface         surface                 list rows, form containers
-    //  drawerSurface        surface                 navigation drawer panel
-    //  popupSurface         surface                 dropdowns, overlays
-    //  insetSurface         surfaceVariant          section dividers, progress tracks
+    //  recessedSurface       surfaceContainerLowest  sunken wells (darker than screen in dark)
+    //  cardSurface           surfaceContainer        standard card background
+    //  sheetSurface          surfaceContainerLow     bottom sheets, dialogs (M3 spec)
+    //  cardSurfaceRaised     surfaceContainerHigh    slightly raised cards
+    //  cardSurfaceProminent  surfaceContainerHigh    elevated / highlighted cards
+    //  sheetSurfaceRaised    surfaceContainerHigh    raised sheet sections
+    //  componentOnCardSubtle surfaceContainerHighest subtle chips on a card (one step above card)
+    //  componentOnCard       surfaceContainerHighest chips, tags on a card
+    //  panelSurface          surfaceContainer        list rows, form containers
+    //  drawerSurface         surfaceContainerLow     navigation drawer (M3 spec; glass is primary)
+    //  popupSurface          surfaceContainerHigh    dropdowns, overlays (float above content)
+    //  inputSurface          surfaceContainerHighest text field backgrounds (M3 filled field spec)
+    //  insetSurface          surfaceVariant          section dividers, progress tracks
     //
     val recessedSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val inputSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
+    val inputSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
     val cardSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
     val cardSurfaceRaised: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val sheetSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
     val cardSurfaceProminent: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val sheetSurfaceRaised: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
-    val componentOnCardSubtle: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
+    val componentOnCardSubtle: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
     val componentOnCard: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHighest
     val panelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainer
-    val onPanelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.background
-    val drawerSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
-    val popupSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLowest
+    val onPanelSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.onSurface
+    val drawerSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerLow
+    val popupSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceContainerHigh
     val insetSurface: Color @Composable @ReadOnlyComposable get() = LocalAppColorScheme.current.surfaceVariant
 
     // Raw M3 surface tokens (for component params that require the M3 name)

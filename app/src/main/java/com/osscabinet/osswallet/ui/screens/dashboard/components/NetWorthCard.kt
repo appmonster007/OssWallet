@@ -65,7 +65,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import com.osscabinet.ossWallet.ui.util.applyFlowTint
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
@@ -263,7 +263,7 @@ private fun FlowBadge(
     previousAmount: BigDecimal? = null
 ) {
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = color.applyAeonTint(mode)
+    val (containerColor, contentColor) = color.applyFlowTint(mode)
     val isDark = mode.isDarkTheme
 
     GlassSurface(

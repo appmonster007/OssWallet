@@ -46,7 +46,7 @@ import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import com.osscabinet.ossWallet.ui.util.applyFlowTint
 import java.math.BigDecimal
 
 @Composable
@@ -259,7 +259,7 @@ fun AeonFlowCard(
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = color.applyAeonTint(mode)
+    val (containerColor, contentColor) = color.applyFlowTint(mode)
     val isDark = mode.isDarkTheme
     val glassSettings = LocalGlassSettings.current
 

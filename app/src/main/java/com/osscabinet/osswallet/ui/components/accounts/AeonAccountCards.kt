@@ -66,7 +66,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import com.osscabinet.ossWallet.ui.util.applyAccountTint
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
@@ -90,7 +90,7 @@ fun AeonAccountCardSmall(
     }
 
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
     val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -174,7 +174,7 @@ fun AeonAccountCardMedium(
     }
 
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
     val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
@@ -293,7 +293,7 @@ fun AeonAccountCardLarge(
     }
 
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
     val isDark = isSystemInDarkTheme()
 
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance

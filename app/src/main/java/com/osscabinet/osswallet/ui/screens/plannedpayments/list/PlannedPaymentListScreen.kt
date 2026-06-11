@@ -344,8 +344,7 @@ fun PlannedPaymentListContent(
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
-                containerColor = Color.Transparent,
-                snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+                containerColor = Color.Transparent
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -509,7 +508,17 @@ fun PlannedPaymentListContent(
                                         onDelete = { onDelete(payment.id) },
                                         onPause = { onPause(payment) },
                                         onResume = { onResume(payment) },
-                                        onConfirm = { onConfirm(payment, payment.schedule.nextDueDate) },
+                                        onConfirm = {
+                                            onConfirm(payment, payment.schedule.nextDueDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Payment confirmed",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                        },
                                         onSkip = {
                                             onSkip(payment, payment.schedule.nextDueDate)
                                             scope.launch {
@@ -562,6 +571,15 @@ fun PlannedPaymentListContent(
                 fabIcon = Icons.Rounded.Repeat,
                 showFab = true
             )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 56.dp + 16.dp + navigationBarHeight + 8.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SnackbarHost(hostState = snackbarHostState)
+            }
 
             AeonTopAppBar(
                 left = AeonTopBarSection(

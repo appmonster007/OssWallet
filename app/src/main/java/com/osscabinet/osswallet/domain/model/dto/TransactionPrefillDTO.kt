@@ -40,6 +40,8 @@ data class TransactionPrefillDTO(
     val sourceTemplateId: Long? = null,
     val sourcePlannedPaymentId: Long? = null,
     val timestamp: Long? = null,
+    // Planned payment occurrence date — separate from timestamp so schedule advances correctly
+    val plannedScheduledDate: Long? = null,
     val isSplitMode: Boolean = false
 ) {
     companion object {
@@ -123,7 +125,8 @@ data class TransactionPrefillDTO(
                 targetCurrency = payment.targetCurrency,
                 exchangeRate = payment.transferRate.toPlainString(),
                 sourcePlannedPaymentId = payment.id,
-                timestamp = scheduledDate ?: payment.schedule.nextDueDate
+                timestamp = System.currentTimeMillis(),
+                plannedScheduledDate = scheduledDate ?: payment.schedule.nextDueDate
             )
         }
     }

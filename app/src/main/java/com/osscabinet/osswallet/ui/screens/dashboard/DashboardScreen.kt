@@ -39,6 +39,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -106,6 +110,7 @@ import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -246,6 +251,23 @@ fun DashboardScreen(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val lastUndoAction by dashboardViewModel.lastUndoAction.collectAsStateWithLifecycle()
+
+    LaunchedEffect(lastUndoAction) {
+        val action = lastUndoAction ?: return@LaunchedEffect
+        val message = if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = "Undo",
+            duration = SnackbarDuration.Short
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            dashboardViewModel.undoLastPlannedPaymentAction()
+        } else {
+            dashboardViewModel.clearUndoAction()
+        }
+    }
 
     // Robust scroll reset: triggers when the Glance tab is selected or the screen is resumed.
     // This addresses the "swipe back" scenario where LifecycleEventEffect doesn't fire.
@@ -431,7 +453,17 @@ fun DashboardScreen(
                     } else null
                 )
 
-                // 4. Quick Add Sheet (when FAB menu is disabled)
+                // 4. Snackbar Layer (above FAB)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 56.dp + AeonSize.D16.value + navigationBarHeight + 8.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    SnackbarHost(hostState = snackbarHostState)
+                }
+
+                // 5. Quick Add Sheet (when FAB menu is disabled)
                 if (showQuickAddSheet) {
                     QuickAddSheet(
                         templates = allTemplates,
@@ -440,7 +472,7 @@ fun DashboardScreen(
                     )
                 }
 
-                // 5. Filter Pill Layer (Overlay)
+                // 6. Filter Pill Layer (Overlay)
                 val pillRequest = filterPillController.activeRequest
                 if (pillRequest != null) {
                     TransactionFilterPill(

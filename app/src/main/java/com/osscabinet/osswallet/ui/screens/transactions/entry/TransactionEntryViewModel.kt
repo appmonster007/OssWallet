@@ -831,7 +831,7 @@ class TransactionEntryViewModel @Inject constructor(
                     linkedTransactionIds = currentState.linkedTransactionIds,
                     clonedFromId = if (currentState.isEditMode) null else currentState.prefillDto?.clonedFromTransactionId,
                     sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-                    scheduledDate = currentState.prefillDto?.timestamp
+                    scheduledDate = currentState.prefillDto?.plannedScheduledDate
                         ?: currentState.selectedDateMillis
                 )
                 onSuccess(id)

@@ -48,6 +48,8 @@ import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.scaledDp
@@ -88,7 +90,7 @@ fun EntryActionCard(
 
     // Foreground color that reads against a filled/colored background (white or near-black)
     val filledAccentContent = remember(selectedColor) {
-        if (selectedColor.luminance() > 0.4f) Color(0xFF1A1A1A) else Color.White
+        if (selectedColor.luminance() > 0.4f) ColorOnLight else ColorOnDark
     }
 
     val backgroundColor by animateColorAsState(

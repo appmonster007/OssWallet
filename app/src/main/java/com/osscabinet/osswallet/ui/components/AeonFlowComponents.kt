@@ -76,7 +76,6 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.util.applyFlowTint
-import com.osscabinet.ossWallet.ui.util.isDark
 import java.math.BigDecimal
 
 @Composable
@@ -214,7 +213,7 @@ fun AeonGridColumnsSettings(
                         label = { Text(count.toString(), style = AppTextStyles.chipLabel) },
                         colors = SegmentedButtonDefaults.colors(
                             activeContainerColor = AppColors.primary,
-                            activeContentColor = if (AppColors.primary.isDark()) Color.White else Color.Black,
+                            activeContentColor = AppColors.onPrimary,
                             inactiveContainerColor = AppColors.surfaceContainerHigh,
                             inactiveContentColor = AppColors.contentSecondary
                         )

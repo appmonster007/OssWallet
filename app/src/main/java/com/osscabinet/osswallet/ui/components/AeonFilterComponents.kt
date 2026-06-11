@@ -47,7 +47,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.isDark
 
 data class AeonTimelineOption(val label: String, val icon: ImageVector)
 
@@ -78,7 +77,7 @@ fun AeonSegmentedControl(
                     label = "bgColor"
                 )
                 val contentColor by animateColorAsState(
-                    if (isSelected) (if (AppColors.primary.isDark()) Color.White else Color.Black) else AppColors.contentSecondary,
+                    if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
                     label = "contentColor"
                 )
 

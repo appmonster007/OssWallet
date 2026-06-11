@@ -25,7 +25,6 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.isDark
 import androidx.compose.ui.graphics.Color
 
 @Composable
@@ -43,7 +42,7 @@ fun CategoryItem(name: String, icon: ImageVector, isSelected: Boolean, onClick: 
                 Icon(
                     icon,
                     contentDescription = name,
-                    tint = if (isSelected) (if (AppColors.primary.isDark()) Color.White else Color.Black) else AppColors.contentSecondary,
+                    tint = if (isSelected) AppColors.onPrimary else AppColors.contentSecondary,
                     modifier = Modifier.size(28.dp)
                 )
             }

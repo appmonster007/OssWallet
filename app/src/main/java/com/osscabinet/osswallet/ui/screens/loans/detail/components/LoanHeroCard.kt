@@ -74,8 +74,7 @@ fun LoanHeroCard(
 
                         val balanceParts = formatAuto(
                             summary.remainingBalance,
-                            loan.currency,
-                            shorten = true
+                            loan.currency
                         ).split(" ")
                         val amountText = balanceParts.dropLast(1).joinToString(" ")
                         val symbolText = balanceParts.lastOrNull() ?: ""
@@ -147,8 +146,7 @@ fun LoanHeroCard(
                         text = "Goal: ${
                             formatAuto(
                                 loan.principalAmount,
-                                loan.currency,
-                                shorten = true
+                                loan.currency
                             )
                         }",
                         style = AppTextStyles.caption,

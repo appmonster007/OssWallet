@@ -54,9 +54,9 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
         result?.totalTransfersInBase ?: BigDecimal.ZERO
         val netInBase = result?.netInBase ?: BigDecimal.ZERO
 
-        val incomeFormatted = formatAuto(incomeInBase, common.baseCurrency, shorten = true)
-        val expenseFormatted = formatAuto(expenseInBase, common.baseCurrency, shorten = true)
-//        val transferFormatted = formatAuto(transferInBase, common.baseCurrency, shorten = true)
+        val incomeFormatted = formatAuto(incomeInBase, common.baseCurrency)
+        val expenseFormatted = formatAuto(expenseInBase, common.baseCurrency)
+//        val transferFormatted = formatAuto(transferInBase, common.baseCurrency)
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
             val currentFilter = TransactionFilter(
@@ -94,12 +94,12 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                 arr.put(
                     JSONObject().apply {
                         put("code", item.currency)
-                        put("income", formatAuto(item.income, item.currency, shorten = true))
-                        put("incomeBase", formatAuto(item.incomeInBase, common.baseCurrency, shorten = true))
-                        put("expense", formatAuto(item.expense, item.currency, shorten = true))
-                        put("expenseBase", formatAuto(item.expenseInBase, common.baseCurrency, shorten = true))
-//                        put("transfer", formatAuto(item.transfer, item.currency, shorten = true))
-//                        put("transferBase", formatAuto(item.transferInBase, common.baseCurrency, shorten = true))
+                        put("income", formatAuto(item.income, item.currency))
+                        put("incomeBase", formatAuto(item.incomeInBase, common.baseCurrency))
+                        put("expense", formatAuto(item.expense, item.currency))
+                        put("expenseBase", formatAuto(item.expenseInBase, common.baseCurrency))
+//                        put("transfer", formatAuto(item.transfer, item.currency))
+//                        put("transferBase", formatAuto(item.transferInBase, common.baseCurrency))
                     }
                 )
             }

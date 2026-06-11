@@ -251,7 +251,7 @@ private fun SuggestionListItem(
                     else -> AppColors.error
                 }
                 Text(
-                    text = formatAuto(pattern.averageAmount.abs(), pattern.currency, shorten = true),
+                    text = formatAuto(pattern.averageAmount.abs(), pattern.currency),
                     style = AppTextStyles.screenTitle,
                     fontWeight = FontWeight.Black,
                     color = amountColor

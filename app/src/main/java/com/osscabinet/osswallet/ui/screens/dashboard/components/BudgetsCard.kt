@@ -207,14 +207,12 @@ private fun BudgetProgressRow(
                         text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
                             formatAuto(
                                 progress.spent.subtract(progress.limit),
-                                progress.budget.currency,
-                                shorten = true
+                                progress.budget.currency
                             )
                         } else {
                             formatAuto(
                                 progress.remaining,
-                                progress.budget.currency,
-                                shorten = true
+                                progress.budget.currency
                             )
                         },
                         style = AppTextStyles.listItemTitle.copy(

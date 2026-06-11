@@ -128,7 +128,7 @@ fun NetWorthCard(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Column {
-                    val amountText = formatAuto(currentMetrics.netWorth, shorten = true)
+                    val amountText = formatAuto(currentMetrics.netWorth)
                     val symbolText = CurrencyFormatter.getCurrencySymbol(displayCurrency)
                     val isSymbolLeft =
                         CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
@@ -165,7 +165,7 @@ fun NetWorthCard(
 
                     currentMetrics.netWorthInBase?.let { inBase ->
                         Text(
-                            text = "≈ ${formatAuto(inBase, baseCurrency, shorten = true)}",
+                            text = "≈ ${formatAuto(inBase, baseCurrency)}",
                             style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
                             color = AppColors.contentPrimary.copy(alpha = 0.6f)
                         )
@@ -331,7 +331,7 @@ private fun FlowBadge(
                 }
             }
             Text(
-                text = formatAuto(amount, currency, shorten = true),
+                text = formatAuto(amount, currency),
                 style = AppTextStyles.managementItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
@@ -392,9 +392,9 @@ private fun NetWorthSettingsSheet(
 @Preview(heightDp = 360)
 fun NetWorthCardGlassPreview() {
     val currentMetrics = NetWorthMetrics(
-        netWorth = BigDecimal("15250.75"),
+        netWorth = BigDecimal("152500.75"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4500.00"),
+            totalIncomeInBase = BigDecimal("4500000.00"),
             totalExpensesInBase = BigDecimal("2350.50"),
             totalTransfersInBase = BigDecimal.ZERO,
             netInBase = BigDecimal("2149.50"),

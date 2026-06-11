@@ -124,8 +124,7 @@ fun AeonChartInteractionPopup(
                     text = formatAuto(
                         amount = value,
                         currencyCode = currency,
-                        precision = precision,
-                        shorten = true
+                        precision = precision
                     ),
                     style = AppTextStyles.screenSubTitle.copy(
                         fontWeight = FontWeight.ExtraBold,

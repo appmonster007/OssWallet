@@ -206,7 +206,7 @@ fun AeonBarChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick, shorten = true),
+                            formatAuto(tick),
                             leftPadding - 8.dp.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -370,8 +370,7 @@ fun AeonBarChart(
                                 text = formatAuto(
                                     amount = bar.value,
                                     currencyCode = currency,
-                                    precision = precision,
-                                    shorten = true
+                                    precision = precision
                                 ),
                                 style = AppTextStyles.formSectionLabel,
                                 color = AppColors.contentPrimary

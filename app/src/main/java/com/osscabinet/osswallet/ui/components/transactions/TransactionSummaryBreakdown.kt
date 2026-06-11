@@ -161,7 +161,7 @@ fun TransactionSummaryBreakdown(
                 .padding(start = 8.dp)
 
             Text(
-                formatAuto(incomeBase, baseCurrency, shorten = true),
+                formatAuto(incomeBase, baseCurrency),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -171,7 +171,7 @@ fun TransactionSummaryBreakdown(
                 textAlign = TextAlign.End
             )
             Text(
-                formatAuto(expenseBase, baseCurrency, shorten = true),
+                formatAuto(expenseBase, baseCurrency),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -181,7 +181,7 @@ fun TransactionSummaryBreakdown(
                 textAlign = TextAlign.End
             )
             Text(
-                formatAuto(netBase, baseCurrency, shorten = true),
+                formatAuto(netBase, baseCurrency),
                 style = AppTextStyles.transactionSwipeAction.copy(
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
@@ -193,9 +193,9 @@ fun TransactionSummaryBreakdown(
 
             if (balanceWeight > 0) {
                 val openingBaseText =
-                    formatAuto(totalOpeningBalanceBase, baseCurrency, shorten = true)
+                    formatAuto(totalOpeningBalanceBase, baseCurrency)
                 val closingBaseText =
-                    formatAuto(totalClosingBalanceBase, baseCurrency, shorten = true)
+                    formatAuto(totalClosingBalanceBase, baseCurrency)
                 val balanceText = when {
                     showOpeningBalance && showClosingBalance -> "$openingBaseText → $closingBaseText"
                     showOpeningBalance -> openingBaseText
@@ -249,21 +249,21 @@ fun TransactionSummaryBreakdown(
                             .padding(start = 8.dp)
 
                         Text(
-                            formatAuto(inc, curr, shorten = true),
+                            formatAuto(inc, curr),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
                             color = positiveColor,
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
                         Text(
-                            formatAuto(exp, curr, shorten = true),
+                            formatAuto(exp, curr),
                             style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
                             color = negativeColor,
                             modifier = breakdownColumnModifier,
                             textAlign = TextAlign.End
                         )
                         Text(
-                            formatAuto(net, curr, shorten = true),
+                            formatAuto(net, curr),
                             style = AppTextStyles.metaLabel.copy(
                                 fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold
@@ -276,10 +276,9 @@ fun TransactionSummaryBreakdown(
                         if (balanceWeight > 0) {
                             val balAfterText = if (balAfter != null) formatAuto(
                                 balAfter,
-                                curr,
-                                shorten = true
+                                curr
                             ) else "0.00 $curr"
-                            val balBeforeText = formatAuto(balBefore, curr, shorten = true)
+                            val balBeforeText = formatAuto(balBefore, curr)
 
                             val balanceText = when {
                                 showOpeningBalance && showClosingBalance -> "$balBeforeText → $balAfterText"

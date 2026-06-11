@@ -327,8 +327,7 @@ fun AeonUpSetPlot(
                         UpSetVerticalBar(
                             amount = CurrencyFormatter.formatAuto(
                                 intersection.value,
-                                currency,
-                                shorten = true
+                                currency
                             ),
                             magnitudeRatio = magnitudeRatio,
                             isPositive = isPositive,
@@ -363,7 +362,7 @@ fun AeonUpSetPlot(
 
                     UpSetHorizontalBar(
                         name = set.name,
-                        amount = CurrencyFormatter.formatAuto(set.total, currency, shorten = true),
+                        amount = CurrencyFormatter.formatAuto(set.total, currency),
                         magnitudeRatio = magnitudeRatio,
                         isPositive = isPositive,
                         onClick = { onSetClick(originalIdx) },

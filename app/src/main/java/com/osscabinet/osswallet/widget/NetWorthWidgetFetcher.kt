@@ -50,11 +50,11 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
 
         prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH] =
-            formatAuto(netWorth, common.baseCurrency, shorten = true)
+            formatAuto(netWorth, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.INCOME] =
-            formatAuto(income, common.baseCurrency, shorten = true)
+            formatAuto(income, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.EXPENSE] =
-            formatAuto(expense, common.baseCurrency, shorten = true)
+            formatAuto(expense, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =

@@ -138,13 +138,13 @@ fun AeonAccountCardSmall(
                     )
                     Column {
                         Text(
-                            formatAuto(balance, account.currencyCode, shorten = true),
+                            formatAuto(balance, account.currencyCode),
                             style = AppTextStyles.transactionSubtitle.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
+                            "≈ ${formatAuto(balanceInBase, baseCurrency)}",
                             style = AppTextStyles.metaLabel,
                             color = contentColor.copy(alpha = 0.6f),
                             maxLines = 1,
@@ -231,7 +231,7 @@ fun AeonAccountCardMedium(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    val amountText = formatAuto(balance, shorten = true)
+                    val amountText = formatAuto(balance)
                     val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
                     val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
 
@@ -257,7 +257,7 @@ fun AeonAccountCardMedium(
                     )
 
                     Text(
-                        "≈ ${formatAuto(balanceInBase, baseCurrency, shorten = true)}",
+                        "≈ ${formatAuto(balanceInBase, baseCurrency)}",
                         style = AppTextStyles.tagLabel,
                         color = contentColor.copy(alpha = 0.7f),
                         maxLines = 1,
@@ -375,7 +375,7 @@ fun AeonAccountCardLarge(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Column {
-                        val amountText = formatAuto(balance, shorten = true)
+                        val amountText = formatAuto(balance)
                         val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
                         val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
 
@@ -403,8 +403,7 @@ fun AeonAccountCardLarge(
                                 text = "≈ ${
                                     formatAuto(
                                         balanceInBase,
-                                        baseCurrency,
-                                        shorten = true
+                                        baseCurrency
                                     )
                                 }",
                                 style = AppTextStyles.metaLabel,

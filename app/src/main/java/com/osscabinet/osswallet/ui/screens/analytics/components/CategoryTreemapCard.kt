@@ -327,7 +327,7 @@ fun CategoryTreemapCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     
-                    val amountText = CurrencyFormatter.formatAuto(total, shorten = true)
+                    val amountText = CurrencyFormatter.formatAuto(total)
                     val symbolText = CurrencyFormatter.getCurrencySymbol(currency)
                     val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
                     val contentColor = AppColors.contentPrimary

@@ -248,7 +248,7 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick, shorten = true),
+                            formatAuto(tick),
                             leftPadding - with(density) { 4.dp.toPx() },
                             yPos + with(density) { 3.dp.toPx() },
                             labelPaint
@@ -559,8 +559,7 @@ fun AeonBarLineChart(
                                     formatAuto(
                                         incomeVal,
                                         currency,
-                                        precision = precision,
-                                        shorten = true
+                                        precision = precision
                                     ),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorPositive
@@ -577,8 +576,7 @@ fun AeonBarLineChart(
                                     formatAuto(
                                         expenseVal,
                                         currency,
-                                        precision = precision,
-                                        shorten = true
+                                        precision = precision
                                     ),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorNegative
@@ -592,7 +590,7 @@ fun AeonBarLineChart(
                         ) {
                             Text("Flow:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatAuto(barVal, currency, precision = precision, shorten = true),
+                                formatAuto(barVal, currency, precision = precision),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
                             )
@@ -606,7 +604,7 @@ fun AeonBarLineChart(
                         ) {
                             Text("Net:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatAuto(lineVal, currency, precision = precision, shorten = true),
+                                formatAuto(lineVal, currency, precision = precision),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = lineColor
                             )

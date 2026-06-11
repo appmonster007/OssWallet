@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
@@ -39,14 +38,14 @@ fun AeonContextGridPreview() {
     OssWalletTheme {
         AeonContextGrid(modifier = Modifier.padding(16.dp)) {
             EntryActionRow {
-                AeonEntryActionCard(
+                EntryActionCard(
                     icon = Icons.Default.AccountBalance,
                     label = "ACCOUNT",
                     value = "Main",
                     onClick = {},
                     modifier = Modifier.weight(1f)
                 )
-                AeonEntryActionCard(
+                EntryActionCard(
                     icon = Icons.Default.Category,
                     label = "CATEGORY",
                     value = "Food",

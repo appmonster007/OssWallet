@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.components.AeonEntryActionCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
@@ -39,14 +38,14 @@ fun EntryActionRow(
 fun EntryActionRowPreview() {
     OssWalletTheme {
         EntryActionRow(modifier = Modifier.padding(16.dp)) {
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Default.AccountBalance,
                 label = "ACCOUNT",
                 value = "Savings",
                 onClick = {},
                 modifier = Modifier.weight(1f)
             )
-            AeonEntryActionCard(
+            EntryActionCard(
                 icon = Icons.Default.Category,
                 label = "CATEGORY",
                 value = "Food",

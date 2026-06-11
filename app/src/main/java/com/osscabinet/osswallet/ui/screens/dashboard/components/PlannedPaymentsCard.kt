@@ -115,12 +115,13 @@ fun PlannedPaymentsCard(
             )
         }
     ) {
+        val dims = AeonTheme.dimensions
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
+            contentPadding = PaddingValues(bottom = dims.cardPadding)
         ) {
             if (overdue.isEmpty() && upcoming.isEmpty()) {
                 item(key = "empty_state") {
@@ -132,7 +133,7 @@ fun PlannedPaymentsCard(
                         },
                         style = AppTextStyles.caption,
                         color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = dims.spacingSm)
                     )
                 }
             }
@@ -177,6 +178,7 @@ private fun PlannedPaymentsSettingsSheet(
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Planned Payments", onDismiss = onDismiss, onDelete = onDelete) {
+        val dims = AeonTheme.dimensions
         CardSettingsSection("Show") {
             val viewModes = listOf(
                 PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
@@ -187,7 +189,7 @@ private fun PlannedPaymentsSettingsSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = dims.cardPadding, vertical = dims.spacingXs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -203,7 +205,7 @@ private fun PlannedPaymentsSettingsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = dims.cardPadding, vertical = dims.spacingSm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -239,6 +241,7 @@ private fun PlannedPaymentRow(
     onSkip: (() -> Unit)?
 ) {
     val haptic = LocalHapticFeedback.current
+    val dims = AeonTheme.dimensions
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
@@ -271,7 +274,7 @@ private fun PlannedPaymentRow(
                     }
                 )
             },
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        shape = RoundedCornerShape(dims.componentCornerRadius),
         glassVariant = GlassVariant.Item,
         fallbackColor = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.15f)
         else AppColors.onPanelSurface,
@@ -314,7 +317,7 @@ private fun PlannedPaymentRow(
                         onClick = { showActions = true },
                         modifier = Modifier
                             .padding(start = 6.dp)
-                            .size(24.dp)
+                            .size(dims.iconSizeMd)
                     ) {
                         Icon(
                             Icons.Default.MoreVert,
@@ -335,7 +338,7 @@ private fun PlannedPaymentRow(
                                         Icons.Rounded.CheckCircle,
                                         contentDescription = null,
                                         tint = AppColors.primary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(dims.iconSizeSm)
                                     )
                                 },
                                 onClick = {
@@ -353,7 +356,7 @@ private fun PlannedPaymentRow(
                                         Icons.Rounded.SkipNext,
                                         contentDescription = null,
                                         tint = AppColors.contentSecondary,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(dims.iconSizeSm)
                                     )
                                 },
                                 onClick = {

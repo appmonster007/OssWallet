@@ -36,14 +36,14 @@ fun Color.pastel(): Color {
 }
 
 /**
- * Unified tint system as defined in colors.md Section 2.8 (Category Tint System).
- * Returns a Pair of (Background Color, Ink Color) for accounts, categories, and tags.
- *
- * Logic:
- * - Light: Very light pastel background (90-94%) + dark saturated ink (20-35%)
- * - Dark:  Saturated dark background (16-24%) + vibrant pastel ink (78-88%)
- * - AMOLED: Very deep background (6-12%) + bright ink (92-96%)
+ * @deprecated Replaced by [applyFlowTint] (income/expense badges) and [applyAccountTint]
+ * (account cards). All call sites have been migrated. Remove this function once the
+ * deprecated String overload and its two callers below are also cleaned up.
  */
+@Deprecated(
+    message = "Use applyFlowTint for income/expense badges or applyAccountTint for account cards.",
+    replaceWith = ReplaceWith("applyFlowTint(mode) or applyAccountTint(mode)")
+)
 fun Color.applyAeonTint(mode: ThemeMode): Pair<Color, Color> {
     val isDark = mode.isDarkTheme
     val isAmoled = mode.isAmoled
@@ -117,6 +117,80 @@ fun Color.applyAeonTint(mode: ThemeMode): Pair<Color, Color> {
     }
 
     return backgroundColor to inkColor
+}
+
+/**
+ * Tint for income/expense flow badges (NetWorth, CashFlow, AeonFlowBadge).
+ * Keeps a pastel background in ALL themes so green/red identity is always
+ * immediately recognisable, regardless of light/dark mode.
+ *
+ * Light:  pastel bg (92% lightness) + dark saturated ink (28%)  — same as applyAeonTint light
+ * Dark:   softer pastel bg (82% lightness) + dark ink (22%)     — light enough to still read as pastel
+ * AMOLED: muted pastel bg (74% lightness) + very dark ink (16%) — dimmed for OLED comfort
+ */
+fun Color.applyFlowTint(mode: ThemeMode): Pair<Color, Color> {
+    val hsl = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), hsl)
+    val baseSaturation = hsl[1]
+
+    val (bgL, bgS, inkL) = when {
+        mode.isAmoled -> Triple(0.74f, baseSaturation.coerceIn(0.18f, 0.38f), 0.16f)
+        mode.isDarkTheme -> Triple(0.82f, baseSaturation.coerceIn(0.20f, 0.40f), 0.22f)
+        else -> Triple(0.92f, baseSaturation.coerceAtMost(0.30f), 0.28f)
+    }
+
+    val bgHsl = hsl.copyOf().also { it[1] = bgS; it[2] = bgL }
+    val inkHsl = hsl.copyOf().also { it[1] = baseSaturation.coerceIn(0.50f, 0.90f); it[2] = inkL }
+    return Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
+}
+
+/**
+ * Tint for account cards — respects the user's exact color choice.
+ *
+ * Light:  exact user color as container; text color auto-derived from luminance.
+ * Dark:   user color darkened to ~18–26% lightness, preserving hue/saturation.
+ * AMOLED: user color darkened further to ~10–16% lightness, very bright ink.
+ */
+fun Color.applyAccountTint(mode: ThemeMode): Pair<Color, Color> {
+    val hsl = FloatArray(3)
+    ColorUtils.colorToHSL(this.toArgb(), hsl)
+    val baseSaturation = hsl[1]
+    val baseLuminance = hsl[2]
+
+    return when {
+        mode.isAmoled -> {
+            val bgHsl = hsl.copyOf().also {
+                it[1] = baseSaturation.coerceIn(0.35f, 0.80f)
+                it[2] = 0.13f
+            }
+            val inkHsl = hsl.copyOf().also {
+                it[1] = (baseSaturation * 0.5f).coerceIn(0.20f, 0.50f)
+                it[2] = 0.90f
+            }
+            Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
+        }
+        mode.isDarkTheme -> {
+            val targetL = when {
+                baseLuminance > 0.7f -> 0.25f
+                baseLuminance > 0.4f -> 0.21f
+                else -> 0.17f
+            }
+            val bgHsl = hsl.copyOf().also {
+                it[1] = baseSaturation.coerceIn(0.30f, 0.75f)
+                it[2] = targetL
+            }
+            val inkHsl = hsl.copyOf().also {
+                it[1] = (baseSaturation * 0.5f).coerceIn(0.20f, 0.50f)
+                it[2] = 0.85f
+            }
+            Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
+        }
+        else -> {
+            // Exact user color; derive readable ink from luminance
+            val inkColor = if (this.isDark()) Color.White else Color(0xFF1A1A1A)
+            this to inkColor
+        }
+    }
 }
 
 /**

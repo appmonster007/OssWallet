@@ -48,7 +48,6 @@ import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.OutlineLight
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import com.osscabinet.ossWallet.ui.util.toHex
 
@@ -60,6 +59,7 @@ fun CategoryEditSheet(
     onSave: (String, String, Int, Long?, CategoryNature) -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
+    val categoryFallbackColor = AppColors.outline
     var name by remember { mutableStateOf(category?.name ?: "") }
     var selectedIcon by remember { mutableStateOf(category?.iconName ?: "Other") }
     var selectedColorHex by remember { mutableStateOf(category?.colorHex?.toHex() ?: "#9E9E9E") }
@@ -261,7 +261,7 @@ fun CategoryEditSheet(
                                         parentIdMapper = if (parentSearchQuery.isBlank()) { it -> it.parentId } else { _ -> null },
                                         iconMapper = { getIconByName(it.iconName) },
                                         colorMapper = {
-                                            if (it.colorHex == -1) OutlineLight else androidx.compose.ui.graphics.Color(
+                                            if (it.colorHex == -1) categoryFallbackColor else androidx.compose.ui.graphics.Color(
                                                 it.colorHex
                                             )
                                         },

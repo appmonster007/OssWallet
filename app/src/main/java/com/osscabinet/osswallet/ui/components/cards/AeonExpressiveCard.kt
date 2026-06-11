@@ -68,6 +68,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import dev.chrisbanes.haze.HazeStyle
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -99,6 +100,7 @@ fun AeonExpressiveCard(
     containerColor: Color = AppColors.cardSurface,
     contentColor: Color = AppColors.contentPrimary,
     backgroundIcon: ImageVector? = null,
+    hazeStyleOverride: HazeStyle? = null,
 
     // Filter — button and pill overlay appear automatically when both are non-null
     filterEnabled: Boolean = true,
@@ -146,7 +148,7 @@ fun AeonExpressiveCard(
         modifier = modifier.graphicsLayer { scaleX = scale; scaleY = scale },
         shape = cardShape,
         hazeLayer = HazeLayer.Surface,
-        hazeStyle = GlassTokens.cardStyle(),
+        hazeStyle = hazeStyleOverride ?: GlassTokens.cardStyle(),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
         fallbackColor = containerColor,
         borderColor = when {

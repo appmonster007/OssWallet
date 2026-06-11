@@ -25,93 +25,23 @@ import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 
-private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark,
-    onPrimary = OnPrimaryDark,
-    primaryContainer = PrimaryContainerDark,
-    onPrimaryContainer = OnPrimaryContainerDark,
-    secondary = SecondaryDark,
-    onSecondary = OnSecondaryDark,
-    secondaryContainer = SecondaryContainerDark,
-    onSecondaryContainer = OnSecondaryContainerDark,
-    tertiary = TertiaryDark,
-    onTertiary = OnTertiaryDark,
-    tertiaryContainer = TertiaryContainerDark,
-    onTertiaryContainer = OnTertiaryContainerDark,
-    error = ErrorDark,
-    onError = OnErrorDark,
-    errorContainer = ErrorContainerDark,
-    onErrorContainer = OnErrorContainerDark,
-    background = BackgroundDark,
-    onBackground = OnBackgroundDark,
-    surface = SurfaceDark,
-    onSurface = OnSurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = OnSurfaceVariantDark,
-    outline = OutlineDark,
-    outlineVariant = OutlineVariantDark,
-    inverseSurface = InverseSurfaceDark,
-    inverseOnSurface = InverseOnSurfaceDark,
-    scrim = Color.Black,
-    surfaceContainerLowest = SurfaceContainerLowestDark,
-    surfaceContainerLow = SurfaceContainerLowDark,
-    surfaceContainer = SurfaceContainerDark,
-    surfaceContainerHigh = SurfaceContainerHighDark,
-    surfaceContainerHighest = SurfaceContainerHighestDark
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = PrimaryLight,
-    onPrimary = OnPrimaryLight,
-    primaryContainer = PrimaryContainerLight,
-    onPrimaryContainer = OnPrimaryContainerLight,
-    secondary = SecondaryLight,
-    onSecondary = OnSecondaryLight,
-    secondaryContainer = SecondaryContainerLight,
-    onSecondaryContainer = OnSecondaryContainerLight,
-    tertiary = TertiaryLight,
-    onTertiary = OnTertiaryLight,
-    tertiaryContainer = TertiaryContainerLight,
-    onTertiaryContainer = OnTertiaryContainerLight,
-    error = ErrorLight,
-    onError = OnErrorLight,
-    errorContainer = ErrorContainerLight,
-    onErrorContainer = OnErrorContainerLight,
-    background = BackgroundLight,
-    onBackground = OnBackgroundLight,
-    surface = SurfaceLight,
-    onSurface = OnSurfaceLight,
-    surfaceVariant = SurfaceVariantLight,
-    onSurfaceVariant = OnSurfaceVariantLight,
-    outline = OutlineLight,
-    outlineVariant = OutlineVariantLight,
-    inverseSurface = InverseSurfaceLight,
-    inverseOnSurface = InverseOnSurfaceLight,
-    scrim = Color.Black,
-    surfaceContainerLowest = SurfaceContainerLowestLight,
-    surfaceContainerLow = SurfaceContainerLowLight,
-    surfaceContainer = SurfaceContainerLight,
-    surfaceContainerHigh = SurfaceContainerHighLight,
-    surfaceContainerHighest = SurfaceContainerHighestLight
-)
-
 private val AmoledColorScheme = darkColorScheme(
     primary = PrimaryAmoled,
     onPrimary = OnPrimaryAmoled,
     primaryContainer = PrimaryContainerAmoled,
     onPrimaryContainer = OnPrimaryContainerAmoled,
-    secondary = SecondaryDark,
-    onSecondary = OnSecondaryDark,
-    secondaryContainer = SecondaryContainerDark,
-    onSecondaryContainer = OnSecondaryContainerDark,
-    tertiary = TertiaryDark,
-    onTertiary = OnTertiaryDark,
-    tertiaryContainer = TertiaryContainerDark,
-    onTertiaryContainer = OnTertiaryContainerDark,
-    error = ErrorDark,
-    onError = OnErrorDark,
-    errorContainer = ErrorContainerDark,
-    onErrorContainer = OnErrorContainerDark,
+    secondary = Color(0xFFC4C5DD),
+    onSecondary = Color(0xFF2D2F42),
+    secondaryContainer = Color(0xFF434559),
+    onSecondaryContainer = Color(0xFFE0E1F9),
+    tertiary = Color(0xFFC6C2EA),
+    onTertiary = Color(0xFF2F2D4D),
+    tertiaryContainer = Color(0xFF454364),
+    onTertiaryContainer = Color(0xFFE3DFFF),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
     background = BackgroundAmoled,
     onBackground = OnBackgroundAmoled,
     surface = SurfaceAmoled,
@@ -120,8 +50,8 @@ private val AmoledColorScheme = darkColorScheme(
     onSurfaceVariant = OnSurfaceVariantAmoled,
     outline = OutlineAmoled,
     outlineVariant = OutlineVariantAmoled,
-    inverseSurface = InverseSurfaceDark,
-    inverseOnSurface = InverseOnSurfaceDark,
+    inverseSurface = Color(0xFFE1E2E9),
+    inverseOnSurface = Color(0xFF0E1015),
     scrim = Color.Black,
     surfaceContainerLowest = SurfaceContainerLowestAmoled,
     surfaceContainerLow = SurfaceContainerLowAmoled,
@@ -177,8 +107,8 @@ fun OssWalletTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> darkColorScheme()
+        else -> lightColorScheme()
     }
 
     val view = LocalView.current
@@ -227,8 +157,8 @@ fun OssWalletPreviewTheme(
 ) {
     val colorScheme = when (theme) {
         "Amoled" -> AmoledColorScheme
-        "Dark"   -> DarkColorScheme
-        else     -> LightColorScheme
+        "Dark"   -> darkColorScheme()
+        else     -> lightColorScheme()
     }
     val themeMode = remember(theme) {
         ThemeHelper.getThemeMode(theme, theme != "Light")

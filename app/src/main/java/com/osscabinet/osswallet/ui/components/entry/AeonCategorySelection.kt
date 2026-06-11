@@ -7,8 +7,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.OutlineLight
 
 @Composable
 fun AeonCategorySelection(
@@ -20,6 +20,7 @@ fun AeonCategorySelection(
     title: String = "Select Category",
     startExpanded: Boolean = true
 ) {
+    val fallbackColor = AppColors.outline
     AeonSelectionSheet(
         title = title,
         onDismiss = onDismiss,
@@ -32,7 +33,7 @@ fun AeonCategorySelection(
         isHierarchical = true,
         parentIdMapper = { it.parentId },
         iconMapper = { getIconByName(it.iconName) },
-        colorMapper = { if (it.colorHex == -1) OutlineLight else Color(it.colorHex) },
+        colorMapper = { if (it.colorHex == -1) fallbackColor else Color(it.colorHex) },
         searchPlaceholder = "Search categories...",
         startExpanded = startExpanded
     )

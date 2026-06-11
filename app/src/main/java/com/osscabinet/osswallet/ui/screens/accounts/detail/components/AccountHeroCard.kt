@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts.detail.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,8 +47,10 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.util.applyAeonTint
+import com.osscabinet.ossWallet.ui.util.applyAccountTint
 import java.math.BigDecimal
 
 @Composable
@@ -81,7 +84,17 @@ fun AccountHeroCard(
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = accountColor.applyAeonTint(mode)
+    val isDark = isSystemInDarkTheme()
+    val glassSettings = LocalGlassSettings.current
+    val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
+
+    // Full-bleed account color: tint the glass blur with the account color so the background
+    // reads as the account color in both glass and non-glass (fallback) modes.
+    val accountHazeStyle = GlassTokens.createHazeStyle(
+        config = glassSettings.card,
+        bgColor = containerColor,
+        isDark = isDark
+    )
 
     val balanceInBase = CurrencyService.convertAmount(
         amount = balance,
@@ -98,6 +111,7 @@ fun AccountHeroCard(
         containerColor = containerColor,
         contentColor = contentColor,
         backgroundIcon = icon,
+        hazeStyleOverride = accountHazeStyle,
         modifier = modifier.clickable { callbacks.onClick?.invoke() },
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
@@ -182,7 +196,7 @@ fun AccountHeroCard(
                     amount = income,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                    color = contentColor,
+                    contentColor = contentColor,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         callbacks.onClickIncome?.invoke(
@@ -199,7 +213,7 @@ fun AccountHeroCard(
                     amount = expense,
                     currency = account.currencyCode,
                     icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                    color = contentColor,
+                    contentColor = contentColor,
                     modifier = Modifier.weight(1f),
                     onClick = {
                         callbacks.onClickExpense?.invoke(
@@ -230,12 +244,9 @@ fun AccountHeroCard(
                     ) {
                         currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
                             Surface(
-                                color = contentColor.copy(alpha = 0.12f),
+                                color = contentColor.copy(alpha = 0.14f),
                                 shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(
-                                    1.dp,
-                                    contentColor.copy(alpha = 0.1f)
-                                ),
+                                border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.18f)),
                                 modifier = Modifier.clickable {
                                     callbacks.onClickCurrency?.invoke(
                                         curr
@@ -276,20 +287,23 @@ fun AccountHeroCard(
     }
 }
 
+// contentColor is the ink color derived from the account color (white on dark bg, dark on light bg).
+// Badges sit directly on the full-bleed account color surface, so we use semi-transparent
+// contentColor overlays — they lighten/darken the background just enough to read as a distinct chip.
 @Composable
 private fun FlowSummaryItem(
     label: String,
     amount: BigDecimal,
     currency: String,
     icon: ImageVector,
-    color: Color,
+    contentColor: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
     Surface(
-        color = color.copy(alpha = 0.12f),
+        color = contentColor.copy(alpha = 0.14f),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.1f)),
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.18f)),
         modifier = modifier.clickable { onClick() }
     ) {
         Column(
@@ -303,23 +317,19 @@ private fun FlowSummaryItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = color,
+                    tint = contentColor.copy(alpha = 0.7f),
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
                     text = label.uppercase(),
-                    style = AppTextStyles.overlineLabel.copy(
-                        letterSpacing = 1.sp
-                    ),
-                    color = color.copy(alpha = 0.8f)
+                    style = AppTextStyles.overlineLabel.copy(letterSpacing = 1.sp),
+                    color = contentColor.copy(alpha = 0.6f)
                 )
             }
             Text(
                 text = formatAuto(amount, currency),
-                style = AppTextStyles.screenSubTitle.copy(
-                    fontWeight = FontWeight.Black
-                ),
-                color = color
+                style = AppTextStyles.screenSubTitle.copy(fontWeight = FontWeight.Black),
+                color = contentColor
             )
         }
     }

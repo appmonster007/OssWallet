@@ -465,11 +465,7 @@ fun DashboardScreen(
 
                 // 5. Quick Add Sheet (when FAB menu is disabled)
                 if (showQuickAddSheet) {
-                    QuickAddSheet(
-                        templates = allTemplates,
-                        categories = allCategories,
-                        onDismiss = { showQuickAddSheet = false }
-                    )
+                    QuickAddSheet(onDismiss = { showQuickAddSheet = false })
                 }
 
                 // 6. Filter Pill Layer (Overlay)

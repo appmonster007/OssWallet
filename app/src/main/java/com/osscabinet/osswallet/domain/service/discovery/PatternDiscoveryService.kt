@@ -7,7 +7,6 @@ import java.util.Calendar
 
 /**
  * Result of the pattern discovery process.
- * Represents a set of transactions that appear to be repeating.
  */
 data class DiscoveredPattern(
     val name: String,
@@ -32,14 +31,15 @@ data class DiscoveredPattern(
 )
 
 /**
- * Offline-first heuristic engine for discovering repeating transaction patterns.
- * Analyzes past transactions to suggest Templates and Planned Payments.
+ * Advanced heuristic engine for discovering repeating transaction patterns.
+ * Features: Fuzzy matching, Calendar-aware recurrence, and Time-decay weighting.
  */
 object PatternDiscoveryService {
 
     private const val MIN_OCCURRENCES = 3
     private const val DAY_IN_MILLIS = 24 * 60 * 60 * 1000L
     private const val INTERVAL_TOLERANCE_DAYS = 3
+    private const val RECENCY_DECAY_MONTHS = 3L
 
     /**
      * Scans transactions and returns a list of discovered patterns.
@@ -47,10 +47,10 @@ object PatternDiscoveryService {
     fun discoverPatterns(transactions: List<Transaction>): List<DiscoveredPattern> {
         if (transactions.size < MIN_OCCURRENCES) return emptyList()
 
-        // 1. Group by key features (Payee + Category + Type + Currency)
+        // 1. Group by cleaned features
         val groups = transactions.groupBy { tx ->
-            val normalizedPayee = tx.payee.trim().lowercase()
-            val payeeKey = if (normalizedPayee.isEmpty()) "note:${tx.note.trim().lowercase()}" else "payee:$normalizedPayee"
+            val cleanedPayee = normalizePayee(tx.payee)
+            val payeeKey = if (cleanedPayee.isEmpty()) "note:${normalizePayee(tx.note)}" else "payee:$cleanedPayee"
             "$payeeKey|${tx.categoryId}|${tx.transactionType}|${tx.currency}"
         }
 
@@ -62,38 +62,70 @@ object PatternDiscoveryService {
         }.sortedByDescending { it.confidence }
     }
 
+    private fun normalizePayee(payee: String): String {
+        return payee.trim()
+            .lowercase()
+            .replace(Regex("[*#]"), " ")           // Remove * and # separators
+            .replace(Regex("\\d{4,}"), "")        // Remove long number sequences (card numbers)
+            .replace(Regex("\\s+"), " ")          // Collapse whitespace
+            .trim()
+    }
+
     private fun analyzeGroup(txs: List<Transaction>): DiscoveredPattern? {
         val lastTx = txs.last()
-        val avgAmount = txs.map { it.amount }.reduce { acc, bigDecimal -> acc.add(bigDecimal) }
-            .divide(BigDecimal(txs.size), 2, RoundingMode.HALF_UP)
-        
-        // Check amount consistency (variance)
-        val amountVariance = txs.map { 
-            it.amount.subtract(avgAmount).abs() 
-        }.reduce { acc, bigDecimal -> acc.add(bigDecimal) }
-            .divide(BigDecimal(txs.size), 10, RoundingMode.HALF_UP)
-            
-        val amountScore = if (avgAmount.compareTo(BigDecimal.ZERO) == 0) 1f 
-            else (1f - (amountVariance.divide(avgAmount.abs(), 10, RoundingMode.HALF_UP).toFloat())).coerceIn(0f, 1f)
 
-        // Identify Recurrence
+        // 1. Calculate Representative Amount
+        // Strategy: Use the most frequent amount (Mode) if it appears in >= 50% of txs.
+        // Otherwise, use the most recent amount (Trend-aware).
+        val amountFrequencies = txs.groupingBy { it.amount }.eachCount()
+        val mostFrequent = amountFrequencies.maxByOrNull { it.value }
+        val representativeAmount = if (mostFrequent != null && mostFrequent.value >= txs.size / 2.0) {
+            mostFrequent.key
+        } else {
+            lastTx.amount
+        }
+
+        // 2. Consistency Score (Calculated against mathematical average)
+        val mathematicalAvg = txs.map { it.amount }.reduce { acc, amt -> acc.add(amt) }
+            .divide(BigDecimal(txs.size), 2, RoundingMode.HALF_UP)
+
+        val amountVariance = txs.map { it.amount.subtract(mathematicalAvg).abs() }
+            .reduce { acc, v -> acc.add(v) }
+            .divide(BigDecimal(txs.size), 10, RoundingMode.HALF_UP)
+
+        val amountScore = if (mathematicalAvg.compareTo(BigDecimal.ZERO) == 0) 1f
+        else (1f - (amountVariance.divide(mathematicalAvg.abs(), 10, RoundingMode.HALF_UP).toFloat())).coerceIn(0f, 1f)
+
+        // 3. Periodicity & Calendar Awareness Score
         val recurrenceResult = detectRecurrence(txs)
         val recurrenceScore = recurrenceResult.confidence
         
-        // Volume Score: More transactions = higher confidence
-        val volumeScore = (txs.size.toFloat() / 10f).coerceIn(0.3f, 1.0f)
+        // 3. Recency Score (Time Decay)
+        val currentTime = System.currentTimeMillis()
+        val daysSinceLast = (currentTime - lastTx.timestamp) / DAY_IN_MILLIS
+        val decayPeriodDays = RECENCY_DECAY_MONTHS * 30
+        
+        // Penalty if the pattern seems to have stopped
+        val recencyScore = if (daysSinceLast < decayPeriodDays) 1f 
+            else (1f - ((daysSinceLast - decayPeriodDays).toFloat() / decayPeriodDays)).coerceIn(0f, 1f)
 
-        // Total Confidence
-        val totalConfidence = (amountScore * 0.2f) + (recurrenceScore * 0.5f) + (volumeScore * 0.3f)
+        // 4. Volume Score
+        val volumeScore = (txs.size.toFloat() / 8f).coerceIn(0.4f, 1.0f)
 
-        if (totalConfidence < 0.4f) return null
+        // Weighted Confidence
+        val totalConfidence = (amountScore * 0.15f) + 
+                            (recurrenceScore * 0.45f) + 
+                            (recencyScore * 0.25f) + 
+                            (volumeScore * 0.15f)
+
+        if (totalConfidence < 0.45f) return null
 
         return DiscoveredPattern(
             name = lastTx.payee.ifBlank { lastTx.note.ifBlank { "Discovered Pattern" } },
             payee = lastTx.payee,
             categoryId = lastTx.categoryId,
             accountId = lastTx.accountId,
-            averageAmount = avgAmount,
+            averageAmount = representativeAmount,
             currency = lastTx.currency,
             transactionType = lastTx.transactionType,
             paymentMethod = lastTx.paymentMethod,
@@ -115,43 +147,69 @@ object PatternDiscoveryService {
     )
 
     private fun detectRecurrence(txs: List<Transaction>): RecurrenceDiscoveryResult {
+        val calendar = Calendar.getInstance()
+        val daysOfMonth = txs.map { 
+            calendar.timeInMillis = it.timestamp
+            calendar.get(Calendar.DAY_OF_MONTH)
+        }
+        val daysOfWeek = txs.map {
+            calendar.timeInMillis = it.timestamp
+            calendar.get(Calendar.DAY_OF_WEEK)
+        }
+
+        // Check for "Same Day of Month" (Monthly Bill)
+        val domFrequency = daysOfMonth.groupingBy { it }.eachCount()
+        val maxDomFreq = domFrequency.values.maxOrNull() ?: 0
+        if (maxDomFreq >= txs.size - 1) { // 1 error allowed
+            val dominantDom = domFrequency.maxBy { it.value }.key
+            return RecurrenceDiscoveryResult(
+                rule = RecurrenceRule(RecurrenceType.MONTHLY, dayOfMonth = dominantDom),
+                confidence = 1.0f
+            )
+        }
+
+        // Check for "Same Day of Week" (Weekly Activity)
+        val dowFrequency = daysOfWeek.groupingBy { it }.eachCount()
+        val maxDowFreq = dowFrequency.values.maxOrNull() ?: 0
+        
+        // Calculate intervals for general check
         val intervals = mutableListOf<Long>()
         for (i in 0 until txs.size - 1) {
             intervals.add(txs[i + 1].timestamp - txs[i].timestamp)
         }
+        val avgIntervalDays = if (intervals.isEmpty()) 0.0 else intervals.average() / DAY_IN_MILLIS
 
-        val avgIntervalDays = intervals.average() / DAY_IN_MILLIS
-        
         return when {
-            // Weekly check (7 days +/- tolerance)
+            // Weekly check (with DOW consistency)
             isCloseTo(avgIntervalDays, 7.0) -> {
+                val dowScore = maxDowFreq.toFloat() / txs.size
                 RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.WEEKLY),
-                    confidence = calculateIntervalConsistency(intervals, 7.0)
+                    rule = RecurrenceRule(RecurrenceType.WEEKLY, dayOfWeek = daysOfWeek.last()),
+                    confidence = (0.7f + (dowScore * 0.3f))
                 )
             }
-            // Monthly check (30 days +/- tolerance)
-            isCloseTo(avgIntervalDays, 30.0) -> {
-                RecurrenceDiscoveryResult(
-                    rule = RecurrenceRule(RecurrenceType.MONTHLY),
-                    confidence = calculateIntervalConsistency(intervals, 30.44) // Average month
-                )
-            }
-            // Bi-weekly check (14 days +/- tolerance)
+            // Bi-weekly
             isCloseTo(avgIntervalDays, 14.0) -> {
                 RecurrenceDiscoveryResult(
                     rule = RecurrenceRule(RecurrenceType.EVERY_N_WEEKS, interval = 2),
-                    confidence = calculateIntervalConsistency(intervals, 14.0)
+                    confidence = 0.8f
                 )
             }
-            // Daily check
+            // Average Monthly (if DOM consistency failed but interval is ~30 days)
+            isCloseTo(avgIntervalDays, 30.0) -> {
+                RecurrenceDiscoveryResult(
+                    rule = RecurrenceRule(RecurrenceType.MONTHLY),
+                    confidence = 0.7f
+                )
+            }
+            // Daily
             isCloseTo(avgIntervalDays, 1.0) -> {
                 RecurrenceDiscoveryResult(
                     rule = RecurrenceRule(RecurrenceType.DAILY),
-                    confidence = calculateIntervalConsistency(intervals, 1.0)
+                    confidence = 0.9f
                 )
             }
-            else -> RecurrenceDiscoveryResult(null, 0.2f) // Low confidence if no periodicity
+            else -> RecurrenceDiscoveryResult(null, 0.2f)
         }
     }
 
@@ -159,17 +217,36 @@ object PatternDiscoveryService {
         return Math.abs(value - target) <= INTERVAL_TOLERANCE_DAYS
     }
 
-    private fun calculateIntervalConsistency(intervals: List<Long>, targetDays: Double): Float {
-        val targetMillis = targetDays * DAY_IN_MILLIS
-        val variances = intervals.map { Math.abs(it - targetMillis).toDouble() }
-        val avgVarianceDays = variances.average() / DAY_IN_MILLIS
+    /**
+     * Logic for calculating the next actual date, handling month-end edge cases.
+     */
+    fun calculateNextDueDate(lastDate: Long, rule: RecurrenceRule): Long {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = lastDate
         
-        return (1.0 - (avgVarianceDays / INTERVAL_TOLERANCE_DAYS)).coerceIn(0.0, 1.0).toFloat()
+        when (rule.type) {
+            RecurrenceType.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, rule.interval)
+            RecurrenceType.WEEKLY -> {
+                calendar.add(Calendar.WEEK_OF_YEAR, rule.interval)
+                rule.dayOfWeek?.let { calendar.set(Calendar.DAY_OF_WEEK, it) }
+            }
+            RecurrenceType.MONTHLY -> {
+                calendar.add(Calendar.MONTH, rule.interval)
+                rule.dayOfMonth?.let { dom ->
+                    val maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+                    calendar.set(Calendar.DAY_OF_MONTH, Math.min(dom, maxDay))
+                }
+            }
+            RecurrenceType.YEARLY -> calendar.add(Calendar.YEAR, rule.interval)
+            RecurrenceType.EVERY_N_DAYS -> calendar.add(Calendar.DAY_OF_YEAR, rule.interval)
+            RecurrenceType.EVERY_N_WEEKS -> calendar.add(Calendar.WEEK_OF_YEAR, rule.interval)
+            RecurrenceType.EVERY_N_MONTHS -> calendar.add(Calendar.MONTH, rule.interval)
+            else -> calendar.add(Calendar.MONTH, 1)
+        }
+        
+        return calendar.timeInMillis
     }
 
-    /**
-     * Converts a discovered pattern into a Template.
-     */
     fun toTemplate(pattern: DiscoveredPattern): Template {
         return Template(
             id = 0,
@@ -191,9 +268,6 @@ object PatternDiscoveryService {
         )
     }
 
-    /**
-     * Converts a discovered pattern into a Planned Payment.
-     */
     fun toPlannedPayment(pattern: DiscoveredPattern, autoConfirm: Boolean = true): PlannedPayment? {
         val rule = pattern.recurrenceRule ?: return null
         
@@ -218,23 +292,5 @@ object PatternDiscoveryService {
             autoConfirm = autoConfirm,
             templateId = null
         )
-    }
-
-    private fun calculateNextDueDate(lastDate: Long, rule: RecurrenceRule): Long {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = lastDate
-        
-        when (rule.type) {
-            RecurrenceType.DAILY -> calendar.add(Calendar.DAY_OF_YEAR, rule.interval)
-            RecurrenceType.WEEKLY -> calendar.add(Calendar.WEEK_OF_YEAR, rule.interval)
-            RecurrenceType.MONTHLY -> calendar.add(Calendar.MONTH, rule.interval)
-            RecurrenceType.YEARLY -> calendar.add(Calendar.YEAR, rule.interval)
-            RecurrenceType.EVERY_N_DAYS -> calendar.add(Calendar.DAY_OF_YEAR, rule.interval)
-            RecurrenceType.EVERY_N_WEEKS -> calendar.add(Calendar.WEEK_OF_YEAR, rule.interval)
-            RecurrenceType.EVERY_N_MONTHS -> calendar.add(Calendar.MONTH, rule.interval)
-            else -> calendar.add(Calendar.MONTH, 1)
-        }
-        
-        return calendar.timeInMillis
     }
 }

@@ -1,7 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toStored
 
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
@@ -87,17 +90,13 @@ data class PlannedPaymentEntryState(
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
     val currency: String get() = source.currency
-    val selectedAccountId: String? get() = source.accountId
-    val targetAccountId: String? get() = destination.accountId
+    val selectedAccountId: String? get() = source.account.toStored()
+    val targetAccountId: String? get() = destination.account.toStored()
     val targetCurrency: String get() = destination.currency
     val selectedCategoryId: Long get() = source.categoryId
 
-    val selectedAccount: Account? get() =
-        accounts.find { it.id == selectedAccountId }
-            ?: if (selectedAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
-    val targetAccount: Account? get() =
-        accounts.find { it.id == targetAccountId }
-            ?: if (targetAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val selectedAccount: Account? get() = source.account.resolve(accounts)
+    val targetAccount: Account? get() = destination.account.resolve(accounts)
 
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
     val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE

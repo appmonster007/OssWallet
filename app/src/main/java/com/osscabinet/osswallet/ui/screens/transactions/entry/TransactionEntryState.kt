@@ -1,8 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
@@ -98,13 +100,9 @@ data class TransactionEntryState(
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
     val selectedCategoryId: Long get() = source.categoryId
-    val selectedAccount: Account? get() =
-        accounts.find { it.id == source.accountId }
-            ?: if (source.accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val selectedAccount: Account? get() = source.account.resolve(accounts)
     val selectedCurrency: String get() = source.currency
-    val targetAccount: Account? get() =
-        accounts.find { it.id == destination.accountId }
-            ?: if (destination.accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val targetAccount: Account? get() = destination.account.resolve(accounts)
     val targetCurrency: String get() = destination.currency
 
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME
@@ -125,16 +123,16 @@ data class TransactionEntryState(
 
             // Account validation
             if (isTransfer) {
-                // Both sides must be explicitly chosen (null = not yet selected)
-                if (source.accountId == null) add(EntryField.ACCOUNT)
-                if (destination.accountId == null) add(EntryField.TARGET_ACCOUNT)
-                // Wallet minimum: both sides can't be outside wallet
-                if (source.accountId?.isBlank() == true && destination.accountId?.isBlank() == true) {
+                // Both sides must be explicitly chosen (Unselected = not yet picked)
+                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
+                if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
+                // Wallet minimum: both sides can't be Outside Wallet
+                if (source.account is AccountRef.Outside && destination.account is AccountRef.Outside) {
                     add(EntryField.ACCOUNT)
                     add(EntryField.TARGET_ACCOUNT)
                 }
             } else {
-                if (source.accountId.isNullOrBlank()) add(EntryField.ACCOUNT)
+                if (source.account !is AccountRef.Wallet) add(EntryField.ACCOUNT)
             }
 
             // Split validation

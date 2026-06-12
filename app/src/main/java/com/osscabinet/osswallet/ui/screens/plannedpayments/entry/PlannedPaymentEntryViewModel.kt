@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
@@ -79,9 +80,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     tagRepository.getAllTags()
                 ) { accounts, categories, templates, tags ->
                     _state.update { current ->
-                        val defaultSource = if (!current.isEditMode && current.source.accountId == null && accounts.isNotEmpty()) {
+                        val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && accounts.isNotEmpty()) {
                             current.source.copy(
-                                accountId = accounts.first().id,
+                                account = AccountRef.Wallet(accounts.first().id),
                                 currency = accounts.first().currencyCode
                             )
                         } else current.source
@@ -117,13 +118,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         linkedTemplate = null,
                         name = template.name,
                         source = TransactionSide(
-                            accountId = template.accountId,
+                            account = AccountRef.fromStored(template.accountId),
                             amount = template.amount.abs().stripTrailingZeros().toPlainString(),
                             currency = template.currency,
                             categoryId = template.categoryId
                         ),
                         destination = TransactionSide(
-                            accountId = template.targetAccountId,
+                            account = AccountRef.fromStored(template.targetAccountId),
                             amount = template.amount.abs().multiply(template.transferRate)
                                 .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                                 .toPlainString(),
@@ -163,7 +164,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         startDateMillis = now,
                         endDateMillis = now,
                         source = current.source.copy(
-                            accountId = firstAccount?.id,
+                            account = firstAccount?.id?.let { AccountRef.Wallet(it) } ?: AccountRef.Unselected,
                             currency = firstAccount?.currencyCode ?: current.source.currency
                         )
                     )
@@ -210,6 +211,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
                 }
 
+                val sourceRef = if (existing.transactionType == TransactionType.TRANSFER)
+                    AccountRef.fromTransferSide(sourceAccId) else AccountRef.fromStored(sourceAccId)
+                val targetRef = if (existing.transactionType == TransactionType.TRANSFER)
+                    AccountRef.fromTransferSide(targetAccId) else AccountRef.fromStored(targetAccId)
+
                 _state.update {
                     it.copy(
                         plannedPaymentId = plannedPaymentId,
@@ -219,13 +225,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         templateUsageCount = usageCount,
                         name = existing.name,
                         source = TransactionSide(
-                            accountId = sourceAccId,
+                            account = sourceRef,
                             amount = sourceAmtStr,
                             currency = sourceCurrency,
                             categoryId = existingCategoryId
                         ),
                         destination = TransactionSide(
-                            accountId = targetAccId,
+                            account = targetRef,
                             amount = targetAmtStr,
                             currency = targetCurr
                         ),
@@ -349,18 +355,19 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             is PlannedPaymentEntryEvent.SetAccountId -> {
                 val s = _state.value
+                val newRef = AccountRef.fromStored(event.id)
                 val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
                     isSourceSide = true,
-                    newAccountId = event.id,
-                    otherSideAccountId = s.destination.accountId
+                    newAccount = newRef,
+                    otherSide = s.destination.account
                 )
-                
+
                 if (isValid || !s.isTransfer) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.id }
                         state.copy(
                             source = state.source.copy(
-                                accountId = event.id,
+                                account = newRef,
                                 currency = account?.currencyCode ?: state.currency
                             )
                         )
@@ -371,18 +378,19 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
                 val s = _state.value
+                val newRef = AccountRef.fromStored(event.id)
                 val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
                     isSourceSide = false,
-                    newAccountId = event.id,
-                    otherSideAccountId = s.source.accountId
+                    newAccount = newRef,
+                    otherSide = s.source.account
                 )
-                
+
                 if (isValid) {
                     _state.update { state ->
                         val account = state.accounts.find { it.id == event.id }
                         state.copy(
                             destination = state.destination.copy(
-                                accountId = event.id,
+                                account = newRef,
                                 currency = account?.currencyCode ?: state.targetCurrency
                             )
                         )
@@ -487,14 +495,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             linkedTemplate = event.template,
                             name = event.template.name,
                             source = TransactionSide(
-                                accountId = event.template.accountId,
+                                account = AccountRef.fromStored(event.template.accountId),
                                 amount = event.template.amount.abs().stripTrailingZeros()
                                     .toPlainString(),
                                 currency = event.template.currency,
                                 categoryId = event.template.categoryId
                             ),
                             destination = TransactionSide(
-                                accountId = event.template.targetAccountId,
+                                account = AccountRef.fromStored(event.template.targetAccountId),
                                 amount = event.template.amount.abs()
                                     .multiply(event.template.transferRate)
                                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
@@ -622,8 +630,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     java.math.BigDecimal.ONE.divide(state.transferRate, 8, java.math.RoundingMode.HALF_UP)
                 else java.math.BigDecimal.ONE
                 state.copy(
-                    source = src.copy(accountId = dst.accountId, currency = dst.currency, amount = effectiveDstAmount),
-                    destination = dst.copy(accountId = src.accountId, currency = src.currency, amount = src.amount),
+                    source = src.copy(account = dst.account, currency = dst.currency, amount = effectiveDstAmount),
+                    destination = dst.copy(account = src.account, currency = src.currency, amount = src.amount),
                     transferRate = newRate
                 )
             }

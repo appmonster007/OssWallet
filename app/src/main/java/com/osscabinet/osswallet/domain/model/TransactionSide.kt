@@ -7,7 +7,7 @@ import java.math.BigDecimal
  * Used to group related fields for state management in entry screens.
  */
 data class TransactionSide(
-    val accountId: String? = null,
+    val account: AccountRef = AccountRef.Unselected,
     val amount: String = "",
     val currency: String = "",
     val categoryId: Long = Category.SYSTEM_UNKNOWN

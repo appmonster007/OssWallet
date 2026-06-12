@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
@@ -44,15 +45,24 @@ object TransactionEntryService {
             when (newType) {
                 TransactionType.INCOME -> {
                     // INCOME is positive impact. In a transfer, the Target side (destination) was receiving.
-                    if (!currentDestination.accountId.isNullOrBlank()) currentDestination else currentSource
+                    if (currentDestination.account is AccountRef.Wallet) currentDestination else currentSource
                 }
                 else -> {
                     // EXPENSE is negative impact. In a transfer, the Source side was giving.
-                    if (!currentSource.accountId.isNullOrBlank()) currentSource else currentDestination
+                    if (currentSource.account is AccountRef.Wallet) currentSource else currentDestination
                 }
             }
         } else {
             currentSource
+        }
+
+        // When transitioning into a transfer, the "other" side defaults to Outside Wallet
+        // iff the primary side already names a real wallet, otherwise it stays Unselected
+        // so the user must pick something.
+        val otherSideRef: AccountRef = if (primarySide.account is AccountRef.Wallet) {
+            AccountRef.Outside
+        } else {
+            AccountRef.Unselected
         }
 
         val newSource: TransactionSide
@@ -62,9 +72,8 @@ object TransactionEntryService {
             TransactionType.TRANSFER -> {
                 if (oldType == TransactionType.INCOME) {
                     // Income account was receiving money → moves to Target (Receiver).
-                    // Source defaults to Outside Wallet if a real income account was selected.
                     newSource = TransactionSide(
-                        accountId = if (!primarySide.accountId.isNullOrBlank()) "" else null,
+                        account = otherSideRef,
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = primarySide.amount,
                         currency = primarySide.currency
@@ -74,13 +83,12 @@ object TransactionEntryService {
                     )
                 } else {
                     // Expense account was giving money → remains the Source.
-                    // Target defaults to Outside Wallet if a real expense account was selected.
                     newSource = primarySide.copy(
                         categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
                         amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
                     )
                     newDestination = TransactionSide(
-                        accountId = if (!primarySide.accountId.isNullOrBlank()) "" else null,
+                        account = otherSideRef,
                         categoryId = Category.SYSTEM_TRANSFER_INFLOW,
                         currency = primarySide.currency
                     )
@@ -90,7 +98,7 @@ object TransactionEntryService {
                 // Moving between Income/Expense or from Transfer to Normal.
                 // Reset category if switching natures or leaving Transfer.
                 val needsCategoryReset = isTransferToNormal || oldType != newType
-                
+
                 newSource = primarySide.copy(
                     amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString(),
                     categoryId = if (needsCategoryReset) Category.SYSTEM_UNKNOWN else primarySide.categoryId
@@ -99,9 +107,11 @@ object TransactionEntryService {
             }
         }
 
-        // 2. Identity Exclusion: Ensure Source != Target for transfers
-        val finalDestination = if (newSource.accountId != null && newSource.accountId == newDestination.accountId) {
-            newDestination.copy(accountId = null, currency = "")
+        // 2. Identity Exclusion: Source != Target. Only matters when both are concrete wallets.
+        val srcAcc = newSource.account
+        val dstAcc = newDestination.account
+        val finalDestination = if (srcAcc is AccountRef.Wallet && dstAcc is AccountRef.Wallet && srcAcc.id == dstAcc.id) {
+            newDestination.copy(account = AccountRef.Unselected, currency = "")
         } else newDestination
 
         return TypeTransitionResult(
@@ -114,20 +124,20 @@ object TransactionEntryService {
 
     /**
      * Logic for selecting a new account on either side of a transfer.
-     * Rule 1: Source != Target.
-     * Rule 2: At least one side must be a managed account (No Outside -> Outside).
+     * Rule 1: Source != Target (Identity Exclusion).
+     * Rule 2: At least one side must be a managed wallet (No Outside-to-Outside).
      */
     fun validateAccountSelection(
         isSourceSide: Boolean,
-        newAccountId: String?,
-        otherSideAccountId: String?
+        newAccount: AccountRef,
+        otherSide: AccountRef
     ): Boolean {
         // Identity Exclusion
-        if (newAccountId != null && newAccountId == otherSideAccountId) return false
-        
+        if (newAccount is AccountRef.Wallet && otherSide is AccountRef.Wallet && newAccount.id == otherSide.id) {
+            return false
+        }
         // Wallet Minimum Rule (No Outside-to-Outside)
-        if (newAccountId == null && otherSideAccountId == null) return false
-        
+        if (newAccount is AccountRef.Outside && otherSide is AccountRef.Outside) return false
         return true
     }
 }

@@ -179,9 +179,10 @@ fun NetWorthCard(
                             .divide(previousMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
 
                         val trendColor = if (change.signum() > 0) AppColors.positive else AppColors.negative
+                        val (trendBg, trendInk) = trendColor.applyFlowTint(LocalThemeMode.current)
 
                         Surface(
-                            color = trendColor.copy(alpha = 0.12f),
+                            color = trendBg,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.padding(bottom = 4.dp)
                         ) {
@@ -194,14 +195,14 @@ fun NetWorthCard(
                                     if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
                                     contentDescription = null,
                                     modifier = Modifier.size(12.dp),
-                                    tint = trendColor
+                                    tint = trendInk
                                 )
                                 Text(
                                     text = "${if (change.signum() > 0) "+" else ""}$percentage%",
                                     style = AppTextStyles.transactionBadge.copy(
                                         fontSize = 10.sp
                                     ),
-                                    color = trendColor
+                                    color = trendInk
                                 )
                             }
                         }
@@ -433,8 +434,40 @@ fun NetWorthCardGlassPreview() {
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun NetWorthCardPreview() {
+fun NetWorthCardLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        NetWorthCardPreviewContent()
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun NetWorthCardDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        NetWorthCardPreviewContent()
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Amoled Mode",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun NetWorthCardAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        NetWorthCardPreviewContent()
+    }
+}
+
+@Composable
+private fun NetWorthCardPreviewContent() {
     val currentMetrics = NetWorthMetrics(
         netWorth = BigDecimal("15250.75"),
         cashFlow = CashFlowResult(
@@ -457,14 +490,13 @@ fun NetWorthCardPreview() {
             filteredTransactions = emptyList()
         )
     )
-    OssWalletTheme {
-        Surface(modifier = Modifier.padding(16.dp)) {
-            NetWorthCard(
-                currentMetrics = currentMetrics,
-                previousMetrics = previousMetrics,
-                baseCurrency = "USD",
-                config = NetWorthCardConfig(cardId = "net_worth", showComparison = true)
-            )
-        }
+
+    Box(modifier = Modifier.padding(16.dp)) {
+        NetWorthCard(
+            currentMetrics = currentMetrics,
+            previousMetrics = previousMetrics,
+            baseCurrency = "USD",
+            config = NetWorthCardConfig(cardId = "net_worth", showComparison = true)
+        )
     }
 }

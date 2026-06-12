@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -56,11 +57,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -88,7 +91,9 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -319,6 +324,16 @@ fun TemplateItem(
         TransactionType.TRANSFER -> AccentBlue to Icons.Rounded.SwapHoriz
     }
 
+    val amountColor = when (template.transactionType) {
+        TransactionType.EXPENSE -> AppColors.error
+        TransactionType.INCOME -> PositiveAmountColor
+        TransactionType.TRANSFER -> AccentBlue
+    }
+
+    val formattedAmount = remember(template.amount, template.currency) {
+        CurrencyFormatter.formatAuto(template.amount, template.currency)
+    }
+
     AeonListItem(
         title = template.name,
         subtitle = categoryName,
@@ -345,29 +360,34 @@ fun TemplateItem(
             }
         },
         trailingContent = {
-            Row {
-                IconButton(onClick = onCreatePlannedPayment) {
+            Text(
+                text = formattedAmount,
+                style = AppTextStyles.listItemTitle,
+                color = amountColor
+            )
+        },
+        menuItems = { onDismiss ->
+            DropdownMenuItem(
+                text = { Text("Create Planned Payment") },
+                leadingIcon = { Icon(Icons.Rounded.Schedule, null, tint = AppColors.primary) },
+                onClick = { onDismiss(); onCreatePlannedPayment() }
+            )
+            DropdownMenuItem(
+                text = { Text(if (template.isStarred) "Unstar" else "Star") },
+                leadingIcon = {
                     Icon(
-                        imageVector = Icons.Rounded.Schedule,
-                        contentDescription = "Create Planned Payment",
-                        tint = AppColors.primary
-                    )
-                }
-                IconButton(onClick = onToggleStar) {
-                    Icon(
-                        imageVector = if (template.isStarred) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        contentDescription = "Star",
+                        if (template.isStarred) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        null,
                         tint = if (template.isStarred) AppColors.primary else AppColors.border
                     )
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Rounded.DeleteOutline,
-                        contentDescription = "Delete",
-                        tint = AppColors.error
-                    )
-                }
-            }
+                },
+                onClick = { onDismiss(); onToggleStar() }
+            )
+            DropdownMenuItem(
+                text = { Text("Delete", color = AppColors.error) },
+                leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null, tint = AppColors.error) },
+                onClick = { onDismiss(); onDelete() }
+            )
         }
     )
 }
@@ -493,5 +513,72 @@ fun TemplateDialog(
             },
             onDismiss = { showAccountPicker = false }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TemplateItemPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Templates Overview", style = AppTextStyles.cardTitle)
+            
+            TemplateItem(
+                template = Template(
+                    name = "Starbucks Coffee",
+                    categoryId = 1,
+                    amount = BigDecimal("5.50"),
+                    transactionType = TransactionType.EXPENSE,
+                    currency = "USD",
+                    accountId = "1"
+                ),
+                categoryName = "Food & Drink",
+                categoryIconName = "Restaurant",
+                onEdit = {},
+                onDelete = {},
+                onToggleStar = {},
+                onCreatePlannedPayment = {}
+            )
+
+            TemplateItem(
+                template = Template(
+                    name = "Monthly Salary",
+                    categoryId = 2,
+                    amount = BigDecimal("5000.00"),
+                    transactionType = TransactionType.INCOME,
+                    currency = "USD",
+                    accountId = "1",
+                    isStarred = true
+                ),
+                categoryName = "Salary",
+                categoryIconName = "Payments",
+                onEdit = {},
+                onDelete = {},
+                onToggleStar = {},
+                onCreatePlannedPayment = {}
+            )
+
+            TemplateItem(
+                template = Template(
+                    name = "Savings Transfer",
+                    categoryId = 3,
+                    amount = BigDecimal("1000.00"),
+                    transactionType = TransactionType.TRANSFER,
+                    currency = "USD",
+                    accountId = "1"
+                ),
+                categoryName = "Transfer",
+                categoryIconName = "SyncAlt",
+                onEdit = {},
+                onDelete = {},
+                onToggleStar = {},
+                onCreatePlannedPayment = {}
+            )
+        }
     }
 }

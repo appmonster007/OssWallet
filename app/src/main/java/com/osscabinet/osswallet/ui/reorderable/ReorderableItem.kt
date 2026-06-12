@@ -1,10 +1,14 @@
 package com.osscabinet.ossWallet.ui.reorderable
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -42,6 +46,20 @@ fun LazyItemScope.ReorderableItem(
         onDispose { state.unregisterItem(key) }
     }
 
+    // Visual feedback: Scale up slightly when dragged to give "lift"
+    val scale by animateFloatAsState(
+        targetValue = if (isDragging) 1.04f else 1.0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "reorder_item_scale"
+    )
+
+    // Lift effect: increase elevation when dragging
+    val elevation by animateFloatAsState(
+        targetValue = if (isDragging) 8f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "reorder_item_elevation"
+    )
+
     Box(
         modifier = modifier
             // animateItem handles smooth slide transitions for non-dragged items when the data
@@ -51,9 +69,13 @@ fun LazyItemScope.ReorderableItem(
             .onGloballyPositioned { coords ->
                 if (enabled) state.registerItem(key, coords)
             }
-            .zIndex(if (isDragging) 1f else 0f)
+            .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
             .graphicsLayer {
                 translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
+                scaleX = scale
+                scaleY = scale
+                shadowElevation = elevation
+                clip = elevation > 0f
             },
         content = { content(isDragging) },
     )

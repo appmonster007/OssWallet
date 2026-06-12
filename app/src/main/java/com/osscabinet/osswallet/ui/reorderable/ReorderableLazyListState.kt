@@ -16,14 +16,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.pow
 
 /**
  * Drop-in drag-to-reorder primitive for [androidx.compose.foundation.lazy.LazyColumn].
@@ -51,6 +55,7 @@ fun rememberReorderableLazyListState(
     onMove: (fromIndex: Int, toIndex: Int) -> Unit,
 ): ReorderableLazyListState {
     val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val onMoveState = rememberUpdatedState(onMove)
     val scrollThresholdPx = with(density) { scrollThreshold.toPx() }
@@ -58,6 +63,7 @@ fun rememberReorderableLazyListState(
     return remember(lazyListState) {
         ReorderableLazyListState(
             lazyListState = lazyListState,
+            haptic = haptic,
             scope = scope,
             onMoveState = onMoveState,
             scrollThresholdPx = scrollThresholdPx,
@@ -70,6 +76,7 @@ fun rememberReorderableLazyListState(
 
 class ReorderableLazyListState internal constructor(
     val lazyListState: LazyListState,
+    private val haptic: HapticFeedback,
     private val scope: CoroutineScope,
     private val onMoveState: State<(Int, Int) -> Unit>,
     private val scrollThresholdPx: Float,
@@ -135,6 +142,7 @@ class ReorderableLazyListState internal constructor(
      */
     internal fun onDragStart(key: Any, pointerInContainer: Offset) {
         val item = itemBounds[key] ?: return
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         draggedKey = key
         pointerYInContainer = pointerInContainer.y
         touchOffsetWithinItem = pointerInContainer.y - item.top
@@ -189,10 +197,15 @@ class ReorderableLazyListState internal constructor(
                 val distFromBottom = viewportHeight - pointerYInContainer
 
                 val speed = when {
-                    distFromTop < scrollThresholdPx ->
-                        -maxScrollSpeedPx * (1f - (distFromTop / scrollThresholdPx).coerceIn(0f, 1f))
-                    distFromBottom < scrollThresholdPx ->
-                        maxScrollSpeedPx * (1f - (distFromBottom / scrollThresholdPx).coerceIn(0f, 1f))
+                    distFromTop < scrollThresholdPx -> {
+                        // Exponential speed-up near edges for natural feel
+                        val factor = (1f - (distFromTop / scrollThresholdPx).coerceIn(0f, 1f)).pow(1.5f)
+                        -maxScrollSpeedPx * factor
+                    }
+                    distFromBottom < scrollThresholdPx -> {
+                        val factor = (1f - (distFromBottom / scrollThresholdPx).coerceIn(0f, 1f)).pow(1.5f)
+                        maxScrollSpeedPx * factor
+                    }
                     else -> 0f
                 }
 
@@ -233,6 +246,7 @@ class ReorderableLazyListState internal constructor(
                 draggedCenterY > nextBounds.top + nextBounds.height * swapTravelRatio
             ) {
                 lastSwapTimeMs = now
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onMoveState.value(currentIndex, nextInfo.index)
                 return
             }
@@ -245,6 +259,7 @@ class ReorderableLazyListState internal constructor(
                 draggedCenterY < prevBounds.bottom - prevBounds.height * swapTravelRatio
             ) {
                 lastSwapTimeMs = now
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onMoveState.value(currentIndex, prevInfo.index)
                 return
             }

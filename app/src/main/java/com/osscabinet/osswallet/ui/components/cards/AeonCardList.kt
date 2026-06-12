@@ -80,6 +80,7 @@ fun AeonCardList(
 
     val reorderState = rememberReorderableLazyListState(
         lazyListState = state,
+        swapTravelRatio = 0.45f, // Refined: trigger swap slightly earlier for snappier feel
         onMove = { fromLazy, toLazy ->
             val from = fromLazy - headerOffset
             val to = toLazy - headerOffset
@@ -102,11 +103,11 @@ fun AeonCardList(
         }
 
         items(sortedCards, key = { it.cardId }) { cardConfig ->
-            // Dim non-dragged peers to focus attention on the dragged card.
+            // M3 Tonal feedback: Dim non-dragged peers to focus attention on the "floating" item.
             val draggingActive = reorderState.draggedKey != null
             val isDragging = reorderState.isDragging(cardConfig.cardId)
             val alpha by animateFloatAsState(
-                targetValue = if (draggingActive && !isDragging) 0.6f else 1.0f,
+                targetValue = if (draggingActive && !isDragging) 0.75f else 1.0f,
                 label = "card_drag_alpha"
             )
 

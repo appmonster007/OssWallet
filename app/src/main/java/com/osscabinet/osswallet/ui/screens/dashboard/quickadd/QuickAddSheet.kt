@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -51,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalFocusManager
@@ -118,12 +120,20 @@ fun QuickAddSheet(
         visibleState.targetState = false
     }
 
-    BackHandler {
-        when (state.currentStep) {
-            STEP_TEMPLATE -> animateDismiss()
-            else -> {
-                hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
+    // Predictive Back Handling (Modern SDK)
+    var backProgress by remember { mutableStateOf(0f) }
+    PredictiveBackHandler(enabled = visibleState.targetState) { progress ->
+        try {
+            progress.collect { event ->
+                backProgress = event.progress
             }
+            if (state.currentStep == STEP_TEMPLATE) {
+                animateDismiss()
+            } else {
+                viewModel.goToStep(state.currentStep - 1)
+            }
+        } catch (e: Exception) {
+            backProgress = 0f
         }
     }
 
@@ -137,7 +147,7 @@ fun QuickAddSheet(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(ColorScrimDark)
+//                    .background(ColorScrimDark)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -156,7 +166,14 @@ fun QuickAddSheet(
                 visibleState = visibleState,
                 enter = slideInVertically(tween(300)) { it } + fadeIn(tween(300)),
                 exit = slideOutVertically(tween(300)) { it } + fadeOut(tween(300)),
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .graphicsLayer {
+                        val scale = 1f - (backProgress * 0.05f)
+                        scaleX = scale
+                        scaleY = scale
+                        alpha = 1f - (backProgress * 0.2f)
+                    }
             ) {
                 val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                 val sheetBody: @Composable () -> Unit = {

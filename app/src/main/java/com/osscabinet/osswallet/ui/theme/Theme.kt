@@ -119,9 +119,6 @@ fun OssWalletTheme(
             val backgroundColor = colorScheme.background.toArgb()
 
             if (setWindowBackground) {
-                window.statusBarColor = backgroundColor
-                window.navigationBarColor = backgroundColor
-
                 // Set window background to avoid flash during transitions
                 window.setBackgroundDrawable(ColorDrawable(backgroundColor))
             }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.TransactionSide
+import com.osscabinet.ossWallet.domain.model.isPicked
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
@@ -102,7 +103,7 @@ fun TransactionFormBody(
                     onEvent(TransactionEntryEvent.ShowSplitSheet(true))
                 },
                 onSwapClick = if (state.isTransfer &&
-                    (state.source.accountId != null || state.destination.accountId != null))
+                    (state.source.account.isPicked || state.destination.account.isPicked))
                     ({ onEvent(TransactionEntryEvent.SwapAccounts) }) else null,
                 accountId = state.selectedAccount?.id,
                 errors = state.errors

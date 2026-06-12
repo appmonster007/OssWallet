@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -124,7 +126,7 @@ class TransactionEntryViewModel @Inject constructor(
                     allNotes = notes,
                     mapsAccessEnabled = mapsAccess,
                     source = TransactionSide(
-                        accountId = selectedAccount?.id,
+                        account = selectedAccount?.id?.let { AccountRef.Wallet(it) } ?: AccountRef.Unselected,
                         currency = selectedAccount?.currencyCode ?: "",
                         categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
                     ),
@@ -215,16 +217,30 @@ class TransactionEntryViewModel @Inject constructor(
                     .stripTrailingZeros()
             } else transaction.transferRate
 
+        // Decode each side using the type-safe AccountRef. For TRANSFER rows, a null/blank
+        // id is the persistence convention for "Outside Wallet" (not "Unselected"); for
+        // non-transfer rows the source is always a real wallet.
+        val sourceRef: AccountRef = if (txType == TransactionType.TRANSFER) {
+            selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
+        } else {
+            selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
+        }
+        val destinationRef: AccountRef = if (txType == TransactionType.TRANSFER) {
+            targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
+        } else {
+            targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
+        }
+
         _state.update {
             it.copy(
                 source = TransactionSide(
-                    accountId = selectedAcc?.id,
+                    account = sourceRef,
                     amount = amountStr,
                     currency = currentCurrency,
                     categoryId = categoryId
                 ),
                 destination = TransactionSide(
-                    accountId = targetAcc?.id,
+                    account = destinationRef,
                     amount = targetAmountStr,
                     currency = targetCurrency
                 ),
@@ -252,9 +268,19 @@ class TransactionEntryViewModel @Inject constructor(
 
         val isOpenedAsReceiver = Category.isAnyTransferInflow(prefill.categoryId)
 
-        // Use prefill data if available, otherwise fallback to current selection
-        var sourceAccId = prefill.accountId ?: currentState.source.accountId
-        var targetAccId = prefill.targetAccountId ?: currentState.destination.accountId
+        // Use prefill data if available, otherwise fallback to current selection.
+        // DTO carries the legacy String? convention (null/blank = absent). The form's typed
+        // AccountRef preserves that convention via fromStored. For TRANSFER edit-mode
+        // prefills, a missing id means Outside Wallet (matching DB encoding).
+        val isTransferEditPrefill = txType == TransactionType.TRANSFER && currentState.isEditMode
+        fun decode(prefId: String?, fallback: AccountRef): AccountRef = when {
+            prefId != null -> if (isTransferEditPrefill) AccountRef.fromTransferSide(prefId) else AccountRef.fromStored(prefId)
+            else -> fallback
+        }
+        var sourceRef = decode(prefill.accountId, currentState.source.account)
+        var targetRef = decode(prefill.targetAccountId, currentState.destination.account)
+        var sourceAccId: String? = (sourceRef as? AccountRef.Wallet)?.id
+        var targetAccId: String? = (targetRef as? AccountRef.Wallet)?.id
 
         var sourceCurrency =
             prefill.currency.ifEmpty {
@@ -275,6 +301,10 @@ class TransactionEntryViewModel @Inject constructor(
             sourceAccId = targetAccId
             targetAccId = originalSourceId
 
+            val originalSourceRef = sourceRef
+            sourceRef = targetRef
+            targetRef = originalSourceRef
+
             val originalSourceCurr = sourceCurrency
             sourceCurrency = targetCurr
             targetCurr = originalSourceCurr
@@ -294,14 +324,14 @@ class TransactionEntryViewModel @Inject constructor(
         _state.update {
             it.copy(
                 source = TransactionSide(
-                    accountId = sourceAccId,
+                    account = sourceRef,
                     amount = if (prefill.amount.isNotEmpty()) amountBD.stripTrailingZeros()
                         .toPlainString() else it.amount,
                     currency = sourceCurrency,
                     categoryId = categoryId
                 ),
                 destination = TransactionSide(
-                    accountId = targetAccId,
+                    account = targetRef,
                     amount = targetAmtBD.toPlainString(),
                     currency = targetCurr
                 ),
@@ -509,20 +539,20 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetAccount -> {
                 val s = _state.value
-                val newAccId = event.account?.id
-                
+                val newRef = AccountRef.fromStored(event.account?.id)
+
                 // Identity Exclusion & Wallet Minimum Rule
                 val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
                     isSourceSide = true,
-                    newAccountId = newAccId,
-                    otherSideAccountId = s.destination.accountId
+                    newAccount = newRef,
+                    otherSide = s.destination.account
                 )
-                
+
                 if (isValid || !s.isTransfer) {
                     update {
                         it.copy(
                             source = it.source.copy(
-                                accountId = newAccId,
+                                account = newRef,
                                 currency = event.account?.currencyCode?.ifBlank { null } ?: it.selectedCurrency
                             )
                         )
@@ -538,20 +568,20 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetTargetAccount -> {
                 val s = _state.value
-                val newAccId = event.account?.id
-                
+                val newRef = AccountRef.fromStored(event.account?.id)
+
                 // Identity Exclusion & Wallet Minimum Rule
                 val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
                     isSourceSide = false,
-                    newAccountId = newAccId,
-                    otherSideAccountId = s.source.accountId
+                    newAccount = newRef,
+                    otherSide = s.source.account
                 )
-                
+
                 if (isValid) {
                     update {
                         it.copy(
                             destination = it.destination.copy(
-                                accountId = newAccId,
+                                account = newRef,
                                 currency = event.account?.currencyCode ?: it.targetCurrency
                             )
                         )
@@ -698,8 +728,8 @@ class TransactionEntryViewModel @Inject constructor(
                     java.math.BigDecimal.ONE.divide(state.exchangeRate, 8, java.math.RoundingMode.HALF_UP)
                 else java.math.BigDecimal.ONE
                 state.copy(
-                    source = src.copy(accountId = dst.accountId, currency = dst.currency, amount = effectiveDstAmount),
-                    destination = dst.copy(accountId = src.accountId, currency = src.currency, amount = src.amount),
+                    source = src.copy(account = dst.account, currency = dst.currency, amount = effectiveDstAmount),
+                    destination = dst.copy(account = src.account, currency = src.currency, amount = src.amount),
                     exchangeRate = newRate
                 )
             }
@@ -770,7 +800,7 @@ class TransactionEntryViewModel @Inject constructor(
                 currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
-            accountId = currentState.selectedAccount?.id,
+            accountId = currentState.source.account.toDbTransferSide(),
             currency = currentState.selectedCurrency,
             categoryId = currentState.selectedCategoryId,
             tags = currentState.selectedTags,
@@ -786,7 +816,7 @@ class TransactionEntryViewModel @Inject constructor(
             status = currentState.status,
             sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
             isTransfer = currentState.isTransfer,
-            targetAccountId = currentState.targetAccount?.id,
+            targetAccountId = currentState.destination.account.toDbTransferSide(),
             targetCurrency = currentState.targetCurrency,
             transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
         )
@@ -858,7 +888,7 @@ class TransactionEntryViewModel @Inject constructor(
                 currentState.isTransfer -> TransactionType.TRANSFER
                 else -> TransactionType.EXPENSE
             },
-            accountId = currentState.selectedAccount?.id,
+            accountId = currentState.source.account.toDbTransferSide(),
             currency = currentState.selectedCurrency,
             categoryId = currentState.selectedCategoryId,
             tags = currentState.selectedTags,
@@ -874,20 +904,20 @@ class TransactionEntryViewModel @Inject constructor(
             status = currentState.status,
             sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
             isTransfer = currentState.isTransfer,
-            targetAccountId = currentState.targetAccount?.id,
+            targetAccountId = currentState.destination.account.toDbTransferSide(),
             targetCurrency = currentState.targetCurrency,
             transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
         )
     }
 
     /**
-     * Set target account to null for outside-of-wallet transfers.
+     * Mark the target side as Outside Wallet (for outside-of-wallet transfers).
      */
     fun clearTargetAccount() {
         update {
             it.copy(
                 destination = it.destination.copy(
-                    accountId = null,
+                    account = AccountRef.Outside,
                     currency = ""
                 )
             )

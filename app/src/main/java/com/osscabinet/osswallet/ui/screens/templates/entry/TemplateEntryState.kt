@@ -1,8 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toStored
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -68,20 +71,16 @@ data class TemplateEntryState(
     val displayLinkedTxs: List<Transaction> = emptyList()
 ) {
     // Legacy mapping
-    val accountId: String? get() = source.accountId
-    val targetAccountId: String? get() = destination.accountId
+    val accountId: String? get() = source.account.toStored()
+    val targetAccountId: String? get() = destination.account.toStored()
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
     val categoryId: Long get() = source.categoryId
     val currency: String get() = source.currency
     val targetCurrency: String get() = destination.currency
 
-    val selectedAccount: Account? get() =
-        accounts.find { it.id == accountId }
-            ?: if (accountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
-    val selectedTargetAccount: Account? get() =
-        accounts.find { it.id == targetAccountId }
-            ?: if (targetAccountId?.isBlank() == true) Account.OUTSIDE_WALLET else null
+    val selectedAccount: Account? get() = source.account.resolve(accounts)
+    val selectedTargetAccount: Account? get() = destination.account.resolve(accounts)
     val selectedCategory: Category? get() = categories.find { it.id == categoryId }
 
     val isIncome: Boolean get() = transactionType == TransactionType.INCOME

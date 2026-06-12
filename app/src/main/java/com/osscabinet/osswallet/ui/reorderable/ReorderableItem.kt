@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
 /**
@@ -41,23 +42,34 @@ fun LazyItemScope.ReorderableItem(
     content: @Composable BoxScope.(isDragging: Boolean) -> Unit,
 ) {
     val isDragging = state.isDragging(key)
+    val isAnyItemDragging = state.draggedKey != null
+    val isOtherItemDragging = isAnyItemDragging && !isDragging
 
     DisposableEffect(key) {
         onDispose { state.unregisterItem(key) }
     }
 
-    // Visual feedback: Scale up slightly when dragged to give "lift"
+    // 1. Visual Feedback: Scale and Elevation (Lifting)
+    // Scale up slightly when dragged to give "lift" and tactile separation.
     val scale by animateFloatAsState(
-        targetValue = if (isDragging) 1.04f else 1.0f,
+        targetValue = if (isDragging) 1.05f else 1.0f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "reorder_item_scale"
+        label = "reorder_item_scale",
     )
 
-    // Lift effect: increase elevation when dragging
-    val elevation by animateFloatAsState(
-        targetValue = if (isDragging) 8f else 0f,
+    // Lift effect: increase elevation when dragging for a prominent shadow.
+    // We convert Dp to Px inline to keep the Composable body lean.
+    val elevationPx by animateFloatAsState(
+        targetValue = if (isDragging) with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.toPx() } else 0f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "reorder_item_elevation"
+        label = "reorder_item_elevation",
+    )
+
+    // 2. Focus: Dim non-dragged peers to focus the interaction
+    val dimAlpha by animateFloatAsState(
+        targetValue = if (isOtherItemDragging) 0.6f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "reorder_dim_alpha",
     )
 
     Box(
@@ -68,21 +80,24 @@ fun LazyItemScope.ReorderableItem(
             .then(if (!isDragging && enabled) Modifier.animateItem() else Modifier)
             .onGloballyPositioned { coords ->
                 if (enabled) state.registerItem(key, coords)
+            }
+            .graphicsLayer {
+                alpha = dimAlpha
             },
     ) {
         if (isDragging) {
-            // THE GHOST (Placeholder in the list)
-            // Stays in the list at the original layout position while the "real" card floats.
+            // 3. Ghost Placeholder: Stays in the list at the original layout position while the
+            // "real" card floats, providing a reference for the drop point.
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .graphicsLayer { alpha = 0.15f }
+                    .graphicsLayer { alpha = 0.2f }
             ) {
                 content(false)
             }
         }
 
-        // THE DRAGGED ITEM (Floating under finger)
+        // 4. Floating Item: The actual card being moved, elevated and scaled.
         Box(
             modifier = Modifier
                 .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
@@ -90,8 +105,10 @@ fun LazyItemScope.ReorderableItem(
                     translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
                     scaleX = scale
                     scaleY = scale
-                    shadowElevation = elevation
-                    clip = elevation > 0f
+                    shadowElevation = elevationPx
+                    // We don't clip here so the shadow isn't cut off. The content (e.g. AeonListItem)
+                    // usually handles its own clipping to rounded corners.
+                    clip = false
                 }
         ) {
             content(isDragging)

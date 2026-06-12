@@ -198,12 +198,12 @@ class ReorderableLazyListState internal constructor(
 
                 val speed = when {
                     distFromTop < scrollThresholdPx -> {
-                        // Exponential speed-up near edges for natural feel
-                        val factor = (1f - (distFromTop / scrollThresholdPx).coerceIn(0f, 1f)).pow(1.5f)
+                        // Quadratic speed-up near edges for natural feel
+                        val factor = (1f - (distFromTop / scrollThresholdPx).coerceIn(0f, 1f)).pow(2f)
                         -maxScrollSpeedPx * factor
                     }
                     distFromBottom < scrollThresholdPx -> {
-                        val factor = (1f - (distFromBottom / scrollThresholdPx).coerceIn(0f, 1f)).pow(1.5f)
+                        val factor = (1f - (distFromBottom / scrollThresholdPx).coerceIn(0f, 1f)).pow(2f)
                         maxScrollSpeedPx * factor
                     }
                     else -> 0f

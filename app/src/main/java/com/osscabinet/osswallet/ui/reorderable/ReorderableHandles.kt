@@ -9,11 +9,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -33,7 +31,6 @@ fun Modifier.longPressDraggableHandle(
     onDragStarted: () -> Unit = {},
     onDragStopped: () -> Unit = {},
 ): Modifier = composed {
-    val haptic = LocalHapticFeedback.current
     var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
 
     this
@@ -46,7 +43,6 @@ fun Modifier.longPressDraggableHandle(
                     val container = state.containerCoords ?: return@detectDragGesturesAfterLongPress
                     if (!handle.isAttached || !container.isAttached) return@detectDragGesturesAfterLongPress
                     val pointerInContainer = container.localPositionOf(handle, localOffset)
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     state.onDragStart(key, pointerInContainer)
                     onDragStarted()
                 },
@@ -77,7 +73,6 @@ fun Modifier.draggableHandle(
     onDragStarted: () -> Unit = {},
     onDragStopped: () -> Unit = {},
 ): Modifier = composed {
-    val haptic = LocalHapticFeedback.current
     var handleCoords: LayoutCoordinates? by remember { mutableStateOf(null) }
 
     this
@@ -90,7 +85,6 @@ fun Modifier.draggableHandle(
                     val container = state.containerCoords ?: return@detectDragGestures
                     if (!handle.isAttached || !container.isAttached) return@detectDragGestures
                     val pointerInContainer: Offset = container.localPositionOf(handle, localOffset)
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     state.onDragStart(key, pointerInContainer)
                     onDragStarted()
                 },

@@ -71,9 +71,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.util.applyFlowTint
 import java.math.BigDecimal
@@ -333,8 +331,8 @@ fun AeonFlowBadge(
     type: CashFlowType,
     currency: String,
     modifier: Modifier = Modifier,
-    incomeColor: Color = PositiveAmountColor,
-    expenseColor: Color = NegativeAmountColor,
+    incomeColor: Color = AppColors.positive,
+    expenseColor: Color = AppColors.negative,
     onClick: (() -> Unit)? = null
 ) {
     val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor

@@ -121,28 +121,29 @@ fun Color.applyAeonTint(mode: ThemeMode): Pair<Color, Color> {
 
 /**
  * Tint for income/expense flow badges (NetWorth, CashFlow, AeonFlowBadge).
- * Keeps a pastel background in ALL themes so green/red identity is always
- * immediately recognisable, regardless of light/dark mode.
  *
- * Light:  pastel bg (92% lightness) + dark saturated ink (28%)  — same as applyAeonTint light
- * Dark:   softer pastel bg (82% lightness) + dark ink (22%)     — light enough to still read as pastel
- * AMOLED: muted pastel bg (74% lightness) + very dark ink (16%) — dimmed for OLED comfort
+ * Follows M3 tonal container philosophy per theme:
+ * Light:  pastel bg (92% L, low sat) + dark ink (28% L)   — surface-variant container style
+ * Dark:   dark tinted bg (18% L, mid sat) + light ink (85% L) — M3 dark container style
+ * AMOLED: near-black tinted bg (10% L, mid sat) + bright ink (90% L) — OLED-optimised container
  */
 fun Color.applyFlowTint(mode: ThemeMode): Pair<Color, Color> {
     val hsl = FloatArray(3)
     ColorUtils.colorToHSL(this.toArgb(), hsl)
     val baseSaturation = hsl[1]
 
-    val (bgL, bgS, inkL) = when {
-        mode.isAmoled -> Triple(0.74f, baseSaturation.coerceIn(0.18f, 0.38f), 0.16f)
-        mode.isDarkTheme -> Triple(0.82f, baseSaturation.coerceIn(0.20f, 0.40f), 0.22f)
-        else -> Triple(0.92f, baseSaturation.coerceAtMost(0.30f), 0.28f)
+    val (bgL, bgS, inkL, inkS) = when {
+        mode.isAmoled -> Quadruple(0.12f, baseSaturation.coerceIn(0.30f, 0.55f), 0.88f, baseSaturation.coerceIn(0.50f, 0.85f))
+        mode.isDarkTheme -> Quadruple(0.20f, baseSaturation.coerceIn(0.28f, 0.52f), 0.86f, baseSaturation.coerceIn(0.45f, 0.80f))
+        else -> Quadruple(0.92f, baseSaturation.coerceAtMost(0.30f), 0.28f, baseSaturation.coerceIn(0.50f, 0.90f))
     }
 
     val bgHsl = hsl.copyOf().also { it[1] = bgS; it[2] = bgL }
-    val inkHsl = hsl.copyOf().also { it[1] = baseSaturation.coerceIn(0.50f, 0.90f); it[2] = inkL }
+    val inkHsl = hsl.copyOf().also { it[1] = inkS; it[2] = inkL }
     return Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
 }
+
+private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 /**
  * Tint for account cards — respects the user's exact color choice.

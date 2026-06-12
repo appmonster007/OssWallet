@@ -71,7 +71,11 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
-import com.osscabinet.ossWallet.ui.components.ReorderableList
+import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
+import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
+import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
+import com.osscabinet.ossWallet.ui.reorderable.reorderable
+import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
 import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -176,14 +180,17 @@ fun TemplateListScreenContent(
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
                     if (isReorderMode) {
-                        ReorderableList(
-                            items = editList,
-                            key = { it.id },
-                            onReorder = { newList -> editList = newList },
-                            onDragEnd = { newList -> onUpdateOrder(newList) },
+                        val reorderState = rememberReorderableLazyListState(
+                            onMove = { from, to ->
+                                editList = editList.toMutableList().apply { add(to, removeAt(from)) }
+                            }
+                        )
+                        LazyColumn(
+                            state = reorderState.lazyListState,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .statusBarsPadding(),
+                                .statusBarsPadding()
+                                .reorderable(reorderState),
                             contentPadding = PaddingValues(
                                 start = AeonTheme.dimensions.screenPadding,
                                 end = AeonTheme.dimensions.screenPadding,
@@ -191,11 +198,25 @@ fun TemplateListScreenContent(
                                 bottom = padding.calculateBottomPadding() + scrollBottomPadding()
                             ),
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.listPadding)
-                        ) { template, isDragging ->
-                            ReorderTemplateItem(
-                                template = template,
-                                isDragging = isDragging
-                            )
+                        ) {
+                            items(editList, key = { it.id }) { template ->
+                                ReorderableItem(
+                                    state = reorderState,
+                                    key = template.id,
+                                    modifier = Modifier
+                                        .longPressDraggableHandle(
+                                            state = reorderState,
+                                            key = template.id,
+                                            onDragStopped = { onUpdateOrder(editList) },
+                                        )
+                                        .reorderableSemantics(state = reorderState, key = template.id),
+                                ) { isDragging ->
+                                    ReorderTemplateItem(
+                                        template = template,
+                                        isDragging = isDragging
+                                    )
+                                }
+                            }
                         }
                     } else {
                         LazyColumn(

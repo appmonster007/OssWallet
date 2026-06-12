@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -7,8 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,8 +21,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
@@ -29,7 +36,11 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
-import com.osscabinet.ossWallet.ui.components.CardReorderableList
+import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
+import com.osscabinet.ossWallet.ui.reorderable.draggableHandle
+import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
+import com.osscabinet.ossWallet.ui.reorderable.reorderable
+import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -51,7 +62,8 @@ fun AeonCardList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.screenPadding),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-    animateCards: Boolean = true,
+    @Suppress("UNUSED_PARAMETER")
+    animateCards: Boolean = true, // no-op: animateItem() is now built into ReorderableItem
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
@@ -61,55 +73,95 @@ fun AeonCardList(
     cardDataMap: Map<String, CardRenderData> = emptyMap(),
     state: LazyListState = rememberLazyListState()
 ) {
-    CardReorderableList(
-        items = cards.sortedBy { it.order },
-        key = { it.cardId },
-        onReorder = onReorder,
-        modifier = modifier,
+    val sortedCards = remember(cards) { cards.sortedBy { it.order } }
+    val sortedCardsRef by rememberUpdatedState(sortedCards)
+    val onReorderRef by rememberUpdatedState(onReorder)
+    val headerOffset = if (header != null) 1 else 0
+
+    val reorderState = rememberReorderableLazyListState(
+        lazyListState = state,
+        onMove = { fromLazy, toLazy ->
+            val from = fromLazy - headerOffset
+            val to = toLazy - headerOffset
+            val current = sortedCardsRef
+            if (from in current.indices && to in current.indices) {
+                val newList = current.toMutableList().apply { add(to, removeAt(from)) }
+                onReorderRef(newList)
+            }
+        }
+    )
+
+    LazyColumn(
+        state = reorderState.lazyListState,
+        modifier = modifier.reorderable(reorderState),
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
-        animateCards = animateCards,
-        header = header,
-        state = state
-    ) { cardConfig, isDragging, dragModifier ->
+    ) {
+        if (header != null) {
+            item(key = "__aeon_card_list_header") { header() }
+        }
 
-        val preComputedData = cardDataMap[cardConfig.cardId]
+        items(sortedCards, key = { it.cardId }) { cardConfig ->
+            // Dim non-dragged peers to focus attention on the dragged card.
+            val draggingActive = reorderState.draggedKey != null
+            val isDragging = reorderState.isDragging(cardConfig.cardId)
+            val alpha by animateFloatAsState(
+                targetValue = if (draggingActive && !isDragging) 0.6f else 1.0f,
+                label = "card_drag_alpha"
+            )
 
-        // cardInput.filter is the screen's base scope. Card computers apply config.filter on top
-        // of that in their own two-step logic — do NOT overwrite input.filter here.
-        val cardWithCallbacks = rememberCardWithCallbacks(
-            config = cardConfig,
-            input = cardInput,
-            registry = cardComputerRegistry,
-            updateHandler = cardUpdateHandler,
-            onDelete = onDelete,
-            onRecordsClick = onRecordsClick,
-            callbacks = callbacks,
-            preComputedData = preComputedData,
-            filterSheetEnabled = !disableFilterSheet
-        )
+            ReorderableItem(
+                state = reorderState,
+                key = cardConfig.cardId,
+                modifier = Modifier
+                    .reorderableSemantics(state = reorderState, key = cardConfig.cardId)
+                    .graphicsLayer { this.alpha = alpha },
+            ) { isDraggingThis ->
+                // Card-header-only drag affordance: only the header initiates a drag, the rest of
+                // the card body remains tappable / scrollable.
+                val dragHandleModifier = Modifier.draggableHandle(
+                    state = reorderState,
+                    key = cardConfig.cardId,
+                )
 
-        when (val card = cardWithCallbacks) {
-            is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
-            null -> Box(modifier = Modifier.size(0.dp))
-            else -> {
-                val effectiveCard = card.copyWithRules(
-                    rules = card.filterRules.layeredWith(screenRules),
-                    baseFilter = baseFilter,
+                val preComputedData = cardDataMap[cardConfig.cardId]
+
+                val cardWithCallbacks = rememberCardWithCallbacks(
+                    config = cardConfig,
+                    input = cardInput,
+                    registry = cardComputerRegistry,
+                    updateHandler = cardUpdateHandler,
+                    onDelete = onDelete,
+                    onRecordsClick = onRecordsClick,
+                    callbacks = callbacks,
+                    preComputedData = preComputedData,
                     filterSheetEnabled = !disableFilterSheet
                 )
 
-                UnifiedCardRenderer(
-                    cardWithCallbacks = effectiveCard,
-                    modifier = Modifier.fillMaxWidth(),
-                    headerModifier = dragModifier,
-                    filterContext = filterContext,
-                    inheritedFilter = cardInput.filter,
-                    screenOwnsTimeline = cardInput.screenOwnsTimeline,
-                )
+                when (val card = cardWithCallbacks) {
+                    is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
+                    null -> Box(modifier = Modifier.size(0.dp))
+                    else -> {
+                        val effectiveCard = card.copyWithRules(
+                            rules = card.filterRules.layeredWith(screenRules),
+                            baseFilter = baseFilter,
+                            filterSheetEnabled = !disableFilterSheet
+                        )
+
+                        UnifiedCardRenderer(
+                            cardWithCallbacks = effectiveCard,
+                            modifier = Modifier.fillMaxWidth(),
+                            headerModifier = dragHandleModifier,
+                            filterContext = filterContext,
+                            inheritedFilter = cardInput.filter,
+                            screenOwnsTimeline = cardInput.screenOwnsTimeline,
+                        )
+                    }
+                }
             }
         }
     }
+
 }
 
 /**

@@ -69,7 +69,13 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.components.ReorderableList
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
+import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
+import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
+import com.osscabinet.ossWallet.ui.reorderable.reorderable
+import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -193,22 +199,21 @@ fun AccountListScreen(
                     }
                 }
             ) { innerPadding ->
-                ReorderableList(
-                    items = editList,
-                    onReorder = { newList ->
-                        editList = newList
-                    },
-                    onDragEnd = { newList ->
-                        viewModel.updateAccountsOrder(newList)
-                    },
-                    key = { it.id },
+                val reorderState = rememberReorderableLazyListState(
+                    onMove = { from, to ->
+                        editList = editList.toMutableList().apply { add(to, removeAt(from)) }
+                    }
+                )
+                LazyColumn(
+                    state = reorderState.lazyListState,
                     modifier = Modifier
                         .fillMaxSize()
                         .statusBarsPadding()
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                         .padding(bottom = innerPadding.calculateBottomPadding())
                         .background(AppColors.screenBackground)
-                        .graphicsLayer(clip = false),
+                        .graphicsLayer(clip = false)
+                        .reorderable(reorderState),
                     contentPadding = PaddingValues(
                         top = pillHeight + AeonTheme.dimensions.screenPadding,
                         bottom = 100.dp,
@@ -216,22 +221,36 @@ fun AccountListScreen(
                         end = AeonTheme.dimensions.screenPadding
                     ),
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-                ) { account, isDragging ->
-                    AccountManagementListItem(
-                        account = account,
-                        isSelectionMode = isSelectionMode,
-                        isSelected = account.id in selectedAccountIds,
-                        isDragging = isDragging,
-                        onSelect = {
-                            selectedAccountIds = if (account.id in selectedAccountIds) {
-                                selectedAccountIds - account.id
-                            } else {
-                                selectedAccountIds + account.id
-                            }
-                        },
-                        onToggleArchive = { viewModel.toggleArchiveAccount(account) },
-                        onAccountClick = { navigate { actions.onAccountClick(account.id) } }
-                    )
+                ) {
+                    items(editList, key = { it.id }) { account ->
+                        ReorderableItem(
+                            state = reorderState,
+                            key = account.id,
+                            modifier = Modifier
+                                .longPressDraggableHandle(
+                                    state = reorderState,
+                                    key = account.id,
+                                    onDragStopped = { viewModel.updateAccountsOrder(editList) },
+                                )
+                                .reorderableSemantics(state = reorderState, key = account.id),
+                        ) { isDragging ->
+                            AccountManagementListItem(
+                                account = account,
+                                isSelectionMode = isSelectionMode,
+                                isSelected = account.id in selectedAccountIds,
+                                isDragging = isDragging,
+                                onSelect = {
+                                    selectedAccountIds = if (account.id in selectedAccountIds) {
+                                        selectedAccountIds - account.id
+                                    } else {
+                                        selectedAccountIds + account.id
+                                    }
+                                },
+                                onToggleArchive = { viewModel.toggleArchiveAccount(account) },
+                                onAccountClick = { navigate { actions.onAccountClick(account.id) } },
+                            )
+                        }
+                    }
                 }
             }
 

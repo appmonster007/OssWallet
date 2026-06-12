@@ -13,7 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,15 +38,13 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.util.applyFlowTint
 import java.math.BigDecimal
@@ -102,7 +102,7 @@ fun CashFlowCard(
                 totalInBase = totalIncomeInBase,
                 baseCurrency = baseCurrency,
                 type = CashFlowType.INCOME,
-                incomeColor = PositiveAmountColor,
+                incomeColor = AppColors.positive,
                 modifier = Modifier.weight(1f),
                 onClick = {
                     callbacks.onClickIncome?.invoke(
@@ -140,7 +140,7 @@ fun CashFlowCard(
                 totalInBase = totalExpenseInBase,
                 baseCurrency = baseCurrency,
                 type = CashFlowType.EXPENSE,
-                expenseColor = NegativeAmountColor,
+                expenseColor = AppColors.negative,
                 modifier = Modifier.weight(1f),
                 onClick = {
                     callbacks.onClickExpense?.invoke(
@@ -222,7 +222,7 @@ internal fun AeonFlowBreakdownItem(
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black
             ),
-            color = AppColors.contentSecondary
+            color = LocalContentColor.current.copy(alpha = 0.6f)
         )
         Column(horizontalAlignment = Alignment.End) {
             Text(
@@ -230,7 +230,8 @@ internal fun AeonFlowBreakdownItem(
                 style = AppTextStyles.listItemTitle.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
-                )
+                ),
+                color = LocalContentColor.current
             )
             if (showBaseConversion && curr != baseCurrency) {
                 Text(
@@ -238,7 +239,7 @@ internal fun AeonFlowBreakdownItem(
                     style = AppTextStyles.metaLabel.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = AppColors.contentSecondary
+                    color = LocalContentColor.current.copy(alpha = 0.55f)
                 )
             }
         }
@@ -261,11 +262,10 @@ fun AeonFlowCard(
     val mode = LocalThemeMode.current
     val (containerColor, contentColor) = color.applyFlowTint(mode)
     val isDark = mode.isDarkTheme
-    val glassSettings = LocalGlassSettings.current
 
     GlassSurface(
         modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
         glassVariant = GlassVariant.Item,
         hazeStyle = GlassTokens.itemStyle(isDark).copyStyle(
             bgColor = containerColor
@@ -273,41 +273,70 @@ fun AeonFlowCard(
         fallbackColor = containerColor,
         borderColor = contentColor.copy(alpha = 0.1f),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            Column(
+                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    label.uppercase(),
-                    style = AppTextStyles.overlineLabel.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp,
-                        fontSize = 9.sp
-                    ),
-                    color = contentColor.copy(alpha = 0.8f)
-                )
-                AeonFlowBadge(
-                    totalInBase,
-                    type,
-                    baseCurrency,
-                    incomeColor = color,
-                    expenseColor = color
-                )
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        label.uppercase(),
+                        style = AppTextStyles.sectionOverline,
+                        color = contentColor.copy(alpha = 0.8f)
+                    )
+                    AeonFlowBadge(
+                        totalInBase,
+                        type,
+                        baseCurrency,
+                        incomeColor = color,
+                        expenseColor = color
+                    )
+                }
 
-            content()
+                content()
+            }
         }
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun CashFlowCardPreview() {
+fun CashFlowCardLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        CashFlowCardPreviewContent()
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun CashFlowCardDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        CashFlowCardPreviewContent()
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Amoled Mode",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun CashFlowCardAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        CashFlowCardPreviewContent()
+    }
+}
+
+@Composable
+private fun CashFlowCardPreviewContent() {
     val sampleBreakdown = listOf(
         CashFlowBreakdownItem(
             "USD",
@@ -337,13 +366,11 @@ fun CashFlowCardPreview() {
         filteredTransactions = emptyList()
     )
 
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            CashFlowCard(
-                cashFlowResult = result,
-                baseCurrency = "USD",
-                config = CashFlowCardConfig(cardId = "preview")
-            )
-        }
+    Box(modifier = Modifier.padding(16.dp)) {
+        CashFlowCard(
+            cashFlowResult = result,
+            baseCurrency = "USD",
+            config = CashFlowCardConfig(cardId = "preview")
+        )
     }
 }

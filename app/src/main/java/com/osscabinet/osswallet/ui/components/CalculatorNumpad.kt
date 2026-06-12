@@ -52,9 +52,6 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
-import com.osscabinet.ossWallet.ui.theme.scaledDp
-import com.osscabinet.ossWallet.ui.theme.scaledSp
 import com.osscabinet.ossWallet.domain.calculator.ExpressionEvaluator
 import com.osscabinet.ossWallet.ui.calculator.CalculationHistoryItem
 import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
@@ -80,10 +77,7 @@ fun CalculatorNumpad(
     showDoneButton: Boolean = true,
     header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
 ) {
-    val uiScale = AeonTheme.uiScale
-    val keyHeight = scaledDp(68f, uiScale, min = 44f, max = 76f)
-    val displayScale = uiScale.coerceIn(0.75f, 1.12f)
-
+    val keyHeight = 54.dp
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
     val evaluator = remember { ExpressionEvaluator() }
@@ -135,7 +129,7 @@ fun CalculatorNumpad(
     }
 
     CalculatorScaffold(
-        modifier = modifier.padding(horizontal = 24.dp),
+        modifier = modifier.padding(horizontal = 18.dp),
         display = {
             if (header != null) {
                 header(state, onSaveInternal, { showHistory = true })
@@ -144,7 +138,6 @@ fun CalculatorNumpad(
                     state = state,
                     onSave = onSaveInternal,
                     onHistory = { showHistory = true },
-                    displayScale = displayScale,
                     showDoneButton = showDoneButton
                 )
             }
@@ -191,7 +184,7 @@ fun CalculatorScaffold(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         topSlot?.invoke()
         display()
@@ -211,14 +204,13 @@ object CalculatorDefaults {
         onSave: () -> Unit,
         onHistory: () -> Unit,
         modifier: Modifier = Modifier,
-        displayScale: Float = 1f,
         showDoneButton: Boolean = true
     ) {
-        val cornerRadius = scaledDp(28f, displayScale, min = 20f, max = 28f)
-        val hPad = scaledDp(16f, displayScale, min = 12f, max = 16f)
-        val vPad = scaledDp(20f, displayScale, min = 14f, max = 20f)
-        val historyContainerSize = scaledDp(28f, displayScale, min = 20f, max = 28f)
-        val historyIconSize = scaledDp(18f, displayScale, min = 13f, max = 18f)
+        val cornerRadius = 20.dp
+        val hPad = 12.dp
+        val vPad = 14.dp
+        val historyContainerSize = 20.dp
+        val historyIconSize = 14.dp
 
         Surface(
             shape = RoundedCornerShape(cornerRadius),
@@ -233,7 +225,6 @@ object CalculatorDefaults {
                     ghostResult = state.ghostResult,
                     isError = state.isError,
                     onSave = onSave,
-                    displayScale = displayScale,
                     showDoneButton = showDoneButton
                 )
 
@@ -258,7 +249,7 @@ object CalculatorDefaults {
     fun StandardKeys(
         onAction: (CalculatorAction) -> Unit,
         modifier: Modifier = Modifier,
-        keyHeight: Dp = 68.dp,
+        keyHeight: Dp = 54.dp,
         canEvaluate: Boolean = false
     ) {
         CalculatorKeys(
@@ -284,15 +275,14 @@ fun CalculatorDisplay(
     isError: Boolean,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    displayScale: Float = 1f,
     showDoneButton: Boolean = true
 ) {
     val displayResult = result.replace("-", "−")
-    val resultFontSize = scaledSp(44f, displayScale, min = 33f, max = 49f)
-    val expressionFontSize = scaledSp(14f, displayScale, min = 11f, max = 16f)
-    val confirmButtonSize = scaledDp(52f, displayScale, min = 40f, max = 58f)
-    val confirmIconSize = scaledDp(24f, displayScale, min = 18f, max = 27f)
-    val spacerWidth = scaledDp(20f, displayScale, min = 12f, max = 22f)
+    val resultFontSize = 32.sp
+    val expressionFontSize = 10.sp
+    val confirmButtonSize = 40.dp
+    val confirmIconSize = 18.dp
+    val spacerWidth = 12.dp
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -371,14 +361,15 @@ fun CalculatorKeys(
     onEqualsPress: () -> Unit,
     onPercentPress: () -> Unit,
     modifier: Modifier = Modifier,
-    keyHeight: Dp = 68.dp,
+    keyHeight: Dp = 54.dp,
     canEvaluate: Boolean = false
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // ... (rows 1-4 omitted for brevity in targetContent match if possible, but I'll include them to be safe)
+    val keyGridSpacing = 8.dp
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(keyGridSpacing)) {
+        // ... (rows omitted for brevity in targetContent match, but I'll include them to be safe)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
             CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
             CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
@@ -388,7 +379,7 @@ fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
             CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f), keyHeight = keyHeight)
@@ -398,7 +389,7 @@ fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
             CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f), keyHeight = keyHeight)
@@ -408,7 +399,7 @@ fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
             CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f), keyHeight = keyHeight)
@@ -418,7 +409,7 @@ fun CalculatorKeys(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f), keyHeight = keyHeight)
@@ -488,15 +479,11 @@ fun CalculatorKey(
     isOperator: Boolean = false,
     isSpecial: Boolean = false,
     isAccent: Boolean = false,
-    keyHeight: Dp = 68.dp
+    keyHeight: Dp = 54.dp
 ) {
-    val scaleFactor = (keyHeight.value / 68f).coerceIn(0f, 1.5f)
-    val cornerRadius = scaledDp(24f, scaleFactor, min = 12f, max = 27f)
-    val iconSize = scaledDp(22f, scaleFactor, min = 16f, max = 25f)
-    val labelFontSize = if (label.length > 1)
-        scaledSp(16f, scaleFactor, min = 11f, max = 18f)
-    else
-        scaledSp(24f, scaleFactor, min = 14f, max = 27f)
+    val cornerRadius = 18.dp
+    val iconSize = 14.dp
+    val labelFontSize = if (label.length > 1) 12.sp else 18.sp
 
     val backgroundColor = when {
         isAccent -> AppColors.primary

@@ -21,6 +21,16 @@ class QuickAddActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Disable activity transitions to let Compose handle the bottom sheet animation
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, 0, 0)
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        } else {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
+
         window.setBackgroundDrawableResource(android.R.color.transparent)
 
         setContent {
@@ -40,7 +50,8 @@ class QuickAddActivity : ComponentActivity() {
                 theme = theme,
                 fontName = selectedFont,
                 glassSettings = glassSettings,
-                uiDensity = uiDensity
+                uiDensity = uiDensity,
+                setWindowBackground = false
             ) {
                 CompositionLocalProvider(LocalGlassmorphismEnabled provides glassmorphismEnabled) {
                     QuickAddSheet(onDismiss = ::finish)

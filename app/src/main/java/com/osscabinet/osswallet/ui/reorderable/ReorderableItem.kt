@@ -68,15 +68,33 @@ fun LazyItemScope.ReorderableItem(
             .then(if (!isDragging && enabled) Modifier.animateItem() else Modifier)
             .onGloballyPositioned { coords ->
                 if (enabled) state.registerItem(key, coords)
-            }
-            .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
-            .graphicsLayer {
-                translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
-                scaleX = scale
-                scaleY = scale
-                shadowElevation = elevation
-                clip = elevation > 0f
             },
-        content = { content(isDragging) },
-    )
+    ) {
+        if (isDragging) {
+            // THE GHOST (Placeholder in the list)
+            // Stays in the list at the original layout position while the "real" card floats.
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer { alpha = 0.15f }
+            ) {
+                content(false)
+            }
+        }
+
+        // THE DRAGGED ITEM (Floating under finger)
+        Box(
+            modifier = Modifier
+                .zIndex(if (isDragging) 10f else 0f) // High Z-index to float above all
+                .graphicsLayer {
+                    translationY = if (isDragging) state.draggedItemTranslation(key) else 0f
+                    scaleX = scale
+                    scaleY = scale
+                    shadowElevation = elevation
+                    clip = elevation > 0f
+                }
+        ) {
+            content(isDragging)
+        }
+    }
 }

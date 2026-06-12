@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
@@ -62,6 +63,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import java.math.BigDecimal
 
@@ -73,6 +75,7 @@ fun SmartSuggestionsScreen(
 ) {
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
     val visiblePatterns =
         patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
@@ -130,6 +133,7 @@ fun SmartSuggestionsScreen(
                                 SuggestionListItem(
                                     pattern = pattern,
                                     categories = categories,
+                                    accounts = accounts,
                                     onAcceptAsTemplate = {
                                         viewModel.saveTemplateFromPattern(it)
                                         actions.onAcceptAsTemplate()
@@ -173,6 +177,7 @@ data class SmartSuggestionsActions(
 private fun SuggestionListItem(
     pattern: DiscoveredPattern,
     categories: List<Category>,
+    accounts: List<Account>,
     onAcceptAsTemplate: (DiscoveredPattern) -> Unit,
     onAcceptAsPlannedPayment: (DiscoveredPattern) -> Unit,
     onDismiss: () -> Unit
@@ -284,9 +289,11 @@ private fun SuggestionListItem(
                         val categoryName =
                             categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
                         DetailItem("Category", categoryName, Modifier.weight(1f))
+                        val accountName = 
+                            accounts.find { it.id == pattern.accountId }?.name ?: pattern.accountId ?: "Outside Wallet"
                         DetailItem(
                             "Account",
-                            pattern.accountId ?: "Outside Wallet",
+                            accountName,
                             Modifier.weight(1f)
                         )
                     }
@@ -408,9 +415,12 @@ private fun SmartSuggestionsScreenPreview() {
         )
     )
 
-    MaterialTheme {
+    OssWalletTheme {
         // Mock UI state for preview
-        Surface(modifier = Modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = AppColors.screenBackground
+        ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -420,6 +430,7 @@ private fun SmartSuggestionsScreenPreview() {
                     SuggestionListItem(
                         pattern = pattern,
                         categories = emptyList(),
+                        accounts = emptyList(),
                         onAcceptAsTemplate = {},
                         onAcceptAsPlannedPayment = {},
                         onDismiss = {}

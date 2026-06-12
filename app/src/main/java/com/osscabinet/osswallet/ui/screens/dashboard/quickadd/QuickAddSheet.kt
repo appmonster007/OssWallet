@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -90,6 +91,20 @@ fun QuickAddSheet(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
+    // State to manage entry/exit transitions
+    val visibleState = remember {
+        MutableTransitionState(false).apply {
+            targetState = true
+        }
+    }
+
+    // When the exit animation finishes, call finish()
+    if (!visibleState.targetState && !visibleState.currentState) {
+        LaunchedEffect(Unit) {
+            onDismiss()
+        }
+    }
+
     // Reset state every time the sheet opens
     LaunchedEffect(Unit) { viewModel.reset() }
 
@@ -98,12 +113,14 @@ fun QuickAddSheet(
         focusManager.clearFocus()
     }
 
+    fun animateDismiss() {
+        hideKeyboard()
+        visibleState.targetState = false
+    }
+
     BackHandler {
         when (state.currentStep) {
-            STEP_TEMPLATE -> {
-                hideKeyboard(); onDismiss()
-            }
-
+            STEP_TEMPLATE -> animateDismiss()
             else -> {
                 hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
             }
@@ -111,29 +128,34 @@ fun QuickAddSheet(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Scrim: always covers full screen including behind keyboard
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(ColorScrimDark)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { hideKeyboard(); onDismiss() }
-                )
-        )
+        // Scrim: Animated alongside the sheet
+        AnimatedVisibility(
+            visibleState = visibleState,
+            enter = fadeIn(tween(300)),
+            exit = fadeOut(tween(300))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(ColorScrimDark)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { animateDismiss() }
+                    )
+            )
+        }
 
-        // Anchor layer: shrinks when keyboard opens (manifest adjustResize)
-        // so the bottom-aligned sheet stays flush with the keyboard top
+        // Anchor layer
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
         ) {
             AnimatedVisibility(
-                visible = true,
+                visibleState = visibleState,
                 enter = slideInVertically(tween(300)) { it } + fadeIn(tween(300)),
-                exit = slideOutVertically(tween(250)) { it } + fadeOut(tween(250)),
+                exit = slideOutVertically(tween(300)) { it } + fadeOut(tween(300)),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
@@ -161,7 +183,7 @@ fun QuickAddSheet(
                             categories = categories,
                             viewModel = viewModel,
                             hideKeyboard = ::hideKeyboard,
-                            onDismiss = onDismiss,
+                            onDismiss = { animateDismiss() }, // Trigger exit animation instead of instant finish
                             onSettled = {}
                         )
                     }

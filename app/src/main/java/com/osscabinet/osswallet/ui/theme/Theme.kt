@@ -84,6 +84,7 @@ fun OssWalletTheme(
     fontName: String = AppFont.DEFAULT.name,
     glassSettings: GlassSettings = GlassSettings(),
     uiDensity: UiDensity = UiDensity.DEFAULT,
+    setWindowBackground: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (theme) {
@@ -117,11 +118,13 @@ fun OssWalletTheme(
             val window = (view.context as Activity).window
             val backgroundColor = colorScheme.background.toArgb()
 
-            window.statusBarColor = backgroundColor
-            window.navigationBarColor = backgroundColor
+            if (setWindowBackground) {
+                window.statusBarColor = backgroundColor
+                window.navigationBarColor = backgroundColor
 
-            // Set window background to avoid flash during transitions
-            window.setBackgroundDrawable(ColorDrawable(backgroundColor))
+                // Set window background to avoid flash during transitions
+                window.setBackgroundDrawable(ColorDrawable(backgroundColor))
+            }
 
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme

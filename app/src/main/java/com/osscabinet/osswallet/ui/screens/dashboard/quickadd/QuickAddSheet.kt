@@ -80,12 +80,12 @@ private const val TOTAL_STEPS = 3
 
 @Composable
 fun QuickAddSheet(
-    templates: List<Template>,
-    categories: List<Category>,
     onDismiss: () -> Unit,
     viewModel: QuickAddViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val templates by viewModel.templates.collectAsState()
+    val categories by viewModel.categories.collectAsState()
     val glassEnabled = LocalGlassmorphismEnabled.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -318,7 +318,7 @@ private fun QuickAddSheetContent(
                 Surface(
                     onClick = {
                         if (!state.isSaving) {
-                            viewModel.saveTransaction(categories = categories, onSuccess = onDismiss)
+                            viewModel.saveTransaction(onSuccess = onDismiss)
                         }
                     },
                     shape = CircleShape,
@@ -420,7 +420,7 @@ private fun QuickAddSheetContent(
                             onAmountChange = viewModel::onAmountChanged,
                             onDone = {
                                 if (!state.isSaving) {
-                                    viewModel.saveTransaction(categories = categories, onSuccess = onDismiss)
+                                    viewModel.saveTransaction(onSuccess = onDismiss)
                                 }
                             }
                         )

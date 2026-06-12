@@ -7,4 +7,9 @@
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="postSplashScreenTheme">@style/Theme.OssWallet</item>
     </style>
+
+    <style name="Theme.OssWallet.Translucent" parent="Theme.OssWallet">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
 </resources>

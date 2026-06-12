@@ -97,4 +97,13 @@
     <!-- Notification channels -->
     <string name="notification_channel_planned_payments_name">Planned Payments</string>
     <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>
+
+    <!-- App shortcuts -->
+    <string name="shortcut_quick_add_short">Quick Add</string>
+    <string name="shortcut_quick_add_long">Add Transaction</string>
+    <string name="shortcut_expense_short">Expense</string>
+    <string name="shortcut_expense_long">Quick Add Expense</string>
+    <string name="shortcut_income_short">Income</string>
+    <string name="shortcut_income_long">Quick Add Income</string>
+    <string name="shortcut_disabled">Quick Add is not available</string>
 </resources>

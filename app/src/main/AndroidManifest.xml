@@ -42,7 +42,7 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:taskAffinity=""
-            android:theme="@style/Theme.OssWallet.Translucent"
+            android:theme="@style/Theme.App.QuickAddShortcut"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- NetWorth homescreen widget -->

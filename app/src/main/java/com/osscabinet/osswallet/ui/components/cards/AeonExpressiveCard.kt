@@ -190,14 +190,15 @@ fun AeonExpressiveCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(headerModifier)
                             .then(headerLongPress),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
                     ) {
                         if (icon != null) {
                             Surface(
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
+                                modifier = Modifier
+                                    .size(AeonTheme.dimensions.iconSizeLg)
+                                    .then(headerModifier),
                                 shape = CircleShape,
                                 color = contentColor.copy(alpha = 0.15f),
                             ) {

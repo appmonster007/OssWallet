@@ -85,7 +85,8 @@ class BudgetEntryViewModel @Inject constructor(
                                 TransactionType.INCOME
                             ),
                             selectedCurrencies = if (it.isEditMode) it.selectedCurrencies else emptySet(),
-                            selectedTags = if (it.isEditMode) it.selectedTags else emptySet()
+                            selectedTags = if (it.isEditMode) it.selectedTags else emptySet(),
+                            matchAllTags = if (it.isEditMode) it.matchAllTags else true
                         )
                     }
                 }
@@ -106,6 +107,7 @@ class BudgetEntryViewModel @Inject constructor(
                     selectedTrackTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME),
                     selectedCurrencies = emptySet(),
                     selectedTags = emptySet(),
+                    matchAllTags = true,
                     queryNote = "",
                     queryPayee = "",
                     isNoteRegex = false,
@@ -144,6 +146,7 @@ class BudgetEntryViewModel @Inject constructor(
                         selectedCategoryIds = budget.categoryIds.toSet(),
                         selectedAccountIds = budget.accountIds.toSet(),
                         selectedTags = budget.tags.toSet(),
+                        matchAllTags = tf.matchAllTags,
                         selectedPaymentMethods = budget.paymentMethods.toSet(),
                         selectedStatuses = budget.statuses.toSet(),
                         linkedTransactionIds = budget.linkedTransactionIds.toSet(),
@@ -178,6 +181,7 @@ class BudgetEntryViewModel @Inject constructor(
             is BudgetEntryEvent.SetAccountIds -> _state.update { it.copy(selectedAccountIds = event.ids) }
             is BudgetEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is BudgetEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
+            is BudgetEntryEvent.SetMatchAllTags -> _state.update { it.copy(matchAllTags = event.matchAll) }
             is BudgetEntryEvent.SetQueryNote -> _state.update { it.copy(queryNote = event.query) }
             is BudgetEntryEvent.SetNoteRegex -> _state.update { it.copy(isNoteRegex = event.isRegex) }
             is BudgetEntryEvent.SetQueryPayee -> _state.update { it.copy(queryPayee = event.query) }
@@ -248,6 +252,7 @@ class BudgetEntryViewModel @Inject constructor(
                             selectedAccountIds = filter.filter.accountIds.toSet(),
                             selectedCategoryIds = filter.filter.categoryIds.toSet(),
                             selectedTags = filter.filter.tags.toSet(),
+                            matchAllTags = filter.filter.matchAllTags,
                             selectedPaymentMethods = filter.filter.paymentMethods.toSet(),
                             selectedStatuses = filter.filter.statuses.toSet(),
                             selectedCurrencies = filter.filter.currencies.toSet(),
@@ -323,6 +328,7 @@ class BudgetEntryViewModel @Inject constructor(
                     categoryIds = s.selectedCategoryIds,
                     accountIds = s.selectedAccountIds,
                     tags = s.selectedTags,
+                    matchAllTags = s.matchAllTags,
                     paymentMethods = s.selectedPaymentMethods,
                     statuses = s.selectedStatuses,
                     currencies = s.selectedCurrencies,

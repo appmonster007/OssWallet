@@ -86,6 +86,7 @@ class FilterEntryViewModel @Inject constructor(
                     selectedStatuses = initialFilter.statuses.toSet(),
                     linkedTransactionIds = initialFilter.linkedTransactionIds.toSet(),
                     selectedTags = initialFilter.tags.toSet(),
+                    matchAllTags = initialFilter.matchAllTags,
                     selectedCurrencies = initialFilter.currencies.toSet(),
                     queryNote = initialFilter.queryNote ?: "",
                     isNoteRegex = initialFilter.isNoteRegex,
@@ -113,7 +114,8 @@ class FilterEntryViewModel @Inject constructor(
                     selectedStatuses = emptySet(),
                     selectedTransactionTypes = emptySet(),
                     selectedCurrencies = emptySet(),
-                    selectedTags = emptySet()
+                    selectedTags = emptySet(),
+                    matchAllTags = true
                 )
             }
             return
@@ -136,6 +138,7 @@ class FilterEntryViewModel @Inject constructor(
                         selectedStatuses = tf.statuses.toSet(),
                         linkedTransactionIds = tf.linkedTransactionIds.toSet(),
                         selectedTags = tf.tags.toSet(),
+                        matchAllTags = tf.matchAllTags,
                         selectedCurrencies = tf.currencies.toSet(),
                         queryNote = tf.queryNote ?: "",
                         isNoteRegex = tf.isNoteRegex,
@@ -178,6 +181,7 @@ class FilterEntryViewModel @Inject constructor(
             }
 
             is FilterEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
+            is FilterEntryEvent.SetMatchAllTags -> _state.update { it.copy(matchAllTags = event.matchAll) }
             is FilterEntryEvent.SetCurrencies -> _state.update { it.copy(selectedCurrencies = event.currencies) }
             is FilterEntryEvent.SetQueryNote -> _state.update { it.copy(queryNote = event.query) }
             is FilterEntryEvent.SetNoteRegex -> _state.update { it.copy(isNoteRegex = event.isRegex) }
@@ -237,6 +241,7 @@ class FilterEntryViewModel @Inject constructor(
                     selectedStatuses = emptySet(),
                     linkedTransactionIds = emptySet(),
                     selectedTags = emptySet(),
+                    matchAllTags = true,
                     selectedCurrencies = emptySet(),
                     queryNote = "",
                     isNoteRegex = false,

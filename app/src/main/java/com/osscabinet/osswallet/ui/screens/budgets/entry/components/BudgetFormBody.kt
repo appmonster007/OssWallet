@@ -250,7 +250,11 @@ fun BudgetFormBody(
                         onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
                         onTagsSelected = { onEvent(BudgetEntryEvent.SetTags(it)) },
-                        onAddTag = { name, _ -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags + name)) }
+                        onAddTag = { name, _ -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags + name)) },
+                        onToggleTagLogic = {
+                            onEvent(BudgetEntryEvent.SetMatchAllTags(!state.matchAllTags))
+                        },
+                        isAndLogic = state.matchAllTags
                     )
 
                     // RESTORED: Payment Method and Status Filters

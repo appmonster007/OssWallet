@@ -17,6 +17,7 @@ sealed class BudgetEntryEvent {
     data class SetAccountIds(val ids: Set<String>) : BudgetEntryEvent()
     data class SetCurrencies(val currencies: Set<String>) : BudgetEntryEvent()
     data class SetTags(val tags: Set<String>) : BudgetEntryEvent()
+    data class SetMatchAllTags(val matchAll: Boolean) : BudgetEntryEvent()
     data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) :
         BudgetEntryEvent()
 

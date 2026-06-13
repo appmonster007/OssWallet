@@ -36,6 +36,7 @@ data class BudgetEntryState(
     val selectedAccountIds: Set<String> = emptySet(),
     val selectedCurrencies: Set<String> = emptySet(),
     val selectedTags: Set<String> = emptySet(),
+    val matchAllTags: Boolean = true,
     val selectedPaymentMethods: Set<PaymentMethod> = emptySet(),
     val selectedStatuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),

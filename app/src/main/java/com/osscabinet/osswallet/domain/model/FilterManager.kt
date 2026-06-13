@@ -120,7 +120,9 @@ class FilterManager {
             transactionTypes = filters.flatMap { it.transactionTypes }.toSet(),
             currencies = filters.flatMap { it.currencies }.toSet(),
             statuses = filters.flatMap { it.statuses }.toSet(),
-            tags = filters.flatMap { it.tags }.toSet()
+            tags = filters.flatMap { it.tags }.toSet(),
+            matchAllTags = filters.all { it.matchAllTags },
+            linkedTransactionIds = filters.flatMap { it.linkedTransactionIds }.toSet()
         )
     }
 }

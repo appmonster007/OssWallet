@@ -15,6 +15,7 @@ sealed class FilterEntryEvent {
 
     data class SetLinkedTransactions(val ids: Set<Long>) : FilterEntryEvent()
     data class SetTags(val tags: Set<String>) : FilterEntryEvent()
+    data class SetMatchAllTags(val matchAll: Boolean) : FilterEntryEvent()
     data class SetCurrencies(val currencies: Set<String>) : FilterEntryEvent()
     data class SetQueryNote(val query: String) : FilterEntryEvent()
     data class SetNoteRegex(val isRegex: Boolean) : FilterEntryEvent()

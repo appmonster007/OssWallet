@@ -87,6 +87,9 @@ fun MainDisplaySettings(
     val uiDensityName by viewModel.uiDensity.collectAsStateWithLifecycle()
     val currentDensity = UiDensity.fromName(uiDensityName)
 
+    val dynamicAccent by viewModel.dynamicAccent.collectAsStateWithLifecycle()
+    val dynamicAccentAvailable = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+
     var showThemeDialog by remember { mutableStateOf(false) }
     var showFontDialog by remember { mutableStateOf(false) }
     var showDensityDialog by remember { mutableStateOf(false) }
@@ -427,6 +430,21 @@ fun MainDisplaySettings(
                                 icon = Icons.Rounded.GridView,
                                 onClick = { showDensityDialog = true }
                             )
+                            if (dynamicAccentAvailable) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                    thickness = 0.5.dp,
+                                    color = AppColors.divider.copy(alpha = 0.5f)
+                                )
+                                EntrySwitchRow(
+                                    label = "Dynamic Accent",
+                                    subtitle = if (dynamicAccent) "Accent follows your wallpaper colors" else "Use the signature accent color",
+                                    icon = Icons.Rounded.Palette,
+                                    checked = dynamicAccent,
+                                    onCheckedChange = { viewModel.setDynamicAccent(it) },
+                                    isFlush = false
+                                )
+                            }
                         }
 
                         AeonSettingsSection("VISUAL EFFECTS") {

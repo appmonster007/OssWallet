@@ -4,6 +4,7 @@ import android.app.Activity
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -15,6 +16,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -61,6 +63,94 @@ private val AmoledColorScheme = darkColorScheme(
     surfaceContainerHighest = SurfaceContainerHighestAmoled
 )
 
+// --- H "Editorial Instrument" color schemes ---
+// Fixed neutrals; primary carries the champagne/bronze accent (dynamic-accent eligible).
+
+private val HDarkColorScheme = darkColorScheme(
+    primary = HDarkAccent,
+    onPrimary = HDarkOnAccent,
+    primaryContainer = HDarkAccentContainer,
+    onPrimaryContainer = HDarkOnAccentContainer,
+    background = HDarkBackground,
+    onBackground = HDarkOnSurface,
+    surface = HDarkBackground,
+    onSurface = HDarkOnSurface,
+    surfaceVariant = HDarkSurfaceVariant,
+    onSurfaceVariant = HDarkOnSurfaceVariant,
+    outline = HDarkOutline,
+    outlineVariant = HDarkOutlineVariant,
+    surfaceContainerLowest = HDarkSurfaceContainerLowest,
+    surfaceContainerLow = HDarkSurfaceContainerLow,
+    surfaceContainer = HDarkSurfaceContainer,
+    surfaceContainerHigh = HDarkSurfaceContainerHigh,
+    surfaceContainerHighest = HDarkSurfaceContainerHighest,
+)
+
+private val HLightColorScheme = lightColorScheme(
+    primary = HLightAccent,
+    onPrimary = HLightOnAccent,
+    primaryContainer = HLightAccentContainer,
+    onPrimaryContainer = HLightOnAccentContainer,
+    background = HLightBackground,
+    onBackground = HLightOnSurface,
+    surface = HLightBackground,
+    onSurface = HLightOnSurface,
+    surfaceVariant = HLightSurfaceVariant,
+    onSurfaceVariant = HLightOnSurfaceVariant,
+    outline = HLightOutline,
+    outlineVariant = HLightOutlineVariant,
+    surfaceContainerLowest = HLightSurfaceContainerLowest,
+    surfaceContainerLow = HLightSurfaceContainerLow,
+    surfaceContainer = HLightSurfaceContainer,
+    surfaceContainerHigh = HLightSurfaceContainerHigh,
+    surfaceContainerHighest = HLightSurfaceContainerHighest,
+)
+
+private val HAmoledColorScheme = darkColorScheme(
+    primary = HDarkAccent,
+    onPrimary = HDarkOnAccent,
+    primaryContainer = HDarkAccentContainer,
+    onPrimaryContainer = HDarkOnAccentContainer,
+    background = HAmoledBackground,
+    onBackground = HDarkOnSurface,
+    surface = HAmoledBackground,
+    onSurface = HDarkOnSurface,
+    surfaceVariant = HAmoledSurfaceVariant,
+    onSurfaceVariant = HDarkOnSurfaceVariant,
+    outline = HAmoledOutline,
+    outlineVariant = HAmoledOutlineVariant,
+    surfaceContainerLowest = HAmoledSurfaceContainerLowest,
+    surfaceContainerLow = HAmoledSurfaceContainerLow,
+    surfaceContainer = HAmoledSurfaceContainer,
+    surfaceContainerHigh = HAmoledSurfaceContainerHigh,
+    surfaceContainerHighest = HAmoledSurfaceContainerHighest,
+)
+
+/**
+ * Applies the active [UiIdentity] palette over [base]. Only H is implemented; A/B
+ * fall through to [base]. When [accentOverride] is non-null (dynamic-accent toggle on,
+ * Android 12+), only the accent token (`primary`) is replaced — all H neutrals stay fixed.
+ */
+fun applyIdentityToColorScheme(
+    base: ColorScheme,
+    identity: UiIdentity,
+    themeMode: ThemeMode,
+    accentOverride: Color? = null,
+): ColorScheme = when (identity) {
+    UiIdentity.H -> {
+        val h = when {
+            themeMode.isAmoled -> HAmoledColorScheme
+            themeMode.isDarkTheme -> HDarkColorScheme
+            else -> HLightColorScheme
+        }
+        if (accentOverride != null) {
+            val onAccent = if (accentOverride.luminance() > 0.5f) ColorOnLight else ColorOnDark
+            h.copy(primary = accentOverride, onPrimary = onAccent)
+        } else h
+    }
+    else -> base
+}
+
 /**
  * Helper object to access the custom theme properties.
  */
@@ -84,11 +174,13 @@ fun OssWalletTheme(
     dynamicColor: Boolean = true,
     fontName: String = AppFont.DEFAULT.name,
     identity: String = UiIdentity.DEFAULT.name,
+    dynamicAccent: Boolean = false,
     glassSettings: GlassSettings = GlassSettings(),
     uiDensity: UiDensity = UiDensity.DEFAULT,
     setWindowBackground: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val uiIdentity = UiIdentity.fromName(identity)
     val darkTheme = when (theme) {
         "Light" -> false
         "Dark", "Amoled" -> true
@@ -102,17 +194,27 @@ fun OssWalletTheme(
 
     // Dynamic color is available on Android 12+
     val dynamicColorAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val context = LocalContext.current
 
-    val colorScheme = when {
+    // Full Material You (wallpaper bg/surface) is incompatible with H's editorial palette,
+    // so it is only applied for non-H identities. Under H, only the accent token may be
+    // wallpaper-derived, via [dynamicAccent].
+    val baseScheme = when {
         theme == "Amoled" -> AmoledColorScheme
-        dynamicColor && dynamicColorAvailable -> {
-            val context = LocalContext.current
+        dynamicColor && dynamicColorAvailable && uiIdentity != UiIdentity.H -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
         darkTheme -> darkColorScheme()
         else -> lightColorScheme()
     }
+
+    val accentOverride = if (dynamicAccent && dynamicColorAvailable) {
+        if (darkTheme) dynamicDarkColorScheme(context).primary
+        else dynamicLightColorScheme(context).primary
+    } else null
+
+    val colorScheme = applyIdentityToColorScheme(baseScheme, uiIdentity, themeMode, accentOverride)
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -136,7 +238,7 @@ fun OssWalletTheme(
         LocalUiScale provides uiDensity.scale,
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,
-        LocalUiIdentity provides UiIdentity.fromName(identity),
+        LocalUiIdentity provides uiIdentity,
         LocalAppFont provides AppFont.fromName(fontName),
         LocalGlassSettings provides glassSettings
     ) {

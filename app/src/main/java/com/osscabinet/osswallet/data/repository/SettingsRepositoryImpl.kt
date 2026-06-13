@@ -31,6 +31,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override val useSystemFont: Flow<Boolean> = settingsDataStore.useSystemFont
     override val selectedFont: Flow<String> = settingsDataStore.selectedFont
     override val uiIdentity: Flow<String> = settingsDataStore.uiIdentity
+    override val dynamicAccent: Flow<Boolean> = settingsDataStore.dynamicAccent
     override val numberingSystem: Flow<String> = settingsDataStore.numberingSystem
     override val recordsSettings: Flow<TransactionSectionSettings> =
         settingsDataStore.recordsSettings
@@ -92,6 +93,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun saveUiIdentity(identity: String) =
         settingsDataStore.saveUiIdentity(identity)
+
+    override suspend fun saveDynamicAccent(enabled: Boolean) =
+        settingsDataStore.saveDynamicAccent(enabled)
 
     override suspend fun saveNumberingSystem(system: String) =
         settingsDataStore.saveNumberingSystem(system)

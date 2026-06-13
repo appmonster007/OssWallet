@@ -6,25 +6,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,25 +46,13 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
-import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
-import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
-import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
-import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.util.applyFlowTint
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -122,130 +106,115 @@ fun NetWorthCard(
                 else -> 28.sp
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column {
-                    val amountText = formatAuto(currentMetrics.netWorth)
-                    val symbolText = CurrencyFormatter.getCurrencySymbol(displayCurrency)
-                    val isSymbolLeft =
-                        CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
-                    val contentColor = AppColors.contentPrimary
+            Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
+                val amountText = formatAuto(currentMetrics.netWorth)
+                val symbolText = CurrencyFormatter.getCurrencySymbol(displayCurrency)
+                val isSymbolLeft =
+                    CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+                val contentColor = AppColors.contentPrimary
 
-                    val symbolStyle = SpanStyle(
-                        fontWeight = FontWeight.Light,
-                        color = contentColor.copy(alpha = 0.6f),
-                        fontSize = (baseFontSize.value * 0.7f).sp
-                    )
+                val symbolStyle = SpanStyle(
+                    fontWeight = FontWeight.Light,
+                    color = contentColor.copy(alpha = 0.6f),
+                    fontSize = (baseFontSize.value * 0.7f).sp
+                )
 
-                    Text(
-                        text = buildAnnotatedString {
-                            if (isSymbolLeft) {
-                                withStyle(symbolStyle) {
-                                    append(symbolText)
-                                }
-                                append(" ")
-                                append(amountText)
-                            } else {
-                                append(amountText)
-                                append(" ")
-                                withStyle(symbolStyle) {
-                                    append(symbolText)
-                                }
+                Text(
+                    text = buildAnnotatedString {
+                        if (isSymbolLeft) {
+                            withStyle(symbolStyle) {
+                                append(symbolText)
                             }
-                        },
-                        style = AppTextStyles.heroAmountLarge.copy(
-                            fontSize = baseFontSize,
-                            letterSpacing = (-1).sp
-                        ),
-                        color = contentColor
-                    )
+                            append(" ")
+                            append(amountText)
+                        } else {
+                            append(amountText)
+                            append(" ")
+                            withStyle(symbolStyle) {
+                                append(symbolText)
+                            }
+                        }
+                    },
+                    style = AppTextStyles.heroAmountLarge.copy(
+                        fontSize = baseFontSize,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = contentColor
+                )
 
-                    currentMetrics.netWorthInBase?.let { inBase ->
-                        Text(
-                            text = "≈ ${formatAuto(inBase, baseCurrency)}",
-                            style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
-                            color = AppColors.contentPrimary.copy(alpha = 0.6f)
-                        )
-                    }
+                currentMetrics.netWorthInBase?.let { inBase ->
+                    Text(
+                        text = "≈ ${formatAuto(inBase, baseCurrency)}",
+                        style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.contentPrimary.copy(alpha = 0.6f)
+                    )
                 }
 
+                // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
                 if (config.showComparison && previousMetrics != null) {
                     val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)
                     if (change.signum() != 0 && previousMetrics.netWorth.signum() != 0) {
                         val percentage = change.multiply(BigDecimal("100"))
                             .divide(previousMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
-
-                        val trendColor = if (change.signum() > 0) AppColors.positive else AppColors.negative
-                        val (trendBg, trendInk) = trendColor.applyFlowTint(LocalThemeMode.current)
-
-                        Surface(
-                            color = trendBg,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Icon(
-                                    if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = trendInk
-                                )
-                                Text(
-                                    text = "${if (change.signum() > 0) "+" else ""}$percentage%",
-                                    style = AppTextStyles.transactionBadge.copy(
-                                        fontSize = 10.sp
-                                    ),
-                                    color = trendInk
-                                )
-                            }
-                        }
+                        val up = change.signum() > 0
+                        val trendColor = if (up) AppColors.positive else AppColors.negative
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(SpanStyle(color = trendColor)) {
+                                    append("${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage%")
+                                }
+                                append("   ")
+                                withStyle(SpanStyle(color = AppColors.contentSecondary.copy(alpha = 0.7f))) {
+                                    append("VS PRIOR PERIOD")
+                                }
+                            },
+                            style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium)
+                        )
                     }
                 }
             }
 
+            // Twin income / expense columns split by a vertical hairline.
             Row(
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aeonDashedTopRule()
+                    .padding(top = 14.dp)
+                    .height(IntrinsicSize.Min)
             ) {
-                FlowBadge(
+                NetWorthFlowColumn(
                     label = "INCOME",
                     amount = currentMetrics.cashFlow.totalIncomeInBase,
                     currency = displayCurrency,
                     color = AppColors.positive,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        callbacks.onClickIncome?.invoke(
-                            config.filter.copy(
-                                transactionTypes = setOf(
-                                    TransactionType.INCOME
-                                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable {
+                            callbacks.onClickIncome?.invoke(
+                                config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))
                             )
-                        )
-                    },
+                        },
                     previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalIncomeInBase else null
                 )
-                FlowBadge(
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(AppColors.outlineVariant)
+                )
+                NetWorthFlowColumn(
                     label = "EXPENSE",
                     amount = currentMetrics.cashFlow.totalExpensesInBase,
                     currency = displayCurrency,
                     color = AppColors.negative,
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        callbacks.onClickExpense?.invoke(
-                            config.filter.copy(
-                                transactionTypes = setOf(
-                                    TransactionType.EXPENSE
-                                )
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable {
+                            callbacks.onClickExpense?.invoke(
+                                config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))
                             )
-                        )
-                    },
+                        },
                     previousAmount = if (config.showComparison) previousMetrics?.cashFlow?.totalExpensesInBase else null
                 )
             }
@@ -254,92 +223,50 @@ fun NetWorthCard(
 }
 
 @Composable
-private fun FlowBadge(
+private fun NetWorthFlowColumn(
     label: String,
     amount: BigDecimal,
     currency: String,
     color: Color,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
     previousAmount: BigDecimal? = null
 ) {
-    val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = color.applyFlowTint(mode)
-    val isDark = mode.isDarkTheme
-
-    GlassSurface(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        glassVariant = GlassVariant.Item,
-        hazeStyle = GlassTokens.itemStyle(isDark).copyStyle(
-            bgColor = containerColor,
-        ),
-        fallbackColor = containerColor,
-        borderColor = contentColor.copy(alpha = 0.1f),
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
     ) {
-        Column(
-            modifier = Modifier.padding(
-                horizontal = AeonTheme.dimensions.cardPadding,
-                vertical = AeonTheme.dimensions.spacingMd
-            ),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                ) {
+            Text(
+                text = label,
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.contentSecondary.copy(alpha = 0.7f)
+            )
+            if (previousAmount != null) {
+                val change = amount.subtract(previousAmount)
+                if (change.signum() != 0 && previousAmount.signum() != 0) {
+                    val percentage = change.multiply(BigDecimal("100"))
+                        .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
+                    val up = change.signum() > 0
                     Text(
-                        text = label,
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp
-                        ),
-                        color = contentColor.copy(alpha = 0.6f)
+                        text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage%",
+                        style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                        color = color
                     )
                 }
-                if (previousAmount != null) {
-                    val change = amount.subtract(previousAmount)
-                    if (change.signum() != 0 && previousAmount.signum() != 0) {
-                        val percentage = change.multiply(BigDecimal("100"))
-                            .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                        ) {
-                            Icon(
-                                if (change.signum() > 0) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingDown,
-                                contentDescription = null,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                                tint = contentColor
-                            )
-                            Text(
-                                text = "${if (change.signum() > 0) "+" else ""}$percentage%",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 10.sp
-                                ),
-                                color = contentColor
-                            )
-                        }
-                    }
-                }
             }
-            Text(
-                text = formatAuto(amount, currency),
-                style = AppTextStyles.managementItemTitle.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                ),
-                color = contentColor
-            )
         }
+        Text(
+            text = formatAuto(amount, currency),
+            style = AppTextStyles.transactionAmount.copy(
+                fontWeight = FontWeight.Normal,
+                fontSize = 19.sp
+            ),
+            color = color
+        )
     }
 }
 

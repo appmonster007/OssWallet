@@ -62,3 +62,27 @@ fun Modifier.aeonDottedUnderline(
         )
     }
 }
+
+/**
+ * Dashed hairline divider drawn along the top edge of the element it modifies —
+ * the editorial "ledger rule" used above Net totals and twin-column splits in
+ * the H comps (`.net` / `.nw-flows` border-top: 1px dashed).
+ */
+@Composable
+fun Modifier.aeonDashedTopRule(
+    color: Color = AppColors.outlineVariant,
+    strokeWidth: Dp = 1.dp,
+): Modifier {
+    return this.drawBehind {
+        val sw = strokeWidth.toPx()
+        drawLine(
+            color = color,
+            start = Offset(0f, 0f),
+            end = Offset(size.width, 0f),
+            strokeWidth = sw,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(
+                floatArrayOf(4f * sw, 4f * sw), 0f,
+            ),
+        )
+    }
+}

@@ -1,21 +1,22 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
@@ -31,22 +31,15 @@ import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
-import com.osscabinet.ossWallet.ui.components.AeonFlowBadge
+import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.util.applyFlowTint
 import java.math.BigDecimal
 
 @Composable
@@ -93,81 +86,160 @@ fun CashFlowCard(
             )
         }
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AeonFlowCard(
-                label = "Income",
-                totalInBase = totalIncomeInBase,
-                baseCurrency = baseCurrency,
-                type = CashFlowType.INCOME,
-                incomeColor = AppColors.positive,
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    callbacks.onClickIncome?.invoke(
-                        config.filter.copy(
-                            transactionTypes = setOf(
-                                TransactionType.INCOME
+        val breakdown = cashFlowResult?.breakdown.orEmpty()
+        val net = totalIncomeInBase.subtract(totalExpenseInBase)
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                CashFlowColumn(
+                    label = "INCOME",
+                    total = totalIncomeInBase,
+                    baseCurrency = baseCurrency,
+                    color = AppColors.positive,
+                    breakdown = breakdown,
+                    amountOf = { it.income },
+                    inBaseOf = { it.incomeInBase },
+                    showBaseConversion = config.showBaseConversion,
+                    onHeaderClick = {
+                        callbacks.onClickIncome?.invoke(
+                            config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))
+                        )
+                    },
+                    onRowClick = { cur ->
+                        callbacks.onClickIncome?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(TransactionType.INCOME),
+                                currencies = setOf(cur)
                             )
                         )
-                    )
-                }
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    cashFlowResult?.breakdown?.forEach { item ->
-                        AeonFlowBreakdownItem(
-                            curr = item.currency,
-                            amount = item.income,
-                            inBase = item.incomeInBase,
-                            baseCurrency = baseCurrency,
-                            showBaseConversion = config.showBaseConversion,
-                            onClick = {
-                                callbacks.onClickIncome?.invoke(
-                                    config.filter.copy(
-                                        transactionTypes = setOf(TransactionType.INCOME),
-                                        currencies = setOf(item.currency)
-                                    )
-                                )
-                            }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(AppColors.outlineVariant)
+                )
+                CashFlowColumn(
+                    label = "EXPENSE",
+                    total = totalExpenseInBase,
+                    baseCurrency = baseCurrency,
+                    color = AppColors.negative,
+                    breakdown = breakdown,
+                    amountOf = { it.expense },
+                    inBaseOf = { it.expenseInBase },
+                    showBaseConversion = config.showBaseConversion,
+                    onHeaderClick = {
+                        callbacks.onClickExpense?.invoke(
+                            config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))
                         )
-                    }
-                }
+                    },
+                    onRowClick = { cur ->
+                        callbacks.onClickExpense?.invoke(
+                            config.filter.copy(
+                                transactionTypes = setOf(TransactionType.EXPENSE),
+                                currencies = setOf(cur)
+                            )
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                )
             }
 
-            AeonFlowCard(
-                label = "Expense",
-                totalInBase = totalExpenseInBase,
-                baseCurrency = baseCurrency,
-                type = CashFlowType.EXPENSE,
-                expenseColor = AppColors.negative,
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    callbacks.onClickExpense?.invoke(
-                        config.filter.copy(
-                            transactionTypes = setOf(
-                                TransactionType.EXPENSE
-                            )
-                        )
-                    )
-                }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .aeonDashedTopRule()
+                    .padding(top = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    cashFlowResult?.breakdown?.forEach { item ->
-                        AeonFlowBreakdownItem(
-                            curr = item.currency,
-                            amount = item.expense,
-                            inBase = item.expenseInBase,
-                            baseCurrency = baseCurrency,
-                            showBaseConversion = config.showBaseConversion,
-                            onClick = {
-                                callbacks.onClickExpense?.invoke(
-                                    config.filter.copy(
-                                        transactionTypes = setOf(TransactionType.EXPENSE),
-                                        currencies = setOf(item.currency)
-                                    )
-                                )
-                            }
+                Text(
+                    text = "NET",
+                    style = AppTextStyles.sectionOverline,
+                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = (if (net.signum() >= 0) "+" else "") + formatAuto(net, baseCurrency),
+                    style = AppTextStyles.transactionAmount.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 17.sp
+                    ),
+                    color = AppColors.accent
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CashFlowColumn(
+    label: String,
+    total: BigDecimal,
+    baseCurrency: String,
+    color: Color,
+    breakdown: List<CashFlowBreakdownItem>,
+    amountOf: (CashFlowBreakdownItem) -> BigDecimal,
+    inBaseOf: (CashFlowBreakdownItem) -> BigDecimal,
+    showBaseConversion: Boolean,
+    onHeaderClick: () -> Unit,
+    onRowClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onHeaderClick() },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = label,
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.contentSecondary.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "Σ ${formatAuto(total, baseCurrency)}",
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                color = AppColors.contentSecondary
+            )
+        }
+        breakdown.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 13.dp)
+                    .clickable { onRowClick(item.currency) },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = item.currency,
+                    style = AppTextStyles.metaLabel,
+                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatAuto(amountOf(item), item.currency),
+                        style = AppTextStyles.transactionAmount.copy(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 19.sp
+                        ),
+                        color = color
+                    )
+                    if (showBaseConversion && item.currency != baseCurrency) {
+                        Text(
+                            text = "≈ ${formatAuto(inBaseOf(item), baseCurrency)}",
+                            style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                            color = AppColors.contentSecondary.copy(alpha = 0.6f)
                         )
                     }
                 }
@@ -196,109 +268,6 @@ private fun CashFlowSettingsSheet(
                     )
                 }
             )
-        }
-    }
-}
-
-@Composable
-internal fun AeonFlowBreakdownItem(
-    curr: String,
-    amount: BigDecimal,
-    inBase: BigDecimal,
-    baseCurrency: String,
-    showBaseConversion: Boolean = true,
-    onClick: () -> Unit = {}
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            curr,
-            style = AppTextStyles.overlineLabel.copy(
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black
-            ),
-            color = LocalContentColor.current.copy(alpha = 0.6f)
-        )
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                formatAuto(amount, curr),
-                style = AppTextStyles.listItemTitle.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
-                ),
-                color = LocalContentColor.current
-            )
-            if (showBaseConversion && curr != baseCurrency) {
-                Text(
-                    "≈ ${formatAuto(inBase, baseCurrency)}",
-                    style = AppTextStyles.metaLabel.copy(
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = LocalContentColor.current.copy(alpha = 0.55f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AeonFlowCard(
-    label: String,
-    totalInBase: BigDecimal,
-    baseCurrency: String,
-    type: CashFlowType,
-    modifier: Modifier = Modifier,
-    incomeColor: Color = AppColors.positive,
-    expenseColor: Color = AppColors.negative,
-    onClick: () -> Unit = {},
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
-    val mode = LocalThemeMode.current
-    val (containerColor, contentColor) = color.applyFlowTint(mode)
-    val isDark = mode.isDarkTheme
-
-    GlassSurface(
-        modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        glassVariant = GlassVariant.Item,
-        hazeStyle = GlassTokens.itemStyle(isDark).copyStyle(
-            bgColor = containerColor
-        ),
-        fallbackColor = containerColor,
-        borderColor = contentColor.copy(alpha = 0.1f),
-    ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Column(
-                modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        label.uppercase(),
-                        style = AppTextStyles.sectionOverline,
-                        color = contentColor.copy(alpha = 0.8f)
-                    )
-                    AeonFlowBadge(
-                        totalInBase,
-                        type,
-                        baseCurrency,
-                        incomeColor = color,
-                        expenseColor = color
-                    )
-                }
-
-                content()
-            }
         }
     }
 }

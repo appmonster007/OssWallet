@@ -87,6 +87,27 @@ val HNegativeDark = Color(0xFFD88379)
 val HPositiveLight = Color(0xFF2C6E49)
 val HNegativeLight = Color(0xFF9B3B30)
 
+// Quiet secondary/tertiary roles — warm neutrals so nothing falls back to Material purple.
+// (M3 leaves these at default values unless explicitly overridden in the scheme.)
+val HDarkSecondary = Color(0xFFC4BDAE)
+val HDarkOnSecondary = Color(0xFF2A2820)
+val HDarkSecondaryContainer = Color(0xFF26241E)
+val HDarkOnSecondaryContainer = Color(0xFFE4DECF)
+val HLightSecondary = Color(0xFF5C5648)
+val HLightOnSecondary = Color(0xFFFFFFFF)
+val HLightSecondaryContainer = Color(0xFFE6E1D4)
+val HLightOnSecondaryContainer = Color(0xFF3A352A)
+
+// Error family aligned to the H negative tone (destructive == negative in a finance app).
+val HDarkError = Color(0xFFD88379)
+val HDarkOnError = Color(0xFF2A1410)
+val HDarkErrorContainer = Color(0xFF4A1F18)
+val HDarkOnErrorContainer = Color(0xFFF0C0B8)
+val HLightError = Color(0xFF9B3B30)
+val HLightOnError = Color(0xFFFFFFFF)
+val HLightErrorContainer = Color(0xFFF0D8D2)
+val HLightOnErrorContainer = Color(0xFF3A140E)
+
 // --- GLASS THEME PREPARATION ---
 // Tokens for upcoming glass implementation as per colors.md
 

@@ -27,6 +27,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -44,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -107,6 +107,14 @@ fun FilterSheetContent(
 
     val filterSheetScope = rememberCoroutineScope()
     val debounceJob = remember { mutableStateOf<Job?>(null) }
+
+    // H "Editorial Instrument" champagne/bronze fill for active (removable) filter chips.
+    val activeChipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = AppColors.accentContainer,
+        selectedLabelColor = AppColors.onAccentContainer,
+        selectedLeadingIconColor = AppColors.onAccentContainer,
+        selectedTrailingIconColor = AppColors.onAccentContainer,
+    )
 
     fun applyFilterWithDebounce(newFilter: TransactionFilter, debounceMs: Long = 300) {
         debounceJob.value?.cancel()
@@ -181,11 +189,7 @@ fun FilterSheetContent(
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
                 Text(
                     "BASE SCOPE",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        fontSize = 10.sp
-                    ),
+                    style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
                     color = AppColors.contentSecondary.copy(alpha = 0.5f)
                 )
 
@@ -273,6 +277,7 @@ fun FilterSheetContent(
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
+                            colors = activeChipColors,
                             label = { Text(categoryMap[id]?.name ?: "Cat: $id") },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )
@@ -288,6 +293,7 @@ fun FilterSheetContent(
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
+                            colors = activeChipColors,
                             label = { Text(effectiveAccountNames[id] ?: id) },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )
@@ -303,6 +309,7 @@ fun FilterSheetContent(
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
+                            colors = activeChipColors,
                             label = { Text(type.displayName) },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )
@@ -318,6 +325,7 @@ fun FilterSheetContent(
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
+                            colors = activeChipColors,
                             label = { Text(tag) },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )
@@ -332,6 +340,7 @@ fun FilterSheetContent(
                                 localFilter = next
                                 applyFilterWithDebounce(next, debounceMs = 0)
                             },
+                            colors = activeChipColors,
                             label = { Text(if (localFilter.matchAllTags) "Match ALL Tags" else "Match ANY Tag") }
                         )
                     }
@@ -346,6 +355,7 @@ fun FilterSheetContent(
                                     applyFilterWithDebounce(it, debounceMs = 0)
                                 }
                             },
+                            colors = activeChipColors,
                             label = { Text(status.displayName) },
                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) }
                         )

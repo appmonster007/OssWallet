@@ -244,7 +244,11 @@ fun FilterFormBody(
                         onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
                         onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) },
                         onTagsSelected = { onEvent(FilterEntryEvent.SetTags(it)) },
-                        onAddTag = { name, _ -> onEvent(FilterEntryEvent.SetTags(state.selectedTags + name)) }
+                        onAddTag = { name, _ -> onEvent(FilterEntryEvent.SetTags(state.selectedTags + name)) },
+                        onToggleTagLogic = {
+                            onEvent(FilterEntryEvent.SetMatchAllTags(!state.matchAllTags))
+                        },
+                        isAndLogic = state.matchAllTags
                     )
                 }
             }

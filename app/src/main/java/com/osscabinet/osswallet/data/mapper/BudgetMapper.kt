@@ -15,6 +15,7 @@ fun BudgetWithFilter.toDomain(): Budget {
         categoryIds = filterDomain.filter.categoryIds,
         accountIds = filterDomain.filter.accountIds,
         tags = filterDomain.filter.tags,
+        matchAllTags = filterDomain.filter.matchAllTags,
         paymentMethods = filterDomain.filter.paymentMethods,
         statuses = filterDomain.filter.statuses,
         currencies = filterDomain.filter.currencies,

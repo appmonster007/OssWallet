@@ -14,6 +14,7 @@ data class Budget(
     val categoryIds: Set<Long> = emptySet(),
     val accountIds: Set<String> = emptySet(),
     val tags: Set<String> = emptySet(),
+    val matchAllTags: Boolean = true,
     val paymentMethods: Set<PaymentMethod> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
     val currencies: Set<String> = emptySet(),

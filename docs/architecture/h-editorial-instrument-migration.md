@@ -1,11 +1,12 @@
 # H "Editorial Instrument" — Compose Migration Plan
 
 ## Context
-The HTML comps in `design/comps/` (h-hybrid.html, full-screens.html, edit-mode.html, pill-demo.html) are approved. We now migrate the **H — Editorial Instrument** identity into the Compose app: warm-black/ivory/champagne (dark) and ivory/ink/bronze (light), Fraunces serif amounts, Inter body, JetBrains Mono micro-readouts, hairline-gradient solid panels, selective glass (blur only on floating chrome), and **self-contained cards** (title + period readout inside the card body, no filter/config buttons).
+The HTML comps in `design/comps/` (h-hybrid.html, full-screens.html, edit-mode.html, pill-demo.html, h-dynamic-accent.html) are approved. We now migrate the **H — Editorial Instrument** identity into the Compose app: warm-black/ivory/champagne (dark) and ivory/ink/bronze (light), Fraunces serif amounts, Inter body, JetBrains Mono micro-readouts, hairline-gradient solid panels, selective glass (blur only on floating chrome), and **self-contained cards** (title + period readout inside the card body, no filter/config buttons).
 
 **Decisions locked:**
 - **H as the new default, with `UiIdentity` hooks** — structure the code so A/B can be added later without refactor, but only H is implemented now (default = H).
 - **Typography customization ships** — extend the font system with Fraunces + JetBrains Mono and a user-facing font/role setting (the switcher previewed in full-screens.html).
+- **M3 color customization = "H neutrals + dynamic accent"** — full Material You (wallpaper bg/surface) is incompatible with H's editorial palette, so it stays off under H/A/B. Instead a dynamic-accent toggle lets Material You's `primary` override **only** the accent token; all H neutrals, type, and pos/neg semantics stay fixed (see Phase 4.3).
 
 **Phase ordering note:** The two **identity-agnostic** structural changes ship first — selective glass (Phase 0) and the card-shell header restructure (Phase 1) — both edit `AeonExpressiveCard.kt`, so they're done back-to-back as one coherent shell rewrite + one regression pass, and both are validated against the *current* theme before any palette/type work. Identity → type → color then layer purely-visual changes on a stable interaction model. The filter-pill/sheet H *restyle* (Phase 5) is deferred until after type + color, since it depends on the mono family and champagne accent.
 
@@ -43,11 +44,11 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [ ] 3.5 Font picker UI lists new fonts; persists via `saveSelectedFont`
 - [ ] **Acceptance:** serif amounts / mono readouts / Inter body with H font, live switch, tnum preserved, no clipping, build green
 
-### Phase 4 — Color: H palettes (dark + light + AMOLED)
+### Phase 4 — Color: H palettes (dark + light + AMOLED) + M3 dynamic accent
 - [ ] 4.1 `applyIdentityToColorScheme(base, identity, themeMode)` with H dark/light/AMOLED palettes
 - [ ] 4.2 Extend pos/neg per identity; champagne/bronze accent token (Phase 0 hairline + Phase 1 readout pick up the accent here)
-- [ ] 4.3 Disable `dynamicColor` when identity != default
-- [ ] **Acceptance:** dashboard + sample screens render H across light/dark/AMOLED, correct contrast, no hardcoded-hex regressions, build green
+- [ ] 4.3 **Dynamic-accent toggle (M3 customization):** keep ALL H neutrals/structure fixed; when the toggle is on (+ Android 12+), override ONLY the accent token with Material You's `primary`. Full `dynamicColor` (bg/surface from wallpaper) stays off under H.
+- [ ] **Acceptance:** dashboard + sample screens render H across light/dark/AMOLED, correct contrast, no hardcoded-hex regressions; dynamic-accent toggle live-recolors accent (hairline, readout, chips) while neutrals stay H; build green
 
 ### Phase 5 — Filter pill / sheet H restyle
 - [ ] 5.1 Restyle `TransactionFilterPill` / `FilterSheetContent` to H (mono labels, champagne chips, serif headings) — content/logic unchanged
@@ -61,17 +62,17 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 
 ### Phase 7 — Polish & verification
 - [ ] 7.1 Nav pill, FAB, icon tints, dividers, empty states aligned to H
-- [ ] 7.2 Design Lab preview screen flips identity (H/light/dark/AMOLED)
-- [ ] **Acceptance:** coherent full-app walkthrough; `./gradlew lint test assembleDebug` green; device check of scroll/pill/reorder/add-card/font switch
+- [ ] 7.2 Design Lab preview screen flips identity (H/light/dark/AMOLED) + dynamic-accent on/off
+- [ ] **Acceptance:** coherent full-app walkthrough; `./gradlew lint test assembleDebug` green; device check of scroll/pill/reorder/add-card/font switch/dynamic-accent toggle
 
 ---
 
 ## Architecture seams (confirmed)
-- **Color:** `Theme.kt` selects the Material3 `ColorScheme` (lines ~104–113); `AppColors.*` reads `LocalAppColorScheme`; `positive`/`negative` already branch on `LocalThemeMode` (Color.kt ~160–177).
+- **Color:** `Theme.kt` selects the Material3 `ColorScheme` (lines ~104–113); `AppColors.*` reads `LocalAppColorScheme`; `positive`/`negative` already branch on `LocalThemeMode` (Color.kt ~160–177). The existing `dynamicColor` Material You path (`dynamicDark/LightColorScheme(context)`, Theme.kt:106–108) is the seam reused for **M3 dynamic accent** — but its `primary` is injected into the H accent token only, not the whole scheme.
 - **Type:** `createTypography(AppFont)` injects only `fontFamily` into a fixed scale (Type.kt 163–179). `AppFont` has `displayFamily`+`bodyFamily` only — **needs a third `monoFamily`**. `AppTextStyles` is the only legal way composables get text styles.
 - **Glass:** `GlassTokens.cardStyle/pillStyle/sheetStyle(isDark)` read `LocalGlassSettings`; `LocalGlassmorphismEnabled` is the on/off. Card shell currently uses `cardStyle` → we demote cards to solid panels, keep glass on pill/sheet/nav.
 - **Cards:** `AeonExpressiveCard` header is already conditional — `showFilterButton = filterEnabled && filter != null && onFilterChange != null` (AeonExpressiveCard.kt:132), `showSettingsButton = displaySettings != null` (133); the period is derived into `effectiveSubtitle` from `filter.timelineRange` via `timelineLabel(...)` (143–145). `UnifiedCardRenderer`, `AeonCardList` (reorder), `CardLayoutViewModel.addDashboardCard` need **no change**.
-- **Settings flow:** `SettingsRepository` (theme/selectedFont/glass…) → `MainActivity` collects → `OssWalletTheme(...)`. New settings (identity, font roles) follow this exact path.
+- **Settings flow:** `SettingsRepository` (theme/selectedFont/glass…) → `MainActivity` collects → `OssWalletTheme(...)`. New settings (identity, font roles, `dynamicAccent`) follow this exact path.
 
 ---
 
@@ -104,14 +105,18 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 **Step 3.5** Font setting UI: extend the existing font picker (`AeonSettingsComponents` / display settings screen) to list the new fonts; persist via `saveSelectedFont`.
 **Acceptance:** With H font active, dashboard hero/amounts render in Fraunces serif, period/overline labels in JetBrains Mono, body in Inter; switching font in settings live-updates; tabular-nums preserved (numbers stay column-aligned). Existing screens render without clipping (spot-check entry, analytics, lists). Build green.
 
-## Phase 4 — Color: H palettes (dark + light + AMOLED)
+## Phase 4 — Color: H palettes (dark + light + AMOLED) + M3 dynamic accent
 **Step 4.1** In `Theme.kt`, add `applyIdentityToColorScheme(base, identity, themeMode)`. For `UiIdentity.H` return H palettes:
   - Dark: bg `#0B0B0A`, panel `#131312`, onSurface ivory `#ECE8DD`, onSurfaceVariant `#9A958A`, accent champagne `#D6C189`, outlineVariant hairline `rgba(236,232,221,.09)`.
   - Light: bg `#F2EFE7`, panel `#FAF8F1`, ink `#1B1914`, accent bronze `#8A6F3C`, hairline `#DED9CC`.
   - AMOLED: bg `#000000`, panel `#0C0C0B`, brighten hairlines slightly.
 **Step 4.2** Extend `AppColors.positive`/`negative` branch (Color.kt 160–177) to also read `LocalUiIdentity`: H pos/neg = `#7FBF8E`/`#D88379` (dark), `#2C6E49`/`#9B3B30` (light). Add a `champagne`/`accentSignature` token if not covered by `accent`. The `aeonHairlineBorder()` (Phase 0) and the period readout (Phase 1) now pick up the champagne/bronze accent automatically.
-**Step 4.3** Disable `dynamicColor` when identity != default (H owns the palette).
-**Acceptance:** Dashboard + a sample of screens (accounts, budgets, settings, entry) render in H palette across light/dark/AMOLED with correct contrast; no hardcoded-hex regressions (grep shows composables still use `AppColors.*`). Build green; existing screenshot-sensitive previews updated.
+**Step 4.3 — M3 dynamic-accent customization (decided: "H neutrals + dynamic accent").** Material You and H's editorial palette directly conflict (wallpaper-derived bg/accents would erase the warm-black/ivory/champagne identity), so full `dynamicColor` (bg+surface+accent from wallpaper) is **off** under H/A/B. Instead H exposes a single **dynamic-accent toggle**:
+  - When **off** (default): accent = H's champagne (dark) / bronze (light) signature.
+  - When **on** (+ Android 12+ `dynamicColorAvailable`): resolve `dynamicDark/LightColorScheme(context).primary` and inject it **only** into the `accent`/`accentSignature` token. ALL H neutrals (bg, panel, ivory/ink text, hairlines), serif/mono type, and pos/neg semantics stay fixed.
+  - Because `aeonHairlineBorder()` (Phase 0), the period readout (Phase 1), filter chips (Phase 5), and card fills (Phase 6) all read the single accent token, the toggle live-recolors the whole accent system without touching structure.
+  - Settings UI: add the toggle next to the identity/font pickers; persist via a new `dynamicAccent` flow on `SettingsRepository` (mirror `selectedFont`/`identity`). The legacy `OssWalletTheme(dynamicColor=...)` path is superseded by identity + this toggle.
+**Acceptance:** Dashboard + a sample of screens (accounts, budgets, settings, entry) render in H palette across light/dark/AMOLED with correct contrast; no hardcoded-hex regressions (grep shows composables still use `AppColors.*`). Dynamic-accent toggle ON live-recolors accent (hairline, readout, chips, fills) from wallpaper while neutrals/type stay H; toggle OFF returns to champagne/bronze. Build green; existing screenshot-sensitive previews updated.
 
 ## Phase 5 — Filter pill / sheet H restyle
 *Deferred to here because the H restyle needs the mono family (Phase 3) and the champagne accent (Phase 4). The Phase 1 trigger relocation already works; this is purely cosmetic.*
@@ -133,13 +138,13 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 
 ## Critical files
 - New: `domain/model/settings/UiIdentity.kt`; `res/font/fraunces*.ttf`, `res/font/jetbrains_mono.ttf`; `ui/components/` hairline-border modifier.
-- Edit: `ui/theme/Theme.kt` (identity→colorScheme, font, provide locals), `ui/theme/Color.kt` (`LocalUiIdentity`, pos/neg/accent per identity), `ui/theme/Type.kt` (`monoFamily`, `LocalAppFont`, new AppFont, mono tokens), `ui/theme/GlassTokens.kt` (card demotion).
-- Edit: `domain/repository/SettingsRepository.kt` + `data/repository/SettingsRepositoryImpl.kt` + `data/local/SettingsDataStore.kt` (identity + font); `MainActivity.kt` (collect/pass).
+- Edit: `ui/theme/Theme.kt` (identity→colorScheme, font, dynamic-accent injection, provide locals), `ui/theme/Color.kt` (`LocalUiIdentity`, pos/neg/accent per identity), `ui/theme/Type.kt` (`monoFamily`, `LocalAppFont`, new AppFont, mono tokens), `ui/theme/GlassTokens.kt` (card demotion).
+- Edit: `domain/repository/SettingsRepository.kt` + `data/repository/SettingsRepositoryImpl.kt` + `data/local/SettingsDataStore.kt` (identity + font + `dynamicAccent`); `MainActivity.kt` (collect/pass).
 - Edit: `ui/components/cards/AeonExpressiveCard.kt` (Phase 0 glass demotion + Phase 1 header restructure); `ui/components/transactions/TransactionFilterPill.kt` + `FilterSheetContent.kt` (Phase 5 H restyle).
 - Edit: dashboard cards `NetWorthCard.kt`, `CashFlowCard.kt`, `AccountsCard.kt`, `BudgetsCard.kt`.
 - **Untouched (verify):** `UnifiedCardRenderer.kt`, `AeonCardList.kt`, `CardLayoutViewModel.kt`, `CardType.kt`, `CardConfig.kt`, registry files.
 
 ## Verification (end-to-end)
 - After each phase: `./gradlew assembleDebug` green; app launches; no crash on dashboard.
-- Final: `./gradlew lint test` green; on device — verify (1) H palette across light/dark/AMOLED, (2) font switch live-updates serif/mono/sans roles, (3) cards are self-contained & buttonless, (4) tap period → pill → sheet → dismiss, (5) long-press → card settings, (6) reorder + add-card intact, (7) glass only on floating chrome, toggle-off degrades cleanly.
-- Compare side-by-side against `design/comps/h-hybrid.html` and `full-screens.html` (H frames).
+- Final: `./gradlew lint test` green; on device — verify (1) H palette across light/dark/AMOLED, (2) font switch live-updates serif/mono/sans roles, (3) cards are self-contained & buttonless, (4) tap period → pill → sheet → dismiss, (5) long-press → card settings, (6) reorder + add-card intact, (7) glass only on floating chrome, toggle-off degrades cleanly, (8) dynamic-accent toggle ON recolors only the accent (hairline/readout/budget fill/net/nav/FAB) from wallpaper while neutrals + type stay H; OFF returns to champagne/bronze.
+- Compare side-by-side against `design/comps/h-hybrid.html`, `full-screens.html` (H frames), and `h-dynamic-accent.html` (M3 accent toggle).

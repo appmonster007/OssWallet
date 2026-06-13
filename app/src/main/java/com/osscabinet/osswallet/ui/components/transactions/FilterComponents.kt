@@ -291,19 +291,6 @@ fun FilterFields(
                 DatePicker(state = datePickerState)
             }
         }
-
-        "Tags" -> {
-            AeonTagSelectionDialog(
-                tags = allTags,
-                selectedTags = filter.tags.toSet(),
-                onTagsSelected = { tags ->
-                    onFilterChange(filter.copy(tags = tags.toSet()))
-                },
-                onAddTag = onAddTag,
-                onDismiss = { activeSheet = null },
-                allowCreation = filterRules.allowTagCreation
-            )
-        }
     }
 
     val accountMap = remember(accounts) { accounts.associate { it.id to it.name } }
@@ -484,7 +471,8 @@ fun FilterFields(
                             label = "NOTE QUERY",
                             icon = Icons.Default.Subtitles,
                             placeholder = "Search note...",
-                            enabled = !isSearchLocked
+                            enabled = !isSearchLocked,
+                            isSelected = filter.queryNote?.isNotEmpty() == true
                         )
                         EntryEditorialInput(
                             value = filter.queryPayee ?: "",
@@ -492,7 +480,8 @@ fun FilterFields(
                             label = "PAYEE QUERY",
                             icon = Icons.Default.Person,
                             placeholder = "Search payee...",
-                            enabled = !isSearchLocked
+                            enabled = !isSearchLocked,
+                            isSelected = filter.queryPayee?.isNotEmpty() == true
                         )
                     }
                 }
@@ -513,10 +502,14 @@ fun FilterFields(
                         EntryTagSection(
                             selectedNames = filter.tags,
                             allAvailableTags = allTags,
-                            onShowTagSheet = { activeSheet = "Tags" },
+                            onShowTagSheet = { },
                             onRemoveTag = { tag ->
                                 onFilterChange(filter.copy(tags = filter.tags - tag))
                             },
+                            onTagsSelected = { tags ->
+                                onFilterChange(filter.copy(tags = tags))
+                            },
+                            onAddTag = onAddTag,
                             label = "FILTER BY TAGS"
                         )
                     }

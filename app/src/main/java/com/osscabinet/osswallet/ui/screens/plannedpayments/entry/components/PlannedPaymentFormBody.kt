@@ -200,6 +200,8 @@ fun PlannedPaymentFormBody(
                 allAvailableTags = state.availableTags,
                 onTagClick = { onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
+                onTagsSelected = { onEvent(PlannedPaymentEntryEvent.SetTags(it)) },
+                onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames + name)) },
                 noteSuggestions = state.uniqueNotes,
                 payeeSuggestions = state.uniquePayees,
                 additionalContent = {

@@ -123,7 +123,8 @@ fun LoanFormBody(
                         onValueChange = { onEvent(LoanEntryEvent.SetCounterparty(it)) },
                         label = if (state.loanType == LoanType.LENT) "BORROWER NAME" else "LENDER NAME",
                         icon = Icons.Rounded.Person,
-                        placeholder = "Who is the other party?"
+                        placeholder = "Who is the other party?",
+                        isSelected = state.counterparty.isNotEmpty()
                     )
 
                     AeonContextGrid {
@@ -184,7 +185,8 @@ fun LoanFormBody(
                         onValueChange = { onEvent(LoanEntryEvent.SetNote(it)) },
                         label = "LOAN NOTE",
                         icon = Icons.AutoMirrored.Rounded.Notes,
-                        placeholder = "Terms, conditions, or reminders..."
+                        placeholder = "Terms, conditions, or reminders...",
+                        isSelected = state.note.isNotEmpty()
                     )
                 }
             }
@@ -263,7 +265,8 @@ fun LoanFormBody(
                                 onValueChange = { onEvent(LoanEntryEvent.SetQueryNote(it)) },
                                 label = "NOTE QUERY",
                                 icon = Icons.AutoMirrored.Rounded.Notes,
-                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Match note text..."
+                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Match note text...",
+                                isSelected = state.queryNote.isNotEmpty()
                             )
                         }
 
@@ -281,7 +284,8 @@ fun LoanFormBody(
                                 onValueChange = { onEvent(LoanEntryEvent.SetQueryPayee(it)) },
                                 label = "COUNTERPARTY QUERY",
                                 icon = Icons.Rounded.Person,
-                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Match name..."
+                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Match name...",
+                                isSelected = state.queryPayee.isNotEmpty()
                             )
                         }
                     }
@@ -291,7 +295,9 @@ fun LoanFormBody(
                         selectedNames = state.selectedTags,
                         allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(LoanEntryEvent.ShowTagSheet(show = true)) },
-                        onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) }
+                        onRemoveTag = { tag -> onEvent(LoanEntryEvent.SetTags(state.selectedTags - tag)) },
+                        onTagsSelected = { onEvent(LoanEntryEvent.SetTags(it)) },
+                        onAddTag = { name, _ -> onEvent(LoanEntryEvent.SetTags(state.selectedTags + name)) }
                     )
 
                     // RESTORED: Payment Method and Status Filters

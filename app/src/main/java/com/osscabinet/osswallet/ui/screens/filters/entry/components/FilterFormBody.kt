@@ -212,7 +212,8 @@ fun FilterFormBody(
                                 onValueChange = { onEvent(FilterEntryEvent.SetQueryNote(it)) },
                                 label = "NOTE QUERY",
                                 icon = Icons.AutoMirrored.Rounded.Notes,
-                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Search note..."
+                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Search note...",
+                                isSelected = state.queryNote.isNotEmpty()
                             )
                         }
 
@@ -230,7 +231,8 @@ fun FilterFormBody(
                                 onValueChange = { onEvent(FilterEntryEvent.SetQueryPayee(it)) },
                                 label = "PAYEE QUERY",
                                 icon = Icons.Rounded.Person,
-                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Search payee..."
+                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Search payee...",
+                                isSelected = state.queryPayee.isNotEmpty()
                             )
                         }
                     }
@@ -240,7 +242,9 @@ fun FilterFormBody(
                         selectedNames = state.selectedTags,
                         allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(FilterEntryEvent.ShowTagSheet(show = true)) },
-                        onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) }
+                        onRemoveTag = { tag -> onEvent(FilterEntryEvent.SetTags(state.selectedTags - tag)) },
+                        onTagsSelected = { onEvent(FilterEntryEvent.SetTags(it)) },
+                        onAddTag = { name, _ -> onEvent(FilterEntryEvent.SetTags(state.selectedTags + name)) }
                     )
                 }
             }

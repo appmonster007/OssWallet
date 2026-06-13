@@ -20,7 +20,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +40,7 @@ import com.osscabinet.ossWallet.ui.theme.scaledDp
 /**
  * Reusable tag selection section for entry screens.
  * Following the "Architect Slate" design specification.
+ * Now manages its own tag selection pop-up for a seamless "real pop up" experience.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -46,7 +50,9 @@ fun EntryTagSection(
     onShowTagSheet: () -> Unit,
     onRemoveTag: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "ADD TAG"
+    label: String = "ADD TAG",
+    onTagsSelected: (Set<String>) -> Unit = {},
+    onAddTag: (String, Int) -> Unit = { _, _ -> }
 ) {
     val uiScale = AeonTheme.uiScale
     val resolvedTags = remember(selectedNames, allAvailableTags) {
@@ -55,17 +61,19 @@ fun EntryTagSection(
                 ?: Tag(name = name)
         }
     }
+    
+    var showPopup by remember { mutableStateOf(false) }
 
     FlowRow(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = AeonTheme.dimensions.cardPadding),
+            .fillMaxWidth(),
+//            .padding(horizontal = AeonTheme.dimensions.cardPadding),
         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
     ) {
         // Add Tag Button
         Surface(
-            onClick = onShowTagSheet,
+            onClick = { showPopup = true },
             shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
             color = AppColors.surfaceContainerHigh,
             border = BorderStroke(1.dp, AppColors.outlineVariant),
@@ -88,6 +96,19 @@ fun EntryTagSection(
                     color = AppColors.primary
                 )
             }
+        }
+        
+        if (showPopup) {
+            AeonTagSelectionDialog(
+                tags = allAvailableTags,
+                selectedTags = selectedNames,
+                onTagsSelected = { tags ->
+                    onTagsSelected(tags)
+                    showPopup = false
+                },
+                onAddTag = onAddTag,
+                onDismiss = { showPopup = false }
+            )
         }
 
         // Selected Tags

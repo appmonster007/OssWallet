@@ -6,19 +6,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,33 +28,29 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.InputChip
-import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.Popup
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
@@ -60,17 +58,16 @@ import com.osscabinet.ossWallet.ui.components.AeonColorSelection
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DefaultAccentColorHex
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AeonTagSelectionDialog(
     tags: List<Tag>,
@@ -87,17 +84,18 @@ fun AeonTagSelectionDialog(
         if (searchQuery.isBlank()) {
             debouncedQuery = ""
         } else {
-            delay(300)
+            delay(200)
             debouncedQuery = searchQuery
         }
     }
 
     var currentSelection by remember { mutableStateOf(selectedTags) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     var localTags by remember { mutableStateOf(emptyList<Tag>()) }
     val allAvailableTags = remember(tags, localTags) {
-        (tags + localTags).distinctBy { it.name }
+        (tags + localTags).distinctBy { it.name }.sortedBy { it.name }
     }
 
     val filteredTags = remember(allAvailableTags, debouncedQuery) {
@@ -113,228 +111,122 @@ fun AeonTagSelectionDialog(
         trimmed.isNotEmpty() && allAvailableTags.any { it.name.equals(trimmed, ignoreCase = true) }
     }
 
-    // Use platform default dialog width so this appears as a centered dialog on large
-    // screens instead of occupying the full window. Previously this was set to false
-    // which caused the dialog content to expand to full-screen on some devices.
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = true)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        val glassEnabled = LocalGlassmorphismEnabled.current
-        val dims = AeonTheme.dimensions
-        AeonHazeProvider { _ ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            val dims = AeonTheme.dimensions
             GlassSurface(
                 modifier = Modifier
-                    .widthIn(max = 720.dp)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
+                    .widthIn(max = 340.dp)
+                    .fillMaxWidth(0.85f)
+                    .wrapContentHeight()
+                    .clickable(enabled = false) {}, // Prevent dismiss when clicking inside
+                shape = RoundedCornerShape(28.dp),
                 hazeStyle = GlassTokens.popupStyle(),
-                glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
-                fallbackColor = AppColors.surfaceContainerHigh,
+                glassVariant = GlassVariant.Popup,
+                fallbackColor = AppColors.popupSurface,
             ) {
                 Column(
-                    modifier = Modifier.padding(dims.cardPadding),
-                    verticalArrangement = Arrangement.spacedBy(dims.spacingLg)
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.tag_selection_title),
-                        style = AppTextStyles.cardTitle,
+                        text = "Select Tags",
+                        style = AppTextStyles.heroAmount.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
                         color = AppColors.contentPrimary
                     )
 
-                    var searchFieldHeight by remember { mutableIntStateOf(0) }
-                    val density = LocalDensity.current
+                    AeonSearchField(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        placeholder = "Search or create...",
+                    )
 
-                     Box(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onGloballyPositioned {
-                                    searchFieldHeight = it.size.height
-                                }
-                        ) {
-                            AeonSearchField(
-                                query = searchQuery,
-                                onQueryChange = { searchQuery = it },
-                                placeholder = stringResource(R.string.tag_search_placeholder),
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val trimmed = searchQuery.trim()
+                        if (trimmed.isNotBlank() && !exactMatchExists && allowCreation) {
+                            TagRow(
+                                name = "Create \"$trimmed\"",
+                                color = Color.Gray.toArgb(), // Placeholder for new tag
+                                isSelected = false,
+                                isCreation = true,
+                                onClick = { showCreateDialog = true }
                             )
                         }
 
-                         Popup(
-                             alignment = Alignment.TopStart,
-                             offset = IntOffset(
-                                 0,
-                                 searchFieldHeight + with(density) { dims.spacingXs.roundToPx() })
-                         ) {
-                             Column {
-                                 AnimatedVisibility(
-                                     visible = searchQuery.isNotEmpty() || currentSelection.isEmpty(),
-                                     enter = fadeIn() + expandVertically(),
-                                     exit = fadeOut() + shrinkVertically()
-                                 ) {
-                                     GlassSurface(
-                                         modifier = Modifier
-                                             .widthIn(max = 560.dp)
-                                             .heightIn(max = 250.dp),
-                                         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                                         hazeStyle = GlassTokens.popupStyle(),
-                                         fallbackColor = AppColors.surfaceContainerHighest,
-                                         borderColor = AppColors.outlineVariant.copy(alpha = 0.2f)
-                                     ) {
-                                         Column(
-                                             modifier = Modifier
-                                                 .padding(vertical = dims.spacingXs)
-                                                 .verticalScroll(rememberScrollState())
-                                         ) {
-                                            val trimmed = searchQuery.trim()
-                                            if (trimmed.isNotBlank() && !exactMatchExists && allowCreation) {
-                                                 TextButton(
-                                                     onClick = { showCreateDialog = true },
-                                                     modifier = Modifier.fillMaxWidth()
-                                                 ) {
-                                                     Row(
-                                                         modifier = Modifier
-                                                             .fillMaxWidth()
-                                                             .padding(horizontal = dims.spacingMd),
-                                                         verticalAlignment = Alignment.CenterVertically,
-                                                         horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
-                                                     ) {
-                                                         Icon(
-                                                             Icons.Rounded.Add,
-                                                             null,
-                                                             tint = AppColors.primary,
-                                                             modifier = Modifier.size(dims.iconSizeSm)
-                                                         )
-                                                         Text(
-                                                             stringResource(
-                                                                 R.string.tag_create_new,
-                                                                 trimmed
-                                                             ),
-                                                             color = AppColors.primary,
-                                                             style = AppTextStyles.listItemTitle
-                                                         )
-                                                     }
-                                                 }
-                                            }
-
-                                            filteredTags.forEach { tag ->
-                                                val isSelected = currentSelection.any {
-                                                    it.equals(tag.name, ignoreCase = true)
-                                                }
-                                                TextButton(
-                                                    onClick = {
-                                                        currentSelection = if (isSelected) {
-                                                            currentSelection.filter {
-                                                                !it.equals(tag.name, ignoreCase = true)
-                                                            }.toSet()
-                                                        } else {
-                                                            currentSelection + tag.name
-                                                        }
-                                                    },
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                        Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(horizontal = dims.spacingMd),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
-                                                    ) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .size(dims.iconSizeXs)
-                                                                .background(
-                                                                        Color(tag.colorHex),
-                                                                    RoundedCornerShape(2.dp)
-                                                                )
-                                                        )
-                                                        Text(
-                                                            tag.name,
-                                                                color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
-                                                            style = AppTextStyles.listItemTitle,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                        if (isSelected) {
-                                                            Icon(
-                                                                Icons.Rounded.Check,
-                                                                null,
-                                                                tint = AppColors.primary,
-                                                                modifier = Modifier.size(dims.iconSizeSm)
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if (filteredTags.isEmpty() && trimmed.isNotBlank() && !allowCreation) {
-                                                Text(
-                                                    stringResource(R.string.tag_no_matches),
-                                                    modifier = Modifier.padding(16.dp),
-                                                    style = AppTextStyles.caption
-                                                )
-                                            }
-                                        }
+                        filteredTags.forEach { tag ->
+                            val isSelected = currentSelection.contains(tag.name)
+                            TagRow(
+                                name = tag.name,
+                                color = tag.colorHex,
+                                isSelected = isSelected,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    currentSelection = if (isSelected) {
+                                        currentSelection - tag.name
+                                    } else {
+                                        currentSelection + tag.name
                                     }
                                 }
-                            }
+                            )
                         }
-                    }
 
-                    if (currentSelection.isNotEmpty()) {
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            currentSelection.forEach { tagName ->
-                                val tagColor = allAvailableTags.find {
-                                    it.name.equals(tagName, ignoreCase = true)
-                                }?.colorHex?.let { Color(it) } ?: AppColors.primary
-
-                                InputChip(
-                                    selected = true,
-                                    onClick = { currentSelection = currentSelection - tagName },
-                                    label = { Text(tagName) },
-                                    trailingIcon = {
-                                        Icon(
-                                            Icons.Rounded.Close,
-                                            null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    },
-                                    shape = RoundedCornerShape(8.dp),
-                                    colors = InputChipDefaults.inputChipColors(
-                                        selectedContainerColor = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
-                                        selectedLabelColor = tagColor,
-                                        selectedTrailingIconColor = tagColor
-                                    ),
-                                    border = InputChipDefaults.inputChipBorder(
-                                        selected = true,
-                                        enabled = true,
-                                        selectedBorderColor = tagColor.copy(alpha = 0.4f)
-                                    )
-                                )
-                            }
+                        if (filteredTags.isEmpty() && trimmed.isNotBlank() && !allowCreation) {
+                            Text(
+                                "No matches found",
+                                modifier = Modifier.padding(16.dp),
+                                style = AppTextStyles.caption,
+                                color = AppColors.contentSecondary
+                            )
                         }
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = onDismiss) {
-                            Text(stringResource(R.string.action_cancel))
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.height(44.dp)
+                        ) {
+                            Text(
+                                "Cancel",
+                                style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary)
+                            )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Button(
                             onClick = {
                                 onTagsSelected(currentSelection)
                                 onDismiss()
                             },
-                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
+                            modifier = Modifier.height(44.dp),
+                            shape = RoundedCornerShape(22.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.primary,
+                                contentColor = AppColors.onPrimary
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp)
                         ) {
-                            Text(stringResource(R.string.action_done), style = AppTextStyles.buttonLabel)
+                            Text("Done", style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }
@@ -358,6 +250,55 @@ fun AeonTagSelectionDialog(
 }
 
 @Composable
+private fun TagRow(
+    name: String,
+    color: Int,
+    isSelected: Boolean,
+    isCreation: Boolean = false,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isCreation) {
+            Icon(
+                Icons.Rounded.Add,
+                contentDescription = null,
+                tint = AppColors.primary,
+                modifier = Modifier.size(14.dp)
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(Color(color), RoundedCornerShape(2.dp))
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = name,
+            style = AppTextStyles.listItemTitle.copy(
+                color = if (isSelected) AppColors.primary else AppColors.contentPrimary,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            ),
+            modifier = Modifier.weight(1f)
+        )
+        if (isSelected) {
+            Icon(
+                Icons.Rounded.Check,
+                contentDescription = null,
+                tint = AppColors.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
 fun AeonTagCreateDialog(
     initialName: String,
     onDismiss: () -> Unit,
@@ -370,15 +311,26 @@ fun AeonTagCreateDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        AeonHazeProvider { _ ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                ),
+            contentAlignment = Alignment.Center
+        ) {
             GlassSurface(
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
+                    .fillMaxWidth(0.85f)
+                    .widthIn(max = 340.dp)
+                    .wrapContentHeight()
+                    .clickable(enabled = false) {},
+                shape = RoundedCornerShape(28.dp),
                 hazeStyle = GlassTokens.popupStyle(),
-                glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Popup,
-                fallbackColor = AppColors.surfaceContainerHigh,
+                glassVariant = GlassVariant.Popup,
+                fallbackColor = AppColors.popupSurface,
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -386,7 +338,7 @@ fun AeonTagCreateDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.tag_create_dialog_title),
-                        style = AppTextStyles.cardTitle,
+                        style = AppTextStyles.heroAmount.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
                         color = AppColors.contentPrimary
                     )
 
@@ -396,7 +348,7 @@ fun AeonTagCreateDialog(
                         label = { Text(stringResource(R.string.tag_name_label), style = AppTextStyles.sectionOverline) },
                         placeholder = { Text(stringResource(R.string.tag_name_placeholder), style = AppTextStyles.formFieldHint) },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                        shape = RoundedCornerShape(12.dp),
                         singleLine = true,
                         textStyle = AppTextStyles.formFieldValue
                     )
@@ -409,12 +361,13 @@ fun AeonTagCreateDialog(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text(stringResource(R.string.action_cancel))
+                            Text("Cancel", style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary))
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Button(
                             onClick = {
                                 if (name.isNotBlank()) {
@@ -427,15 +380,26 @@ fun AeonTagCreateDialog(
                                 }
                             },
                             enabled = name.isNotBlank(),
-                            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
+                            shape = RoundedCornerShape(22.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.primary,
+                                contentColor = AppColors.onPrimary
+                            )
                         ) {
-                            Text(stringResource(R.string.action_create), style = AppTextStyles.buttonLabel)
+                            Text("Create", style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold))
                         }
                     }
                 }
             }
         }
     }
+}
+
+private fun Color.toArgb(): Int {
+    return (this.alpha * 255.0f + 0.5f).toInt() shl 24 or
+            ((this.red * 255.0f + 0.5f).toInt() shl 16) or
+            ((this.green * 255.0f + 0.5f).toInt() shl 8) or
+            (this.blue * 255.0f + 0.5f).toInt()
 }
 
 @ThemePreviews
@@ -451,18 +415,6 @@ fun AeonTagSelectionDialogPreview() {
             onTagsSelected = {},
             onAddTag = { _, _ -> },
             onDismiss = {}
-        )
-    }
-}
-
-@ThemePreviews
-@Composable
-fun AeonTagCreateDialogPreview() {
-    OssWalletTheme {
-        AeonTagCreateDialog(
-            initialName = "New Tag",
-            onDismiss = {},
-            onConfirm = { _, _ -> }
         )
     }
 }

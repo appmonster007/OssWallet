@@ -36,6 +36,8 @@ fun AeonDetailSection(
     allAvailableTags: List<Tag> = emptyList(),
     onTagClick: () -> Unit = {},
     onRemoveTag: (String) -> Unit = {},
+    onTagsSelected: (Set<String>) -> Unit = {},
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
     noteSuggestions: List<String> = emptyList(),
     payeeSuggestions: List<String> = emptyList(),
     additionalContent: @Composable (ColumnScope.() -> Unit)? = null
@@ -52,41 +54,31 @@ fun AeonDetailSection(
                 icon = Icons.AutoMirrored.Rounded.Notes,
                 suggestions = noteSuggestions,
                 placeholder = "Tap to enter...",
-                isFlush = true
+                isSelected = note.isNotEmpty(),
+                isFlush = false
             )
         }
 
         if (showPayee) {
-            if (showNote) {
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(start = AeonTheme.dimensions.iconSizeXl + AeonTheme.dimensions.spacingLg)
-                )
-            }
             EntryEditorialInput(
                 value = payee,
                 onValueChange = onPayeeChange,
                 label = payeeLabel,
                 icon = Icons.Rounded.Person,
                 suggestions = payeeSuggestions,
-                isFlush = true
+                isSelected = payee.isNotEmpty(),
+                isFlush = false
             )
         }
 
         if (showTags) {
-            if (showNote || showPayee) {
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(start = AeonTheme.dimensions.iconSizeXl + AeonTheme.dimensions.spacingLg)
-                )
-            }
             EntryTagSection(
                 selectedNames = selectedNames,
                 allAvailableTags = allAvailableTags,
                 onShowTagSheet = onTagClick,
-                onRemoveTag = onRemoveTag
+                onRemoveTag = onRemoveTag,
+                onTagsSelected = onTagsSelected,
+                onAddTag = onAddTag
             )
         }
 

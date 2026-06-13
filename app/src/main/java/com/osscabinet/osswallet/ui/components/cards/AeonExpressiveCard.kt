@@ -222,7 +222,7 @@ fun AeonExpressiveCard(
                                 if (periodTappable) {
                                     Text(
                                         text = effectiveSubtitle,
-                                        style = AppTextStyles.caption,
+                                        style = AppTextStyles.cardPeriodReadout,
                                         color = AppColors.contentSecondary,
                                         modifier = Modifier
                                             .clickable { showFilterSheet = true }
@@ -231,7 +231,7 @@ fun AeonExpressiveCard(
                                 } else {
                                     Text(
                                         text = effectiveSubtitle,
-                                        style = AppTextStyles.caption,
+                                        style = AppTextStyles.cardPeriodReadout,
                                         color = AppColors.contentSecondary,
                                     )
                                 }

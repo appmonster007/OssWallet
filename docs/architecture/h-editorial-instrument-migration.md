@@ -51,8 +51,8 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [x] **Acceptance:** dashboard + sample screens render H across light/dark/AMOLED, correct contrast, no hardcoded-hex regressions; dynamic-accent toggle live-recolors accent (hairline, readout, chips) while neutrals stay H; build green
 
 ### Phase 5 — Filter pill / sheet H restyle
-- [ ] 5.1 Restyle `TransactionFilterPill` / `FilterSheetContent` to H (mono labels, champagne chips, serif headings) — content/logic unchanged
-- [ ] **Acceptance:** pill + sheet match comps in light+dark (mono/champagne/serif), all filter logic intact, build green
+- [x] 5.1 Restyle `FilterSheetContent` to H: section overline → mono (`sectionOverline`), active/removable chips → champagne (`accentContainer`), serif heading via `heroAmount`. Pill already consumes `AppColors.*`/glass so H neutrals+accent flow automatically — content/logic unchanged
+- [x] **Acceptance:** pill + sheet match comps in light+dark (mono/champagne/serif), all filter logic intact, build green
 
 ### Phase 6 — Card content restyle
 - [ ] 6.1 NetWorthCard: serif hero, mono trend, twin income/expense columns split by hairline

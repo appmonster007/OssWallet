@@ -46,7 +46,7 @@ fun countActiveFilters(
     if (filter.statuses != baseFilter.statuses) count++
 
     // 10. Tags
-    if (filter.tags != baseFilter.tags) count++
+    if (filter.tags != baseFilter.tags || filter.matchAllTags != baseFilter.matchAllTags) count++
 
     return count
 }

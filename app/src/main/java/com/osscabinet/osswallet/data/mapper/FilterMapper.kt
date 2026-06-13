@@ -34,7 +34,8 @@ fun FilterEntity.toDomain(): Filter {
             currencies = currencies,
             statuses = statuses,
             linkedTransactionIds = linkedTransactionIds,
-            tags = tags
+            tags = tags,
+            matchAllTags = matchAllTags
         )
     )
 }
@@ -68,6 +69,7 @@ fun Filter.toEntity(): FilterEntity {
         currencies = filter.currencies,
         statuses = filter.statuses,
         linkedTransactionIds = filter.linkedTransactionIds,
-        tags = filter.tags
+        tags = filter.tags,
+        matchAllTags = filter.matchAllTags
     )
 }

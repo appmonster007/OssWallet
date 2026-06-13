@@ -323,6 +323,19 @@ fun FilterSheetContent(
                         )
                     }
                 }
+                if (localFilter.tags.size > 1) {
+                    item {
+                        FilterChip(
+                            selected = localFilter.matchAllTags,
+                            onClick = {
+                                val next = localFilter.copy(matchAllTags = !localFilter.matchAllTags)
+                                localFilter = next
+                                applyFilterWithDebounce(next, debounceMs = 0)
+                            },
+                            label = { Text(if (localFilter.matchAllTags) "Match ALL Tags" else "Match ANY Tag") }
+                        )
+                    }
+                }
                 items(items = localFilter.statuses.toList()) { status ->
                     if (status !in baseFilter.statuses) {
                         FilterChip(

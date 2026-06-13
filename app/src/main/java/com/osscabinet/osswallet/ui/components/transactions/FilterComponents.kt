@@ -510,6 +510,10 @@ fun FilterFields(
                                 onFilterChange(filter.copy(tags = tags))
                             },
                             onAddTag = onAddTag,
+                            onToggleTagLogic = {
+                                onFilterChange(filter.copy(matchAllTags = !filter.matchAllTags))
+                            },
+                            isAndLogic = filter.matchAllTags,
                             label = "FILTER BY TAGS"
                         )
                     }

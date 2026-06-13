@@ -25,6 +25,7 @@ data class TransactionFilter(
     val transactionTypes: Set<TransactionType> = emptySet(), // if empty, matches all
     val currencies: Set<String> = emptySet(),
     val tags: Set<String> = emptySet(),
+    val matchAllTags: Boolean = true, // true = AND, false = OR
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet()
 )
@@ -45,6 +46,7 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         categoryIds = mergeSets(this.categoryIds, other.categoryIds),
         currencies = mergeSets(this.currencies, other.currencies),
         tags = mergeSets(this.tags, other.tags),
+        matchAllTags = other.matchAllTags,
         paymentMethods = mergeSets(this.paymentMethods, other.paymentMethods),
         statuses = mergeSets(this.statuses, other.statuses),
         linkedTransactionIds = mergeSets(this.linkedTransactionIds, other.linkedTransactionIds),

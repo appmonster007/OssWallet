@@ -52,15 +52,15 @@ data class AeonDimensions(
      * - All Entry/Form Screens
      */
     // Outer edge of all primary screens
-    val screenPadding: Dp = AeonSize.D18.value,
+    val screenPadding: Dp = AeonSize.D14.value,
     // Internal content margin of a standard Card
-    val cardPadding: Dp = AeonSize.D16.value,
+    val cardPadding: Dp = AeonSize.D12.value,
     // Internal padding for chips and small action items
-    val chipPadding: Dp = AeonSize.D10.value,
+    val chipPadding: Dp = AeonSize.D8.value,
     // Horizontal padding for items in a LazyColumn
-    val listPadding: Dp = AeonSize.D12.value,
+    val listPadding: Dp = AeonSize.D10.value,
     // Spacing between items in a Grid
-    val gridPadding: Dp = AeonSize.D12.value,
+    val gridPadding: Dp = AeonSize.D10.value,
 
     /**
      * SEMANTIC SPACING

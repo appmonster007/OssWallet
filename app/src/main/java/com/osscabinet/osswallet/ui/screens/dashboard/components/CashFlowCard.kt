@@ -231,7 +231,7 @@ private fun CashFlowColumn(
                         text = formatAuto(amountOf(item), item.currency),
                         style = AppTextStyles.transactionAmount.copy(
                             fontWeight = FontWeight.Normal,
-                            fontSize = 19.sp
+//                            fontSize = 19.sp
                         ),
                         color = color
                     )

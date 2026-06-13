@@ -137,6 +137,7 @@ fun OssWalletTheme(
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,
         LocalUiIdentity provides UiIdentity.fromName(identity),
+        LocalAppFont provides AppFont.fromName(fontName),
         LocalGlassSettings provides glassSettings
     ) {
         MaterialTheme(

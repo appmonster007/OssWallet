@@ -18,16 +18,16 @@ The HTML comps in `design/comps/` (h-hybrid.html, full-screens.html, edit-mode.h
 Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance met. Update each step's box as it completes; never mark a phase done until its **Acceptance** criteria below pass and `./gradlew assembleDebug` is green.
 
 ### Phase 0 — Selective-glass policy (identity-agnostic)
-- [ ] 0.1 `Modifier.aeonHairlineBorder()` (+ optional ambient glow helper) in `ui/components/`
-- [ ] 0.2 Demote `AeonExpressiveCard` off `GlassTokens.cardStyle` → solid panel + hairline border
-- [ ] 0.3 Keep glass on nav pill / filter pill / sheets / dialogs; verify glass-off degrades
-- [ ] **Acceptance:** cards opaque hairline panels, chrome still blurs, glass-off degrades, no scroll jank, build green, registry untouched
+- [x] 0.1 `Modifier.aeonHairlineBorder()` (+ optional ambient glow helper) in `ui/components/`
+- [x] 0.2 Demote `AeonExpressiveCard` off `GlassTokens.cardStyle` → solid panel + hairline border
+- [x] 0.3 Keep glass on nav pill / filter pill / sheets / dialogs; verify glass-off degrades
+- [x] **Acceptance:** cards opaque hairline panels, chrome still blurs, glass-off degrades, no scroll jank, build green, registry untouched
 
 ### Phase 1 — Card shell: self-contained header structure (identity-agnostic)
-- [ ] 1.1 Restructure header (no flag): in-body title + tappable period readout (when `filter != null`) + optional link; remove filter/settings icon buttons (237–265)
-- [ ] 1.2 Tap readout (when `filter != null && onFilterChange != null`) → existing `showFilterSheet` path / `LocalFilterPillController`
-- [ ] 1.3 Long-press (when `displaySettings != null`) → settings sheet; reorder handle stays on header section
-- [ ] **Acceptance:** filter cards show title+period in body, no icons; tap→pill→sheet→dismiss; long-press settings; reorder & add-card intact; hero/analytics cards unchanged; build green; registry untouched
+- [x] 1.1 Restructure header (no flag): in-body title + tappable period readout (when `filter != null`) + optional link; remove filter/settings icon buttons (237–265)
+- [x] 1.2 Tap readout (when `filter != null && onFilterChange != null`) → existing `showFilterSheet` path / `LocalFilterPillController`
+- [x] 1.3 Long-press (when `displaySettings != null`) → settings sheet; reorder handle stays on header section
+- [x] **Acceptance:** filter cards show title+period in body, no icons; tap→pill→sheet→dismiss; long-press settings; reorder & add-card intact; hero/analytics cards unchanged; build green; registry untouched
 
 ### Phase 2 — Identity seam (no visual change)
 - [x] 2.1 `domain/model/settings/UiIdentity.kt` enum `{ H, A, B; DEFAULT=H; fromName() }`
@@ -37,12 +37,12 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [x] **Acceptance:** runs identically to Phase 1, default identity=H wired, build green, no visible change
 
 ### Phase 3 — Typography: 3-family model + new fonts
-- [ ] 3.1 Add font resources (Fraunces + italic, JetBrains Mono)
-- [ ] 3.2 Add `monoFamily` to `AppFont`; add `EDITORIAL_INSTRUMENT`; `DEFAULT = EDITORIAL_INSTRUMENT`
-- [ ] 3.3 `LocalAppFont` provided in `OssWalletTheme`
-- [ ] 3.4 Route amount tokens → serif, micro-readouts → mono (`cardPeriodReadout` added; the Phase 1 readout picks up mono here)
-- [ ] 3.5 Font picker UI lists new fonts; persists via `saveSelectedFont`
-- [ ] **Acceptance:** serif amounts / mono readouts / Inter body with H font, live switch, tnum preserved, no clipping, build green
+- [x] 3.1 Add font resources (Fraunces + italic, JetBrains Mono)
+- [x] 3.2 Add `monoFamily` to `AppFont`; add `EDITORIAL_INSTRUMENT`; `DEFAULT = EDITORIAL_INSTRUMENT`
+- [x] 3.3 `LocalAppFont` provided in `OssWalletTheme`
+- [x] 3.4 Route amount tokens → serif, micro-readouts → mono (`cardPeriodReadout` added; the Phase 1 readout picks up mono here)
+- [x] 3.5 Font picker UI lists new fonts; persists via `saveSelectedFont` (picker iterates `AppFont.entries`, so new fonts appear automatically)
+- [x] **Acceptance:** serif amounts / mono readouts / Inter body with H font, live switch, tnum preserved, no clipping, build green
 
 ### Phase 4 — Color: H palettes (dark + light + AMOLED) + M3 dynamic accent
 - [ ] 4.1 `applyIdentityToColorScheme(base, identity, themeMode)` with H dark/light/AMOLED palettes

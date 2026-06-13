@@ -1,49 +1,94 @@
+@file:OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
+
 package com.osscabinet.ossWallet.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.R
+
+// Variable-font families. Each weight maps to the font's `wght` axis via FontVariation
+// (min SDK 26) so weights render from the real outlines instead of synthetic bolding.
+private val FrauncesFamily = FontFamily(
+    Font(R.font.fraunces, FontWeight.Light, variationSettings = FontVariation.Settings(FontVariation.weight(300))),
+    Font(R.font.fraunces, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.fraunces, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.fraunces, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.fraunces, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.fraunces_italic, FontWeight.Normal, FontStyle.Italic, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.fraunces_italic, FontWeight.Medium, FontStyle.Italic, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+)
+
+private val InterFamily = FontFamily(
+    Font(R.font.inter, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.inter, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.inter, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.inter, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+)
+
+private val JetBrainsMonoFamily = FontFamily(
+    Font(R.font.jetbrains_mono, FontWeight.Normal),
+    Font(R.font.jetbrains_mono, FontWeight.Medium),
+)
 
 /**
  * All supported app fonts. Add new entries here to make them available throughout the app —
  * no other typography code needs to change.
  *
- * [displayFamily] is used for headings/display text; [bodyFamily] for body/label text.
- * For [SYSTEM] both resolve to [FontFamily.Default].
+ * [displayFamily] is used for headings/display/amount text; [bodyFamily] for body/label text;
+ * [monoFamily] for micro-readouts (overlines, period labels, table headers).
  */
 enum class AppFont(
     val displayName: String,
     val displayFamily: FontFamily,
-    val bodyFamily: FontFamily
+    val bodyFamily: FontFamily,
+    val monoFamily: FontFamily
 ) {
+    EDITORIAL_INSTRUMENT(
+        displayName = "Editorial Instrument",
+        displayFamily = FrauncesFamily,
+        bodyFamily = InterFamily,
+        monoFamily = JetBrainsMonoFamily
+    ),
     MANROPE(
         displayName = "Manrope",
         displayFamily = FontFamily(Font(R.font.manrope)),
-        bodyFamily = FontFamily.Default
+        bodyFamily = FontFamily.Default,
+        monoFamily = FontFamily.Monospace
     ),
     INTER(
         displayName = "Inter",
-        displayFamily = FontFamily.Default,
-        bodyFamily = FontFamily.Default
+        displayFamily = InterFamily,
+        bodyFamily = InterFamily,
+        monoFamily = FontFamily.Monospace
     ),
     SYSTEM(
         displayName = "System Default",
         displayFamily = FontFamily.Default,
-        bodyFamily = FontFamily.Default
+        bodyFamily = FontFamily.Default,
+        monoFamily = FontFamily.Monospace
     );
 
     companion object {
-        val DEFAULT = MANROPE
+        val DEFAULT = EDITORIAL_INSTRUMENT
         fun fromName(name: String): AppFont = entries.find { it.name == name } ?: DEFAULT
     }
 }
+
+/**
+ * The active [AppFont], provided by [OssWalletTheme]. Lets [AppTextStyles] tokens route
+ * micro-readouts to [AppFont.monoFamily] and amounts to [AppFont.displayFamily].
+ */
+val LocalAppFont = staticCompositionLocalOf { AppFont.DEFAULT }
 
 // Typographic scale: sizes, weights, spacing — defined once with no font concern.
 // Font selection only injects fontFamily via createTypography(); nothing else changes.
@@ -205,7 +250,10 @@ object AppTextStyles {
     // Amount displayed on the transaction row (positive / negative numeral).
     val transactionAmount: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = LocalAppFont.current.displayFamily,
+                fontWeight = FontWeight.SemiBold
+            )
 
     // Secondary meta-data line under the amount (e.g. converted currency).
     val transactionAmountMeta: TextStyle
@@ -267,7 +315,10 @@ object AppTextStyles {
     // Secondary figure inside a card (e.g. expense sub-total).
     val cardSecondaryAmount: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = LocalAppFont.current.displayFamily,
+                fontWeight = FontWeight.Bold
+            )
 
     // Inline delta / change indicator.
     val cardDelta: TextStyle
@@ -378,6 +429,7 @@ object AppTextStyles {
     val timelineTabLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
+                fontFamily = LocalAppFont.current.monoFamily,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp,
                 fontSize = 8.sp
@@ -434,7 +486,16 @@ object AppTextStyles {
     // Timestamp or date meta label (small, secondary).
     val metaLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
-            MaterialTheme.typography.labelExtraSmall
+            MaterialTheme.typography.labelExtraSmall.copy(fontFamily = LocalAppFont.current.monoFamily)
+
+    // Tappable period readout inside a self-contained card header (e.g. "MAR 2025").
+    val cardPeriodReadout: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.labelSmall.copy(
+                fontFamily = LocalAppFont.current.monoFamily,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.5.sp
+            )
 
     // Caption / footnote text (below cards, under data).
     val caption: TextStyle
@@ -445,6 +506,7 @@ object AppTextStyles {
     val overlineLabel: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
+                fontFamily = LocalAppFont.current.monoFamily,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.sp
             )
@@ -454,6 +516,7 @@ object AppTextStyles {
     val sectionOverline: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
+                fontFamily = LocalAppFont.current.monoFamily,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 1.5.sp
             )
@@ -462,6 +525,7 @@ object AppTextStyles {
     val tableColumnHeader: TextStyle
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
+                fontFamily = LocalAppFont.current.monoFamily,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp
             )

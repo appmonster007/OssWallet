@@ -119,7 +119,7 @@ fun FilterSheetContent(
 
     // Sync localFilter when the external filter changes (and no edit is in flight).
     LaunchedEffect(filter) {
-        if (debounceJob.value == null) {
+        if (debounceJob.value == null && localFilter != filter) {
             localFilter = filter
         }
     }

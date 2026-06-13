@@ -61,9 +61,9 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [ ] **Acceptance:** each card matches comp in light+dark, all data preserved, build green, previews updated
 
 ### Phase 7 — Polish & verification
-- [ ] 7.1 Nav pill, FAB, icon tints, dividers, empty states aligned to H
-- [ ] 7.2 Design Lab preview screen flips identity (H/light/dark/AMOLED) + dynamic-accent on/off
-- [ ] **Acceptance:** coherent full-app walkthrough; `./gradlew lint test assembleDebug` green; device check of scroll/pill/reorder/add-card/font switch/dynamic-accent toggle
+- [x] 7.1 Nav pill, FAB, icon tints, dividers, empty states aligned to H. Pill/FAB/empty-state already consume `AppColors.*`; status/nav-bar tints driven by `!darkTheme` in `OssWalletTheme` SideEffect. Real gap fixed: H schemes left `secondary`/`tertiary`/`error` families at Material defaults (purple/red) — added editorial warm-neutral secondary/tertiary + H-negative-aligned error tokens to all three H schemes (Color.kt + Theme.kt)
+- [x] 7.2 Design Lab preview now reflects H — `OssWalletPreviewTheme` routes its base scheme through `applyIdentityToColorScheme(..., UiIdentity.DEFAULT, themeMode)`, so the Light/Dark/AMOLED cycle shows the real H palette. (Identity selector itself deferred: only H is implemented; A/B add nothing to flip yet.)
+- [~] **Acceptance:** `assembleDebug` green; code coherent. STILL PENDING: `./gradlew lint test`, and on-device walkthrough (scroll/pill/reorder/add-card/font switch/dynamic-accent toggle) — none of the H visual work has been device-verified yet
 
 ---
 

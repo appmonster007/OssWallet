@@ -71,6 +71,18 @@ private val HDarkColorScheme = darkColorScheme(
     onPrimary = HDarkOnAccent,
     primaryContainer = HDarkAccentContainer,
     onPrimaryContainer = HDarkOnAccentContainer,
+    secondary = HDarkSecondary,
+    onSecondary = HDarkOnSecondary,
+    secondaryContainer = HDarkSecondaryContainer,
+    onSecondaryContainer = HDarkOnSecondaryContainer,
+    tertiary = HDarkSecondary,
+    onTertiary = HDarkOnSecondary,
+    tertiaryContainer = HDarkSecondaryContainer,
+    onTertiaryContainer = HDarkOnSecondaryContainer,
+    error = HDarkError,
+    onError = HDarkOnError,
+    errorContainer = HDarkErrorContainer,
+    onErrorContainer = HDarkOnErrorContainer,
     background = HDarkBackground,
     onBackground = HDarkOnSurface,
     surface = HDarkBackground,
@@ -91,6 +103,18 @@ private val HLightColorScheme = lightColorScheme(
     onPrimary = HLightOnAccent,
     primaryContainer = HLightAccentContainer,
     onPrimaryContainer = HLightOnAccentContainer,
+    secondary = HLightSecondary,
+    onSecondary = HLightOnSecondary,
+    secondaryContainer = HLightSecondaryContainer,
+    onSecondaryContainer = HLightOnSecondaryContainer,
+    tertiary = HLightSecondary,
+    onTertiary = HLightOnSecondary,
+    tertiaryContainer = HLightSecondaryContainer,
+    onTertiaryContainer = HLightOnSecondaryContainer,
+    error = HLightError,
+    onError = HLightOnError,
+    errorContainer = HLightErrorContainer,
+    onErrorContainer = HLightOnErrorContainer,
     background = HLightBackground,
     onBackground = HLightOnSurface,
     surface = HLightBackground,
@@ -111,6 +135,18 @@ private val HAmoledColorScheme = darkColorScheme(
     onPrimary = HDarkOnAccent,
     primaryContainer = HDarkAccentContainer,
     onPrimaryContainer = HDarkOnAccentContainer,
+    secondary = HDarkSecondary,
+    onSecondary = HDarkOnSecondary,
+    secondaryContainer = HDarkSecondaryContainer,
+    onSecondaryContainer = HDarkOnSecondaryContainer,
+    tertiary = HDarkSecondary,
+    onTertiary = HDarkOnSecondary,
+    tertiaryContainer = HDarkSecondaryContainer,
+    onTertiaryContainer = HDarkOnSecondaryContainer,
+    error = HDarkError,
+    onError = HDarkOnError,
+    errorContainer = HDarkErrorContainer,
+    onErrorContainer = HDarkOnErrorContainer,
     background = HAmoledBackground,
     onBackground = HDarkOnSurface,
     surface = HAmoledBackground,
@@ -261,14 +297,16 @@ fun OssWalletPreviewTheme(
     theme: String,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = when (theme) {
+    val themeMode = remember(theme) {
+        ThemeHelper.getThemeMode(theme, theme != "Light")
+    }
+    val baseScheme = when (theme) {
         "Amoled" -> AmoledColorScheme
         "Dark"   -> darkColorScheme()
         else     -> lightColorScheme()
     }
-    val themeMode = remember(theme) {
-        ThemeHelper.getThemeMode(theme, theme != "Light")
-    }
+    // Reflect the active identity (H) so previews match the real app across Light/Dark/AMOLED.
+    val colorScheme = applyIdentityToColorScheme(baseScheme, UiIdentity.DEFAULT, themeMode)
     CompositionLocalProvider(
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,

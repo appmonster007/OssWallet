@@ -241,25 +241,24 @@ fun AeonTransactionItem(
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
+                            val amountColor =
+                                if (type == CashFlowType.INCOME) AppColors.positive else AppColors.negative
                             Text(
                                 text = amount,
-                                style = AppTextStyles.listItemTitle.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = scaledSp(13f, uiScale),
-                                    color = if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error
+                                style = AppTextStyles.transactionAmount.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = scaledSp(15f, uiScale),
+                                    color = amountColor
                                 )
                             )
 
                             if (convertedAmount != null) {
                                 Text(
                                     text = convertedAmount,
-                                    style = AppTextStyles.transactionSwipeAction.copy(
-                                        fontWeight = FontWeight.Bold,
+                                    style = AppTextStyles.transactionAmountMeta.copy(
                                         fontSize = 9.sp
                                     ),
-                                    color = (if (type == CashFlowType.INCOME) PositiveAmountColor else AppColors.error).copy(
-                                        alpha = 0.8f
-                                    )
+                                    color = amountColor.copy(alpha = 0.8f)
                                 )
                             }
 

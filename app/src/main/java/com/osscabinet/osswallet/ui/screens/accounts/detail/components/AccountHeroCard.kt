@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.screens.accounts.detail.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,8 +46,6 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.util.applyAccountTint
 import java.math.BigDecimal
@@ -84,17 +81,7 @@ fun AccountHeroCard(
     val icon = AppIconMap[account.icon] ?: Icons.Rounded.AccountBalance
 
     val mode = LocalThemeMode.current
-    val isDark = isSystemInDarkTheme()
-    val glassSettings = LocalGlassSettings.current
     val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
-
-    // Full-bleed account color: tint the glass blur with the account color so the background
-    // reads as the account color in both glass and non-glass (fallback) modes.
-    val accountHazeStyle = GlassTokens.createHazeStyle(
-        config = glassSettings.card,
-        bgColor = containerColor,
-        isDark = isDark
-    )
 
     val balanceInBase = CurrencyService.convertAmount(
         amount = balance,
@@ -111,7 +98,6 @@ fun AccountHeroCard(
         containerColor = containerColor,
         contentColor = contentColor,
         backgroundIcon = icon,
-        hazeStyleOverride = accountHazeStyle,
         modifier = modifier.clickable { callbacks.onClick?.invoke() },
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,

@@ -1,33 +1,27 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DonutLarge
-import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material.icons.rounded.Savings
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
@@ -35,17 +29,15 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 
 @Composable
 fun BudgetsCard(
@@ -91,10 +83,11 @@ fun BudgetsCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                items.forEach { progress ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                items.forEachIndexed { index, progress ->
                     BudgetProgressRow(
                         progress = progress,
+                        showDivider = index < items.lastIndex,
                         onClick = { callbacks.onBudgetClick(progress.budget.id) }
                     )
                 }
@@ -125,120 +118,60 @@ private fun BudgetsSettingsSheet(
 @Composable
 private fun BudgetProgressRow(
     progress: BudgetProgress,
+    showDivider: Boolean,
     onClick: () -> Unit
 ) {
-    val trackColor = when (progress.alertLevel) {
-        BudgetAlertLevel.EXCEEDED -> AppColors.error
-        BudgetAlertLevel.WARNING -> AppColors.error.copy(alpha = 0.8f)
-        BudgetAlertLevel.NONE -> PositiveAmountColor
-    }
+    val pct = progress.percentage.coerceIn(0f, 1f)
+    val over = progress.alertLevel == BudgetAlertLevel.EXCEEDED
+    val fillColor = if (over) AppColors.negative else AppColors.accent
+    val currency = progress.budget.currency
 
-    GlassSurface(
-        modifier = Modifier.clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.cardSurfaceProminent,
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) Icons.Rounded.ErrorOutline else Icons.Rounded.Savings,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = trackColor.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = progress.budget.name,
-                        style = AppTextStyles.screenSubTitle.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.2).sp
-                        ),
-                        color = AppColors.contentPrimary
-                    )
-                }
-                Text(
-                    text = "${(progress.percentage * 100).toInt()}%",
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Black,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = trackColor
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = { progress.percentage.coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp),
-                color = trackColor,
-                trackColor = AppColors.componentOnCard,
-                strokeCap = StrokeCap.Round
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .then(
+                if (showDivider) Modifier.aeonDottedUnderline(AppColors.outlineVariant)
+                else Modifier
             )
+            .padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = progress.budget.name,
+                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                color = AppColors.contentPrimary
+            )
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = AppColors.contentPrimary)) {
+                        append(formatAuto(progress.spent, currency))
+                    }
+                    withStyle(SpanStyle(color = AppColors.contentSecondary.copy(alpha = 0.8f))) {
+                        append(" / ${formatAuto(progress.limit, currency)} · ${(progress.percentage * 100).toInt()}%")
+                    }
+                },
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium)
+            )
+        }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) "OVER BUDGET" else "REMAINING",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            fontSize = 12.sp
-                        ),
-                        color = trackColor
-                    )
-                    Text(
-                        text = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) {
-                            formatAuto(
-                                progress.spent.subtract(progress.limit),
-                                progress.budget.currency
-                            )
-                        } else {
-                            formatAuto(
-                                progress.remaining,
-                                progress.budget.currency
-                            )
-                        },
-                        style = AppTextStyles.listItemTitle.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (progress.alertLevel == BudgetAlertLevel.EXCEEDED) AppColors.error else AppColors.contentPrimary
-                        )
-                    )
-                }
-
-                Surface(
-                    color = AppColors.insetSurface, // Level 3: Deepest unit
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, AppColors.border) // Mandatory for Level 3
-                ) {
-                    Text(
-                        text = "${formatAuto(progress.spent)} / ${formatAuto(progress.limit)}",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum",
-                            fontSize = 12.sp
-                        ),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = AppColors.contentSecondary // Paired with SurfaceVariant
-                    )
-                }
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(AppColors.outlineVariant)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(pct)
+                    .fillMaxHeight()
+                    .background(fillColor)
+            )
         }
     }
 }

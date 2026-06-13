@@ -30,11 +30,11 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [ ] **Acceptance:** filter cards show title+period in body, no icons; tap→pill→sheet→dismiss; long-press settings; reorder & add-card intact; hero/analytics cards unchanged; build green; registry untouched
 
 ### Phase 2 — Identity seam (no visual change)
-- [ ] 2.1 `domain/model/settings/UiIdentity.kt` enum `{ H, A, B; DEFAULT=H; fromName() }`
-- [ ] 2.2 `LocalUiIdentity` in Color.kt
-- [ ] 2.3 `identity` flow + `saveIdentity()` in SettingsRepository/Impl/DataStore
-- [ ] 2.4 `OssWalletTheme(identity=...)` provides `LocalUiIdentity`; MainActivity collects/passes
-- [ ] **Acceptance:** runs identically to Phase 1, default identity=H wired, build green, no visible change
+- [x] 2.1 `domain/model/settings/UiIdentity.kt` enum `{ H, A, B; DEFAULT=H; fromName() }`
+- [x] 2.2 `LocalUiIdentity` in Color.kt
+- [x] 2.3 `uiIdentity` flow + `saveUiIdentity()` in SettingsRepository/Impl/DataStore
+- [x] 2.4 `OssWalletTheme(identity=...)` provides `LocalUiIdentity`; MainActivity collects/passes
+- [x] **Acceptance:** runs identically to Phase 1, default identity=H wired, build green, no visible change
 
 ### Phase 3 — Typography: 3-family model + new fonts
 - [ ] 3.1 Add font resources (Fraunces + italic, JetBrains Mono)

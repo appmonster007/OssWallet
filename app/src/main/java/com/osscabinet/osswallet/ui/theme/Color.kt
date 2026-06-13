@@ -125,6 +125,10 @@ val LocalThemeMode = staticCompositionLocalOf<ThemeMode> {
     error("No ThemeMode provided. Wrap your UI in OssWalletTheme.")
 }
 
+val LocalUiIdentity = staticCompositionLocalOf {
+    com.osscabinet.ossWallet.domain.model.settings.UiIdentity.DEFAULT
+}
+
 object AppColors {
 
     // ── Accent / Brand ──────────────────────────────────────────────────────

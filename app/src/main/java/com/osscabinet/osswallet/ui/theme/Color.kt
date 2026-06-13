@@ -7,6 +7,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
+import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 
 // --- AMOLED THEME ---
 
@@ -30,6 +31,61 @@ val SurfaceContainerLowAmoled = Color(0xFF0A0C10) // N-4
 val SurfaceContainerAmoled = Color(0xFF0E1015)    // N-6
 val SurfaceContainerHighAmoled = Color(0xFF191C20) // N-10
 val SurfaceContainerHighestAmoled = Color(0xFF1D2024) // N-12
+
+// --- H "EDITORIAL INSTRUMENT" PALETTE ---
+// Warm-black / ivory / champagne (dark + amoled) and ivory / ink / bronze (light).
+// Neutrals are fixed under H; only the accent (primary) is dynamic-accent eligible.
+
+// Dark
+val HDarkBackground = Color(0xFF0B0B0A)
+val HDarkSurfaceContainerLowest = Color(0xFF0E0E0D)
+val HDarkSurfaceContainerLow = Color(0xFF111110)
+val HDarkSurfaceContainer = Color(0xFF131312)       // panel / card body
+val HDarkSurfaceContainerHigh = Color(0xFF1A1A18)
+val HDarkSurfaceContainerHighest = Color(0xFF201F1D)
+val HDarkSurfaceVariant = Color(0xFF1A1A18)
+val HDarkOnSurface = Color(0xFFECE8DD)              // ivory
+val HDarkOnSurfaceVariant = Color(0xFF9A958A)
+val HDarkOutline = Color(0x2EECE8DD)               // ivory ~18%
+val HDarkOutlineVariant = Color(0x17ECE8DD)        // ivory ~9% hairline
+val HDarkAccent = Color(0xFFD6C189)                // champagne
+val HDarkOnAccent = Color(0xFF2A2410)
+val HDarkAccentContainer = Color(0xFF3A3320)
+val HDarkOnAccentContainer = Color(0xFFF0E4C0)
+
+// Light
+val HLightBackground = Color(0xFFF2EFE7)
+val HLightSurfaceContainerLowest = Color(0xFFFFFFFF)
+val HLightSurfaceContainerLow = Color(0xFFFAF8F1)
+val HLightSurfaceContainer = Color(0xFFFAF8F1)      // panel / card body
+val HLightSurfaceContainerHigh = Color(0xFFF4F1E8)
+val HLightSurfaceContainerHighest = Color(0xFFEEEADF)
+val HLightSurfaceVariant = Color(0xFFEAE6DA)
+val HLightOnSurface = Color(0xFF1B1914)             // ink
+val HLightOnSurfaceVariant = Color(0xFF6B6658)
+val HLightOutline = Color(0xFFC9C2B2)
+val HLightOutlineVariant = Color(0xFFDED9CC)        // hairline
+val HLightAccent = Color(0xFF8A6F3C)               // bronze
+val HLightOnAccent = Color(0xFFFFFFFF)
+val HLightAccentContainer = Color(0xFFE8DCC0)
+val HLightOnAccentContainer = Color(0xFF3A2E14)
+
+// AMOLED (true black, panels lifted slightly, hairlines brightened)
+val HAmoledBackground = Color(0xFF000000)
+val HAmoledSurfaceContainerLowest = Color(0xFF000000)
+val HAmoledSurfaceContainerLow = Color(0xFF080807)
+val HAmoledSurfaceContainer = Color(0xFF0C0C0B)     // panel / card body
+val HAmoledSurfaceContainerHigh = Color(0xFF141413)
+val HAmoledSurfaceContainerHighest = Color(0xFF1A1A18)
+val HAmoledSurfaceVariant = Color(0xFF141413)
+val HAmoledOutline = Color(0x33ECE8DD)             // ivory ~20%
+val HAmoledOutlineVariant = Color(0x1FECE8DD)      // ivory ~12% hairline
+
+// Semantic feedback (pos / neg) under H
+val HPositiveDark = Color(0xFF7FBF8E)
+val HNegativeDark = Color(0xFFD88379)
+val HPositiveLight = Color(0xFF2C6E49)
+val HNegativeLight = Color(0xFF9B3B30)
 
 // --- GLASS THEME PREPARATION ---
 // Tokens for upcoming glass implementation as per colors.md
@@ -164,6 +220,9 @@ object AppColors {
     val positive: Color
         @Composable @ReadOnlyComposable get() {
             val mode = LocalThemeMode.current
+            if (LocalUiIdentity.current == UiIdentity.H) {
+                return if (mode.isDarkTheme || mode.isAmoled) HPositiveDark else HPositiveLight
+            }
             return when {
                 mode.isAmoled -> Color(0xFF5BE093)
                 mode.isDarkTheme -> Color(0xFF4DCE85)
@@ -173,6 +232,9 @@ object AppColors {
     val negative: Color
         @Composable @ReadOnlyComposable get() {
             val mode = LocalThemeMode.current
+            if (LocalUiIdentity.current == UiIdentity.H) {
+                return if (mode.isDarkTheme || mode.isAmoled) HNegativeDark else HNegativeLight
+            }
             return when {
                 mode.isAmoled -> Color(0xFFF08782)
                 mode.isDarkTheme -> Color(0xFFE27974)

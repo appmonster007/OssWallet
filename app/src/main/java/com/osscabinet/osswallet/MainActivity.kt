@@ -55,6 +55,7 @@ class MainActivity : FragmentActivity() {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
             val selectedFont by settingsRepository.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
             val uiIdentity by settingsRepository.uiIdentity.collectAsStateWithLifecycle(initialValue = com.osscabinet.ossWallet.domain.model.settings.UiIdentity.DEFAULT.name)
+            val dynamicAccent by settingsRepository.dynamicAccent.collectAsStateWithLifecycle(initialValue = false)
             val precision by settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
             val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
@@ -82,6 +83,7 @@ class MainActivity : FragmentActivity() {
                 theme = theme,
                 fontName = selectedFont,
                 identity = uiIdentity,
+                dynamicAccent = dynamicAccent,
                 glassSettings = glassSettings,
                 uiDensity = uiDensity
             ) {

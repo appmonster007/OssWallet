@@ -88,6 +88,9 @@ class SettingsViewModel @Inject constructor(
     val selectedFont: StateFlow<String> = settingsRepository.selectedFont
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Default")
     
+    val dynamicAccent: StateFlow<Boolean> = settingsRepository.dynamicAccent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     
@@ -282,6 +285,12 @@ class SettingsViewModel @Inject constructor(
     fun setUiDensity(density: com.osscabinet.ossWallet.domain.model.settings.UiDensity) {
         viewModelScope.launch {
             settingsRepository.saveUiDensity(density.name)
+        }
+    }
+
+    fun setDynamicAccent(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveDynamicAccent(enabled)
         }
     }
 

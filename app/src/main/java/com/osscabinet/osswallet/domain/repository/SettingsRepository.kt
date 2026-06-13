@@ -23,6 +23,7 @@ interface SettingsRepository {
     val useSystemFont: Flow<Boolean>
     val selectedFont: Flow<String>
     val uiIdentity: Flow<String>
+    val dynamicAccent: Flow<Boolean>
     val numberingSystem: Flow<String>
     val recordsSettings: Flow<TransactionSectionSettings>
     val dashboardCardsConfig: Flow<String>
@@ -56,6 +57,7 @@ interface SettingsRepository {
     suspend fun saveUseSystemFont(enabled: Boolean)
     suspend fun saveSelectedFont(fontName: String)
     suspend fun saveUiIdentity(identity: String)
+    suspend fun saveDynamicAccent(enabled: Boolean)
     suspend fun saveNumberingSystem(system: String)
     suspend fun updateRecordsSettings(update: (TransactionSectionSettings) -> TransactionSectionSettings)
     suspend fun saveDashboardCardsConfig(config: String)

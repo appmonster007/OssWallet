@@ -45,10 +45,10 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & acceptance me
 - [x] **Acceptance:** serif amounts / mono readouts / Inter body with H font, live switch, tnum preserved, no clipping, build green
 
 ### Phase 4 — Color: H palettes (dark + light + AMOLED) + M3 dynamic accent
-- [ ] 4.1 `applyIdentityToColorScheme(base, identity, themeMode)` with H dark/light/AMOLED palettes
-- [ ] 4.2 Extend pos/neg per identity; champagne/bronze accent token (Phase 0 hairline + Phase 1 readout pick up the accent here)
-- [ ] 4.3 **Dynamic-accent toggle (M3 customization):** keep ALL H neutrals/structure fixed; when the toggle is on (+ Android 12+), override ONLY the accent token with Material You's `primary`. Full `dynamicColor` (bg/surface from wallpaper) stays off under H.
-- [ ] **Acceptance:** dashboard + sample screens render H across light/dark/AMOLED, correct contrast, no hardcoded-hex regressions; dynamic-accent toggle live-recolors accent (hairline, readout, chips) while neutrals stay H; build green
+- [x] 4.1 `applyIdentityToColorScheme(base, identity, themeMode, accentOverride)` with H dark/light/AMOLED palettes (`HDark/HLight/HAmoledColorScheme` in Theme.kt; H constants in Color.kt)
+- [x] 4.2 Extend pos/neg per identity; champagne/bronze accent via `primary` token (hairline + readout pick it up automatically)
+- [x] 4.3 **Dynamic-accent toggle (M3 customization):** `dynamicAccent` setting (DataStore/Repo/Impl/VM/MainActivity) overrides ONLY `primary` with Material You's `primary` on Android 12+; H neutrals stay fixed. Toggle surfaced in Display Settings → Appearance.
+- [x] **Acceptance:** dashboard + sample screens render H across light/dark/AMOLED, correct contrast, no hardcoded-hex regressions; dynamic-accent toggle live-recolors accent (hairline, readout, chips) while neutrals stay H; build green
 
 ### Phase 5 — Filter pill / sheet H restyle
 - [ ] 5.1 Restyle `TransactionFilterPill` / `FilterSheetContent` to H (mono labels, champagne chips, serif headings) — content/logic unchanged

@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.UiDensity
+import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 
 private val AmoledColorScheme = darkColorScheme(
     primary = PrimaryAmoled,
@@ -82,6 +83,7 @@ fun OssWalletTheme(
     theme: String = "System",
     dynamicColor: Boolean = true,
     fontName: String = AppFont.DEFAULT.name,
+    identity: String = UiIdentity.DEFAULT.name,
     glassSettings: GlassSettings = GlassSettings(),
     uiDensity: UiDensity = UiDensity.DEFAULT,
     setWindowBackground: Boolean = true,
@@ -134,6 +136,7 @@ fun OssWalletTheme(
         LocalUiScale provides uiDensity.scale,
         LocalAppColorScheme provides colorScheme,
         LocalThemeMode provides themeMode,
+        LocalUiIdentity provides UiIdentity.fromName(identity),
         LocalGlassSettings provides glassSettings
     ) {
         MaterialTheme(

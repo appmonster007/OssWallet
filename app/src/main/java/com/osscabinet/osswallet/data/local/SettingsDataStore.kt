@@ -40,6 +40,7 @@ class SettingsDataStore(private val context: Context) {
         val USER_NAME_KEY = stringPreferencesKey("user_name")
         val USE_SYSTEM_FONT_KEY = booleanPreferencesKey("use_system_font")
         val SELECTED_FONT_KEY = stringPreferencesKey("selected_font")
+        val UI_IDENTITY_KEY = stringPreferencesKey("ui_identity")
         val NUMBERING_SYSTEM_KEY = stringPreferencesKey("numbering_system")
         val SHORTLISTED_CURRENCIES_KEY = stringSetPreferencesKey("shortlisted_currencies")
 
@@ -124,6 +125,11 @@ class SettingsDataStore(private val context: Context) {
     val selectedFont: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[SELECTED_FONT_KEY]
             ?: if (preferences[USE_SYSTEM_FONT_KEY] == true) "SYSTEM" else "MANROPE"
+    }
+
+    val uiIdentity: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[UI_IDENTITY_KEY]
+            ?: com.osscabinet.ossWallet.domain.model.settings.UiIdentity.DEFAULT.name
     }
 
     val numberingSystem: Flow<String> = context.dataStore.data.map { preferences ->
@@ -290,6 +296,12 @@ class SettingsDataStore(private val context: Context) {
     suspend fun saveSelectedFont(fontName: String) {
         context.dataStore.edit { preferences ->
             preferences[SELECTED_FONT_KEY] = fontName
+        }
+    }
+
+    suspend fun saveUiIdentity(identity: String) {
+        context.dataStore.edit { preferences ->
+            preferences[UI_IDENTITY_KEY] = identity
         }
     }
 

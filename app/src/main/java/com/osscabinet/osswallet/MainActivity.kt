@@ -54,6 +54,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
             val selectedFont by settingsRepository.selectedFont.collectAsStateWithLifecycle(initialValue = "MANROPE")
+            val uiIdentity by settingsRepository.uiIdentity.collectAsStateWithLifecycle(initialValue = com.osscabinet.ossWallet.domain.model.settings.UiIdentity.DEFAULT.name)
             val precision by settingsRepository.decimalPrecision.collectAsStateWithLifecycle(initialValue = 2)
             val numberingSystem by settingsRepository.numberingSystem.collectAsStateWithLifecycle(initialValue = "WESTERN")
             val use24Hour by settingsRepository.use24HourFormat.collectAsStateWithLifecycle(initialValue = false)
@@ -80,6 +81,7 @@ class MainActivity : FragmentActivity() {
             OssWalletTheme(
                 theme = theme,
                 fontName = selectedFont,
+                identity = uiIdentity,
                 glassSettings = glassSettings,
                 uiDensity = uiDensity
             ) {

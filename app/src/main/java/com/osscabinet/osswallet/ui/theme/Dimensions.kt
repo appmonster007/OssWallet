@@ -105,7 +105,7 @@ data class AeonDimensions(
      * The curvature that defines the Aeon look.
      */
     // Main structural cards (Accounts, Budgets, Loans)
-    val cardCornerRadius: Dp = AeonSize.D32.value,
+    val cardCornerRadius: Dp = AeonSize.D28.value,
     // Full-screen bottom sheets and alert dialogs
     val dialogCornerRadius: Dp = AeonSize.D32.value,
     // Generic grouping containers (Surfaces inside screens)

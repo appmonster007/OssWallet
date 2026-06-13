@@ -493,7 +493,7 @@ object AppTextStyles {
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.labelSmall.copy(
                 fontFamily = LocalAppFont.current.monoFamily,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.Light,
                 letterSpacing = 0.5.sp
             )
 

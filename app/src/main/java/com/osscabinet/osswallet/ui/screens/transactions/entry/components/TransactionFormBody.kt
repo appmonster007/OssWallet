@@ -174,6 +174,8 @@ fun TransactionFormBody(
                 allAvailableTags = state.allTags,
                 onTagClick = { onEvent(TransactionEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TransactionEntryEvent.RemoveTag(tag)) },
+                onTagsSelected = { tags -> onEvent(TransactionEntryEvent.SetTags(tags)) },
+                onAddTag = { tag, color -> onEvent(TransactionEntryEvent.AddTag(tag, color)) },
                 noteSuggestions = state.allNotes,
                 payeeSuggestions = state.allPayees,
                 additionalContent = {

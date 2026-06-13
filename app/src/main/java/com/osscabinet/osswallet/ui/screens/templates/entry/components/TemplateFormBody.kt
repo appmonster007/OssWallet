@@ -142,6 +142,8 @@ fun TemplateFormBody(
                 allAvailableTags = state.allTags,
                 onTagClick = { onEvent(TemplateEntryEvent.ShowTagSheet(true)) },
                 onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
+                onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
+                onAddTag = { name, _ -> onEvent(TemplateEntryEvent.SetTags(state.tags + name)) },
                 noteSuggestions = state.uniqueNotes,
                 payeeSuggestions = state.uniquePayees,
                 additionalContent = {

@@ -126,7 +126,8 @@ fun BudgetFormBody(
                         onValueChange = { onEvent(BudgetEntryEvent.SetNote(it)) },
                         label = "BUDGET NOTE",
                         icon = Icons.AutoMirrored.Rounded.Notes,
-                        placeholder = "Brief description or purpose..."
+                        placeholder = "Brief description or purpose...",
+                        isSelected = state.note.isNotEmpty()
                     )
                 }
             }
@@ -217,7 +218,8 @@ fun BudgetFormBody(
                                 onValueChange = { onEvent(BudgetEntryEvent.SetQueryNote(it)) },
                                 label = "NOTE QUERY",
                                 icon = Icons.AutoMirrored.Rounded.Notes,
-                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Match note text..."
+                                placeholder = if (state.isNoteRegex) "/pattern/i" else "Match note text...",
+                                isSelected = state.queryNote.isNotEmpty()
                             )
                         }
 
@@ -235,7 +237,8 @@ fun BudgetFormBody(
                                 onValueChange = { onEvent(BudgetEntryEvent.SetQueryPayee(it)) },
                                 label = "PAYEE QUERY",
                                 icon = Icons.Rounded.Person,
-                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Match payee name..."
+                                placeholder = if (state.isPayeeRegex) "/pattern/i" else "Match payee name...",
+                                isSelected = state.queryPayee.isNotEmpty()
                             )
                         }
                     }
@@ -245,7 +248,9 @@ fun BudgetFormBody(
                         selectedNames = state.selectedTags,
                         allAvailableTags = state.availableTags,
                         onShowTagSheet = { onEvent(BudgetEntryEvent.ShowTagSheet(show = true)) },
-                        onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) }
+                        onRemoveTag = { tag -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags - tag)) },
+                        onTagsSelected = { onEvent(BudgetEntryEvent.SetTags(it)) },
+                        onAddTag = { name, _ -> onEvent(BudgetEntryEvent.SetTags(state.selectedTags + name)) }
                     )
 
                     // RESTORED: Payment Method and Status Filters

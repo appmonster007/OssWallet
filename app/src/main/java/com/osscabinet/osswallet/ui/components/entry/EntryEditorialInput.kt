@@ -89,6 +89,7 @@ fun EntryEditorialInput(
     placeholder: String = "Enter text...",
     iconColor: Color = AppColors.primary,
     enabled: Boolean = true,
+    isSelected: Boolean = false,
     isFlush: Boolean = false,
     isError: Boolean = false,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
@@ -122,6 +123,7 @@ fun EntryEditorialInput(
     val backgroundColor by animateColorAsState(
         targetValue = when {
             isFlush -> AppColors.transparent
+            isSelected -> iconColor.copy(alpha = 0.15f)
             glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
             else -> AppColors.surfaceContainerLow
         },
@@ -132,7 +134,7 @@ fun EntryEditorialInput(
         targetValue = when {
             isFlush -> Color.Transparent
             isError -> AppColors.error
-            isFocused -> AppColors.primary
+            isFocused || isSelected -> iconColor
             glassEnabled -> Color.White.copy(alpha = 0.1f)
             else -> AppColors.outlineVariant.copy(alpha = 0.5f)
         },
@@ -143,7 +145,7 @@ fun EntryEditorialInput(
     val borderWidth by animateDpAsState(
         targetValue = when {
             isFlush -> 0.dp
-            isFocused || isError -> config.surface.borderWidth.dp
+            isFocused || isError || isSelected -> config.surface.borderWidth.dp
             else -> (config.surface.borderWidth * 0.5f).dp
         },
         label = "borderWidth"

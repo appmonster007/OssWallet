@@ -28,6 +28,11 @@ class TransactionManagerTest {
             plannedPaymentRepository,
             widgetRefreshTrigger
         )
+        // handleSaveTransaction wraps its work in runAtomically { ... }; run the block inline
+        // so the per-test stubs below are actually exercised.
+        coEvery { transactionUseCases.runAtomically<Any?>(any()) } coAnswers {
+            firstArg<suspend () -> Any?>().invoke()
+        }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -27,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -42,7 +45,7 @@ import com.osscabinet.ossWallet.ui.theme.scaledDp
  * Following the "Architect Slate" design specification.
  * Now manages its own tag selection pop-up for a seamless "real pop up" experience.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun EntryTagSection(
     selectedNames: Set<String>,
@@ -52,9 +55,12 @@ fun EntryTagSection(
     modifier: Modifier = Modifier,
     label: String = "ADD TAG",
     onTagsSelected: (Set<String>) -> Unit = {},
-    onAddTag: (String, Int) -> Unit = { _, _ -> }
+    onAddTag: (String, Int) -> Unit = { _, _ -> },
+    onToggleTagLogic: (() -> Unit)? = null,
+    isAndLogic: Boolean = true
 ) {
     val uiScale = AeonTheme.uiScale
+    val haptic = LocalHapticFeedback.current
     val resolvedTags = remember(selectedNames, allAvailableTags) {
         selectedNames.map { name ->
             allAvailableTags.find { it.name.equals(name, ignoreCase = true) }
@@ -73,11 +79,20 @@ fun EntryTagSection(
     ) {
         // Add Tag Button
         Surface(
-            onClick = { showPopup = true },
             shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
             color = AppColors.surfaceContainerHigh,
             border = BorderStroke(1.dp, AppColors.outlineVariant),
-            modifier = Modifier.height(scaledDp(32f, uiScale))
+            modifier = Modifier
+                .height(scaledDp(32f, uiScale))
+                .combinedClickable(
+                    onClick = { showPopup = true },
+                    onLongClick = {
+                        if (onToggleTagLogic != null) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onToggleTagLogic()
+                        }
+                    }
+                )
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = scaledDp(12f, uiScale)),
@@ -91,7 +106,9 @@ fun EntryTagSection(
                 )
                 Spacer(modifier = Modifier.width(scaledDp(6f, uiScale)))
                 Text(
-                    text = label,
+                    text = if (onToggleTagLogic != null) {
+                        "Tags (${if (isAndLogic) "AND" else "OR"})"
+                    } else label,
                     style = AppTextStyles.tagLabel,
                     color = AppColors.primary
                 )

@@ -31,5 +31,6 @@ data class FilterEntity(
     val currencies: Set<String> = emptySet(),
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val tags: Set<String> = emptySet()
+    val tags: Set<String> = emptySet(),
+    val matchAllTags: Boolean = true
 )

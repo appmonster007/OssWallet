@@ -124,8 +124,8 @@ class CashFlowComparisonCardComputer(
 
         when (granularity) {
             CashFlowComparisonGranularity.DAY -> {
-                var day = LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone)
-                val lastDay = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone)
+                var day = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
+                val lastDay = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
                 while (!day.isAfter(lastDay)) {
                     val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
                     val end = day.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
@@ -134,10 +134,10 @@ class CashFlowComparisonCardComputer(
                 }
             }
             CashFlowComparisonGranularity.WEEK -> {
-                var weekStart = LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone)
+                var weekStart = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
                     .with(DayOfWeek.MONDAY)
                     .let { if (it.atStartOfDay(zone).toInstant().toEpochMilli() > rangeStart) it.minusWeeks(1) else it }
-                val rangeEndDate = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone)
+                val rangeEndDate = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
                 while (!weekStart.isAfter(rangeEndDate)) {
                     val weekEnd = weekStart.plusDays(6)
                     val start = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -147,8 +147,8 @@ class CashFlowComparisonCardComputer(
                 }
             }
             CashFlowComparisonGranularity.MONTH -> {
-                var month = LocalDate.ofInstant(Instant.ofEpochMilli(rangeStart), zone).withDayOfMonth(1)
-                val lastMonth = LocalDate.ofInstant(Instant.ofEpochMilli(rangeEnd), zone).withDayOfMonth(1)
+                var month = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate().withDayOfMonth(1)
+                val lastMonth = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate().withDayOfMonth(1)
                 while (!month.isAfter(lastMonth)) {
                     val start = month.atStartOfDay(zone).toInstant().toEpochMilli()
                     val end = month.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1

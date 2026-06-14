@@ -108,6 +108,92 @@ fun ConvertedWithNativeSubtext(
 }
 
 /**
+ * Same as [NativeWithConvertedSubtext] but takes a precomputed [convertedAmount] instead
+ * of re-running conversion at render time. Use this when the data layer already produced
+ * the equivalent (e.g. `record.amountInBase`, `AccountSummaryItem.balanceInBase`).
+ */
+@Composable
+fun NativeWithConvertedSubtext(
+    amount: BigDecimal,
+    nativeCurrency: String,
+    targetCurrency: String,
+    convertedAmount: BigDecimal,
+    modifier: Modifier = Modifier,
+    primaryStyle: TextStyle = LocalTextStyle.current,
+    subtextStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    primaryColor: Color = Color.Unspecified,
+    subtextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    horizontalAlignment: Alignment.Horizontal = Alignment.End,
+) {
+    val primary = remember(amount, nativeCurrency) { formatAuto(amount, nativeCurrency) }
+    val subtext = if (nativeCurrency != targetCurrency) {
+        remember(convertedAmount, targetCurrency) {
+            "≈ ${formatAuto(convertedAmount, targetCurrency)}"
+        }
+    } else null
+
+    Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
+        Text(text = primary, style = primaryStyle, color = primaryColor)
+        if (subtext != null) {
+            Text(text = subtext, style = subtextStyle, color = subtextColor)
+        }
+    }
+}
+
+/**
+ * Same as [ConvertedWithNativeSubtext] but takes a precomputed [convertedAmount] instead
+ * of re-running conversion at render time.
+ */
+@Composable
+fun ConvertedWithNativeSubtext(
+    amount: BigDecimal,
+    nativeCurrency: String,
+    targetCurrency: String,
+    convertedAmount: BigDecimal,
+    modifier: Modifier = Modifier,
+    primaryStyle: TextStyle = LocalTextStyle.current,
+    subtextStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    primaryColor: Color = Color.Unspecified,
+    subtextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    horizontalAlignment: Alignment.Horizontal = Alignment.End,
+) {
+    val sameCurrency = nativeCurrency == targetCurrency
+    val primary = remember(amount, convertedAmount, nativeCurrency, targetCurrency) {
+        formatAuto(if (sameCurrency) amount else convertedAmount, targetCurrency)
+    }
+    val subtext = if (!sameCurrency) {
+        remember(amount, nativeCurrency) { formatAuto(amount, nativeCurrency) }
+    } else null
+
+    Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
+        Text(text = primary, style = primaryStyle, color = primaryColor)
+        if (subtext != null) {
+            Text(text = subtext, style = subtextStyle, color = subtextColor)
+        }
+    }
+}
+
+/**
+ * Non-composable helper that returns `(primary, subtext?)` formatted strings for a
+ * "native primary, ≈ converted subtext" pair. Subtext is null when `nativeCurrency`
+ * already equals `targetCurrency`. Useful for call sites that hand pre-formatted strings
+ * to a richer component (e.g. AeonTransactionItem) instead of rendering Text composables
+ * directly.
+ */
+fun nativeWithConvertedStrings(
+    amount: BigDecimal,
+    nativeCurrency: String,
+    targetCurrency: String,
+    convertedAmount: BigDecimal?,
+): Pair<String, String?> {
+    val primary = formatAuto(amount, nativeCurrency)
+    val subtext = if (nativeCurrency != targetCurrency && convertedAmount != null) {
+        "≈ ${formatAuto(convertedAmount, targetCurrency)}"
+    } else null
+    return primary to subtext
+}
+
+/**
  * Inline single-line equivalent. Renders "primary (≈ subtext)" on one line if currencies
  * differ; otherwise just the primary. Useful in tight rows where a stacked Column is too tall.
  */

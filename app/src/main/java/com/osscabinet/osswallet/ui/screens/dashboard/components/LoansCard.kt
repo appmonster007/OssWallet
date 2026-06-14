@@ -1,27 +1,23 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,10 +33,9 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -92,12 +87,13 @@ fun LoansCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items.forEach { summary ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                items.forEachIndexed { index, summary ->
                     LoanSummaryRow(
                         summary = summary,
                         targetCurrency = targetCurrency,
                         exchangeRates = exchangeRates,
+                        showDivider = index < items.lastIndex,
                         onClick = { callbacks.onLoanClick(summary.loan.id) }
                     )
                 }
@@ -142,114 +138,93 @@ private fun LoanSummaryRow(
     summary: LoanSummary,
     targetCurrency: String,
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
+    showDivider: Boolean,
     onClick: () -> Unit
 ) {
     val accentColor =
-        if (summary.loan.loanType == LoanType.LENT) AppColors.primary else WarningColor
+        if (summary.loan.loanType == LoanType.LENT) AppColors.accent else WarningColor
 
     val progress = if (summary.loan.principalAmount > BigDecimal.ZERO)
         (summary.totalPaid.divide(summary.loan.principalAmount, 4, RoundingMode.HALF_UP)).toFloat()
             .coerceIn(0f, 1f)
     else 0f
 
-    GlassSurface(
-        modifier = Modifier.clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.sheetSurface,
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .then(
+                if (showDivider) Modifier.aeonDottedUnderline(AppColors.outlineVariant)
+                else Modifier
+            )
+            .padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = summary.loan.name,
-                        style = AppTextStyles.screenSubTitle.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.2).sp
-                        ),
-                        color = AppColors.contentPrimary
-                    )
-                    Text(
-                        text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}"
-                        else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp
-                        ),
-                        color = accentColor.copy(alpha = 0.7f)
-                    )
-                }
-
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${(progress * 100).toInt()}%",
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Black,
-                        fontFeatureSettings = "tnum"
-                    ),
-                    color = accentColor
+                    text = summary.loan.name,
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                    color = AppColors.contentPrimary
+                )
+                Text(
+                    text = if (summary.loan.loanType == LoanType.LENT) "LENT TO ${summary.loan.lenderOrBorrowerName}".uppercase()
+                    else "BORROWED FROM ${summary.loan.lenderOrBorrowerName}".uppercase(),
+                    style = AppTextStyles.metaLabel,
+                    color = accentColor.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp),
-                color = accentColor,
-                trackColor = accentColor.copy(alpha = 0.1f),
-                strokeCap = StrokeCap.Round
+            com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
+                amount = summary.remainingBalance,
+                nativeCurrency = summary.loan.currency,
+                targetCurrency = targetCurrency,
+                rates = exchangeRates,
+                primaryStyle = AppTextStyles.transactionAmount.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 17.sp
+                ),
+                primaryColor = AppColors.contentPrimary,
+                subtextStyle = AppTextStyles.metaLabel,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
+                horizontalAlignment = Alignment.End
             )
+        }
 
-            Spacer(modifier = Modifier.height(14.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(AppColors.outlineVariant)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(accentColor)
+            )
+        }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "REMAINING",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
-                        amount = summary.remainingBalance,
-                        nativeCurrency = summary.loan.currency,
-                        targetCurrency = targetCurrency,
-                        rates = exchangeRates,
-                        primaryStyle = AppTextStyles.listItemTitle.copy(
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        primaryColor = AppColors.contentPrimary,
-                        horizontalAlignment = Alignment.Start
-                    )
-                }
-
-                Surface(
-                    color = AppColors.componentOnCard.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Principal: ${formatAuto(summary.loan.principalAmount)}",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontFeatureSettings = "tnum"
-                        ),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                    )
-                }
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "PRINCIPAL ${formatAuto(summary.loan.principalAmount)}",
+                style = AppTextStyles.metaLabel,
+                color = AppColors.contentSecondary.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "${(progress * 100).toInt()}% PAID",
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
+                color = accentColor
+            )
         }
     }
 }

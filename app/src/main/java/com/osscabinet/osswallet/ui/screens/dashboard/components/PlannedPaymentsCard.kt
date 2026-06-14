@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -24,8 +23,6 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
@@ -60,11 +57,10 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import java.math.BigDecimal
@@ -260,16 +256,17 @@ private fun PlannedPaymentRow(
     var showActions by remember { mutableStateOf(false) }
 
     val typeColor = when {
-        isOverdue -> AppColors.error
+        isOverdue -> AppColors.negative
         transactionType == TransactionType.INCOME -> AppColors.positive
         transactionType == TransactionType.TRANSFER -> AccentBlue
-        else -> AppColors.error
+        else -> AppColors.negative
     }
 
-    GlassSurface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
+            .aeonDottedUnderline(AppColors.outlineVariant)
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
@@ -283,33 +280,26 @@ private fun PlannedPaymentRow(
                     }
                 )
             },
-        shape = RoundedCornerShape(dims.componentCornerRadius),
-        glassVariant = GlassVariant.Item,
-        fallbackColor = if (isOverdue) AppColors.errorContainer.copy(alpha = 0.15f)
-        else AppColors.onPanelSurface,
-        borderColor = if (isOverdue) AppColors.error.copy(alpha = 0.2f) else null,
-        borderWidth = if (isOverdue) 0.5.dp else null,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = AppTextStyles.managementItemTitle.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    ),
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                    color = AppColors.contentPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = dateLabel.uppercase(),
-                    style = AppTextStyles.transactionStatusMicro,
-                    color = if (isOverdue) AppColors.error
-                    else AppColors.contentSecondary
+                    style = AppTextStyles.metaLabel,
+                    color = if (isOverdue) AppColors.negative
+                    else AppColors.contentSecondary.copy(alpha = 0.8f),
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
             com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
@@ -317,12 +307,14 @@ private fun PlannedPaymentRow(
                 nativeCurrency = currency,
                 targetCurrency = targetCurrency,
                 rates = exchangeRates,
-                primaryStyle = AppTextStyles.listItemTitle.copy(
-                    fontWeight = FontWeight.Black,
-                    fontSize = 14.sp,
+                primaryStyle = AppTextStyles.transactionAmount.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
                     color = typeColor
                 ),
-                primaryColor = typeColor
+                primaryColor = typeColor,
+                subtextStyle = AppTextStyles.metaLabel,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f)
             )
             if (onConfirm != null || onSkip != null) {
                 Box {

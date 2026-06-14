@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -35,12 +36,11 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
@@ -206,24 +206,25 @@ fun CurrencyBalanceItem(
     modifier: Modifier = Modifier
 ) {
     val style = if (isLarge) AppTextStyles.heroAmount else AppTextStyles.cardSecondaryAmount
-    val verticalPadding = if (isLarge) 16.dp else 12.dp
+    val verticalPadding = if (isLarge) 16.dp else 14.dp
+    val shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
 
-    GlassSurface(
-        modifier = modifier.clickable { onClick() },
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.surfaceContainerLow,
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(AppColors.cardSurfaceProminent)
+            .aeonHairlineBorder(shape)
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = verticalPadding)
     ) {
         Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = verticalPadding)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                curr,
-                style = AppTextStyles.overlineLabel,
-                color = AppColors.primary,
+                curr.uppercase(),
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.accent,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -234,6 +235,8 @@ fun CurrencyBalanceItem(
                     targetCurrency = targetCurrency,
                     rates = exchangeRates,
                     primaryStyle = style,
+                    subtextStyle = AppTextStyles.metaLabel,
+                    subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
                     horizontalAlignment = Alignment.Start,
                     modifier = Modifier.fillMaxWidth()
                 )

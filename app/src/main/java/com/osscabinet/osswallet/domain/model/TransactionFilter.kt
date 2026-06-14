@@ -5,14 +5,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
-/**
- * Sign-based predicate orthogonal to [TransactionType]. ANY = no constraint;
- * IN = amount > 0; OUT = amount < 0. Used by views that need to disambiguate
- * transfer legs (e.g. CashFlow card "Inflow / Outflow" tap-through to Records).
- */
-@Serializable
-enum class FlowDirection { ANY, IN, OUT }
-
 @Serializable
 data class TransactionFilter(
     val timelineRange: TimelineRange = TimelineRange.AllTime(),
@@ -36,7 +28,6 @@ data class TransactionFilter(
     val matchAllTags: Boolean = true, // true = AND, false = OR
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val flowDirection: FlowDirection = FlowDirection.ANY,
 )
 
 /**
@@ -69,7 +60,6 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         hasWarranty = other.hasWarranty ?: this.hasWarranty,
         warrantyExpirationStart = other.warrantyExpirationStart ?: this.warrantyExpirationStart,
         warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd,
-        flowDirection = if (other.flowDirection != FlowDirection.ANY) other.flowDirection else this.flowDirection,
     )
 }
 
@@ -114,6 +104,24 @@ fun TransactionFilter.forIncome(): TransactionFilter =
  */
 fun TransactionFilter.forExpense(): TransactionFilter =
     copy(transactionTypes = setOf(TransactionType.EXPENSE))
+
+/**
+ * Creates a filter for transfer-inflow legs only.
+ */
+fun TransactionFilter.forTransferIn(): TransactionFilter =
+    copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+
+/**
+ * Creates a filter for transfer-outflow legs only.
+ */
+fun TransactionFilter.forTransferOut(): TransactionFilter =
+    copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+
+/**
+ * Creates a filter for both transfer leg types.
+ */
+fun TransactionFilter.forTransfers(): TransactionFilter =
+    copy(transactionTypes = TransactionType.TRANSFER_TYPES)
 
 /**
  * Creates a filter with a specific timeline range.

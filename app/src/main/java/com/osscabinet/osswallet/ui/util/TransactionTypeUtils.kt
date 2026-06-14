@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.util
 
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import java.math.BigDecimal
 
 /**
@@ -51,14 +52,9 @@ fun isIncome(amount: BigDecimal): Boolean {
 }
 
 /**
- * Checks if a transaction type represents a transfer.
- * 
- * @param type The transaction type
- * @return true if TRANSFER, false otherwise
+ * Checks if a transaction type represents a transfer leg (inflow or outflow).
  */
-fun isTransfer(type: TransactionType): Boolean {
-    return type == TransactionType.TRANSFER
-}
+fun isTransfer(type: TransactionType): Boolean = type.isTransfer
 
 /**
  * Formats an amount for display with proper sign handling.

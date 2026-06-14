@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.service.aggregation
 
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
@@ -54,7 +55,7 @@ object AggregationService {
         val breakdown = calculateIncomeExpenseBreakdown(transactions, exchangeRates, baseCurrency)
 
         val transferByCurrency = calculateSummaryByCurrency(
-            transactions.filter { it.transactionType == TransactionType.TRANSFER }
+            transactions.filter { it.transactionType.isTransfer }
         )
 
         val allCurrencies = (breakdown.incomeCurrencyBreakdown.keys +
@@ -128,7 +129,7 @@ object AggregationService {
         val total = transactions.sumOf { it.amount }
         val incomeTransactions = transactions.filter { it.transactionType == TransactionType.INCOME }
         val expenseTransactions = transactions.filter { it.transactionType == TransactionType.EXPENSE }
-        val transferTransactions = transactions.filter { it.transactionType == TransactionType.TRANSFER }
+        val transferTransactions = transactions.filter { it.transactionType.isTransfer }
         val income = incomeTransactions.sumOf { it.amount }
         val expense = expenseTransactions.sumOf { it.amount }
         val transfer = transferTransactions.sumOf { it.amount }
@@ -145,7 +146,7 @@ object AggregationService {
                 val total = txs.sumOf { it.amount }
                 val income = txs.filter { it.transactionType == TransactionType.INCOME }.sumOf { it.amount }
                 val expense = txs.filter { it.transactionType == TransactionType.EXPENSE }.sumOf { it.amount }
-                val transfer = txs.filter { it.transactionType == TransactionType.TRANSFER }.sumOf { it.amount }
+                val transfer = txs.filter { it.transactionType.isTransfer }.sumOf { it.amount }
                 FinancialSummary(total, income, expense, transfer, txs.size)
             }
     }

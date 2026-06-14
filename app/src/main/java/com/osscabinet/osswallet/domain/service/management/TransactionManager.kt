@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -68,7 +69,7 @@ class TransactionManager(
                 val amount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 val request = baseRequest.copy(
                     name = categoryNameLookup(split.categoryId ?: baseRequest.categoryId),
-                    amount = if (baseRequest.transactionType == TransactionType.INCOME) amount else amount.negate(),
+                    amount = if (baseRequest.entryMode == EntryMode.INCOME) amount else amount.negate(),
                     categoryId = split.categoryId ?: baseRequest.categoryId,
                     note = split.note
                 )
@@ -143,6 +144,7 @@ class TransactionManager(
             sourceAccountId != null && targetAccountId == null -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
+                    transactionType = TransactionType.TRANSFER_OUTFLOW,
                     categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
                     else baseOutflowCategory,
                     targetCurrency = request.targetCurrency
@@ -160,6 +162,7 @@ class TransactionManager(
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     accountId = targetAccountId,
                     amount = amount,
+                    transactionType = TransactionType.TRANSFER_INFLOW,
                     currency = request.targetCurrency ?: request.currency,
                     categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
                     else baseInflowCategory,
@@ -179,6 +182,7 @@ class TransactionManager(
                 // If it's an internal transfer, we force the signs: Source is -ve, Target is +ve
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
+                    transactionType = TransactionType.TRANSFER_OUTFLOW,
                     categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
                     else baseOutflowCategory,
                     targetAccountId = targetAccountId,
@@ -190,6 +194,7 @@ class TransactionManager(
                     id = 0,
                     amount = amount.multiply(request.transferRate)
                         .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros(),
+                    transactionType = TransactionType.TRANSFER_INFLOW,
                     accountId = targetAccountId,
                     currency = request.targetCurrency ?: request.currency,
                     categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
@@ -216,6 +221,7 @@ class TransactionManager(
                                 amount = amount.multiply(request.transferRate)
                                     .setScale(8, java.math.RoundingMode.HALF_UP)
                                     .stripTrailingZeros(),
+                                transactionType = TransactionType.TRANSFER_INFLOW,
                                 accountId = targetAccountId,
                                 currency = request.targetCurrency ?: request.currency,
                                 categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
@@ -376,19 +382,25 @@ class TransactionManager(
 
     // Maps a TransactionRequest onto a Transaction, reusing an existing row's identity
     // if provided so that updates preserve the original id and any unrelated fields.
-    private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction =
-        (base ?: Transaction(
+    // Transfer rows default to TRANSFER_OUTFLOW here; handleTransferSave overrides per leg.
+    private fun TransactionRequest.toNormalTransaction(base: Transaction?): Transaction {
+        val defaultType = when (entryMode) {
+            EntryMode.EXPENSE -> TransactionType.EXPENSE
+            EntryMode.INCOME -> TransactionType.INCOME
+            EntryMode.TRANSFER -> TransactionType.TRANSFER_OUTFLOW
+        }
+        return (base ?: Transaction(
             id = 0,
             name = name,
             amount = BigDecimal.ZERO,
             timestamp = timestamp,
             currency = currency,
-            transactionType = transactionType,
+            transactionType = defaultType,
             accountId = accountId,
             categoryId = categoryId
         )).copy(
             amount = amount,
-            transactionType = transactionType,
+            transactionType = defaultType,
             accountId = accountId,
             currency = currency,
             categoryId = categoryId,
@@ -406,6 +418,7 @@ class TransactionManager(
             targetCurrency = targetCurrency,
             transferRate = transferRate
         )
+    }
 
     private suspend fun <T> andRefresh(block: suspend () -> T): T =
         block().also { widgetRefreshTrigger.trigger() }

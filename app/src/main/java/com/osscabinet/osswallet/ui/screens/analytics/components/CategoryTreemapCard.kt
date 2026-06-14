@@ -700,20 +700,20 @@ fun CategoryTreemapCardPreview() {
         )
     )
 
-        OssWalletTheme {
-            CategoryTreemapCard(
-                config = CategoryTreemapCardConfig(
-                    cardId = "preview",
-                    title = "Category Treemap",
-                    showLabels = true,
-                    showLegend = true,
-                    showComparison = true,
-                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
-                ),
-                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
-                currency = "USD"
-            )
-        }
+    OssWalletTheme {
+        CategoryTreemapCard(
+            config = CategoryTreemapCardConfig(
+                cardId = "preview",
+                title = "Category Treemap",
+                showLabels = true,
+                showLegend = true,
+                showComparison = true,
+                filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
+            ),
+            data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
+            currency = "USD"
+        )
+    }
 }
 
 @Serializable

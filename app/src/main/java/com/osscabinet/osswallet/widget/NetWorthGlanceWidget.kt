@@ -1,3 +1,5 @@
+@file:Suppress("RestrictedApi") // Glance's resource-based ColorProvider(@ColorRes) is public but flagged across library groups
+
 package com.osscabinet.ossWallet.widget
 
 import android.content.Context

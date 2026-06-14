@@ -14,7 +14,11 @@ data class FinancialSummary(
     val income: BigDecimal,
     val expense: BigDecimal,
     val transfer: BigDecimal,
-    val transactionCount: Int
+    val transactionCount: Int,
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    val transferOut: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO,
 ) {
     /**
      * Net flow (income + expense)
@@ -30,6 +34,10 @@ data class FinancialSummary(
             income = BigDecimal.ZERO,
             expense = BigDecimal.ZERO,
             transfer = BigDecimal.ZERO,
+            transferIn = BigDecimal.ZERO,
+            transferOut = BigDecimal.ZERO,
+            crossCcyTransferIn = BigDecimal.ZERO,
+            crossCcyTransferOut = BigDecimal.ZERO,
             transactionCount = 0
         )
 
@@ -43,6 +51,10 @@ data class FinancialSummary(
                 income = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.income) },
                 expense = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.expense) },
                 transfer = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transfer) },
+                transferIn = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transferIn) },
+                transferOut = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transferOut) },
+                crossCcyTransferIn = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.crossCcyTransferIn) },
+                crossCcyTransferOut = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.crossCcyTransferOut) },
                 transactionCount = summaries.sumOf { it.transactionCount }
             )
         }

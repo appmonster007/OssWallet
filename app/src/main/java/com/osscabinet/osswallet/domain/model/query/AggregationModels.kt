@@ -54,6 +54,10 @@ data class MetricConfig(
         INCOME_ONLY,    // transactionType = 'income'
         EXPENSE_ONLY,   // transactionType = 'expense'
         TRANSFER_ONLY,  // transactionType = 'transfer'
+        TRANSFER_IN_ONLY,   // transactionType = 'transfer' AND amount > 0
+        TRANSFER_OUT_ONLY,  // transactionType = 'transfer' AND amount < 0
+        CROSS_CCY_TRANSFER_IN_ONLY,   // transfer leg, amount > 0, currency <> targetCurrency
+        CROSS_CCY_TRANSFER_OUT_ONLY,  // transfer leg, amount < 0, currency <> targetCurrency
         POSITIVE_ONLY,  // amount > 0
         NEGATIVE_ONLY,  // amount < 0
         NONE
@@ -69,18 +73,40 @@ object StandardMetrics {
     val INCOME_SUM = MetricConfig(
         name = "income",
         function = AggregationFunction.SUM,
-        filter = MetricConfig.MetricFilter.POSITIVE_ONLY
+        filter = MetricConfig.MetricFilter.INCOME_ONLY
     )
     val EXPENSE_SUM = MetricConfig(
         name = "expense",
         function = AggregationFunction.SUM,
-        filter = MetricConfig.MetricFilter.NEGATIVE_ONLY,
+        filter = MetricConfig.MetricFilter.EXPENSE_ONLY,
         transform = MetricConfig.MetricTransform.ABS
     )
     val TRANSFER_SUM = MetricConfig(
         name = "transfer",
         function = AggregationFunction.SUM,
         filter = MetricConfig.MetricFilter.TRANSFER_ONLY,
+        transform = MetricConfig.MetricTransform.ABS
+    )
+    val TRANSFER_IN_SUM = MetricConfig(
+        name = "transferIn",
+        function = AggregationFunction.SUM,
+        filter = MetricConfig.MetricFilter.TRANSFER_IN_ONLY
+    )
+    val TRANSFER_OUT_SUM = MetricConfig(
+        name = "transferOut",
+        function = AggregationFunction.SUM,
+        filter = MetricConfig.MetricFilter.TRANSFER_OUT_ONLY,
+        transform = MetricConfig.MetricTransform.ABS
+    )
+    val CROSS_CCY_TRANSFER_IN_SUM = MetricConfig(
+        name = "crossCcyTransferIn",
+        function = AggregationFunction.SUM,
+        filter = MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY
+    )
+    val CROSS_CCY_TRANSFER_OUT_SUM = MetricConfig(
+        name = "crossCcyTransferOut",
+        function = AggregationFunction.SUM,
+        filter = MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY,
         transform = MetricConfig.MetricTransform.ABS
     )
     val NET_FLOW = MetricConfig(
@@ -101,7 +127,12 @@ object StandardMetrics {
         column = "*"
     )
 
-    fun defaultSet() = listOf(INCOME_SUM, EXPENSE_SUM, TRANSFER_SUM, TOTAL_SUM, COUNT)
+    fun defaultSet() = listOf(
+        INCOME_SUM, EXPENSE_SUM,
+        TRANSFER_SUM, TRANSFER_IN_SUM, TRANSFER_OUT_SUM,
+        CROSS_CCY_TRANSFER_IN_SUM, CROSS_CCY_TRANSFER_OUT_SUM,
+        TOTAL_SUM, COUNT
+    )
 }
 
 /**
@@ -116,6 +147,12 @@ data class RawAggregateResult(
     val m2: BigDecimal = BigDecimal.ZERO,
     val m3: BigDecimal = BigDecimal.ZERO,
     val m4: BigDecimal = BigDecimal.ZERO,
+    val m5: BigDecimal = BigDecimal.ZERO,
+    val m6: BigDecimal = BigDecimal.ZERO,
+    val m7: BigDecimal = BigDecimal.ZERO,
+    val m8: BigDecimal = BigDecimal.ZERO,
+    val m9: BigDecimal = BigDecimal.ZERO,
+    val m10: BigDecimal = BigDecimal.ZERO,
     val count: Int = 0
 )
 

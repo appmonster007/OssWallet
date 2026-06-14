@@ -108,14 +108,22 @@ object TransactionAggregationService {
         val income = data.metrics["income"] ?: BigDecimal.ZERO
         val expense = data.metrics["expense"] ?: BigDecimal.ZERO
         val transfer = data.metrics["transfer"] ?: BigDecimal.ZERO
-        
+        val transferIn = data.metrics["transferIn"] ?: BigDecimal.ZERO
+        val transferOut = data.metrics["transferOut"] ?: BigDecimal.ZERO
+        val crossCcyTransferIn = data.metrics["crossCcyTransferIn"] ?: BigDecimal.ZERO
+        val crossCcyTransferOut = data.metrics["crossCcyTransferOut"] ?: BigDecimal.ZERO
+
         // Ensure expense is negative in FinancialSummary if ABS was used in MetricConfig
         // Our StandardMetrics.EXPENSE_SUM uses ABS transform.
         return FinancialSummary(
             totalAmount = data.metrics["total"] ?: income.subtract(expense),
             income = income,
-            expense = expense.negate(), 
+            expense = expense.negate(),
             transfer = transfer,
+            transferIn = transferIn,
+            transferOut = transferOut,
+            crossCcyTransferIn = crossCcyTransferIn,
+            crossCcyTransferOut = crossCcyTransferOut,
             transactionCount = data.count
         )
     }

@@ -54,9 +54,15 @@ sealed class CardCallbacks {
      */
     data class CashFlow(
         val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onDisplayModeChange: (String, com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode) -> Unit = { _, _ -> },
+        val onShowNetColumnChange: (String, Boolean) -> Unit = { _, _ -> },
+        val onExcludeSameCurrencyTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
         val onClickExpense: ((TransactionFilter) -> Unit)? = null,
+        val onClickTransfer: ((TransactionFilter) -> Unit)? = null,
+        val onClickInflow: ((TransactionFilter) -> Unit)? = null,
+        val onClickOutflow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}

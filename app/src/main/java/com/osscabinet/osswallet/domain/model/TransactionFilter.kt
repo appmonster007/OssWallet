@@ -5,6 +5,14 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
+/**
+ * Sign-based predicate orthogonal to [TransactionType]. ANY = no constraint;
+ * IN = amount > 0; OUT = amount < 0. Used by views that need to disambiguate
+ * transfer legs (e.g. CashFlow card "Inflow / Outflow" tap-through to Records).
+ */
+@Serializable
+enum class FlowDirection { ANY, IN, OUT }
+
 @Serializable
 data class TransactionFilter(
     val timelineRange: TimelineRange = TimelineRange.AllTime(),
@@ -27,7 +35,8 @@ data class TransactionFilter(
     val tags: Set<String> = emptySet(),
     val matchAllTags: Boolean = true, // true = AND, false = OR
     val statuses: Set<TransactionStatus> = emptySet(),
-    val linkedTransactionIds: Set<Long> = emptySet()
+    val linkedTransactionIds: Set<Long> = emptySet(),
+    val flowDirection: FlowDirection = FlowDirection.ANY,
 )
 
 /**
@@ -59,7 +68,8 @@ fun TransactionFilter.merge(other: TransactionFilter): TransactionFilter {
         maxAmount = other.maxAmount ?: this.maxAmount,
         hasWarranty = other.hasWarranty ?: this.hasWarranty,
         warrantyExpirationStart = other.warrantyExpirationStart ?: this.warrantyExpirationStart,
-        warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd
+        warrantyExpirationEnd = other.warrantyExpirationEnd ?: this.warrantyExpirationEnd,
+        flowDirection = if (other.flowDirection != FlowDirection.ANY) other.flowDirection else this.flowDirection,
     )
 }
 

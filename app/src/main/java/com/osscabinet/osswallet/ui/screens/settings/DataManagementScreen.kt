@@ -53,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -79,7 +80,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -449,7 +449,7 @@ fun DataManagementScreen(
                                                     color = AppColors.contentPrimary
                                                 )
                                                 Text(
-                                                    text = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
+                                                    text = SimpleDateFormat("MMM d, yyyy HH:mm", LocalConfiguration.current.locales[0])
                                                         .format(Date(backup.createdAt)) +
                                                             " · ${backup.sizeBytes / 1024} KB",
                                                     style = AppTextStyles.metaLabel,

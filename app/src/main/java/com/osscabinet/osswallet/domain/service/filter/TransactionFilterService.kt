@@ -108,10 +108,16 @@ object TransactionFilterService {
         val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
         val matchesLinkedTransactions = filter.linkedTransactionIds.isEmpty() || tx.id in filter.linkedTransactionIds
 
+        val matchesFlowDirection = when (filter.flowDirection) {
+            com.osscabinet.ossWallet.domain.model.FlowDirection.IN -> tx.amount.signum() > 0
+            com.osscabinet.ossWallet.domain.model.FlowDirection.OUT -> tx.amount.signum() < 0
+            com.osscabinet.ossWallet.domain.model.FlowDirection.ANY -> true
+        }
+
         return matchesAccounts && matchesCategories && matchesType && matchesAmount &&
                 matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
                 matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags &&
-                matchesLinkedTransactions
+                matchesLinkedTransactions && matchesFlowDirection
     }
 
     fun filterTransactionsWithBalance(

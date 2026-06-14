@@ -11,6 +11,10 @@ data class CashFlowResult(
     val totalIncomeInBase: BigDecimal,
     val totalExpensesInBase: BigDecimal,
     val totalTransfersInBase: BigDecimal,
+    val totalTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    val totalTransferOutInBase: BigDecimal = BigDecimal.ZERO,
+    val totalCrossCcyTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    val totalCrossCcyTransferOutInBase: BigDecimal = BigDecimal.ZERO,
     val netInBase: BigDecimal,
     val breakdown: List<CashFlowBreakdownItem>,
     val filteredTransactions: List<Transaction>
@@ -20,6 +24,10 @@ data class CashFlowResult(
             totalIncomeInBase = BigDecimal.ZERO,
             totalExpensesInBase = BigDecimal.ZERO,
             totalTransfersInBase = BigDecimal.ZERO,
+            totalTransferInInBase = BigDecimal.ZERO,
+            totalTransferOutInBase = BigDecimal.ZERO,
+            totalCrossCcyTransferInInBase = BigDecimal.ZERO,
+            totalCrossCcyTransferOutInBase = BigDecimal.ZERO,
             netInBase = BigDecimal.ZERO,
             breakdown = emptyList(),
             filteredTransactions = emptyList()
@@ -29,6 +37,12 @@ data class CashFlowResult(
 
 /**
  * Breakdown of cash flow by currency.
+ *
+ * - [transfer] is the magnitude of all transfer activity (ABS sum).
+ * - [transferIn] / [transferOut] are gross-positive / gross-magnitude signed-direction sums.
+ * - [crossCcyTransferIn] / [crossCcyTransferOut] only count transfer legs where
+ *   `currency != targetCurrency`. Useful at currency level where same-ccy transfers
+ *   self-cancel in their bucket.
  */
 data class CashFlowBreakdownItem(
     val currency: String,
@@ -37,7 +51,15 @@ data class CashFlowBreakdownItem(
     val expense: BigDecimal,
     val expenseInBase: BigDecimal,
     val transfer: BigDecimal,
-    val transferInBase: BigDecimal
+    val transferInBase: BigDecimal,
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    val transferInInBase: BigDecimal = BigDecimal.ZERO,
+    val transferOut: BigDecimal = BigDecimal.ZERO,
+    val transferOutInBase: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferOutInBase: BigDecimal = BigDecimal.ZERO,
 )
 
 /**

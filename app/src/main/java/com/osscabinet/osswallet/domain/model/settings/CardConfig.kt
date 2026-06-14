@@ -158,6 +158,17 @@ data class CurrencyBalancesCardConfig(
 /**
  * Configuration for Cash Flow card instances
  */
+/**
+ * Display mode for the Cash Flow card's per-currency breakdown.
+ *
+ * - [TYPE_DISTINCTION]: one column per TransactionType in the active filter (INCOME / EXPENSE / TRANSFER).
+ *   TRANSFER column shows signed net per currency (same-ccy transfers auto-cancel).
+ * - [INFLOW_OUTFLOW]: fixed INFLOW + OUTFLOW columns. Each combines all positive-/negative-direction
+ *   contributions of types currently in the filter.
+ */
+@Serializable
+enum class CashFlowDisplayMode { TYPE_DISTINCTION, INFLOW_OUTFLOW }
+
 @Serializable
 @SerialName("cash_flow")
 data class CashFlowCardConfig(
@@ -167,6 +178,9 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
+    val displayMode: CashFlowDisplayMode = CashFlowDisplayMode.TYPE_DISTINCTION,
+    val showNetColumn: Boolean = true,
+    val excludeSameCurrencyTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASH_FLOW

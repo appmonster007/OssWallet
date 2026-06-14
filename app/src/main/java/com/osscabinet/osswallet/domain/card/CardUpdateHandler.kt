@@ -92,6 +92,33 @@ interface CardUpdateHandler {
             }
         }
     }
+
+    fun updateCardCashFlowDisplayMode(
+        cardId: String,
+        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+    ) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(displayMode = mode) else config
+            }
+        }
+    }
+
+    fun updateCardCashFlowShowNetColumn(cardId: String, show: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(showNetColumn = show) else config
+            }
+        }
+    }
+
+    fun updateCardCashFlowExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is CashFlowCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+            }
+        }
+    }
     
     // Accounts
     fun updateCardAccountsLayout(cardId: String, layout: String) {

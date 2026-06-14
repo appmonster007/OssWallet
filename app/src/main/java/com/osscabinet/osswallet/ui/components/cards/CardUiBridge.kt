@@ -195,12 +195,36 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
+                        onDisplayModeChange = { id, mode ->
+                            updateHandler.updateCardCashFlowDisplayMode(id, mode)
+                        },
+                        onShowNetColumnChange = { id, show ->
+                            updateHandler.updateCardCashFlowShowNetColumn(id, show)
+                        },
+                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
+                            updateHandler.updateCardCashFlowExcludeSameCurrencyTransfers(id, exclude)
+                        },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
                         },
                         onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickTransfer = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickInflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickOutflow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )

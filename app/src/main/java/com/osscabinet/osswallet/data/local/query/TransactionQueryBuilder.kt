@@ -59,7 +59,7 @@ class TransactionQueryBuilder {
                 select.append("NULL AS d$i, ")
             }
 
-            // 2. Metrics (m1 - m4)
+            // 2. Metrics (m1 - m10)
             plan.metrics.take(4).forEachIndexed { index, metric ->
                 val alias = "m${index + 1}"
                 val func = when (metric.function) {
@@ -75,6 +75,10 @@ class TransactionQueryBuilder {
                     MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType = 'transfer' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} > 0 AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} < 0 AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column
@@ -90,8 +94,8 @@ class TransactionQueryBuilder {
                 select.append("$func($finalExpr) AS $alias, ")
             }
 
-            // Pad metrics
-            for (i in (plan.metrics.size + 1)..4) {
+            // Pad metrics (RawAggregateResult has m1..m10)
+            for (i in (plan.metrics.size + 1)..10) {
                 select.append("0 AS m$i, ")
             }
 
@@ -129,6 +133,11 @@ class TransactionQueryBuilder {
             val placeholders = filter.transactionTypes.joinToString(",") { "?" }
             where.append(" AND transactionType IN ($placeholders)")
             args.addAll(filter.transactionTypes.map { it.value })
+        }
+        when (filter.flowDirection) {
+            com.osscabinet.ossWallet.domain.model.FlowDirection.IN -> where.append(" AND amount > 0")
+            com.osscabinet.ossWallet.domain.model.FlowDirection.OUT -> where.append(" AND amount < 0")
+            com.osscabinet.ossWallet.domain.model.FlowDirection.ANY -> Unit
         }
         if (filter.currencies.isNotEmpty()) {
             val placeholders = filter.currencies.joinToString(",") { "?" }

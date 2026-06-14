@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.format
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
+import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
@@ -114,25 +115,20 @@ fun AeonAccountCardSmall(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Text(
-                formatAuto(balance, account.currencyCode),
-                style = AppTextStyles.transactionAmount.copy(
+            NativeWithConvertedSubtext(
+                amount = balance,
+                nativeCurrency = account.currencyCode,
+                targetCurrency = baseCurrency,
+                convertedAmount = balanceInBase,
+                primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
                     fontSize = 17.sp
                 ),
-                color = AppColors.contentPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                primaryColor = AppColors.contentPrimary,
+                subtextStyle = AppTextStyles.metaLabel,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
+                horizontalAlignment = Alignment.Start,
             )
-            if (account.currencyCode != baseCurrency) {
-                Text(
-                    "≈ ${formatAuto(balanceInBase, baseCurrency)}",
-                    style = AppTextStyles.metaLabel,
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
         }
     }
 }
@@ -184,26 +180,20 @@ fun AeonAccountCardMedium(
                 }
             }
 
-            Text(
-                formatAuto(balance, account.currencyCode),
-                style = AppTextStyles.transactionAmount.copy(
+            NativeWithConvertedSubtext(
+                amount = balance,
+                nativeCurrency = account.currencyCode,
+                targetCurrency = baseCurrency,
+                convertedAmount = balanceInBase,
+                primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
                     fontSize = 22.sp
                 ),
-                color = AppColors.contentPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                primaryColor = AppColors.contentPrimary,
+                subtextStyle = AppTextStyles.metaLabel,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
+                horizontalAlignment = Alignment.Start,
             )
-
-            if (account.currencyCode != baseCurrency) {
-                Text(
-                    "≈ ${formatAuto(balanceInBase, baseCurrency)}",
-                    style = AppTextStyles.metaLabel,
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
         }
     }
 }
@@ -279,23 +269,21 @@ fun AeonAccountCardLarge(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    formatAuto(balance, account.currencyCode),
-                    style = AppTextStyles.transactionAmount.copy(
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 32.sp
-                    ),
-                    color = AppColors.contentPrimary
-                )
-                if (account.currencyCode != baseCurrency) {
-                    Text(
-                        "≈ ${formatAuto(balanceInBase, baseCurrency)}",
-                        style = AppTextStyles.metaLabel,
-                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                    )
-                }
-            }
+            NativeWithConvertedSubtext(
+                amount = balance,
+                nativeCurrency = account.currencyCode,
+                targetCurrency = baseCurrency,
+                convertedAmount = balanceInBase,
+                modifier = Modifier.fillMaxWidth(),
+                primaryStyle = AppTextStyles.transactionAmount.copy(
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 32.sp
+                ),
+                primaryColor = AppColors.contentPrimary,
+                subtextStyle = AppTextStyles.metaLabel,
+                subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
+                horizontalAlignment = Alignment.Start,
+            )
 
             if (incomeInAccountCurrency.signum() != 0 || expenseInAccountCurrency.signum() != 0) {
                 Row(

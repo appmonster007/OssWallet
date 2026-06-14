@@ -21,6 +21,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.nativeWithConvertedStrings
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
@@ -94,16 +95,17 @@ fun AeonTransactionList(
                         isRevealed = revealedCardIds.contains(record.id),
                         onEvent = onTransactionEvent
                     ) {
+                        val (amountText, convertedText) = nativeWithConvertedStrings(
+                            amount = record.amount,
+                            nativeCurrency = record.currency,
+                            targetCurrency = baseCurrency,
+                            convertedAmount = record.amountInBase,
+                        )
                         AeonTransactionItem(
                             category = record.categoryName,
                             account = record.accountName,
-                            amount = formatAuto(
-                                record.amount,
-                                record.currency
-                            ),
-                            convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
-                                formatAuto(record.amountInBase, baseCurrency)
-                            } else null,
+                            amount = amountText,
+                            convertedAmount = convertedText,
                             balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
                                 record.item.balanceBefore,
                                 record.accountCurrency

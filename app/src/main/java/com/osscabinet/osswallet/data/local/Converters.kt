@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.data.local
 
 import androidx.room.TypeConverter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -13,6 +14,11 @@ import kotlinx.serialization.json.Json
 import java.math.BigDecimal
 
 class Converters {
+    private val json = Json {
+        encodeDefaults = true
+        // Tolerate fields removed across schema migrations (e.g. legacy flowDirection).
+        ignoreUnknownKeys = true
+    }
     @TypeConverter
     fun fromBigDecimal(value: BigDecimal?): String? {
         return value?.toString()
@@ -25,32 +31,32 @@ class Converters {
 
     @TypeConverter
     fun fromTimelineRange(value: TimelineRange?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toTimelineRange(value: String?): TimelineRange? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromTransactionFilter(value: TransactionFilter?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toTransactionFilter(value: String?): TransactionFilter? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromFloatSet(value: Set<Float>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toFloatSet(value: String?): Set<Float>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
@@ -105,62 +111,62 @@ class Converters {
 
     @TypeConverter
     fun fromTransactionTypeList(value: List<TransactionType>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toTransactionTypeList(value: String?): List<TransactionType>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromTransactionTypeSet(value: Set<TransactionType>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toTransactionTypeSet(value: String?): Set<TransactionType>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromLongSet(value: Set<Long>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toLongSet(value: String?): Set<Long>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromPaymentMethodSet(value: Set<PaymentMethod>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toPaymentMethodSet(value: String?): Set<PaymentMethod>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromTransactionStatusSet(value: Set<TransactionStatus>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toTransactionStatusSet(value: String?): Set<TransactionStatus>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromStringSet(value: Set<String>?): String? {
-        return value?.let { Json.encodeToString(it) }
+        return value?.let { json.encodeToString(it) }
     }
 
     @TypeConverter
     fun toStringSet(value: String?): Set<String>? {
-        return value?.let { Json.decodeFromString(it) }
+        return value?.let { json.decodeFromString(it) }
     }
 
     @TypeConverter
@@ -171,5 +177,15 @@ class Converters {
     @TypeConverter
     fun toCategoryNature(value: String?): CategoryNature? {
         return value?.let { CategoryNature.fromValue(it) }
+    }
+
+    @TypeConverter
+    fun fromEntryMode(value: EntryMode?): String? {
+        return value?.value
+    }
+
+    @TypeConverter
+    fun toEntryMode(value: String?): EntryMode? {
+        return value?.let { EntryMode.fromValue(it) }
     }
 }

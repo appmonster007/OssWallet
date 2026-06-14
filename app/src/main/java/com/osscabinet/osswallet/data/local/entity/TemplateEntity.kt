@@ -4,9 +4,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import java.math.BigDecimal
 
 @Entity(
@@ -26,7 +26,7 @@ data class TemplateEntity(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: TransactionType,
+    val entryMode: EntryMode,
     val icon: String? = null,
     val colorHex: String? = null,
     val accountId: String? = null,

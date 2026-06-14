@@ -74,11 +74,11 @@ class TransactionQueryBuilder {
                 val filterExpr = when (metric.filter) {
                     MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType = 'transfer' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} > 0 AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer' AND ${metric.column} < 0 AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType IN ('transfer_inflow','transfer_outflow') THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer_inflow' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer_outflow' THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer_inflow' AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer_outflow' AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column
@@ -133,11 +133,6 @@ class TransactionQueryBuilder {
             val placeholders = filter.transactionTypes.joinToString(",") { "?" }
             where.append(" AND transactionType IN ($placeholders)")
             args.addAll(filter.transactionTypes.map { it.value })
-        }
-        when (filter.flowDirection) {
-            com.osscabinet.ossWallet.domain.model.FlowDirection.IN -> where.append(" AND amount > 0")
-            com.osscabinet.ossWallet.domain.model.FlowDirection.OUT -> where.append(" AND amount < 0")
-            com.osscabinet.ossWallet.domain.model.FlowDirection.ANY -> Unit
         }
         if (filter.currencies.isNotEmpty()) {
             val placeholders = filter.currencies.joinToString(",") { "?" }

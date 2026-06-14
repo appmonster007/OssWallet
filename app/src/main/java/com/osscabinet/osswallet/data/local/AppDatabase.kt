@@ -59,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -307,6 +307,62 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ── transactions.transactionType: split legacy 'transfer' by amount sign ──
+                db.execSQL("UPDATE `transactions` SET `transactionType` = 'transfer_inflow'  WHERE `transactionType` = 'transfer' AND CAST(`amount` AS REAL) > 0")
+                db.execSQL("UPDATE `transactions` SET `transactionType` = 'transfer_outflow' WHERE `transactionType` = 'transfer' AND CAST(`amount` AS REAL) < 0")
+                // Zero-amount transfer rows: bucket as outflow so they remain visible.
+                db.execSQL("UPDATE `transactions` SET `transactionType` = 'transfer_outflow' WHERE `transactionType` = 'transfer'")
+
+                // ── templates: rename transactionType -> entryMode via table-recreate ──
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `templates_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `categoryId` INTEGER NOT NULL,
+                        `amount` TEXT NOT NULL,
+                        `entryMode` TEXT NOT NULL,
+                        `icon` TEXT,
+                        `colorHex` TEXT,
+                        `accountId` TEXT,
+                        `targetAccountId` TEXT,
+                        `targetCurrency` TEXT,
+                        `transferRate` TEXT NOT NULL,
+                        `note` TEXT,
+                        `payee` TEXT,
+                        `location` TEXT,
+                        `gpsLocation` TEXT,
+                        `warrantyExpiration` INTEGER,
+                        `transactionStatus` TEXT NOT NULL,
+                        `paymentMethod` TEXT,
+                        `currency` TEXT NOT NULL,
+                        `tags` TEXT NOT NULL,
+                        `isStarred` INTEGER NOT NULL,
+                        `displayOrder` INTEGER NOT NULL,
+                        `profileId` INTEGER NOT NULL,
+                        FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                """.trimIndent()
+                )
+                // Existing values 'expense', 'income', 'transfer' all match EntryMode.value verbatim.
+                db.execSQL(
+                    """
+                    INSERT INTO `templates_new`
+                    SELECT `id`, `name`, `categoryId`, `amount`, `transactionType`, `icon`, `colorHex`,
+                           `accountId`, `targetAccountId`, `targetCurrency`, `transferRate`, `note`, `payee`,
+                           `location`, `gpsLocation`, `warrantyExpiration`, `transactionStatus`, `paymentMethod`,
+                           `currency`, `tags`, `isStarred`, `displayOrder`, `profileId`
+                    FROM `templates`
+                """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `templates`")
+                db.execSQL("ALTER TABLE `templates_new` RENAME TO `templates`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_templates_categoryId` ON `templates` (`categoryId`)")
+            }
+        }
+
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Clean up potential case-duplicates before enforcing unique index
@@ -347,7 +403,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_9_10,
                         MIGRATION_10_11,
                         MIGRATION_11_12,
-                        MIGRATION_12_13
+                        MIGRATION_12_13,
+                        MIGRATION_13_14
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

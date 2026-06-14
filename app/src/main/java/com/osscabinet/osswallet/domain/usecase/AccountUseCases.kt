@@ -45,7 +45,8 @@ class AccountUseCases(
         initialBalances.forEach { (curr, balance) ->
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
             if (amount.compareTo(BigDecimal.ZERO) != 0) {
-                val categoryId = if (amount.signum() >= 0) Category.SYSTEM_INITIAL_BALANCE_INFLOW
+                val isInflow = amount.signum() >= 0
+                val categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
                                  else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW
                 transactionRepository.insertTransaction(
                     Transaction(
@@ -56,7 +57,7 @@ class AccountUseCases(
                         categoryId = categoryId,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
-                        transactionType = TransactionType.TRANSFER
+                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
                     ),
                     profileId
                 )
@@ -74,32 +75,36 @@ class AccountUseCases(
         when {
             amount.compareTo(BigDecimal.ZERO) == 0 && existing != null ->
                 transactionRepository.deleteTransaction(existing.id)
-            amount.compareTo(BigDecimal.ZERO) != 0 && existing != null ->
+            amount.compareTo(BigDecimal.ZERO) != 0 && existing != null -> {
+                val isInflow = amount.signum() >= 0
                 transactionRepository.updateTransaction(
                     existing,
                     existing.copy(
                         amount = amount,
-                        categoryId = if (amount.signum() >= 0) Category.SYSTEM_INITIAL_BALANCE_INFLOW
+                        categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
                                      else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
-                        transactionType = TransactionType.TRANSFER
+                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
                     ),
                     profileId
                 )
-            amount.compareTo(BigDecimal.ZERO) != 0 ->
+            }
+            amount.compareTo(BigDecimal.ZERO) != 0 -> {
+                val isInflow = amount.signum() >= 0
                 transactionRepository.insertTransaction(
                     Transaction(
                         name = "Initial Balance",
                         accountId = accountId,
                         amount = amount,
                         currency = currency,
-                        categoryId = if (amount.signum() >= 0) Category.SYSTEM_INITIAL_BALANCE_INFLOW
+                        categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
                                      else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
-                        transactionType = TransactionType.TRANSFER
+                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
                     ),
                     profileId
                 )
+            }
         }
     }
 }

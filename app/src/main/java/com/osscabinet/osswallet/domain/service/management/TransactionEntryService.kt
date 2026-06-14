@@ -2,48 +2,48 @@ package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.TransactionType
 
 /**
  * Domain service to handle complex state transitions for transaction entry.
- * Centralizes the business logic for switching between transaction types.
+ * Centralizes the business logic for switching between entry modes.
  */
 object TransactionEntryService {
 
     data class TypeTransitionResult(
-        val newType: TransactionType,
+        val newMode: EntryMode,
         val source: TransactionSide,
         val destination: TransactionSide,
         val isSplitModeAllowed: Boolean
     )
 
     /**
-     * Rules for switching types:
-     * - Idempotency: If newType == oldType, return current state.
+     * Rules for switching modes:
+     * - Idempotency: If newMode == oldMode, return current state.
      * - Expense -> Transfer: Original account stays as SOURCE (Giver).
      * - Income -> Transfer: Original account moves to DESTINATION (Receiver).
      * - Transfer -> Normal: Revert to single side based on which side holds a managed account.
      * - Income <-> Expense: Reset category to SYSTEM_UNKNOWN.
      */
     fun transitionType(
-        oldType: TransactionType,
-        newType: TransactionType,
+        oldMode: EntryMode,
+        newMode: EntryMode,
         currentSource: TransactionSide,
         currentDestination: TransactionSide,
         isSplitMode: Boolean
     ): TypeTransitionResult {
         // 1. Idempotency: Prevent state reset when clicking the already-active type
-        if (oldType == newType) {
-            return TypeTransitionResult(newType, currentSource, currentDestination, isSplitMode)
+        if (oldMode == newMode) {
+            return TypeTransitionResult(newMode, currentSource, currentDestination, isSplitMode)
         }
 
-        val isTransferToNormal = oldType == TransactionType.TRANSFER && newType != TransactionType.TRANSFER
+        val isTransferToNormal = oldMode == EntryMode.TRANSFER && newMode != EntryMode.TRANSFER
 
         // Determine the "Primary" account from the user's perspective.
         val primarySide = if (isTransferToNormal) {
-            when (newType) {
-                TransactionType.INCOME -> {
+            when (newMode) {
+                EntryMode.INCOME -> {
                     // INCOME is positive impact. In a transfer, the Target side (destination) was receiving.
                     if (currentDestination.account is AccountRef.Wallet) currentDestination else currentSource
                 }
@@ -68,9 +68,9 @@ object TransactionEntryService {
         val newSource: TransactionSide
         val newDestination: TransactionSide
 
-        when (newType) {
-            TransactionType.TRANSFER -> {
-                if (oldType == TransactionType.INCOME) {
+        when (newMode) {
+            EntryMode.TRANSFER -> {
+                if (oldMode == EntryMode.INCOME) {
                     // Income account was receiving money → moves to Target (Receiver).
                     newSource = TransactionSide(
                         account = otherSideRef,
@@ -97,7 +97,7 @@ object TransactionEntryService {
             else -> {
                 // Moving between Income/Expense or from Transfer to Normal.
                 // Reset category if switching natures or leaving Transfer.
-                val needsCategoryReset = isTransferToNormal || oldType != newType
+                val needsCategoryReset = isTransferToNormal || oldMode != newMode
 
                 newSource = primarySide.copy(
                     amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString(),
@@ -115,10 +115,10 @@ object TransactionEntryService {
         } else newDestination
 
         return TypeTransitionResult(
-            newType = newType,
+            newMode = newMode,
             source = newSource,
             destination = finalDestination,
-            isSplitModeAllowed = newType != TransactionType.TRANSFER && isSplitMode
+            isSplitModeAllowed = newMode != EntryMode.TRANSFER && isSplitMode
         )
     }
 

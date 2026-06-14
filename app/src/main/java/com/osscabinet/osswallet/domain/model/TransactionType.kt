@@ -3,12 +3,13 @@ package com.osscabinet.ossWallet.domain.model
 import kotlinx.serialization.Serializable
 
 /**
- * Enum representing the type of a transaction.
+ * Enum representing the type of a transaction leg.
  *
- * @property displayName Human-readable name for UI display
- * @property value String identifier used for persistence
- * @property iconName Name of the icon to use (maps to AppIconMap in UI layer)
- * @property colorHex Hex color value for the type
+ * Each row in the `transactions` table holds exactly one of these values.
+ * Transfers are split into `TRANSFER_INFLOW` / `TRANSFER_OUTFLOW` so the
+ * "direction" of a transfer leg is encoded in the type itself, not in the
+ * amount sign. Use [EntryMode] for event-level form/template state where the
+ * leg distinction is not yet known.
  */
 @Serializable
 enum class TransactionType(
@@ -29,66 +30,55 @@ enum class TransactionType(
         iconName = "Add",
         colorHex = "#004D40"
     ),
-    TRANSFER(
-        displayName = "Transfer",
-        value = "transfer",
-        iconName = "SwapHoriz",
+    TRANSFER_INFLOW(
+        displayName = "Transfer In",
+        value = "transfer_inflow",
+        iconName = "ArrowDownward",
+        colorHex = "#2196F3"
+    ),
+    TRANSFER_OUTFLOW(
+        displayName = "Transfer Out",
+        value = "transfer_outflow",
+        iconName = "ArrowUpward",
         colorHex = "#2196F3"
     );
 
     companion object {
-        /**
-         * Get TransactionType from string value.
-         * Defaults to EXPENSE if the value is invalid.
-         */
-        fun fromValue(value: String?): TransactionType {
-            return entries.find { it.value.equals(value, ignoreCase = true) } ?: EXPENSE
-        }
+        val TRANSFER_TYPES: Set<TransactionType> = setOf(TRANSFER_INFLOW, TRANSFER_OUTFLOW)
 
         /**
-         * Get TransactionType from integer (used in some entities).
-         * 0: Expense, 1: Income, 2: Transfer
+         * Resolve from the persisted string value. Defaults to EXPENSE when unrecognised.
+         * Legacy "transfer" is intentionally NOT accepted here — the schema migration
+         * 9 → 10 backfills existing rows by sign; any caller still seeing the literal
+         * "transfer" string after migration is a bug worth surfacing.
          */
-        fun fromInt(type: Int): TransactionType {
-            return when (type) {
-                1 -> INCOME
-                2 -> TRANSFER
-                else -> EXPENSE
-            }
-        }
+        fun fromValue(value: String?): TransactionType =
+            entries.find { it.value.equals(value, ignoreCase = true) } ?: EXPENSE
 
         /**
-         * Get TransactionType from boolean (for backward compatibility).
-         * true = INCOME, false = EXPENSE
+         * Lossy mapping retained only for the integer-encoded legacy CSV path:
+         * 0 → EXPENSE, 1 → INCOME, 2 → TRANSFER_OUTFLOW (sign unknown; default to outflow).
          */
-        @Deprecated("Use TransactionType directly to support Transfers", ReplaceWith("this"))
-        fun fromBoolean(isIncome: Boolean): TransactionType {
-            return if (isIncome) INCOME else EXPENSE
+        fun fromInt(type: Int): TransactionType = when (type) {
+            1 -> INCOME
+            2 -> TRANSFER_OUTFLOW
+            else -> EXPENSE
         }
 
-        /**
-         * Special value for filters to indicate "all types".
-         */
         const val ALL = "all"
     }
 
     /**
-     * Convert to integer representation.
-     * 0: Expense, 1: Income, 2: Transfer
+     * Lossy: both transfer subtypes map to 2.
      */
     fun toInt(): Int = when (this) {
         EXPENSE -> 0
         INCOME -> 1
-        TRANSFER -> 2
+        TRANSFER_INFLOW, TRANSFER_OUTFLOW -> 2
     }
-
-    /**
-     * Convert to boolean (for backward compatibility).
-     * INCOME = true, EXPENSE = false.
-     * Note: Returns false for TRANSFER.
-     */
-    @Deprecated("Use equality check with INCOME to support Transfers", ReplaceWith("this == TransactionType.INCOME"))
-    fun toBoolean(): Boolean = this == INCOME
 }
+
+val TransactionType.isTransfer: Boolean
+    get() = this in TransactionType.TRANSFER_TYPES
 
 enum class AmountEditingSide { SOURCE, TARGET }

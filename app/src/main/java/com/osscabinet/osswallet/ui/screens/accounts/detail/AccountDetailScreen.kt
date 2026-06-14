@@ -171,7 +171,7 @@ fun AccountDetailScreen(
     val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
 
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val loadFilterErrorMessage = stringResource(R.string.account_detail_load_filter_error)
 
     LaunchedEffect(config.filterJson) {
         if (config.filterJson != null) {
@@ -181,7 +181,7 @@ fun AccountDetailScreen(
                 accountDetailViewModel.updateFilter(filter)
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.account_detail_load_filter_error)
+                    message = loadFilterErrorMessage
                 )
             }
         }

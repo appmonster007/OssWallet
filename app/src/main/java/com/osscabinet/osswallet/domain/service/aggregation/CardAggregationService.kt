@@ -43,19 +43,12 @@ object CardAggregationService {
 
         val netWorth = CurrencyService.calculateTotalInCurrency(
             currencyTotals = currentTotalsByCurrency,
-            targetCurrency = input.displayCurrency,
+            targetCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates
         )
-        val netWorthInBase = if (input.displayCurrency != input.baseCurrency) {
-            CurrencyService.calculateTotalInCurrency(
-                currencyTotals = currentTotalsByCurrency,
-                targetCurrency = input.baseCurrency,
-                exchangeRates = input.exchangeRates
-            )
-        } else null
 
         val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter)
-        val currentMetrics = NetWorthMetrics(netWorth, cashFlow, netWorthInBase)
+        val currentMetrics = NetWorthMetrics(netWorth, cashFlow)
 
         val previousMetrics: NetWorthMetrics? = if (config.showComparison) {
             val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
@@ -70,26 +63,18 @@ object CardAggregationService {
                     .mapValues { it.value.totalAmount }
                 val prevNetWorth = CurrencyService.calculateTotalInCurrency(
                     currencyTotals = prevTotalsByCurrency,
-                    targetCurrency = input.displayCurrency,
+                    targetCurrency = input.targetCurrency,
                     exchangeRates = input.exchangeRates
                 )
-                val prevNetWorthInBase = if (input.displayCurrency != input.baseCurrency) {
-                    CurrencyService.calculateTotalInCurrency(
-                        currencyTotals = prevTotalsByCurrency,
-                        targetCurrency = input.baseCurrency,
-                        exchangeRates = input.exchangeRates
-                    )
-                } else null
                 val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter)
-                NetWorthMetrics(prevNetWorth, prevCashFlow, prevNetWorthInBase)
+                NetWorthMetrics(prevNetWorth, prevCashFlow)
             } else null
         } else null
 
         return CardRenderData.NetWorth(
             config = config,
             currentMetrics = currentMetrics,
-            baseCurrency = input.baseCurrency,
-            displayCurrency = input.displayCurrency,
+            currency = input.targetCurrency,
             previousMetrics = previousMetrics
         )
     }
@@ -109,7 +94,7 @@ object CardAggregationService {
         return CardRenderData.CashFlow(
             config = config,
             result = result,
-            baseCurrency = input.displayCurrency
+            currency = input.targetCurrency
         )
     }
 
@@ -129,9 +114,9 @@ object CardAggregationService {
         var totalTransferInBase = BigDecimal.ZERO
 
         val breakdownItems = summariesByCurrency.map { (curr, summary) ->
-            val incomeInBase = CurrencyService.convertAmount(summary.income, curr, input.displayCurrency, input.exchangeRates, 10)
-            val expenseInBase = CurrencyService.convertAmount(summary.expense.abs(), curr, input.displayCurrency, input.exchangeRates, 10)
-            val transferInBase = CurrencyService.convertAmount(summary.transfer, curr, input.displayCurrency, input.exchangeRates, 10)
+            val incomeInBase = CurrencyService.convertAmount(summary.income, curr, input.targetCurrency, input.exchangeRates, 10)
+            val expenseInBase = CurrencyService.convertAmount(summary.expense.abs(), curr, input.targetCurrency, input.exchangeRates, 10)
+            val transferInBase = CurrencyService.convertAmount(summary.transfer, curr, input.targetCurrency, input.exchangeRates, 10)
 
             totalIncomeInBase = totalIncomeInBase.add(incomeInBase)
             totalExpenseInBase = totalExpenseInBase.add(expenseInBase)
@@ -177,12 +162,17 @@ object CardAggregationService {
             CurrencyAggregationItem(
                 currency = curr,
                 amount = summary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, input.displayCurrency, input.exchangeRates, 10)
+                amountInBase = CurrencyService.convertAmount(summary.totalAmount, curr, input.targetCurrency, input.exchangeRates, 10)
                     .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }.sortedByDescending { it.amountInBase.abs() }
 
-        return CardRenderData.CurrencyBalances(config, balances, input.displayCurrency)
+        return CardRenderData.CurrencyBalances(
+            config = config,
+            items = balances,
+            currency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
+        )
     }
 
     suspend fun computeAccountsCard(
@@ -212,7 +202,7 @@ object CardAggregationService {
 
             val balanceInBase = CurrencyService.calculateTotalInCurrency(
                 currencyTotals = currencySummaries.mapValues { it.value.totalAmount },
-                targetCurrency = input.baseCurrency,
+                targetCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 precision = 10
             )
@@ -231,11 +221,12 @@ object CardAggregationService {
         }
 
         return CardRenderData.Accounts(
-            config,
-            input.effectiveAccounts,
-            accountStats,
-            input.baseCurrency,
-            "light"
+            config = config,
+            updatedAccounts = input.effectiveAccounts,
+            accountStats = accountStats,
+            currency = input.targetCurrency,
+            currentTheme = "light",
+            exchangeRates = input.exchangeRates
         )
     }
 
@@ -288,7 +279,7 @@ object CardAggregationService {
             balance = lifetimeSummary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             income = periodSummary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             expense = periodSummary.expense.abs().setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            baseCurrency = input.baseCurrency,
+            currency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             currencyBalances = balancesByCurrency
         )

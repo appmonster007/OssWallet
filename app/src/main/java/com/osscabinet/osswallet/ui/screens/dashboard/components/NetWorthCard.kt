@@ -142,14 +142,6 @@ fun NetWorthCard(
                     color = contentColor
                 )
 
-                currentMetrics.netWorthInBase?.let { inBase ->
-                    Text(
-                        text = "≈ ${formatAuto(inBase, baseCurrency)}",
-                        style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
-                        color = AppColors.contentPrimary.copy(alpha = 0.6f)
-                    )
-                }
-
                 // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
                 if (config.showComparison && previousMetrics != null) {
                     val change = currentMetrics.netWorth.subtract(previousMetrics.netWorth)

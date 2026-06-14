@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConf
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
@@ -60,7 +61,7 @@ class CashFlowComparisonCardComputer(
             buckets = fullBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.displayCurrency,
+            baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
             excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -76,7 +77,7 @@ class CashFlowComparisonCardComputer(
                 buckets = prevBuckets,
                 baseFilter = mergedFilter,
                 profileId = input.profileId,
-                baseCurrency = input.displayCurrency,
+                baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 today = today,
                 excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -93,7 +94,7 @@ class CashFlowComparisonCardComputer(
             buckets = lastYearBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.displayCurrency,
+            baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
             excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -104,7 +105,7 @@ class CashFlowComparisonCardComputer(
             currentSeries = currentSeries,
             previousSeries = previousSeries,
             lastYearSeries = lastYearSeries,
-            baseCurrency = input.displayCurrency,
+            currency = input.targetCurrency,
             granularity = granularity,
             periodLabels = fullBuckets.map { it.third },
             currentTotalBuckets = fullBuckets.size,
@@ -168,7 +169,7 @@ class CashFlowComparisonCardComputer(
         baseFilter: TransactionFilter,
         profileId: Int,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         today: Long,
         excludeFuture: Boolean
     ): CashFlowComparisonSeries {
@@ -188,7 +189,7 @@ class CashFlowComparisonCardComputer(
         bucketEnd: Long,
         label: String,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): CashFlowTimePoint {
         val summaries = TransactionAggregationService.getSummaryByCurrency(
             queryService, profileId,

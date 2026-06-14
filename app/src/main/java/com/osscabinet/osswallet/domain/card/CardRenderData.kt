@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.service.*
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import java.math.BigDecimal
 
@@ -32,8 +33,7 @@ data class CashFlowComparisonSeries(val points: List<CashFlowTimePoint>)
  */
 data class NetWorthMetrics(
     val netWorth: BigDecimal,
-    val cashFlow: CashFlowResult,
-    val netWorthInBase: BigDecimal? = null
+    val cashFlow: CashFlowResult
 ) {
     companion object {
         fun empty() = NetWorthMetrics(
@@ -52,35 +52,36 @@ sealed class CardRenderData {
     data class NetWorth(
         val config: NetWorthCardConfig,
         val currentMetrics: NetWorthMetrics,
-        val baseCurrency: String,
-        val displayCurrency: String = baseCurrency,
+        val currency: String,
         val previousMetrics: NetWorthMetrics? = null
     ) : CardRenderData()
 
     data class CurrencyBalances(
         val config: CurrencyBalancesCardConfig,
         val items: List<CurrencyAggregationItem>,
-        val baseCurrency: String
+        val currency: String,
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData()
 
     data class CashFlow(
         val config: CashFlowCardConfig,
         val result: CashFlowResult,
-        val baseCurrency: String
+        val currency: String
     ) : CardRenderData()
 
     data class Accounts(
         val config: AccountsCardConfig,
         val updatedAccounts: List<Account>,
         val accountStats: Map<String, AccountSummaryItem>,
-        val baseCurrency: String,
-        val currentTheme: String
+        val currency: String,
+        val currentTheme: String,
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData()
 
     data class CategoryPieChart(
         val config: CategoryPieChartCardConfig,
         val items: List<CategoryTreeMetrics>,
-        val displayCurrency: String,
+        val currency: String,
         val previousTotal: BigDecimal? = null,
         val incomeTotal: BigDecimal = BigDecimal.ZERO,
         val expenseTotal: BigDecimal = BigDecimal.ZERO,
@@ -91,7 +92,7 @@ sealed class CardRenderData {
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
         val items: List<CategoryTreeMetrics>,
-        val displayCurrency: String,
+        val currency: String,
         val previousTotal: BigDecimal? = null,
         val incomeTotal: BigDecimal = BigDecimal.ZERO,
         val expenseTotal: BigDecimal = BigDecimal.ZERO,
@@ -102,18 +103,22 @@ sealed class CardRenderData {
     data class PlannedPayments(
         val config: PlannedPaymentsCardConfig,
         val upcoming: List<UpcomingPaymentItem>,
-        val overdue: List<PlannedPayment>
+        val overdue: List<PlannedPayment>,
+        val currency: String,
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData()
 
     data class Budgets(
         val config: BudgetsCardConfig,
         val items: List<BudgetProgress>,
-        val displayCurrency: String
+        val currency: String
     ) : CardRenderData()
 
     data class Loans(
         val config: LoansCardConfig,
-        val items: List<LoanSummary>
+        val items: List<LoanSummary>,
+        val currency: String,
+        val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData()
 
     data class AccountHero(
@@ -122,16 +127,16 @@ sealed class CardRenderData {
         val balance: BigDecimal,
         val income: BigDecimal,
         val expense: BigDecimal,
-        val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>,
+        val currency: String,
+        val exchangeRates: ExchangeRateSnapshot,
         val currencyBalances: Map<String, BigDecimal> = emptyMap()
     ) : CardRenderData()
 
     data class RecentActivities(
         val config: RecentActivitiesCardConfig,
         val listState: TransactionListState,
-        val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>
+        val currency: String,
+        val exchangeRates: ExchangeRateSnapshot
     ) : CardRenderData()
 
     data class CashFlowComparison(
@@ -139,7 +144,7 @@ sealed class CardRenderData {
         val currentSeries: CashFlowComparisonSeries,
         val previousSeries: CashFlowComparisonSeries,
         val lastYearSeries: CashFlowComparisonSeries,
-        val baseCurrency: String,
+        val currency: String,
         val granularity: CashFlowComparisonGranularity,
         // Labels for every bucket in the full current period (no zero-origin sentinel).
         // Used to drive the x-axis when currentSeries is truncated at today.
@@ -155,7 +160,7 @@ sealed class CardRenderData {
         val config: IncomeExpenseBarCardConfig,
         val buckets: List<CashFlowTimePoint>,
         val granularity: CashFlowComparisonGranularity,
-        val baseCurrency: String,
+        val currency: String,
         // Index of the last bucket whose start time is ≤ today.
         // -1 means all buckets are in the future. Used to terminate the net line at today.
         val todayBucketIndex: Int = -1
@@ -166,14 +171,14 @@ sealed class CardRenderData {
         val buckets: List<CategorySpendingBucket>,
         val granularity: CashFlowComparisonGranularity,
         val activeCategories: List<CategorySummary>,
-        val baseCurrency: String
+        val currency: String
     ) : CardRenderData()
 
     data class TagUpSetPlot(
         val config: TagUpSetPlotCardConfig,
         val sets: List<TagUpSetSet>,
         val intersections: List<TagUpSetIntersection>,
-        val baseCurrency: String
+        val currency: String
     ) : CardRenderData()
 }
 

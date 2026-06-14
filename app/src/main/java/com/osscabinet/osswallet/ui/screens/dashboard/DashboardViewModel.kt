@@ -185,8 +185,11 @@ class DashboardViewModel @Inject constructor(
                         accounts = accounts,
                         categories = categories,
                         tags = tags,
-                        exchangeRates = rates,
-                        baseCurrency = baseCurrency,
+                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                            anchor = baseCurrency,
+                            rates = rates
+                        ),
+                        targetCurrency = baseCurrency,
                         plannedPayments = plannedPayments,
                         budgets = budgets,
                         loans = loans,
@@ -209,7 +212,7 @@ class DashboardViewModel @Inject constructor(
                             .groupBy { it.accountId }
                             .flatMap { (accId, accountTransactions) ->
                                 val account = accounts.find { it.id == accId }
-                                val accountCurrency = account?.currencyCode ?: "USD"
+                                val accountCurrency = account?.currencyCode ?: baseCurrency
 
                                 var runningBalance = BigDecimal.ZERO
                                 accountTransactions.map { transaction ->

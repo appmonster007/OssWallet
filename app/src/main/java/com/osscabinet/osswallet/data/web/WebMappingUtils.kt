@@ -134,7 +134,7 @@ internal fun CardRenderData.toPayloadDto(
         transfer = currentMetrics.cashFlow.totalTransfersInBase.toDouble(),
         cashFlow = currentMetrics.cashFlow.netInBase.toDouble(),
         previousNetWorth = previousMetrics?.netWorth?.toDouble(),
-        currency = this.baseCurrency
+        currency = this.currency
     )
 
     is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
@@ -142,7 +142,7 @@ internal fun CardRenderData.toPayloadDto(
         expense = result.totalExpensesInBase.toDouble(),
         transfer = result.totalTransfersInBase.toDouble(),
         net = result.netInBase.toDouble(),
-        currency = this.baseCurrency
+        currency = this.currency
     )
 
     is CardRenderData.CurrencyBalances -> CardPayloadDto.CurrencyBalances(
@@ -153,7 +153,7 @@ internal fun CardRenderData.toPayloadDto(
                 balanceInBase = item.amountInBase.toDouble()
             )
         },
-        baseCurrency = this.baseCurrency
+        baseCurrency = this.currency
     )
 
     is CardRenderData.Accounts -> CardPayloadDto.Accounts(
@@ -264,7 +264,7 @@ internal fun CardRenderData.toPayloadDto(
                     colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
                 )
             },
-            displayCurrency = displayCurrency
+            displayCurrency = currency
         )
     }
 
@@ -282,7 +282,7 @@ internal fun CardRenderData.toPayloadDto(
                     colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
                 )
             },
-            displayCurrency = displayCurrency
+            displayCurrency = currency
         )
     }
 
@@ -315,7 +315,7 @@ internal fun CardRenderData.toPayloadDto(
             )
         },
         granularity = granularity.name,
-        baseCurrency = this.baseCurrency
+        baseCurrency = this.currency
     )
 
     is CardRenderData.IncomeExpenseBar -> CardPayloadDto.IncomeExpenseBar(
@@ -329,7 +329,7 @@ internal fun CardRenderData.toPayloadDto(
             )
         },
         granularity = granularity.name,
-        baseCurrency = this.baseCurrency,
+        baseCurrency = this.currency,
         todayBucketIndex = todayBucketIndex
     )
 
@@ -349,7 +349,7 @@ internal fun CardRenderData.toPayloadDto(
             )
         },
         granularity = granularity.name,
-        baseCurrency = this.baseCurrency
+        baseCurrency = this.currency
     )
 
     is CardRenderData.TagUpSetPlot -> CardPayloadDto.TagUpSetPlot(
@@ -368,7 +368,7 @@ internal fun CardRenderData.toPayloadDto(
                 transactionCount = i.transactionCount
             )
         },
-        baseCurrency = this.baseCurrency
+        baseCurrency = this.currency
     )
 
     is CardRenderData.AccountHero -> CardPayloadDto.NetWorth(

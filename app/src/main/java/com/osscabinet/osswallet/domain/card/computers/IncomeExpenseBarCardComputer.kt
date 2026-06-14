@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
@@ -68,7 +69,7 @@ class IncomeExpenseBarCardComputer(
             buckets = buckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
-            baseCurrency = input.displayCurrency,
+            baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             granularity = granularity
         )
@@ -77,7 +78,7 @@ class IncomeExpenseBarCardComputer(
             config = config,
             buckets = series.points,
             granularity = granularity,
-            baseCurrency = input.displayCurrency,
+            currency = input.targetCurrency,
             todayBucketIndex = todayBucketIndex
         )
     }
@@ -144,7 +145,7 @@ class IncomeExpenseBarCardComputer(
         baseFilter: TransactionFilter,
         profileId: Int,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         granularity: CashFlowComparisonGranularity
     ): CashFlowComparisonSeries {
         val points = buckets.map { (bucketStart, bucketEnd, label) ->

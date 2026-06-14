@@ -48,6 +48,9 @@ import java.math.RoundingMode
 @Composable
 fun LoansCard(
     items: List<LoanSummary>,
+    targetCurrency: String = "USD",
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = targetCurrency, rates = emptyMap()),
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -93,6 +96,8 @@ fun LoansCard(
                 items.forEach { summary ->
                     LoanSummaryRow(
                         summary = summary,
+                        targetCurrency = targetCurrency,
+                        exchangeRates = exchangeRates,
                         onClick = { callbacks.onLoanClick(summary.loan.id) }
                     )
                 }
@@ -135,6 +140,8 @@ private fun LoansSettingsSheet(
 @Composable
 private fun LoanSummaryRow(
     summary: LoanSummary,
+    targetCurrency: String,
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
     onClick: () -> Unit
 ) {
     val accentColor =
@@ -215,15 +222,16 @@ private fun LoanSummaryRow(
                         ),
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
-                    Text(
-                        text = formatAuto(
-                            summary.remainingBalance,
-                            summary.loan.currency
-                        ),
-                        style = AppTextStyles.listItemTitle.copy(
+                    com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
+                        amount = summary.remainingBalance,
+                        nativeCurrency = summary.loan.currency,
+                        targetCurrency = targetCurrency,
+                        rates = exchangeRates,
+                        primaryStyle = AppTextStyles.listItemTitle.copy(
                             fontWeight = FontWeight.ExtraBold
                         ),
-                        color = AppColors.contentPrimary
+                        primaryColor = AppColors.contentPrimary,
+                        horizontalAlignment = Alignment.Start
                     )
                 }
 

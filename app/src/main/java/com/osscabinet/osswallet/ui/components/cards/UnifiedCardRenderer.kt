@@ -47,8 +47,8 @@ fun UnifiedCardRenderer(
 
             NetWorthCard(
                 currentMetrics = renderData.currentMetrics,
-                baseCurrency = renderData.baseCurrency,
-                displayCurrency = renderData.displayCurrency,
+                baseCurrency = renderData.currency,
+                displayCurrency = renderData.currency,
                 config = renderData.config,
                 previousMetrics = renderData.previousMetrics,
                 callbacks = cb,
@@ -69,7 +69,8 @@ fun UnifiedCardRenderer(
 
             CurrencyBalancesCard(
                 currencyTotals = renderData.items,
-                baseCurrency = renderData.baseCurrency,
+                baseCurrency = renderData.currency,
+                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,
@@ -89,7 +90,7 @@ fun UnifiedCardRenderer(
 
             CashFlowCard(
                 cashFlowResult = renderData.result,
-                baseCurrency = renderData.baseCurrency,
+                baseCurrency = renderData.currency,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,
@@ -158,6 +159,7 @@ fun UnifiedCardRenderer(
             CategoryPieChartCard(
                 config = renderData.config,
                 data = uiData,
+                currency = renderData.currency,
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -225,6 +227,7 @@ fun UnifiedCardRenderer(
             CategoryTreemapCard(
                 config = renderData.config,
                 data = uiData,
+                currency = renderData.currency,
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -246,7 +249,7 @@ fun UnifiedCardRenderer(
                 balance = renderData.balance,
                 income = renderData.income,
                 expense = renderData.expense,
-                baseCurrency = renderData.baseCurrency,
+                baseCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 currencyBalances = renderData.currencyBalances,
@@ -271,7 +274,8 @@ fun UnifiedCardRenderer(
             AccountsCard(
                 accounts = renderData.updatedAccounts,
                 accountStats = renderData.accountStats,
-                baseCurrency = renderData.baseCurrency,
+                baseCurrency = renderData.currency,
+                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,
@@ -292,6 +296,8 @@ fun UnifiedCardRenderer(
             PlannedPaymentsCard(
                 upcoming = renderData.upcoming,
                 overdue = renderData.overdue,
+                targetCurrency = renderData.currency,
+                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,
@@ -330,6 +336,8 @@ fun UnifiedCardRenderer(
 
             LoansCard(
                 items = renderData.items,
+                targetCurrency = renderData.currency,
+                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,
@@ -351,7 +359,7 @@ fun UnifiedCardRenderer(
                 listState = renderData.listState,
                 config = renderData.config,
                 callbacks = cb,
-                baseCurrency = renderData.baseCurrency,
+                baseCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,

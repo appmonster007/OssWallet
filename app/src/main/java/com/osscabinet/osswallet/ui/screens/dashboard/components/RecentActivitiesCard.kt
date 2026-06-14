@@ -47,7 +47,8 @@ fun RecentActivitiesCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     baseCurrency: String = "USD",
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),

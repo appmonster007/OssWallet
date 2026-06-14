@@ -152,7 +152,7 @@ fun TagUpSetPlotCard(
             if (uiSets.isNotEmpty()) {
                 AeonUpSetPlot(
                     data = AeonUpSetData(uiSets, uiIntersections),
-                    currency = renderData.baseCurrency,
+                    currency = renderData.currency,
                     maxVisibleRows = config.maxTags,
                     maxVisibleCols = config.maxIntersections,
                     dynamicFilteringMode = config.dynamicFilteringMode,
@@ -230,7 +230,7 @@ fun TagUpSetPlotCard(
                                 incomeBase = intersection.income,
                                 expenseBase = intersection.expense,
                                 netBase = intersection.income.subtract(intersection.expense),
-                                baseCurrency = renderData.baseCurrency,
+                                baseCurrency = renderData.currency,
                                 labelColumnWidth = 32.dp,
                                 showCurrencyBreakdown = true
                             )
@@ -578,7 +578,7 @@ fun TagUpSetPlotCardPreview() {
                             transactionCount = 3
                         )
                     ),
-                    baseCurrency = "USD"
+                    currency = "USD"
                 )
             )
         }

@@ -57,7 +57,7 @@ fun AccountHeroCard(
     income: BigDecimal,
     expense: BigDecimal,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal>,
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
     config: AccountHeroCardConfig,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -342,7 +342,7 @@ fun AccountHeroCardPreview() {
                 income = BigDecimal("15000.00"),
                 expense = BigDecimal("4200.00"),
                 baseCurrency = "USD",
-                exchangeRates = emptyMap(),
+                exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = "USD", rates = emptyMap()),
                 config = AccountHeroCardConfig(cardId = "preview"),
                 currencyBalances = mapOf(
                     "USD" to BigDecimal("1800000.00"),

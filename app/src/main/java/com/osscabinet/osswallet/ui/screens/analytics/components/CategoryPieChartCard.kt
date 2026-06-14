@@ -72,6 +72,7 @@ import java.math.RoundingMode
 fun CategoryPieChartCard(
     config: CategoryPieChartCardConfig,
     data: List<CategoryPieChartData>,
+    currency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
@@ -280,7 +281,7 @@ fun CategoryPieChartCard(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
                     rounded = config.rounded,
-                    currency = baseFilter.currencies.firstOrNull() ?: "USD",
+                    currency = currency,
                     previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
@@ -661,7 +662,8 @@ fun CategoryPieChartCardPreview() {
                     showComparison = true,
                     filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
                 ),
-                data = richData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.8"))) }
+                data = richData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.8"))) },
+                currency = "USD"
             )
         }
     }

@@ -128,7 +128,7 @@ fun CategorySpendingTrendCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp),
-                    currency = renderData.baseCurrency,
+                    currency = renderData.currency,
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
                     cornerRadius = 0.dp
@@ -220,7 +220,7 @@ fun CategorySpendingTrendCard(
                         renderData.activeCategories.forEach { summary ->
                             CategorySummaryRow(
                                 summary = summary,
-                                currency = renderData.baseCurrency,
+                                currency = renderData.currency,
                                 onClick = {
                                     callbacks.onRecordsClick(displayFilter.forCategory(summary.categoryId))
                                 }
@@ -437,7 +437,7 @@ fun CategorySpendingTrendCardPreview() {
                 BigDecimal("200.00")
             )
         ),
-        baseCurrency = "USD"
+        currency = "USD"
     )
 
     OssWalletTheme {

@@ -61,8 +61,8 @@ class CategoryPieChartCardComputer :
         val tree = AggregationService.buildCategoryTree(
             transactions = filteredTx,
             allCategories = input.categories,
-            exchangeRates = input.exchangeRates,
-            baseCurrency = input.displayCurrency,
+            exchangeRates = input.exchangeRates.rates,
+            baseCurrency = input.targetCurrency,
             previousTransactions = previousTx
         )
 
@@ -76,7 +76,7 @@ class CategoryPieChartCardComputer :
         return CardRenderData.CategoryPieChart(
             config = config,
             items = tree,
-            displayCurrency = input.displayCurrency,
+            currency = input.targetCurrency,
             previousTotal = previousTotal,
             incomeTotal = incomeTotal,
             expenseTotal = expenseTotal,

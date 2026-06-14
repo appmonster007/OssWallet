@@ -78,6 +78,7 @@ import java.math.RoundingMode
 fun CategoryTreemapCard(
     config: CategoryTreemapCardConfig,
     data: List<CategoryTreemapData>,
+    currency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
@@ -311,8 +312,6 @@ fun CategoryTreemapCard(
                     currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
             }
-            val currency = baseFilter.currencies.firstOrNull() ?: "USD"
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -711,7 +710,8 @@ fun CategoryTreemapCardPreview() {
                     showComparison = true,
                     filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
                 ),
-                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) }
+                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
+                currency = "USD"
             )
         }
 }

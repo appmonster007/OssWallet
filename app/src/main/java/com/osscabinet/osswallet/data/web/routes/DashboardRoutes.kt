@@ -68,9 +68,11 @@ fun Route.dashboardRoutes(
                     accounts = accounts,
                     categories = categories,
                     tags = allTags,
-                    exchangeRates = exchangeRates,
-                    baseCurrency = baseCurrency,
-                    displayCurrency = baseCurrency,
+                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                        anchor = baseCurrency,
+                        rates = exchangeRates
+                    ),
+                    targetCurrency = baseCurrency,
                     filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = false)),
                     plannedPayments = allPayments,
                     budgets = budgets,

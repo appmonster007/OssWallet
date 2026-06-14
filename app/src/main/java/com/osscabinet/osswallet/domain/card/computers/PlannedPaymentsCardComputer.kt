@@ -72,7 +72,9 @@ class PlannedPaymentsCardComputer :
         return CardRenderData.PlannedPayments(
             config = config,
             upcoming = shownUpcoming,
-            overdue = shownOverdue
+            overdue = shownOverdue,
+            currency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
         )
     }
 }

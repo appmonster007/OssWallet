@@ -124,7 +124,7 @@ fun IncomeExpenseBarCard(
             Text(
                 text = CurrencyFormatter.formatAuto(
                     amount = netTotal,
-                    currencyCode = renderData.baseCurrency,
+                    currencyCode = renderData.currency,
                     precision = CurrencyService.precision
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
@@ -163,7 +163,7 @@ fun IncomeExpenseBarCard(
                     barColorPositive = ChartColorGreen,
                     barColorNegative = ChartColorRed,
                     lineColor = ChartColorBlue,
-                    currency = renderData.baseCurrency,
+                    currency = renderData.currency,
                     showGrid = config.showGridLines,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,7 +265,7 @@ fun IncomeExpenseBarCardPreview() {
         config = IncomeExpenseBarCardConfig(cardId = "preview"),
         buckets = buckets,
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
-        baseCurrency = "USD",
+        currency = "USD",
         todayBucketIndex = 2
     )
 

@@ -27,8 +27,11 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                 profileId = common.profileId,
                 input = CardInput(
                     profileId = common.profileId,
-                    baseCurrency = common.baseCurrency,
-                    exchangeRates = common.exchangeRates,
+                    targetCurrency = common.baseCurrency,
+                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                        anchor = common.baseCurrency,
+                        rates = common.exchangeRates
+                    ),
                     filter = TransactionFilter(
                         timelineRange = config.timelineRange.withExcludeFuture(true)
                     ),

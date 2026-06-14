@@ -599,9 +599,11 @@ fun DynamicAccountDetailCards(
             accounts = listOf(state.account),
             categories = state.allCategories,
             tags = state.allTags,
-            exchangeRates = state.exchangeRates,
-            baseCurrency = state.baseCurrency,
-            displayCurrency = state.account.currencyCode,
+            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                anchor = state.baseCurrency,
+                rates = state.exchangeRates
+            ),
+            targetCurrency = state.account.currencyCode,
             filter = state.currentFilter,
             screenContext = ScreenContext.ACCOUNT_DETAIL
         )

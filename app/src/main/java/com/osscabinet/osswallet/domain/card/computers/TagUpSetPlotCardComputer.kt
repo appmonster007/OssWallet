@@ -56,7 +56,7 @@ class TagUpSetPlotCardComputer(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val profileId = input.profileId
-        val baseCurrency = input.displayCurrency
+        val baseCurrency = input.targetCurrency
         val exchangeRates = input.exchangeRates
 
         // 1. Compute Individual Tag Totals
@@ -261,7 +261,7 @@ class TagUpSetPlotCardComputer(
             config = config,
             sets = sets,
             intersections = intersections,
-            baseCurrency = baseCurrency
+            currency = baseCurrency
         )
     }
 }

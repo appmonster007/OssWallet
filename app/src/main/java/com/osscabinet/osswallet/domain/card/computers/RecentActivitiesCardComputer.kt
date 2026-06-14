@@ -29,7 +29,7 @@ class RecentActivitiesCardComputer : CardDataComputer<RecentActivitiesCardConfig
             .groupBy { it.accountId }
             .flatMap { (accId, accountTransactions) ->
                 val account = input.accounts.find { it.id == accId }
-                val accountCurrency = account?.currencyCode ?: "USD"
+                val accountCurrency = account?.currencyCode ?: input.targetCurrency
 
                 var runningBalance = BigDecimal.ZERO
                 accountTransactions.map { transaction ->
@@ -77,15 +77,15 @@ class RecentActivitiesCardComputer : CardDataComputer<RecentActivitiesCardConfig
             accounts = input.accounts,
             categories = input.categories,
             allTags = input.tags,
-            baseCurrency = input.displayCurrency,
-            exchangeRates = input.exchangeRates,
+            baseCurrency = input.targetCurrency,
+            exchangeRates = input.exchangeRates.rates,
             allTxnBreakdown = config.allTxnBreakdown,
         )
 
         return CardRenderData.RecentActivities(
             config = config,
             listState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
-            baseCurrency = input.displayCurrency,
+            currency = input.targetCurrency,
             exchangeRates = input.exchangeRates
         )
     }

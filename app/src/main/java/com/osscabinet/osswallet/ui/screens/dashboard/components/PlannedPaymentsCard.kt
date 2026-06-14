@@ -77,6 +77,9 @@ import java.time.format.DateTimeFormatter
 fun PlannedPaymentsCard(
     upcoming: List<UpcomingPaymentItem>,
     overdue: List<PlannedPayment>,
+    targetCurrency: String = "USD",
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = targetCurrency, rates = emptyMap()),
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -143,6 +146,8 @@ fun PlannedPaymentsCard(
                     title = payment.name,
                     amount = payment.amount,
                     currency = payment.currency,
+                    targetCurrency = targetCurrency,
+                    exchangeRates = exchangeRates,
                     transactionType = payment.transactionType,
                     dateLabel = "OVERDUE",
                     isOverdue = true,
@@ -157,6 +162,8 @@ fun PlannedPaymentsCard(
                     title = item.plannedPayment.name,
                     amount = item.plannedPayment.amount,
                     currency = item.plannedPayment.currency,
+                    targetCurrency = targetCurrency,
+                    exchangeRates = exchangeRates,
                     transactionType = item.plannedPayment.transactionType,
                     dateLabel = formatRelativeDate(item.scheduledDate, System.currentTimeMillis()),
                     isOverdue = false,
@@ -233,6 +240,8 @@ private fun PlannedPaymentRow(
     title: String,
     amount: BigDecimal,
     currency: String,
+    targetCurrency: String,
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
     transactionType: TransactionType,
     dateLabel: String,
     isOverdue: Boolean,
@@ -303,13 +312,17 @@ private fun PlannedPaymentRow(
                     else AppColors.contentSecondary
                 )
             }
-            Text(
-                text = formatAuto(amount, currency),
-                style = AppTextStyles.listItemTitle.copy(
+            com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
+                amount = amount,
+                nativeCurrency = currency,
+                targetCurrency = targetCurrency,
+                rates = exchangeRates,
+                primaryStyle = AppTextStyles.listItemTitle.copy(
                     fontWeight = FontWeight.Black,
                     fontSize = 14.sp,
                     color = typeColor
-                )
+                ),
+                primaryColor = typeColor
             )
             if (onConfirm != null || onSkip != null) {
                 Box {

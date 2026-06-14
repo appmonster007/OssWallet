@@ -116,7 +116,7 @@ fun CashFlowComparisonCard(
             Text(
                 text = CurrencyFormatter.formatAuto(
                     amount = aggregateTotal,
-                    currencyCode = renderData.baseCurrency,
+                    currencyCode = renderData.currency,
                     precision = CurrencyService.precision
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
@@ -153,7 +153,7 @@ fun CashFlowComparisonCard(
 
                 AeonLineChart(
                     series = series,
-                    currency = renderData.baseCurrency,
+                    currency = renderData.currency,
                     lineThicknessDp = 1.5f,
                     showGrid = config.showGridLines,
                     totalXSlots = totalXSlots,
@@ -426,7 +426,7 @@ fun CashFlowComparisonShorterPrevPreview() {
             )
         ),
         lastYearSeries = CashFlowComparisonSeries(emptyList()),
-        baseCurrency = "USD",
+        currency = "USD",
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
         periodLabels = listOf("01/02", "02/02", "03/02", "04/02", "05/02"),
         currentTotalBuckets = 5,
@@ -510,7 +510,7 @@ fun CashFlowComparisonLongerPrevPreview() {
             )
         ),
         lastYearSeries = CashFlowComparisonSeries(emptyList()),
-        baseCurrency = "USD",
+        currency = "USD",
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
         periodLabels = listOf("01/02", "02/02", "03/02", "04/02", "05/02"),
         currentTotalBuckets = 5,
@@ -572,7 +572,7 @@ fun CashFlowComparisonTightMarkersPreview() {
                 )
             )
         ),
-        baseCurrency = "USD",
+        currency = "USD",
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.DAY,
         periodLabels = (1..30).map { "$it/02" },
         currentTotalBuckets = 28,

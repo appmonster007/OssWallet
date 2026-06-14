@@ -6,7 +6,7 @@ import java.math.RoundingMode
 import java.util.Currency
 
 /**
- * Domain service for currency conversion and core business logic.
+ * Domain11 service for currency conversion and core business logic.
  */
 object CurrencyService {
 
@@ -15,53 +15,51 @@ object CurrencyService {
      */
     var precision: Int = 2
 
-    // ==================== Conversion & Logic ====================
+    // ==================== Conversion & Logic (ExchangeRateSnapshot) ====================
 
     /**
-     * Converts an amount from one currency to another using exchange rates.
+     * Converts an amount from one currency to another using a snapshot.
+     * The snapshot's anchor is treated as the implicit `1.0` rate.
+     * If either source or target rate is missing (and not the anchor), the
+     * original amount is returned (rescaled).
      */
     fun convertAmount(
         amount: BigDecimal,
         fromCurrency: String,
         toCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = this.precision
     ): BigDecimal {
         if (fromCurrency == toCurrency) return amount.setScale(precision, RoundingMode.HALF_UP)
 
-        val fromRate = exchangeRates[fromCurrency]
-        val toRate = exchangeRates[toCurrency]
+        val anchor = exchangeRates.anchor
+        val fromRate = if (fromCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[fromCurrency]
+        val toRate = if (toCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[toCurrency]
 
         if (fromRate == null || toRate == null || fromRate.signum() == 0) {
             return amount.setScale(precision, RoundingMode.HALF_UP)
         }
 
         val intermediatePrecision = maxOf(precision + 4, 10)
-        val inBase = amount.divide(fromRate, intermediatePrecision, RoundingMode.HALF_UP)
+        val inAnchor = amount.divide(fromRate, intermediatePrecision, RoundingMode.HALF_UP)
 
-        return inBase.multiply(toRate).setScale(precision, RoundingMode.HALF_UP)
+        return inAnchor.multiply(toRate).setScale(precision, RoundingMode.HALF_UP)
     }
 
-    /**
-     * Converts an amount from source currency to base currency using exchange rates.
-     */
     fun convertToBaseCurrency(
         amount: BigDecimal,
         fromCurrency: String,
         toCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): BigDecimal {
         return convertAmount(amount, fromCurrency, toCurrency, exchangeRates, 10)
     }
 
-    /**
-     * Converts a FinancialSummary from source currency to another currency.
-     */
     fun convertFinancialSummary(
         summary: FinancialSummary,
         fromCurrency: String,
         toCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = 10
     ): FinancialSummary {
         return FinancialSummary(
@@ -73,13 +71,10 @@ object CurrencyService {
         )
     }
 
-    /**
-     * Aggregates multiple FinancialSummary objects into a single one in a target currency.
-     */
     fun calculateTotalFinancialSummary(
         summaries: Map<String, FinancialSummary>,
         targetCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): FinancialSummary {
         if (summaries.isEmpty()) return FinancialSummary.EMPTY
 
@@ -96,38 +91,111 @@ object CurrencyService {
         }
     }
 
-    /**
-     * Converts a FinancialSummary to base currency.
-     */
     fun convertFinancialSummaryToBase(
         summary: FinancialSummary,
         fromCurrency: String,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): FinancialSummary = convertFinancialSummary(summary, fromCurrency, baseCurrency, exchangeRates)
 
-    /**
-     * Aggregates multiple FinancialSummary objects into a single one in base currency.
-     */
     fun calculateTotalInBaseCurrency(
         summaries: Map<String, FinancialSummary>,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): FinancialSummary = calculateTotalFinancialSummary(summaries, baseCurrency, exchangeRates)
 
-    /**
-     * Calculates the total amount in a target currency from a map of currency totals.
-     */
     fun calculateTotalInCurrency(
         currencyTotals: Map<String, BigDecimal>,
         targetCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = this.precision
     ): BigDecimal {
         return currencyTotals.entries.fold(BigDecimal.ZERO) { acc, (curr, amount) ->
             acc.add(convertAmount(amount, curr, targetCurrency, exchangeRates, precision + 4))
         }.setScale(precision, RoundingMode.HALF_UP)
     }
+
+    // ==================== Back-compat Map<String, BigDecimal> overloads ====================
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun convertAmount(
+        amount: BigDecimal,
+        fromCurrency: String,
+        toCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int = this.precision
+    ): BigDecimal = convertAmount(
+        amount, fromCurrency, toCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates),
+        precision
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun convertToBaseCurrency(
+        amount: BigDecimal,
+        fromCurrency: String,
+        toCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): BigDecimal = convertToBaseCurrency(
+        amount, fromCurrency, toCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates)
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun convertFinancialSummary(
+        summary: FinancialSummary,
+        fromCurrency: String,
+        toCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int = 10
+    ): FinancialSummary = convertFinancialSummary(
+        summary, fromCurrency, toCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates),
+        precision
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun calculateTotalFinancialSummary(
+        summaries: Map<String, FinancialSummary>,
+        targetCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary = calculateTotalFinancialSummary(
+        summaries, targetCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates)
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun convertFinancialSummaryToBase(
+        summary: FinancialSummary,
+        fromCurrency: String,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary = convertFinancialSummaryToBase(
+        summary, fromCurrency, baseCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates)
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun calculateTotalInBaseCurrency(
+        summaries: Map<String, FinancialSummary>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>
+    ): FinancialSummary = calculateTotalInBaseCurrency(
+        summaries, baseCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates)
+    )
+
+    @Deprecated("Pass ExchangeRateSnapshot")
+    fun calculateTotalInCurrency(
+        currencyTotals: Map<String, BigDecimal>,
+        targetCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int = this.precision
+    ): BigDecimal = calculateTotalInCurrency(
+        currencyTotals, targetCurrency,
+        ExchangeRateSnapshot(anchor = "USD", rates = exchangeRates),
+        precision
+    )
 
     /**
      * Returns all available currency codes.

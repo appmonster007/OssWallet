@@ -55,6 +55,8 @@ fun AccountsCard(
     accounts: List<Account>,
     accountStats: Map<String, AccountSummaryItem>,
     baseCurrency: String,
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -35,6 +36,8 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
@@ -47,6 +50,8 @@ import java.math.BigDecimal
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
+    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
     config: CurrencyBalancesCardConfig,
     callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -104,8 +109,8 @@ fun CurrencyBalancesCard(
                     CurrencyBalanceItem(
                         curr = item.currency,
                         amount = item.amount,
-                        inBase = item.amountInBase,
-                        baseCurrency = baseCurrency,
+                        targetCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
                         showBaseConversion = config.showBaseConversion,
                         isLarge = isLarge,
                         onClick = {
@@ -135,8 +140,8 @@ fun CurrencyBalancesCard(
                     CurrencyBalanceItem(
                         curr = item.currency,
                         amount = item.amount,
-                        inBase = item.amountInBase,
-                        baseCurrency = baseCurrency,
+                        targetCurrency = baseCurrency,
+                        exchangeRates = exchangeRates,
                         showBaseConversion = config.showBaseConversion,
                         onClick = {
                             callbacks.onCurrencyClick?.invoke(
@@ -193,8 +198,8 @@ private fun CurrencyBalancesSettingsSheet(
 fun CurrencyBalanceItem(
     curr: String,
     amount: BigDecimal,
-    inBase: BigDecimal,
-    baseCurrency: String,
+    targetCurrency: String,
+    exchangeRates: ExchangeRateSnapshot,
     showBaseConversion: Boolean = true,
     isLarge: Boolean = false,
     onClick: () -> Unit = {},
@@ -222,21 +227,22 @@ fun CurrencyBalanceItem(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text(
-                formatAuto(amount, curr),
-                style = style,
-                maxLines = 1
-            )
-
-            if (showBaseConversion && curr != baseCurrency) {
+            if (showBaseConversion) {
+                NativeWithConvertedSubtext(
+                    amount = amount,
+                    nativeCurrency = curr,
+                    targetCurrency = targetCurrency,
+                    rates = exchangeRates,
+                    primaryStyle = style,
+                    horizontalAlignment = Alignment.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
                 Text(
-                    "≈ ${formatAuto(inBase, baseCurrency)}",
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary,
+                    formatAuto(amount, curr),
+                    style = style,
                     maxLines = 1
                 )
-            } else if (showBaseConversion) {
-                Spacer(modifier = Modifier.height(14.dp))
             }
         }
     }

@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
@@ -25,32 +26,35 @@ import java.math.BigDecimal
 class CardComputationTest {
 
     private val baseCurrency = "USD"
-    private val exchangeRates = mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.85"))
-    
+    private val exchangeRates = ExchangeRateSnapshot(
+        anchor = "USD",
+        rates = mapOf("USD" to BigDecimal.ONE, "EUR" to BigDecimal("0.85"))
+    )
+
     private val registry = CardComputerRegistry(listOf(
         object : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
             override val supportedType = CardType.NET_WORTH
             override suspend fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
                 val totals = AggregationService.calculateTotalByCurrency(input.transactions)
                 val netWorth = CurrencyService.calculateTotalInCurrency(
-                    totals, input.baseCurrency, input.exchangeRates
+                    totals, input.targetCurrency, input.exchangeRates
                 )
-                val cashFlow = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates)
-                return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.baseCurrency)
+                val cashFlow = AggregationService.calculateCashFlowResult(input.transactions, input.targetCurrency, input.exchangeRates.rates)
+                return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.targetCurrency)
             }
         },
         object : CardDataComputer<CashFlowCardConfig, CardRenderData.CashFlow> {
             override val supportedType = CardType.CASH_FLOW
             override suspend fun compute(input: CardInput, config: CashFlowCardConfig): CardRenderData.CashFlow {
-                val result = AggregationService.calculateCashFlowResult(input.transactions, input.baseCurrency, input.exchangeRates)
-                return CardRenderData.CashFlow(config, result, input.baseCurrency)
+                val result = AggregationService.calculateCashFlowResult(input.transactions, input.targetCurrency, input.exchangeRates.rates)
+                return CardRenderData.CashFlow(config, result, input.targetCurrency)
             }
         },
         object : CardDataComputer<CurrencyBalancesCardConfig, CardRenderData.CurrencyBalances> {
             override val supportedType = CardType.CURRENCY_BALANCES
             override suspend fun compute(input: CardInput, config: CurrencyBalancesCardConfig): CardRenderData.CurrencyBalances {
-                val items = AggregationService.calculateCurrencyBalances(input.transactions, input.baseCurrency, input.exchangeRates)
-                return CardRenderData.CurrencyBalances(config, items, input.baseCurrency)
+                val items = AggregationService.calculateCurrencyBalances(input.transactions, input.targetCurrency, input.exchangeRates.rates)
+                return CardRenderData.CurrencyBalances(config, items, input.targetCurrency)
             }
         }
     ))
@@ -70,7 +74,7 @@ class CardComputationTest {
         accounts = accounts,
         categories = emptyList(),
         exchangeRates = exchangeRates,
-        baseCurrency = baseCurrency
+        targetCurrency = baseCurrency
     )
 
     @Test

@@ -43,11 +43,16 @@ class LoansCardComputer : CardDataComputer<LoansCardConfig, CardRenderData.Loans
             LoanService.buildSummaryFromTransactions(
                 loan = loan,
                 transactions = filteredTx,
-                exchangeRates = input.exchangeRates,
+                exchangeRates = input.exchangeRates.rates,
                 now = now,
                 allCategories = input.categories
             )
         }
-        return CardRenderData.Loans(config = config, items = items)
+        return CardRenderData.Loans(
+            config = config,
+            items = items,
+            currency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
+        )
     }
 }

@@ -174,8 +174,11 @@ fun AnalyticsScreen(
                                     transactions = state.allTransactions,
                                     accounts = state.accounts,
                                     categories = state.allCategories,
-                                    exchangeRates = state.exchangeRates,
-                                    baseCurrency = state.selectedCurrency,
+                                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                                        anchor = state.selectedCurrency,
+                                        rates = state.exchangeRates
+                                    ),
+                                    targetCurrency = state.selectedCurrency,
                                     plannedPayments = state.plannedPayments,
                                     budgets = state.budgets,
                                     loans = state.loans,

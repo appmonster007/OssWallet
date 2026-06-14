@@ -10,7 +10,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 
 /**
  * The ONE shared input for all card computations.
@@ -28,9 +28,8 @@ data class CardInput(
     val accounts: List<Account>,
     val categories: List<Category>,
     val tags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
-    val exchangeRates: Map<String, BigDecimal>,
-    val baseCurrency: String,
-    val displayCurrency: String = baseCurrency,
+    val exchangeRates: ExchangeRateSnapshot,
+    val targetCurrency: String,
     val filter: TransactionFilter = TransactionFilter(),
     val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val commonFilterEnabled: Boolean = false,

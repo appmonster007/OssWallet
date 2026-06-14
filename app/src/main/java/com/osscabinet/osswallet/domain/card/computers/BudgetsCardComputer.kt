@@ -49,8 +49,8 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             val rollover = BudgetService.calculateRollover(
                 budget = budget,
                 transactions = filteredTx,
-                exchangeRates = input.exchangeRates,
-                baseCurrency = input.displayCurrency,
+                exchangeRates = input.exchangeRates.rates,
+                baseCurrency = input.targetCurrency,
                 now = now,
                 allCategories = input.categories,
                 excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -58,8 +58,8 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
             val spent = BudgetService.calculateSpent(
                 budget = budget,
                 transactions = filteredTx,
-                exchangeRates = input.exchangeRates,
-                baseCurrency = input.displayCurrency,
+                exchangeRates = input.exchangeRates.rates,
+                baseCurrency = input.targetCurrency,
                 now = now,
                 allCategories = input.categories,
                 excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -70,7 +70,7 @@ class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.B
         return CardRenderData.Budgets(
             config = config,
             items = items,
-            displayCurrency = input.displayCurrency
+            currency = input.targetCurrency
         )
     }
 }

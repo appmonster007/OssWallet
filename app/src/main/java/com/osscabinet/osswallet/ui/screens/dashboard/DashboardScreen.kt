@@ -884,8 +884,11 @@ fun DashboardGlanceTab(
             accounts = state.allAccounts.ifEmpty { state.accounts },
             categories = state.allCategories,
             tags = state.allTags,
-            exchangeRates = state.exchangeRates,
-            baseCurrency = state.baseCurrency,
+            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                anchor = state.baseCurrency,
+                rates = state.exchangeRates
+            ),
+            targetCurrency = state.baseCurrency,
             plannedPayments = state.plannedPayments,
             budgets = state.budgets,
             loans = state.loans,
@@ -1033,7 +1036,7 @@ fun DashboardScreenPreview() {
                         netInBase = BigDecimal("2000.00")
                     )
                 ),
-                baseCurrency = "USD"
+                currency = "USD"
             ),
             "accounts_1" to CardRenderData.Accounts(
                 config = accountsConfig,
@@ -1049,7 +1052,7 @@ fun DashboardScreenPreview() {
                         transferInAccountCurrency = BigDecimal.ZERO
                     )
                 ),
-                baseCurrency = "USD",
+                currency = "USD",
                 currentTheme = "Glass"
             )
         ),

@@ -5,6 +5,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.AggregationFunction
+import com.osscabinet.ossWallet.domain.model.query.AggregationLimits
 import com.osscabinet.ossWallet.domain.model.query.MetricConfig
 import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
@@ -55,12 +56,12 @@ class TransactionQueryBuilder {
             }
 
             // Pad dimensions
-            for (i in (plan.sqlDimensions.size + 1)..4) {
+            for (i in (plan.sqlDimensions.size + 1)..AggregationLimits.MAX_DIMENSIONS) {
                 select.append("NULL AS d$i, ")
             }
 
             // 2. Metrics (m1 - m10)
-            plan.metrics.take(4).forEachIndexed { index, metric ->
+            plan.metrics.take(AggregationLimits.MAX_METRICS).forEachIndexed { index, metric ->
                 val alias = "m${index + 1}"
                 val func = when (metric.function) {
                     AggregationFunction.SUM -> "SUM"
@@ -75,10 +76,10 @@ class TransactionQueryBuilder {
                     MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType IN ('transfer_inflow','transfer_outflow') THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer_inflow' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer_outflow' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN transactionType = 'transfer_inflow' AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN transactionType = 'transfer_outflow' AND targetCurrency IS NOT NULL AND currency <> targetCurrency THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column
@@ -95,7 +96,7 @@ class TransactionQueryBuilder {
             }
 
             // Pad metrics (RawAggregateResult has m1..m10)
-            for (i in (plan.metrics.size + 1)..10) {
+            for (i in (plan.metrics.size + 1)..AggregationLimits.MAX_METRICS) {
                 select.append("0 AS m$i, ")
             }
 

@@ -119,7 +119,7 @@ object CardAggregationService {
 
         val breakdownItems = summariesByCurrency.map { (curr, summary) ->
             val incomeInBase = CurrencyService.convertAmount(summary.income, curr, input.targetCurrency, input.exchangeRates, 10)
-            val expenseInBase = CurrencyService.convertAmount(summary.expense.abs(), curr, input.targetCurrency, input.exchangeRates, 10)
+            val expenseInBase = CurrencyService.convertAmount(summary.expense, curr, input.targetCurrency, input.exchangeRates, 10)
             val transferInBase = CurrencyService.convertAmount(summary.transfer, curr, input.targetCurrency, input.exchangeRates, 10)
             val transferInInBase = CurrencyService.convertAmount(summary.transferIn, curr, input.targetCurrency, input.exchangeRates, 10)
             val transferOutInBase = CurrencyService.convertAmount(summary.transferOut, curr, input.targetCurrency, input.exchangeRates, 10)
@@ -138,7 +138,7 @@ object CardAggregationService {
                 currency = curr,
                 income = summary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 incomeInBase = incomeInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                expense = summary.expense.abs().setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expense = summary.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expenseInBase = expenseInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 transfer = summary.transfer.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 transferInBase = transferInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
@@ -161,7 +161,10 @@ object CardAggregationService {
             totalTransferOutInBase = totalTransferOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             totalCrossCcyTransferInInBase = totalCrossCcyTransferInInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             totalCrossCcyTransferOutInBase = totalCrossCcyTransferOutInBase.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            netInBase = totalIncomeInBase.subtract(totalExpenseInBase).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            netInBase = totalIncomeInBase
+                .add(totalExpenseInBase)
+                .add(totalTransferInBase)
+                .setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             breakdown = breakdownItems,
             filteredTransactions = emptyList()
         )
@@ -239,7 +242,7 @@ object CardAggregationService {
                 balance = totalSummaryInAccountCurrency.totalAmount,
                 balanceInBase = balanceInBase,
                 incomeInAccountCurrency = totalSummaryInAccountCurrency.income,
-                expenseInAccountCurrency = totalSummaryInAccountCurrency.expense.abs(),
+                expenseInAccountCurrency = totalSummaryInAccountCurrency.expense,
                 transferInAccountCurrency = totalSummaryInAccountCurrency.transfer
             )
         }
@@ -302,7 +305,7 @@ object CardAggregationService {
             account = account,
             balance = lifetimeSummary.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             income = periodSummary.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            expense = periodSummary.expense.abs().setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            expense = periodSummary.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             currency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             currencyBalances = balancesByCurrency

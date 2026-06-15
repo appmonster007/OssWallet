@@ -169,10 +169,10 @@ class IncomeExpenseBarCardComputer(
                         10
                     )
                 )
-                // expense is already negated in FinancialSummary; take abs for display
+                // expense is already negated in FinancialSummary
                 totalExpense = totalExpense.add(
                     CurrencyService.convertAmount(
-                        summary.expense.abs(),
+                        summary.expense,
                         currency,
                         baseCurrency,
                         exchangeRates,
@@ -187,7 +187,7 @@ class IncomeExpenseBarCardComputer(
                 bucketEnd = bucketEnd,
                 income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                net = totalIncome.subtract(totalExpense)
+                net = totalIncome.add(totalExpense)
                     .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }

@@ -200,14 +200,14 @@ class CashFlowComparisonCardComputer(
         var totalExpense = BigDecimal.ZERO
         summaries.forEach { (currency, summary) ->
             totalIncome += CurrencyService.convertAmount(summary.income, currency, baseCurrency, exchangeRates, 10)
-            totalExpense += CurrencyService.convertAmount(summary.expense.abs(), currency, baseCurrency, exchangeRates, 10)
+            totalExpense += CurrencyService.convertAmount(summary.expense, currency, baseCurrency, exchangeRates, 10)
         }
         return CashFlowTimePoint(
             label = label,
             epochMillis = bucketStart,
             income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            net = totalIncome.subtract(totalExpense).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+            net = totalIncome.add(totalExpense).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
         )
     }
 }

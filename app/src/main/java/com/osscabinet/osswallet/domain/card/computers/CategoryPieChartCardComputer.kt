@@ -66,12 +66,12 @@ class CategoryPieChartCardComputer :
             previousTransactions = previousTx
         )
 
-        val incomeTotal = tree.sumOf { it.income.abs() }
-        val expenseTotal = tree.sumOf { it.expense.abs() }
+        val incomeTotal = tree.sumOf { it.income }
+        val expenseTotal = tree.sumOf { it.expense }
 
-        val previousIncomeTotal = previousTx?.let { tree.sumOf { it.previousIncome?.abs() ?: BigDecimal.ZERO } }
-        val previousExpenseTotal = previousTx?.let { tree.sumOf { it.previousExpense?.abs() ?: BigDecimal.ZERO } }
-        val previousTotal = previousTx?.let { tree.sumOf { it.previousNetBalance?.abs() ?: BigDecimal.ZERO } }
+        val previousIncomeTotal = previousTx?.let { tree.sumOf { it.previousIncome ?: BigDecimal.ZERO } }
+        val previousExpenseTotal = previousTx?.let { tree.sumOf { it.previousExpense ?: BigDecimal.ZERO } }
+        val previousTotal = previousTx?.let { tree.sumOf { it.previousNetBalance ?: BigDecimal.ZERO } }
 
         return CardRenderData.CategoryPieChart(
             config = config,

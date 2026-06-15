@@ -251,9 +251,9 @@ private fun SuggestionListItem(
                     fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f)
                 )
-                val amountColor = when (pattern.transactionType) {
-                    TransactionType.INCOME -> PositiveAmountColor
-                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> AccentBlue
+                val amountColor = when (pattern.entryMode) {
+                    EntryMode.INCOME -> PositiveAmountColor
+                    EntryMode.TRANSFER -> AccentBlue
                     else -> AppColors.error
                 }
                 Text(

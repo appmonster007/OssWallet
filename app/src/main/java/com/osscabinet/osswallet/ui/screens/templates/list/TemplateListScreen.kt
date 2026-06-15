@@ -61,6 +61,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
@@ -318,16 +320,16 @@ fun TemplateItem(
     onToggleStar: () -> Unit,
     onCreatePlannedPayment: () -> Unit
 ) {
-    val (badgeColor, badgeIcon) = when (template.transactionType) {
-        TransactionType.EXPENSE -> AppColors.error to Icons.Rounded.ArrowDownward
-        TransactionType.INCOME -> PositiveAmountColor to Icons.Rounded.ArrowUpward
-        TransactionType.TRANSFER -> AccentBlue to Icons.Rounded.SwapHoriz
+    val (badgeColor, badgeIcon) = when (template.entryMode) {
+        EntryMode.EXPENSE -> AppColors.error to Icons.Rounded.ArrowDownward
+        EntryMode.INCOME -> PositiveAmountColor to Icons.Rounded.ArrowUpward
+        EntryMode.TRANSFER -> AccentBlue to Icons.Rounded.SwapHoriz
     }
 
-    val amountColor = when (template.transactionType) {
-        TransactionType.EXPENSE -> AppColors.error
-        TransactionType.INCOME -> PositiveAmountColor
-        TransactionType.TRANSFER -> AccentBlue
+    val amountColor = when (template.entryMode) {
+        EntryMode.EXPENSE -> AppColors.error
+        EntryMode.INCOME -> PositiveAmountColor
+        EntryMode.TRANSFER -> AccentBlue
     }
 
     val formattedAmount = remember(template.amount, template.currency) {
@@ -398,12 +400,12 @@ fun TemplateDialog(
     template: Template?,
     accounts: List<Account>,
     onDismiss: () -> Unit,
-    onConfirm: (String, Long, Double, TransactionType, String?, String?) -> Unit
+    onConfirm: (String, Long, Double, EntryMode, String?, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(template?.name ?: "") }
     var categoryId by remember { mutableLongStateOf(template?.categoryId ?: Category.SYSTEM_UNKNOWN) }
     var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
-    var type by remember { mutableStateOf(template?.transactionType ?: TransactionType.EXPENSE) }
+    var type by remember { mutableStateOf(template?.entryMode ?: EntryMode.EXPENSE) }
     var note by remember { mutableStateOf(template?.note ?: "") }
     var accountId by remember { mutableStateOf(template?.accountId) }
 
@@ -465,18 +467,18 @@ fun TemplateDialog(
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
                 ) {
                     FilterChip(
-                        selected = type == TransactionType.EXPENSE,
-                        onClick = { type = TransactionType.EXPENSE },
+                        selected = type == EntryMode.EXPENSE,
+                        onClick = { type = EntryMode.EXPENSE },
                         label = { Text("Expense") }
                     )
                     FilterChip(
-                        selected = type == TransactionType.INCOME,
-                        onClick = { type = TransactionType.INCOME },
+                        selected = type == EntryMode.INCOME,
+                        onClick = { type = EntryMode.INCOME },
                         label = { Text("Income") }
                     )
                     FilterChip(
-                        selected = type == TransactionType.TRANSFER,
-                        onClick = { type = TransactionType.TRANSFER },
+                        selected = type == EntryMode.TRANSFER,
+                        onClick = { type = EntryMode.TRANSFER },
                         label = { Text("Transfer") }
                     )
                 }
@@ -533,7 +535,7 @@ private fun TemplateItemPreview() {
                     name = "Starbucks Coffee",
                     categoryId = 1,
                     amount = BigDecimal("5.50"),
-                    transactionType = TransactionType.EXPENSE,
+                    entryMode = EntryMode.EXPENSE,
                     currency = "USD",
                     accountId = "1"
                 ),
@@ -550,7 +552,7 @@ private fun TemplateItemPreview() {
                     name = "Monthly Salary",
                     categoryId = 2,
                     amount = BigDecimal("5000.00"),
-                    transactionType = TransactionType.INCOME,
+                    entryMode = EntryMode.INCOME,
                     currency = "USD",
                     accountId = "1",
                     isStarred = true
@@ -568,7 +570,7 @@ private fun TemplateItemPreview() {
                     name = "Savings Transfer",
                     categoryId = 3,
                     amount = BigDecimal("1000.00"),
-                    transactionType = TransactionType.TRANSFER,
+                    entryMode = EntryMode.TRANSFER,
                     currency = "USD",
                     accountId = "1"
                 ),

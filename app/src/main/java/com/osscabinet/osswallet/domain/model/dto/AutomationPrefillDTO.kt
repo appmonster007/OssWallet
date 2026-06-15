@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.*
 import java.math.BigDecimal
 
@@ -10,7 +11,7 @@ data class TemplatePrefillDTO(
     val name: String,
     val categoryId: Long,
     val amount: BigDecimal,
-    val transactionType: TransactionType,
+    val entryMode: EntryMode,
     val accountId: String?,
     val note: String?,
     val payee: String?,

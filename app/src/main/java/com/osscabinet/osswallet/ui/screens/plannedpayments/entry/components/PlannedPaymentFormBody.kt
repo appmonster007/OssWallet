@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,7 +92,7 @@ fun PlannedPaymentFormBody(
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
-                transactionType = state.transactionType,
+                transactionType = state.entryMode,
                 onTypeSelected = { onType -> onEvent(PlannedPaymentEntryEvent.SetTransactionType(onType)) },
                 source = AeonAmountData(
                     value = state.amount,
@@ -167,20 +168,19 @@ fun PlannedPaymentFormBody(
 
                 // Row 2: Account and Category/Target
                 AeonEntryContextRow(
-                    isTransfer = state.transactionType == TransactionType.TRANSFER,
                     accountSelector = AeonSelectorState(
                         selection = state.selectedAccount,
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },
                         isError = state.hasError(EntryField.ACCOUNT)
                     ),
-                    categorySelector = if (state.transactionType != TransactionType.TRANSFER) {
+                    categorySelector = if (state.entryMode != EntryMode.TRANSFER) {
                         AeonSelectorState(
                             selection = state.categories.find { it.id == state.selectedCategoryId },
                             onClick = { onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(true)) },
                             isError = state.hasError(EntryField.CATEGORY)
                         )
                     } else null,
-                    targetAccountSelector = if (state.transactionType == TransactionType.TRANSFER) {
+                    targetAccountSelector = if (state.entryMode == EntryMode.TRANSFER) {
                         AeonSelectorState(
                             selection = state.targetAccount,
                             onClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(true)) },

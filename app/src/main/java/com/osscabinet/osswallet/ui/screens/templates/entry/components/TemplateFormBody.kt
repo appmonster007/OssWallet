@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,7 +72,7 @@ fun TemplateFormBody(
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
-                transactionType = state.transactionType,
+                transactionType = state.entryMode,
                 onTypeSelected = { onEvent(TemplateEntryEvent.SetTransactionType(it)) },
                 source = AeonAmountData(
                     value = state.amount,
@@ -109,20 +110,19 @@ fun TemplateFormBody(
             // CONTEXT: Action cards row: Account, Category
             AeonContextGrid {
                 AeonEntryContextRow(
-                    isTransfer = state.transactionType == TransactionType.TRANSFER,
                     accountSelector = AeonSelectorState(
                         selection = state.selectedAccount,
                         onClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },
                         isError = state.errors.contains(EntryField.ACCOUNT)
                     ),
-                    categorySelector = if (state.transactionType != TransactionType.TRANSFER) {
+                    categorySelector = if (state.entryMode != EntryMode.TRANSFER) {
                         AeonSelectorState(
                             selection = state.selectedCategory,
                             onClick = { onEvent(TemplateEntryEvent.ShowCategorySheet(true)) },
                             isError = state.errors.contains(EntryField.CATEGORY)
                         )
                     } else null,
-                    targetAccountSelector = if (state.transactionType == TransactionType.TRANSFER) {
+                    targetAccountSelector = if (state.entryMode == EntryMode.TRANSFER) {
                         AeonSelectorState(
                             selection = state.selectedTargetAccount,
                             onClick = { onEvent(TemplateEntryEvent.ShowTargetAccountSheet(true)) },

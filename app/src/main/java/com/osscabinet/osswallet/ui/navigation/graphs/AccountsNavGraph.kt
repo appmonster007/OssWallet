@@ -92,7 +92,7 @@ fun NavGraphBuilder.accountsGraph(
                     navController.navigate(
                         TransactionEntryRoute(
                             accountId = accId,
-                            transactionType = type?.toInt() ?: -1,
+                            transactionType = type?.ordinal ?: -1,
                             templateId = templateId ?: -1L
                         )
                     )

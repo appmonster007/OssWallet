@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -144,7 +145,7 @@ fun PlannedPaymentsCard(
                     currency = payment.currency,
                     targetCurrency = targetCurrency,
                     exchangeRates = exchangeRates,
-                    transactionType = payment.transactionType,
+                    entryMode = payment.entryMode,
                     dateLabel = "OVERDUE",
                     isOverdue = true,
                     onClick = { callbacks.onItemClick(payment.id) },
@@ -160,7 +161,7 @@ fun PlannedPaymentsCard(
                     currency = item.plannedPayment.currency,
                     targetCurrency = targetCurrency,
                     exchangeRates = exchangeRates,
-                    transactionType = item.plannedPayment.transactionType,
+                    entryMode = item.plannedPayment.entryMode,
                     dateLabel = formatRelativeDate(item.scheduledDate, System.currentTimeMillis()),
                     isOverdue = false,
                     onClick = { callbacks.onItemClick(item.plannedPayment.id) },
@@ -238,7 +239,7 @@ private fun PlannedPaymentRow(
     currency: String,
     targetCurrency: String,
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
-    transactionType: TransactionType,
+    entryMode: EntryMode,
     dateLabel: String,
     isOverdue: Boolean,
     onClick: () -> Unit,
@@ -257,8 +258,8 @@ private fun PlannedPaymentRow(
 
     val typeColor = when {
         isOverdue -> AppColors.negative
-        transactionType == TransactionType.INCOME -> AppColors.positive
-        transactionType == TransactionType.TRANSFER -> AccentBlue
+        entryMode == EntryMode.INCOME -> AppColors.positive
+        entryMode == EntryMode.TRANSFER -> AccentBlue
         else -> AppColors.negative
     }
 
@@ -395,7 +396,7 @@ fun PlannedPaymentsCardPreview() {
         name = "Internet Bill",
         categoryId = 1,
         amount = BigDecimal("50.00"),
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         currency = "USD",
         schedule = mockSchedule
     )
@@ -405,7 +406,7 @@ fun PlannedPaymentsCardPreview() {
         name = "Netflix",
         categoryId = 2,
         amount = BigDecimal("15.99"),
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         currency = "USD",
         schedule = mockSchedule
     )
@@ -458,7 +459,7 @@ fun PlannedPaymentsCardPreview() {
 //        title = payment.title,
 //        amount = payment.amount,
 //        category = "",
-//        transactionType = payment.transactionType,
+//        entryMode = payment.entryMode,
 //        accountId = payment.accountId,
 //        currency = payment.currency,
 //        categoryId = payment.categoryId,

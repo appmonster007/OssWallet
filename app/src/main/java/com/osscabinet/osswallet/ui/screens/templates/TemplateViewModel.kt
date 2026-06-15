@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Template
@@ -37,7 +38,7 @@ class TemplateViewModel @Inject constructor(
         name: String,
         categoryId: Long,
         amount: BigDecimal,
-        transactionType: TransactionType,
+        entryMode: EntryMode,
         icon: String? = null,
         colorHex: String? = null,
         accountId: String? = null,
@@ -59,7 +60,7 @@ class TemplateViewModel @Inject constructor(
                     name = name,
                     categoryId = categoryId,
                     amount = amount,
-                    transactionType = transactionType,
+                    entryMode = entryMode,
                     icon = icon,
                     colorHex = colorHex,
                     accountId = accountId,

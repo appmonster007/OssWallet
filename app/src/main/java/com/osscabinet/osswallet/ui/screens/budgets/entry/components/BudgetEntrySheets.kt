@@ -76,7 +76,7 @@ fun BudgetEntrySheets(
                 when (it) {
                     TransactionType.EXPENSE -> Icons.Rounded.Remove
                     TransactionType.INCOME -> Icons.Rounded.Add
-                    TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> Icons.Rounded.SwapHoriz
                 }
             }
         )

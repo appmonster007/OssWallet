@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.web.routes
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.data.web.AuthSessionManager
 import com.osscabinet.ossWallet.data.web.authenticate
 import com.osscabinet.ossWallet.data.web.dto.*
@@ -145,7 +146,7 @@ fun Route.transactionRoutes(
                             title = pp.name,
                             amount = pp.amount.toDouble(),
                             currency = pp.currency,
-                            type = pp.transactionType.name,
+                            type = pp.entryMode.name,
                             categoryId = pp.categoryId,
                             categoryName = categoryMap[pp.categoryId]?.name,
                             accountId = pp.accountId,
@@ -197,16 +198,16 @@ fun Route.transactionRoutes(
                 val profileId = settingsRepository.currentProfileId.first()
                 val req = call.receive<CreateTransactionRequest>()
 
-                val txType = TransactionType.entries.find {
+                val txType = EntryMode.entries.find {
                     it.name.equals(req.transactionType, ignoreCase = true)
-                } ?: TransactionType.EXPENSE
+                } ?: EntryMode.EXPENSE
 
                 val domainRequest = TransactionRequest(
                     name = req.name,
                     amount = BigDecimal.valueOf(req.amount),
                     timestamp = req.timestamp,
                     currency = req.currency,
-                    transactionType = txType,
+                    entryMode = txType,
                     accountId = req.accountId,
                     categoryId = req.categoryId,
                     tags = req.tags.toSet(),
@@ -221,7 +222,6 @@ fun Route.transactionRoutes(
                     gpsLocation = req.gpsLocation,
                     location = req.location,
                     warrantyExpiration = req.warrantyExpiration,
-                    isTransfer = txType == TransactionType.TRANSFER,
                     targetAccountId = req.targetAccountId,
                     targetCurrency = req.targetCurrency,
                     transferRate = BigDecimal.valueOf(req.transferRate)
@@ -315,15 +315,15 @@ fun Route.transactionRoutes(
                 val req = call.receive<UpdateTransactionRequest>()
 
                 val txType = req.transactionType?.let {
-                    TransactionType.entries.find { t -> t.name.equals(it, ignoreCase = true) }
-                } ?: old.transactionType
+                    EntryMode.entries.find { t -> t.name.equals(it, ignoreCase = true) }
+                } ?: old.transactionType.toEntryMode()
 
                 val domainRequest = TransactionRequest(
                     name = req.name ?: old.name,
                     amount = req.amount?.let { BigDecimal.valueOf(it) } ?: old.amount,
                     timestamp = req.timestamp ?: old.timestamp,
                     currency = req.currency ?: old.currency,
-                    transactionType = txType,
+                    entryMode = txType,
                     accountId = req.accountId ?: old.accountId,
                     categoryId = req.categoryId ?: old.categoryId,
                     tags = req.tags?.toSet() ?: old.tags,
@@ -338,7 +338,6 @@ fun Route.transactionRoutes(
                     gpsLocation = req.gpsLocation ?: old.gpsLocation,
                     location = req.location ?: old.location,
                     warrantyExpiration = req.warrantyExpiration ?: old.warrantyExpiration,
-                    isTransfer = txType == TransactionType.TRANSFER,
                     targetAccountId = req.targetAccountId ?: old.targetAccountId,
                     targetCurrency = req.targetCurrency ?: old.targetCurrency,
                     transferRate = req.transferRate?.let { BigDecimal.valueOf(it) } ?: old.transferRate
@@ -460,7 +459,7 @@ fun Route.transactionRoutes(
                         when (tx.transactionType) {
                             TransactionType.INCOME -> acc + tx.amount
                             TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER -> acc - tx.amount
+                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                         }
                     }.toDouble()
             }

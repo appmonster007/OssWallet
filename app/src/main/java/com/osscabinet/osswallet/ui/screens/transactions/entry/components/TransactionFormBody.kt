@@ -70,7 +70,7 @@ fun TransactionFormBody(
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Header card containing transaction type selector and amount input
             AeonImpactHeaderCard(
-                transactionType = state.transactionType,
+                transactionType = state.entryMode,
                 onTypeSelected = { onEvent(TransactionEntryEvent.SetTransactionType(it)) },
                 source = AeonAmountData(
                     value = state.amount,

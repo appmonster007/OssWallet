@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.management
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.cronutils.descriptor.CronDescriptor
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
@@ -188,7 +189,7 @@ object PlannedPaymentService {
             name = "",
             categoryId = 0,
             amount = BigDecimal.ZERO,
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             accountId = null,
             currency = "USD",
             schedule = PaymentSchedule(rule, startDate, endDate, startDate)

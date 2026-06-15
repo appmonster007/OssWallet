@@ -1,6 +1,11 @@
 package com.osscabinet.ossWallet.domain.service.discovery
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.toEntryMode
+
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.toEntryMode
+
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Calendar
@@ -15,7 +20,7 @@ data class DiscoveredPattern(
     val accountId: String?,
     val averageAmount: BigDecimal,
     val currency: String,
-    val transactionType: TransactionType,
+    val entryMode: EntryMode,
     val paymentMethod: PaymentMethod,
     val note: String,
     val tags: Set<String>,
@@ -127,7 +132,7 @@ object PatternDiscoveryService {
             accountId = lastTx.accountId,
             averageAmount = representativeAmount,
             currency = lastTx.currency,
-            transactionType = lastTx.transactionType,
+            entryMode = lastTx.transactionType.toEntryMode(),
             paymentMethod = lastTx.paymentMethod,
             note = lastTx.note,
             tags = lastTx.tags,
@@ -253,7 +258,7 @@ object PatternDiscoveryService {
             name = pattern.name,
             categoryId = pattern.categoryId,
             amount = pattern.averageAmount,
-            transactionType = pattern.transactionType,
+            entryMode = pattern.entryMode,
             icon = null,
             colorHex = null,
             accountId = pattern.accountId,
@@ -276,7 +281,7 @@ object PatternDiscoveryService {
             name = pattern.name,
             categoryId = pattern.categoryId,
             amount = pattern.averageAmount,
-            transactionType = pattern.transactionType,
+            entryMode = pattern.entryMode,
             accountId = pattern.accountId,
             note = pattern.note,
             payee = pattern.payee,

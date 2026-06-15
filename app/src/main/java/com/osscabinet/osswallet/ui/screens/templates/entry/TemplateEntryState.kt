@@ -11,7 +11,7 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
@@ -25,7 +25,7 @@ data class TemplateEntryState(
     val source: TransactionSide = TransactionSide(currency = "USD"),
     val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
-    val transactionType: TransactionType = TransactionType.EXPENSE,
+    val entryMode: EntryMode = EntryMode.EXPENSE,
     val categoryName: String = "Unknown",
     val transferRate: BigDecimal = BigDecimal.ONE,
     val note: String = "",
@@ -83,9 +83,9 @@ data class TemplateEntryState(
     val selectedTargetAccount: Account? get() = destination.account.resolve(accounts)
     val selectedCategory: Category? get() = categories.find { it.id == categoryId }
 
-    val isIncome: Boolean get() = transactionType == TransactionType.INCOME
-    val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
-    val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+    val isIncome: Boolean get() = entryMode == EntryMode.INCOME
+    val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
+    val isTransfer: Boolean get() = entryMode == EntryMode.TRANSFER
     val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(categoryId)
 
     val amountValue: BigDecimal

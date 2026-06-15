@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
@@ -96,7 +97,7 @@ class PlannedPaymentViewModel @Inject constructor(
             val request = TransactionRequest(
                 name = categoryName,
                 amount = payment.amount,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
                 currency = payment.currency,
                 categoryId = payment.categoryId,
@@ -108,7 +109,6 @@ class PlannedPaymentViewModel @Inject constructor(
                 gpsLocation = payment.gpsLocation,
                 warrantyExpiration = payment.warrantyExpiration,
                 status = payment.transactionStatus,
-                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate
@@ -145,7 +145,7 @@ class PlannedPaymentViewModel @Inject constructor(
             val request = TransactionRequest(
                 name = categoryName,
                 amount = payment.amount,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
                 currency = payment.currency,
                 categoryId = payment.categoryId,
@@ -157,7 +157,6 @@ class PlannedPaymentViewModel @Inject constructor(
                 gpsLocation = payment.gpsLocation,
                 warrantyExpiration = payment.warrantyExpiration,
                 status = payment.transactionStatus,
-                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate

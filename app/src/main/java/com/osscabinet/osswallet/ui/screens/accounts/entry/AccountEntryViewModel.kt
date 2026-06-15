@@ -381,7 +381,8 @@ class AccountEntryViewModel @Inject constructor(
                                 currency = currency,
                                 categoryId = if (delta.signum() > 0) Category.SYSTEM_TRANSFER_INFLOW
                                              else Category.SYSTEM_TRANSFER_OUTFLOW,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = if (delta.signum() > 0) TransactionType.TRANSFER_INFLOW
+                                                  else TransactionType.TRANSFER_OUTFLOW,
                                 note = "Balance adjustment"
                             ),
                             profileId

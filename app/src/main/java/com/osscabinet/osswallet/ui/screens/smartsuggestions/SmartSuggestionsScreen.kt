@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.smartsuggestions
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -252,7 +253,7 @@ private fun SuggestionListItem(
                 )
                 val amountColor = when (pattern.transactionType) {
                     TransactionType.INCOME -> PositiveAmountColor
-                    TransactionType.TRANSFER -> AccentBlue
+                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> AccentBlue
                     else -> AppColors.error
                 }
                 Text(
@@ -384,7 +385,7 @@ private fun SmartSuggestionsScreenPreview() {
             accountId = "Savings",
             averageAmount = BigDecimal("-15.99"),
             currency = "USD",
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             paymentMethod = PaymentMethod.CREDIT_CARD,
             note = "Monthly plan",
             tags = setOf("subscription", "streaming"),
@@ -402,7 +403,7 @@ private fun SmartSuggestionsScreenPreview() {
             accountId = "Checking",
             averageAmount = BigDecimal("-85.40"),
             currency = "USD",
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             paymentMethod = PaymentMethod.DEBIT_CARD,
             note = "",
             tags = emptySet<String>(),

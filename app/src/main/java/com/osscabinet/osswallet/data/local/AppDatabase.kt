@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room

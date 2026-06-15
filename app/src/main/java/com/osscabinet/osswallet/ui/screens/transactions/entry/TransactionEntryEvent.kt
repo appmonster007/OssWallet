@@ -2,11 +2,11 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import java.math.BigDecimal
 
@@ -23,7 +23,7 @@ sealed class TransactionEntryEvent {
     data class RemoveTag(val tag: String) : TransactionEntryEvent()
     data class SetPaymentMethod(val method: PaymentMethod) : TransactionEntryEvent()
     data class SetStatus(val status: TransactionStatus) : TransactionEntryEvent()
-    data class SetTransactionType(val type: TransactionType) : TransactionEntryEvent()
+    data class SetTransactionType(val type: EntryMode) : TransactionEntryEvent()
     data class SetDate(val millis: Long) : TransactionEntryEvent()
     data class SetPayee(val payee: String) : TransactionEntryEvent()
     data class SetNote(val note: String) : TransactionEntryEvent()

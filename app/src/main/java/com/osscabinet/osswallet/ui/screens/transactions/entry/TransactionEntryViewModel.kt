@@ -1,16 +1,18 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
+import com.osscabinet.ossWallet.domain.model.toEntryMode
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -72,7 +74,7 @@ class TransactionEntryViewModel @Inject constructor(
     fun initialize(
         transactionId: Long? = null,
         accountId: String? = null,
-        initialType: TransactionType = TransactionType.EXPENSE,
+        initialType: EntryMode = EntryMode.EXPENSE,
         initialTemplateId: Long? = null,
         prefillDto: TransactionPrefillDTO? = null
     ) {
@@ -130,7 +132,7 @@ class TransactionEntryViewModel @Inject constructor(
                         currency = selectedAccount?.currencyCode ?: "",
                         categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
                     ),
-                    transactionType = initialType,
+                    entryMode = initialType,
                     selectedTemplateName = null,
                     selectedDateMillis = initialTimestamp,
                     shortlistedCurrencies = effectiveShortlistedCurrencies.value,
@@ -160,8 +162,8 @@ class TransactionEntryViewModel @Inject constructor(
         linkedTxs: List<Transaction>
     ) {
         val txType = when {
-            Category.isTransfer(transaction.categoryId) -> TransactionType.TRANSFER
-            else -> transaction.transactionType
+            Category.isTransfer(transaction.categoryId) -> EntryMode.TRANSFER
+            else -> transaction.transactionType.toEntryMode()
         }
 
         val isOpenedAsReceiver = Category.isAnyTransferInflow(transaction.categoryId)
@@ -173,10 +175,10 @@ class TransactionEntryViewModel @Inject constructor(
         var targetCurrency = transaction.targetCurrency ?: transaction.currency
         var categoryId = transaction.categoryId
 
-        if (txType == TransactionType.TRANSFER) {
+        if (txType == EntryMode.TRANSFER) {
             val linkedTransfer = linkedTxs.find { tx ->
                 Category.isTransfer(tx.categoryId) &&
-                        tx.transactionType == TransactionType.TRANSFER &&
+                        tx.transactionType.isTransfer &&
                         tx.id != transaction.id &&
                         kotlin.math.abs(tx.timestamp - transaction.timestamp) < 5000
             }
@@ -220,12 +222,12 @@ class TransactionEntryViewModel @Inject constructor(
         // Decode each side using the type-safe AccountRef. For TRANSFER rows, a null/blank
         // id is the persistence convention for "Outside Wallet" (not "Unselected"); for
         // non-transfer rows the source is always a real wallet.
-        val sourceRef: AccountRef = if (txType == TransactionType.TRANSFER) {
+        val sourceRef: AccountRef = if (txType == EntryMode.TRANSFER) {
             selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
         } else {
             selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
         }
-        val destinationRef: AccountRef = if (txType == TransactionType.TRANSFER) {
+        val destinationRef: AccountRef = if (txType == EntryMode.TRANSFER) {
             targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
         } else {
             targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
@@ -247,7 +249,7 @@ class TransactionEntryViewModel @Inject constructor(
                 selectedTags = transaction.tags,
                 paymentMethod = transaction.paymentMethod,
                 status = transaction.status,
-                transactionType = txType,
+                entryMode = txType,
                 selectedDateMillis = transaction.timestamp,
                 payee = transaction.payee,
                 note = transaction.note,
@@ -264,7 +266,7 @@ class TransactionEntryViewModel @Inject constructor(
     private fun applyPrefill(prefill: TransactionPrefillDTO) {
         val currentState = _state.value
         val accounts = currentState.accounts
-        val txType = prefill.transactionType
+        val txType = prefill.entryMode
 
         val isOpenedAsReceiver = Category.isAnyTransferInflow(prefill.categoryId)
 
@@ -272,7 +274,7 @@ class TransactionEntryViewModel @Inject constructor(
         // DTO carries the legacy String? convention (null/blank = absent). The form's typed
         // AccountRef preserves that convention via fromStored. For TRANSFER edit-mode
         // prefills, a missing id means Outside Wallet (matching DB encoding).
-        val isTransferEditPrefill = txType == TransactionType.TRANSFER && currentState.isEditMode
+        val isTransferEditPrefill = txType == EntryMode.TRANSFER && currentState.isEditMode
         fun decode(prefId: String?, fallback: AccountRef): AccountRef = when {
             prefId != null -> if (isTransferEditPrefill) AccountRef.fromTransferSide(prefId) else AccountRef.fromStored(prefId)
             else -> fallback
@@ -295,7 +297,7 @@ class TransactionEntryViewModel @Inject constructor(
             .stripTrailingZeros()
         var categoryId = prefill.categoryId
 
-        if (txType == TransactionType.TRANSFER && isOpenedAsReceiver) {
+        if (txType == EntryMode.TRANSFER && isOpenedAsReceiver) {
             // Flip for display consistency
             val originalSourceId = sourceAccId
             sourceAccId = targetAccId
@@ -316,7 +318,7 @@ class TransactionEntryViewModel @Inject constructor(
 
             categoryId =
                 if (Category.isInitialBalance(prefill.categoryId)) Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
-        } else if (txType == TransactionType.TRANSFER) {
+        } else if (txType == EntryMode.TRANSFER) {
             categoryId =
                 if (Category.isInitialBalance(prefill.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
         }
@@ -338,7 +340,7 @@ class TransactionEntryViewModel @Inject constructor(
                 selectedTags = prefill.tags,
                 paymentMethod = prefill.paymentMethod,
                 status = prefill.status,
-                transactionType = txType,
+                entryMode = txType,
                 payee = prefill.payee,
                 note = prefill.note,
                 warrantyExpirationMillis = prefill.warrantyExpiration
@@ -369,7 +371,7 @@ class TransactionEntryViewModel @Inject constructor(
 
         // Post-prefill logic for transfers
         // Only recalculate if the prefill didn't provide a custom exchange rate (1.0 is default)
-        if (txType == TransactionType.TRANSFER && prefill.exchangeRate == "1.0") {
+        if (txType == EntryMode.TRANSFER && prefill.exchangeRate == "1.0") {
             recalculateExchangeRate()
         }
     }
@@ -383,10 +385,10 @@ class TransactionEntryViewModel @Inject constructor(
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 if (inputAmount < BigDecimal.ZERO) {
                     _state.update { state ->
-                        val newType = when (state.transactionType) {
-                            TransactionType.EXPENSE -> TransactionType.INCOME
-                            TransactionType.INCOME -> TransactionType.EXPENSE
-                            else -> state.transactionType
+                        val newMode = when (state.entryMode) {
+                            EntryMode.EXPENSE -> EntryMode.INCOME
+                            EntryMode.INCOME -> EntryMode.EXPENSE
+                            else -> state.entryMode
                         }
                         val finalInput = inputAmount.abs()
                         state.copy(
@@ -398,7 +400,7 @@ class TransactionEntryViewModel @Inject constructor(
                                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                                     .toPlainString()
                             ),
-                            transactionType = newType
+                            entryMode = newMode
                         )
                     }
                 } else {
@@ -461,29 +463,29 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetStatus -> update { it.copy(status = event.status) }
             is TransactionEntryEvent.SetTransactionType -> {
-                val oldType = _state.value.transactionType
-                val newType = event.type
+                val oldMode = _state.value.entryMode
+                val newMode = event.type
 
                 _state.update { state ->
                     val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
-                        oldType = oldType,
-                        newType = newType,
+                        oldMode = oldMode,
+                        newMode = newMode,
                         currentSource = state.source,
                         currentDestination = state.destination,
                         isSplitMode = state.isSplitMode
                     )
 
                     state.copy(
-                        transactionType = result.newType,
+                        entryMode = result.newMode,
                         source = result.source,
                         destination = result.destination,
                         isSplitMode = result.isSplitModeAllowed,
-                        showSplitSheet = if (result.newType == TransactionType.TRANSFER) false else state.showSplitSheet
+                        showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet
                     )
                 }
 
                 // Recalculate exchange rate if switching to/from transfer
-                if (newType == TransactionType.TRANSFER) {
+                if (newMode == EntryMode.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -795,10 +797,10 @@ class TransactionEntryViewModel @Inject constructor(
 
                 else -> currentState.amountValue
             },
-            transactionType = when {
-                currentState.isIncome -> TransactionType.INCOME
-                currentState.isTransfer -> TransactionType.TRANSFER
-                else -> TransactionType.EXPENSE
+            entryMode = when {
+                currentState.isIncome -> EntryMode.INCOME
+                currentState.isTransfer -> EntryMode.TRANSFER
+                else -> EntryMode.EXPENSE
             },
             accountId = currentState.source.account.toDbTransferSide(),
             currency = currentState.selectedCurrency,
@@ -815,7 +817,6 @@ class TransactionEntryViewModel @Inject constructor(
             } else null,
             status = currentState.status,
             sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-            isTransfer = currentState.isTransfer,
             targetAccountId = currentState.destination.account.toDbTransferSide(),
             targetCurrency = currentState.targetCurrency,
             transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
@@ -883,10 +884,10 @@ class TransactionEntryViewModel @Inject constructor(
             name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
                 ?: "Transaction",
             amount = BigDecimal.ZERO, // To be set by caller
-            transactionType = when {
-                currentState.isIncome -> TransactionType.INCOME
-                currentState.isTransfer -> TransactionType.TRANSFER
-                else -> TransactionType.EXPENSE
+            entryMode = when {
+                currentState.isIncome -> EntryMode.INCOME
+                currentState.isTransfer -> EntryMode.TRANSFER
+                else -> EntryMode.EXPENSE
             },
             accountId = currentState.source.account.toDbTransferSide(),
             currency = currentState.selectedCurrency,
@@ -903,7 +904,6 @@ class TransactionEntryViewModel @Inject constructor(
             } else null,
             status = currentState.status,
             sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-            isTransfer = currentState.isTransfer,
             targetAccountId = currentState.destination.account.toDbTransferSide(),
             targetCurrency = currentState.targetCurrency,
             transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE

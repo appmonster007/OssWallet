@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.web.routes
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.data.web.AuthSessionManager
 import com.osscabinet.ossWallet.data.web.authenticate
 import com.osscabinet.ossWallet.data.web.dto.ApiResponse
@@ -142,13 +143,13 @@ fun Route.plannedPaymentRoutes(
                     name = req.name,
                     amount = BigDecimal.valueOf(req.amount),
                     currency = req.currency,
-                    transactionType = TransactionType.entries.find {
+                    entryMode = EntryMode.entries.find {
                         it.name.equals(
                             req.transactionType,
                             ignoreCase = true
                         )
                     }
-                        ?: TransactionType.EXPENSE,
+                        ?: EntryMode.EXPENSE,
                     categoryId = req.categoryId,
                     accountId = req.accountId,
                     targetAccountId = req.targetAccountId,
@@ -233,7 +234,11 @@ fun Route.plannedPaymentRoutes(
                     amount = payment.amount,
                     timestamp = now,
                     currency = payment.currency,
-                    transactionType = payment.transactionType,
+                    transactionType = when (payment.entryMode) {
+                        com.osscabinet.ossWallet.domain.model.EntryMode.EXPENSE -> com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE
+                        com.osscabinet.ossWallet.domain.model.EntryMode.INCOME -> com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
+                        com.osscabinet.ossWallet.domain.model.EntryMode.TRANSFER -> com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
+                    },
                     accountId = payment.accountId,
                     categoryId = payment.categoryId,
                     tags = payment.tags,
@@ -321,7 +326,7 @@ fun Route.plannedPaymentRoutes(
                 val request = TransactionRequest(
                     name = payment.name,
                     amount = payment.amount,
-                    transactionType = payment.transactionType,
+                    entryMode = payment.entryMode,
                     accountId = payment.accountId,
                     categoryId = payment.categoryId,
                     currency = payment.currency,
@@ -457,14 +462,14 @@ fun Route.plannedPaymentRoutes(
                     name = req.name ?: existing.name,
                     amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
                     currency = req.currency ?: existing.currency,
-                    transactionType = req.transactionType?.let { t ->
-                        TransactionType.entries.find {
+                    entryMode = req.transactionType?.let { t ->
+                        EntryMode.entries.find {
                             it.name.equals(
                                 t,
                                 ignoreCase = true
                             )
-                        } ?: existing.transactionType
-                    } ?: existing.transactionType,
+                        } ?: existing.entryMode
+                    } ?: existing.entryMode,
                     categoryId = req.categoryId ?: existing.categoryId,
                     accountId = req.accountId ?: existing.accountId,
                     targetAccountId = req.targetAccountId ?: existing.targetAccountId,

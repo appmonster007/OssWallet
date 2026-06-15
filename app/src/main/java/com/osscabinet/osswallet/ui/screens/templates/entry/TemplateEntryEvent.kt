@@ -5,13 +5,15 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import java.math.BigDecimal
 
 sealed class TemplateEntryEvent {
     data class SetName(val name: String) : TemplateEntryEvent()
     data class SetAmount(val amount: String) : TemplateEntryEvent()
     data class SetTargetAmount(val amount: String) : TemplateEntryEvent()
-    data class SetTransactionType(val type: TransactionType) : TemplateEntryEvent()
+    data class SetTransactionType(val type: EntryMode) : TemplateEntryEvent()
     data class SetCategory(val categoryId: Long) : TemplateEntryEvent()
     data class SetAccount(val accountId: String?) : TemplateEntryEvent()
     data class SetTargetAccount(val accountId: String?) : TemplateEntryEvent()

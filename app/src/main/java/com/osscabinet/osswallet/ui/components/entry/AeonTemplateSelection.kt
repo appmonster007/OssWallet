@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -162,9 +163,9 @@ fun AeonTemplateSelection(
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    val (prefix, color) = when (template.transactionType) {
-                                        TransactionType.INCOME -> "+" to PositiveAmountColor
-                                        TransactionType.TRANSFER -> "⇄" to AccentBlue
+                                    val (prefix, color) = when (template.entryMode) {
+                                        EntryMode.INCOME -> "+" to PositiveAmountColor
+                                        EntryMode.TRANSFER -> "⇄" to AccentBlue
                                         else -> "-" to AppColors.error
                                     }
                                     Text(
@@ -193,7 +194,7 @@ fun AeonTemplateSelectionPreview() {
                     name = "Rent",
                     categoryId = 1,
                     amount = BigDecimal("1000"),
-                    transactionType = TransactionType.EXPENSE,
+                    entryMode = EntryMode.EXPENSE,
                     accountId = "1",
                     currency = "USD"
                 ),
@@ -202,7 +203,7 @@ fun AeonTemplateSelectionPreview() {
                     name = "Salary",
                     categoryId = 2,
                     amount = BigDecimal("5000"),
-                    transactionType = TransactionType.INCOME,
+                    entryMode = EntryMode.INCOME,
                     accountId = "1",
                     currency = "USD"
                 )

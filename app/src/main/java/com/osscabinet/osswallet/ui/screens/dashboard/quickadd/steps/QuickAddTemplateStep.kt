@@ -695,9 +695,9 @@ fun PreviewQuickAddTemplateStep() {
         Category(3, "Health", "Favorite", -16737025, false, null)
     )
     val mockTemplates = listOf(
-        Template(1, "Lunch", 1, java.math.BigDecimal("15.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1"),
-        Template(2, "Uber", 2, java.math.BigDecimal("25.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1"),
-        Template(3, "Gym", 3, java.math.BigDecimal("50.00"), com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE, currency = "USD", accountId = "1")
+        Template(1, "Lunch", 1, java.math.BigDecimal("15.00"), com.osscabinet.ossWallet.domain.model.EntryMode.EXPENSE, currency = "USD", accountId = "1"),
+        Template(2, "Uber", 2, java.math.BigDecimal("25.00"), com.osscabinet.ossWallet.domain.model.EntryMode.EXPENSE, currency = "USD", accountId = "1"),
+        Template(3, "Gym", 3, java.math.BigDecimal("50.00"), com.osscabinet.ossWallet.domain.model.EntryMode.EXPENSE, currency = "USD", accountId = "1")
     )
 
     OssWalletTheme {

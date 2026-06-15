@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -12,7 +13,6 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
@@ -29,7 +29,7 @@ data class TransactionEntryState(
     val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val status: TransactionStatus = TransactionStatus.CLEARED,
-    val transactionType: TransactionType = TransactionType.EXPENSE,
+    val entryMode: EntryMode = EntryMode.EXPENSE,
     val selectedDateMillis: Long = System.currentTimeMillis(),
     val payee: String = "",
     val note: String = "",
@@ -105,9 +105,9 @@ data class TransactionEntryState(
     val targetAccount: Account? get() = destination.account.resolve(accounts)
     val targetCurrency: String get() = destination.currency
 
-    val isIncome: Boolean get() = transactionType == TransactionType.INCOME
-    val isExpense: Boolean get() = transactionType == TransactionType.EXPENSE
-    val isTransfer: Boolean get() = transactionType == TransactionType.TRANSFER
+    val isIncome: Boolean get() = entryMode == EntryMode.INCOME
+    val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
+    val isTransfer: Boolean get() = entryMode == EntryMode.TRANSFER
     val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(selectedCategoryId)
 
     val displayLinkedTxs: List<Transaction>

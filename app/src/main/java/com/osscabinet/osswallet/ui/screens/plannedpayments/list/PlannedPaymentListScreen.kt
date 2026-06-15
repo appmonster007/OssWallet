@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.list
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -614,8 +615,8 @@ private fun PlannedPaymentListItem(
     val typeColor = when {
         isPaused -> AppColors.contentSecondary.copy(alpha = 0.5f)
         isOverdue -> AppColors.error
-        payment.transactionType == TransactionType.INCOME -> AppColors.primary
-        payment.transactionType == TransactionType.TRANSFER -> AccentBlue
+        payment.entryMode == EntryMode.INCOME -> AppColors.primary
+        payment.entryMode == EntryMode.TRANSFER -> AccentBlue
         else -> AppColors.error
     }
 
@@ -695,7 +696,7 @@ private fun PlannedPaymentListPreview() {
             name = "Rent",
             amount = BigDecimal("1500.00"),
             currency = "USD",
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             categoryId = 1,
             status = PlannedPaymentStatus.ACTIVE,
             schedule = PaymentSchedule(
@@ -709,7 +710,7 @@ private fun PlannedPaymentListPreview() {
             name = "Internet",
             amount = BigDecimal("60.00"),
             currency = "USD",
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             categoryId = 2,
             status = PlannedPaymentStatus.ACTIVE,
             schedule = PaymentSchedule(
@@ -723,7 +724,7 @@ private fun PlannedPaymentListPreview() {
             name = "Salary",
             amount = BigDecimal("5000.00"),
             currency = "USD",
-            transactionType = TransactionType.INCOME,
+            entryMode = EntryMode.INCOME,
             categoryId = 3,
             status = PlannedPaymentStatus.ACTIVE,
             schedule = PaymentSchedule(
@@ -737,7 +738,7 @@ private fun PlannedPaymentListPreview() {
             name = "Netflix",
             amount = BigDecimal("15.99"),
             currency = "USD",
-            transactionType = TransactionType.EXPENSE,
+            entryMode = EntryMode.EXPENSE,
             categoryId = 4,
             status = PlannedPaymentStatus.PAUSED,
             schedule = PaymentSchedule(
@@ -773,7 +774,7 @@ private fun SwipeablePaymentItemPreview() {
         name = "Rent Payment",
         amount = BigDecimal("1200.00"),
         currency = "USD",
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         categoryId = 1,
         status = PlannedPaymentStatus.ACTIVE,
         schedule = PaymentSchedule(

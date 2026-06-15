@@ -125,7 +125,7 @@ class CsvImportServiceImpl @Inject constructor(
                 row["category"]?.equals("TRANSFER", ignoreCase = true) == true
 
     private fun detectTransactionType(row: Map<String, String>): TransactionType = when {
-        isTransferRow(row) -> TransactionType.TRANSFER
+        isTransferRow(row) -> TransactionType.TRANSFER_OUTFLOW
         row["type"]?.trimEnd('s')?.equals("expense", ignoreCase = true) == true -> TransactionType.EXPENSE
         row["type"]?.equals("income", ignoreCase = true) == true -> TransactionType.INCOME
         else -> TransactionType.EXPENSE
@@ -704,7 +704,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 amount = targetEntry.baseAmount.abs(),
                                 timestamp = targetEntry.timestamp,
                                 currency = targetEntry.currency,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = targetAccountId,
                                 categoryId = 1005L,
                                 tags = tagIds,
@@ -742,7 +742,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 amount = absAmount.negate(),
                                 timestamp = sourceEntry.timestamp,
                                 currency = sourceEntry.currency,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = sourceAccountId,
                                 categoryId = 1006L,
                                 tags = tagIds,
@@ -794,7 +794,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 amount = absAmount.negate(),
                                 timestamp = sourceEntry.timestamp,
                                 currency = sourceEntry.currency,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = sourceAccountId,
                                 categoryId = 1006L,
                                 tags = tagIds,
@@ -821,7 +821,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 amount = targetAmount,
                                 timestamp = targetEntry.timestamp,
                                 currency = targetEntry.currency,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = targetAccountId,
                                 categoryId = 1005L,
                                 tags = tagIds,
@@ -870,7 +870,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 amount = finalAmount,
                                 timestamp = t.timestamp,
                                 currency = t.currency,
-                                transactionType = TransactionType.TRANSFER,
+                                transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = accountId,
                                 categoryId = categoryId,
                                 tags = tagIds,
@@ -934,7 +934,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val finalAmount = when (txType) {
                         TransactionType.EXPENSE -> baseAmount.abs().negate()
                         TransactionType.INCOME -> baseAmount.abs()
-                        TransactionType.TRANSFER -> baseAmount.abs()
+                        TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> baseAmount.abs()
                     }
 
                     val tagIds = resolveTagIds(tagNames, existingTagsList)
@@ -1217,7 +1217,7 @@ class CsvImportServiceImpl @Inject constructor(
                             transactionDao.insertTransaction(TransactionEntity(
                                 id = 0, name = targetEntry.note.ifBlank { "Transfer" }.take(50),
                                 amount = targetEntry.baseAmount.abs(), timestamp = targetEntry.timestamp,
-                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER,
+                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = targetAccountId, categoryId = 1005L, tags = emptySet(),
                                 targetAccountId = null, targetCurrency = null, transferRate = BigDecimal.ONE,
                                 paymentMethod = PaymentMethod.MOBILE_PAYMENT, payee = "", note = targetEntry.note,
@@ -1238,7 +1238,7 @@ class CsvImportServiceImpl @Inject constructor(
                             transactionDao.insertTransaction(TransactionEntity(
                                 id = 0, name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
                                 amount = absAmount.negate(), timestamp = sourceEntry.timestamp,
-                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER,
+                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = sourceAccountId, categoryId = 1006L, tags = emptySet(),
                                 targetAccountId = null, targetCurrency = null, transferRate = BigDecimal.ONE,
                                 paymentMethod = PaymentMethod.MOBILE_PAYMENT, payee = "", note = sourceEntry.note,
@@ -1270,7 +1270,7 @@ class CsvImportServiceImpl @Inject constructor(
                             val sourceId = transactionDao._insertTransaction(TransactionEntity(
                                 id = 0, name = sourceEntry.note.ifBlank { "Transfer" }.take(50),
                                 amount = absAmount.negate(), timestamp = sourceEntry.timestamp,
-                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER,
+                                currency = sourceEntry.currency, transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = sourceAccountId, categoryId = 1006L, tags = emptySet(),
                                 targetAccountId = targetAccountId, targetCurrency = targetEntry.currency,
                                 transferRate = transferRate, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
@@ -1281,7 +1281,7 @@ class CsvImportServiceImpl @Inject constructor(
                             val targetId = transactionDao._insertTransaction(TransactionEntity(
                                 id = 0, name = targetEntry.note.ifBlank { "Transfer" }.take(50),
                                 amount = targetAmount, timestamp = targetEntry.timestamp,
-                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER,
+                                currency = targetEntry.currency, transactionType = TransactionType.TRANSFER_OUTFLOW,
                                 accountId = targetAccountId, categoryId = 1005L, tags = emptySet(),
                                 targetAccountId = sourceAccountId, targetCurrency = sourceEntry.currency,
                                 transferRate = inverseRate, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
@@ -1309,7 +1309,7 @@ class CsvImportServiceImpl @Inject constructor(
                         transactionDao.insertTransaction(TransactionEntity(
                             id = 0, name = t.note.ifBlank { "Transfer" }.take(50),
                             amount = finalAmount, timestamp = t.timestamp,
-                            currency = t.currency, transactionType = TransactionType.TRANSFER,
+                            currency = t.currency, transactionType = TransactionType.TRANSFER_OUTFLOW,
                             accountId = accountId, categoryId = if (isOutflow) 1006L else 1005L,
                             tags = emptySet(), targetAccountId = null, targetCurrency = null,
                             transferRate = BigDecimal.ONE, paymentMethod = PaymentMethod.MOBILE_PAYMENT,
@@ -1511,7 +1511,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val categoryId = categoryMap[categoryName.lowercase()] ?: 1000L
 
                     val txType = when {
-                        isTransferStr.equals("true", ignoreCase = true) -> TransactionType.TRANSFER
+                        isTransferStr.equals("true", ignoreCase = true) -> TransactionType.TRANSFER_OUTFLOW
                         typeStr.equals("income", ignoreCase = true) -> TransactionType.INCOME
                         else -> TransactionType.EXPENSE
                     }

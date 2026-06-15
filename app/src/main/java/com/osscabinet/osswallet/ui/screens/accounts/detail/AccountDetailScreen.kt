@@ -77,6 +77,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
@@ -152,7 +154,7 @@ data class AccountDetailActions(
     val onNavigateToLoanDetail: (Long) -> Unit = {},
     val onCloneTransactionClick: (Long) -> Unit = {},
     val onSplitTransactionClick: (Long) -> Unit = {},
-    val onAddTransactionClick: (String, TransactionType?, Long?) -> Unit,
+    val onAddTransactionClick: (String, EntryMode?, Long?) -> Unit,
     val onRecordsClick: (TransactionFilter) -> Unit,
     val onSaveFilterClick: (TransactionFilter) -> Unit = {}
 )
@@ -426,7 +428,7 @@ fun AccountDetailScreen(
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {
                         if (!expandableFabEnabled) {
-                            navigate { actions.onAddTransactionClick(config.accountId, TransactionType.EXPENSE, null) }
+                            navigate { actions.onAddTransactionClick(config.accountId, EntryMode.EXPENSE, null) }
                         }
                     },
                     fabMenu = if (expandableFabEnabled) {

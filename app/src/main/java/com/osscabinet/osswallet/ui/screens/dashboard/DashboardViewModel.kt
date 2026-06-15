@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -296,7 +297,7 @@ class DashboardViewModel @Inject constructor(
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
                 currency = payment.currency,
                 categoryId = payment.categoryId,
@@ -305,7 +306,6 @@ class DashboardViewModel @Inject constructor(
                 timestamp = System.currentTimeMillis(),
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",
-                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate,

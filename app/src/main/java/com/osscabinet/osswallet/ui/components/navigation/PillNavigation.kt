@@ -70,6 +70,8 @@ import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.getIconByName
@@ -418,7 +420,7 @@ fun TransactionFabMenu(
     isExpanded: Boolean,
     templates: List<Template>,
     categories: List<Category> = emptyList(),
-    onAddClick: (TransactionType?, Long?) -> Unit,
+    onAddClick: (EntryMode?, Long?) -> Unit,
     onAddAccountClick: (() -> Unit)? = null
 ) {
     val categoryMap = remember(categories) { categories.associateBy { it.id } }
@@ -438,7 +440,7 @@ fun TransactionFabMenu(
             icon = icon,
             index = index,
             iconColor = iconColor,
-            onClick = { onAddClick(template.transactionType, template.id) }
+            onClick = { onAddClick(template.entryMode, template.id) }
         )
     }
 
@@ -459,7 +461,7 @@ fun TransactionFabMenu(
         label = "Transfer",
         icon = Icons.Rounded.SyncAlt,
         index = if (onAddAccountClick != null) baseIndex + 1 else baseIndex,
-        onClick = { onAddClick(TransactionType.TRANSFER, null) }
+        onClick = { onAddClick(EntryMode.TRANSFER, null) }
     )
 
     FabMenuItem(
@@ -467,7 +469,7 @@ fun TransactionFabMenu(
         label = "New Transaction",
         icon = Icons.Rounded.Add,
         index = if (onAddAccountClick != null) baseIndex + 2 else baseIndex + 1,
-        onClick = { onAddClick(TransactionType.EXPENSE, null) }
+        onClick = { onAddClick(EntryMode.EXPENSE, null) }
     )
 }
 

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +68,7 @@ import androidx.compose.foundation.rememberScrollState
 fun QuickAddAccountStep(
     accounts: List<Account>,
     selectedAccountId: String?,
-    transactionType: TransactionType,
+    entryMode: EntryMode,
     isStepActive: Boolean = false,
     onAccountTapped: (String) -> Unit,
     onToggleType: () -> Unit,
@@ -92,7 +93,7 @@ fun QuickAddAccountStep(
         }
     }
 
-    val typeColor = if (transactionType == TransactionType.EXPENSE)
+    val typeColor = if (entryMode == EntryMode.EXPENSE)
         Color(android.graphics.Color.parseColor(TransactionType.EXPENSE.colorHex))
     else
         Color(android.graphics.Color.parseColor(TransactionType.INCOME.colorHex))
@@ -146,14 +147,14 @@ fun QuickAddAccountStep(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = if (transactionType == TransactionType.EXPENSE)
+                            imageVector = if (entryMode == EntryMode.EXPENSE)
                                 Icons.Rounded.TrendingDown else Icons.Rounded.TrendingUp,
                             contentDescription = null,
                             tint = typeColor,
                             modifier = Modifier.size(toggleIconSize)
                         )
                         Text(
-                            text = transactionType.displayName,
+                            text = entryMode.displayName,
                             style = AppTextStyles.chartAxisLabel,
                             color = typeColor
                         )
@@ -219,7 +220,7 @@ fun QuickAddAccountStep(
                 AccountGridItem(
                     account = account,
                     isSelected = account.id == selectedAccountId,
-                    transactionType = transactionType,
+                    entryMode = entryMode,
                     onClick = { onAccountTapped(account.id) },
                     tileSize = tileSize,
                     tileCorner = tileCorner,
@@ -245,7 +246,7 @@ fun QuickAddAccountStep(
 private fun AccountGridItem(
     account: Account,
     isSelected: Boolean,
-    transactionType: TransactionType,
+    entryMode: EntryMode,
     onClick: () -> Unit,
     tileSize: androidx.compose.ui.unit.Dp = 72.dp,
     tileCorner: androidx.compose.ui.unit.Dp = 20.dp,
@@ -259,7 +260,7 @@ private fun AccountGridItem(
     }
 
     val borderColor = if (isSelected) {
-        if (transactionType == TransactionType.EXPENSE)
+        if (entryMode == EntryMode.EXPENSE)
             Color(android.graphics.Color.parseColor(TransactionType.EXPENSE.colorHex))
         else
             Color(android.graphics.Color.parseColor(TransactionType.INCOME.colorHex))
@@ -320,7 +321,7 @@ fun PreviewQuickAddAccountStep() {
             QuickAddAccountStep(
                 accounts = mockAccounts,
                 selectedAccountId = "1",
-                transactionType = TransactionType.EXPENSE,
+                entryMode = EntryMode.EXPENSE,
                 onAccountTapped = {},
                 onToggleType = {}
             )

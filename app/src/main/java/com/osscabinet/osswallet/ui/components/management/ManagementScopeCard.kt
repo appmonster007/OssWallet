@@ -193,7 +193,7 @@ fun ManagementScopeCard(
                                 color = when (type) {
                                     TransactionType.EXPENSE -> negativeColor
                                     TransactionType.INCOME -> positiveColor
-                                    TransactionType.TRANSFER -> accentColor
+                                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> accentColor
                                 }
                             )
                         }

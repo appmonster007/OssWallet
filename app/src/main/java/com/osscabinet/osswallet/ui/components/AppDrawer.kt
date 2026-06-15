@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -287,9 +288,9 @@ fun AppDrawerContent(
                             onClick = { onNavigate { onTemplateClick(template) } },
                             icon = {
                                 Icon(
-                                    when (template.transactionType) {
-                                        TransactionType.INCOME -> Icons.Rounded.ArrowUpward
-                                        TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                                    when (template.entryMode) {
+                                        EntryMode.INCOME -> Icons.Rounded.ArrowUpward
+                                        EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
                                         else -> Icons.Rounded.ArrowDownward
                                     },
                                     contentDescription = null,

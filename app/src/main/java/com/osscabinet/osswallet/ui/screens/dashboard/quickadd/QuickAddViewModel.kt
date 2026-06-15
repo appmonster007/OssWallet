@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
@@ -33,7 +34,7 @@ data class QuickAddState(
     val selectedCategoryId: Long? = null,
     val selectedAccountId: String? = null,
     val selectedCurrency: String = "",
-    val transactionType: TransactionType = TransactionType.EXPENSE,
+    val entryMode: EntryMode = EntryMode.EXPENSE,
     val accounts: List<Account> = emptyList(),
     val isSaving: Boolean = false
 )
@@ -52,10 +53,10 @@ class QuickAddViewModel @Inject constructor(
         const val EXTRA_TYPE = "type"
     }
 
-    private val initialType: TransactionType = savedStateHandle
+    private val initialType: EntryMode = savedStateHandle
         .get<String>(EXTRA_TYPE)
-        ?.let { runCatching { TransactionType.valueOf(it) }.getOrNull() }
-        ?: TransactionType.EXPENSE
+        ?.let { runCatching { EntryMode.valueOf(it) }.getOrNull() }
+        ?: EntryMode.EXPENSE
 
     val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -63,7 +64,7 @@ class QuickAddViewModel @Inject constructor(
     val categories: StateFlow<List<Category>> = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _state = MutableStateFlow(QuickAddState(transactionType = initialType))
+    private val _state = MutableStateFlow(QuickAddState(entryMode = initialType))
     val state: StateFlow<QuickAddState> = _state.asStateFlow()
 
     init {
@@ -84,7 +85,7 @@ class QuickAddViewModel @Inject constructor(
                 selectedCategoryId = template.categoryId,
                 selectedAccountId = template.accountId,
                 selectedCurrency = account?.currencyCode ?: template.currency,
-                transactionType = template.transactionType,
+                entryMode = template.entryMode,
                 amount = template.amount.abs(),
                 currentStep = 1
             )
@@ -97,7 +98,7 @@ class QuickAddViewModel @Inject constructor(
                 selectedTemplate = null,
                 selectedCategoryId = category.id,
                 selectedAccountId = null,
-                transactionType = TransactionType.EXPENSE,
+                entryMode = EntryMode.EXPENSE,
                 amount = BigDecimal.ZERO,
                 currentStep = 1
             )
@@ -129,9 +130,9 @@ class QuickAddViewModel @Inject constructor(
 
     fun toggleTransactionType() {
         _state.update {
-            val next = if (it.transactionType == TransactionType.EXPENSE)
-                TransactionType.INCOME else TransactionType.EXPENSE
-            it.copy(transactionType = next)
+            val next = if (it.entryMode == EntryMode.EXPENSE)
+                EntryMode.INCOME else EntryMode.EXPENSE
+            it.copy(entryMode = next)
         }
     }
 
@@ -140,7 +141,7 @@ class QuickAddViewModel @Inject constructor(
         val accountId = s.selectedAccountId ?: return
         val amount = s.amount
         if (amount <= BigDecimal.ZERO) return
-        val signedAmount = if (s.transactionType == TransactionType.INCOME) amount else amount.negate()
+        val signedAmount = if (s.entryMode == EntryMode.INCOME) amount else amount.negate()
 
         val account = s.accounts.find { it.id == accountId } ?: return
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
@@ -157,7 +158,7 @@ class QuickAddViewModel @Inject constructor(
                         request = TransactionRequest(
                             name = name,
                             amount = signedAmount,
-                            transactionType = s.transactionType,
+                            entryMode = s.entryMode,
                             accountId = accountId,
                             currency = s.selectedCurrency.ifBlank { account.currencyCode },
                             categoryId = categoryId,
@@ -180,7 +181,7 @@ class QuickAddViewModel @Inject constructor(
 
     fun reset() {
         val currentAccounts = _state.value.accounts
-        _state.value = QuickAddState(accounts = currentAccounts, transactionType = initialType)
+        _state.value = QuickAddState(accounts = currentAccounts, entryMode = initialType)
     }
 
     val canSave: Boolean

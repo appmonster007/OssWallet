@@ -35,9 +35,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.FlowDirection
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.isTransfer
+
+
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
@@ -152,7 +154,7 @@ private fun CashFlowTable(
     val types = config.filter.transactionTypes
     val showIncome = TransactionType.INCOME in types
     val showExpense = TransactionType.EXPENSE in types
-    val showTransfer = TransactionType.TRANSFER in types
+    val showTransfer = types.any { it.isTransfer }
     val excludeSameCcy = config.excludeSameCurrencyTransfers
 
     // Pick transfer source: cross-ccy-only when toggle is on, gross otherwise.
@@ -182,7 +184,6 @@ private fun CashFlowTable(
                                 baseFilterForDrill.copy(
                                     transactionTypes = setOf(TransactionType.INCOME),
                                     currencies = setOf(ccy),
-                                    flowDirection = FlowDirection.ANY,
                                 )
                             )
                         }
@@ -198,7 +199,6 @@ private fun CashFlowTable(
                                 baseFilterForDrill.copy(
                                     transactionTypes = setOf(TransactionType.EXPENSE),
                                     currencies = setOf(ccy),
-                                    flowDirection = FlowDirection.ANY,
                                 )
                             )
                         }
@@ -214,9 +214,8 @@ private fun CashFlowTable(
                         onCellClick = { ccy ->
                             callbacks.onClickTransfer?.invoke(
                                 baseFilterForDrill.copy(
-                                    transactionTypes = setOf(TransactionType.TRANSFER),
+                                    transactionTypes = TransactionType.TRANSFER_TYPES,
                                     currencies = setOf(ccy),
-                                    flowDirection = FlowDirection.ANY,
                                 )
                             )
                         }
@@ -226,11 +225,11 @@ private fun CashFlowTable(
             CashFlowDisplayMode.INFLOW_OUTFLOW -> {
                 val inflowTypes = buildSet {
                     if (showIncome) add(TransactionType.INCOME)
-                    if (showTransfer) add(TransactionType.TRANSFER)
+                    if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
                 }
                 val outflowTypes = buildSet {
                     if (showExpense) add(TransactionType.EXPENSE)
-                    if (showTransfer) add(TransactionType.TRANSFER)
+                    if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
                 }
                 listOf(
                     TableColumn(
@@ -250,7 +249,6 @@ private fun CashFlowTable(
                                 baseFilterForDrill.copy(
                                     transactionTypes = inflowTypes,
                                     currencies = setOf(ccy),
-                                    flowDirection = FlowDirection.IN,
                                 )
                             )
                         }
@@ -272,7 +270,6 @@ private fun CashFlowTable(
                                 baseFilterForDrill.copy(
                                     transactionTypes = outflowTypes,
                                     currencies = setOf(ccy),
-                                    flowDirection = FlowDirection.OUT,
                                 )
                             )
                         }

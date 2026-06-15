@@ -39,7 +39,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -142,11 +142,11 @@ fun <T> EntryTypeSelector(
 @Preview(showBackground = true)
 @Composable
 fun EntryTypeSelectorPreview() {
-    var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
+    var selectedType by remember { mutableStateOf(EntryMode.EXPENSE) }
     val types = listOf(
-        Triple(Icons.Rounded.Remove, "Expense", TransactionType.EXPENSE),
-        Triple(Icons.Rounded.Add, "Income", TransactionType.INCOME),
-        Triple(Icons.Rounded.SwapHoriz, "Transfer", TransactionType.TRANSFER)
+        Triple(Icons.Rounded.Remove, "Expense", EntryMode.EXPENSE),
+        Triple(Icons.Rounded.Add, "Income", EntryMode.INCOME),
+        Triple(Icons.Rounded.SwapHoriz, "Transfer", EntryMode.TRANSFER)
     )
 
     OssWalletTheme {
@@ -155,7 +155,7 @@ fun EntryTypeSelectorPreview() {
                 selectedType = selectedType,
                 onTypeSelected = { selectedType = it },
                 types = types,
-                selectedColor = if (selectedType == TransactionType.INCOME) AppColors.primary else AppColors.error
+                selectedColor = if (selectedType == EntryMode.INCOME) AppColors.primary else AppColors.error
             )
         }
     }

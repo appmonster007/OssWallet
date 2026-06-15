@@ -311,7 +311,7 @@ fun FilterFields(
                             when (filter.transactionTypes.first()) {
                                 TransactionType.INCOME -> Icons.AutoMirrored.Filled.TrendingUp
                                 TransactionType.EXPENSE -> Icons.AutoMirrored.Filled.TrendingDown
-                                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                                TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> Icons.Rounded.SwapHoriz
                             }
                         } else Icons.Default.FilterList,
                         label = "TYPES",

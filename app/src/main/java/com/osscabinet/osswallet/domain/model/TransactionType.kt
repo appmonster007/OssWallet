@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import kotlinx.serialization.Serializable
 
 /**

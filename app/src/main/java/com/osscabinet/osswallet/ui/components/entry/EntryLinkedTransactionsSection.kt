@@ -141,7 +141,7 @@ private fun EntryLinkedTransactionItem(
                 balanceBefore = BigDecimal.ZERO.toPlainString(),
                 balanceAfter = tx.amount.toPlainString(),
                 type = when (tx.transactionType) {
-                    TransactionType.TRANSFER -> CashFlowType.TRANSFER
+                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> CashFlowType.TRANSFER
                     TransactionType.INCOME -> CashFlowType.INCOME
                     else -> CashFlowType.EXPENSE
                 },

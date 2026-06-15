@@ -42,7 +42,7 @@ fun Route.accountRoutes(
                             when (tx.transactionType) {
                                 TransactionType.INCOME -> acc + tx.amount
                                 TransactionType.EXPENSE -> acc - tx.amount
-                                TransactionType.TRANSFER -> acc - tx.amount
+                                TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                             }
                         }
                     AccountDto(
@@ -105,7 +105,7 @@ fun Route.accountRoutes(
                         when (tx.transactionType) {
                             TransactionType.INCOME -> acc + tx.amount
                             TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER -> acc - tx.amount
+                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                         }
                     }
                 call.respond(
@@ -144,7 +144,7 @@ fun Route.accountRoutes(
                     when (tx.transactionType) {
                         TransactionType.INCOME -> acc + tx.amount
                         TransactionType.EXPENSE -> acc - tx.amount
-                        TransactionType.TRANSFER -> acc - tx.amount
+                        TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                     }
                 }
                 val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
@@ -199,7 +199,7 @@ fun Route.accountRoutes(
                         when (tx.transactionType) {
                             TransactionType.INCOME -> acc + tx.amount
                             TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER -> acc - tx.amount
+                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                         }
                     }
                 call.respond(

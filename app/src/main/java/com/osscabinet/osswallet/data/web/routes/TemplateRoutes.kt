@@ -48,13 +48,13 @@ fun Route.templateRoutes(
                     name = req.name,
                     categoryId = req.categoryId,
                     amount = BigDecimal.valueOf(req.amount),
-                    transactionType = TransactionType.entries.find {
+                    entryMode = EntryMode.entries.find {
                         it.name.equals(
                             req.transactionType,
                             ignoreCase = true
                         )
                     }
-                        ?: TransactionType.EXPENSE,
+                        ?: EntryMode.EXPENSE,
                     currency = req.currency,
                     accountId = req.accountId,
                     targetAccountId = req.targetAccountId,
@@ -141,14 +141,14 @@ fun Route.templateRoutes(
                     name = req.name ?: existing.name,
                     categoryId = req.categoryId ?: existing.categoryId,
                     amount = req.amount?.let { BigDecimal.valueOf(it) } ?: existing.amount,
-                    transactionType = req.transactionType?.let { t ->
-                        TransactionType.entries.find {
+                    entryMode = req.transactionType?.let { t ->
+                        EntryMode.entries.find {
                             it.name.equals(
                                 t,
                                 ignoreCase = true
                             )
-                        } ?: existing.transactionType
-                    } ?: existing.transactionType,
+                        } ?: existing.entryMode
+                    } ?: existing.entryMode,
                     currency = req.currency ?: existing.currency,
                     accountId = req.accountId ?: existing.accountId,
                     targetAccountId = req.targetAccountId ?: existing.targetAccountId,

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.filters.entry.components
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,7 +88,7 @@ fun FilterFormBody(
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Header card for the Filter Name
             AeonImpactHeaderCard(
-                transactionType = TransactionType.EXPENSE,
+                transactionType = EntryMode.EXPENSE,
                 onTypeSelected = { },
                 source = AeonAmountData(
                     value = "",

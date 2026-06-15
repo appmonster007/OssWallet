@@ -42,6 +42,8 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
@@ -91,7 +93,7 @@ fun BudgetFormBody(
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
             // IMPACT: Primary Identity (Name & Limit)
             AeonImpactHeaderCard(
-                transactionType = if (state.selectedTrackTypes.contains(TransactionType.EXPENSE)) TransactionType.EXPENSE else TransactionType.INCOME,
+                transactionType = if (state.selectedTrackTypes.contains(TransactionType.EXPENSE)) EntryMode.EXPENSE else EntryMode.INCOME,
                 onTypeSelected = { },
                 source = AeonAmountData(
                     value = state.limitAmount,

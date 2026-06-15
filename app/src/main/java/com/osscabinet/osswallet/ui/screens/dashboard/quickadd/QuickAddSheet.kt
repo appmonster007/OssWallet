@@ -437,7 +437,7 @@ private fun QuickAddSheetContent(
                     STEP_ACCOUNT -> QuickAddAccountStep(
                         accounts = state.accounts,
                         selectedAccountId = state.selectedAccountId,
-                        transactionType = state.transactionType,
+                        entryMode = state.entryMode,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
                         onAccountTapped = {
                             hideKeyboard()

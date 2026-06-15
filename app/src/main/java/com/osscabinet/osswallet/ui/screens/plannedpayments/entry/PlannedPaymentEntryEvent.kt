@@ -7,6 +7,8 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import java.math.BigDecimal
 
 sealed class PlannedPaymentEntryEvent {
@@ -14,7 +16,7 @@ sealed class PlannedPaymentEntryEvent {
     data class SetAmountText(val amount: String) : PlannedPaymentEntryEvent()
     data class SetTargetAmount(val amount: String) : PlannedPaymentEntryEvent()
     data class SetCurrency(val currency: String) : PlannedPaymentEntryEvent()
-    data class SetTransactionType(val type: TransactionType) : PlannedPaymentEntryEvent()
+    data class SetTransactionType(val type: EntryMode) : PlannedPaymentEntryEvent()
     data class SetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetCurrency(val currency: String?) : PlannedPaymentEntryEvent()

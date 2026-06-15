@@ -40,6 +40,10 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.isTransfer
+
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.BackupMeta
 import com.osscabinet.ossWallet.domain.repository.BackupRepository
@@ -121,7 +125,7 @@ class BackupRepositoryImpl @Inject constructor(
                 val months = ((it - tx.timestamp) / (1000L * 60 * 60 * 24 * 30)).toInt()
                 months.coerceAtLeast(0)
             } ?: 0
-            val isTransfer = tx.transactionType == TransactionType.TRANSFER
+            val isTransfer = tx.transactionType.isTransfer
             val tags = tx.tags.joinToString("|")
             val row = listOf(
                 tx.timestamp.toString(),
@@ -346,7 +350,7 @@ class BackupRepositoryImpl @Inject constructor(
                     it.name,
                     it.categoryId,
                     it.amount,
-                    it.transactionType,
+                    it.entryMode,
                     it.icon,
                     it.colorHex,
                     it.accountId,
@@ -826,9 +830,11 @@ class BackupRepositoryImpl @Inject constructor(
                     name = p["name"] ?: "",
                     categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
                     amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                    transactionType = TransactionType.fromInt(
-                        p["transactionType"]?.toIntOrNull() ?: 0
-                    ),
+                    entryMode = when (p["transactionType"]?.toIntOrNull() ?: 0) {
+                        1 -> EntryMode.INCOME
+                        2 -> EntryMode.TRANSFER
+                        else -> EntryMode.EXPENSE
+                    },
                     icon = p["icon"],
                     colorHex = p["colorHex"],
                     accountId = p["accountId"],

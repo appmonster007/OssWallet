@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.util
 
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.isTransfer
+
 import java.math.BigDecimal
 
 /**

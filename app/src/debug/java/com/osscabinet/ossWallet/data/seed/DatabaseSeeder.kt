@@ -8,6 +8,8 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.toEntryMode
+
 import kotlinx.coroutines.flow.first
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -377,7 +379,7 @@ class DatabaseSeeder @Inject constructor(
     ) {
         fun toEntity(categoryNameToId: Map<String, Long>) = TemplateEntity(
             name = name, categoryId = categoryNameToId[categoryName] ?: Category.SYSTEM_UNKNOWN,
-            amount = amount, transactionType = transactionType, currency = currency,
+            amount = amount, entryMode = transactionType.toEntryMode(), currency = currency,
             paymentMethod = paymentMethod, payee = payee, note = note,
             tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
             accountId = accountId.takeIf { !it.isNullOrBlank() }

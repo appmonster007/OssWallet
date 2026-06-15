@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.Category
@@ -130,7 +131,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                                 .toPlainString(),
                             currency = template.targetCurrency ?: ""
                         ),
-                        transactionType = template.transactionType,
+                        entryMode = template.entryMode,
                         transferRate = template.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
@@ -191,7 +192,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     .toPlainString()
                 var existingCategoryId = existing.categoryId
 
-                if (existing.transactionType == TransactionType.TRANSFER && isOpenedAsReceiver) {
+                if (existing.entryMode == EntryMode.TRANSFER && isOpenedAsReceiver) {
                     // Flip for Source-Target consistency
                     sourceAccId = existing.targetAccountId
                     targetAccId = existing.accountId
@@ -205,15 +206,15 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     } else targetAmtStr
                 }
                 
-                if (existing.transactionType == TransactionType.TRANSFER) {
+                if (existing.entryMode == EntryMode.TRANSFER) {
                     // Semantic Normalization: Source is always Outflow, Destination is always Inflow
                     existingCategoryId = if (Category.isInitialBalance(existing.categoryId)) 
                         Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
                 }
 
-                val sourceRef = if (existing.transactionType == TransactionType.TRANSFER)
+                val sourceRef = if (existing.entryMode == EntryMode.TRANSFER)
                     AccountRef.fromTransferSide(sourceAccId) else AccountRef.fromStored(sourceAccId)
-                val targetRef = if (existing.transactionType == TransactionType.TRANSFER)
+                val targetRef = if (existing.entryMode == EntryMode.TRANSFER)
                     AccountRef.fromTransferSide(targetAccId) else AccountRef.fromStored(targetAccId)
 
                 _state.update {
@@ -235,7 +236,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             amount = targetAmtStr,
                             currency = targetCurr
                         ),
-                        transactionType = existing.transactionType,
+                        entryMode = existing.entryMode,
                         transferRate = existing.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
@@ -283,10 +284,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 if (inputAmount < BigDecimal.ZERO) {
                     _state.update { state ->
-                        val newType = when (state.transactionType) {
-                            TransactionType.EXPENSE -> TransactionType.INCOME
-                            TransactionType.INCOME -> TransactionType.EXPENSE
-                            else -> state.transactionType
+                        val newMode = when (state.entryMode) {
+                            EntryMode.EXPENSE -> EntryMode.INCOME
+                            EntryMode.INCOME -> EntryMode.EXPENSE
+                            else -> state.entryMode
                         }
                         val finalInput = inputAmount.abs()
                         state.copy(
@@ -298,7 +299,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                                     .toPlainString()
                             ),
-                            transactionType = newType
+                            entryMode = newMode
                         )
                     }
                 } else {
@@ -331,24 +332,24 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetTransactionType -> {
-                val oldType = _state.value.transactionType
-                val newType = event.type
+                val oldMode = _state.value.entryMode
+                val newMode = event.type
                 _state.update { state ->
                     val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
-                        oldType = oldType,
-                        newType = newType,
+                        oldMode = oldMode,
+                        newMode = newMode,
                         currentSource = state.source,
                         currentDestination = state.destination,
                         isSplitMode = false // Planned payments don't support split mode yet
                     )
 
                     state.copy(
-                        transactionType = result.newType,
+                        entryMode = result.newMode,
                         source = result.source,
                         destination = result.destination
                     )
                 }
-                if (newType == TransactionType.TRANSFER) {
+                if (newMode == EntryMode.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -509,7 +510,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                                     .toPlainString(),
                                 currency = event.template.targetCurrency ?: ""
                             ),
-                            transactionType = event.template.transactionType,
+                            entryMode = event.template.entryMode,
                             transferRate = event.template.transferRate,
                             payee = event.template.payee ?: "",
                             noteUserPart = event.template.note ?: "",
@@ -676,7 +677,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 name = s.name,
                 categoryId = templateCategoryId,
                 amount = amountValue,
-                transactionType = s.transactionType,
+                entryMode = s.entryMode,
                 accountId = reqAccountId,
                 targetAccountId = reqTargetAccountId,
                 targetCurrency = s.targetCurrency,
@@ -706,7 +707,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 name = s.name,
                 categoryId = templateCategoryId,
                 amount = amountValue,
-                transactionType = s.transactionType,
+                entryMode = s.entryMode,
                 accountId = reqAccountId,
                 targetAccountId = reqTargetAccountId,
                 targetCurrency = s.targetCurrency,
@@ -786,7 +787,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     private fun recalculateExchangeRate() {
         viewModelScope.launch {
             val currentState = _state.value
-            if (currentState.transactionType == TransactionType.TRANSFER &&
+            if (currentState.entryMode == EntryMode.TRANSFER &&
                 currentState.currency.isNotEmpty() &&
                 currentState.targetCurrency?.isNotEmpty() == true
             ) {

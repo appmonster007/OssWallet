@@ -1,4 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
+import com.osscabinet.ossWallet.domain.model.EntryMode
+
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -159,7 +161,7 @@ data class DashboardActions(
     val onMenuClick: () -> Unit,
     val onBackClick: () -> Unit = {},
     val onRecordsClick: (TransactionFilter) -> Unit,
-    val onAddClick: (TransactionType?, Long?) -> Unit,
+    val onAddClick: (EntryMode?, Long?) -> Unit,
     val onManageAccountsClick: () -> Unit,
     val onAccountClick: (String) -> Unit,
     val onNavigateToPlannedPaymentList: () -> Unit = {},
@@ -550,7 +552,7 @@ fun DashboardScreenLayout(
                         }
                     },
                     onFabLongPress = if (!expandableFabEnabled) ({
-                        navigate { actions.onAddClick(TransactionType.EXPENSE, null) }
+                        navigate { actions.onAddClick(EntryMode.EXPENSE, null) }
                     }) else null,
                     fabMenu = if (expandableFabEnabled) {
                         {

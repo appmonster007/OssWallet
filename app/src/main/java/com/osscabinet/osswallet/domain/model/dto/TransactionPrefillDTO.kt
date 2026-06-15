@@ -1,11 +1,12 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
+import com.osscabinet.ossWallet.domain.model.toEntryMode
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -18,7 +19,7 @@ data class TransactionPrefillDTO(
     val name: String = "",
     val amount: String,
     val categoryId: Long,
-    val transactionType: TransactionType,
+    val entryMode: EntryMode,
     val accountId: String? = null,
     val currency: String,
     val tags: Set<String> = emptySet(),
@@ -58,7 +59,7 @@ data class TransactionPrefillDTO(
                 name = "", // Transactions don't have names
                 amount = transaction.amount.abs().toPlainString(),
                 categoryId = transaction.categoryId,
-                transactionType = transaction.transactionType,
+                entryMode = transaction.transactionType.toEntryMode(),
                 accountId = transaction.accountId,
                 currency = transaction.currency,
                 tags = transaction.tags,
@@ -88,7 +89,7 @@ data class TransactionPrefillDTO(
                 name = template.name,
                 amount = if (template.amount.signum() != 0) template.amount.abs().toPlainString() else "",
                 categoryId = template.categoryId,
-                transactionType = template.transactionType,
+                entryMode = template.entryMode,
                 accountId = template.accountId,
                 currency = template.currency,
                 tags = template.tags,
@@ -114,7 +115,7 @@ data class TransactionPrefillDTO(
                 name = payment.name,
                 amount = payment.amount.abs().toPlainString(),
                 categoryId = payment.categoryId,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId,
                 currency = payment.currency,
                 tags = payment.tags,

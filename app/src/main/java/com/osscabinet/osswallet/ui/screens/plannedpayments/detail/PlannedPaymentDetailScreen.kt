@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.detail
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -209,7 +210,7 @@ fun PlannedPaymentDetailScreen(
                 name = payment.name,
                 categoryId = payment.categoryId,
                 amount = payment.amount,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
@@ -341,7 +342,7 @@ fun PlannedPaymentDetailContent(
                                                 iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
                                             )
 
-                                            if (payment.transactionType == TransactionType.TRANSFER) {
+                                            if (payment.entryMode == EntryMode.TRANSFER) {
                                                 CompactDetailCell(
                                                     icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
                                                     label = "TARGET ACCOUNT",
@@ -454,7 +455,7 @@ fun PlannedPaymentDetailContent(
                                                     )
                                                 }
 
-                                                if (payment.transactionType == TransactionType.TRANSFER) {
+                                                if (payment.entryMode == EntryMode.TRANSFER) {
                                                     DetailMetaRow(
                                                         icon = Icons.Rounded.Repeat,
                                                         label = "Transfer Rate",
@@ -607,15 +608,15 @@ private fun PlannedPaymentHero(
     payment: PlannedPayment,
     modifier: Modifier = Modifier
 ) {
-    val accentColor = when (payment.transactionType) {
-        TransactionType.INCOME -> AppColors.primary
-        TransactionType.TRANSFER -> AppColors.accent
-        TransactionType.EXPENSE -> AppColors.error
+    val accentColor = when (payment.entryMode) {
+        EntryMode.INCOME -> AppColors.primary
+        EntryMode.TRANSFER -> AppColors.accent
+        EntryMode.EXPENSE -> AppColors.error
     }
 
     AeonExpressiveCard(
         title = payment.name,
-        subtitle = payment.transactionType.displayName,
+        subtitle = payment.entryMode.displayName,
         accentColor = accentColor,
         modifier = modifier
     ) {
@@ -623,9 +624,9 @@ private fun PlannedPaymentHero(
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
         ) {
-            val amountPrefix = when (payment.transactionType) {
-                TransactionType.EXPENSE -> "-"
-                TransactionType.INCOME -> "+"
+            val amountPrefix = when (payment.entryMode) {
+                EntryMode.EXPENSE -> "-"
+                EntryMode.INCOME -> "+"
                 else -> ""
             }
             Text(
@@ -1005,7 +1006,7 @@ fun PlannedPaymentDetailPreview() {
         name = "Netflix Subscription",
         amount = BigDecimal("15.99"),
         currency = "USD",
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         categoryId = 1L,
         accountId = "acc_1",
         payee = "Netflix",
@@ -1074,7 +1075,7 @@ fun OccurrenceItemPreview() {
         name = "Netflix Subscription",
         amount = BigDecimal("15.99"),
         currency = "USD",
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         categoryId = 1L,
         accountId = "acc_1",
         payee = "Netflix",

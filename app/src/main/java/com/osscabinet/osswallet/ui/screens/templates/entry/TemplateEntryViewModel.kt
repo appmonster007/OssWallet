@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.Category
@@ -116,7 +117,7 @@ class TemplateEntryViewModel @Inject constructor(
                         destination = TransactionSide(
                             amount = prefill.amount.abs().stripTrailingZeros().toPlainString()
                         ),
-                        transactionType = prefill.transactionType,
+                        entryMode = prefill.entryMode,
                         note = prefill.note ?: "",
                         payee = prefill.payee ?: "",
                         location = prefill.location ?: "",
@@ -160,7 +161,7 @@ class TemplateEntryViewModel @Inject constructor(
                     .toPlainString()
                 var existingCategoryId = template.categoryId
 
-                if (template.transactionType == TransactionType.TRANSFER && isOpenedAsReceiver) {
+                if (template.entryMode == EntryMode.TRANSFER && isOpenedAsReceiver) {
                     // Flip for Source-Target consistency
                     sourceAccId = template.targetAccountId
                     targetAccId = template.accountId
@@ -174,15 +175,15 @@ class TemplateEntryViewModel @Inject constructor(
                     } else targetAmtStr
                 }
                 
-                if (template.transactionType == TransactionType.TRANSFER) {
+                if (template.entryMode == EntryMode.TRANSFER) {
                     // Semantic Normalization: Source is always Outflow, Destination is always Inflow
                     existingCategoryId = if (Category.isInitialBalance(template.categoryId)) 
                         Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
                 }
 
-                val sourceRef = if (template.transactionType == TransactionType.TRANSFER)
+                val sourceRef = if (template.entryMode == EntryMode.TRANSFER)
                     AccountRef.fromTransferSide(sourceAccId) else AccountRef.fromStored(sourceAccId)
-                val targetRef = if (template.transactionType == TransactionType.TRANSFER)
+                val targetRef = if (template.entryMode == EntryMode.TRANSFER)
                     AccountRef.fromTransferSide(targetAccId) else AccountRef.fromStored(targetAccId)
 
                 _state.update {
@@ -202,7 +203,7 @@ class TemplateEntryViewModel @Inject constructor(
                             amount = targetAmtStr,
                             currency = targetCurr
                         ),
-                        transactionType = template.transactionType,
+                        entryMode = template.entryMode,
                         transferRate = template.transferRate,
                         note = template.note ?: "",
                         payee = template.payee ?: "",
@@ -228,10 +229,10 @@ class TemplateEntryViewModel @Inject constructor(
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 if (inputAmount < BigDecimal.ZERO) {
                     _state.update { state ->
-                        val newType = when (state.transactionType) {
-                            TransactionType.EXPENSE -> TransactionType.INCOME
-                            TransactionType.INCOME -> TransactionType.EXPENSE
-                            else -> state.transactionType
+                        val newMode = when (state.entryMode) {
+                            EntryMode.EXPENSE -> EntryMode.INCOME
+                            EntryMode.INCOME -> EntryMode.EXPENSE
+                            else -> state.entryMode
                         }
                         val finalAmt = inputAmount.abs()
                         state.copy(
@@ -243,7 +244,7 @@ class TemplateEntryViewModel @Inject constructor(
                                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                                     .toPlainString()
                             ),
-                            transactionType = newType
+                            entryMode = newMode
                         )
                     }
                 } else {
@@ -276,24 +277,24 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetTransactionType -> {
-                val oldType = _state.value.transactionType
-                val newType = event.type
+                val oldMode = _state.value.entryMode
+                val newMode = event.type
                 _state.update { state ->
                     val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
-                        oldType = oldType,
-                        newType = newType,
+                        oldMode = oldMode,
+                        newMode = newMode,
                         currentSource = state.source,
                         currentDestination = state.destination,
                         isSplitMode = false // Templates don't support split mode
                     )
 
                     state.copy(
-                        transactionType = result.newType,
+                        entryMode = result.newMode,
                         source = result.source,
                         destination = result.destination
                     )
                 }
-                if (newType == TransactionType.TRANSFER) {
+                if (newMode == EntryMode.TRANSFER) {
                     recalculateExchangeRate()
                 }
             }
@@ -501,7 +502,7 @@ class TemplateEntryViewModel @Inject constructor(
     private fun recalculateExchangeRate() {
         viewModelScope.launch {
             val currentState = _state.value
-            if (currentState.transactionType == TransactionType.TRANSFER &&
+            if (currentState.entryMode == EntryMode.TRANSFER &&
                 currentState.currency.isNotEmpty() &&
                 currentState.targetCurrency?.isNotEmpty() == true
             ) {
@@ -553,7 +554,7 @@ class TemplateEntryViewModel @Inject constructor(
                 name = s.name,
                 categoryId = templateCategoryId,
                 amount = amountValue,
-                transactionType = s.transactionType,
+                entryMode = s.entryMode,
                 accountId = s.accountId,
                 targetAccountId = s.targetAccountId,
                 targetCurrency = s.targetCurrency,

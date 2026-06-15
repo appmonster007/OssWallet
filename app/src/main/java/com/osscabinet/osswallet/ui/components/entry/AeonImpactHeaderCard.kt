@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
@@ -60,12 +61,12 @@ data class AeonAmountData(
 )
 
 /**
- * Convenience overload for TransactionType.
+ * Convenience overload for EntryMode (form-state level).
  */
 @Composable
 fun AeonImpactHeaderCard(
-    transactionType: TransactionType,
-    onTypeSelected: (TransactionType) -> Unit,
+    transactionType: EntryMode,
+    onTypeSelected: (EntryMode) -> Unit,
     source: AeonAmountData,
     target: AeonAmountData? = null,
     categoryId: Long? = null,
@@ -82,37 +83,46 @@ fun AeonImpactHeaderCard(
     accountId: String? = null,
     errors: Set<EntryField> = emptySet()
 ) {
-    val isTransfer = transactionType == TransactionType.TRANSFER
+    val isTransfer = transactionType == EntryMode.TRANSFER
     val amountPrefix = when {
-        transactionType == TransactionType.EXPENSE -> "-"
-        transactionType == TransactionType.INCOME -> "+"
+        transactionType == EntryMode.EXPENSE -> "-"
+        transactionType == EntryMode.INCOME -> "+"
         isTransfer -> "-" // Source is always Giver in transfer
         else -> ""
     }
+    val expenseColorHex = TransactionType.EXPENSE.colorHex
+    val incomeColorHex = TransactionType.INCOME.colorHex
+    val transferColorHex = TransactionType.TRANSFER_OUTFLOW.colorHex
+    fun EntryMode.colorHex(): String = when (this) {
+        EntryMode.EXPENSE -> expenseColorHex
+        EntryMode.INCOME -> incomeColorHex
+        EntryMode.TRANSFER -> transferColorHex
+    }
+
     // Type selector highlight colour: reflects the direction of money relative to wallet accounts.
     // Outside source → income green; Outside target → expense red; Wallet↔Wallet → neutral transfer blue.
     val typeSelectorColor = when {
-        !isTransfer -> Color(transactionType.colorHex.toColorInt())
-        accountId?.isBlank() == true -> Color(TransactionType.INCOME.colorHex.toColorInt())
-        targetAccountId?.isBlank() == true -> Color(TransactionType.EXPENSE.colorHex.toColorInt())
-        else -> Color(TransactionType.TRANSFER.colorHex.toColorInt())
+        !isTransfer -> Color(transactionType.colorHex().toColorInt())
+        accountId?.isBlank() == true -> Color(incomeColorHex.toColorInt())
+        targetAccountId?.isBlank() == true -> Color(expenseColorHex.toColorInt())
+        else -> Color(transferColorHex.toColorInt())
     }
 
-    val types = TransactionType.entries.map {
+    val types = EntryMode.entries.map {
         Triple(
             when (it) {
-                TransactionType.EXPENSE -> Icons.Rounded.Remove
-                TransactionType.INCOME -> Icons.Rounded.Add
-                TransactionType.TRANSFER -> Icons.Rounded.SwapHoriz
+                EntryMode.EXPENSE -> Icons.Rounded.Remove
+                EntryMode.INCOME -> Icons.Rounded.Add
+                EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
             },
             it.displayName,
             it
         )
     }
 
-    // Default colors based on transaction type if not explicitly provided
-    val defaultSourceColor = if (isTransfer) Color(TransactionType.EXPENSE.colorHex.toColorInt()) else Color(transactionType.colorHex.toColorInt())
-    val defaultTargetColor = if (isTransfer) Color(TransactionType.INCOME.colorHex.toColorInt()) else null
+    // Default colors based on entry mode if not explicitly provided
+    val defaultSourceColor = if (isTransfer) Color(expenseColorHex.toColorInt()) else Color(transactionType.colorHex().toColorInt())
+    val defaultTargetColor = if (isTransfer) Color(incomeColorHex.toColorInt()) else null
 
     AeonImpactHeaderCard(
         selectedType = transactionType,
@@ -132,7 +142,6 @@ fun AeonImpactHeaderCard(
         nameIcon = nameIcon,
         showAmount = showAmount,
         showTypeSelector = showTypeSelector,
-        isTransfer = isTransfer,
         targetAccountId = targetAccountId,
         transferRate = transferRate,
         onExchangeRateClick = onExchangeRateClick,
@@ -358,7 +367,7 @@ fun AeonImpactHeaderCardPreview() {
     OssWalletTheme {
         Surface(modifier = Modifier.padding(16.dp)) {
             AeonImpactHeaderCard(
-                transactionType = TransactionType.EXPENSE,
+                transactionType = EntryMode.EXPENSE,
                 onTypeSelected = {},
                 source = AeonAmountData(
                     value = "1,250.00",

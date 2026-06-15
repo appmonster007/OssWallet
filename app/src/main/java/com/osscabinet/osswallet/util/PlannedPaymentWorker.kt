@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.util
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -39,7 +40,7 @@ class PlannedPaymentWorker(
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
                 val amount =
-                    if (payment.transactionType == TransactionType.INCOME || payment.transactionType == TransactionType.TRANSFER) {
+                    if (payment.entryMode == EntryMode.INCOME || payment.entryMode == EntryMode.TRANSFER) {
                         payment.amount.abs()
                     } else {
                         payment.amount.abs().negate()
@@ -49,7 +50,7 @@ class PlannedPaymentWorker(
                     name = allCategories.find { it.id == payment.categoryId }?.name
                         ?: "Planned Payment",
                     amount = amount,
-                    transactionType = payment.transactionType,
+                    entryMode = payment.entryMode,
                     accountId = payment.accountId,
                     currency = payment.currency,
                     categoryId = payment.categoryId,
@@ -62,7 +63,6 @@ class PlannedPaymentWorker(
                     warrantyExpiration = payment.warrantyExpiration,
                     status = payment.transactionStatus,
                     sourcePlannedPaymentId = payment.id,
-                    isTransfer = payment.transactionType == TransactionType.TRANSFER,
                     targetAccountId = payment.targetAccountId,
                     targetCurrency = payment.targetCurrency,
                     transferRate = payment.transferRate

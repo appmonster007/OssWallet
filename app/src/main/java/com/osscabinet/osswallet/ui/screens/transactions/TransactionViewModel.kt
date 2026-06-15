@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.transactions
 
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
@@ -489,7 +490,7 @@ class TransactionViewModel @Inject constructor(
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
-                transactionType = payment.transactionType,
+                entryMode = payment.entryMode,
                 accountId = payment.accountId,
                 categoryId = payment.categoryId,
                 currency = payment.currency,
@@ -499,7 +500,6 @@ class TransactionViewModel @Inject constructor(
                 note = payment.note ?: "",
                 status = payment.transactionStatus,
                 sourcePlannedPaymentId = paymentId,
-                isTransfer = payment.transactionType == TransactionType.TRANSFER,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
                 transferRate = payment.transferRate
@@ -566,7 +566,7 @@ class TransactionViewModel @Inject constructor(
                     val targetTx = linkedTxs.find {
                         Category.isTransfer(it.categoryId) &&
                                 it.accountId != transaction.accountId &&
-                                it.transactionType == TransactionType.INCOME
+                                it.entryMode == EntryMode.INCOME
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {
@@ -708,7 +708,7 @@ class TransactionViewModel @Inject constructor(
             name = template.name,
             categoryId = template.categoryId,
             amount = template.amount,
-            transactionType = template.transactionType,
+            entryMode = template.entryMode,
             accountId = template.accountId,
             note = template.note,
             payee = template.payee,

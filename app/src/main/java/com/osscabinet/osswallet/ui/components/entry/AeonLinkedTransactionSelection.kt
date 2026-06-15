@@ -174,7 +174,7 @@ fun AeonLinkedTransactionSelection(
                                         balanceBefore = "",
                                         balanceAfter = "",
                                         type = when (tx.transactionType) {
-                                            TransactionType.TRANSFER -> CashFlowType.TRANSFER
+                                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> CashFlowType.TRANSFER
                                             TransactionType.INCOME -> CashFlowType.INCOME
                                             else -> CashFlowType.EXPENSE
                                         },

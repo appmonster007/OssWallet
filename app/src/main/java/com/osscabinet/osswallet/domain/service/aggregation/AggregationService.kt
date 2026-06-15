@@ -1,8 +1,8 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem

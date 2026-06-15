@@ -74,7 +74,7 @@ fun NavGraphBuilder.primaryTabsGraph(
                         vms.transactionViewModel.setTemplatePrefill(templateId)
                         navController.navigate(TransactionEntryRoute())
                     } else {
-                        navController.navigate(TransactionEntryRoute(transactionType = type?.toInt() ?: -1))
+                        navController.navigate(TransactionEntryRoute(transactionType = type?.ordinal ?: -1))
                     }
                 },
                 onManageAccountsClick = { navController.navigate(AccountListRoute) },

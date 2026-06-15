@@ -69,7 +69,7 @@ object AggregationService {
             val inc = breakdown.incomeCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
             val exp = breakdown.expenseCurrencyBreakdown[curr] ?: FinancialSummary.EMPTY
             val tr = transferByCurrency[curr] ?: FinancialSummary.EMPTY
-            val transferInBase = CurrencyService.convertAmount(tr.transfer.abs(), curr, baseCurrency, exchangeRates, 10)
+            val transferInBase = CurrencyService.convertAmount(tr.transfer, curr, baseCurrency, exchangeRates, 10)
                 .setScale(precision, RoundingMode.HALF_UP)
             totalTransferInBase = totalTransferInBase.add(transferInBase)
             CashFlowBreakdownItem(
@@ -80,7 +80,7 @@ object AggregationService {
                 expense = exp.totalAmount.setScale(precision, RoundingMode.HALF_UP),
                 expenseInBase = CurrencyService.convertAmount(exp.totalAmount, curr, baseCurrency, exchangeRates, 10)
                     .setScale(precision, RoundingMode.HALF_UP),
-                transfer = tr.transfer.abs().setScale(precision, RoundingMode.HALF_UP),
+                transfer = tr.transfer.setScale(precision, RoundingMode.HALF_UP),
                 transferInBase = transferInBase
             )
         }

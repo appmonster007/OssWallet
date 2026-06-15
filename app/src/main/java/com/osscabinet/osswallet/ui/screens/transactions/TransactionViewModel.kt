@@ -566,7 +566,7 @@ class TransactionViewModel @Inject constructor(
                     val targetTx = linkedTxs.find {
                         Category.isTransfer(it.categoryId) &&
                                 it.accountId != transaction.accountId &&
-                                it.entryMode == EntryMode.INCOME
+                                it.transactionType == TransactionType.TRANSFER_INFLOW
                     }
                     if (targetTx != null) {
                         val rate = if (transaction.amount.signum() != 0) {

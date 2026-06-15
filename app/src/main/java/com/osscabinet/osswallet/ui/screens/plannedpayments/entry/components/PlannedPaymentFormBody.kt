@@ -168,6 +168,7 @@ fun PlannedPaymentFormBody(
 
                 // Row 2: Account and Category/Target
                 AeonEntryContextRow(
+                    isTransfer = state.entryMode == EntryMode.TRANSFER,
                     accountSelector = AeonSelectorState(
                         selection = state.selectedAccount,
                         onClick = { onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(true)) },

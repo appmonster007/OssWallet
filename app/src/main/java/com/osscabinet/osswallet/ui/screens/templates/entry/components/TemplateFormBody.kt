@@ -110,6 +110,7 @@ fun TemplateFormBody(
             // CONTEXT: Action cards row: Account, Category
             AeonContextGrid {
                 AeonEntryContextRow(
+                    isTransfer = state.entryMode == EntryMode.TRANSFER,
                     accountSelector = AeonSelectorState(
                         selection = state.selectedAccount,
                         onClick = { onEvent(TemplateEntryEvent.ShowAccountSheet(true)) },

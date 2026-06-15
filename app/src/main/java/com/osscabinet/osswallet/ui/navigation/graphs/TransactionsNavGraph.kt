@@ -8,6 +8,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
@@ -65,7 +66,13 @@ fun NavGraphBuilder.transactionsGraph(
             config = TransactionEntryConfig(
                 transactionId = route.transactionId.takeIf { it != -1L },
                 accountId = route.accountId,
-                initialType = if (route.transactionType == -1) null else TransactionType.fromInt(route.transactionType),
+                initialType = if (route.transactionType == -1) null else {
+                    when(TransactionType.fromInt(route.transactionType)) {
+                        TransactionType.INCOME -> EntryMode.INCOME
+                        TransactionType.EXPENSE -> EntryMode.EXPENSE
+                        else -> EntryMode.TRANSFER
+                    }
+                },
                 initialTemplateId = route.templateId.takeIf { it != -1L },
                 prefillDto = prefillDto
             ),

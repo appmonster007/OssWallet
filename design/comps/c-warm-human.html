@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OssWallet — Direction C: Warm &amp; Human</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Gabarito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FAF6EF;
+  --card:#FFFFFF;
+  --clay:#2B2724;          /* warm near-black ink */
+  --clay-2:#7A736A;
+  --clay-3:#B0A89D;
+  --line:#EFE9DE;
+  --terra:#E8602C;          /* signature terracotta */
+  --terra-soft:#FBE9E0;
+  --moss:#5F7E3E;
+  --moss-soft:#EAF0DC;
+  --butter:#F4C84C;
+  --butter-soft:#FBF2D7;
+  --sky:#4D7FA8;
+  --sky-soft:#E3EDF5;
+  --rose:#C24B6E;
+  --pos:#4E8A3C;
+  --neg:#C8463F;
+  --display:'Gabarito',sans-serif;
+  --body:'Outfit',sans-serif;
+  --r-lg:28px; --r-md:20px;
+  --shadow:0 2px 4px rgba(43,39,36,.04), 0 12px 28px rgba(43,39,36,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#E8E1D4;display:flex;justify-content:center;padding:48px 0;font-family:var(--body)}
+.phone{width:392px;height:852px;background:var(--cream);border-radius:48px;overflow:hidden;position:relative;
+  box-shadow:0 40px 80px rgba(43,39,36,.3), inset 0 0 0 1px rgba(255,255,255,.6)}
+.screen{height:100%;overflow-y:auto;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+
+.status{display:flex;justify-content:space-between;padding:18px 28px 0;font:600 13px var(--body);color:var(--clay)}
+
+.header{padding:24px 24px 8px;display:flex;justify-content:space-between;align-items:center}
+.hello{font:700 22px var(--display);color:var(--clay);letter-spacing:-.01em}
+.hello span{color:var(--terra)}
+.hello-sub{font:500 12.5px var(--body);color:var(--clay-2);margin-top:3px}
+.profile{width:42px;height:42px;border-radius:16px;background:var(--terra);color:#fff;
+  display:flex;align-items:center;justify-content:center;font:700 15px var(--display);
+  box-shadow:0 6px 14px rgba(232,96,44,.3);transform:rotate(-3deg)}
+
+/* hero */
+.hero{margin:14px 16px 0;background:var(--clay);border-radius:var(--r-lg);padding:24px;position:relative;overflow:hidden;
+  box-shadow:0 18px 36px rgba(43,39,36,.22)}
+.hero .blob{position:absolute;border-radius:50%;filter:blur(2px)}
+.hero .b1{width:180px;height:180px;background:rgba(232,96,44,.25);top:-70px;right:-50px}
+.hero .b2{width:120px;height:120px;background:rgba(244,200,76,.16);bottom:-50px;left:-30px}
+.hero-label{font:600 11px var(--body);letter-spacing:.12em;text-transform:uppercase;color:#A89F94;position:relative}
+.hero-amount{margin-top:10px;font:800 44px/1 var(--display);color:#FAF6EF;letter-spacing:-.02em;font-variant-numeric:tabular-nums;position:relative}
+.hero-amount .dec{font-size:24px;color:#8F877C;font-weight:700}
+.hero-pills{display:flex;gap:8px;margin-top:16px;position:relative}
+.pill{font:600 11.5px var(--body);padding:6px 12px;border-radius:100px;font-variant-numeric:tabular-nums}
+.pill.up{background:rgba(124,196,98,.18);color:#9FD588}
+.pill.dim{background:rgba(255,255,255,.08);color:#C8C0B5}
+.hero-spark{margin:18px -24px -24px;position:relative}
+
+/* sections */
+.sec{padding:26px 24px 12px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h2{font:700 17px var(--display);color:var(--clay);letter-spacing:-.01em}
+.sec a{font:600 12px var(--body);color:var(--terra);text-decoration:none}
+
+/* cash flow duo */
+.duo{display:flex;gap:12px;margin:0 16px}
+.duo-card{flex:1;background:var(--card);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow)}
+.duo-ic{width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.duo-ic.in{background:var(--moss-soft)} .duo-ic.out{background:var(--terra-soft)}
+.duo-label{font:600 11px var(--body);color:var(--clay-2);margin-top:10px}
+.duo-amt{font:800 19px var(--display);margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.duo-amt.in{color:var(--pos)} .duo-amt.out{color:var(--clay)}
+.duo-bar{height:6px;border-radius:3px;background:var(--line);margin-top:12px;overflow:hidden}
+.duo-bar i{display:block;height:100%;border-radius:3px}
+.savings{margin:12px 16px 0;background:var(--moss-soft);border-radius:var(--r-md);padding:14px 18px;display:flex;align-items:center;gap:12px}
+.savings .em{font-size:20px}
+.savings b{font:700 14px var(--display);color:var(--moss)}
+.savings span{font:500 12px var(--body);color:var(--clay-2);margin-left:auto;font-variant-numeric:tabular-nums}
+
+/* accounts */
+.acct-list{margin:0 16px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:6px 18px}
+.acct{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.acct:last-child{border:none}
+.acct-ic{width:42px;height:42px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.acct-name{font:700 14px var(--display);color:var(--clay)}
+.acct-type{font:500 11.5px var(--body);color:var(--clay-3);margin-top:2px}
+.acct-bal{margin-left:auto;text-align:right;font:700 15px var(--display);color:var(--clay);font-variant-numeric:tabular-nums}
+.acct-fx{font:500 10.5px var(--body);color:var(--clay-3);margin-top:2px}
+
+/* budgets — rounded rings row */
+.budget-row-wrap{display:flex;gap:12px;margin:0 16px;overflow-x:auto;scrollbar-width:none}
+.budget-row-wrap::-webkit-scrollbar{display:none}
+.bud{flex:none;width:124px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--shadow);padding:16px 14px;text-align:center}
+.ring{width:64px;height:64px;margin:0 auto;position:relative}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 13px var(--display);color:var(--clay)}
+.bud-name{font:700 12.5px var(--display);color:var(--clay);margin-top:10px}
+.bud-figs{font:500 10.5px var(--body);color:var(--clay-3);margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* transactions */
+.tx-list{margin:0 16px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:6px 18px}
+.tx{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}
+.tx:last-child{border:none}
+.tx-ic{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.tx-name{font:600 13.5px var(--body);color:var(--clay)}
+.tx-cat{font:500 11px var(--body);color:var(--clay-3);margin-top:2px}
+.tx-amt{margin-left:auto;font:700 14px var(--display);font-variant-numeric:tabular-nums;color:var(--clay)}
+.tx-amt.in{color:var(--pos)}
+
+.foot{padding:20px 24px 112px;text-align:center;font:500 11px var(--body);color:var(--clay-3)}
+
+/* nav */
+.navwrap{position:sticky;bottom:0;padding:14px 24px 24px;background:linear-gradient(transparent,var(--cream) 50%)}
+.nav{background:var(--card);border-radius:100px;display:flex;justify-content:space-between;align-items:center;padding:8px 10px;
+  box-shadow:0 4px 8px rgba(43,39,36,.06), 0 18px 40px rgba(43,39,36,.14)}
+.nav a{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--clay-3);font-size:17px;text-decoration:none}
+.nav a.active{background:var(--clay);color:var(--cream)}
+.nav a.fab{background:var(--terra);color:#fff;width:54px;height:54px;font-size:24px;font-weight:600;
+  box-shadow:0 8px 18px rgba(232,96,44,.4);transform:rotate(0deg)}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="phone"><div class="screen">
+
+  <div class="status"><span>9:41</span><span>◧ ⌁ ▮</span></div>
+
+  <div class="header">
+    <div>
+      <div class="hello">Hey, Prathit <span>👋</span></div>
+      <div class="hello-sub">Your money looks healthy today</div>
+    </div>
+    <div class="profile">P</div>
+  </div>
+
+  <div class="hero">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="hero-label">Total net worth</div>
+    <div class="hero-amount">₹12,48,560<span class="dec">.40</span></div>
+    <div class="hero-pills">
+      <span class="pill up">▲ 2.4% this month</span>
+      <span class="pill dim">+₹29,140</span>
+    </div>
+    <div class="hero-spark">
+      <svg width="392" height="70" viewBox="0 0 392 70">
+        <defs>
+          <linearGradient id="warm" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#E8602C" stop-opacity=".35"/>
+            <stop offset="1" stop-color="#E8602C" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,52 C40,46 60,50 90,42 C120,34 150,40 180,33 C210,26 240,32 270,22 C300,14 330,20 360,12 L392,14 L392,70 L0,70 Z" fill="url(#warm)"/>
+        <path d="M0,52 C40,46 60,50 90,42 C120,34 150,40 180,33 C210,26 240,32 270,22 C300,14 330,20 360,12 L392,14" fill="none" stroke="#E8602C" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="sec"><h2>This month</h2><a href="#">June ›</a></div>
+  <div class="duo">
+    <div class="duo-card">
+      <div class="duo-ic in">🌱</div>
+      <div class="duo-label">Came in</div>
+      <div class="duo-amt in">₹86,400</div>
+      <div class="duo-bar"><i style="width:86%;background:var(--moss)"></i></div>
+    </div>
+    <div class="duo-card">
+      <div class="duo-ic out">🛍️</div>
+      <div class="duo-label">Went out</div>
+      <div class="duo-amt out">₹57,260</div>
+      <div class="duo-bar"><i style="width:57%;background:var(--terra)"></i></div>
+    </div>
+  </div>
+  <div class="savings"><span class="em">🎉</span><b>You saved ₹29,140</b><span>34% of income</span></div>
+
+  <div class="sec"><h2>Accounts</h2><a href="#">See all 6</a></div>
+  <div class="acct-list">
+    <div class="acct">
+      <div class="acct-ic" style="background:var(--sky-soft)">🏦</div>
+      <div><div class="acct-name">HDFC Salary</div><div class="acct-type">Bank account</div></div>
+      <div><div class="acct-bal">₹4,82,310</div><div class="acct-fx">INR</div></div>
+    </div>
+    <div class="acct">
+      <div class="acct-ic" style="background:var(--butter-soft)">👛</div>
+      <div><div class="acct-name">Cash</div><div class="acct-type">In your pocket</div></div>
+      <div><div class="acct-bal">₹6,250</div><div class="acct-fx">INR</div></div>
+    </div>
+    <div class="acct">
+      <div class="acct-ic" style="background:var(--moss-soft)">🌍</div>
+      <div><div class="acct-name">Wise USD</div><div class="acct-type">Multi-currency</div></div>
+      <div><div class="acct-bal">$1,204.50</div><div class="acct-fx">≈ ₹1,00,575</div></div>
+    </div>
+  </div>
+
+  <div class="sec"><h2>Budgets</h2><a href="#">June ›</a></div>
+  <div class="budget-row-wrap">
+    <div class="bud">
+      <div class="ring">
+        <svg width="64" height="64"><circle cx="32" cy="32" r="27" fill="none" stroke="#EFE9DE" stroke-width="7"/>
+        <circle cx="32" cy="32" r="27" fill="none" stroke="#E8602C" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="34"/></svg>
+        <span class="pct">80%</span>
+      </div>
+      <div class="bud-name">Dining out</div>
+      <div class="bud-figs">₹6,420 / 8,000</div>
+    </div>
+    <div class="bud">
+      <div class="ring">
+        <svg width="64" height="64"><circle cx="32" cy="32" r="27" fill="none" stroke="#EFE9DE" stroke-width="7"/>
+        <circle cx="32" cy="32" r="27" fill="none" stroke="#5F7E3E" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="41"/></svg>
+        <span class="pct">76%</span>
+      </div>
+      <div class="bud-name">Groceries</div>
+      <div class="bud-figs">₹9,180 / 12,000</div>
+    </div>
+    <div class="bud">
+      <div class="ring">
+        <svg width="64" height="64"><circle cx="32" cy="32" r="27" fill="none" stroke="#EFE9DE" stroke-width="7"/>
+        <circle cx="32" cy="32" r="27" fill="none" stroke="#C8463F" stroke-width="7" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0"/></svg>
+        <span class="pct" style="color:var(--neg)">110%</span>
+      </div>
+      <div class="bud-name">Transport</div>
+      <div class="bud-figs">₹4,940 / 4,500</div>
+    </div>
+  </div>
+
+  <div class="sec"><h2>Recent</h2><a href="#">Everything ›</a></div>
+  <div class="tx-list">
+    <div class="tx">
+      <div class="tx-ic" style="background:var(--terra-soft)">☕</div>
+      <div><div class="tx-name">Blue Tokai Coffee</div><div class="tx-cat">Dining out · today</div></div>
+      <span class="tx-amt">−₹460</span>
+    </div>
+    <div class="tx">
+      <div class="tx-ic" style="background:var(--sky-soft)">🚇</div>
+      <div><div class="tx-name">Metro recharge</div><div class="tx-cat">Transport · today</div></div>
+      <span class="tx-amt">−₹500</span>
+    </div>
+    <div class="tx">
+      <div class="tx-ic" style="background:var(--moss-soft)">💼</div>
+      <div><div class="tx-name">Freelance invoice #41</div><div class="tx-cat">Income · yesterday</div></div>
+      <span class="tx-amt in">+$320.00</span>
+    </div>
+    <div class="tx">
+      <div class="tx-ic" style="background:var(--butter-soft)">🛒</div>
+      <div><div class="tx-name">BigBasket</div><div class="tx-cat">Groceries · 10 Jun</div></div>
+      <span class="tx-amt">−₹2,184</span>
+    </div>
+  </div>
+
+  <div class="foot">🔒 Everything stays on your phone</div>
+
+  <div class="navwrap">
+    <nav class="nav">
+      <a class="active" href="#">◈</a>
+      <a href="#">≣</a>
+      <a class="fab" href="#">+</a>
+      <a href="#">◔</a>
+      <a href="#">⚙︎</a>
+    </nav>
+  </div>
+
+</div></div>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OssWallet — Reinvented Card Interaction (no buttons)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#101113;font-family:'Inter',sans-serif;color:#E8E8EA;padding:44px;display:flex;gap:44px;justify-content:center;flex-wrap:wrap}
+.col{width:400px}
+.col>h2{font-size:13px;font-weight:600;margin-bottom:6px}
+.col>p{font-size:11.5px;color:#84868E;line-height:1.65;margin-bottom:18px;min-height:70px}
+.hint{font-size:10.5px;color:#6E7077;margin-top:12px;line-height:1.7}
+.hint b{color:#A9ACB4;font-weight:600}
+svg{display:block}
+
+/* ===== flip machinery (shared) ===== */
+.flip{perspective:1400px}
+.flipper{position:relative;transition:transform .65s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
+.flip.flipped .flipper{transform:rotateY(180deg)}
+.face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.back{position:absolute;inset:0;transform:rotateY(180deg)}
+
+/* ============ A — QUIET LUXURY ============ */
+.stage-a{background:#F2EFE7;border-radius:24px;padding:28px 24px;user-select:none}
+.card-a{--ink:#191714;--ink2:#5A554B;--ink3:#8C867A;--hair:#D9D4C7;--hairS:#B8B2A2;--green:#1D3A33;--pos:#2C6E49;--neg:#9B3B30}
+.a-title{font:500 19px 'Fraunces',serif;font-style:italic;color:var(--ink)}
+.a-readout{display:inline-flex;align-items:center;gap:7px;margin-top:6px;cursor:pointer;border-bottom:1px dotted var(--hairS);padding-bottom:2px}
+.a-readout span{font:400 11px 'Inter';color:var(--ink2);letter-spacing:.05em}
+.a-readout em{font-style:normal;font-weight:600;color:var(--green)}
+.a-readout .caret{font-size:8px;color:var(--ink3);transition:transform .3s}
+.a-filterbar{overflow:hidden;max-height:0;opacity:0;transition:max-height .45s cubic-bezier(.4,0,.2,1),opacity .35s}
+.a-filterbar.open{max-height:60px;opacity:1}
+.a-pills{display:flex;gap:6px;padding-top:14px;flex-wrap:wrap}
+.a-pill{font:500 10px 'Inter';letter-spacing:.06em;padding:5px 11px;border:1px solid var(--hairS);border-radius:100px;color:var(--ink2);display:flex;gap:6px;align-items:center;cursor:pointer;background:transparent}
+.a-pill b{font-weight:600;color:var(--ink)}
+.a-pill .x{color:var(--ink3)}
+.a-pill.add{border-style:dashed;color:var(--ink3)}
+.a-rule{height:1px;background:var(--hair);margin-top:18px}
+.a-cols{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 22px;padding-top:18px}
+.a-div{background:var(--hair)}
+.a-col-label{display:flex;justify-content:space-between;align-items:baseline}
+.a-col-label span{font:500 9.5px 'Inter';letter-spacing:.3em;text-transform:uppercase;color:var(--ink3)}
+.a-total{font:500 11px 'Fraunces',serif;color:var(--ink2);font-variant-numeric:tabular-nums}
+.a-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+.a-cur{font:500 9.5px 'Inter';letter-spacing:.16em;color:var(--ink3)}
+.a-amt{font:400 21px 'Fraunces',serif;font-variant-numeric:tabular-nums;text-align:right}
+.a-amt.pos{color:var(--pos)} .a-amt.neg{color:var(--neg)}
+.a-approx{font:400 10px 'Inter';color:var(--ink3);text-align:right;margin-top:2px}
+.a-foot{margin-top:20px;padding-top:14px;border-top:1px dotted var(--hairS);display:flex;justify-content:space-between;align-items:baseline}
+.a-foot span{font:500 9.5px 'Inter';letter-spacing:.3em;text-transform:uppercase;color:var(--ink3)}
+.a-foot b{font:500 17px 'Fraunces',serif;color:var(--pos);font-variant-numeric:tabular-nums}
+/* back face A */
+.a-back{background:#EDE9DE;border:1px solid var(--hairS);border-radius:18px;padding:20px;height:100%;display:flex;flex-direction:column}
+.a-back-title{font:500 15px 'Fraunces',serif;font-style:italic;color:var(--ink)}
+.a-back-sub{font:500 9px 'Inter';letter-spacing:.28em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.a-opt{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dotted var(--hairS)}
+.a-opt span{font:500 12px 'Inter';color:var(--ink2)}
+.a-opt b{font:600 11px 'Inter';color:var(--green);letter-spacing:.04em}
+.a-toggle{width:34px;height:19px;border-radius:10px;border:1px solid var(--hairS);position:relative;background:transparent}
+.a-toggle.on{background:var(--green);border-color:var(--green)}
+.a-toggle i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--hairS)}
+.a-toggle.on i{left:auto;right:2px;background:#EDEDE4}
+.a-done{margin-top:auto;align-self:flex-end;font:500 10px 'Inter';letter-spacing:.24em;text-transform:uppercase;color:var(--green);border-bottom:1px solid var(--green);padding-bottom:2px;cursor:pointer}
+
+/* ============ B — INSTRUMENT ============ */
+.stage-b{background:#020203;border-radius:24px;padding:28px 24px;position:relative;overflow:hidden;user-select:none}
+.stage-b::before{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(200,255,77,.08),transparent 65%);top:-100px;right:-80px;pointer-events:none}
+.card-b{--txt:#EDEFF2;--txt2:#8A8F9C;--txt3:#565B66;--edge:rgba(255,255,255,.10);--volt:#C8FF4D;--pos:#5BE093;--neg:#F0827C}
+.b-face{border:1px solid var(--edge);border-radius:22px;background:rgba(255,255,255,.045);backdrop-filter:blur(20px);padding:18px;position:relative;overflow:hidden}
+.b-face::before{content:'';position:absolute;inset:0;border-radius:22px;padding:1px;
+  background:linear-gradient(135deg,rgba(200,255,77,.3),transparent 35%,transparent 70%,rgba(111,214,255,.15));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.b-idx{font:500 9px 'JetBrains Mono',monospace;color:var(--txt3);letter-spacing:.1em}
+.b-title{font:600 13.5px 'Space Grotesk';letter-spacing:.07em;text-transform:uppercase;color:var(--txt)}
+.b-readout{display:inline-flex;align-items:center;gap:8px;margin-top:6px;cursor:pointer;padding:4px 9px;margin-left:-9px;border-radius:8px;border:1px solid transparent;transition:all .25s}
+.b-readout:hover,.b-readout.lit{border-color:rgba(200,255,77,.3);background:rgba(200,255,77,.07)}
+.b-readout span{font:500 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:var(--txt2)}
+.b-readout em{font-style:normal;color:var(--volt)}
+.b-readout .sig{width:5px;height:5px;border-radius:50%;background:var(--volt);box-shadow:0 0 7px var(--volt)}
+.b-filterbar{overflow:hidden;max-height:0;opacity:0;transition:max-height .45s cubic-bezier(.4,0,.2,1),opacity .35s}
+.b-filterbar.open{max-height:60px;opacity:1}
+.b-pills{display:flex;gap:6px;padding-top:13px;flex-wrap:wrap}
+.b-pill{font:500 9.5px 'JetBrains Mono',monospace;padding:5px 10px;border:1px solid var(--edge);border-radius:9px;color:var(--txt2);display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.03);cursor:pointer}
+.b-pill b{color:var(--volt);font-weight:500}
+.b-pill .x{color:var(--txt3)}
+.b-pill.add{border-style:dashed;color:var(--txt3);background:transparent}
+.b-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}
+.b-cell{border:1px solid var(--edge);border-radius:14px;background:rgba(255,255,255,.02);padding:13px}
+.b-cell-head{display:flex;justify-content:space-between;align-items:center}
+.b-cell-head span{font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.26em;text-transform:uppercase}
+.b-cell-head span.in{color:var(--pos)} .b-cell-head span.out{color:var(--neg)}
+.b-total{font:500 10px 'JetBrains Mono',monospace;padding:3px 7px;border-radius:6px}
+.b-total.in{background:rgba(91,224,147,.12);color:var(--pos)}
+.b-total.out{background:rgba(240,130,124,.12);color:var(--neg)}
+.b-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+.b-cur{font:500 9px 'JetBrains Mono',monospace;letter-spacing:.18em;color:var(--txt3)}
+.b-amt{font:500 16px 'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;text-align:right}
+.b-amt.in{color:var(--pos)} .b-amt.out{color:var(--neg)}
+.b-approx{font:500 8.5px 'JetBrains Mono',monospace;color:var(--txt3);text-align:right;margin-top:2px}
+.b-net{margin-top:13px;border-top:1px dashed var(--edge);padding-top:12px;display:flex;justify-content:space-between;align-items:center}
+.b-net span{font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.26em;text-transform:uppercase;color:var(--txt3)}
+.b-net b{font:600 14px 'JetBrains Mono',monospace;color:var(--volt);text-shadow:0 0 14px rgba(200,255,77,.4)}
+/* back face B */
+.b-backface{border:1px solid rgba(200,255,77,.25);border-radius:22px;background:rgba(200,255,77,.04);backdrop-filter:blur(20px);padding:18px;height:100%;display:flex;flex-direction:column}
+.b-back-title{font:600 12px 'Space Grotesk';letter-spacing:.1em;text-transform:uppercase;color:var(--volt)}
+.b-back-sub{font:500 8.5px 'JetBrains Mono',monospace;letter-spacing:.2em;color:var(--txt3);margin-top:3px;text-transform:uppercase}
+.b-opt{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.b-opt span{font:500 11.5px 'Space Grotesk';color:var(--txt2)}
+.b-opt b{font:500 10px 'JetBrains Mono',monospace;color:var(--volt)}
+.b-toggle{width:34px;height:19px;border-radius:6px;border:1px solid var(--edge);position:relative;background:rgba(255,255,255,.04)}
+.b-toggle.on{background:rgba(200,255,77,.18);border-color:rgba(200,255,77,.4)}
+.b-toggle i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:4px;background:var(--txt3)}
+.b-toggle.on i{left:auto;right:2px;background:var(--volt);box-shadow:0 0 8px rgba(200,255,77,.6)}
+.b-done{margin-top:auto;align-self:flex-end;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.2em;color:var(--volt);border:1px solid rgba(200,255,77,.35);border-radius:8px;padding:6px 12px;cursor:pointer}
+/* press feedback */
+.pressable{transition:transform .18s}
+.pressing{transform:scale(.975)}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <h2>A — Quiet Luxury · buttonless card</h2>
+  <p>No icons. The subtitle is the live filter readout — <b>tap it</b> to expand editable filter pills. <b>Press &amp; hold</b> anywhere on the card to flip it over to its configuration back, like turning a printed card.</p>
+  <div class="stage-a"><div class="card-a flip" id="flipA"><div class="flipper" id="flpA">
+    <div class="face pressable" id="frontA">
+      <div class="a-title">Cash flow</div>
+      <div class="a-readout" id="roA">
+        <span>This year · <em>Jan 1 – Jun 12</em></span>
+        <span class="caret">▾</span>
+      </div>
+      <div class="a-filterbar" id="fbA">
+        <div class="a-pills">
+          <span class="a-pill">Period <b>This year</b> <span class="x">×</span></span>
+          <span class="a-pill">Tags <b>2</b> <span class="x">×</span></span>
+          <span class="a-pill add">+ Filter</span>
+        </div>
+      </div>
+      <div class="a-rule"></div>
+      <div class="a-cols">
+        <div>
+          <div class="a-col-label"><span>Income</span><span class="a-total">Σ $6,100.00</span></div>
+          <div class="a-row"><span class="a-cur">USD</span><span class="a-amt pos">$5,000.00</span></div>
+          <div class="a-row"><span class="a-cur">EUR</span><span><span class="a-amt pos">€1,000.00</span><div class="a-approx">≈ $1,100.00</div></span></div>
+        </div>
+        <div class="a-div"></div>
+        <div>
+          <div class="a-col-label"><span>Expense</span><span class="a-total">Σ $4,380.00</span></div>
+          <div class="a-row"><span class="a-cur">USD</span><span class="a-amt neg">$3,500.00</span></div>
+          <div class="a-row"><span class="a-cur">EUR</span><span><span class="a-amt neg">€800.00</span><div class="a-approx">≈ $880.00</div></span></div>
+        </div>
+      </div>
+      <div class="a-foot"><span>Net</span><b>+$1,720.00</b></div>
+    </div>
+    <div class="back">
+      <div class="a-back">
+        <div class="a-back-title">Cash flow — configure</div>
+        <div class="a-back-sub">Card settings</div>
+        <div style="margin-top:10px">
+          <div class="a-opt"><span>Show per-currency rows</span><span class="a-toggle on"><i></i></span></div>
+          <div class="a-opt"><span>Base conversions (≈)</span><span class="a-toggle on"><i></i></span></div>
+          <div class="a-opt"><span>Compare with last period</span><span class="a-toggle"><i></i></span></div>
+          <div class="a-opt"><span>Style</span><b>LEDGER ›</b></div>
+        </div>
+        <div class="a-done" id="doneA">Done · flip back</div>
+      </div>
+    </div>
+  </div></div></div>
+  <p class="hint"><b>Try it:</b> click the subtitle to toggle filters · press-and-hold the card (~450ms) to flip · "Done" flips back.</p>
+</div>
+
+<div class="col">
+  <h2>B — Instrument · buttonless card</h2>
+  <p>The period line is a live <b>readout chip</b> with a volt status dot when filters are active — tap to expand the query. Press &amp; hold flips to the config back, which renders as the card's "circuit side."</p>
+  <div class="stage-b"><div class="card-b flip" id="flipB"><div class="flipper" id="flpB">
+    <div class="b-face face pressable" id="frontB">
+      <div class="b-idx">01 /</div>
+      <div class="b-title">Cash Flow</div>
+      <div class="b-readout" id="roB">
+        <span>THIS YEAR · <em>JAN 01 → JUN 12</em></span>
+      </div>
+      <div class="b-filterbar" id="fbB">
+        <div class="b-pills">
+          <span class="b-pill">PERIOD:<b>YEAR</b><span class="x">×</span></span>
+          <span class="b-pill">TAGS:<b>2</b><span class="x">×</span></span>
+          <span class="b-pill add">+ FILTER</span>
+        </div>
+      </div>
+      <div class="b-grid">
+        <div class="b-cell">
+          <div class="b-cell-head"><span class="in">Income</span><span class="b-total in">Σ 6,100.00</span></div>
+          <div class="b-row"><span class="b-cur">USD</span><span class="b-amt in">5,000.00</span></div>
+          <div class="b-row"><span class="b-cur">EUR</span><span><span class="b-amt in">1,000.00</span><div class="b-approx">≈ $1,100.00</div></span></div>
+        </div>
+        <div class="b-cell">
+          <div class="b-cell-head"><span class="out">Expense</span><span class="b-total out">Σ 4,380.00</span></div>
+          <div class="b-row"><span class="b-cur">USD</span><span class="b-amt out">3,500.00</span></div>
+          <div class="b-row"><span class="b-cur">EUR</span><span><span class="b-amt out">800.00</span><div class="b-approx">≈ $880.00</div></span></div>
+        </div>
+      </div>
+      <div class="b-net"><span>Net Delta</span><b>+$1,720.00</b></div>
+    </div>
+    <div class="back">
+      <div class="b-backface">
+        <div class="b-back-title">Cash Flow // Config</div>
+        <div class="b-back-sub">Module settings</div>
+        <div style="margin-top:8px">
+          <div class="b-opt"><span>Per-currency rows</span><span class="b-toggle on"><i></i></span></div>
+          <div class="b-opt"><span>Base conversions (≈)</span><span class="b-toggle on"><i></i></span></div>
+          <div class="b-opt"><span>Compare vs last period</span><span class="b-toggle"><i></i></span></div>
+          <div class="b-opt"><span>Render style</span><b>SPLIT-CELL ›</b></div>
+        </div>
+        <div class="b-done" id="doneB">COMMIT ⏎</div>
+      </div>
+    </div>
+  </div></div></div>
+  <p class="hint"><b>Try it:</b> click the readout chip to expand the query · press-and-hold the card to flip · "COMMIT" flips back.</p>
+</div>
+
+<script>
+function wire(flipId, frontId, roId, fbId, doneId){
+  const flip=document.getElementById(flipId), front=document.getElementById(frontId),
+        ro=document.getElementById(roId), fb=document.getElementById(fbId), done=document.getElementById(doneId);
+  ro.addEventListener('click',e=>{e.stopPropagation();fb.classList.toggle('open');ro.classList.toggle('lit')});
+  let t=null;
+  const start=e=>{if(e.target.closest('#'+roId)||e.target.closest('#'+fbId))return;
+    front.classList.add('pressing');
+    t=setTimeout(()=>{flip.classList.add('flipped');front.classList.remove('pressing')},450)};
+  const cancel=()=>{clearTimeout(t);front.classList.remove('pressing')};
+  front.addEventListener('pointerdown',start);
+  front.addEventListener('pointerup',cancel);
+  front.addEventListener('pointerleave',cancel);
+  done.addEventListener('click',()=>flip.classList.remove('flipped'));
+}
+wire('flipA','frontA','roA','fbA','doneA');
+wire('flipB','frontB','roB','fbB','doneB');
+</script>
+</body>
+</html>

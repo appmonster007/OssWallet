@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OssWallet — Direction H: Hybrid (Editorial Instrument)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0B0A;            /* warm black */
+  --panel:#131312;
+  --panel-2:#181816;
+  --ivory:#ECE8DD;
+  --ivory-2:#9A958A;
+  --ivory-3:#5F5B52;
+  --hair:rgba(236,232,221,.09);
+  --hair-2:rgba(236,232,221,.16);
+  --gold:#D6C189;           /* champagne signature */
+  --gold-dim:rgba(214,193,137,.12);
+  --pos:#7FBF8E;
+  --neg:#D88379;
+  --serif:'Fraunces',serif;
+  --sans:'Inter',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{background:#161614;display:flex;justify-content:center;padding:48px 0;font-family:var(--sans)}
+.phone{width:392px;height:852px;background:var(--bg);border-radius:48px;overflow:hidden;position:relative;
+  box-shadow:0 40px 90px rgba(0,0,0,.75), inset 0 0 0 1px rgba(236,232,221,.08)}
+.phone::before{content:'';position:absolute;width:460px;height:460px;border-radius:50%;
+  background:radial-gradient(circle, rgba(214,193,137,.07), transparent 64%);top:-160px;right:-130px;pointer-events:none}
+.screen{height:100%;overflow-y:auto;scrollbar-width:none;position:relative;z-index:1}
+.screen::-webkit-scrollbar{display:none}
+
+.status{display:flex;justify-content:space-between;padding:18px 28px 0;font:500 12px var(--mono);color:var(--ivory-3)}
+
+.header{padding:24px 28px 4px;display:flex;justify-content:space-between;align-items:flex-end}
+.brand{font:300 13px var(--sans);letter-spacing:.28em;color:var(--ivory-3);text-transform:uppercase}
+.brand b{color:var(--ivory);font-weight:600}
+.profile{width:34px;height:34px;border-radius:50%;border:1px solid var(--hair-2);display:flex;align-items:center;justify-content:center;font:500 12px var(--serif);color:var(--gold);font-style:italic}
+
+/* hero — editorial, on the canvas itself, no panel */
+.hero{padding:32px 28px 28px;border-bottom:1px solid var(--hair)}
+.overline{font:500 9px var(--mono);letter-spacing:.34em;text-transform:uppercase;color:var(--ivory-3);display:flex;align-items:center;gap:12px}
+.overline::after{content:'';flex:1;height:1px;background:var(--hair)}
+.overline em{font-style:normal;color:var(--gold)}
+.hero-amount{margin-top:18px;font:300 54px/1 var(--serif);color:var(--ivory);font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.01em}
+.hero-amount .sym{font-size:28px;vertical-align:28%;color:var(--ivory-2);margin-right:4px}
+.hero-amount .dec{font-size:28px;color:var(--ivory-3)}
+.hero-meta{margin-top:14px;display:flex;align-items:baseline;gap:14px;font:400 12.5px var(--sans);color:var(--ivory-2)}
+.delta{color:var(--pos);font-weight:600;font-variant-numeric:tabular-nums}
+.delta::before{content:'↗';margin-right:3px;font-weight:400}
+.hero-spark{margin-top:20px}
+
+/* section header */
+.sec{padding:26px 28px 14px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h2{font:500 16px var(--serif);font-style:italic;color:var(--ivory)}
+.sec h2 b{font:500 9px var(--mono);font-style:normal;color:var(--ivory-3);letter-spacing:.1em;margin-right:10px;vertical-align:2px}
+.sec a{font:500 9px var(--mono);letter-spacing:.24em;color:var(--ivory-3);text-decoration:none;text-transform:uppercase}
+
+/* solid ink panel w/ champagne hairline gradient — selective-glass policy: no blur on cards */
+.panel{margin:20px 16px 0;background:var(--panel);border-radius:22px;padding:18px;position:relative}
+.panel:first-of-type{margin-top:8px}
+.panel::before{content:'';position:absolute;inset:0;border-radius:22px;padding:1px;
+  background:linear-gradient(135deg, rgba(214,193,137,.34), rgba(236,232,221,.07) 38%, rgba(236,232,221,.05) 70%, rgba(214,193,137,.12));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+/* self-contained card header — title + readout live INSIDE the panel */
+.cardhd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.card-title{font:500 16px var(--serif);font-style:italic;color:var(--ivory);line-height:1.1}
+.card-link{font:500 8.5px var(--mono);letter-spacing:.22em;color:var(--ivory-3);text-decoration:none;text-transform:uppercase;padding-top:4px}
+.readout{display:inline-block;font:500 9px var(--mono);letter-spacing:.12em;color:var(--ivory-3);margin-top:6px;text-transform:uppercase;border-bottom:1px dotted var(--hair-2);padding-bottom:2px}
+.readout em{font-style:normal;color:var(--gold)}
+.readout .caret{font-size:8px;margin-left:5px}
+
+/* cash flow */
+.flow{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 20px;margin-top:16px}
+.flow-div{background:var(--hair)}
+.flow-label{display:flex;justify-content:space-between;align-items:baseline}
+.flow-label span{font:500 8.5px var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--ivory-3)}
+.flow-total{font:500 10px var(--mono);color:var(--ivory-2);font-variant-numeric:tabular-nums}
+.flow-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:13px}
+.flow-cur{font:500 8.5px var(--mono);letter-spacing:.18em;color:var(--ivory-3)}
+.flow-amt{font:400 20px var(--serif);font-variant-numeric:tabular-nums;text-align:right}
+.flow-amt.pos{color:var(--pos)} .flow-amt.neg{color:var(--neg)}
+.flow-approx{font:500 9px var(--mono);color:var(--ivory-3);text-align:right;margin-top:2px;font-variant-numeric:tabular-nums}
+.net{grid-column:1/-1;margin-top:16px;padding-top:14px;border-top:1px dashed var(--hair-2);display:flex;justify-content:space-between;align-items:baseline}
+.net span{font:500 8.5px var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--ivory-3)}
+.net b{font:500 17px var(--serif);color:var(--gold);font-variant-numeric:tabular-nums}
+
+/* net worth card — serif hero + twin mono flow columns */
+.nw-amt{margin-top:14px;font:300 36px/1 var(--serif);color:var(--ivory);font-variant-numeric:tabular-nums}
+.nw-amt .sym{font-size:19px;vertical-align:26%;color:var(--ivory-2);margin-right:3px}
+.nw-amt .dec{font-size:19px;color:var(--ivory-3)}
+.nw-trend{margin-top:8px;font:500 10px var(--mono);color:var(--pos);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.nw-trend i{font-style:normal;color:var(--ivory-3);letter-spacing:.16em;text-transform:uppercase;margin-left:6px}
+.nw-flows{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 20px;margin-top:16px;padding-top:14px;border-top:1px dashed var(--hair-2)}
+.nw-col .lbl{font:500 8.5px var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--ivory-3);display:flex;justify-content:space-between}
+.nw-col .lbl b{font-weight:500;letter-spacing:.04em}
+.nw-col .lbl b.up{color:var(--pos)} .nw-col .lbl b.dn{color:var(--neg)}
+.nw-col .val{margin-top:9px;font:400 19px var(--serif);font-variant-numeric:tabular-nums}
+.nw-col .val.pos{color:var(--pos)} .nw-col .val.neg{color:var(--neg)}
+
+/* accounts — ledger rows inside panel */
+.acct{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px dotted var(--hair-2)}
+.acct:first-child{padding-top:16px}
+.acct:last-child{border:none;padding-bottom:2px}
+.acct-mark{width:7px;height:7px;border-radius:50%;flex:none}
+.acct-name{font:500 13.5px var(--sans);color:var(--ivory)}
+.acct-type{font:500 8.5px var(--mono);letter-spacing:.16em;color:var(--ivory-3);margin-top:3px;text-transform:uppercase}
+.acct-bal{margin-left:auto;text-align:right;font:400 16px var(--serif);color:var(--ivory);font-variant-numeric:tabular-nums}
+.acct-fx{font:500 9px var(--mono);color:var(--ivory-3);margin-top:2px}
+.acct-add{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;padding:11px 0;
+  border:1px dashed var(--hair-2);border-radius:14px;font:500 9px var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--ivory-3);cursor:pointer}
+.acct-add b{color:var(--gold);font-weight:400;font-size:13px}
+
+/* budgets — hairline track + gold fill */
+.budget{padding:12px 0;border-bottom:1px dotted var(--hair-2)}
+.budget:first-child{padding-top:16px}
+.budget:last-child{border:none;padding-bottom:4px}
+.budget-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.budget-name{font:500 13px var(--sans);color:var(--ivory)}
+.budget-figs{font:500 10px var(--mono);color:var(--ivory-3);font-variant-numeric:tabular-nums}
+.budget-figs b{color:var(--ivory-2);font-weight:500}
+.track{height:2px;background:var(--hair-2);position:relative}
+.track i{position:absolute;inset:0;right:auto;background:var(--gold)}
+.track i.hot{background:var(--neg)}
+
+/* transactions */
+.tx{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px dotted var(--hair-2)}
+.tx:first-child{padding-top:16px}
+.tx:last-child{border:none;padding-bottom:2px}
+.tx-date{font:500 8.5px var(--mono);letter-spacing:.1em;color:var(--ivory-3);width:46px;flex:none;text-transform:uppercase}
+.tx-name{font:500 13px var(--sans);color:var(--ivory)}
+.tx-cat{font:500 9px var(--mono);letter-spacing:.08em;color:var(--ivory-3);margin-top:3px;text-transform:uppercase}
+.tx-amt{margin-left:auto;font:400 14.5px var(--serif);font-variant-numeric:tabular-nums;color:var(--ivory)}
+.tx-amt.in{color:var(--pos)}
+
+.foot{padding:20px 28px 110px;text-align:center;font:500 8.5px var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--ivory-3)}
+.foot em{font-style:normal;color:var(--gold)}
+
+/* nav — THE glass surface (selective glass policy) */
+.navwrap{position:sticky;bottom:0;padding:14px 24px 24px;background:linear-gradient(transparent,var(--bg) 55%)}
+.nav{border:1px solid var(--hair-2);background:rgba(19,19,18,.6);backdrop-filter:blur(26px);border-radius:100px;
+  display:flex;justify-content:space-between;align-items:center;padding:8px 10px}
+.nav a{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ivory-3);font-size:16px;text-decoration:none}
+.nav a.active{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(214,193,137,.3)}
+.nav a.fab{background:var(--gold);color:#171613;width:52px;height:52px;font-size:22px;font-weight:400;box-shadow:0 0 26px rgba(214,193,137,.28)}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="phone"><div class="screen">
+
+  <div class="status"><span>09:41</span><span>LTE ▮▮▮</span></div>
+
+  <div class="header">
+    <div class="brand">Oss<b>Wallet</b></div>
+    <div class="profile">P</div>
+  </div>
+
+  <div class="hero">
+    <div class="overline">Net Worth <em>·</em> June 2026</div>
+    <div class="hero-amount"><span class="sym">₹</span>12,48,560<span class="dec">.40</span></div>
+    <div class="hero-meta">
+      <span class="delta">2.4%</span>
+      <span>+₹29,140 this month</span>
+    </div>
+    <div class="hero-spark">
+      <svg width="336" height="56" viewBox="0 0 336 56">
+        <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#D6C189" stop-opacity=".18"/><stop offset="1" stop-color="#D6C189" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="M0,44 28,40 56,42 84,34 112,36 140,28 168,31 196,22 224,25 252,16 280,18 308,10 336,12 L336,56 0,56 Z" fill="url(#hg)"/>
+        <polyline points="0,44 28,40 56,42 84,34 112,36 140,28 168,31 196,22 224,25 252,16 280,18 308,10 336,12"
+          fill="none" stroke="#D6C189" stroke-width="1.4"/>
+        <circle cx="336" cy="12" r="3" fill="#0B0B0A" stroke="#D6C189" stroke-width="1.4"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="cardhd">
+      <div>
+        <div class="card-title">Net worth</div>
+        <div class="readout">This year · <em>Jan 01 → Jun 12</em><span class="caret">▾</span></div>
+      </div>
+      <a class="card-link" href="#">Detail →</a>
+    </div>
+    <div class="nw-amt"><span class="sym">$</span>15,250<span class="dec">.75</span></div>
+    <div class="nw-trend">▲ +8.2%<i>vs prior period</i></div>
+    <div class="nw-flows">
+      <div class="nw-col">
+        <div class="lbl"><span>Income</span><b class="up">▲ +7.1%</b></div>
+        <div class="val pos">$4,500.00</div>
+      </div>
+      <div class="flow-div"></div>
+      <div class="nw-col">
+        <div class="lbl"><span>Expense</span><b class="dn">▲ +11.9%</b></div>
+        <div class="val neg">$2,350.50</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="cardhd">
+      <div>
+        <div class="card-title">Cash flow</div>
+        <div class="readout">This year · <em>Jan 01 → Jun 12</em><span class="caret">▾</span></div>
+      </div>
+      <a class="card-link" href="#">Ledger →</a>
+    </div>
+    <div class="flow">
+      <div>
+        <div class="flow-label"><span>Income</span><span class="flow-total">Σ $6,100</span></div>
+        <div class="flow-row"><span class="flow-cur">USD</span><span class="flow-amt pos">$5,000.00</span></div>
+        <div class="flow-row"><span class="flow-cur">EUR</span>
+          <span><span class="flow-amt pos">€1,000.00</span><div class="flow-approx">≈ $1,100.00</div></span></div>
+      </div>
+      <div class="flow-div"></div>
+      <div>
+        <div class="flow-label"><span>Expense</span><span class="flow-total">Σ $4,380</span></div>
+        <div class="flow-row"><span class="flow-cur">USD</span><span class="flow-amt neg">$3,500.00</span></div>
+        <div class="flow-row"><span class="flow-cur">EUR</span>
+          <span><span class="flow-amt neg">€800.00</span><div class="flow-approx">≈ $880.00</div></span></div>
+      </div>
+      <div class="net"><span>Net</span><b>+$1,720.00</b></div>
+    </div>
+  </div>
+
+  <div class="panel" style="padding-bottom:14px">
+    <div class="cardhd">
+      <div>
+        <div class="card-title">Accounts</div>
+        <div class="readout">This year · <em>Jan 01 → Jun 12</em><span class="caret">▾</span></div>
+      </div>
+      <a class="card-link" href="#">All 6 →</a>
+    </div>
+    <div class="acct">
+      <span class="acct-mark" style="background:#D6C189"></span>
+      <div><div class="acct-name">HDFC Salary</div><div class="acct-type">Bank · Primary</div></div>
+      <div><div class="acct-bal">₹4,82,310</div><div class="acct-fx">INR</div></div>
+    </div>
+    <div class="acct">
+      <span class="acct-mark" style="background:#8FA8C2"></span>
+      <div><div class="acct-name">Wise USD</div><div class="acct-type">Multi-currency</div></div>
+      <div><div class="acct-bal">$1,204.50</div><div class="acct-fx">≈ ₹1,00,575 @ 83.5</div></div>
+    </div>
+    <div class="acct">
+      <span class="acct-mark" style="background:#B68B5C"></span>
+      <div><div class="acct-name">Cash</div><div class="acct-type">Physical</div></div>
+      <div><div class="acct-bal">₹6,250</div><div class="acct-fx">INR</div></div>
+    </div>
+    <div class="acct-add"><b>+</b> Add account</div>
+  </div>
+
+  <div class="panel" style="padding-bottom:14px">
+    <div class="cardhd">
+      <div>
+        <div class="card-title">Budgets</div>
+        <div class="readout">June 2026 · <em>Jun 01 → Jun 30</em><span class="caret">▾</span></div>
+      </div>
+      <a class="card-link" href="#">All →</a>
+    </div>
+    <div class="budget">
+      <div class="budget-row"><span class="budget-name">Dining out</span><span class="budget-figs"><b>₹6,420</b> / ₹8,000 · 80%</span></div>
+      <div class="track"><i style="width:80%"></i></div>
+    </div>
+    <div class="budget">
+      <div class="budget-row"><span class="budget-name">Groceries</span><span class="budget-figs"><b>₹9,180</b> / ₹12,000 · 76%</span></div>
+      <div class="track"><i style="width:76%"></i></div>
+    </div>
+    <div class="budget">
+      <div class="budget-row"><span class="budget-name">Transport</span><span class="budget-figs"><b>₹4,940</b> / ₹4,500 · 110%</span></div>
+      <div class="track"><i class="hot" style="width:100%"></i></div>
+    </div>
+  </div>
+
+  <div class="panel" style="padding-bottom:14px">
+    <div class="cardhd">
+      <div>
+        <div class="card-title">Recent activity</div>
+        <div class="readout">This year · <em>Jan 01 → Jun 12</em><span class="caret">▾</span></div>
+      </div>
+      <a class="card-link" href="#">Ledger →</a>
+    </div>
+    <div class="tx">
+      <span class="tx-date">12 Jun</span>
+      <div><div class="tx-name">Blue Tokai Coffee</div><div class="tx-cat">Dining · HDFC</div></div>
+      <span class="tx-amt">−₹460</span>
+    </div>
+    <div class="tx">
+      <span class="tx-date">12 Jun</span>
+      <div><div class="tx-name">Metro recharge</div><div class="tx-cat">Transport · Cash</div></div>
+      <span class="tx-amt">−₹500</span>
+    </div>
+    <div class="tx">
+      <span class="tx-date">11 Jun</span>
+      <div><div class="tx-name">Freelance — invoice #41</div><div class="tx-cat">Income · Wise</div></div>
+      <span class="tx-amt in">+$320.00</span>
+    </div>
+    <div class="tx">
+      <span class="tx-date">10 Jun</span>
+      <div><div class="tx-name">BigBasket</div><div class="tx-cat">Groceries · HDFC</div></div>
+      <span class="tx-amt">−₹2,184</span>
+    </div>
+  </div>
+
+  <div class="foot">Encrypted on device <em>·</em> No cloud</div>
+
+  <div class="navwrap">
+    <nav class="nav">
+      <a class="active" href="#">◈</a>
+      <a href="#">≣</a>
+      <a class="fab" href="#">+</a>
+      <a href="#">◔</a>
+      <a href="#">⚙︎</a>
+    </nav>
+  </div>
+
+</div></div>
+</body>
+</html>

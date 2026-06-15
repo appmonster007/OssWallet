@@ -118,7 +118,7 @@ object TransactionAggregationService {
         return FinancialSummary(
             totalAmount = data.metrics["total"] ?: income.subtract(expense),
             income = income,
-            expense = expense.negate(),
+            expense = expense,
             transfer = transfer,
             transferIn = transferIn,
             transferOut = transferOut,

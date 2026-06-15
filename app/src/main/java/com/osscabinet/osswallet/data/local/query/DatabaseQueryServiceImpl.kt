@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregatedData
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
+import com.osscabinet.ossWallet.domain.model.query.AggregationLimits
 import com.osscabinet.ossWallet.domain.model.query.MetricConfig
 import com.osscabinet.ossWallet.domain.model.query.RawAggregateResult
 import com.osscabinet.ossWallet.domain.model.query.TimeGranularity
@@ -100,21 +101,23 @@ class DatabaseQueryServiceImpl(
         plan: AggregationPlanner.AggregationPlan
     ): List<AggregatedData> {
         val mapped = raw.map { row ->
-            val dimMap = plan.sqlDimensions.mapIndexedNotNull { i, dim ->
-                val value = when (i) {
-                    0 -> row.d1; 1 -> row.d2; 2 -> row.d3; 3 -> row.d4; else -> null
-                }
-                dim to (value ?: "unspecified")
-            }.toMap()
+            val dimMap = plan.sqlDimensions.take(AggregationLimits.MAX_DIMENSIONS)
+                .mapIndexedNotNull { i, dim ->
+                    val value = when (i) {
+                        0 -> row.d1; 1 -> row.d2; 2 -> row.d3; 3 -> row.d4; else -> null
+                    }
+                    dim to (value ?: "unspecified")
+                }.toMap()
 
-            val metMap = plan.metrics.mapIndexedNotNull { i, met ->
-                val value = when (i) {
-                    0 -> row.m1; 1 -> row.m2; 2 -> row.m3; 3 -> row.m4; 4 -> row.m5
-                    5 -> row.m6; 6 -> row.m7; 7 -> row.m8; 8 -> row.m9; 9 -> row.m10
-                    else -> null
-                }
-                if (value != null) met.name to value else null
-            }.toMap()
+            val metMap = plan.metrics.take(AggregationLimits.MAX_METRICS)
+                .mapIndexedNotNull { i, met ->
+                    val value = when (i) {
+                        0 -> row.m1; 1 -> row.m2; 2 -> row.m3; 3 -> row.m4; 4 -> row.m5
+                        5 -> row.m6; 6 -> row.m7; 7 -> row.m8; 8 -> row.m9; 9 -> row.m10
+                        else -> null
+                    }
+                    if (value != null) met.name to value else null
+                }.toMap()
 
             AggregatedData(dimMap, metMap, row.count)
         }

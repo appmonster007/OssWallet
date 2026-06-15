@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -103,32 +104,11 @@ fun CashFlowCard(
             )
         }
     ) {
-        val types = config.filter.transactionTypes
-        if (types.isEmpty()) {
-            EmptyTypesState()
-        } else {
-            CashFlowTable(
-                config = config,
-                result = cashFlowResult ?: CashFlowResult.empty(),
-                baseCurrency = baseCurrency,
-                callbacks = callbacks,
-            )
-        }
-    }
-}
-
-@Composable
-private fun EmptyTypesState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "No transaction types selected. Open settings to choose what to show.",
-            style = AppTextStyles.metaLabel,
-            color = AppColors.contentSecondary,
+        CashFlowTable(
+            config = config,
+            result = cashFlowResult ?: CashFlowResult.empty(),
+            baseCurrency = baseCurrency,
+            callbacks = callbacks,
         )
     }
 }
@@ -152,9 +132,9 @@ private fun CashFlowTable(
     callbacks: CardCallbacks.CashFlow,
 ) {
     val types = config.filter.transactionTypes
-    val showIncome = TransactionType.INCOME in types
-    val showExpense = TransactionType.EXPENSE in types
-    val showTransfer = types.any { it.isTransfer }
+    val showIncome = types.isEmpty() || TransactionType.INCOME in types
+    val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
+    val showTransfer = types.isEmpty() || types.any { it.isTransfer }
     val excludeSameCcy = config.excludeSameCurrencyTransfers
 
     // Pick transfer source: cross-ccy-only when toggle is on, gross otherwise.
@@ -207,9 +187,9 @@ private fun CashFlowTable(
                 if (showTransfer) add(
                     TableColumn(
                         label = "TRANSFER", key = "tx", color = accentColor,
-                        totalInBase = totalTxInBase - totalTxOutBase,
-                        nativeOf = { txIn(it) - txOut(it) },
-                        baseOf = { txInBase(it) - txOutBase(it) },
+                        totalInBase = totalTxInBase + totalTxOutBase,
+                        nativeOf = { txIn(it) + txOut(it) },
+                        baseOf = { txInBase(it) + txOutBase(it) },
                         isSigned = true,
                         onCellClick = { ccy ->
                             callbacks.onClickTransfer?.invoke(
@@ -280,22 +260,20 @@ private fun CashFlowTable(
     }
 
     val netColumn: TableColumn? = if (config.showNetColumn) {
-        val netTotalInBase = columns.fold(BigDecimal.ZERO) { acc, c ->
-            if (c.key == "exp" || c.key == "out") acc - c.totalInBase else acc + c.totalInBase
-        }
+        val netTotalInBase = columns.fold(BigDecimal.ZERO) { acc, c -> acc + c.totalInBase }
         TableColumn(
             label = "NET", key = "net", color = accentColor,
             totalInBase = netTotalInBase,
             nativeOf = { item ->
                 columns.fold(BigDecimal.ZERO) { acc, c ->
                     val v = c.nativeOf(item)
-                    if (c.key == "exp" || c.key == "out") acc - v else acc + v
+                    acc + v
                 }
             },
             baseOf = { item ->
                 columns.fold(BigDecimal.ZERO) { acc, c ->
                     val v = c.baseOf(item)
-                    if (c.key == "exp" || c.key == "out") acc - v else acc + v
+                    acc + v
                 }
             },
             isSigned = true,
@@ -514,7 +492,7 @@ private fun CashFlowSettingsSheet(
             SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
                     SegmentedButton(
@@ -535,24 +513,23 @@ private fun CashFlowSettingsSheet(
                     )
                 }
             }
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show NET column",
                 checked = config.showNetColumn,
                 onCheckedChange = {
                     callbacks.onShowNetColumnChange(config.cardId, it)
-                },
-                isFlush = true,
+                }
             )
-            EntrySwitchRow(
-                label = "Exclude same-currency transfers",
-                subtitle = "Only used in Inflow / Outflow mode",
-                checked = config.excludeSameCurrencyTransfers,
-                enabled = config.displayMode == CashFlowDisplayMode.INFLOW_OUTFLOW,
-                onCheckedChange = {
-                    callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
-                },
-                isFlush = true,
-            )
+            if (config.displayMode == CashFlowDisplayMode.INFLOW_OUTFLOW) {
+                AeonSettingsToggle(
+                    label = "Exclude same-currency transfers",
+                    description = "Only used in Inflow / Outflow mode",
+                    checked = config.excludeSameCurrencyTransfers,
+                    onCheckedChange = {
+                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+                    }
+                )
+            }
         }
     }
 }

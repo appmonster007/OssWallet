@@ -79,13 +79,11 @@ object StandardMetrics {
         name = "expense",
         function = AggregationFunction.SUM,
         filter = MetricConfig.MetricFilter.EXPENSE_ONLY,
-        transform = MetricConfig.MetricTransform.ABS
     )
     val TRANSFER_SUM = MetricConfig(
         name = "transfer",
         function = AggregationFunction.SUM,
-        filter = MetricConfig.MetricFilter.TRANSFER_ONLY,
-        transform = MetricConfig.MetricTransform.ABS
+        filter = MetricConfig.MetricFilter.TRANSFER_ONLY
     )
     val TRANSFER_IN_SUM = MetricConfig(
         name = "transferIn",
@@ -96,7 +94,6 @@ object StandardMetrics {
         name = "transferOut",
         function = AggregationFunction.SUM,
         filter = MetricConfig.MetricFilter.TRANSFER_OUT_ONLY,
-        transform = MetricConfig.MetricTransform.ABS
     )
     val CROSS_CCY_TRANSFER_IN_SUM = MetricConfig(
         name = "crossCcyTransferIn",
@@ -107,8 +104,8 @@ object StandardMetrics {
         name = "crossCcyTransferOut",
         function = AggregationFunction.SUM,
         filter = MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY,
-        transform = MetricConfig.MetricTransform.ABS
     )
+
     val NET_FLOW = MetricConfig(
         name = "netFlow",
         function = AggregationFunction.SUM,
@@ -133,6 +130,14 @@ object StandardMetrics {
         CROSS_CCY_TRANSFER_IN_SUM, CROSS_CCY_TRANSFER_OUT_SUM,
         TOTAL_SUM, COUNT
     )
+}
+
+/**
+ * Constants for aggregation limits.
+ */
+object AggregationLimits {
+    const val MAX_DIMENSIONS = 4
+    const val MAX_METRICS = 10
 }
 
 /**

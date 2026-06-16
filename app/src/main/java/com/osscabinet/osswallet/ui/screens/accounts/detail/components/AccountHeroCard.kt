@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts.detail.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -532,19 +533,35 @@ private fun FlowSummaryItem(
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Account Hero - Light")
 @Composable
-fun AccountHeroCardPreview() {
-    val account =
-        Account(
-            "1",
-            "Wealth Fund",
-            "USD",
-            AccountStructureType.INVESTMENT,
-            "#004D40",
-            "AccountBalance",
-            emptyList()
-        )
+fun AccountHeroCardLightPreview() {
+    AccountHeroCardPreviewContent("Light")
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Account Hero - Dark")
+@Composable
+fun AccountHeroCardDarkPreview() {
+    AccountHeroCardPreviewContent("Dark")
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Account Hero - Amoled")
+@Composable
+fun AccountHeroCardAmoledPreview() {
+    AccountHeroCardPreviewContent("Amoled")
+}
+
+@Composable
+private fun AccountHeroCardPreviewContent(theme: String) {
+    val account = Account(
+        "1",
+        "Wealth Fund",
+        "USD",
+        AccountStructureType.INVESTMENT,
+        "#004D40",
+        "AccountBalance",
+        emptyList()
+    )
     val summary = AccountSummaryItem(
         account = account,
         currencyBalances = mapOf(
@@ -559,8 +576,12 @@ fun AccountHeroCardPreview() {
             expense = BigDecimal("4200.00")
         )
     )
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
-        Box(modifier = Modifier.padding(24.dp)) {
+    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = theme) {
+        Box(
+            modifier = Modifier
+                .background(AppColors.background)
+                .padding(24.dp)
+        ) {
             AccountHeroCard(
                 summary = summary,
                 baseCurrency = "USD",

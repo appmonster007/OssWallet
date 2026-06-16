@@ -178,6 +178,7 @@ fun NativeWithConvertedSubtext(
     primaryColor: Color = Color.Unspecified,
     subtextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     horizontalAlignment: Alignment.Horizontal = Alignment.End,
+    showSubtextSpace: Boolean = true
 ) {
     val primary = CurrencyReprUi.formatCurrencyAnnotated(
         amount = amount,
@@ -194,8 +195,9 @@ fun NativeWithConvertedSubtext(
 
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
         Text(text = primary, style = primaryStyle, color = primaryColor)
-        if (subtext != null) {
-            Text(text = subtext, style = subtextStyle, color = subtextColor)
+        when {
+            subtext != null -> Text(text = subtext, style = subtextStyle, color = subtextColor)
+            showSubtextSpace -> Text(text = " ", style = subtextStyle, color = Color.Transparent)
         }
     }
 }

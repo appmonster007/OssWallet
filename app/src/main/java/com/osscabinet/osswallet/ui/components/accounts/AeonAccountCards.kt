@@ -89,7 +89,7 @@ fun AeonAccountCardSmall(
     modifier: Modifier = Modifier
 ) {
     val dotColor = accountDotColor(account)
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(12.dp)
 
     Box(
         modifier = modifier
@@ -98,17 +98,17 @@ fun AeonAccountCardSmall(
             .background(AppColors.cardSurfaceProminent)
             .aeonHairlineBorder(shape)
             .clickable { onClick() }
-            .padding(14.dp)
+            .padding(8.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                AccountColorDot(dotColor, 7.dp)
+                AccountColorDot(dotColor, 5.dp)
                 Text(
                     account.name.uppercase(),
-                    style = AppTextStyles.sectionOverline,
+                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp),
                     color = AppColors.contentSecondary.copy(alpha = 0.8f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -121,10 +121,10 @@ fun AeonAccountCardSmall(
                 convertedAmount = balanceInBase,
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
-                    fontSize = 17.sp
+                    fontSize = 9.sp
                 ),
                 primaryColor = AppColors.contentPrimary,
-                subtextStyle = AppTextStyles.metaLabel,
+                subtextStyle = AppTextStyles.metaLabel.copy(fontSize = 7.sp),
                 subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f),
                 horizontalAlignment = Alignment.Start,
             )
@@ -143,7 +143,7 @@ fun AeonAccountCardMedium(
     modifier: Modifier = Modifier
 ) {
     val dotColor = accountDotColor(account)
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(16.dp)
 
     Box(
         modifier = modifier
@@ -152,26 +152,29 @@ fun AeonAccountCardMedium(
             .background(AppColors.cardSurfaceProminent)
             .aeonHairlineBorder(shape)
             .clickable { onClick() }
-            .padding(16.dp)
+            .padding(10.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                AccountColorDot(dotColor, 7.dp)
+                AccountColorDot(dotColor, 6.dp)
                 Column {
                     Text(
                         account.name,
-                        style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                        style = AppTextStyles.listItemTitle.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp
+                        ),
                         color = AppColors.contentPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         account.structureType.displayName.uppercase(),
-                        style = AppTextStyles.metaLabel,
+                        style = AppTextStyles.metaLabel.copy(fontSize = 8.sp),
                         color = AppColors.contentSecondary.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -186,7 +189,7 @@ fun AeonAccountCardMedium(
                 convertedAmount = balanceInBase,
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
-                    fontSize = 22.sp
+                    fontSize = 14.sp
                 ),
                 primaryColor = AppColors.contentPrimary,
                 subtextStyle = AppTextStyles.metaLabel,
@@ -215,7 +218,7 @@ fun AeonAccountCardLarge(
     onClickExpense: (() -> Unit)? = null
 ) {
     val dotColor = accountDotColor(account)
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(20.dp)
 
     Box(
         modifier = modifier
@@ -224,9 +227,9 @@ fun AeonAccountCardLarge(
             .background(AppColors.cardSurfaceProminent)
             .aeonHairlineBorder(shape)
             .clickable { onClick() }
-            .padding(20.dp)
+            .padding(12.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -240,7 +243,10 @@ fun AeonAccountCardLarge(
                     Column {
                         Text(
                             account.name,
-                            style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                            style = AppTextStyles.listItemTitle.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp
+                            ),
                             color = AppColors.contentPrimary
                         )
                         Text(
@@ -276,7 +282,7 @@ fun AeonAccountCardLarge(
                 modifier = Modifier.fillMaxWidth(),
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
-                    fontSize = 32.sp
+                    fontSize = 24.sp
                 ),
                 primaryColor = AppColors.contentPrimary,
                 subtextStyle = AppTextStyles.metaLabel,
@@ -289,8 +295,8 @@ fun AeonAccountCardLarge(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aeonDashedTopRule()
-                        .padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     AccountFlowReadout(
                         label = "IN",
@@ -523,14 +529,33 @@ fun AeonAccountCardsGlassLightPreview() {
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
+                        AeonAccountCardSmall(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    AeonAccountCardMedium(
-                        account = portfolio,
-                        balance = BigDecimal("48320.00"),
-                        balanceInBase = BigDecimal("48320.00"),
-                        baseCurrency = "USD",
-                        onClick = {}
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardMedium(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardMedium(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     AeonAccountCardLarge(
                         account = savings,
                         balance = BigDecimal("12345.67"),
@@ -575,14 +600,33 @@ fun AeonAccountCardsGlassDarkPreview() {
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
+                        AeonAccountCardSmall(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    AeonAccountCardMedium(
-                        account = portfolio,
-                        balance = BigDecimal("48320.00"),
-                        balanceInBase = BigDecimal("48320.00"),
-                        baseCurrency = "USD",
-                        onClick = {}
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardMedium(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardMedium(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     AeonAccountCardLarge(
                         account = savings,
                         balance = BigDecimal("12345.67"),
@@ -627,14 +671,33 @@ fun AeonAccountCardsGlassAmoledPreview() {
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
+                        AeonAccountCardSmall(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    AeonAccountCardMedium(
-                        account = portfolio,
-                        balance = BigDecimal("48320.00"),
-                        balanceInBase = BigDecimal("48320.00"),
-                        baseCurrency = "USD",
-                        onClick = {}
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AeonAccountCardMedium(
+                            account = portfolio,
+                            balance = BigDecimal("48320.00"),
+                            balanceInBase = BigDecimal("48320.00"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                        AeonAccountCardMedium(
+                            account = checking,
+                            balance = BigDecimal("3421.50"),
+                            balanceInBase = BigDecimal("3754.20"),
+                            baseCurrency = "USD",
+                            onClick = {},
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     AeonAccountCardLarge(
                         account = savings,
                         balance = BigDecimal("12345.67"),

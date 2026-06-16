@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -73,24 +75,19 @@ fun BudgetHeroCard(
                             progress.remaining
                         }
 
-                        val amount = formatAuto(displayAmount, budget.currency)
-                        val amountParts = amount.split(" ")
-                        val amountText = amountParts.dropLast(1).joinToString(" ")
-                        val symbolText = amountParts.lastOrNull() ?: ""
-
                         Text(
-                            text = buildAnnotatedString {
-                                append(amountText)
-                                withStyle(
-                                    SpanStyle(
+                            text = CurrencyReprUi.formatCurrencyAnnotated(
+                                amount = displayAmount,
+                                currencyCode = budget.currency,
+                                spec = CurrencyDisplaySpec(useSemanticColor = false),
+                                partStyles = CurrencyPartStyles(
+                                    symbol = SpanStyle(
                                         fontWeight = FontWeight.Normal,
                                         color = AppColors.contentSecondary.copy(alpha = 0.4f),
                                         fontSize = 16.sp
                                     )
-                                ) {
-                                    append(" $symbolText")
-                                }
-                            },
+                                )
+                            ),
                             style = AppTextStyles.heroAmount.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 36.sp,
@@ -143,18 +140,31 @@ fun BudgetHeroCard(
                                 .background(accentColor, CircleShape)
                         )
                         Text(
-                            text = "${formatAuto(progress.spent)} spent",
+                            text = buildAnnotatedString {
+                                append(
+                                    CurrencyReprUi.formatCurrencyAnnotated(
+                                        amount = progress.spent,
+                                        currencyCode = null,
+                                        spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                    )
+                                )
+                                append(" spent")
+                            },
                             style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
                             color = AppColors.contentSecondary.copy(alpha = 0.8f)
                         )
                     }
                     Text(
-                        text = "Limit: ${
-                            formatAuto(
-                                budget.limitAmount,
-                                budget.currency
+                        text = buildAnnotatedString {
+                            append("Limit: ")
+                            append(
+                                CurrencyReprUi.formatCurrencyAnnotated(
+                                    amount = budget.limitAmount,
+                                    currencyCode = budget.currency,
+                                    spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                )
                             )
-                        }",
+                        },
                         style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )

@@ -56,7 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonExtendedFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
@@ -163,9 +163,11 @@ fun AccountListScreen(
                         )
                         val balance = balances[account.id] ?: BigDecimal.ZERO
                         Text(
-                            formatAuto(balance, account.currencyCode),
-                            style = AppTextStyles.caption,
-                            color = if (balance < BigDecimal.ZERO) AppColors.error else AppColors.contentPrimary
+                            text = CurrencyReprUi.formatCurrencyAnnotated(
+                                amount = balance,
+                                currencyCode = account.currencyCode
+                            ),
+                            style = AppTextStyles.caption
                         )
                     }
                 }

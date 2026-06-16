@@ -18,12 +18,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -101,8 +103,16 @@ fun TransactionHeader(
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
                 if (!showCurrencyBreakdown) {
+                    val netBaseFormatted = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = netBase,
+                        currencyCode = baseCurrency,
+                        spec = CurrencyDisplaySpec(useSemanticColor = false)
+                    )
                     Text(
-                        text = "∑ ${formatAuto(netBase, baseCurrency)}",
+                        text = buildAnnotatedString {
+                            append("∑ ")
+                            append(netBaseFormatted)
+                        },
                         style = styles.baseValueStyle,
                         color = if (netBase >= BigDecimal.ZERO) styles.positiveColor else styles.negativeColor,
                         textAlign = TextAlign.Center,

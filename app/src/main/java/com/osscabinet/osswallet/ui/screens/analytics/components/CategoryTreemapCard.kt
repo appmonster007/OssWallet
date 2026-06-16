@@ -54,7 +54,8 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -326,9 +327,9 @@ fun CategoryTreemapCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     
-                    val amountText = CurrencyFormatter.formatAuto(total)
-                    val symbolText = CurrencyFormatter.getCurrencySymbol(currency)
-                    val isSymbolLeft = CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
+                    val amountText = formatCurrency(total)
+                    val symbolText = CurrencyService.getCurrencySymbol(currency)
+                    val isSymbolLeft = CurrencyService.activeSystem.symbolPosition == CurrencyService.SymbolPosition.LEFT
                     val contentColor = AppColors.contentPrimary
                     
                     Text(
@@ -549,7 +550,7 @@ fun TreemapLegend(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = CurrencyFormatter.formatAuto(item.amount),
+                        text = formatCurrency(item.amount),
                         style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp

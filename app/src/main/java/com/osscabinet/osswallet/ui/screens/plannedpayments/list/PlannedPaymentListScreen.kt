@@ -87,6 +87,7 @@ import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonSize
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -623,7 +624,7 @@ private fun PlannedPaymentListItem(
     val recurrenceLabel =
         PlannedPaymentService.formatRecurrenceHuman(payment.schedule.recurrenceRule)
     val formattedAmount = remember(payment.amount, payment.currency) {
-        com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto(payment.amount, payment.currency)
+        formatCurrency(payment.amount, payment.currency)
     }
 
     val statusIcon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.Repeat

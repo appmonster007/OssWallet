@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import java.math.BigDecimal
 
@@ -51,13 +51,14 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         val expense = renderData?.currentMetrics?.cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO
         val prev = renderData?.previousMetrics
 
+        val formatter = CurrencyReprUi.CurrencyNumberFormatter()
         prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH] =
-            formatAuto(netWorth, common.baseCurrency)
+            formatter.format(netWorth, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.INCOME] =
-            formatAuto(income, common.baseCurrency)
+            formatter.format(income, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.EXPENSE] =
-            formatAuto(expense, common.baseCurrency)
+            formatter.format(expense, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =

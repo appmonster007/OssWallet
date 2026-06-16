@@ -68,10 +68,9 @@ class MainActivity : FragmentActivity() {
             val uiDensity = com.osscabinet.ossWallet.domain.model.settings.UiDensity.fromName(uiDensityName)
 
             LaunchedEffect(precision, numberingSystem) {
-                com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.precision = precision
-                com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.activeSystem = 
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.FormattingSystem.fromString(numberingSystem)
                 com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision = precision
+                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.activeSystem =
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.FormattingSystem.fromString(numberingSystem)
                 com.osscabinet.ossWallet.domain.service.timeline.TimelineService.precision = precision
             }
 

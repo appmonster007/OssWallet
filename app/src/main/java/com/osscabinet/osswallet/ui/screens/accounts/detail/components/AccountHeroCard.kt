@@ -37,9 +37,10 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -122,11 +123,6 @@ fun AccountHeroCard(
                     color = contentColor.copy(alpha = 0.6f)
                 )
 
-                val amountText = formatAuto(balance)
-                val symbolText = CurrencyFormatter.getCurrencySymbol(account.currencyCode)
-                val isSymbolLeft =
-                    CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
-
                 val symbolStyle = SpanStyle(
                     fontWeight = FontWeight.Light,
                     color = contentColor.copy(alpha = 0.7f),
@@ -134,21 +130,12 @@ fun AccountHeroCard(
                 )
 
                 Text(
-                    text = buildAnnotatedString {
-                        if (isSymbolLeft) {
-                            withStyle(symbolStyle) {
-                                append(symbolText)
-                            }
-                            append(" ")
-                            append(amountText)
-                        } else {
-                            append(amountText)
-                            append(" ")
-                            withStyle(symbolStyle) {
-                                append(symbolText)
-                            }
-                        }
-                    },
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = balance,
+                        currencyCode = account.currencyCode,
+                        spec = CurrencyDisplaySpec(useSemanticColor = false),
+                        partStyles = CurrencyPartStyles(symbol = symbolStyle)
+                    ),
                     style = AppTextStyles.heroAmountLarge.copy(
                         fontSize = 36.sp,
                         letterSpacing = (-1).sp
@@ -158,12 +145,11 @@ fun AccountHeroCard(
 
                 if (account.currencyCode != baseCurrency) {
                     Text(
-                        text = "≈ ${
-                            formatAuto(
-                                balanceInBase,
-                                baseCurrency
-                            )
-                        }",
+                        text = CurrencyReprUi.formatCurrencyAnnotated(
+                            amount = balanceInBase,
+                            currencyCode = baseCurrency,
+                            spec = CurrencyDisplaySpec(isApproximate = true, useSemanticColor = false)
+                        ),
                         style = AppTextStyles.transactionTitle.copy(
                             fontWeight = FontWeight.Medium,
                             color = contentColor.copy(alpha = 0.7f)
@@ -256,7 +242,11 @@ fun AccountHeroCard(
                                         color = contentColor
                                     )
                                     Text(
-                                        formatAuto(bal),
+                                        text = CurrencyReprUi.formatCurrencyAnnotated(
+                                            amount = bal,
+                                            currencyCode = null,
+                                            spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                        ),
                                         style = AppTextStyles.transactionTitle.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = (-0.2).sp
@@ -313,7 +303,11 @@ private fun FlowSummaryItem(
                 )
             }
             Text(
-                text = formatAuto(amount, currency),
+                text = CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = amount,
+                    currencyCode = currency,
+                    spec = CurrencyDisplaySpec(useSemanticColor = false)
+                ),
                 style = AppTextStyles.screenSubTitle.copy(fontWeight = FontWeight.Black),
                 color = contentColor
             )

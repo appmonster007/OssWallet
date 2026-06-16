@@ -38,8 +38,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
@@ -107,10 +109,6 @@ fun NetWorthCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
-                val amountText = formatAuto(currentMetrics.netWorth)
-                val symbolText = CurrencyFormatter.getCurrencySymbol(displayCurrency)
-                val isSymbolLeft =
-                    CurrencyFormatter.activeSystem.symbolPosition == CurrencyFormatter.SymbolPosition.LEFT
                 val contentColor = AppColors.contentPrimary
 
                 val symbolStyle = SpanStyle(
@@ -120,21 +118,12 @@ fun NetWorthCard(
                 )
 
                 Text(
-                    text = buildAnnotatedString {
-                        if (isSymbolLeft) {
-                            withStyle(symbolStyle) {
-                                append(symbolText)
-                            }
-                            append(" ")
-                            append(amountText)
-                        } else {
-                            append(amountText)
-                            append(" ")
-                            withStyle(symbolStyle) {
-                                append(symbolText)
-                            }
-                        }
-                    },
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = currentMetrics.netWorth,
+                        currencyCode = displayCurrency,
+                        spec = CurrencyDisplaySpec(useSemanticColor = false),
+                        partStyles = CurrencyPartStyles(symbol = symbolStyle)
+                    ),
                     style = AppTextStyles.heroAmountLarge.copy(
                         fontSize = baseFontSize,
                         letterSpacing = (-1).sp
@@ -252,7 +241,11 @@ private fun NetWorthFlowColumn(
             }
         }
         Text(
-            text = formatAuto(amount, currency),
+            text = CurrencyReprUi.formatCurrencyAnnotated(
+                amount = amount,
+                currencyCode = currency,
+                spec = CurrencyDisplaySpec(useSemanticColor = false)
+            ),
             style = AppTextStyles.transactionAmount.copy(
                 fontWeight = FontWeight.Normal,
                 fontSize = 19.sp

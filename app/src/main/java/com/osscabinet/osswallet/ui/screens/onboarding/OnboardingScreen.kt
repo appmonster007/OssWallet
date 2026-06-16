@@ -83,8 +83,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.platform.LocalConfiguration
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -853,7 +854,7 @@ private fun CurrencyTile(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    getCurrencySymbol(metadata.code),
+                    CurrencyService.getCurrencySymbol(metadata.code),
                     style = if (isSmallScreen) AppTextStyles.cardTitle else AppTextStyles.heroAmount,
                     color = if (isBase) AppColors.primary else AppColors.contentPrimary
                 )
@@ -1046,7 +1047,7 @@ private fun AppearanceStep(
                 )
                 Spacer(modifier = Modifier.width(scaledDp(8f, uiScale)))
                 Text(
-                    text = "Example: ${formatAuto(BigDecimal("1234.5678"), precision = selectedPrecision)}",
+                    text = "Example: ${formatCurrency(BigDecimal("1234.5678"), spec = CurrencyDisplaySpec(precision = selectedPrecision))}",
                     style = AppTextStyles.listItemTitle.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = if (isSmallScreen) scaledSp(12f, uiScale) else scaledSp(14f, uiScale)

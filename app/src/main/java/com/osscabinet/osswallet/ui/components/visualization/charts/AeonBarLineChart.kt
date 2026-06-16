@@ -52,7 +52,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -248,7 +249,7 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick),
+                            formatCurrency(tick),
                             leftPadding - with(density) { 4.dp.toPx() },
                             yPos + with(density) { 3.dp.toPx() },
                             labelPaint
@@ -556,10 +557,10 @@ fun AeonBarLineChart(
                             ) {
                                 Text("Income:", style = AppTextStyles.transactionSwipeAction)
                                 Text(
-                                    formatAuto(
+                                    formatCurrency(
                                         incomeVal,
                                         currency,
-                                        precision = precision
+                                        CurrencyDisplaySpec(precision = precision)
                                     ),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorPositive
@@ -573,10 +574,10 @@ fun AeonBarLineChart(
                             ) {
                                 Text("Expense:", style = AppTextStyles.transactionSwipeAction)
                                 Text(
-                                    formatAuto(
+                                    formatCurrency(
                                         expenseVal,
                                         currency,
-                                        precision = precision
+                                        CurrencyDisplaySpec(precision = precision)
                                     ),
                                     style = AppTextStyles.managementItemSubtitle,
                                     color = barColorNegative
@@ -590,7 +591,7 @@ fun AeonBarLineChart(
                         ) {
                             Text("Flow:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatAuto(barVal, currency, precision = precision),
+                                formatCurrency(barVal, currency, CurrencyDisplaySpec(precision = precision)),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
                             )
@@ -604,7 +605,7 @@ fun AeonBarLineChart(
                         ) {
                             Text("Net:", style = AppTextStyles.transactionSwipeAction)
                             Text(
-                                formatAuto(lineVal, currency, precision = precision),
+                                formatCurrency(lineVal, currency, CurrencyDisplaySpec(precision = precision)),
                                 style = AppTextStyles.managementItemSubtitle,
                                 color = lineColor
                             )

@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -52,11 +52,11 @@ fun AeonBudgetProgress(
                 )
                 Text(
                     "${
-                        formatAuto(
+                        formatCurrency(
                             current,
                             baseCurrency
                         )
-                    } / ${formatAuto(total, baseCurrency)}",
+                    } / ${formatCurrency(total, baseCurrency)}",
                     style = AppTextStyles.transactionSwipeAction.copy(
                         color = AppColors.border
                     )

@@ -58,9 +58,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencyName
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -112,12 +112,13 @@ fun CurrencySettingsScreen(
                         "ISO",
                         "SOUTH_AMERICAN"
                     ).forEach { systemKey ->
-                        val system = CurrencyFormatter.FormattingSystem.fromString(systemKey)
-                        val previewText = CurrencyFormatter.formatForSystem(
-                            amount = previewAmount,
+                        val system = CurrencyService.FormattingSystem.fromString(systemKey)
+                        val previewText = CurrencyReprUi.CurrencyNumberFormatter(
                             system = system,
+                        ).format(
+                            amount = previewAmount,
                             currencyCode = currencyCode,
-                            precision = decimalPrecision
+                            spec = CurrencyDisplaySpec(precision = decimalPrecision, shortenThreshold = Int.MAX_VALUE),
                         )
 
                         val label = when (systemKey) {
@@ -225,7 +226,7 @@ fun CurrencySettingsScreen(
                         ) {
                             items(filteredCurrencies) { metadata ->
                                 val code = metadata.code
-                                val symbol = getCurrencySymbol(code)
+                                val symbol = CurrencyService.getCurrencySymbol(code)
                                 val name = metadata.name
                                 Surface(
                                     onClick = {
@@ -382,8 +383,8 @@ fun CurrencySettingsScreen(
                         AeonSettingsSection("CURRENCY") {
                             AeonSettingsItem(
                                 title = "Base Currency",
-                                subtitle = "${getCurrencySymbol(currencyCode)} ${
-                                    getCurrencyName(
+                                subtitle = "${CurrencyService.getCurrencySymbol(currencyCode)} ${
+                                    CurrencyService.getCurrencyName(
                                         currencyCode
                                     )
                                 }",
@@ -483,10 +484,10 @@ fun CurrencySettingsScreen(
                             )
                             AeonSettingsItem(
                                 title = "Formatting System",
-                                subtitle = CurrencyFormatter.formatAuto(
+                                subtitle = CurrencyReprUi.CurrencyNumberFormatter().format(
                                     amount = java.math.BigDecimal("1234.5678"),
                                     currencyCode = currencyCode,
-                                    precision = decimalPrecision
+                                    spec = CurrencyDisplaySpec(precision = decimalPrecision),
                                 ),
                                 icon = Icons.Rounded.AutoFixHigh,
                                 onClick = { showSystemDialog = true }

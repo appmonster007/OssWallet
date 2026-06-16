@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -72,26 +74,19 @@ fun LoanHeroCard(
                             color = AppColors.contentSecondary
                         )
 
-                        val balanceParts = formatAuto(
-                            summary.remainingBalance,
-                            loan.currency
-                        ).split(" ")
-                        val amountText = balanceParts.dropLast(1).joinToString(" ")
-                        val symbolText = balanceParts.lastOrNull() ?: ""
-
                         Text(
-                            text = buildAnnotatedString {
-                                append(amountText)
-                                withStyle(
-                                    SpanStyle(
+                            text = CurrencyReprUi.formatCurrencyAnnotated(
+                                amount = summary.remainingBalance,
+                                currencyCode = loan.currency,
+                                spec = CurrencyDisplaySpec(useSemanticColor = false),
+                                partStyles = CurrencyPartStyles(
+                                    symbol = SpanStyle(
                                         fontWeight = FontWeight.Normal,
                                         color = AppColors.contentSecondary,
                                         fontSize = 16.sp
                                     )
-                                ) {
-                                    append(" $symbolText")
-                                }
-                            },
+                                )
+                            ),
                             style = AppTextStyles.heroAmountDisplay,
                             color = AppColors.contentPrimary
                         )
@@ -137,18 +132,31 @@ fun LoanHeroCard(
                                 .background(accentColor, CircleShape)
                         )
                         Text(
-                            text = "${formatAuto(summary.totalPaid)} settled",
+                            text = buildAnnotatedString {
+                                append(
+                                    CurrencyReprUi.formatCurrencyAnnotated(
+                                        amount = summary.totalPaid,
+                                        currencyCode = null,
+                                        spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                    )
+                                )
+                                append(" settled")
+                            },
                             style = AppTextStyles.caption,
                             color = AppColors.contentSecondary
                         )
                     }
                     Text(
-                        text = "Goal: ${
-                            formatAuto(
-                                loan.principalAmount,
-                                loan.currency
+                        text = buildAnnotatedString {
+                            append("Goal: ")
+                            append(
+                                CurrencyReprUi.formatCurrencyAnnotated(
+                                    amount = loan.principalAmount,
+                                    currencyCode = loan.currency,
+                                    spec = CurrencyDisplaySpec(useSemanticColor = false)
+                                )
                             )
-                        }",
+                        },
                         style = AppTextStyles.caption,
                         color = AppColors.contentSecondary
                     )

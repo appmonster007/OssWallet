@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.domain.service.currency
 
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import android.icu.util.ULocale
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Currency
+import java.util.Locale
 
 /**
  * Domain11 service for currency conversion and core business logic.
@@ -11,9 +13,94 @@ import java.util.Currency
 object CurrencyService {
 
     /**
-     * Global decimal precision used for calculations when not specified.
+     * Global settings used for formatting and calculations.
      */
     var precision: Int = 2
+    var activeSystem: FormattingSystem = FormattingSystem.WESTERN
+
+    enum class SymbolPosition { LEFT, RIGHT }
+
+    /**
+     * Formatting system defines the style of number and currency display.
+     */
+    enum class FormattingSystem(
+        val decimalSeparator: Char,
+        val groupingSeparator: Char,
+        val symbolPosition: SymbolPosition,
+        val isIndianGrouping: Boolean = false
+    ) {
+        WESTERN(
+            decimalSeparator = '.',
+            groupingSeparator = ',',
+            symbolPosition = SymbolPosition.LEFT
+        ),
+        EUROPEAN(
+            decimalSeparator = ',',
+            groupingSeparator = '.',
+            symbolPosition = SymbolPosition.RIGHT
+        ),
+        INDIAN(
+            decimalSeparator = '.',
+            groupingSeparator = ',',
+            symbolPosition = SymbolPosition.LEFT,
+            isIndianGrouping = true
+        ),
+        SWISS(
+            decimalSeparator = '.',
+            groupingSeparator = '\'',
+            symbolPosition = SymbolPosition.LEFT
+        ),
+        FRENCH(
+            decimalSeparator = ',',
+            groupingSeparator = ' ',
+            symbolPosition = SymbolPosition.RIGHT
+        ),
+        ISO(decimalSeparator = '.', groupingSeparator = ' ', symbolPosition = SymbolPosition.LEFT),
+        SOUTH_AMERICAN(
+            decimalSeparator = ',',
+            groupingSeparator = '.',
+            symbolPosition = SymbolPosition.LEFT
+        );
+
+        companion object {
+            fun fromString(value: String?): FormattingSystem =
+                entries.find { it.name.equals(value, ignoreCase = true) } ?: WESTERN
+        }
+    }
+
+    /**
+     * Returns the symbol for a given currency code.
+     */
+    fun getCurrencySymbol(currencyCode: String?): String {
+        if (currencyCode.isNullOrBlank()) return ""
+        return try {
+            val code = currencyCode.uppercase().trim()
+            if (code.length == 3 && code.all { it.isLetter() }) {
+                android.icu.util.Currency.getInstance(code).getSymbol(android.icu.util.ULocale.getDefault())
+            } else {
+                currencyCode
+            }
+        } catch (e: Exception) {
+            currencyCode
+        }
+    }
+
+    /**
+     * Returns the full name for a given currency code.
+     */
+    fun getCurrencyName(currencyCode: String?): String {
+        if (currencyCode.isNullOrBlank()) return ""
+        return try {
+            val code = currencyCode.uppercase().trim()
+            if (code.length == 3 && code.all { it.isLetter() }) {
+                android.icu.util.Currency.getInstance(code).getDisplayName(Locale.getDefault())
+            } else {
+                currencyCode
+            }
+        } catch (e: Exception) {
+            currencyCode
+        }
+    }
 
     // ==================== Conversion & Logic (ExchangeRateSnapshot) ====================
 

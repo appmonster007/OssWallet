@@ -31,8 +31,9 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
@@ -122,10 +123,10 @@ fun IncomeExpenseBarCard(
             // Net total for the period (sum of all bucket net values)
             val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
             Text(
-                text = CurrencyFormatter.formatAuto(
+                text = CurrencyReprUi.formatCurrencyAnnotated(
                     amount = netTotal,
                     currencyCode = renderData.currency,
-                    precision = CurrencyService.precision
+                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
                 color = AppColors.contentPrimary,

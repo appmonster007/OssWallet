@@ -39,7 +39,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
@@ -295,7 +296,7 @@ fun AeonTreemap(
                                         }
                                     }
                                     Text(
-                                        formatAuto(node.value, currency, precision = precision),
+                                        formatCurrency(node.value, currency, CurrencyDisplaySpec(precision = precision)),
                                         style = AppTextStyles.chartLegendLabel,
                                         color = labelColor.copy(alpha = 0.85f),
                                         maxLines = 1,

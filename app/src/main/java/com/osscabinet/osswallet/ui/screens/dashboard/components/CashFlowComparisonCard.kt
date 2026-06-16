@@ -31,7 +31,8 @@ import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -114,10 +115,10 @@ fun CashFlowComparisonCard(
                 }
             }
             Text(
-                text = CurrencyFormatter.formatAuto(
+                text = formatCurrency(
                     amount = aggregateTotal,
                     currencyCode = renderData.currency,
-                    precision = CurrencyService.precision
+                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
                 ),
                 style = AppTextStyles.cardSecondaryAmount,
                 color = AppColors.contentPrimary,

@@ -338,6 +338,58 @@ fun AeonExpressiveCard(
     }
 }
 
+/**
+ * A specialized version of [AeonExpressiveCard] for "Hero" sections that standardizes
+ * the large amount display and overline label.
+ */
+@Composable
+fun AeonHeroCard(
+    title: String,
+    amount: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    accentColor: Color? = null,
+    amountColor: Color = AppColors.contentPrimary,
+    containerColor: Color = AppColors.cardSurface,
+    contentColor: Color = AppColors.contentPrimary,
+    backgroundIcon: ImageVector? = null,
+    onClick: (() -> Unit)? = null,
+    displaySettings: (@Composable (onDismiss: () -> Unit) -> Unit)? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
+) {
+    AeonExpressiveCard(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        accentColor = accentColor,
+        containerColor = containerColor,
+        contentColor = contentColor,
+        backgroundIcon = backgroundIcon,
+        modifier = modifier,
+        onClick = onClick,
+        displaySettings = displaySettings,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = label.uppercase(),
+                style = AppTextStyles.overlineLabel,
+                color = contentColor.copy(alpha = 0.6f)
+            )
+            Text(
+                text = amount,
+                style = AppTextStyles.heroAmountDisplay,
+                color = amountColor
+            )
+        }
+        if (content != null) {
+            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+            content()
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -412,14 +464,18 @@ fun AeonCardFilterButton(
 }
 
 // ---------------------------------------------------------------------------
-// Preview
+// Previews
 // ---------------------------------------------------------------------------
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Light Theme")
 @Composable
-private fun AeonExpressiveCardPreview() {
-    OssWalletTheme {
-        Box(Modifier.padding(16.dp)) {
+private fun AeonExpressiveCardLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        Box(
+            Modifier
+                .background(AppColors.background)
+                .padding(16.dp)
+        ) {
             AeonExpressiveCard(
                 title = "Net Worth",
                 subtitle = "Monthly · January 2024",
@@ -435,6 +491,123 @@ private fun AeonExpressiveCardPreview() {
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Dark Theme")
+@Composable
+private fun AeonExpressiveCardDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        Box(
+            Modifier
+                .background(AppColors.background)
+                .padding(16.dp)
+        ) {
+            AeonExpressiveCard(
+                title = "Net Worth",
+                subtitle = "Monthly · January 2024",
+                icon = Icons.Rounded.AccountBalance,
+                filter = TransactionFilter(),
+                onFilterChange = {},
+                displaySettings = {},
+            ) {
+                Text(
+                    text = "$12,450.00",
+                    style = AppTextStyles.heroAmount,
+                    color = AppColors.primary,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Amoled Theme")
+@Composable
+private fun AeonExpressiveCardAmoledPreview() {
+    OssWalletTheme(theme = "Amoled") {
+        Box(
+            Modifier
+                .background(AppColors.background)
+                .padding(16.dp)
+        ) {
+            AeonExpressiveCard(
+                title = "Net Worth",
+                subtitle = "Monthly · January 2024",
+                icon = Icons.Rounded.AccountBalance,
+                filter = TransactionFilter(),
+                onFilterChange = {},
+                displaySettings = {},
+            ) {
+                Text(
+                    text = "$12,450.00",
+                    style = AppTextStyles.heroAmount,
+                    color = AppColors.primary,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Accent Color")
+@Composable
+private fun AeonExpressiveCardAccentPreview() {
+    OssWalletTheme {
+        Box(
+            Modifier
+                .background(AppColors.background)
+                .padding(16.dp)
+        ) {
+            AeonExpressiveCard(
+                title = "Savings Goal",
+                subtitle = "85% of $10,000",
+                icon = Icons.Rounded.AccountBalance,
+                accentColor = Color(0xFF4CAF50),
+                filter = TransactionFilter(),
+                onFilterChange = {},
+            ) {
+                Text(
+                    text = "$8,500.00",
+                    style = AppTextStyles.heroAmount,
+                    color = Color(0xFF4CAF50),
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+// ── AeonHeroCard Previews ──────────────────────────────────────────────────
+
+@Preview(showBackground = true, name = "Hero - Light")
+@Composable
+private fun AeonHeroCardLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        Box(Modifier.background(AppColors.background).padding(16.dp)) {
+            AeonHeroCard(
+                title = "Net Worth",
+                amount = "$1,245,800.50",
+                label = "Total Balance",
+                icon = Icons.Rounded.AccountBalance,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Hero - Dark")
+@Composable
+private fun AeonHeroCardDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        Box(Modifier.background(AppColors.background).padding(16.dp)) {
+            AeonHeroCard(
+                title = "Wealth Fund",
+                amount = "$245,800.50",
+                label = "Total Balance",
+                icon = Icons.Rounded.AccountBalance,
+                accentColor = Color(0xFF004D40),
+            )
         }
     }
 }

@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SegmentedButton
@@ -28,12 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -47,7 +49,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
@@ -61,6 +63,7 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
+import com.osscabinet.ossWallet.ui.theme.LocalUiIdentity
 import com.osscabinet.ossWallet.ui.util.applyAccountTint
 import java.math.BigDecimal
 
@@ -93,11 +96,35 @@ fun AccountHeroCard(
     val mode = LocalThemeMode.current
     val (containerColor, contentColor) = accountColor.applyAccountTint(mode)
 
+    val isDarkBg = containerColor.luminance() < 0.5
+    val isH = LocalUiIdentity.current == UiIdentity.H
+
+    val posColor = if (isH) {
+        if (isDarkBg) Color(0xFF7FBF8E) else Color(0xFF2C6E49)
+    } else {
+        if (isDarkBg) Color(0xFF4DCE85) else Color(0xFF1E9B4F)
+    }
+
+    val negColor = if (isH) {
+        if (isDarkBg) Color(0xFFD88379) else Color(0xFF9B3B30)
+    } else {
+        if (isDarkBg) Color(0xFFE27974) else Color(0xFFC8463F)
+    }
+
+    val accColor = if (isH) {
+        if (isDarkBg) Color(0xFFD6C189) else Color(0xFF8A6F3C)
+    } else {
+        if (isDarkBg) Color(0xFFDDE2FA) else Color(0xFF2F3A88)
+    }
+
+    val subColor = if (isDarkBg) contentColor.copy(alpha = 0.7f) else AppColors.contentSecondary
+
     val balanceInBase = summary.balanceInBase
 
     AeonExpressiveCard(
         title = account.name,
         subtitle = account.structureType.displayName,
+        subtitleColor = subColor,
         icon = icon,
         accentColor = contentColor,
         containerColor = containerColor,
@@ -165,10 +192,10 @@ fun AccountHeroCard(
                 }
             }
 
-            // Income/Expense Flow Row
-            Row(
+            // Income/Expense Flow Column (Tabular)
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val excludeSameCcy = config.excludeSameCurrencyTransfers
                 val types = config.filter.transactionTypes
@@ -183,14 +210,13 @@ fun AccountHeroCard(
                     CashFlowDisplayMode.TYPE_DISTINCTION -> {
                         if (showIncome) {
                             FlowSummaryItem(
-                                label = "INC",
+                                label = "INCOME",
                                 amount = flow.income,
                                 currency = account.currencyCode,
                                 icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                                color = AppColors.positive,
+                                color = posColor,
                                 contentColor = contentColor,
                                 previousAmount = prevFlow?.income,
-                                modifier = Modifier.weight(1f),
                                 onClick = {
                                     callbacks.onClickIncome?.invoke(
                                         config.filter.copy(
@@ -204,14 +230,13 @@ fun AccountHeroCard(
                         }
                         if (showExpense) {
                             FlowSummaryItem(
-                                label = "EXP",
+                                label = "EXPENSE",
                                 amount = flow.expense,
                                 currency = account.currencyCode,
                                 icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                                color = AppColors.negative,
+                                color = negColor,
                                 contentColor = contentColor,
                                 previousAmount = prevFlow?.expense,
-                                modifier = Modifier.weight(1f),
                                 onClick = {
                                     callbacks.onClickExpense?.invoke(
                                         config.filter.copy(
@@ -230,14 +255,13 @@ fun AccountHeroCard(
                             } else null
 
                             FlowSummaryItem(
-                                label = "TRF",
+                                label = "TRANSFER",
                                 amount = tx,
                                 currency = account.currencyCode,
-                                icon = Icons.Rounded.AccountBalance,
-                                color = AppColors.accent,
+                                icon = Icons.Rounded.SwapHoriz,
+                                color = accColor,
                                 contentColor = contentColor,
                                 previousAmount = prevTx,
-                                modifier = Modifier.weight(1f),
                                 forceShowPlus = true,
                                 onClick = {
                                     callbacks.onClickTransfer?.invoke(
@@ -261,14 +285,13 @@ fun AccountHeroCard(
                         val prevOutflow = prevFlow?.let { (it.expense) + (prevTxOut ?: BigDecimal.ZERO) }
 
                         FlowSummaryItem(
-                            label = "IN",
+                            label = "INFLOW",
                             amount = (if (showIncome) flow.income else BigDecimal.ZERO) + (if (showTransfer) txIn else BigDecimal.ZERO),
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                            color = AppColors.positive,
+                            color = posColor,
                             contentColor = contentColor,
                             previousAmount = prevInflow,
-                            modifier = Modifier.weight(1f),
                             onClick = {
                                 callbacks.onClickInflow?.invoke(
                                     config.filter.copy(
@@ -281,14 +304,13 @@ fun AccountHeroCard(
                             }
                         )
                         FlowSummaryItem(
-                            label = "OUT",
+                            label = "OUTFLOW",
                             amount = (if (showExpense) flow.expense else BigDecimal.ZERO) + (if (showTransfer) txOut else BigDecimal.ZERO),
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                            color = AppColors.negative,
+                            color = negColor,
                             contentColor = contentColor,
                             previousAmount = prevOutflow,
-                            modifier = Modifier.weight(1f),
                             onClick = {
                                 callbacks.onClickOutflow?.invoke(
                                     config.filter.copy(
@@ -447,88 +469,84 @@ private fun FlowSummaryItem(
     onClick: () -> Unit = {}
 ) {
     Surface(
-        color = contentColor.copy(alpha = 0.08f),
-        shape = RoundedCornerShape(16.dp),
+        color = contentColor.copy(alpha = 0.1f),
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, contentColor.copy(alpha = 0.12f)),
         modifier = modifier.clickable { onClick() }
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 14.dp, horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color.copy(alpha = 0.9f),
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        text = label,
-                        style = AppTextStyles.overlineLabel.copy(
-                            letterSpacing = 0.5.sp,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = contentColor.copy(alpha = 0.5f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color.copy(alpha = 0.9f),
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = label,
+                style = AppTextStyles.overlineLabel.copy(
+                    letterSpacing = 0.5.sp,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = contentColor.copy(alpha = 0.5f),
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                if (previousAmount != null) {
-                    val change = amount.subtract(previousAmount)
-                    if (change.signum() != 0 && previousAmount.signum() != 0) {
-                        val percentage = change.multiply(BigDecimal("100"))
-                            .divide(previousAmount.abs(), 1, java.math.RoundingMode.HALF_UP)
-                        val up = change.signum() > 0
-
-                        val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
-                            "${if (percentage.signum() > 0) ">999" else "<-999"}%"
-                        } else {
-                            "${if (up) "+" else ""}$percentage%"
-                        }
-
-                        Text(
-                            text = "${if (up) "▲" else "▼"} $displayPercentage",
-                            style = AppTextStyles.metaLabel.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 9.sp
-                            ),
-                            color = color,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
             Text(
                 text = CurrencyReprUi.formatCurrencyAnnotated(
                     amount = amount,
                     currencyCode = currency,
                     spec = CurrencyDisplaySpec(
-                        useSemanticColor = false, 
+                        useSemanticColor = false,
                         forceShowPlus = forceShowPlus,
-                        shortenThreshold = 8
+                        shortenThreshold = 10
                     )
                 ),
-                style = AppTextStyles.screenSubTitle.copy(
+                style = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    letterSpacing = (-0.6).sp
+                    fontSize = 14.sp
                 ),
                 color = color,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+
+            if (previousAmount != null) {
+                val change = amount.subtract(previousAmount)
+                if (change.signum() != 0 && previousAmount.signum() != 0) {
+                    val percentage = change.multiply(BigDecimal("100"))
+                        .divide(previousAmount.abs(), 1, java.math.RoundingMode.HALF_UP)
+                    val up = change.signum() > 0
+
+                    val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
+                        "${if (percentage.signum() > 0) ">999" else "<-999"}%"
+                    } else {
+                        "${if (up) "+" else ""}$percentage%"
+                    }
+
+                    Text(
+                        text = "${if (up) "▲" else "▼"} $displayPercentage",
+                        style = AppTextStyles.metaLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp
+                        ),
+                        color = color,
+                        modifier = Modifier.widthIn(min = 44.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        maxLines = 1
+                    )
+                } else {
+                    Box(modifier = Modifier.width(44.dp))
+                }
+            }
         }
     }
 }

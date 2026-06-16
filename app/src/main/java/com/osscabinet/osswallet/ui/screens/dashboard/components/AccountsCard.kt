@@ -472,7 +472,7 @@ fun AccountsCardPreview() {
             mapOf("USD" to BigDecimal("5000.00")),
             BigDecimal("5000.00"),
             BigDecimal("5000.00"),
-            currentFlow = AccountFlowMetrics(
+            currentPeriodFlow = AccountFlowMetrics(
                 income = BigDecimal("1000.00"),
                 expense = BigDecimal("200.00"),
                 transferIn = BigDecimal.ZERO
@@ -483,7 +483,7 @@ fun AccountsCardPreview() {
             mapOf("EUR" to BigDecimal("1200.00")),
             BigDecimal("1200.00"),
             BigDecimal("1320.00"),
-            currentFlow = AccountFlowMetrics(
+            currentPeriodFlow = AccountFlowMetrics(
                 income = BigDecimal("500.00"),
                 expense = BigDecimal("100.00"),
                 transferIn = BigDecimal.ZERO

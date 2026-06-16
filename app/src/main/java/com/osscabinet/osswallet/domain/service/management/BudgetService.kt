@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
@@ -47,7 +48,8 @@ object BudgetService {
 
         // If it's an income-only budget, we track progress towards positive target.
         // Otherwise (expense or mixed), we track net outflow.
-        val spent = netAmount
+        val isIncomeOnly = budget.trackTypes.isNotEmpty() && budget.trackTypes.all { it == TransactionType.INCOME }
+        val spent = if (isIncomeOnly) netAmount else netAmount.negate()
 
         return spent.setScale(precision, RoundingMode.HALF_UP)
     }

@@ -6,7 +6,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -27,7 +27,7 @@ class PlannedPaymentServiceTest {
         name = "Test",
         categoryId = 1001L,
         amount = BigDecimal("100"),
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         currency = "USD",
         accountId = "acc1"
     )
@@ -46,7 +46,7 @@ class PlannedPaymentServiceTest {
         name = "Test",
         categoryId = 1001L,
         amount = BigDecimal("100"),
-        transactionType = TransactionType.EXPENSE,
+        entryMode = EntryMode.EXPENSE,
         currency = "USD",
         templateId = stubTemplate.id,
         schedule = PaymentSchedule(

@@ -372,13 +372,13 @@ internal fun CardRenderData.toPayloadDto(
     )
 
     is CardRenderData.AccountHero -> CardPayloadDto.NetWorth(
-        netWorth = balance.toDouble(),
-        income = income.toDouble(),
-        expense = expense.toDouble(),
+        netWorth = summary.balance.toDouble(),
+        income = summary.currentPeriodFlow.income.toDouble(),
+        expense = summary.currentPeriodFlow.expense.toDouble(),
         transfer = 0.0,
-        cashFlow = (income - expense).toDouble(),
+        cashFlow = (summary.currentPeriodFlow.income - summary.currentPeriodFlow.expense).toDouble(),
         previousNetWorth = null,
-        currency = account.currencyCode
+        currency = summary.account.currencyCode
     )
 }
 

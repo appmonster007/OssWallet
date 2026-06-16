@@ -22,7 +22,7 @@ class CardFilterRulesTest {
     @Test
     fun `CategoricalRule Limited - when input is outside subset - returns empty`() {
         val rule = CategoricalRule.Limited(setOf(TransactionType.INCOME, TransactionType.EXPENSE))
-        val selection = setOf(TransactionType.TRANSFER)
+        val selection = setOf(TransactionType.TRANSFER_INFLOW)
         
         val result = rule.apply(selection)
         
@@ -42,7 +42,7 @@ class CardFilterRulesTest {
     @Test
     fun `CategoricalRule Locked - always returns forced values`() {
         val rule = CategoricalRule.Locked(setOf(TransactionType.INCOME))
-        val selection = setOf(TransactionType.EXPENSE, TransactionType.TRANSFER)
+        val selection = setOf(TransactionType.EXPENSE, TransactionType.TRANSFER_OUTFLOW)
         
         val result = rule.apply(selection)
         
@@ -113,12 +113,12 @@ class CardFilterRulesTest {
             typeRule = CategoricalRule.Limited(setOf(TransactionType.INCOME, TransactionType.EXPENSE))
         )
         val constraintRules = CardFilterRules(
-            typeRule = CategoricalRule.Limited(setOf(TransactionType.EXPENSE, TransactionType.TRANSFER))
+            typeRule = CategoricalRule.Limited(setOf(TransactionType.EXPENSE, TransactionType.TRANSFER_INFLOW))
         )
         
         val combined = baseRules.layeredWith(constraintRules)
         
-        // Intersection of {INCOME, EXPENSE} and {EXPENSE, TRANSFER} is {EXPENSE}
+        // Intersection of {INCOME, EXPENSE} and {EXPENSE, TRANSFER_INFLOW} is {EXPENSE}
         val result = combined.typeRule.apply(emptySet())
         assertEquals(setOf(TransactionType.EXPENSE), result)
     }

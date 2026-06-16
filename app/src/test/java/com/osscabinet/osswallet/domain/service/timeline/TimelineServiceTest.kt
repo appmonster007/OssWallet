@@ -3,7 +3,7 @@ package com.osscabinet.ossWallet.domain.service.timeline
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
@@ -25,7 +25,7 @@ class TimelineServiceTest {
                     name = "Test Planned",
                     categoryId = 1L,
                     amount = BigDecimal("10.00"),
-                    transactionType = TransactionType.EXPENSE,
+                    entryMode = EntryMode.EXPENSE,
                     currency = "USD",
                     schedule = PaymentSchedule(
                         recurrenceRule = RecurrenceRule(RecurrenceType.DAILY),

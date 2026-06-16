@@ -37,7 +37,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -179,18 +179,18 @@ fun RecentActivitiesScreen(
                             AeonTransactionItem(
                                 category = record.categoryName,
                                 account = record.accountName,
-                                amount = formatAuto(
+                                amount = formatCurrency(
                                     record.amount,
                                     record.currency
                                 ),
                                 convertedAmount = if ((record.currency != baseCurrency) && (record.amountInBase != null)) {
-                                    formatAuto(record.amountInBase, baseCurrency)
+                                    formatCurrency(record.amountInBase, baseCurrency)
                                 } else null,
-                                balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                balanceBefore = if (record is ConfirmedTransactionUiModel) formatCurrency(
                                     record.item.balanceBefore,
                                     record.accountCurrency
                                 ) else "",
-                                balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
+                                balanceAfter = if (record is ConfirmedTransactionUiModel) formatCurrency(
                                     record.item.balanceAfter,
                                     record.accountCurrency
                                 ) else "",

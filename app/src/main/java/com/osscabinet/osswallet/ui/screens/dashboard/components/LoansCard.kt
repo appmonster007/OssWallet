@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +28,8 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -215,8 +217,16 @@ private fun LoanSummaryRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val principalAmount = CurrencyReprUi.formatCurrencyAnnotated(
+                amount = summary.loan.principalAmount,
+                currencyCode = null,
+                spec = CurrencyDisplaySpec(useSemanticColor = false)
+            )
             Text(
-                text = "PRINCIPAL ${formatAuto(summary.loan.principalAmount)}",
+                text = buildAnnotatedString {
+                    append("PRINCIPAL ")
+                    append(principalAmount)
+                },
                 style = AppTextStyles.metaLabel,
                 color = AppColors.contentSecondary.copy(alpha = 0.7f)
             )

@@ -5,7 +5,7 @@ import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
@@ -73,7 +73,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             val account = accountsMap[tx.accountId]
             WidgetTransaction(
                 id = tx.id,
-                amount = formatAuto(tx.amount.abs(), tx.currency),
+                amount = formatCurrency(tx.amount.abs(), tx.currency),
                 currency = tx.currency,
                 type = tx.transactionType.value,
                 category = category?.name ?: "Unknown",

@@ -39,8 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -336,7 +335,7 @@ fun AeonAccountCardLarge(
                                 color = AppColors.contentSecondary.copy(alpha = 0.7f)
                             )
                             Text(
-                                formatAuto(bal),
+                                formatCurrency(bal),
                                 style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
                                 color = AppColors.contentPrimary
                             )
@@ -367,7 +366,7 @@ private fun AccountFlowReadout(
             color = AppColors.contentSecondary.copy(alpha = 0.7f)
         )
         Text(
-            formatAuto(amount, currency),
+            formatCurrency(amount, currency),
             style = AppTextStyles.transactionAmount.copy(
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp

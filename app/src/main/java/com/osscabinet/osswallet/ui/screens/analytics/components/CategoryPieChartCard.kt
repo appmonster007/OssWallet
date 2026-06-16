@@ -49,7 +49,7 @@ import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -479,7 +479,7 @@ fun CategoryLegend(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = CurrencyFormatter.formatAuto(item.amount),
+                        text = formatCurrency(item.amount),
                         style = AppTextStyles.listItemSubtitle.copy(
                             fontWeight = FontWeight.Black
                         ),

@@ -19,7 +19,7 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.nativeWithConvertedStrings
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -106,11 +106,11 @@ fun AeonTransactionList(
                             account = record.accountName,
                             amount = amountText,
                             convertedAmount = convertedText,
-                            balanceBefore = if (record is ConfirmedTransactionUiModel) formatAuto(
+                            balanceBefore = if (record is ConfirmedTransactionUiModel) formatCurrency(
                                 record.item.balanceBefore,
                                 record.accountCurrency
                             ) else "",
-                            balanceAfter = if (record is ConfirmedTransactionUiModel) formatAuto(
+                            balanceAfter = if (record is ConfirmedTransactionUiModel) formatCurrency(
                                 record.item.balanceAfter,
                                 record.accountCurrency
                             ) else "",

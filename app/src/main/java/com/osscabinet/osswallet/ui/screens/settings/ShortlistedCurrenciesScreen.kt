@@ -48,7 +48,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -174,7 +174,7 @@ fun ShortlistedCurrenciesScreen(
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     Text(
-                                                        getCurrencySymbol(metadata.code),
+                                                        CurrencyService.getCurrencySymbol(metadata.code),
                                                         style = AppTextStyles.cardSectionTitle,
                                                         color = if (isSelected) AppColors.primary else AppColors.contentSecondary
                                                     )

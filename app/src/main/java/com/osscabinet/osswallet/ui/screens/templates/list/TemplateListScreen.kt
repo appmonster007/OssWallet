@@ -65,7 +65,7 @@ import com.osscabinet.ossWallet.domain.model.EntryMode
 
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -333,7 +333,7 @@ fun TemplateItem(
     }
 
     val formattedAmount = remember(template.amount, template.currency) {
-        CurrencyFormatter.formatAuto(template.amount, template.currency)
+        formatCurrency(template.amount, template.currency)
     }
 
     AeonListItem(

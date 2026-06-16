@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import com.osscabinet.ossWallet.di.WidgetDataLoaderEntryPoint
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
@@ -31,7 +30,6 @@ object WidgetDataLoader {
         val precision = settings.decimalPrecision.first()
 
         // Sync global precision for widget process
-        CurrencyFormatter.precision = precision
         CurrencyService.precision = precision
         TimelineService.precision = precision
 

@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -171,7 +171,7 @@ fun CategoryBreakdownPieChart(
                     )
                     if (displaySegment != null) {
                         Text(
-                            text = formatAuto(displaySegment.amount.abs()),
+                            text = formatCurrency(displaySegment.amount.abs()),
                             style = AppTextStyles.transactionTitle,
                             textAlign = TextAlign.Center,
                             color = AppColors.contentPrimary

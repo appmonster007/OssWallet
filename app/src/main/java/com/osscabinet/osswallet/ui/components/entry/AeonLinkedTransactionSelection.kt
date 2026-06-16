@@ -46,8 +46,9 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.toUiModels
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
@@ -166,10 +167,10 @@ fun AeonLinkedTransactionSelection(
                                         category = category?.name
                                             ?: stringResource(R.string.unknown),
                                         account = account?.name ?: stringResource(R.string.unknown),
-                                        amount = formatAuto(
+                                        amount = formatCurrency(
                                             tx.amount,
                                             tx.currency,
-                                            precision = CurrencyFormatter.precision
+                                            CurrencyDisplaySpec(precision = CurrencyService.precision)
                                         ),
                                         balanceBefore = "",
                                         balanceAfter = "",

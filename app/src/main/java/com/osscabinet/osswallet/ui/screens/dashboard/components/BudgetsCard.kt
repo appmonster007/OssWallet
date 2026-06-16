@@ -28,7 +28,8 @@ import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -149,11 +150,23 @@ private fun BudgetProgressRow(
             )
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = AppColors.contentPrimary)) {
-                        append(formatAuto(progress.spent, currency))
-                    }
+                    append(
+                        CurrencyReprUi.formatCurrencyAnnotated(
+                            amount = progress.spent,
+                            currencyCode = currency,
+                            spec = CurrencyDisplaySpec(useSemanticColor = false)
+                        )
+                    )
                     withStyle(SpanStyle(color = AppColors.contentSecondary.copy(alpha = 0.8f))) {
-                        append(" / ${formatAuto(progress.limit, currency)} · ${(progress.percentage * 100).toInt()}%")
+                        append(" / ")
+                        append(
+                            CurrencyReprUi.formatCurrencyAnnotated(
+                                amount = progress.limit,
+                                currencyCode = currency,
+                                spec = CurrencyDisplaySpec(useSemanticColor = false)
+                            )
+                        )
+                        append(" · ${(progress.percentage * 100).toInt()}%")
                     }
                 },
                 style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium)

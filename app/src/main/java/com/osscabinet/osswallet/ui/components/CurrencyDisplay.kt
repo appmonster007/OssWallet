@@ -11,11 +11,54 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import androidx.compose.ui.text.buildAnnotatedString
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
+
+/**
+ * Single-call composable for displaying a formatted currency amount.
+ *
+ * [style] is the base for the whole Text composable.
+ * [spec] governs formatting behavior (sign, precision, shortening, semantic color).
+ * [partStyles] fields override individual spans — null = inherit [style] as SpanStyle.
+ *
+ * Examples:
+ *   // Zero config
+ *   CurrencyText(amount = balance, currencyCode = "USD", style = AppTextStyles.headline)
+ *
+ *   // Dimmer symbol, larger value
+ *   CurrencyText(
+ *       amount = balance, currencyCode = "EUR",
+ *       spec = CurrencyDisplaySpec(forceShowPlus = true),
+ *       partStyles = CurrencyPartStyles(symbol = SpanStyle(fontSize = 12.sp, color = AppColors.muted))
+ *   )
+ */
+@Composable
+fun CurrencyText(
+    amount: BigDecimal?,
+    currencyCode: String?,
+    modifier: Modifier = Modifier,
+    style: TextStyle = LocalTextStyle.current,
+    color: Color = Color.Unspecified,
+    spec: CurrencyDisplaySpec = CurrencyDisplaySpec(),
+    partStyles: CurrencyPartStyles = CurrencyPartStyles(),
+) {
+    val base = style.toSpanStyle()
+    val text = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = amount,
+        currencyCode = currencyCode,
+        spec = spec.copy(useSemanticColor = if (color == Color.Unspecified) spec.useSemanticColor else false),
+        baseStyle = base,
+        partStyles = partStyles,
+    )
+    Text(text = text, style = style, color = color, modifier = modifier)
+}
 
 /**
  * Renders an amount where the user's native currency is the primary line and the
@@ -37,20 +80,26 @@ fun NativeWithConvertedSubtext(
     subtextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     horizontalAlignment: Alignment.Horizontal = Alignment.End,
 ) {
-    val primary = remember(amount, nativeCurrency) {
-        formatAuto(amount, nativeCurrency)
-    }
+    val primary = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = amount,
+        currencyCode = nativeCurrency,
+        spec = CurrencyDisplaySpec(useSemanticColor = primaryColor == Color.Unspecified),
+    )
     val showSubtext = nativeCurrency != targetCurrency
     val subtext = if (showSubtext) {
-        remember(amount, nativeCurrency, targetCurrency, rates) {
-            val converted = CurrencyService.convertAmount(
+        val converted = remember(amount, nativeCurrency, targetCurrency, rates) {
+            CurrencyService.convertAmount(
                 amount = amount,
                 fromCurrency = nativeCurrency,
                 toCurrency = targetCurrency,
                 exchangeRates = rates,
             )
-            "≈ ${formatAuto(converted, targetCurrency)}"
         }
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = converted,
+            currencyCode = targetCurrency,
+            spec = CurrencyDisplaySpec(isApproximate = true, useSemanticColor = false),
+        )
     } else null
 
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
@@ -66,8 +115,7 @@ fun NativeWithConvertedSubtext(
  * original native amount appears as a subtext below, only when the two differ.
  *
  * Use this when comparability across rows is what matters (account list, planned
- * payments, loans) but the user should still see the native amount they actually
- * deal with.
+ * payments, loans) but the user should still see the native amount they actually deal with.
  */
 @Composable
 fun ConvertedWithNativeSubtext(
@@ -92,11 +140,17 @@ fun ConvertedWithNativeSubtext(
             exchangeRates = rates,
         )
     }
-    val primary = remember(converted, targetCurrency) {
-        formatAuto(converted, targetCurrency)
-    }
+    val primary = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = converted,
+        currencyCode = targetCurrency,
+        spec = CurrencyDisplaySpec(useSemanticColor = primaryColor == Color.Unspecified),
+    )
     val subtext = if (!sameCurrency) {
-        remember(amount, nativeCurrency) { formatAuto(amount, nativeCurrency) }
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = amount,
+            currencyCode = nativeCurrency,
+            spec = CurrencyDisplaySpec(useSemanticColor = false),
+        )
     } else null
 
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
@@ -125,11 +179,17 @@ fun NativeWithConvertedSubtext(
     subtextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     horizontalAlignment: Alignment.Horizontal = Alignment.End,
 ) {
-    val primary = remember(amount, nativeCurrency) { formatAuto(amount, nativeCurrency) }
+    val primary = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = amount,
+        currencyCode = nativeCurrency,
+        spec = CurrencyDisplaySpec(useSemanticColor = primaryColor == Color.Unspecified),
+    )
     val subtext = if (nativeCurrency != targetCurrency) {
-        remember(convertedAmount, targetCurrency) {
-            "≈ ${formatAuto(convertedAmount, targetCurrency)}"
-        }
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = convertedAmount,
+            currencyCode = targetCurrency,
+            spec = CurrencyDisplaySpec(isApproximate = true, useSemanticColor = false),
+        )
     } else null
 
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
@@ -158,11 +218,17 @@ fun ConvertedWithNativeSubtext(
     horizontalAlignment: Alignment.Horizontal = Alignment.End,
 ) {
     val sameCurrency = nativeCurrency == targetCurrency
-    val primary = remember(amount, convertedAmount, nativeCurrency, targetCurrency) {
-        formatAuto(if (sameCurrency) amount else convertedAmount, targetCurrency)
-    }
+    val primary = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = if (sameCurrency) amount else convertedAmount,
+        currencyCode = targetCurrency,
+        spec = CurrencyDisplaySpec(useSemanticColor = primaryColor == Color.Unspecified),
+    )
     val subtext = if (!sameCurrency) {
-        remember(amount, nativeCurrency) { formatAuto(amount, nativeCurrency) }
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = amount,
+            currencyCode = nativeCurrency,
+            spec = CurrencyDisplaySpec(useSemanticColor = false),
+        )
     } else null
 
     Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
@@ -175,10 +241,8 @@ fun ConvertedWithNativeSubtext(
 
 /**
  * Non-composable helper that returns `(primary, subtext?)` formatted strings for a
- * "native primary, ≈ converted subtext" pair. Subtext is null when `nativeCurrency`
- * already equals `targetCurrency`. Useful for call sites that hand pre-formatted strings
- * to a richer component (e.g. AeonTransactionItem) instead of rendering Text composables
- * directly.
+ * "native primary, ≈ converted subtext" pair. Subtext is null when currencies match.
+ * Use for call sites that pass pre-formatted strings to richer components (e.g. AeonTransactionItem).
  */
 fun nativeWithConvertedStrings(
     amount: BigDecimal,
@@ -186,9 +250,10 @@ fun nativeWithConvertedStrings(
     targetCurrency: String,
     convertedAmount: BigDecimal?,
 ): Pair<String, String?> {
-    val primary = formatAuto(amount, nativeCurrency)
+    val formatter = CurrencyReprUi.CurrencyNumberFormatter()
+    val primary = formatter.format(amount, nativeCurrency)
     val subtext = if (nativeCurrency != targetCurrency && convertedAmount != null) {
-        "≈ ${formatAuto(convertedAmount, targetCurrency)}"
+        "≈ ${formatter.format(convertedAmount, targetCurrency)}"
     } else null
     return primary to subtext
 }
@@ -207,17 +272,32 @@ fun NativeWithConvertedInline(
     style: TextStyle = LocalTextStyle.current,
     color: Color = Color.Unspecified,
 ) {
-    val text = remember(amount, nativeCurrency, targetCurrency, rates) {
-        val primary = formatAuto(amount, nativeCurrency)
-        if (nativeCurrency == targetCurrency) primary
-        else {
-            val converted = CurrencyService.convertAmount(
+    val primary = CurrencyReprUi.formatCurrencyAnnotated(
+        amount = amount,
+        currencyCode = nativeCurrency,
+        spec = CurrencyDisplaySpec(useSemanticColor = color == Color.Unspecified),
+    )
+
+    val text = if (nativeCurrency == targetCurrency) primary
+    else {
+        val converted = remember(amount, nativeCurrency, targetCurrency, rates) {
+            CurrencyService.convertAmount(
                 amount = amount,
                 fromCurrency = nativeCurrency,
                 toCurrency = targetCurrency,
                 exchangeRates = rates,
             )
-            "$primary (≈ ${formatAuto(converted, targetCurrency)})"
+        }
+        val secondary = CurrencyReprUi.formatCurrencyAnnotated(
+            amount = converted,
+            currencyCode = targetCurrency,
+            spec = CurrencyDisplaySpec(useSemanticColor = false, isApproximate = true),
+        )
+        buildAnnotatedString {
+            append(primary)
+            append(" (")
+            append(secondary)
+            append(")")
         }
     }
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {

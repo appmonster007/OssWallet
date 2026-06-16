@@ -39,7 +39,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.getCurrencySymbol
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -363,7 +363,7 @@ fun CurrencyTile(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    getCurrencySymbol(code),
+                    CurrencyService.getCurrencySymbol(code),
                     style = AppTextStyles.heroAmount,
                     color = if (isPrimary) AppColors.onPrimary else AppColors.contentPrimary
                 )

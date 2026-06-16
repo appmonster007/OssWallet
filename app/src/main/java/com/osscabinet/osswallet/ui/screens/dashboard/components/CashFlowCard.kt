@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -44,7 +45,8 @@ import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
@@ -409,8 +411,15 @@ private fun TotalsCell(
     signed: Boolean,
     width: Dp,
 ) {
-    val sign = if (signed && amountInBase.signum() > 0) "+" else ""
-    val text = if (amountInBase.signum() == 0 && signed) "—" else sign + formatAuto(amountInBase, baseCurrency)
+    val text = if (amountInBase.signum() == 0 && signed) {
+        buildAnnotatedString { append("—") }
+    } else {
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = amountInBase,
+            currencyCode = baseCurrency,
+            spec = CurrencyDisplaySpec(forceShowPlus = signed, useSemanticColor = false)
+        )
+    }
     Box(
         modifier = Modifier
             .width(width)
@@ -440,8 +449,15 @@ private fun BreakdownCell(
     onClick: (() -> Unit)?,
 ) {
     val isZero = native.signum() == 0
-    val sign = if (signed && native.signum() > 0) "+" else ""
-    val nativeText = if (isZero && signed) "—" else sign + formatAuto(native, nativeCcy)
+    val nativeText = if (isZero && signed) {
+        buildAnnotatedString { append("—") }
+    } else {
+        CurrencyReprUi.formatCurrencyAnnotated(
+            amount = native,
+            currencyCode = nativeCcy,
+            spec = CurrencyDisplaySpec(forceShowPlus = signed, useSemanticColor = false)
+        )
+    }
     val clickModifier = if (onClick != null && !isZero) Modifier.clickable { onClick() } else Modifier
     Column(
         modifier = Modifier
@@ -458,9 +474,12 @@ private fun BreakdownCell(
             overflow = TextOverflow.Ellipsis,
         )
         if (!isZero && showBaseConversion && nativeCcy != baseCcy) {
-            val baseSign = if (signed && base.signum() > 0) "+" else ""
             Text(
-                text = "≈ $baseSign${formatAuto(base, baseCcy)}",
+                text = CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = base,
+                    currencyCode = baseCcy,
+                    spec = CurrencyDisplaySpec(forceShowPlus = signed, useSemanticColor = false, isApproximate = true)
+                ),
                 style = AppTextStyles.metaLabel,
                 color = AppColors.contentSecondary.copy(alpha = 0.6f),
                 maxLines = 1,

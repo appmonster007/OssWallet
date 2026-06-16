@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
@@ -325,7 +325,7 @@ fun AeonUpSetPlot(
                         val isPositive = intersection.value >= BigDecimal.ZERO
 
                         UpSetVerticalBar(
-                            amount = CurrencyFormatter.formatAuto(
+                            amount = formatCurrency(
                                 intersection.value,
                                 currency
                             ),
@@ -362,7 +362,7 @@ fun AeonUpSetPlot(
 
                     UpSetHorizontalBar(
                         name = set.name,
-                        amount = CurrencyFormatter.formatAuto(set.total, currency),
+                        amount = formatCurrency(set.total, currency),
                         magnitudeRatio = magnitudeRatio,
                         isPositive = isPositive,
                         onClick = { onSetClick(originalIdx) },

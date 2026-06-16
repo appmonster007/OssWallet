@@ -26,7 +26,8 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
@@ -242,7 +243,11 @@ fun CurrencyBalanceItem(
                 )
             } else {
                 Text(
-                    formatAuto(amount, curr),
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = amount,
+                        currencyCode = curr,
+                        spec = CurrencyDisplaySpec(useSemanticColor = false)
+                    ),
                     style = style,
                     maxLines = 1
                 )

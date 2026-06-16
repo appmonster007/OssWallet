@@ -48,7 +48,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -71,7 +73,7 @@ fun AeonBarChart(
     groups: List<AeonBarChartGroup>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+    precision: Int = CurrencyService.precision,
     animate: Boolean = true,
     showGrid: Boolean = true,
     showXAxisLabels: Boolean = true,
@@ -152,6 +154,8 @@ fun AeonBarChart(
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
+        val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
+        val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
         val gridLineColor = AppColors.outlineVariant
         val selectionLineColor = ChartZeroLineColor
@@ -206,7 +210,7 @@ fun AeonBarChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick),
+                            currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
                             leftPadding - 8.dp.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -367,10 +371,10 @@ fun AeonBarChart(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = formatAuto(
+                                text = currencyFormatter.format(
                                     amount = bar.value,
                                     currencyCode = currency,
-                                    precision = precision
+                                    spec = chartSpec,
                                 ),
                                 style = AppTextStyles.formSectionLabel,
                                 color = AppColors.contentPrimary
@@ -391,7 +395,7 @@ fun AeonBarChart(
     data: List<Pair<String, BigDecimal>>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+    precision: Int = CurrencyService.precision,
     barColor: Color = ChartColorBlue,
     animate: Boolean = true,
     cornerRadius: Dp = 4.dp

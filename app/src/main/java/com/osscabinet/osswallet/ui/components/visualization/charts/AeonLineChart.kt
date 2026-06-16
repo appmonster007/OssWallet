@@ -47,7 +47,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter.formatAuto
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -70,7 +72,7 @@ fun AeonLineChart(
     series: List<AeonLineChartSeries>,
     modifier: Modifier = Modifier,
     currency: String = "USD",
-    precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+    precision: Int = CurrencyService.precision,
     showGrid: Boolean = true,
     animate: Boolean = true,
     lineThicknessDp: Float = 0f,
@@ -104,6 +106,9 @@ fun AeonLineChart(
 
     val verticalGuideColor = ChartZeroLineColor
     val dims = AeonTheme.dimensions
+
+    val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
+    val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
@@ -239,7 +244,7 @@ fun AeonLineChart(
                             strokeWidth = (dims.spacingXs / 8).toPx()
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatAuto(tick),
+                            currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
                             leftPadding - dims.spacingMd.toPx(),
                             yPos + dims.spacingXs.toPx(),
                             labelPaint
@@ -601,10 +606,10 @@ fun AeonLineChart(
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = formatAuto(
+                                        text = currencyFormatter.format(
                                             amount = p.y,
                                             currencyCode = currency,
-                                            precision = precision
+                                            spec = chartSpec,
                                         ),
                                         style = AppTextStyles.formSectionLabel,
                                         color = AppColors.contentPrimary

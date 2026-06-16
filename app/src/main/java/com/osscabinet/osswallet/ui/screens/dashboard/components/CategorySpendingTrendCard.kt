@@ -48,7 +48,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyFormatter
+import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyUtil
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -278,10 +278,10 @@ private fun CategorySummaryRow(
 
 @Composable
 private fun formatCurrency(amount: BigDecimal, currency: String): String {
-    val formatted = CurrencyFormatter.formatAuto(
+    val formatted = formatCurrencyUtil(
         amount = amount,
         currencyCode = currency,
-        precision = CurrencyService.precision
+        spec = com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(precision = CurrencyService.precision)
     )
     return if (amount.signum() > 0) "+$formatted" else formatted
 }

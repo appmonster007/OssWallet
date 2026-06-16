@@ -128,6 +128,8 @@ data class NetWorthCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
+    val displayMode: CashFlowDisplayMode = CashFlowDisplayMode.TYPE_DISTINCTION,
+    val excludeSameCurrencyTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)),
     val profileId: Int? = null
 ) : CardConfig() {
@@ -201,6 +203,9 @@ data class AccountsCardConfig(
     val layout: String = "grid",
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
+    val showComparison: Boolean = true,
+    val displayMode: CashFlowDisplayMode = CashFlowDisplayMode.TYPE_DISTINCTION,
+    val excludeSameCurrencyTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNTS
@@ -267,6 +272,9 @@ data class AccountHeroCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true,
+    val showComparison: Boolean = true,
+    val displayMode: CashFlowDisplayMode = CashFlowDisplayMode.TYPE_DISTINCTION,
+    val excludeSameCurrencyTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO

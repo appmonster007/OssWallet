@@ -46,11 +46,11 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
 
             NetWorthCard(
-                currentMetrics = renderData.currentMetrics,
+                currentPeriodMetrics = renderData.currentPeriodMetrics,
                 baseCurrency = renderData.currency,
                 displayCurrency = renderData.currency,
                 config = renderData.config,
-                previousMetrics = renderData.previousMetrics,
+                previousPeriodMetrics = renderData.previousPeriodMetrics,
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -245,14 +245,9 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
 
             AccountHeroCard(
-                account = renderData.account,
-                balance = renderData.balance,
-                income = renderData.income,
-                expense = renderData.expense,
+                summary = renderData.summary,
                 baseCurrency = renderData.currency,
-                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
-                currencyBalances = renderData.currencyBalances,
                 callbacks = cb,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -273,9 +268,8 @@ fun UnifiedCardRenderer(
 
             AccountsCard(
                 accounts = renderData.updatedAccounts,
-                accountStats = renderData.accountStats,
+                accountSummaries = renderData.accountSummaries,
                 baseCurrency = renderData.currency,
-                exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
                 callbacks = cb,
                 filterContext = filterContext,

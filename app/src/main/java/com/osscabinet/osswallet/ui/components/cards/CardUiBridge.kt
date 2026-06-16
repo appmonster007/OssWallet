@@ -102,6 +102,12 @@ fun rememberCardWithCallbacks(
                                 show
                             )
                         },
+                        onDisplayModeChange = { id, mode ->
+                            updateHandler.updateCardNetWorthDisplayMode(id, mode)
+                        },
+                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
+                            updateHandler.updateCardNetWorthExcludeSameCurrencyTransfers(id, exclude)
+                        },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardNetWorthFilter(
                                 id,
@@ -114,6 +120,21 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickTransfer = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickInflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickOutflow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
@@ -269,9 +290,30 @@ fun rememberCardWithCallbacks(
                                 show
                             )
                         },
+                        onDisplayModeChange = { id, mode ->
+                            updateHandler.updateCardAccountsDisplayMode(id, mode)
+                        },
+                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
+                            updateHandler.updateCardAccountsExcludeSameCurrencyTransfers(id, exclude)
+                        },
                         onManageClick = callbacks.accountActions.onManageClick,
                         onAccountClick = callbacks.accountActions.onClick,
                         onRecordsClick = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickInflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickOutflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickTransfer = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
@@ -344,6 +386,15 @@ fun rememberCardWithCallbacks(
                 CardWithCallbacks.AccountHero(
                     renderData = renderData,
                     callbacks = CardCallbacks.AccountHero(
+                        onShowCurrencyBadgesChange = { id, show ->
+                            updateHandler.updateCardHeroShowCurrencyBadges(id, show)
+                        },
+                        onDisplayModeChange = { id, mode ->
+                            updateHandler.updateCardHeroDisplayMode(id, mode)
+                        },
+                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
+                            updateHandler.updateCardHeroExcludeSameCurrencyTransfers(id, exclude)
+                        },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardHeroFilter(
                                 id,
@@ -356,6 +407,21 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickExpense = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickTransfer = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickInflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickOutflow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )

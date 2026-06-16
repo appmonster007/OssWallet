@@ -84,10 +84,24 @@ data class CurrencyAggregationItem(
  */
 data class AccountSummaryItem(
     val account: Account,
-    val currencyBalances: Map<String, BigDecimal>,
-    val balance: BigDecimal, // Total balance in account currency
-    val balanceInBase: BigDecimal,
-    val incomeInAccountCurrency: BigDecimal,
-    val expenseInAccountCurrency: BigDecimal,
-    val transferInAccountCurrency: BigDecimal
+    val currencyBalances: Map<String, BigDecimal> = emptyMap(),
+    val balance: BigDecimal = BigDecimal.ZERO, // Total balance in account currency
+    val balanceInBase: BigDecimal = BigDecimal.ZERO,
+    val currentPeriodFlow: AccountFlowMetrics = AccountFlowMetrics(),
+    val previousPeriodFlow: AccountFlowMetrics? = null
 )
+
+/**
+ * Encapsulates flow-based metrics for an account or group of accounts.
+ */
+data class AccountFlowMetrics(
+    val income: BigDecimal = BigDecimal.ZERO,
+    val expense: BigDecimal = BigDecimal.ZERO,
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    val transferOut: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
+    val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO
+) {
+    val netTransfer: BigDecimal get() = transferIn + transferOut
+    val netCrossCcyTransfer: BigDecimal get() = crossCcyTransferIn + crossCcyTransferOut
+}

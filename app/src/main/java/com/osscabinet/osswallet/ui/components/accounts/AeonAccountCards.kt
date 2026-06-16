@@ -6,12 +6,15 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,7 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
@@ -80,14 +87,12 @@ private fun AccountColorDot(color: Color, size: Dp = 8.dp) {
 
 @Composable
 fun AeonAccountCardSmall(
-    account: Account,
-    balance: BigDecimal,
-    balanceInBase: BigDecimal,
+    summary: AccountSummaryItem,
     baseCurrency: String,
-    currencyBalances: Map<String, BigDecimal> = emptyMap(),
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(12.dp)
 
@@ -115,10 +120,10 @@ fun AeonAccountCardSmall(
                 )
             }
             NativeWithConvertedSubtext(
-                amount = balance,
+                amount = summary.balance,
                 nativeCurrency = account.currencyCode,
                 targetCurrency = baseCurrency,
-                convertedAmount = balanceInBase,
+                convertedAmount = summary.balanceInBase,
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
                     fontSize = 9.sp
@@ -134,14 +139,12 @@ fun AeonAccountCardSmall(
 
 @Composable
 fun AeonAccountCardMedium(
-    account: Account,
-    balance: BigDecimal,
-    balanceInBase: BigDecimal,
+    summary: AccountSummaryItem,
     baseCurrency: String,
-    currencyBalances: Map<String, BigDecimal> = emptyMap(),
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(16.dp)
 
@@ -183,10 +186,10 @@ fun AeonAccountCardMedium(
             }
 
             NativeWithConvertedSubtext(
-                amount = balance,
+                amount = summary.balance,
                 nativeCurrency = account.currencyCode,
                 targetCurrency = baseCurrency,
-                convertedAmount = balanceInBase,
+                convertedAmount = summary.balanceInBase,
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.sp
@@ -202,21 +205,21 @@ fun AeonAccountCardMedium(
 
 @Composable
 fun AeonAccountCardLarge(
-    account: Account,
-    balance: BigDecimal,
-    balanceInBase: BigDecimal,
+    summary: AccountSummaryItem,
     baseCurrency: String,
-    exchangeRates: Map<String, BigDecimal> = emptyMap(),
-    currencyBalances: Map<String, BigDecimal> = emptyMap(),
-    incomeInAccountCurrency: BigDecimal = BigDecimal.ZERO,
-    expenseInAccountCurrency: BigDecimal = BigDecimal.ZERO,
+    displayMode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION,
+    excludeSameCurrencyTransfers: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardNumber: String? = null,
     extraLabel: String? = null,
     onClickIncome: (() -> Unit)? = null,
-    onClickExpense: (() -> Unit)? = null
+    onClickExpense: (() -> Unit)? = null,
+    onClickTransfer: (() -> Unit)? = null,
+    onClickInflow: (() -> Unit)? = null,
+    onClickOutflow: (() -> Unit)? = null
 ) {
+    val account = summary.account
     val dotColor = accountDotColor(account)
     val shape = RoundedCornerShape(20.dp)
 
@@ -275,10 +278,10 @@ fun AeonAccountCardLarge(
             }
 
             NativeWithConvertedSubtext(
-                amount = balance,
+                amount = summary.balance,
                 nativeCurrency = account.currencyCode,
                 targetCurrency = baseCurrency,
-                convertedAmount = balanceInBase,
+                convertedAmount = summary.balanceInBase,
                 modifier = Modifier.fillMaxWidth(),
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
@@ -290,33 +293,92 @@ fun AeonAccountCardLarge(
                 horizontalAlignment = Alignment.Start,
             )
 
-            if (incomeInAccountCurrency.signum() != 0 || expenseInAccountCurrency.signum() != 0) {
+            val flow = summary.currentPeriodFlow
+            val prevFlow = summary.previousPeriodFlow
+
+            if (flow.income.signum() != 0 || flow.expense.signum() != 0 || flow.transferIn.signum() != 0 || flow.transferOut.signum() != 0) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aeonDashedTopRule()
-                        .padding(top = 8.dp),
+                        .padding(top = 8.dp)
+                        .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    AccountFlowReadout(
-                        label = "IN",
-                        amount = incomeInAccountCurrency,
-                        currency = account.currencyCode,
-                        color = AppColors.positive,
-                        onClick = onClickIncome,
-                        modifier = Modifier.weight(1f)
-                    )
-                    AccountFlowReadout(
-                        label = "OUT",
-                        amount = expenseInAccountCurrency,
-                        currency = account.currencyCode,
-                        color = AppColors.negative,
-                        onClick = onClickExpense,
-                        modifier = Modifier.weight(1f)
-                    )
+                    when (displayMode) {
+                        com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION -> {
+                            AccountFlowReadout(
+                                label = "INC",
+                                amount = flow.income,
+                                currency = account.currencyCode,
+                                color = AppColors.positive,
+                                onClick = onClickIncome,
+                                previousAmount = prevFlow?.income,
+                                modifier = Modifier.weight(1f)
+                            )
+                            AccountFlowSeparator()
+                            AccountFlowReadout(
+                                label = "EXP",
+                                amount = flow.expense,
+                                currency = account.currencyCode,
+                                color = AppColors.negative,
+                                onClick = onClickExpense,
+                                previousAmount = prevFlow?.expense,
+                                modifier = Modifier.weight(1f)
+                            )
+                            AccountFlowSeparator()
+                            val tx = if (excludeSameCurrencyTransfers) flow.netCrossCcyTransfer else flow.netTransfer
+                            val prevTx = if (prevFlow != null) {
+                                if (excludeSameCurrencyTransfers) prevFlow.netCrossCcyTransfer else prevFlow.netTransfer
+                            } else null
+
+                            AccountFlowReadout(
+                                label = "TRF",
+                                amount = tx,
+                                currency = account.currencyCode,
+                                color = AppColors.accent,
+                                onClick = onClickTransfer,
+                                previousAmount = prevTx,
+                                modifier = Modifier.weight(1f),
+                                forceShowPlus = true
+                            )
+                        }
+
+                        com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW -> {
+                            val txIn = if (excludeSameCurrencyTransfers) flow.crossCcyTransferIn else flow.transferIn
+                            val txOut = if (excludeSameCurrencyTransfers) flow.crossCcyTransferOut else flow.transferOut
+
+                            val prevTxIn = if (excludeSameCurrencyTransfers) prevFlow?.crossCcyTransferIn else prevFlow?.transferIn
+                            val prevTxOut = if (excludeSameCurrencyTransfers) prevFlow?.crossCcyTransferOut else prevFlow?.transferOut
+                            
+                            val prevInflow = prevFlow?.let { it.income + (prevTxIn ?: BigDecimal.ZERO) }
+                            val prevOutflow = prevFlow?.let { it.expense + (prevTxOut ?: BigDecimal.ZERO) }
+
+                            AccountFlowReadout(
+                                label = "IN",
+                                amount = flow.income + txIn,
+                                currency = account.currencyCode,
+                                color = AppColors.positive,
+                                onClick = onClickInflow,
+                                previousAmount = prevInflow,
+                                modifier = Modifier.weight(1f)
+                            )
+                            AccountFlowSeparator()
+                            AccountFlowReadout(
+                                label = "OUT",
+                                amount = flow.expense + txOut,
+                                currency = account.currencyCode,
+                                color = AppColors.negative,
+                                onClick = onClickOutflow,
+                                previousAmount = prevOutflow,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
                 }
             }
 
+            val currencyBalances = summary.currencyBalances
             val sortedCurrencyBalances = remember(currencyBalances) {
                 currencyBalances.toList().sortedBy { it.first }
             }
@@ -354,28 +416,81 @@ fun AeonAccountCardLarge(
 }
 
 @Composable
+private fun AccountFlowSeparator() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .fillMaxHeight()
+            .background(AppColors.outlineVariant)
+    )
+}
+
+@Composable
 private fun AccountFlowReadout(
     label: String,
     amount: BigDecimal,
     currency: String,
     color: Color,
     onClick: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    previousAmount: BigDecimal? = null,
+    forceShowPlus: Boolean = false
 ) {
     Column(
         modifier = if (onClick != null) modifier.clickable { onClick() } else modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                label,
+                style = AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                color = AppColors.contentSecondary.copy(alpha = 0.5f),
+                maxLines = 1,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            if (previousAmount != null) {
+                val change = amount.subtract(previousAmount)
+                if (change.signum() != 0 && previousAmount.signum() != 0) {
+                    val percentage = change.multiply(BigDecimal("100"))
+                        .divide(previousAmount.abs(), 1, java.math.RoundingMode.HALF_UP)
+                    val up = change.signum() > 0
+
+                    val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
+                        "${if (percentage.signum() > 0) ">999" else "<-999"}%"
+                    } else {
+                        "${if (up) "+" else ""}$percentage%"
+                    }
+
+                    Text(
+                        text = "${if (up) "▲" else "▼"} $displayPercentage",
+                        style = AppTextStyles.metaLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 8.sp
+                        ),
+                        color = color,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
         Text(
-            label,
-            style = AppTextStyles.sectionOverline,
-            color = AppColors.contentSecondary.copy(alpha = 0.7f)
-        )
-        Text(
-            formatCurrency(amount, currency),
+            text = CurrencyReprUi.formatCurrencyAnnotated(
+                amount = amount,
+                currencyCode = currency,
+                spec = CurrencyDisplaySpec(
+                    useSemanticColor = false,
+                    forceShowPlus = forceShowPlus,
+                    shortenThreshold = 10
+                )
+            ),
             style = AppTextStyles.transactionAmount.copy(
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                letterSpacing = (-0.3).sp
             ),
             color = color,
             maxLines = 1,
@@ -458,6 +573,20 @@ fun AeonAccountCardsPreview() {
         colorHex = "#4CAF50",
         icon = "Savings"
     )
+    val mockSummary = AccountSummaryItem(
+        account = mockAccount,
+        currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
+        balance = BigDecimal("1234.56"),
+        balanceInBase = BigDecimal("1234.56"),
+        currentFlow = AccountFlowMetrics(
+            income = BigDecimal("500.00"),
+            expense = BigDecimal("100.00")
+        ),
+        previousFlow = AccountFlowMetrics(
+            income = BigDecimal("400.00"),
+            expense = BigDecimal("150.00")
+        )
+    )
 
     OssWalletTheme {
         Column(
@@ -465,29 +594,21 @@ fun AeonAccountCardsPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             AeonAccountCardSmall(
-                account = mockAccount,
-                balance = BigDecimal("1234.56"),
-                balanceInBase = BigDecimal("1234.56"),
+                summary = mockSummary,
                 baseCurrency = "USD",
                 onClick = {}
             )
 
             AeonAccountCardMedium(
-                account = mockAccount,
-                balance = BigDecimal("1234.56"),
-                balanceInBase = BigDecimal("1234.56"),
+                summary = mockSummary,
                 baseCurrency = "USD",
                 onClick = {}
             )
 
             AeonAccountCardLarge(
-                account = mockAccount,
-                balance = BigDecimal("1234.56"),
-                balanceInBase = BigDecimal("1234.56"),
+                summary = mockSummary,
                 baseCurrency = "USD",
-                onClick = {},
-                incomeInAccountCurrency = BigDecimal("500.00"),
-                expenseInAccountCurrency = BigDecimal("100.00")
+                onClick = {}
             )
         }
     }
@@ -497,6 +618,14 @@ private fun glassPreviewAccounts() = Triple(
     Account(id = "1", name = "Main Savings", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, colorHex = "#4CAF50", icon = "Savings"),
     Account(id = "2", name = "Checking", currencyCode = "EUR", structureType = AccountStructureType.BANK, colorHex = "#2196F3", icon = "AccountBalance"),
     Account(id = "3", name = "Portfolio", currencyCode = "USD", structureType = AccountStructureType.INVESTMENT, colorHex = "#9C27B0", icon = "ShowChart")
+)
+
+private fun mockSummary(account: Account) = AccountSummaryItem(
+    account = account,
+    currencyBalances = mapOf(account.currencyCode to BigDecimal("12345.67")),
+    balance = BigDecimal("12345.67"),
+    balanceInBase = BigDecimal("12345.67"),
+    currentPeriodFlow = AccountFlowMetrics(income = BigDecimal("5200.00"), expense = BigDecimal("1840.50"))
 )
 
 @Preview(showBackground = true, name = "Glass – Light")
@@ -514,25 +643,19 @@ fun AeonAccountCardsGlassLightPreview() {
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardSmall(
-                            account = savings,
-                            balance = BigDecimal("12345.67"),
-                            balanceInBase = BigDecimal("12345.67"),
+                            summary = mockSummary(savings),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
@@ -540,30 +663,22 @@ fun AeonAccountCardsGlassLightPreview() {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardMedium(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardMedium(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                     }
                     AeonAccountCardLarge(
-                        account = savings,
-                        balance = BigDecimal("12345.67"),
-                        balanceInBase = BigDecimal("12345.67"),
+                        summary = mockSummary(savings),
                         baseCurrency = "USD",
                         onClick = {},
-                        incomeInAccountCurrency = BigDecimal("5200.00"),
-                        expenseInAccountCurrency = BigDecimal("1840.50"),
                         cardNumber = "•••• 4921"
                     )
                 }
@@ -585,25 +700,19 @@ fun AeonAccountCardsGlassDarkPreview() {
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardSmall(
-                            account = savings,
-                            balance = BigDecimal("12345.67"),
-                            balanceInBase = BigDecimal("12345.67"),
+                            summary = mockSummary(savings),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
@@ -611,30 +720,22 @@ fun AeonAccountCardsGlassDarkPreview() {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardMedium(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardMedium(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                     }
                     AeonAccountCardLarge(
-                        account = savings,
-                        balance = BigDecimal("12345.67"),
-                        balanceInBase = BigDecimal("12345.67"),
+                        summary = mockSummary(savings),
                         baseCurrency = "USD",
                         onClick = {},
-                        incomeInAccountCurrency = BigDecimal("5200.00"),
-                        expenseInAccountCurrency = BigDecimal("1840.50"),
                         cardNumber = "•••• 4921"
                     )
                 }
@@ -656,25 +757,19 @@ fun AeonAccountCardsGlassAmoledPreview() {
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardSmall(
-                            account = savings,
-                            balance = BigDecimal("12345.67"),
-                            balanceInBase = BigDecimal("12345.67"),
+                            summary = mockSummary(savings),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardSmall(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
@@ -682,30 +777,22 @@ fun AeonAccountCardsGlassAmoledPreview() {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         AeonAccountCardMedium(
-                            account = portfolio,
-                            balance = BigDecimal("48320.00"),
-                            balanceInBase = BigDecimal("48320.00"),
+                            summary = mockSummary(portfolio),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                         AeonAccountCardMedium(
-                            account = checking,
-                            balance = BigDecimal("3421.50"),
-                            balanceInBase = BigDecimal("3754.20"),
+                            summary = mockSummary(checking).copy(balanceInBase = BigDecimal("3754.20")),
                             baseCurrency = "USD",
                             onClick = {},
                             modifier = Modifier.weight(1f)
                         )
                     }
                     AeonAccountCardLarge(
-                        account = savings,
-                        balance = BigDecimal("12345.67"),
-                        balanceInBase = BigDecimal("12345.67"),
+                        summary = mockSummary(savings),
                         baseCurrency = "USD",
                         onClick = {},
-                        incomeInAccountCurrency = BigDecimal("5200.00"),
-                        expenseInAccountCurrency = BigDecimal("1840.50"),
                         cardNumber = "•••• 4921"
                     )
                 }
@@ -725,6 +812,16 @@ fun AeonAccountCardsDarkPreview() {
         colorHex = "#4CAF50",
         icon = "Savings"
     )
+    val mockSummary = AccountSummaryItem(
+        account = mockAccount,
+        currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
+        balance = BigDecimal("1234.56"),
+        balanceInBase = BigDecimal("1234.56"),
+        currentFlow = AccountFlowMetrics(
+            income = BigDecimal("500.00"),
+            expense = BigDecimal("100.00")
+        )
+    )
 
     OssWalletTheme(theme = "Dark") {
         Surface(color = MaterialTheme.colorScheme.background) {
@@ -733,29 +830,21 @@ fun AeonAccountCardsDarkPreview() {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 AeonAccountCardSmall(
-                    account = mockAccount,
-                    balance = BigDecimal("1234.56"),
-                    balanceInBase = BigDecimal("1234.56"),
+                    summary = mockSummary,
                     baseCurrency = "USD",
                     onClick = {}
                 )
 
                 AeonAccountCardMedium(
-                    account = mockAccount,
-                    balance = BigDecimal("1234.56"),
-                    balanceInBase = BigDecimal("1234.56"),
+                    summary = mockSummary,
                     baseCurrency = "USD",
                     onClick = {}
                 )
 
                 AeonAccountCardLarge(
-                    account = mockAccount,
-                    balance = BigDecimal("1234.56"),
-                    balanceInBase = BigDecimal("1234.56"),
+                    summary = mockSummary,
                     baseCurrency = "USD",
-                    onClick = {},
-                    incomeInAccountCurrency = BigDecimal("500.00"),
-                    expenseInAccountCurrency = BigDecimal("100.00")
+                    onClick = {}
                 )
             }
         }

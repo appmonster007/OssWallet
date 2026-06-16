@@ -46,10 +46,10 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
             )
         }.getOrNull()
 
-        val netWorth = renderData?.currentMetrics?.netWorth ?: BigDecimal.ZERO
-        val income = renderData?.currentMetrics?.cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO
-        val expense = renderData?.currentMetrics?.cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO
-        val prev = renderData?.previousMetrics
+        val netWorth = renderData?.currentPeriodMetrics?.netWorth ?: BigDecimal.ZERO
+        val income = renderData?.currentPeriodMetrics?.cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO
+        val expense = renderData?.currentPeriodMetrics?.cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO
+        val prev = renderData?.previousPeriodMetrics
 
         val formatter = CurrencyReprUi.CurrencyNumberFormatter()
         prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"

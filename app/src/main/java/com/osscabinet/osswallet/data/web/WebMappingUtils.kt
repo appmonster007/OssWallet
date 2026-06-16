@@ -128,12 +128,12 @@ internal fun CardRenderData.toPayloadDto(
     accountMap: Map<String, Account>
 ): CardPayloadDto = when (this) {
     is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
-        netWorth = currentMetrics.netWorth.toDouble(),
-        income = currentMetrics.cashFlow.totalIncomeInBase.toDouble(),
-        expense = currentMetrics.cashFlow.totalExpensesInBase.toDouble(),
-        transfer = currentMetrics.cashFlow.totalTransfersInBase.toDouble(),
-        cashFlow = currentMetrics.cashFlow.netInBase.toDouble(),
-        previousNetWorth = previousMetrics?.netWorth?.toDouble(),
+        netWorth = currentPeriodMetrics.netWorth.toDouble(),
+        income = currentPeriodMetrics.cashFlow.totalIncomeInBase.toDouble(),
+        expense = currentPeriodMetrics.cashFlow.totalExpensesInBase.toDouble(),
+        transfer = currentPeriodMetrics.cashFlow.totalTransfersInBase.toDouble(),
+        cashFlow = currentPeriodMetrics.cashFlow.netInBase.toDouble(),
+        previousNetWorth = previousPeriodMetrics?.netWorth?.toDouble(),
         currency = this.currency
     )
 
@@ -157,15 +157,15 @@ internal fun CardRenderData.toPayloadDto(
     )
 
     is CardRenderData.Accounts -> CardPayloadDto.Accounts(
-        accounts = accountStats.map { (id, stats) ->
+        accounts = accountSummaries.map { (id, stats) ->
             CardPayloadDto.AccountSummaryItem(
                 id = id,
                 name = stats.account.name,
                 currency = stats.account.currencyCode,
                 balance = stats.balance.toDouble(),
-                income = stats.incomeInAccountCurrency.toDouble(),
-                expense = stats.expenseInAccountCurrency.toDouble(),
-                transfer = stats.transferInAccountCurrency.toDouble(),
+                income = stats.currentPeriodFlow.income.toDouble(),
+                expense = stats.currentPeriodFlow.expense.toDouble(),
+                transfer = stats.currentPeriodFlow.netTransfer.toDouble(),
                 balanceInBase = stats.balanceInBase.toDouble()
             )
         }

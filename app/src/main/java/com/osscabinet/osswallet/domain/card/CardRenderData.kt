@@ -51,9 +51,9 @@ sealed class CardRenderData {
 
     data class NetWorth(
         val config: NetWorthCardConfig,
-        val currentMetrics: NetWorthMetrics,
+        val currentPeriodMetrics: NetWorthMetrics,
         val currency: String,
-        val previousMetrics: NetWorthMetrics? = null
+        val previousPeriodMetrics: NetWorthMetrics? = null
     ) : CardRenderData()
 
     data class CurrencyBalances(
@@ -72,7 +72,7 @@ sealed class CardRenderData {
     data class Accounts(
         val config: AccountsCardConfig,
         val updatedAccounts: List<Account>,
-        val accountStats: Map<String, AccountSummaryItem>,
+        val accountSummaries: Map<String, AccountSummaryItem>,
         val currency: String,
         val currentTheme: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
@@ -123,13 +123,9 @@ sealed class CardRenderData {
 
     data class AccountHero(
         val config: AccountHeroCardConfig,
-        val account: Account,
-        val balance: BigDecimal,
-        val income: BigDecimal,
-        val expense: BigDecimal,
+        val summary: AccountSummaryItem,
         val currency: String,
-        val exchangeRates: ExchangeRateSnapshot,
-        val currencyBalances: Map<String, BigDecimal> = emptyMap()
+        val exchangeRates: ExchangeRateSnapshot
     ) : CardRenderData()
 
     data class RecentActivities(

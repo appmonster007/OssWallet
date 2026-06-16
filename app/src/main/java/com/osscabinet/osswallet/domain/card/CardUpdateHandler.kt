@@ -35,6 +35,25 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardNetWorthDisplayMode(
+        cardId: String,
+        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+    ) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(displayMode = mode) else config
+            }
+        }
+    }
+
+    fun updateCardNetWorthExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is NetWorthCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+            }
+        }
+    }
+
     fun updateCardNetWorthFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
@@ -144,6 +163,25 @@ interface CardUpdateHandler {
             }
         }
     }
+
+    fun updateCardAccountsDisplayMode(
+        cardId: String,
+        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+    ) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(displayMode = mode) else config
+            }
+        }
+    }
+
+    fun updateCardAccountsExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is AccountsCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+            }
+        }
+    }
     
     fun updateCardAccountsFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
@@ -161,7 +199,26 @@ interface CardUpdateHandler {
             }
         }
     }
-    
+
+    fun updateCardHeroDisplayMode(
+        cardId: String,
+        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+    ) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is AccountHeroCardConfig) config.copy(displayMode = mode) else config
+            }
+        }
+    }
+
+    fun updateCardHeroExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                if (config is AccountHeroCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+            }
+        }
+    }
+
     fun updateCardHeroFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->

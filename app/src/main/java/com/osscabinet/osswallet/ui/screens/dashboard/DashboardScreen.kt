@@ -80,6 +80,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
@@ -1030,7 +1031,7 @@ fun DashboardScreenPreview() {
         cardDataMap = mapOf(
             "net_worth_1" to CardRenderData.NetWorth(
                 config = netWorthConfig,
-                currentMetrics = NetWorthMetrics(
+                currentPeriodMetrics = NetWorthMetrics(
                     netWorth = BigDecimal("12500.00"),
                     cashFlow = CashFlowResult.empty().copy(
                         totalIncomeInBase = BigDecimal("5000.00"),
@@ -1043,15 +1044,16 @@ fun DashboardScreenPreview() {
             "accounts_1" to CardRenderData.Accounts(
                 config = accountsConfig,
                 updatedAccounts = listOf(sampleAccount),
-                accountStats = mapOf(
+                accountSummaries = mapOf(
                     "1" to AccountSummaryItem(
                         account = sampleAccount,
                         currencyBalances = mapOf("USD" to BigDecimal("12500.00")),
                         balance = BigDecimal("12500.00"),
                         balanceInBase = BigDecimal("12500.00"),
-                        incomeInAccountCurrency = BigDecimal("5000.00"),
-                        expenseInAccountCurrency = BigDecimal("3000.00"),
-                        transferInAccountCurrency = BigDecimal.ZERO
+                        currentPeriodFlow = AccountFlowMetrics(
+                            income = BigDecimal("5000.00"),
+                            expense = BigDecimal("3000.00")
+                        )
                     )
                 ),
                 currency = "USD",

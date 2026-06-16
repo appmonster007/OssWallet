@@ -21,6 +21,9 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -31,12 +34,13 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonLazyRow
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardLarge
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
@@ -53,10 +57,8 @@ import java.math.BigDecimal
 @Composable
 fun AccountsCard(
     accounts: List<Account>,
-    accountStats: Map<String, AccountSummaryItem>,
+    accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -107,12 +109,11 @@ fun AccountsCard(
                 accounts.forEach { account ->
                     AccountItemWrapper(
                         account = account,
-                        accountStats = accountStats,
+                        accountSummaries = accountSummaries,
                         baseCurrency = baseCurrency,
-                        gridColumns = config.gridColumns,
+                        config = config,
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
-                        filter = config.filter,
                         modifier = if (config.gridColumns == 1) Modifier.fillMaxWidth() else Modifier.weight(
                             1f
                         )
@@ -142,12 +143,11 @@ fun AccountsCard(
                 items(accounts) { account ->
                     AccountItemWrapper(
                         account = account,
-                        accountStats = accountStats,
+                        accountSummaries = accountSummaries,
                         baseCurrency = baseCurrency,
-                        gridColumns = 2,
+                        config = config,
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
-                        filter = config.filter,
                         modifier = Modifier.width(180.dp)
                     )
                 }
@@ -174,7 +174,7 @@ private fun AccountsSettingsSheet(
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Accounts", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Display") {
+        CardSettingsSection("Layout") {
             AeonLayoutToggle(
                 layout = config.layout,
                 onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
@@ -183,6 +183,47 @@ private fun AccountsSettingsSheet(
                 AeonGridColumnsSettings(
                     gridColumns = config.gridColumns,
                     onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
+                )
+            }
+            EntrySwitchRow(
+                label = "Show Comparison",
+                subtitle = "Show change from previous period",
+                checked = config.showComparison,
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+                isFlush = true
+            )
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = config.displayMode == mode,
+                        onClick = { callbacks.onDisplayModeChange(config.cardId, mode) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.entries.size
+                        ),
+                        label = {
+                            Text(
+                                when (mode) {
+                                    com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION -> "Type"
+                                    com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW -> "In / Out"
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+            if (config.displayMode == com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW) {
+                AeonSettingsToggle(
+                    label = "Exclude same-currency transfers",
+                    description = "Only used in Inflow / Outflow mode",
+                    checked = config.excludeSameCurrencyTransfers,
+                    onCheckedChange = {
+                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+                    }
                 )
             }
             AeonSettingsToggle(
@@ -211,22 +252,23 @@ private fun AccountsSettingsSheet(
 @Composable
 private fun FlowRowScope.AccountItemWrapper(
     account: Account,
-    accountStats: Map<String, AccountSummaryItem>,
+    accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    gridColumns: Int,
+    config: AccountsCardConfig,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
-    filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
         account = account,
-        accountStats = accountStats,
+        accountSummaries = accountSummaries,
         baseCurrency = baseCurrency,
-        gridColumns = gridColumns,
+        gridColumns = config.gridColumns,
+        displayMode = config.displayMode,
+        excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
-        filter = filter,
+        filter = config.filter,
         modifier = modifier
     )
 }
@@ -234,22 +276,23 @@ private fun FlowRowScope.AccountItemWrapper(
 @Composable
 private fun AccountItemWrapper(
     account: Account,
-    accountStats: Map<String, AccountSummaryItem>,
+    accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
-    gridColumns: Int,
+    config: AccountsCardConfig,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
-    filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
     AccountItemContent(
         account = account,
-        accountStats = accountStats,
+        accountSummaries = accountSummaries,
         baseCurrency = baseCurrency,
-        gridColumns = gridColumns,
+        gridColumns = 2, // Medium card for row layout
+        displayMode = config.displayMode,
+        excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
-        filter = filter,
+        filter = config.filter,
         modifier = modifier
     )
 }
@@ -257,27 +300,24 @@ private fun AccountItemWrapper(
 @Composable
 private fun AccountItemContent(
     account: Account,
-    accountStats: Map<String, AccountSummaryItem>,
+    accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
     gridColumns: Int,
+    displayMode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION,
+    excludeSameCurrencyTransfers: Boolean = false,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
     modifier: Modifier = Modifier
 ) {
-    val stats = accountStats[account.id]
-    val balance = stats?.balance ?: BigDecimal.ZERO
-    val totalInBase = stats?.balanceInBase ?: BigDecimal.ZERO
+    val stats = accountSummaries[account.id] ?: AccountSummaryItem(account)
 
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
-            account = account,
-            balance = balance,
-            balanceInBase = totalInBase,
+            summary = stats,
             baseCurrency = baseCurrency,
-            currencyBalances = stats?.currencyBalances ?: emptyMap(),
-            incomeInAccountCurrency = stats?.incomeInAccountCurrency ?: BigDecimal.ZERO,
-            expenseInAccountCurrency = stats?.expenseInAccountCurrency ?: BigDecimal.ZERO,
+            displayMode = displayMode,
+            excludeSameCurrencyTransfers = excludeSameCurrencyTransfers,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
             onClickIncome = {
@@ -295,25 +335,43 @@ private fun AccountItemContent(
                         transactionTypes = setOf(TransactionType.EXPENSE)
                     )
                 )
+            },
+            onClickInflow = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = setOf(account.id),
+                        transactionTypes = setOf(TransactionType.INCOME) + TransactionType.TRANSFER_TYPES
+                    )
+                )
+            },
+            onClickOutflow = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = setOf(account.id),
+                        transactionTypes = setOf(TransactionType.EXPENSE) + TransactionType.TRANSFER_TYPES
+                    )
+                )
+            },
+            onClickTransfer = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = setOf(account.id),
+                        transactionTypes = TransactionType.TRANSFER_TYPES
+                    )
+                )
             }
         )
 
         2 -> AeonAccountCardMedium(
-            account = account,
-            balance = balance,
-            balanceInBase = totalInBase,
+            summary = stats,
             baseCurrency = baseCurrency,
-            currencyBalances = stats?.currencyBalances ?: emptyMap(),
             onClick = { onAccountClick(account.id) },
             modifier = modifier
         )
 
         else -> AeonAccountCardSmall(
-            account = account,
-            balance = balance,
-            balanceInBase = totalInBase,
+            summary = stats,
             baseCurrency = baseCurrency,
-            currencyBalances = stats?.currencyBalances ?: emptyMap(),
             onClick = { onAccountClick(account.id) },
             modifier = modifier
         )
@@ -358,12 +416,11 @@ private fun AeonAddAccountCardContent(
         "Add",
         listOf("Add")
     )
+    val summary = AccountSummaryItem(placeholderAccount)
 
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
-            account = placeholderAccount,
-            balance = BigDecimal.ZERO,
-            balanceInBase = BigDecimal.ZERO,
+            summary = summary,
             baseCurrency = baseCurrency,
             onClick = onClick,
             modifier = modifier,
@@ -371,18 +428,14 @@ private fun AeonAddAccountCardContent(
         )
 
         2 -> AeonAccountCardMedium(
-            account = placeholderAccount,
-            balance = BigDecimal.ZERO,
-            balanceInBase = BigDecimal.ZERO,
+            summary = summary,
             baseCurrency = baseCurrency,
             onClick = onClick,
             modifier = modifier
         )
 
         else -> AeonAccountCardSmall(
-            account = placeholderAccount,
-            balance = BigDecimal.ZERO,
-            balanceInBase = BigDecimal.ZERO,
+            summary = summary,
             baseCurrency = baseCurrency,
             onClick = onClick,
             modifier = modifier
@@ -419,18 +472,22 @@ fun AccountsCardPreview() {
             mapOf("USD" to BigDecimal("5000.00")),
             BigDecimal("5000.00"),
             BigDecimal("5000.00"),
-            BigDecimal("1000.00"),
-            BigDecimal("200.00"),
-            BigDecimal.ZERO
+            currentFlow = AccountFlowMetrics(
+                income = BigDecimal("1000.00"),
+                expense = BigDecimal("200.00"),
+                transferIn = BigDecimal.ZERO
+            )
         ),
         "2" to AccountSummaryItem(
             accounts[1],
             mapOf("EUR" to BigDecimal("1200.00")),
             BigDecimal("1200.00"),
             BigDecimal("1320.00"),
-            BigDecimal("500.00"),
-            BigDecimal("100.00"),
-            BigDecimal.ZERO
+            currentFlow = AccountFlowMetrics(
+                income = BigDecimal("500.00"),
+                expense = BigDecimal("100.00"),
+                transferIn = BigDecimal.ZERO
+            )
         )
     )
 
@@ -438,7 +495,7 @@ fun AccountsCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             AccountsCard(
                 accounts = accounts,
-                accountStats = stats,
+                accountSummaries = stats,
                 baseCurrency = "USD",
                 config = AccountsCardConfig(cardId = "preview"),
                 callbacks = CardCallbacks.Accounts(onManageClick = {}, onAccountClick = {})

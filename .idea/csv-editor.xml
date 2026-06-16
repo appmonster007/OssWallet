@@ -3,6 +3,76 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="/.claude/skills/bmad-advanced-elicitation/methods.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/.claude/skills/bmad-brainstorming/brain-methods.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/.claude/skills/bmad-create-architecture/data/domain-complexity.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/.claude/skills/bmad-create-architecture/data/project-types.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/.claude/skills/bmad-document-project/documentation-requirements.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/_bmad/_config/bmad-help.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/_bmad/_config/files-manifest.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/_bmad/_config/skill-manifest.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/_bmad/bmm/module-help.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/_bmad/core/module-help.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/debug/assets/accounts.csv">
           <value>
             <Attribute>
@@ -38,6 +108,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/app/src/debug/assets/tags.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/debug/assets/templates.csv">
           <value>
             <Attribute>
@@ -67,6 +144,13 @@
           </value>
         </entry>
         <entry key="/app/src/main/assets/wallet-budgetbakers/payment_type_map.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/tmp/cashew-2026-06-09-12-08-28-536507.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

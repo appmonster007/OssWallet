@@ -91,6 +91,7 @@ fun AeonExpressiveCard(
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     subtitle: String? = null,
+    subtitleColor: Color = AppColors.contentSecondary,
     icon: ImageVector? = null,
     accentColor: Color? = null,
     isWarning: Boolean = false,
@@ -224,7 +225,7 @@ fun AeonExpressiveCard(
                                     Text(
                                         text = effectiveSubtitle,
                                         style = AppTextStyles.cardPeriodReadout,
-                                        color = AppColors.contentSecondary,
+                                        color = subtitleColor,
                                         modifier = Modifier
                                             .clickable { showFilterSheet = true }
                                             .aeonDottedUnderline(),
@@ -233,7 +234,7 @@ fun AeonExpressiveCard(
                                     Text(
                                         text = effectiveSubtitle,
                                         style = AppTextStyles.cardPeriodReadout,
-                                        color = AppColors.contentSecondary,
+                                        color = subtitleColor,
                                     )
                                 }
                             }

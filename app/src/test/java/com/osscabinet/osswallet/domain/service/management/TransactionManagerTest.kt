@@ -40,15 +40,14 @@ class TransactionManagerTest {
         val request = TransactionRequest(
             name = "Transfer",
             amount = BigDecimal("100.00"),
-            transactionType = TransactionType.TRANSFER,
+            entryMode = EntryMode.TRANSFER,
             accountId = "ACC_1",
             targetAccountId = "ACC_2",
             currency = "USD",
             targetCurrency = "EUR",
             transferRate = BigDecimal("0.85"),
             categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
-            timestamp = 123456789L,
-            isTransfer = true
+            timestamp = 123456789L
         )
 
         val sourceSlot = slot<Transaction>()
@@ -80,13 +79,12 @@ class TransactionManagerTest {
         val request = TransactionRequest(
             name = "Initial Balance",
             amount = BigDecimal("500.00"),
-            transactionType = TransactionType.TRANSFER,
+            entryMode = EntryMode.TRANSFER,
             accountId = null,
             targetAccountId = "ACC_1",
             currency = "USD",
             categoryId = Category.SYSTEM_INITIAL_BALANCE_INFLOW,
-            timestamp = 123456789L,
-            isTransfer = true
+            timestamp = 123456789L
         )
 
         val txSlot = slot<Transaction>()
@@ -104,13 +102,12 @@ class TransactionManagerTest {
         val request = TransactionRequest(
             name = "Initial Balance",
             amount = BigDecimal("300.00"),
-            transactionType = TransactionType.TRANSFER,
+            entryMode = EntryMode.TRANSFER,
             accountId = "ACC_1",
             targetAccountId = null,
             currency = "USD",
             categoryId = Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
-            timestamp = 123456789L,
-            isTransfer = true
+            timestamp = 123456789L
         )
 
         val txSlot = slot<Transaction>()
@@ -129,7 +126,7 @@ class TransactionManagerTest {
             id = 10L,
             name = "Old",
             amount = BigDecimal("-50.00"),
-            transactionType = TransactionType.TRANSFER,
+            transactionType = TransactionType.TRANSFER_OUTFLOW,
             accountId = "ACC_1",
             categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
             timestamp = 1000L,
@@ -140,15 +137,14 @@ class TransactionManagerTest {
         val request = TransactionRequest(
             name = "Updated",
             amount = BigDecimal("150.00"),
-            transactionType = TransactionType.TRANSFER,
+            entryMode = EntryMode.TRANSFER,
             accountId = "ACC_1",
             targetAccountId = "ACC_3", // Changed target account
             currency = "USD",
             targetCurrency = "EUR",
             transferRate = BigDecimal("0.9"),
             categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
-            timestamp = 2000L,
-            isTransfer = true
+            timestamp = 2000L
         )
 
         coEvery { transactionUseCases.getLinkedTransactionIds(10L) } returns flowOf(listOf(11L))
@@ -156,7 +152,7 @@ class TransactionManagerTest {
             id = 11L,
             name = "Old Target",
             amount = BigDecimal("50.00"),
-            transactionType = TransactionType.TRANSFER,
+            transactionType = TransactionType.TRANSFER_INFLOW,
             accountId = "ACC_2",
             categoryId = Category.SYSTEM_TRANSFER_INFLOW,
             timestamp = 1000L,

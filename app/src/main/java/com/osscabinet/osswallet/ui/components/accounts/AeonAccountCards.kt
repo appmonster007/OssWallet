@@ -578,11 +578,11 @@ fun AeonAccountCardsPreview() {
         currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
         balance = BigDecimal("1234.56"),
         balanceInBase = BigDecimal("1234.56"),
-        currentFlow = AccountFlowMetrics(
+        currentPeriodFlow = AccountFlowMetrics(
             income = BigDecimal("500.00"),
             expense = BigDecimal("100.00")
         ),
-        previousFlow = AccountFlowMetrics(
+        previousPeriodFlow = AccountFlowMetrics(
             income = BigDecimal("400.00"),
             expense = BigDecimal("150.00")
         )
@@ -817,7 +817,7 @@ fun AeonAccountCardsDarkPreview() {
         currencyBalances = mapOf("USD" to BigDecimal("1234.56")),
         balance = BigDecimal("1234.56"),
         balanceInBase = BigDecimal("1234.56"),
-        currentFlow = AccountFlowMetrics(
+        currentPeriodFlow = AccountFlowMetrics(
             income = BigDecimal("500.00"),
             expense = BigDecimal("100.00")
         )

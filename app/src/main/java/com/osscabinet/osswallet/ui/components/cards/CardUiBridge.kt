@@ -435,7 +435,7 @@ fun rememberCardWithCallbacks(
                         onSeeAll = {
                             onRecordsClick(resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline))
                         },
-                        onClick = { callbacks.accountActions.onClick(renderData.account.id) },
+                        onClick = { callbacks.accountActions.onClick(renderData.summary.account.id) },
                         onSaveFilterClick = callbacks.filterActions.onSaveClick
                     ),
                     filterRules = config.filterRules,

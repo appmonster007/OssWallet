@@ -554,7 +554,7 @@ fun AccountHeroCardPreview() {
         ),
         balance = BigDecimal("245800.50"),
         balanceInBase = BigDecimal("245800.50"),
-        currentMetFlow = AccountFlowMetrics(
+        currentPeriodFlow = AccountFlowMetrics(
             income = BigDecimal("15000.00"),
             expense = BigDecimal("4200.00")
         )

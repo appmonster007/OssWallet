@@ -86,7 +86,6 @@ data class TemplateEntryState(
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME
     val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
     val isTransfer: Boolean get() = entryMode == EntryMode.TRANSFER
-    val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(categoryId)
 
     val amountValue: BigDecimal
         get() = source.amountValue

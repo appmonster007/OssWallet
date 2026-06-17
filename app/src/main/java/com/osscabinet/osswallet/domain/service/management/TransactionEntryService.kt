@@ -74,22 +74,22 @@ object TransactionEntryService {
                     // Income account was receiving money → moves to Target (Receiver).
                     newSource = TransactionSide(
                         account = otherSideRef,
-                        categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+                        categoryId = Category.SYSTEM_TRANSFER,
                         amount = primarySide.amount,
                         currency = primarySide.currency
                     )
                     newDestination = primarySide.copy(
-                        categoryId = Category.SYSTEM_TRANSFER_INFLOW
+                        categoryId = Category.SYSTEM_TRANSFER
                     )
                 } else {
                     // Expense account was giving money → remains the Source.
                     newSource = primarySide.copy(
-                        categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+                        categoryId = Category.SYSTEM_TRANSFER,
                         amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
                     )
                     newDestination = TransactionSide(
                         account = otherSideRef,
-                        categoryId = Category.SYSTEM_TRANSFER_INFLOW,
+                        categoryId = Category.SYSTEM_TRANSFER,
                         currency = primarySide.currency
                     )
                 }

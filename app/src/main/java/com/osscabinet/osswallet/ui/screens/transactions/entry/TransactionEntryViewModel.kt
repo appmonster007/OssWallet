@@ -166,7 +166,7 @@ class TransactionEntryViewModel @Inject constructor(
             else -> transaction.transactionType.toEntryMode()
         }
 
-        val isOpenedAsReceiver = Category.isAnyTransferInflow(transaction.categoryId)
+        val isOpenedAsReceiver = transaction.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
         var selectedAcc: Account? = accounts.find { it.id == transaction.accountId }
         var targetAcc: Account? = accounts.find { it.id == transaction.targetAccountId }
         var amountStr = ""
@@ -193,7 +193,7 @@ class TransactionEntryViewModel @Inject constructor(
                 amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
                     ?: if (transaction.transferRate.signum() != 0) {
                         transaction.amount.abs()
-                            .divide(transaction.transferRate, 8, java.math.RoundingMode.HALF_UP)
+                            .multiply(transaction.transferRate)
                             .stripTrailingZeros().toPlainString()
                     } else ""
             } else {
@@ -204,9 +204,9 @@ class TransactionEntryViewModel @Inject constructor(
                             .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                             .toPlainString()
             }
-            // Semantic Normalization: Source is Outflow, Destination is Inflow
-            categoryId = if (Category.isInitialBalance(transaction.categoryId)) 
-                Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+            // Semantic Normalization: Unified category for both sides
+            categoryId = if (Category.isInitialBalance(transaction.categoryId))
+                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
         } else {
             amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
         }
@@ -268,7 +268,10 @@ class TransactionEntryViewModel @Inject constructor(
         val accounts = currentState.accounts
         val txType = prefill.entryMode
 
-        val isOpenedAsReceiver = Category.isAnyTransferInflow(prefill.categoryId)
+        val isOpenedAsReceiver = prefill.categoryId == Category.SYSTEM_INITIAL_BALANCE ||
+                prefill.categoryId == Category.SYSTEM_TRANSFER // This is ambiguous now, but prefill direction should come from type if possible. 
+                // However, DTO might not have correct type yet. For now, check type if present.
+                || prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
 
         // Use prefill data if available, otherwise fallback to current selection.
         // DTO carries the legacy String? convention (null/blank = absent). The form's typed
@@ -316,11 +319,11 @@ class TransactionEntryViewModel @Inject constructor(
                 targetAmtBD.divide(rateBD, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
             } else targetAmtBD
 
-            categoryId =
-                if (Category.isInitialBalance(prefill.categoryId)) Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
+            categoryId = if (Category.isInitialBalance(prefill.categoryId))
+                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
         } else if (txType == EntryMode.TRANSFER) {
-            categoryId =
-                if (Category.isInitialBalance(prefill.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+            categoryId = if (Category.isInitialBalance(prefill.categoryId))
+                Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
         }
 
         _state.update {
@@ -792,9 +795,7 @@ class TransactionEntryViewModel @Inject constructor(
             amount = when {
                 currentState.isIncome -> currentState.amountValue.abs()
                 currentState.isExpense -> currentState.amountValue.abs().negate()
-                currentState.isTransfer -> if (currentState.isTransferInflow) currentState.amountValue.abs() else currentState.amountValue.abs()
-                    .negate()
-
+                currentState.isTransfer -> currentState.amountValue.abs().negate() // TransactionManager handles sign
                 else -> currentState.amountValue
             },
             entryMode = when {

@@ -46,7 +46,7 @@ class TransactionManagerTest {
             currency = "USD",
             targetCurrency = "EUR",
             transferRate = BigDecimal("0.85"),
-            categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+            categoryId = Category.SYSTEM_TRANSFER,
             timestamp = 123456789L
         )
 
@@ -63,13 +63,13 @@ class TransactionManagerTest {
         assertEquals(BigDecimal("-100.00"), sourceSlot.captured.amount)
         assertEquals("ACC_1", sourceSlot.captured.accountId)
         assertEquals("ACC_2", sourceSlot.captured.targetAccountId)
-        assertEquals(Category.SYSTEM_TRANSFER_OUTFLOW, sourceSlot.captured.categoryId)
+        assertEquals(Category.SYSTEM_TRANSFER, sourceSlot.captured.categoryId)
 
         // Verify Target Transaction
         assertEquals(0, BigDecimal("85.00").compareTo(targetSlot.captured.amount))
         assertEquals("ACC_2", targetSlot.captured.accountId)
         assertEquals("ACC_1", targetSlot.captured.targetAccountId)
-        assertEquals(Category.SYSTEM_TRANSFER_INFLOW, targetSlot.captured.categoryId)
+        assertEquals(Category.SYSTEM_TRANSFER, targetSlot.captured.categoryId)
         // In the target transaction, the targetCurrency is the currency of the SOURCE
         assertEquals("USD", targetSlot.captured.targetCurrency) 
     }
@@ -83,7 +83,7 @@ class TransactionManagerTest {
             accountId = null,
             targetAccountId = "ACC_1",
             currency = "USD",
-            categoryId = Category.SYSTEM_INITIAL_BALANCE_INFLOW,
+            categoryId = Category.SYSTEM_INITIAL_BALANCE,
             timestamp = 123456789L
         )
 
@@ -94,7 +94,7 @@ class TransactionManagerTest {
 
         assertEquals(0, BigDecimal("500.00").compareTo(txSlot.captured.amount))
         assertEquals("ACC_1", txSlot.captured.accountId)
-        assertEquals(Category.SYSTEM_INITIAL_BALANCE_INFLOW, txSlot.captured.categoryId)
+        assertEquals(Category.SYSTEM_INITIAL_BALANCE, txSlot.captured.categoryId)
     }
 
     @Test
@@ -106,7 +106,7 @@ class TransactionManagerTest {
             accountId = "ACC_1",
             targetAccountId = null,
             currency = "USD",
-            categoryId = Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
+            categoryId = Category.SYSTEM_INITIAL_BALANCE,
             timestamp = 123456789L
         )
 
@@ -117,7 +117,7 @@ class TransactionManagerTest {
 
         assertEquals(0, BigDecimal("-300.00").compareTo(txSlot.captured.amount))
         assertEquals("ACC_1", txSlot.captured.accountId)
-        assertEquals(Category.SYSTEM_INITIAL_BALANCE_OUTFLOW, txSlot.captured.categoryId)
+        assertEquals(Category.SYSTEM_INITIAL_BALANCE, txSlot.captured.categoryId)
     }
 
     @Test
@@ -128,7 +128,7 @@ class TransactionManagerTest {
             amount = BigDecimal("-50.00"),
             transactionType = TransactionType.TRANSFER_OUTFLOW,
             accountId = "ACC_1",
-            categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+            categoryId = Category.SYSTEM_TRANSFER,
             timestamp = 1000L,
             currency = "USD",
             targetAccountId = "ACC_2"
@@ -143,7 +143,7 @@ class TransactionManagerTest {
             currency = "USD",
             targetCurrency = "EUR",
             transferRate = BigDecimal("0.9"),
-            categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+            categoryId = Category.SYSTEM_TRANSFER,
             timestamp = 2000L
         )
 
@@ -154,7 +154,7 @@ class TransactionManagerTest {
             amount = BigDecimal("50.00"),
             transactionType = TransactionType.TRANSFER_INFLOW,
             accountId = "ACC_2",
-            categoryId = Category.SYSTEM_TRANSFER_INFLOW,
+            categoryId = Category.SYSTEM_TRANSFER,
             timestamp = 1000L,
             currency = "USD",
             targetAccountId = "ACC_1"

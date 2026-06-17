@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -321,8 +320,8 @@ fun AeonBarChart(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
-                    .heightIn(max = 240.dp)
-                    .clip(RoundedCornerShape(dims.spacingMd)),
+                    .heightIn(max = 240.dp),
+                shape = RoundedCornerShape(dims.spacingMd),
                 color = AppColors.surfaceContainerHigh,
                 tonalElevation = dims.spacingSm,
                 shadowElevation = dims.spacingSm,

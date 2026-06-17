@@ -84,8 +84,8 @@ fun AeonChartInteractionPopup(
     Surface(
         modifier = Modifier
             .offset { IntOffset(xPos.roundToInt(), yPos.roundToInt()) }
-            .width(tooltipWidth)
-            .clip(RoundedCornerShape(dims.containerCornerRadius)),
+            .width(tooltipWidth),
+        shape = RoundedCornerShape(dims.containerCornerRadius),
         color = AppColors.cardSurfaceProminent,
         tonalElevation = dims.spacingSm,
         shadowElevation = dims.spacingMd,

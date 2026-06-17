@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import androidx.compose.ui.graphics.toArgb
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -58,7 +59,9 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Paint as AndroidPaint
@@ -90,7 +93,7 @@ fun AeonBarChart(
     val density = LocalDensity.current
     val dims = AeonTheme.dimensions
 
-    val animationProgress = remember { Animatable(0f) }
+    val animationProgress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(groups) {
         if (animate) {
             animationProgress.snapTo(0f)
@@ -157,9 +160,12 @@ fun AeonBarChart(
         val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
-        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
-        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.15f)
+        val isDark = LocalThemeMode.current.isDarkTheme
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.05f else 0.1f)
         val selectionLineColor = ChartZeroLineColor
+        val labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
+        val axisLabelColor = AppColors.contentSecondary.copy(alpha = 0.8f)
 
         fun findIndex(offsetX: Float): Int {
             val total = groups.size
@@ -194,7 +200,7 @@ fun AeonBarChart(
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
-                    color = android.graphics.Color.argb(140, 158, 158, 158)
+                    color = labelColor.toArgb()
                     textAlign = AndroidPaint.Align.RIGHT
                     textSize = 9.sp.toPx()
                 }
@@ -301,11 +307,10 @@ fun AeonBarChart(
                     else currentNegAccumulator = endVal
                 }
 
-                // 4. X-Axis Labels
                 if (showXAxisLabels) {
                     val labelPaint = AndroidPaint().apply {
                         isAntiAlias = true
-                        color = android.graphics.Color.argb(180, 158, 158, 158)
+                        color = axisLabelColor.toArgb()
                         textAlign = AndroidPaint.Align.CENTER
                         textSize = 9.sp.toPx()
                     }
@@ -329,7 +334,7 @@ fun AeonBarChart(
                         color = selectionLineColor,
                         start = Offset(x, topPadding),
                         end = Offset(x, heightPx - bottomPadding),
-                        strokeWidth = 2.dp.toPx(),
+                        strokeWidth = (dims.spacingXs / 4).toPx(),
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
                     )
                 }
@@ -402,25 +407,65 @@ fun AeonBarChart(
     )
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Simple Bar Chart")
+@androidx.compose.ui.tooling.preview.Preview(name = "Light Theme")
 @Composable
-fun AeonBarChartSimplePreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(250.dp)
-            .padding(16.dp)) {
-            AeonBarChart(
-                data = listOf(
-                    "Mon" to BigDecimal("120.00"),
-                    "Tue" to BigDecimal("450.00"),
-                    "Wed" to BigDecimal("-100.00"),
-                    "Thu" to BigDecimal("280.00"),
-                    "Fri" to BigDecimal("600.00"),
-                    "Sat" to BigDecimal("350.00"),
-                    "Sun" to BigDecimal("200.00")
+fun AeonBarChartLightPreview() {
+    OssWalletPreviewTheme(theme = "Light") {
+        Surface(color = AppColors.background) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+                AeonBarChart(
+                    data = listOf(
+                        "Mon" to BigDecimal("120.00"),
+                        "Tue" to BigDecimal("450.00"),
+                        "Wed" to BigDecimal("-100.00"),
+                        "Thu" to BigDecimal("280.00"),
+                        "Fri" to BigDecimal("600.00")
+                    ),
+                    animate = false
                 )
-            )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Dark Theme")
+@Composable
+fun AeonBarChartDarkPreview() {
+    OssWalletPreviewTheme(theme = "Dark") {
+        Surface(color = AppColors.background) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+                AeonBarChart(
+                    data = listOf(
+                        "Mon" to BigDecimal("120.00"),
+                        "Tue" to BigDecimal("450.00"),
+                        "Wed" to BigDecimal("-100.00"),
+                        "Thu" to BigDecimal("280.00"),
+                        "Fri" to BigDecimal("600.00")
+                    ),
+                    animate = false
+                )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Amoled Theme")
+@Composable
+fun AeonBarChartAmoledPreview() {
+    OssWalletPreviewTheme(theme = "Amoled") {
+        Surface(color = AppColors.background) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+                AeonBarChart(
+                    data = listOf(
+                        "Mon" to BigDecimal("120.00"),
+                        "Tue" to BigDecimal("450.00"),
+                        "Wed" to BigDecimal("-100.00"),
+                        "Thu" to BigDecimal("280.00"),
+                        "Fri" to BigDecimal("600.00")
+                    ),
+                    animate = false
+                )
+            }
         }
     }
 }

@@ -58,11 +58,14 @@ import com.osscabinet.ossWallet.ui.theme.ChartDotHighlight
 import com.osscabinet.ossWallet.ui.theme.ChartGridColor
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
 import com.osscabinet.ossWallet.ui.theme.ColorTransparent
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
 import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
+import android.graphics.Paint as AndroidPaint
 
 /**
  * High-fidelity, interactive line chart with area gradients and dashed grids.
@@ -95,7 +98,7 @@ fun AeonLineChart(
     var selectedIndex by remember { mutableIntStateOf(-1) }
     val density = LocalDensity.current
 
-    val animationProgress = remember { Animatable(0f) }
+    val animationProgress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(series) {
         if (animate) {
             animationProgress.snapTo(0f)
@@ -168,8 +171,11 @@ fun AeonLineChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
-        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
-        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.15f)
+        val isDark = LocalThemeMode.current.isDarkTheme
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.05f else 0.1f)
+        val labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
+        val axisLabelColor = AppColors.contentSecondary.copy(alpha = 0.8f)
 
         val effectiveTotal = if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
         val slotWidth = chartWidth / effectiveTotal.coerceAtLeast(1)
@@ -229,11 +235,12 @@ fun AeonLineChart(
         ) {
             // 1. Draw Grid System and Y-Axis Labels
             if (showGrid) {
-                val labelPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.argb(140, 158, 158, 158)
-                    textSize = 9.sp.toPx()
-                    textAlign = android.graphics.Paint.Align.RIGHT
+                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
+                val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
+                    color = labelColor.toArgb()
+                    textAlign = AndroidPaint.Align.RIGHT
+                    textSize = 9.sp.toPx()
                 }
 
                 var tick = effectiveMinY
@@ -244,7 +251,8 @@ fun AeonLineChart(
                             color = gridLineColor,
                             start = Offset(leftPadding, yPos),
                             end = Offset(w - rightPadding, yPos),
-                            strokeWidth = (dims.spacingXs / 8).toPx()
+                            strokeWidth = 1f,
+                            pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
                             currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
@@ -392,11 +400,11 @@ fun AeonLineChart(
 
             // X-axis labels — prefer explicit xAxisLabels list, fall back to first series labels
             if (showXAxisLabels || xAxisLabels.isNotEmpty()) {
-                val labelPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.argb(220, 180, 180, 180)
-                    textSize = 9.sp.toPx()
-                    textAlign = android.graphics.Paint.Align.CENTER
+                val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
+                    color = axisLabelColor.toArgb()
+                    textAlign = AndroidPaint.Align.CENTER
+                    textSize = 9.sp.toPx()
                 }
                 val labelY = h - bottomPadding + with(density) { 14.dp.toPx() }
 
@@ -481,7 +489,7 @@ fun AeonLineChart(
                 // x threshold (fraction of chartWidth) past which label right-aligns
                 val markerEndThreshold = 0.8f
 
-                val markerLabelPaint = android.graphics.Paint().apply {
+                val markerLabelPaint = AndroidPaint().apply {
                     textSize = with(density) { 9.sp.toPx() }
                     isAntiAlias = true
                     typeface = android.graphics.Typeface.create(
@@ -518,7 +526,7 @@ fun AeonLineChart(
                     val isAtEnd = x > leftPadding + chartWidth * markerEndThreshold
                     markerLabelPaint.color = markerColor.toArgb()
                     markerLabelPaint.textAlign =
-                        if (isAtEnd) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
+                        if (isAtEnd) AndroidPaint.Align.RIGHT else AndroidPaint.Align.LEFT
 
                     val labelY =
                         topPadding + markerLabelTopOffsetPx + (currentLevel * markerLabelHeightPx)
@@ -607,45 +615,92 @@ fun AeonLineChart(
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(name = "Light Theme")
 @Composable
-fun AeonLineChartPreview() {
-    OssWalletTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .padding(AeonTheme.dimensions.screenPadding)
-        ) {
-            AeonLineChart(
-                series = listOf(
-                    AeonLineChartSeries(
-                        name = "Balance",
-                        color = ChartColorBlue,
-                        dataPoints = listOf(
-                            AeonLineChartPoint(0f, BigDecimal("1200.00"), "Jan"),
-                            AeonLineChartPoint(1f, BigDecimal("1500.00"), "Feb"),
-                            AeonLineChartPoint(2f, BigDecimal("1100.00"), "Mar"),
-                            AeonLineChartPoint(3f, BigDecimal("1800.00"), "Apr"),
-                            AeonLineChartPoint(4f, BigDecimal("2100.00"), "May"),
-                            AeonLineChartPoint(5f, BigDecimal("1900.00"), "Jun")
+fun AeonLineChartLightPreview() {
+    OssWalletPreviewTheme(theme = "Light") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonLineChart(
+                    series = listOf(
+                        AeonLineChartSeries(
+                            name = "Balance",
+                            color = ChartColorBlue,
+                            dataPoints = listOf(
+                                AeonLineChartPoint(0f, BigDecimal("1200.00"), "Jan"),
+                                AeonLineChartPoint(1f, BigDecimal("1500.00"), "Feb"),
+                                AeonLineChartPoint(2f, BigDecimal("1100.00"), "Mar")
+                            )
                         )
                     ),
-                    AeonLineChartSeries(
-                        name = "Expense",
-                        color = TagPresetColors[0],
-                        fillGradient = false,
-                        dataPoints = listOf(
-                            AeonLineChartPoint(0f, BigDecimal("500.00"), "Jan"),
-                            AeonLineChartPoint(1f, BigDecimal("800.00"), "Feb"),
-                            AeonLineChartPoint(2f, BigDecimal("700.00"), "Mar"),
-                            AeonLineChartPoint(3f, BigDecimal("900.00"), "Apr"),
-                            AeonLineChartPoint(4f, BigDecimal("1200.00"), "May"),
-                            AeonLineChartPoint(5f, BigDecimal("1000.00"), "Jun")
-                        )
-                    )
+                    animate = false
                 )
-            )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Dark Theme")
+@Composable
+fun AeonLineChartDarkPreview() {
+    OssWalletPreviewTheme(theme = "Dark") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonLineChart(
+                    series = listOf(
+                        AeonLineChartSeries(
+                            name = "Balance",
+                            color = ChartColorBlue,
+                            dataPoints = listOf(
+                                AeonLineChartPoint(0f, BigDecimal("1200.00"), "Jan"),
+                                AeonLineChartPoint(1f, BigDecimal("1500.00"), "Feb"),
+                                AeonLineChartPoint(2f, BigDecimal("1100.00"), "Mar")
+                            )
+                        )
+                    ),
+                    animate = false
+                )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Amoled Theme")
+@Composable
+fun AeonLineChartAmoledPreview() {
+    OssWalletPreviewTheme(theme = "Amoled") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonLineChart(
+                    series = listOf(
+                        AeonLineChartSeries(
+                            name = "Balance",
+                            color = ChartColorBlue,
+                            dataPoints = listOf(
+                                AeonLineChartPoint(0f, BigDecimal("1200.00"), "Jan"),
+                                AeonLineChartPoint(1f, BigDecimal("1500.00"), "Feb"),
+                                AeonLineChartPoint(2f, BigDecimal("1100.00"), "Mar")
+                            )
+                        )
+                    ),
+                    animate = false
+                )
+            }
         }
     }
 }

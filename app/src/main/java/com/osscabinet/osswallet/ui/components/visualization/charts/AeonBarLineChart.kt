@@ -53,6 +53,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -63,7 +64,9 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
 import com.osscabinet.ossWallet.ui.theme.ChartGridColor
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Paint as AndroidPaint
@@ -124,7 +127,7 @@ fun AeonBarLineChart(
     val density = LocalDensity.current
     val dims = AeonTheme.dimensions
 
-    val animationProgress = remember { Animatable(0f) }
+    val animationProgress = remember { Animatable(if (animate) 0f else 1f) }
     LaunchedEffect(barData, lineData, incomeData, expenseData) {
         if (animate) {
             animationProgress.snapTo(0f)
@@ -197,8 +200,11 @@ fun AeonBarLineChart(
         val zeroY = valueToY(BigDecimal.ZERO)
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
-        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
-        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.15f)
+        val isDark = LocalThemeMode.current.isDarkTheme
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.05f else 0.1f)
+        val labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
+        val axisLabelColor = AppColors.contentSecondary.copy(alpha = 0.8f)
 
         fun findIndex(offsetX: Float): Int {
             val total = effectiveBarData.size
@@ -235,9 +241,9 @@ fun AeonBarLineChart(
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
-                    color = android.graphics.Color.argb(140, 158, 158, 158)
+                    color = labelColor.toArgb()
                     textAlign = AndroidPaint.Align.RIGHT
-                    textSize = with(density) { 9.sp.toPx() }
+                    textSize = 9.sp.toPx()
                 }
 
                 var tick = effectiveMinY
@@ -478,7 +484,7 @@ fun AeonBarLineChart(
 
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
-                    color = android.graphics.Color.argb(220, 180, 180, 180)
+                    color = axisLabelColor.toArgb()
                     textAlign = AndroidPaint.Align.CENTER
                     textSize = with(density) { 9.sp.toPx() }
                 }
@@ -597,30 +603,65 @@ fun AeonBarLineChart(
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(name = "Light Theme")
 @Composable
-fun AeonBarLineChartPreview() {
-    OssWalletTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(250.dp)
-                .padding(AeonTheme.dimensions.screenPadding)
-        ) {
-            AeonBarLineChart(
-                barData = listOf(
-                    BigDecimal("500"),
-                    BigDecimal("-200"),
-                    BigDecimal("800"),
-                    BigDecimal("400")
-                ),
-                lineData = listOf(
-                    BigDecimal("500"),
-                    BigDecimal("300"),
-                    BigDecimal("1100"),
-                    BigDecimal("1500")
+fun AeonBarLineChartLightPreview() {
+    OssWalletPreviewTheme(theme = "Light") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonBarLineChart(
+                    barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
+                    lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    animate = false
                 )
-            )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Dark Theme")
+@Composable
+fun AeonBarLineChartDarkPreview() {
+    OssWalletPreviewTheme(theme = "Dark") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonBarLineChart(
+                    barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
+                    lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    animate = false
+                )
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(name = "Amoled Theme")
+@Composable
+fun AeonBarLineChartAmoledPreview() {
+    OssWalletPreviewTheme(theme = "Amoled") {
+        Surface(color = AppColors.background) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+                    .padding(16.dp)
+            ) {
+                AeonBarLineChart(
+                    barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
+                    lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    animate = false
+                )
+            }
         }
     }
 }

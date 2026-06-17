@@ -102,6 +102,7 @@ fun AeonBarLineChart(
     expenseData: List<BigDecimal> = emptyList(),
     xLabels: List<String?> = emptyList(),
     showXAxisLabels: Boolean = false,
+    showPeriodBars: Boolean = true,
     lineThicknessDp: Float = 0f,
     showGrid: Boolean = true,
     roundedBars: Boolean = false
@@ -197,6 +198,9 @@ fun AeonBarLineChart(
         val zeroY = valueToY(BigDecimal.ZERO)
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
+
         fun findIndex(offsetX: Float): Int {
             val total = effectiveBarData.size
             val step = chartWidth / (total - 1).coerceAtLeast(1)
@@ -229,7 +233,6 @@ fun AeonBarLineChart(
         ) {
             // 1. Draw Grid + Y-Axis Labels
             if (showGrid) {
-                val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f))
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
@@ -245,7 +248,7 @@ fun AeonBarLineChart(
                     val yPos = valueToY(tick)
                     if (yPos >= chartTop - 1f && yPos <= chartBottom + 1f) {
                         drawLine(
-                            color = gridColor,
+                            color = gridLineColor,
                             start = Offset(leftPadding, yPos),
                             end = Offset(widthPx - rightPadding, yPos),
                             strokeWidth = 1f,
@@ -259,6 +262,27 @@ fun AeonBarLineChart(
                         )
                     }
                     tick = tick.add(niceStep)
+                }
+            }
+
+            // 1.5 Draw Period Background Bars
+            if (showPeriodBars) {
+                val totalBuckets = effectiveBarData.size
+                if (totalBuckets > 0) {
+                    val slotWidth = chartWidth / totalBuckets.coerceAtLeast(1)
+                    val barWidth = slotWidth * 0.9f
+                    for (index in 0 until totalBuckets) {
+                        val slotCenterX = if (dualBarMode) {
+                            leftPadding + (index + 0.5f) * slotWidth
+                        } else {
+                            indexToX(index, totalBuckets)
+                        }
+                        drawRect(
+                            color = periodBarColor,
+                            topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
+                            size = Size(barWidth, chartHeight)
+                        )
+                    }
                 }
             }
 
@@ -312,7 +336,7 @@ fun AeonBarLineChart(
                     )
                 }
             } else {
-                val barWidth = chartWidth / effectiveBarData.size * 0.5f
+                val barWidth = chartWidth / effectiveBarData.size * 0.8f
                 effectiveBarData.forEachIndexed { index, value ->
                     val x = indexToX(index, effectiveBarData.size)
                     val y = valueToY(value)

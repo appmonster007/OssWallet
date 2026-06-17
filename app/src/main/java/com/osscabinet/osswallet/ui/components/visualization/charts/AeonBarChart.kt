@@ -75,6 +75,7 @@ fun AeonBarChart(
     precision: Int = CurrencyService.precision,
     animate: Boolean = true,
     showGrid: Boolean = true,
+    showPeriodBars: Boolean = true,
     showXAxisLabels: Boolean = true,
     roundedBars: Boolean = false
 ) {
@@ -103,11 +104,11 @@ fun AeonBarChart(
         val widthPx = constraints.maxWidth.toFloat()
         val heightPx = constraints.maxHeight.toFloat()
 
-        val leftPadding = with(density) { 44.dp.toPx() }
+        val leftPadding = with(density) { 48.dp.toPx() }
         val rightPadding = with(density) { dims.spacingMd.toPx() }
-        val topPadding = with(density) { dims.spacingMd.toPx() }
-        val xLabelHeight = if (showXAxisLabels) with(density) { 20.dp.toPx() } else 0f
-        val bottomPadding = with(density) { dims.spacingLg.toPx() } + xLabelHeight
+        val topPadding = with(density) { dims.spacingLg.toPx() }
+        val xLabelHeight = with(density) { 16.dp.toPx() }
+        val bottomPadding = with(density) { dims.spacingXl.toPx() } + (if (showXAxisLabels) xLabelHeight else 0f)
 
         val chartWidth = widthPx - leftPadding - rightPadding
         val chartHeight = heightPx - topPadding - bottomPadding
@@ -156,7 +157,8 @@ fun AeonBarChart(
         val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
-        val gridLineColor = AppColors.outlineVariant
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
         val selectionLineColor = ChartZeroLineColor
 
         fun findIndex(offsetX: Float): Int {
@@ -210,12 +212,27 @@ fun AeonBarChart(
                         )
                         drawContext.canvas.nativeCanvas.drawText(
                             currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
-                            leftPadding - 8.dp.toPx(),
+                            leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
                         )
                     }
                     tick = tick.add(niceStep)
+                }
+            }
+
+            // 1.5 Draw Period Background Bars
+            if (showPeriodBars && groups.isNotEmpty()) {
+                val totalSlots = groups.size
+                val slotWidth = chartWidth / totalSlots
+                groups.forEachIndexed { index, _ ->
+                    val slotCenterX = indexToX(index, totalSlots)
+                    val barWidth = slotWidth * 0.95f 
+                    drawRect(
+                        color = periodBarColor,
+                        topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
+                        size = Size(barWidth, chartHeight)
+                    )
                 }
             }
 
@@ -229,7 +246,7 @@ fun AeonBarChart(
 
             // 3. Draw Bars (Simple or Stacked)
             val slotWidth = chartWidth / groups.size.coerceAtLeast(1)
-            val barWidth = slotWidth * 0.7f
+            val barWidth = slotWidth * 0.85f
 
             val total = groups.size
             val firstValidIdx = groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0

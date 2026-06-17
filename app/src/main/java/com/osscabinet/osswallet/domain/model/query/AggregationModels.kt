@@ -53,11 +53,11 @@ data class MetricConfig(
     enum class MetricFilter {
         INCOME_ONLY,    // transactionType = 'income'
         EXPENSE_ONLY,   // transactionType = 'expense'
-        TRANSFER_ONLY,  // transactionType = 'transfer'
-        TRANSFER_IN_ONLY,   // transactionType = 'transfer' AND amount > 0
-        TRANSFER_OUT_ONLY,  // transactionType = 'transfer' AND amount < 0
-        CROSS_CCY_TRANSFER_IN_ONLY,   // transfer leg, amount > 0, currency <> targetCurrency
-        CROSS_CCY_TRANSFER_OUT_ONLY,  // transfer leg, amount < 0, currency <> targetCurrency
+        TRANSFER_ONLY,  // transactionType IN ('transfer_inflow', 'transfer_outflow')
+        TRANSFER_IN_ONLY,   // transactionType = 'transfer_inflow'
+        TRANSFER_OUT_ONLY,  // transactionType = 'transfer_outflow'
+        CROSS_CCY_TRANSFER_IN_ONLY,   // transfer leg, incoming, currency <> targetCurrency
+        CROSS_CCY_TRANSFER_OUT_ONLY,  // transfer leg, outgoing, currency <> targetCurrency
         POSITIVE_ONLY,  // amount > 0
         NEGATIVE_ONLY,  // amount < 0
         NONE

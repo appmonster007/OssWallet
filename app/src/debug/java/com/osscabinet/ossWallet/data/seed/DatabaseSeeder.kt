@@ -109,12 +109,7 @@ class DatabaseSeeder @Inject constructor(
         var ok = 0; var fail = 0
         csvTransactions.forEach { tx ->
             try {
-                val rawCatId = categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
-                val catId = when (rawCatId) {
-                    1004L -> Category.SYSTEM_INITIAL_BALANCE
-                    1006L -> Category.SYSTEM_TRANSFER
-                    else -> rawCatId
-                }
+                val catId = categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
                 val entity = tx.copy(categoryId = catId).toTransactionEntity()
                 val dbId = transactionDao._insertTransaction(entity)
                 if (tx.seedId != null) {

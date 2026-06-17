@@ -397,7 +397,7 @@ fun ExpressiveActionButton(
         modifier = Modifier.scale(scale)
     ) {
         Surface(
-            modifier = Modifier.size(44.dp),
+            modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg),
             onClick = onClick,
             shape = CircleShape,
             color = containerColor,
@@ -415,7 +415,7 @@ fun ExpressiveActionButton(
             text = label,
             style = AppTextStyles.transactionSwipeAction.copy(
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 10.sp
+                fontSize = 8.sp
             ),
             color = contentColor.copy(alpha = 0.9f),
             modifier = Modifier.padding(top = AeonTheme.dimensions.spacingXs)

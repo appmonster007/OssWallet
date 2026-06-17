@@ -254,7 +254,7 @@ fun CategoryPieChartCard(
                     }
 
                     val sliceValue = item.amount
-                    val globalValue = data.sumOf { it.amount }
+                    val globalMagnitude = data.sumOf { it.amount.abs() }
 
                     AeonPieChartSlice(
                         value = sliceValue,
@@ -262,8 +262,8 @@ fun CategoryPieChartCard(
                         color = displayColor,
                         hasSubcategories = item.hasSubcategories,
                         subcategoryCount = item.subcategoryCount,
-                        percentageOfTotal = if (globalValue.signum() != 0)
-                            sliceValue.divide(globalValue, 4, RoundingMode.HALF_UP).toFloat()
+                        percentageOfTotal = if (globalMagnitude.signum() != 0)
+                            sliceValue.abs().divide(globalMagnitude, 4, RoundingMode.HALF_UP).toFloat()
                         else 0f,
                         id = item.categoryId
                     )

@@ -60,7 +60,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,6 +83,35 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Collapse categories in transactions table
+                db.execSQL("UPDATE transactions SET categoryId = 1003 WHERE categoryId = 1004")
+                db.execSQL("UPDATE transactions SET categoryId = 1005 WHERE categoryId = 1006")
+
+                // 2. Collapse categories in templates table
+                db.execSQL("UPDATE templates SET categoryId = 1003 WHERE categoryId = 1004")
+                db.execSQL("UPDATE templates SET categoryId = 1005 WHERE categoryId = 1006")
+
+                // 3. Collapse categories in planned_payments table
+                // (Note: categoryId is in template, but if it exists directly anywhere else)
+                // PlannedPaymentEntity doesn't have categoryId directly, it's via Template.
+
+                // 4. Cleanup categories table
+                db.execSQL("DELETE FROM categories WHERE id IN (1004, 1006)")
+                db.execSQL("UPDATE categories SET name = 'Initial Balance', iconName = 'AccountBalance' WHERE id = 1003")
+                db.execSQL("UPDATE categories SET name = 'Transfer', iconName = 'SwapHoriz' WHERE id = 1005")
+
+                // 5. Consolidate Unique Indices for Initial Balance
+                db.execSQL("DROP INDEX IF EXISTS idx_transactions_initial_balance_inflow_unique")
+                db.execSQL("DROP INDEX IF EXISTS idx_transactions_initial_balance_outflow_unique")
+                db.execSQL(
+                    """CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_initial_balance_unique
+                              ON transactions(accountId, currency, categoryId) WHERE categoryId = 1003"""
+                )
+            }
         }
 
         val MIGRATION_7_8 = object : Migration(7, 8) {
@@ -405,7 +434,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_10_11,
                         MIGRATION_11_12,
                         MIGRATION_12_13,
-                        MIGRATION_13_14
+                        MIGRATION_13_14,
+                        MIGRATION_14_15
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

@@ -150,35 +150,20 @@ class TemplateEntryViewModel @Inject constructor(
             templateRepository.getTemplateById(templateId)?.let { template ->
                 val isLinked = plannedPaymentRepository.isTemplateUsedInPlannedPayments(templateId)
 
-                val isOpenedAsReceiver = Category.isAnyTransferInflow(template.categoryId)
-                var sourceAccId = template.accountId
-                var targetAccId = template.targetAccountId
-                var sourceCurrency = template.currency ?: "USD"
-                var targetCurr = template.targetCurrency ?: ""
-                var sourceAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
-                var targetAmtStr = template.amount.abs().multiply(template.transferRate)
+                val sourceAccId = template.accountId
+                val targetAccId = template.targetAccountId
+                val sourceCurrency = template.currency ?: "USD"
+                val targetCurr = template.targetCurrency ?: ""
+                val sourceAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
+                val targetAmtStr = template.amount.abs().multiply(template.transferRate)
                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                     .toPlainString()
                 var existingCategoryId = template.categoryId
 
-                if (template.entryMode == EntryMode.TRANSFER && isOpenedAsReceiver) {
-                    // Flip for Source-Target consistency
-                    sourceAccId = template.targetAccountId
-                    targetAccId = template.accountId
-                    sourceCurrency = template.targetCurrency ?: template.currency ?: "USD"
-                    targetCurr = template.currency ?: ""
-                    targetAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
-                    sourceAmtStr = if (template.transferRate.signum() != 0) {
-                        template.amount.abs()
-                            .divide(template.transferRate, 8, java.math.RoundingMode.HALF_UP)
-                            .stripTrailingZeros().toPlainString()
-                    } else targetAmtStr
-                }
-                
                 if (template.entryMode == EntryMode.TRANSFER) {
-                    // Semantic Normalization: Source is always Outflow, Destination is always Inflow
-                    existingCategoryId = if (Category.isInitialBalance(template.categoryId)) 
-                        Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+                    // Semantic Normalization: Unified category for both sides
+                    existingCategoryId = if (Category.isInitialBalance(template.categoryId))
+                        Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
                 }
 
                 val sourceRef = if (template.entryMode == EntryMode.TRANSFER)
@@ -540,13 +525,11 @@ class TemplateEntryViewModel @Inject constructor(
 
         viewModelScope.launch {
             val amountValue = if (s.isIncome) s.amountValue.abs()
-            else if (s.isTransfer) {
-                if (s.isTransferInflow) s.amountValue.abs() else s.amountValue.abs().negate()
-            } else s.amountValue.abs().negate()
+            else s.amountValue.abs().negate() // Expense and Transfer normalized to negative
 
             val templateCategoryId = if (s.isTransfer) {
-                if (Category.isInitialBalance(s.categoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW
-                else Category.SYSTEM_TRANSFER_OUTFLOW
+                if (Category.isInitialBalance(s.categoryId)) Category.SYSTEM_INITIAL_BALANCE
+                else Category.SYSTEM_TRANSFER
             } else s.categoryId
 
             val template = Template(

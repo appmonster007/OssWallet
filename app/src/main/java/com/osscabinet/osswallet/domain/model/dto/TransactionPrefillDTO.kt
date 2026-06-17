@@ -35,6 +35,7 @@ data class TransactionPrefillDTO(
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
     val exchangeRate: String = "1.0",
+    val transactionType: com.osscabinet.ossWallet.domain.model.TransactionType? = null,
     // For clone functionality
     val clonedFromTransactionId: Long? = null,
     // Source identifier
@@ -73,6 +74,7 @@ data class TransactionPrefillDTO(
                 targetAccountId = transaction.targetAccountId,
                 targetCurrency = transaction.targetCurrency,
                 exchangeRate = transaction.transferRate.toPlainString(),
+                transactionType = transaction.transactionType,
                 clonedFromTransactionId = clonedFromId ?: transaction.id,
                 timestamp = transaction.timestamp, // Keep original timestamp for splits
                 isSplitMode = isSplitMode

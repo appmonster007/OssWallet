@@ -73,7 +73,7 @@ class CardFilterTest {
         id = 3,
         name = "Entertainment",
         amount = BigDecimal("300"),
-        categoryId = Category.SYSTEM_TRANSFER_OUTFLOW,
+        categoryId = Category.SYSTEM_TRANSFER,
         timestamp = System.currentTimeMillis(),
         currency = "GBP",
         transactionType = TransactionType.EXPENSE,

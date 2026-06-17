@@ -101,7 +101,6 @@ data class PlannedPaymentEntryState(
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME
     val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
     val isTransfer: Boolean get() = entryMode == EntryMode.TRANSFER
-    val isTransferInflow: Boolean get() = isTransfer && Category.isAnyTransferInflow(selectedCategoryId)
 
     val amountValue: BigDecimal
         get() = source.amountValue

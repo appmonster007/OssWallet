@@ -181,35 +181,20 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     existing.templateId?.let { plannedPaymentRepository.getCountByTemplateId(it) }
                         ?: 0
 
-                val isOpenedAsReceiver = Category.isAnyTransferInflow(existing.categoryId)
-                var sourceAccId = existing.accountId
-                var targetAccId = existing.targetAccountId
-                var sourceCurrency = existing.currency
-                var targetCurr = existing.targetCurrency ?: existing.currency
-                var sourceAmtStr = existing.amount.abs().stripTrailingZeros().toPlainString()
+                val sourceAccId = existing.accountId
+                val targetAccId = existing.targetAccountId
+                val sourceCurrency = existing.currency
+                val targetCurr = existing.targetCurrency ?: existing.currency
+                val sourceAmtStr = existing.amount.abs().stripTrailingZeros().toPlainString()
                 var targetAmtStr = existing.amount.abs().multiply(existing.transferRate)
                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                     .toPlainString()
                 var existingCategoryId = existing.categoryId
 
-                if (existing.entryMode == EntryMode.TRANSFER && isOpenedAsReceiver) {
-                    // Flip for Source-Target consistency
-                    sourceAccId = existing.targetAccountId
-                    targetAccId = existing.accountId
-                    sourceCurrency = existing.targetCurrency ?: existing.currency
-                    targetCurr = existing.currency
-                    targetAmtStr = existing.amount.abs().stripTrailingZeros().toPlainString()
-                    sourceAmtStr = if (existing.transferRate.signum() != 0) {
-                        existing.amount.abs()
-                            .divide(existing.transferRate, 8, java.math.RoundingMode.HALF_UP)
-                            .stripTrailingZeros().toPlainString()
-                    } else targetAmtStr
-                }
-                
                 if (existing.entryMode == EntryMode.TRANSFER) {
-                    // Semantic Normalization: Source is always Outflow, Destination is always Inflow
-                    existingCategoryId = if (Category.isInitialBalance(existing.categoryId)) 
-                        Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+                    // Semantic Normalization: Unified category for both sides
+                    existingCategoryId = if (Category.isInitialBalance(existing.categoryId))
+                        Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
                 }
 
                 val sourceRef = if (existing.entryMode == EntryMode.TRANSFER)
@@ -646,14 +631,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = when {
-                s.isIncome -> s.amountValue.abs()
-                s.isExpense -> s.amountValue.abs().negate()
-                s.isTransfer -> if (s.isTransferInflow) s.amountValue.abs() else s.amountValue.abs()
-                    .negate()
-
-                else -> s.amountValue
-            }
+            val amountValue = if (s.isIncome) s.amountValue.abs()
+            else s.amountValue.abs().negate() // Expense and Transfer normalized to negative
 
             val rule = RecurrenceRule(
                 type = s.recurrenceType,
@@ -667,8 +646,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             val reqTargetAccountId = s.targetAccountId
 
             val templateCategoryId = if (s.isTransfer) {
-                if (Category.isInitialBalance(s.selectedCategoryId)) Category.SYSTEM_INITIAL_BALANCE_OUTFLOW
-                else Category.SYSTEM_TRANSFER_OUTFLOW
+                if (Category.isInitialBalance(s.selectedCategoryId)) Category.SYSTEM_INITIAL_BALANCE
+                else Category.SYSTEM_TRANSFER
             } else s.selectedCategoryId
 
             // 1. Create or Update Template

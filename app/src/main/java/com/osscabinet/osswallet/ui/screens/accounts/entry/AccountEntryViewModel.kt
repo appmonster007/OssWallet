@@ -379,8 +379,7 @@ class AccountEntryViewModel @Inject constructor(
                                 amount = if (delta.signum() > 0) absAmount else absAmount.negate(),
                                 timestamp = System.currentTimeMillis(),
                                 currency = currency,
-                                categoryId = if (delta.signum() > 0) Category.SYSTEM_TRANSFER_INFLOW
-                                             else Category.SYSTEM_TRANSFER_OUTFLOW,
+                                categoryId = Category.SYSTEM_TRANSFER,
                                 transactionType = if (delta.signum() > 0) TransactionType.TRANSFER_INFLOW
                                                   else TransactionType.TRANSFER_OUTFLOW,
                                 note = "Balance adjustment"

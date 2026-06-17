@@ -46,15 +46,13 @@ class AccountUseCases(
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
             if (amount.compareTo(BigDecimal.ZERO) != 0) {
                 val isInflow = amount.signum() >= 0
-                val categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
-                                 else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW
                 transactionRepository.insertTransaction(
                     Transaction(
                         name = "Initial Balance",
                         accountId = accountId,
                         amount = amount,
                         currency = curr,
-                        categoryId = categoryId,
+                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
                         transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
@@ -81,8 +79,7 @@ class AccountUseCases(
                     existing,
                     existing.copy(
                         amount = amount,
-                        categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
-                                     else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
+                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
                     ),
                     profileId
@@ -96,8 +93,7 @@ class AccountUseCases(
                         accountId = accountId,
                         amount = amount,
                         currency = currency,
-                        categoryId = if (isInflow) Category.SYSTEM_INITIAL_BALANCE_INFLOW
-                                     else Category.SYSTEM_INITIAL_BALANCE_OUTFLOW,
+                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
                         note = "Initial Balance",
                         timestamp = System.currentTimeMillis(),
                         transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW

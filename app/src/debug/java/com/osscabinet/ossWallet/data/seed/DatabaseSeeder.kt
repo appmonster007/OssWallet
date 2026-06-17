@@ -16,12 +16,9 @@ import java.io.InputStreamReader
 import java.math.BigDecimal
 import javax.inject.Inject
 
-private fun BigDecimal.enforceSign(type: TransactionType, categoryId: Long): BigDecimal = when {
-    type == TransactionType.EXPENSE -> abs().negate()
-    type == TransactionType.INCOME -> abs()
-    Category.isAnyTransferInflow(categoryId) -> abs()
-    Category.isAnyTransferOutflow(categoryId) -> abs().negate()
-    else -> this
+private fun BigDecimal.enforceSign(type: TransactionType): BigDecimal = when (type) {
+    TransactionType.EXPENSE, TransactionType.TRANSFER_OUTFLOW -> abs().negate()
+    TransactionType.INCOME, TransactionType.TRANSFER_INFLOW -> abs()
 }
 
 private fun parseCsvLine(line: String): List<String> {
@@ -112,7 +109,12 @@ class DatabaseSeeder @Inject constructor(
         var ok = 0; var fail = 0
         csvTransactions.forEach { tx ->
             try {
-                val catId = categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
+                val rawCatId = categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
+                val catId = when (rawCatId) {
+                    1004L -> Category.SYSTEM_INITIAL_BALANCE
+                    1006L -> Category.SYSTEM_TRANSFER
+                    else -> rawCatId
+                }
                 val entity = tx.copy(categoryId = catId).toTransactionEntity()
                 val dbId = transactionDao._insertTransaction(entity)
                 if (tx.seedId != null) {
@@ -489,7 +491,7 @@ class DatabaseSeeder @Inject constructor(
     ) {
         fun toTransactionEntity() = TransactionEntity(
             name = title.ifBlank { category },
-            amount = amount.enforceSign(transactionType, categoryId ?: Category.SYSTEM_UNKNOWN),
+            amount = amount.enforceSign(transactionType),
             timestamp = daysAgo?.let { System.currentTimeMillis() - it * 86_400_000L } ?: timestamp ?: System.currentTimeMillis(),
             currency = currency, transactionType = transactionType,
             accountId = accountId, categoryId = categoryId ?: Category.SYSTEM_UNKNOWN,
@@ -510,7 +512,15 @@ class DatabaseSeeder @Inject constructor(
                     amount = p.getOrNull(2)?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                     category = p.getOrNull(3) ?: "", categoryId = p.getOrNull(4)?.toLongOrNull(),
                     timestamp = p.getOrNull(5)?.toLongOrNull(), currency = p.getOrNull(6) ?: "USD",
-                    transactionType = TransactionType.fromValue(p.getOrNull(7) ?: "expense"),
+                    transactionType = run {
+                        val raw = p.getOrNull(7) ?: "expense"
+                        if (raw == "transfer") {
+                            val amt = p.getOrNull(2)?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                            if (amt >= BigDecimal.ZERO) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
+                        } else {
+                            TransactionType.fromValue(raw)
+                        }
+                    },
                     accountId = p.getOrNull(8) ?: "",
                     paymentMethod = PaymentMethod.fromString(p.getOrNull(9) ?: "Cash"),
                     payee = p.getOrNull(10) ?: "", note = p.getOrNull(11) ?: "",

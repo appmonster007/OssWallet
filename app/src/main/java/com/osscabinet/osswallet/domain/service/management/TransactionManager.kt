@@ -134,10 +134,8 @@ class TransactionManager(
         val targetAccountId = request.targetAccountId
         val amount = request.amount.abs()
 
-        val baseInflowCategory = if (Category.isInitialBalance(request.categoryId))
-            Category.SYSTEM_INITIAL_BALANCE_INFLOW else Category.SYSTEM_TRANSFER_INFLOW
-        val baseOutflowCategory = if (Category.isInitialBalance(request.categoryId))
-            Category.SYSTEM_INITIAL_BALANCE_OUTFLOW else Category.SYSTEM_TRANSFER_OUTFLOW
+        val baseCategory = if (Category.isInitialBalance(request.categoryId))
+            Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
 
         return when {
             // Outflow: Wallet -> Outside
@@ -145,8 +143,7 @@ class TransactionManager(
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
                     transactionType = TransactionType.TRANSFER_OUTFLOW,
-                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
-                    else baseOutflowCategory,
+                    categoryId = baseCategory,
                     targetCurrency = request.targetCurrency
                 )
                 if (existingTransaction != null) {
@@ -164,8 +161,7 @@ class TransactionManager(
                     amount = amount,
                     transactionType = TransactionType.TRANSFER_INFLOW,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
-                    else baseInflowCategory,
+                    categoryId = baseCategory,
                     targetAccountId = null,
                     targetCurrency = request.currency
                 )
@@ -183,8 +179,7 @@ class TransactionManager(
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
                     transactionType = TransactionType.TRANSFER_OUTFLOW,
-                    categoryId = if (Category.isAnyTransferOutflow(request.categoryId)) request.categoryId
-                    else baseOutflowCategory,
+                    categoryId = baseCategory,
                     targetAccountId = targetAccountId,
                     targetCurrency = request.targetCurrency
                 )
@@ -197,8 +192,7 @@ class TransactionManager(
                     transactionType = TransactionType.TRANSFER_INFLOW,
                     accountId = targetAccountId,
                     currency = request.targetCurrency ?: request.currency,
-                    categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
-                    else baseInflowCategory,
+                    categoryId = baseCategory,
                     targetAccountId = sourceAccountId,
                     targetCurrency = request.currency,
                     transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(
@@ -224,8 +218,7 @@ class TransactionManager(
                                 transactionType = TransactionType.TRANSFER_INFLOW,
                                 accountId = targetAccountId,
                                 currency = request.targetCurrency ?: request.currency,
-                                categoryId = if (Category.isAnyTransferInflow(request.categoryId)) request.categoryId
-                                else baseInflowCategory,
+                                categoryId = baseCategory,
                                 targetAccountId = sourceAccountId,
                                 targetCurrency = request.currency,
                                 transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(

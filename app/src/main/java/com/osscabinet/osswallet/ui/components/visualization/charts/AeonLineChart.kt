@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -73,6 +74,7 @@ fun AeonLineChart(
     currency: String = "USD",
     precision: Int = CurrencyService.precision,
     showGrid: Boolean = true,
+    showPeriodBars: Boolean = true,
     animate: Boolean = true,
     lineThicknessDp: Float = 0f,
     showXAxisLabels: Boolean = false,
@@ -166,6 +168,9 @@ fun AeonLineChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
 
+        val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
+
         fun indexToX(index: Float, total: Int): Float {
             val effective = if (totalXSlots > 0) totalXSlots else total
             if (effective <= 1) return leftPadding
@@ -223,7 +228,6 @@ fun AeonLineChart(
         ) {
             // 1. Draw Grid System and Y-Axis Labels
             if (showGrid) {
-                val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val labelPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.argb(140, 158, 158, 158)
                     textSize = 9.sp.toPx()
@@ -236,7 +240,7 @@ fun AeonLineChart(
                     val yPos = valueToY(tick)
                     if (yPos >= topPadding - 1f && yPos <= topPadding + chartHeight + 1f) {
                         drawLine(
-                            color = gridColor,
+                            color = gridLineColor,
                             start = Offset(leftPadding, yPos),
                             end = Offset(w - rightPadding, yPos),
                             strokeWidth = (dims.spacingXs / 8).toPx()
@@ -249,6 +253,26 @@ fun AeonLineChart(
                         )
                     }
                     tick = tick.add(niceStep)
+                }
+            }
+
+            // 1.5 Draw Period Background Bars
+            if (showPeriodBars) {
+                val referenceSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
+                if (referenceSeries != null) {
+                    val totalPoints = if (totalXSlots > 0) totalXSlots else referenceSeries.dataPoints.size
+                    if (totalPoints > 1) {
+                        val slotWidth = chartWidth / (totalPoints - 1)
+                        for (i in 0 until totalPoints) {
+                            val centerX = indexToX(i.toFloat(), totalPoints)
+                            val barWidth = slotWidth * 0.9f
+                            drawRect(
+                                color = periodBarColor,
+                                topLeft = Offset(centerX - barWidth / 2, topPadding),
+                                size = Size(barWidth, chartHeight)
+                            )
+                        }
+                    }
                 }
             }
 

@@ -76,7 +76,7 @@ fun AeonBarChart(
     animate: Boolean = true,
     showGrid: Boolean = true,
     showXAxisLabels: Boolean = true,
-    cornerRadius: Dp = 4.dp
+    roundedBars: Boolean = false
 ) {
     if (groups.isEmpty() || groups.all { it.bars.isEmpty() }) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -103,7 +103,7 @@ fun AeonBarChart(
         val widthPx = constraints.maxWidth.toFloat()
         val heightPx = constraints.maxHeight.toFloat()
 
-        val leftPadding = with(density) { 50.dp.toPx() }
+        val leftPadding = with(density) { 44.dp.toPx() }
         val rightPadding = with(density) { dims.spacingMd.toPx() }
         val topPadding = with(density) { dims.spacingMd.toPx() }
         val xLabelHeight = if (showXAxisLabels) with(density) { 20.dp.toPx() } else 0f
@@ -231,6 +231,23 @@ fun AeonBarChart(
             val slotWidth = chartWidth / groups.size.coerceAtLeast(1)
             val barWidth = slotWidth * 0.7f
 
+            val total = groups.size
+            val firstValidIdx = groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0
+            val lastValidIdx = groups.indexOfLast { it.label.isNotBlank() }.takeIf { it != -1 } ?: (total - 1)
+            
+            val indicesToShow = mutableSetOf<Int>()
+            if (total > 0) {
+                indicesToShow.add(firstValidIdx)
+                indicesToShow.add(lastValidIdx)
+                val range = lastValidIdx - firstValidIdx
+                if (range > 0) {
+                    val interval = range.toFloat() / 6f
+                    for (i in 1..5) {
+                        indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                    }
+                }
+            }
+
             groups.forEachIndexed { groupIndex, group ->
                 val centerX = indexToX(groupIndex, groups.size)
 
@@ -255,11 +272,12 @@ fun AeonBarChart(
                     val top = if (isPositive) endY else startY
                     val bottom = if (isPositive) startY else endY
 
+                    val radiusPx = if (roundedBars) with(density) { 4.dp.toPx() } else 0f
                     drawRoundRect(
                         color = bar.color.copy(alpha = 0.85f),
                         topLeft = Offset(centerX - barWidth / 2, top),
                         size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx())
+                        cornerRadius = CornerRadius(radiusPx, radiusPx)
                     )
 
                     if (isPositive) currentPosAccumulator = endVal
@@ -274,9 +292,8 @@ fun AeonBarChart(
                         textAlign = AndroidPaint.Align.CENTER
                         textSize = 9.sp.toPx()
                     }
-                    // Only show every Nth label if there are too many
-                    val step = (groups.size / 6).coerceAtLeast(1)
-                    if (groupIndex % step == 0 || groupIndex == groups.size - 1) {
+
+                    if (groupIndex in indicesToShow) {
                         drawContext.canvas.nativeCanvas.drawText(
                             group.label,
                             centerX,
@@ -397,7 +414,7 @@ fun AeonBarChart(
     precision: Int = CurrencyService.precision,
     barColor: Color = ChartColorBlue,
     animate: Boolean = true,
-    cornerRadius: Dp = 4.dp
+    roundedBars: Boolean = false
 ) {
     val groups = remember(data, barColor) {
         data.map { (label, value) ->
@@ -410,7 +427,7 @@ fun AeonBarChart(
         currency = currency,
         precision = precision,
         animate = animate,
-        cornerRadius = cornerRadius
+        roundedBars = roundedBars
     )
 }
 

@@ -136,11 +136,20 @@ fun IncomeExpenseBarCard(
             // Legend row
             IncomeExpenseLegendRow()
 
-            // Build chart data — prepend zero sentinel so line starts at origin.
-            // Bars cover the full period; net line is capped at today (todayBucketIndex).
-            val incomeChartData = listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
-            val expenseChartData = listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
-            val xLabelData: List<String?> = listOf(null) + renderData.buckets.map { it.label }
+            // Build chart data.
+            // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
+            // For Cumulative mode, we prepend a zero point at the start so the trajectory begins at 0.
+            val incomeChartData = if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
+                                 else renderData.buckets.map { it.income }
+            val expenseChartData = if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
+                                  else renderData.buckets.map { it.expense }
+            
+            // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
+            val xLabelData: List<String?> = if (isCumulative) {
+                listOf(null) + renderData.buckets.map { it.label }
+            } else {
+                renderData.buckets.map { it.label }
+            }
 
             val realBuckets = if (renderData.todayBucketIndex >= 0) {
                 renderData.buckets.take(renderData.todayBucketIndex + 1)
@@ -150,7 +159,7 @@ fun IncomeExpenseBarCard(
             val netLineData: List<BigDecimal> = if (isCumulative) {
                 buildCumulativeNet(realBuckets)
             } else {
-                listOf(BigDecimal.ZERO) + realBuckets.map { it.net }
+                realBuckets.map { it.net }
             }
 
             if (renderData.buckets.isNotEmpty()) {
@@ -244,21 +253,21 @@ fun IncomeExpenseBarCardPreview() {
             "Jan",
             0,
             BigDecimal("5000"),
-            BigDecimal("3500"),
+            BigDecimal("-3500"),
             BigDecimal("1500")
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
             "Feb",
             0,
             BigDecimal("5200"),
-            BigDecimal("4000"),
+            BigDecimal("-4000"),
             BigDecimal("1200")
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
             "Mar",
             0,
             BigDecimal("4800"),
-            BigDecimal("3800"),
+            BigDecimal("-3800"),
             BigDecimal("1000")
         )
     )

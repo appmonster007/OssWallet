@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
+import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -30,9 +31,6 @@ class CashFlowComparisonCardComputer(
 
     override val supportedType = CardType.CASHFLOW_COMPARISON
 
-    private val dayFormatter = DateTimeFormatter.ofPattern("dd/MM")
-    private val monthFormatter = DateTimeFormatter.ofPattern("MM/yyyy")
-
     override suspend fun compute(
         input: CardInput,
         config: CashFlowComparisonCardConfig
@@ -45,60 +43,90 @@ class CashFlowComparisonCardComputer(
         )
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
-        val spanDays = (currentEnd - currentStart) / 86_400_000L
-        val granularity = when {
-            spanDays <= 182L -> CashFlowComparisonGranularity.DAY   // ≤ ~6 months → daily
-            spanDays <= 730L -> CashFlowComparisonGranularity.WEEK  // ≤ ~2 years  → weekly
-            else             -> CashFlowComparisonGranularity.MONTH // > 2 years   → monthly
-        }
+        val excludeFuture = mergedFilter.timelineRange.excludeFuture
+        val today = System.currentTimeMillis()
+
+        // 1. Determine the visual period for the chart (X-axis labels and markers).
+        // If excludeFuture is true, the entire chart truncates at 'today'.
+        val masterEnd = if (excludeFuture) minOf(currentEnd, today) else currentEnd
+
+        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
 
         val zone = TimelineService.systemZoneId
-        val today = System.currentTimeMillis()
-        // Use full-period buckets so the current line spans the same visual width as prev/last-year.
-        // Future buckets return zeros; past/current buckets are capped at today if excludeFuture is true.
-        val fullBuckets = generateBuckets(currentStart, currentEnd, granularity)
+        val masterBuckets = CardComputerUtils.generateBuckets(currentStart, masterEnd, granularity)
+
+        // 2. Compute Current Series (always stop at 'today' for the line)
         val currentSeries = computeSeriesFromBucketsWithFutureCap(
-            buckets = fullBuckets,
+            buckets = masterBuckets,
             baseFilter = mergedFilter,
             profileId = input.profileId,
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
-            excludeFuture = mergedFilter.timelineRange.excludeFuture
+            excludeFuture = true // Always cap current line at today
         )
 
-        // Previous period — cap at today so we don't show future zero-lines
+        // 3. Compute Previous Period Series:
+        // If excludeFuture is true, we shift previous period data to align with masterBuckets relative to 'today'.
         val (prevStart, prevEnd) = TimelineService.getPreviousRange(mergedFilter.timelineRange)
-        var prevTotalBuckets = 0
         val previousSeries = if (prevStart != null && prevEnd != null) {
-            val prevBuckets = generateBuckets(prevStart, prevEnd, granularity)
-            prevTotalBuckets = prevBuckets.size
+            val shift = currentStart - prevStart
+            val prevBuckets = masterBuckets.map { (start, end, label) ->
+                Triple(start - shift, end - shift, label)
+            }
             computeSeriesFromBucketsWithFutureCap(
                 buckets = prevBuckets,
                 baseFilter = mergedFilter,
                 profileId = input.profileId,
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
-                today = today,
-                excludeFuture = mergedFilter.timelineRange.excludeFuture
+                today = today - shift, // Relative 'today' for the previous period
+                excludeFuture = excludeFuture
             )
         } else CashFlowComparisonSeries(emptyList())
 
-        // Same period last year — cap at today (unlikely to trigger unless current range is far in future)
-        val lastYearStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentStart), zone)
-            .minusYears(1).toInstant().toEpochMilli()
-        val lastYearEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentEnd), zone)
-            .minusYears(1).toInstant().toEpochMilli()
-        val lastYearBuckets = generateBuckets(lastYearStart, lastYearEnd, granularity)
-        val lastYearSeries = computeSeriesFromBucketsWithFutureCap(
-            buckets = lastYearBuckets,
-            baseFilter = mergedFilter,
-            profileId = input.profileId,
-            baseCurrency = input.targetCurrency,
-            exchangeRates = input.exchangeRates,
-            today = today,
-            excludeFuture = mergedFilter.timelineRange.excludeFuture
-        )
+        // 4. Compute Last Year Series (Shifted by exactly 1 year)
+        val lastYearSeries = run {
+            val lastYearBuckets = masterBuckets.map { (start, end, label) ->
+                val shiftedStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(start), zone)
+                    .minusYears(1).toInstant().toEpochMilli()
+                val shiftedEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(end), zone)
+                    .minusYears(1).toInstant().toEpochMilli()
+                Triple(shiftedStart, shiftedEnd, label)
+            }
+            val lastYearToday = ZonedDateTime.ofInstant(Instant.ofEpochMilli(today), zone)
+                .minusYears(1).toInstant().toEpochMilli()
+
+            computeSeriesFromBucketsWithFutureCap(
+                buckets = lastYearBuckets,
+                baseFilter = mergedFilter,
+                profileId = input.profileId,
+                baseCurrency = input.targetCurrency,
+                exchangeRates = input.exchangeRates,
+                today = lastYearToday,
+                excludeFuture = excludeFuture
+            )
+        }
+
+        // 5. Total bucket counts for markers.
+        // We calculate what the full period length would be if it wasn't truncated by 'today'.
+        val fullCurrentBuckets = if (excludeFuture) masterBuckets.size else CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity).size
+        
+        val fullPrevBucketsCount = if (excludeFuture) {
+            masterBuckets.size 
+        } else if (prevStart != null && prevEnd != null) {
+            CardComputerUtils.generateBuckets(prevStart, prevEnd, granularity).size
+        } else 0
+
+        val lastYearBucketsCount = if (excludeFuture) {
+            masterBuckets.size
+        } else {
+            val lyStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentStart), zone)
+                .minusYears(1).toInstant().toEpochMilli()
+            val lyEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentEnd), zone)
+                .minusYears(1).toInstant().toEpochMilli()
+            CardComputerUtils.generateBuckets(lyStart, lyEnd, granularity).size
+        }
 
         return CardRenderData.CashFlowComparison(
             config = config,
@@ -107,59 +135,11 @@ class CashFlowComparisonCardComputer(
             lastYearSeries = lastYearSeries,
             currency = input.targetCurrency,
             granularity = granularity,
-            periodLabels = fullBuckets.map { it.third },
-            currentTotalBuckets = fullBuckets.size,
-            previousTotalBuckets = prevTotalBuckets,
-            lastYearTotalBuckets = lastYearBuckets.size
+            periodLabels = masterBuckets.map { it.third },
+            currentTotalBuckets = fullCurrentBuckets,
+            previousTotalBuckets = fullPrevBucketsCount,
+            lastYearTotalBuckets = lastYearBucketsCount
         )
-    }
-
-    // Generates a list of (bucketStart, bucketEnd, label) for all buckets covering [rangeStart, rangeEnd].
-    private fun generateBuckets(
-        rangeStart: Long,
-        rangeEnd: Long,
-        granularity: CashFlowComparisonGranularity
-    ): List<Triple<Long, Long, String>> {
-        val zone = TimelineService.systemZoneId
-        val buckets = mutableListOf<Triple<Long, Long, String>>()
-
-        when (granularity) {
-            CashFlowComparisonGranularity.DAY -> {
-                var day = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
-                val lastDay = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
-                while (!day.isAfter(lastDay)) {
-                    val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = day.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
-                    buckets.add(Triple(start, end, day.format(dayFormatter)))
-                    day = day.plusDays(1)
-                }
-            }
-            CashFlowComparisonGranularity.WEEK -> {
-                var weekStart = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
-                    .with(DayOfWeek.MONDAY)
-                    .let { if (it.atStartOfDay(zone).toInstant().toEpochMilli() > rangeStart) it.minusWeeks(1) else it }
-                val rangeEndDate = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
-                while (!weekStart.isAfter(rangeEndDate)) {
-                    val weekEnd = weekStart.plusDays(6)
-                    val start = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = weekEnd.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
-                    buckets.add(Triple(start, end, weekStart.format(dayFormatter)))
-                    weekStart = weekStart.plusWeeks(1)
-                }
-            }
-            CashFlowComparisonGranularity.MONTH -> {
-                var month = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate().withDayOfMonth(1)
-                val lastMonth = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate().withDayOfMonth(1)
-                while (!month.isAfter(lastMonth)) {
-                    val start = month.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = month.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
-                    buckets.add(Triple(start, end, month.format(monthFormatter)))
-                    month = month.plusMonths(1)
-                }
-            }
-        }
-
-        return buckets
     }
 
     // Current / Previous / Last Year series: drop future buckets entirely if excludeFuture is true.

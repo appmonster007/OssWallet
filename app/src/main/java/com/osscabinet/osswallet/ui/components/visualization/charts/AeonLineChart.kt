@@ -112,12 +112,12 @@ fun AeonLineChart(
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val leftPadding = with(density) { 50.dp.toPx() }
+        val leftPadding = with(density) { 44.dp.toPx() }
         val xLabelHeight = with(density) { 14.dp.toPx() }
         val bottomPadding =
             with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
         val topPadding = with(density) { dims.spacingLg.toPx() }
-        val rightPadding = with(density) { dims.spacing2xl.toPx() } // Increased for marker labels
+        val rightPadding = with(density) { dims.spacingMd.toPx() } 
 
         val chartWidth = w - leftPadding - rightPadding
         val chartHeight = h - bottomPadding - topPadding
@@ -226,10 +226,9 @@ fun AeonLineChart(
                 val gridColor = ChartGridColor.copy(alpha = 0.25f)
                 val labelPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.argb(140, 158, 158, 158)
-                    textSize = 10.sp.toPx()
+                    textSize = 9.sp.toPx()
                     textAlign = android.graphics.Paint.Align.RIGHT
                     isAntiAlias = true
-                    alpha = 140
                 }
 
                 var tick = effectiveMinY
@@ -244,8 +243,8 @@ fun AeonLineChart(
                         )
                         drawContext.canvas.nativeCanvas.drawText(
                             currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
-                            leftPadding - dims.spacingMd.toPx(),
-                            yPos + dims.spacingXs.toPx(),
+                            leftPadding - dims.spacingSm.toPx(),
+                            yPos + 3.dp.toPx(),
                             labelPaint
                         )
                     }
@@ -384,53 +383,69 @@ fun AeonLineChart(
                         density
                     ) { 2.dp.toPx() }
 
-                // Derive jump from the minimum pixel gap a label needs so they never overlap.
-                // "dd/MM" at 9sp is ~32dp wide; this scales correctly with chart width and data density.
-                val minLabelSpacingPx = with(density) { 32.dp.toPx() }
-
                 if (xAxisLabels.isNotEmpty()) {
                     val total = xAxisLabels.size
-                    val lastIdx = total - 1
-                    val jump =
-                        maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
-                    val threshold = (jump / 2).coerceAtLeast(1)
-                    val nearestLowerJump = (lastIdx / jump) * jump
-                    val skipNearestLowerJump =
-                        lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
-                    xAxisLabels.forEachIndexed { index, lbl ->
-                        if (lbl == null) return@forEachIndexed
-                        val show = index == 1 || index == lastIdx ||
-                                (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                        if (show) drawContext.canvas.nativeCanvas.drawText(
-                            lbl,
-                            indexToX(index.toFloat(), total),
-                            labelY,
-                            labelPaint
-                        )
+                    
+                    // Find first and last non-null labels to define the range for 7 labels
+                    val firstValidIdx = xAxisLabels.indexOfFirst { it != null }
+                    val lastValidIdx = xAxisLabels.indexOfLast { it != null }
+
+                    val indicesToShow = mutableSetOf<Int>()
+                    if (firstValidIdx != -1 && lastValidIdx != -1) {
+                        indicesToShow.add(firstValidIdx)
+                        indicesToShow.add(lastValidIdx)
+                        
+                        val validRange = lastValidIdx - firstValidIdx
+                        if (validRange > 0) {
+                            val interval = validRange.toFloat() / 6f
+                            for (i in 1..5) {
+                                indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                            }
+                        }
                     }
-                } else {
-                    val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
-                    if (labelSeries != null) {
-                        val total = labelSeries.dataPoints.size
-                        val lastIdx = total - 1
-                        val jump = maxOf(
-                            1,
-                            kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt()
-                        )
-                        val threshold = (jump / 2).coerceAtLeast(1)
-                        val nearestLowerJump = (lastIdx / jump) * jump
-                        val skipNearestLowerJump =
-                            lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
-                        labelSeries.dataPoints.forEachIndexed { index, point ->
-                            val lbl = point.label ?: return@forEachIndexed
-                            val show = index == 1 || index == lastIdx ||
-                                    (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                            if (show) drawContext.canvas.nativeCanvas.drawText(
+
+                    xAxisLabels.forEachIndexed { index, lbl ->
+                        if (lbl != null && indicesToShow.contains(index)) {
+                            drawContext.canvas.nativeCanvas.drawText(
                                 lbl,
                                 indexToX(index.toFloat(), total),
                                 labelY,
                                 labelPaint
                             )
+                        }
+                    }
+                } else {
+                    val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
+                    if (labelSeries != null) {
+                        val total = labelSeries.dataPoints.size
+                        
+                        val firstValidIdx = labelSeries.dataPoints.indexOfFirst { it.label != null }
+                        val lastValidIdx = labelSeries.dataPoints.indexOfLast { it.label != null }
+
+                        val indicesToShow = mutableSetOf<Int>()
+                        if (firstValidIdx != -1 && lastValidIdx != -1) {
+                            indicesToShow.add(firstValidIdx)
+                            indicesToShow.add(lastValidIdx)
+                            
+                            val validRange = lastValidIdx - firstValidIdx
+                            if (validRange > 0) {
+                                val interval = validRange.toFloat() / 6f
+                                for (i in 1..5) {
+                                    indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                                }
+                            }
+                        }
+
+                        labelSeries.dataPoints.forEachIndexed { index, point ->
+                            val lbl = point.label ?: return@forEachIndexed
+                            if (indicesToShow.contains(index)) {
+                                drawContext.canvas.nativeCanvas.drawText(
+                                    lbl,
+                                    indexToX(index.toFloat(), total),
+                                    labelY,
+                                    labelPaint
+                                )
+                            }
                         }
                     }
                 }

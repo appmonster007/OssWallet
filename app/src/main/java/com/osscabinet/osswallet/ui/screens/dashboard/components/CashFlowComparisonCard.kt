@@ -146,9 +146,15 @@ fun CashFlowComparisonCard(
                     renderData.previousTotalBuckets,
                     renderData.lastYearTotalBuckets
                 )
-                // Zero-origin sentinel + enough slots for the longest period shown.
-                val totalXSlots = maxXBuckets + 1
-                val xAxisLabels: List<String?> = listOf(null) + renderData.periodLabels
+                // Use maxXBuckets + 1 for cumulative view to account for zero origin point.
+                val totalXSlots = if (config.isCumulative) maxXBuckets + 1 else maxXBuckets
+                
+                // Labels: Prepend null for origin point in cumulative mode to avoid label repetition.
+                val xAxisLabels: List<String?> = if (config.isCumulative) {
+                    listOf(null) + renderData.periodLabels
+                } else {
+                    renderData.periodLabels
+                }
 
                 val markers = buildMarkersList(renderData, config)
 
@@ -268,7 +274,6 @@ private fun buildSeriesList(
     val series = mutableListOf<AeonLineChartSeries>()
 
     fun seriesPoints(s: CashFlowComparisonSeries): List<AeonLineChartPoint> {
-        val origin = AeonLineChartPoint(x = 0f, y = BigDecimal.ZERO, label = null)
         var running = BigDecimal.ZERO
         val dataPoints = s.points.mapIndexed { index, point ->
             val value = when (selectedMetric) {
@@ -278,12 +283,16 @@ private fun buildSeriesList(
             }
             running += value
             AeonLineChartPoint(
-                x = (index + 1).toFloat(),
+                x = if (isCumulative) (index + 1).toFloat() else index.toFloat(),
                 y = if (isCumulative) running else value,
                 label = point.label
             )
         }
-        return listOf(origin) + dataPoints
+        return if (isCumulative) {
+            listOf(AeonLineChartPoint(x = 0f, y = BigDecimal.ZERO, label = null)) + dataPoints
+        } else {
+            dataPoints
+        }
     }
 
     if (config.showCurrentPeriod && renderData.currentSeries.points.isNotEmpty()) {

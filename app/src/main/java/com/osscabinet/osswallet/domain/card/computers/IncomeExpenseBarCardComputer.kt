@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.card.computers
 
+import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -30,9 +31,6 @@ class IncomeExpenseBarCardComputer(
 
     override val supportedType = CardType.INCOME_EXPENSE_BAR
 
-    private val dayFormatter = DateTimeFormatter.ofPattern("dd/MM")
-    private val monthFormatter = DateTimeFormatter.ofPattern("MM/yyyy")
-
     override suspend fun compute(
         input: CardInput,
         config: IncomeExpenseBarCardConfig
@@ -53,16 +51,11 @@ class IncomeExpenseBarCardComputer(
             input.transactions
         )
 
-        val spanDays = (currentEnd - currentStart) / 86_400_000L
-        val granularity = when {
-            spanDays <= 90L -> CashFlowComparisonGranularity.DAY
-            spanDays <= 365L -> CashFlowComparisonGranularity.WEEK
-            else -> CashFlowComparisonGranularity.MONTH
-        }
+        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
 
         // No capping at today — show all buckets in the period (future buckets return zeros)
         val today = System.currentTimeMillis()
-        val buckets = generateBuckets(currentStart, currentEnd, granularity)
+        val buckets = CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity)
         val todayBucketIndex = buckets.indexOfLast { (bucketStart, _, _) -> bucketStart <= today }
 
         val series = computeSeriesFromBuckets(
@@ -81,63 +74,6 @@ class IncomeExpenseBarCardComputer(
             currency = input.targetCurrency,
             todayBucketIndex = todayBucketIndex
         )
-    }
-
-    private fun generateBuckets(
-        rangeStart: Long,
-        rangeEnd: Long,
-        granularity: CashFlowComparisonGranularity
-    ): List<Triple<Long, Long, String>> {
-        val zone = TimelineService.systemZoneId
-        val buckets = mutableListOf<Triple<Long, Long, String>>()
-
-        when (granularity) {
-            CashFlowComparisonGranularity.DAY -> {
-                var day = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
-                val lastDay = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
-                while (!day.isAfter(lastDay)) {
-                    val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end =
-                        day.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant().toEpochMilli()
-                    buckets.add(Triple(start, end, day.format(dayFormatter)))
-                    day = day.plusDays(1)
-                }
-            }
-
-            CashFlowComparisonGranularity.WEEK -> {
-                var weekStart = Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate()
-                    .with(DayOfWeek.MONDAY)
-                    .let {
-                        if (it.atStartOfDay(zone).toInstant()
-                                .toEpochMilli() > rangeStart
-                        ) it.minusWeeks(1) else it
-                    }
-                val rangeEndDate = Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate()
-                while (!weekStart.isAfter(rangeEndDate)) {
-                    val weekEnd = weekStart.plusDays(6)
-                    val start = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = weekEnd.atTime(23, 59, 59, 999_000_000).atZone(zone).toInstant()
-                        .toEpochMilli()
-                    buckets.add(Triple(start, end, weekStart.format(dayFormatter)))
-                    weekStart = weekStart.plusWeeks(1)
-                }
-            }
-
-            CashFlowComparisonGranularity.MONTH -> {
-                var month =
-                    Instant.ofEpochMilli(rangeStart).atZone(zone).toLocalDate().withDayOfMonth(1)
-                val lastMonth =
-                    Instant.ofEpochMilli(rangeEnd).atZone(zone).toLocalDate().withDayOfMonth(1)
-                while (!month.isAfter(lastMonth)) {
-                    val start = month.atStartOfDay(zone).toInstant().toEpochMilli()
-                    val end = month.plusMonths(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
-                    buckets.add(Triple(start, end, month.format(monthFormatter)))
-                    month = month.plusMonths(1)
-                }
-            }
-        }
-
-        return buckets
     }
 
     private suspend fun computeSeriesFromBuckets(

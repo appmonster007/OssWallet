@@ -131,7 +131,7 @@ fun CategorySpendingTrendCard(
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
-                    cornerRadius = 0.dp
+                    roundedBars = false
                 )
             }
 

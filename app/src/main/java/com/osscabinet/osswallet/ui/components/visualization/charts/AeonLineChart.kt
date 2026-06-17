@@ -169,7 +169,7 @@ fun AeonLineChart(
         val zeroY = valueToY(BigDecimal.ZERO)
 
         val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
-        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.15f)
 
         val effectiveTotal = if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
         val slotWidth = chartWidth / effectiveTotal.coerceAtLeast(1)

@@ -198,7 +198,7 @@ fun AeonBarLineChart(
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
         val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
-        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
+        val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.15f)
 
         fun findIndex(offsetX: Float): Int {
             val total = effectiveBarData.size

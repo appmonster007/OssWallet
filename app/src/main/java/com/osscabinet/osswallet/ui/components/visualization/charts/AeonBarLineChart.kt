@@ -144,7 +144,7 @@ fun AeonBarLineChart(
         val chartWidth = widthPx - leftPadding - rightPadding
 
         val allValues = if (dualBarMode) {
-            incomeData + expenseData.map { it.negate() } + lineData
+            incomeData + expenseData + lineData
         } else {
             effectiveBarData + lineData
         }
@@ -292,17 +292,16 @@ fun AeonBarLineChart(
                 expenseData.forEachIndexed { index, expenseVal ->
                     val slotCenterX = leftPadding + (index + 0.5f) * slotWidth
                     val expenseX = slotCenterX  // right half of the slot
-                    // Expense is stored as positive, drawn as negative (below zero)
-                    val negExpense = expenseVal.negate()
-                    val expenseY = valueToY(negExpense)
-                    // expenseY > zeroY in canvas coords (below the zero line)
+                    val expenseY = valueToY(expenseVal)
                     val animatedExpenseY = zeroY + (expenseY - zeroY) * animationProgress.value
 
-                    // topLeft.y = zeroY (the zero line), bar extends downward to animatedExpenseY
+                    val expenseTop = if (expenseVal >= BigDecimal.ZERO) animatedExpenseY else zeroY
+                    val expenseBottom = if (expenseVal >= BigDecimal.ZERO) zeroY else animatedExpenseY
+
                     drawRoundRect(
                         color = barColorNegative.copy(alpha = 0.8f),
-                        topLeft = Offset(expenseX, zeroY),
-                        size = Size(halfBarWidth, (animatedExpenseY - zeroY).coerceAtLeast(1f)),
+                        topLeft = Offset(expenseX, expenseTop),
+                        size = Size(halfBarWidth, (expenseBottom - expenseTop).coerceAtLeast(1f)),
                         cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
                     )
                 }

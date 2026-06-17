@@ -126,7 +126,7 @@ class TagUpSetPlotCardComputer(
                         when (config.selectedMetric) {
                             ChartMetric.INCOME -> p.second.income
                             ChartMetric.EXPENSE -> p.second.expense
-                            ChartMetric.NET -> p.second.income.subtract(p.second.expense)
+                            ChartMetric.NET -> p.second.income.add(p.second.expense)
                         }
                     }
                     when (config.tagSortMode) {
@@ -194,7 +194,7 @@ class TagUpSetPlotCardComputer(
                         expense = expenseTotal,
                         incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
                         expenseByCurrency = expByCurr.filterValues { it.signum() != 0 },
-                        net = incomeTotal.subtract(expenseTotal),
+                        net = incomeTotal.add(expenseTotal),
                         transactionCount = count
                     )
                 }

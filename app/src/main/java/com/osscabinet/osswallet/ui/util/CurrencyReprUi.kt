@@ -87,7 +87,7 @@ object CurrencyReprUi {
             fun build(v: String) = CurrencyParts(sign, symbol, v, system.symbolPosition)
 
             val standard = build(formatter.format(abs, spec.precision))
-            if (standard.fullString().length <= spec.shortenThreshold) return standard
+            if (spec.shortenThreshold == -1 || standard.fullString().length <= spec.shortenThreshold) return standard
 
             for (p in spec.precision downTo 0) {
                 val candidate = build(shortener.shorten(abs, p))

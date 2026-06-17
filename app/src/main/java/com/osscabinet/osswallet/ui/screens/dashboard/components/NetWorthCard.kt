@@ -116,7 +116,7 @@ fun NetWorthCard(
 
                 val symbolStyle = SpanStyle(
                     fontWeight = FontWeight.Light,
-                    color = contentColor.copy(alpha = 0.6f),
+                    color = contentColor.copy(alpha = 0.9f),
                     fontSize = (baseFontSize.value * 0.7f).sp
                 )
 

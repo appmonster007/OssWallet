@@ -159,7 +159,7 @@ fun AccountHeroCard(
 
                 val symbolStyle = SpanStyle(
                     fontWeight = FontWeight.Light,
-                    color = contentColor.copy(alpha = 0.7f),
+                    color = contentColor.copy(alpha = 0.9f),
                     fontSize = 24.sp
                 )
 
@@ -328,7 +328,7 @@ fun AccountHeroCard(
 
             // Multi-Currency Section
             val currencyBalances = summary.currencyBalances
-            if (config.showCurrencyBadges && currencyBalances.isNotEmpty()) {
+            if (config.showCurrencyBadges && currencyBalances.isNotEmpty() && currencyBalances.size > 1) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "DISTRIBUTION",
@@ -507,7 +507,7 @@ private fun FlowSummaryItem(
                     spec = CurrencyDisplaySpec(
                         useSemanticColor = false,
                         forceShowPlus = forceShowPlus,
-                        shortenThreshold = 10
+                        shortenThreshold = 20
                     )
                 ),
                 style = AppTextStyles.transactionAmount.copy(

@@ -227,7 +227,7 @@ fun AeonBarChart(
                 val slotWidth = chartWidth / totalSlots
                 groups.forEachIndexed { index, _ ->
                     val slotCenterX = indexToX(index, totalSlots)
-                    val barWidth = slotWidth * 0.95f 
+                    val barWidth = slotWidth * 0.95f
                     drawRect(
                         color = periodBarColor,
                         topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
@@ -310,14 +310,14 @@ fun AeonBarChart(
                         textSize = 9.sp.toPx()
                     }
 
-                    if (groupIndex in indicesToShow) {
-                        drawContext.canvas.nativeCanvas.drawText(
-                            group.label,
-                            centerX,
-                            heightPx - bottomPadding + 16.dp.toPx(),
-                            labelPaint
-                        )
-                    }
+                if (groupIndex in indicesToShow) {
+                    drawContext.canvas.nativeCanvas.drawText(
+                        group.label,
+                        centerX,
+                        heightPx - bottomPadding + with(density) { 14.dp.toPx() },
+                        labelPaint
+                    )
+                }
                 }
             }
 

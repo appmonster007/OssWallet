@@ -134,17 +134,13 @@ fun AeonBarLineChart(
         }
     }
 
-    // Extra bottom padding for x-axis labels
-    val xLabelExtraDp = if (showXAxisLabels) 14.dp else 0.dp
-
     BoxWithConstraints(modifier = modifier) {
-        val widthPx = with(density) { maxWidth.toPx() }
-        val heightPx = with(density) { maxHeight.toPx() }
-        val xLabelExtraPx = with(density) { xLabelExtraDp.toPx() }
-        val leftPadding = with(density) { 44.dp.toPx() }
-        val topPadding = with(density) { dims.spacingMd.toPx() }
+        val widthPx = constraints.maxWidth.toFloat()
+        val heightPx = constraints.maxHeight.toFloat()
+        val leftPadding = with(density) { 48.dp.toPx() }
+        val topPadding = with(density) { dims.spacingLg.toPx() }
         val rightPadding = with(density) { dims.spacingMd.toPx() }
-        val bottomPadding = with(density) { dims.spacing2xl.toPx() } + xLabelExtraPx
+        val bottomPadding = with(density) { dims.spacingXl.toPx() } + with(density) { (if (showXAxisLabels) 16.dp else 0.dp).toPx() }
         val chartWidth = widthPx - leftPadding - rightPadding
 
         val allValues = if (dualBarMode) {
@@ -184,6 +180,8 @@ fun AeonBarLineChart(
 
         val chartHeight = heightPx - topPadding - bottomPadding
 
+        val slotWidth = chartWidth / effectiveBarData.size.coerceAtLeast(1)
+
         fun valueToY(value: BigDecimal): Float {
             val normalized =
                 (value - effectiveMinY).divide(effectiveRange, 10, RoundingMode.HALF_UP).toFloat()
@@ -191,8 +189,9 @@ fun AeonBarLineChart(
         }
 
         fun indexToX(index: Int, total: Int): Float {
-            if (total <= 1) return widthPx / 2
-            return leftPadding + (index.toFloat() / (total - 1)) * chartWidth
+            if (total <= 0) return leftPadding + chartWidth / 2
+            val sWidth = chartWidth / total
+            return leftPadding + (index + 0.5f) * sWidth
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
@@ -203,8 +202,8 @@ fun AeonBarLineChart(
 
         fun findIndex(offsetX: Float): Int {
             val total = effectiveBarData.size
-            val step = chartWidth / (total - 1).coerceAtLeast(1)
-            return ((offsetX - leftPadding + step / 2) / step).toInt().coerceIn(0, total - 1)
+            if (total <= 0) return -1
+            return ((offsetX - leftPadding) / slotWidth).toInt().coerceIn(0, total - 1)
         }
 
         Canvas(
@@ -256,8 +255,8 @@ fun AeonBarLineChart(
                         )
                         drawContext.canvas.nativeCanvas.drawText(
                             com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter().format(amount = tick, currencyCode = null, spec = chartSpec),
-                            leftPadding - with(density) { 6.dp.toPx() },
-                            yPos + with(density) { 3.dp.toPx() },
+                            leftPadding - dims.spacingSm.toPx(),
+                            yPos + 3.dp.toPx(),
                             labelPaint
                         )
                     }
@@ -269,18 +268,13 @@ fun AeonBarLineChart(
             if (showPeriodBars) {
                 val totalBuckets = effectiveBarData.size
                 if (totalBuckets > 0) {
-                    val slotWidth = chartWidth / totalBuckets.coerceAtLeast(1)
-                    val barWidth = slotWidth * 0.9f
+                    val periodBarWidth = slotWidth * 0.95f
                     for (index in 0 until totalBuckets) {
-                        val slotCenterX = if (dualBarMode) {
-                            leftPadding + (index + 0.5f) * slotWidth
-                        } else {
-                            indexToX(index, totalBuckets)
-                        }
+                        val slotCenterX = indexToX(index, totalBuckets)
                         drawRect(
                             color = periodBarColor,
-                            topLeft = Offset(slotCenterX - barWidth / 2, topPadding),
-                            size = Size(barWidth, chartHeight)
+                            topLeft = Offset(slotCenterX - periodBarWidth / 2, topPadding),
+                            size = Size(periodBarWidth, chartHeight)
                         )
                     }
                 }
@@ -294,14 +288,12 @@ fun AeonBarLineChart(
                 strokeWidth = (dims.spacingXs / 4).toPx()
             )
 
-            // 2. Draw Bars
             if (dualBarMode) {
                 val totalBuckets = incomeData.size
-                val slotWidth = chartWidth / totalBuckets.coerceAtLeast(1)
                 val barWidth = slotWidth * 0.5f  // Unified bar width centered in the slot
 
                 for (index in incomeData.indices) {
-                    val slotCenterX = leftPadding + (index + 0.5f) * slotWidth
+                    val slotCenterX = indexToX(index, totalBuckets)
                     val x = slotCenterX - barWidth / 2
 
                     // Income Bar (drawn upwards)
@@ -336,7 +328,7 @@ fun AeonBarLineChart(
                     )
                 }
             } else {
-                val barWidth = chartWidth / effectiveBarData.size * 0.8f
+                val barWidth = slotWidth * 0.85f
                 effectiveBarData.forEachIndexed { index, value ->
                     val x = indexToX(index, effectiveBarData.size)
                     val y = valueToY(value)
@@ -364,18 +356,8 @@ fun AeonBarLineChart(
             var prevX = 0f
             var prevY = 0f
             val lineTotal = lineData.size
-            // In dual-bar mode use the full-period slot count (incomeData.size) so a truncated net
-            // line shares the same x-spacing as the bars rather than stretching to fill the chart.
-            val fullPeriodSlots = if (dualBarMode) incomeData.size else lineTotal
-            val lineSlotWidth = if (dualBarMode && fullPeriodSlots > 0) {
-                chartWidth / fullPeriodSlots
-            } else 0f
             lineData.forEachIndexed { index, value ->
-                val x = if (dualBarMode) {
-                    leftPadding + (index + 0.5f) * lineSlotWidth
-                } else {
-                    indexToX(index, lineTotal)
-                }
+                val x = indexToX(index, effectiveBarData.size)
                 val y = valueToY(value)
                 val animatedY = zeroY + (y - zeroY) * animationProgress.value
 
@@ -500,18 +482,13 @@ fun AeonBarLineChart(
                     textAlign = AndroidPaint.Align.CENTER
                     textSize = with(density) { 9.sp.toPx() }
                 }
-                val labelSlotWidth = if (dualBarMode) chartWidth / total.coerceAtLeast(1) else 0f
                 xLabels.forEachIndexed { index, label ->
                     if (label != null && indicesToShow.contains(index)) {
-                        val x = if (dualBarMode) {
-                            leftPadding + (index + 0.5f) * labelSlotWidth
-                        } else {
-                            indexToX(index, total)
-                        }
+                        val x = indexToX(index, total)
                         drawContext.canvas.nativeCanvas.drawText(
                             label,
                             x,
-                            heightPx - xLabelExtraPx * 0.2f,
+                            heightPx - bottomPadding + with(density) { 14.dp.toPx() },
                             labelPaint
                         )
                     }
@@ -520,12 +497,7 @@ fun AeonBarLineChart(
 
             // 6. Draw selection highlight
             selectedIndex?.let { index ->
-                val selTotal = effectiveBarData.size
-                val selSlotWidth = if (dualBarMode) chartWidth / selTotal.coerceAtLeast(1) else 0f
-                val x = if (dualBarMode) leftPadding + (index + 0.5f) * selSlotWidth else indexToX(
-                    index,
-                    selTotal
-                )
+                val x = indexToX(index, effectiveBarData.size)
                 drawLine(
                     color = ChartZeroLineColor,
                     start = Offset(x, topPadding),
@@ -538,12 +510,7 @@ fun AeonBarLineChart(
 
         // Tooltip
         selectedIndex?.let { index ->
-            val ttTotal = effectiveBarData.size
-            val ttSlotWidth = if (dualBarMode) chartWidth / ttTotal.coerceAtLeast(1) else 0f
-            val x = if (dualBarMode) leftPadding + (index + 0.5f) * ttSlotWidth else indexToX(
-                index,
-                ttTotal
-            )
+            val x = indexToX(index, effectiveBarData.size)
 
             val tooltipWidth = 160.dp
             val tooltipHeight = if (dualBarMode) 120.dp else 100.dp
@@ -553,7 +520,7 @@ fun AeonBarLineChart(
             val xPos =
                 (x - tooltipWidthPx / 2).coerceIn(0f, (widthPx - tooltipWidthPx).coerceAtLeast(0f))
             val yPos =
-                (topPadding - 10f).coerceIn(0f, (heightPx - tooltipHeightPx).coerceAtLeast(0f))
+                (topPadding).coerceIn(0f, (heightPx - tooltipHeightPx).coerceAtLeast(0f))
 
             val label = xLabels.getOrNull(index)
             val barVal = effectiveBarData.getOrNull(index)

@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
@@ -142,13 +143,6 @@ fun TagUpSetPlotCard(
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            MetricToggleRow(
-                selectedMetric = config.selectedMetric,
-                onMetricChange = { metric -> callbacks.onUpdate(config.copy(selectedMetric = metric)) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (uiSets.isNotEmpty()) {
                 AeonUpSetPlot(
                     data = AeonUpSetData(uiSets, uiIntersections),
@@ -156,6 +150,17 @@ fun TagUpSetPlotCard(
                     maxVisibleRows = config.maxTags,
                     maxVisibleCols = config.maxIntersections,
                     dynamicFilteringMode = config.dynamicFilteringMode,
+                    topStartContent = {
+                        CompactMetricSelector(
+                            selectedMetric = config.selectedMetric,
+                            onMetricChange = { metric ->
+                                callbacks.onUpdate(config.copy(selectedMetric = metric))
+                            },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(end = 8.dp)
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
@@ -256,24 +261,42 @@ fun TagUpSetPlotCard(
 }
 
 @Composable
-private fun MetricToggleRow(
+private fun CompactMetricSelector(
     selectedMetric: ChartMetric,
-    onMetricChange: (ChartMetric) -> Unit
+    onMetricChange: (ChartMetric) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val options = ChartMetric.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, metric ->
-            SegmentedButton(
-                selected = selectedMetric == metric,
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        ChartMetric.entries.forEach { metric ->
+            val isSelected = selectedMetric == metric
+            Surface(
                 onClick = { onMetricChange(metric) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = {
+                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) AppColors.primary else AppColors.cardSurfaceProminent,
+                tonalElevation = if (isSelected) 0.dp else 2.dp,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .alpha(if (isSelected) 1f else 0.8f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = metric.name,
-                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                        style = AppTextStyles.caption.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
+                        ),
+                        color = if (isSelected) AppColors.onPrimary else AppColors.contentPrimary
                     )
                 }
-            )
+            }
         }
     }
 }

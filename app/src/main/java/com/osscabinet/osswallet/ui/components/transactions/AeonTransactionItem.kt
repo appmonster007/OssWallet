@@ -125,25 +125,26 @@ fun AeonTransactionItem(
         color = containerColor,
         shape = RectangleShape
     ) {
-        Column(
-            modifier = if (isPlanned) {
-                Modifier
-                    .padding(horizontal = outerPadding, vertical = 4.dp)
-                    .then(dashedBorder)
-                    .padding(
-                        horizontal = AeonTheme.dimensions.listPadding - outerPadding,
+        Column {
+            Column(
+                modifier = if (isPlanned) {
+                    Modifier
+                        .padding(horizontal = outerPadding, vertical = 4.dp)
+                        .then(dashedBorder)
+                        .padding(
+                            horizontal = AeonTheme.dimensions.listPadding - outerPadding,
+                            vertical = AeonTheme.dimensions.spacingSm
+                        )
+                } else {
+                    Modifier.padding(
+                        horizontal = AeonTheme.dimensions.listPadding,
                         vertical = AeonTheme.dimensions.spacingSm
                     )
-            } else {
-                Modifier.padding(
-                    horizontal = AeonTheme.dimensions.listPadding,
-                    vertical = AeonTheme.dimensions.spacingSm
-                )
-            }
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+                }
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (showIcon) {
                         Box(modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)) {
                             Surface(
@@ -316,14 +317,15 @@ fun AeonTransactionItem(
                         }
                     }
                 }
-        }
+            }
 
-        if (showDividers) {
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.5f)
-            )
+            if (showDividers) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
+                    thickness = 0.5.dp,
+                    color = AppColors.divider.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }

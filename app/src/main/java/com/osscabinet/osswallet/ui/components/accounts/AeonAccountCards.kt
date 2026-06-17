@@ -296,16 +296,15 @@ fun AeonAccountCardLarge(
             val flow = summary.currentPeriodFlow
             val prevFlow = summary.previousPeriodFlow
 
-            if (flow.income.signum() != 0 || flow.expense.signum() != 0 || flow.transferIn.signum() != 0 || flow.transferOut.signum() != 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aeonDashedTopRule()
-                        .padding(top = 8.dp)
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    when (displayMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aeonDashedTopRule()
+                    .padding(top = 8.dp)
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when (displayMode) {
                         com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION -> {
                             AccountFlowReadout(
                                 label = "INC",
@@ -376,7 +375,6 @@ fun AeonAccountCardLarge(
                         }
                     }
                 }
-            }
 
             val currencyBalances = summary.currencyBalances
             val sortedCurrencyBalances = remember(currencyBalances) {

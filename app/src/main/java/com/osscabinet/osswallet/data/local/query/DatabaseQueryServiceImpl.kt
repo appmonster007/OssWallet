@@ -111,12 +111,17 @@ class DatabaseQueryServiceImpl(
 
             val metMap = plan.metrics.take(AggregationLimits.MAX_METRICS)
                 .mapIndexedNotNull { i, met ->
-                    val value = when (i) {
+                    val rawValue = when (i) {
                         0 -> row.m1; 1 -> row.m2; 2 -> row.m3; 3 -> row.m4; 4 -> row.m5
                         5 -> row.m6; 6 -> row.m7; 7 -> row.m8; 8 -> row.m9; 9 -> row.m10
                         else -> null
                     }
-                    if (value != null) met.name to value else null
+                    val decimalValue = try {
+                        rawValue?.let { BigDecimal(it) } ?: BigDecimal.ZERO
+                    } catch (e: Exception) {
+                        BigDecimal.ZERO
+                    }
+                    met.name to decimalValue
                 }.toMap()
 
             AggregatedData(dimMap, metMap, row.count)

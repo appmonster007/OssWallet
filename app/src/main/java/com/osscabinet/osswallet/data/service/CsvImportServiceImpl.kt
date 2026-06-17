@@ -1517,7 +1517,8 @@ class CsvImportServiceImpl @Inject constructor(
                         else -> TransactionType.EXPENSE
                     }
 
-                    val finalAmount = if (txType == TransactionType.EXPENSE) amount.abs().negate() else amount.abs()
+                    val finalAmount = if (txType == TransactionType.EXPENSE || txType == TransactionType.TRANSFER_OUTFLOW)
+                        amount.abs().negate() else amount.abs()
 
                     val paymentMethod = when (paymentTypeStr.uppercase().replace(" ", "_")) {
                         "MOBILE_PAYMENT" -> PaymentMethod.MOBILE_PAYMENT

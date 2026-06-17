@@ -87,7 +87,20 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_14_15 = object : Migration(14, 15) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // 1. Collapse categories in transactions table
+                // 1. Resolve duplicates before creating unique index
+                // If a user has both 1003 and 1004 for the same account/currency, delete the 1004 one
+                db.execSQL("""
+                    DELETE FROM transactions 
+                    WHERE categoryId = 1004 
+                    AND EXISTS (
+                        SELECT 1 FROM transactions t2 
+                        WHERE t2.accountId = transactions.accountId 
+                        AND t2.currency = transactions.currency 
+                        AND t2.categoryId = 1003
+                    )
+                """)
+
+                // 2. Collapse categories in transactions table
                 db.execSQL("UPDATE transactions SET categoryId = 1003 WHERE categoryId = 1004")
                 db.execSQL("UPDATE transactions SET categoryId = 1005 WHERE categoryId = 1006")
 

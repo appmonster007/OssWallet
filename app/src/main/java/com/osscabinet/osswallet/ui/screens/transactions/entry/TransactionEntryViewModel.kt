@@ -268,10 +268,7 @@ class TransactionEntryViewModel @Inject constructor(
         val accounts = currentState.accounts
         val txType = prefill.entryMode
 
-        val isOpenedAsReceiver = prefill.categoryId == Category.SYSTEM_INITIAL_BALANCE ||
-                prefill.categoryId == Category.SYSTEM_TRANSFER // This is ambiguous now, but prefill direction should come from type if possible. 
-                // However, DTO might not have correct type yet. For now, check type if present.
-                || prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
+        val isOpenedAsReceiver = prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
 
         // Use prefill data if available, otherwise fallback to current selection.
         // DTO carries the legacy String? convention (null/blank = absent). The form's typed

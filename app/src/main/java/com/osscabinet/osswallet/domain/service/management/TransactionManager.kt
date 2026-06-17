@@ -206,32 +206,24 @@ class TransactionManager(
                     // When updating a linked transfer, find the other side and update it too
                     val linkedIds =
                         transactionUseCases.getLinkedTransactionIds(existingTransaction.id).first()
-                    linkedIds.forEach { linkedId ->
-                        val linkedTx = transactionUseCases.getTransactionById(linkedId)
-                        if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
-                            // Update the target side to match the new metadata from source
-                            val updatedTarget = sourceTransaction.copy(
-                                id = linkedId,
-                                amount = amount.multiply(request.transferRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP)
-                                    .stripTrailingZeros(),
-                                transactionType = TransactionType.TRANSFER_INFLOW,
-                                accountId = targetAccountId,
-                                currency = request.targetCurrency ?: request.currency,
-                                categoryId = baseCategory,
-                                targetAccountId = sourceAccountId,
-                                targetCurrency = request.currency,
-                                transferRate = if (request.transferRate.signum() != 0) BigDecimal.ONE.divide(
-                                    request.transferRate,
-                                    8,
-                                    java.math.RoundingMode.HALF_UP
-                                ).stripTrailingZeros() else BigDecimal.ONE
-                            )
-                            transactionUseCases.updateTransaction(
-                                linkedTx,
-                                updatedTarget,
-                                profileId
-                            )
+                    
+                    if (linkedIds.isEmpty()) {
+                        // Conversion from Standalone (Outside Wallet) to Internal: Create the missing leg
+                        val targetId = transactionUseCases.insertTransaction(targetTransaction, profileId)
+                        transactionUseCases.addTransactionLink(existingTransaction.id, targetId)
+                        transactionUseCases.addTransactionLink(targetId, existingTransaction.id)
+                    } else {
+                        linkedIds.forEach { linkedId ->
+                            val linkedTx = transactionUseCases.getTransactionById(linkedId)
+                            if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
+                                // Update the target side to match the new metadata from source
+                                val updatedTarget = targetTransaction.copy(id = linkedId)
+                                transactionUseCases.updateTransaction(
+                                    linkedTx,
+                                    updatedTarget,
+                                    profileId
+                                )
+                            }
                         }
                     }
                     transactionUseCases.updateTransaction(

@@ -113,8 +113,7 @@ object TransactionAggregationService {
         val crossCcyTransferIn = data.metrics["crossCcyTransferIn"] ?: BigDecimal.ZERO
         val crossCcyTransferOut = data.metrics["crossCcyTransferOut"] ?: BigDecimal.ZERO
 
-        // Ensure expense is negative in FinancialSummary if ABS was used in MetricConfig
-        // Our StandardMetrics.EXPENSE_SUM uses ABS transform.
+        // StandardMetrics uses signed SUM in DB, so income is positive and expense is negative.
         return FinancialSummary(
             totalAmount = data.metrics["total"] ?: income.add(expense),
             income = income,

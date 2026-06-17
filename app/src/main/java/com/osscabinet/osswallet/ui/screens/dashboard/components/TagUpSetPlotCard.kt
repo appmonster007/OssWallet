@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,6 +84,7 @@ fun TagUpSetPlotCard(
     headerModifier: Modifier = Modifier,
 ) {
     val config = renderData.config
+    var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
     var selectedIntersection by remember { mutableStateOf<AeonUpSetIntersection?>(null) }
 
     val displayFilter =
@@ -115,31 +117,72 @@ fun TagUpSetPlotCard(
             )
         }
     ) {
-        val uiSets = renderData.sets.map {
-            AeonUpSetSet(
-                name = it.tagName,
-                total = it.totalAmount,
-                income = it.income,
-                expense = it.expense,
-                incomeByCurrency = it.incomeByCurrency,
-                expenseByCurrency = it.expenseByCurrency,
-                transactionCount = it.transactionCount
-            )
-        }
-        val setIndexMap = uiSets.withIndex().associate { it.value.name to it.index }
+        val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
+            val getMetricValue = { s: TagUpSetSet ->
+                when (selectedMetric) {
+                    ChartMetric.INCOME -> s.income
+                    ChartMetric.EXPENSE -> s.expense
+                    ChartMetric.NET -> s.income.add(s.expense)
+                }
+            }
 
-        val uiIntersections = renderData.intersections.mapNotNull { intersection ->
-            val indices = intersection.tags.mapNotNull { setIndexMap[it] }.toSet()
-            if (indices.isEmpty()) null
-            else AeonUpSetIntersection(
-                setIndices = indices,
-                value = intersection.amount,
-                income = intersection.income,
-                expense = intersection.expense,
-                incomeByCurrency = intersection.incomeByCurrency,
-                expenseByCurrency = intersection.expenseByCurrency,
-                count = intersection.transactionCount
-            )
+            renderData.sets.let { list ->
+                when (config.tagSortMode) {
+                    UpSetTagSortMode.NAME_ASC -> list.sortedBy { it.tagName }
+                    UpSetTagSortMode.NAME_DESC -> list.sortedByDescending { it.tagName }
+                    UpSetTagSortMode.DECREASING_ABS -> list.sortedByDescending { getMetricValue(it).abs() }
+                    UpSetTagSortMode.INCREASING_ABS -> list.sortedBy { getMetricValue(it).abs() }
+                    UpSetTagSortMode.DECREASING -> list.sortedByDescending { getMetricValue(it) }
+                    UpSetTagSortMode.INCREASING -> list.sortedBy { getMetricValue(it) }
+                }
+            }.map {
+                AeonUpSetSet(
+                    name = it.tagName,
+                    total = getMetricValue(it),
+                    income = it.income,
+                    expense = it.expense,
+                    incomeByCurrency = it.incomeByCurrency,
+                    expenseByCurrency = it.expenseByCurrency,
+                    transactionCount = it.transactionCount
+                )
+            }
+        }
+        val setIndexMap =
+            remember(uiSets) { uiSets.withIndex().associate { it.value.name to it.index } }
+
+        val uiIntersections = remember(
+            renderData.intersections,
+            selectedMetric,
+            config.intersectionSortMode,
+            setIndexMap
+        ) {
+            renderData.intersections.mapNotNull { intersection ->
+                val indices = intersection.tags.mapNotNull { setIndexMap[it] }.toSet()
+                if (indices.isEmpty()) null
+                else {
+                    val amount = when (selectedMetric) {
+                        ChartMetric.INCOME -> intersection.income
+                        ChartMetric.EXPENSE -> intersection.expense
+                        ChartMetric.NET -> intersection.income.add(intersection.expense)
+                    }
+                    AeonUpSetIntersection(
+                        setIndices = indices,
+                        value = amount,
+                        income = intersection.income,
+                        expense = intersection.expense,
+                        incomeByCurrency = intersection.incomeByCurrency,
+                        expenseByCurrency = intersection.expenseByCurrency,
+                        count = intersection.transactionCount
+                    )
+                }
+            }.let { list ->
+                when (config.intersectionSortMode) {
+                    UpSetIntersectionSortMode.DECREASING_ABS -> list.sortedByDescending { it.value.abs() }
+                    UpSetIntersectionSortMode.INCREASING_ABS -> list.sortedBy { it.value.abs() }
+                    UpSetIntersectionSortMode.DECREASING -> list.sortedByDescending { it.value }
+                    UpSetIntersectionSortMode.INCREASING -> list.sortedBy { it.value }
+                }
+            }
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -152,8 +195,9 @@ fun TagUpSetPlotCard(
                     dynamicFilteringMode = config.dynamicFilteringMode,
                     topStartContent = {
                         CompactMetricSelector(
-                            selectedMetric = config.selectedMetric,
+                            selectedMetric = selectedMetric,
                             onMetricChange = { metric ->
+                                selectedMetric = metric
                                 callbacks.onUpdate(config.copy(selectedMetric = metric))
                             },
                             modifier = Modifier
@@ -234,7 +278,7 @@ fun TagUpSetPlotCard(
                                 expenseByCurrency = intersection.expenseByCurrency,
                                 incomeBase = intersection.income,
                                 expenseBase = intersection.expense,
-                                netBase = intersection.income.subtract(intersection.expense),
+                                netBase = intersection.income.add(intersection.expense),
                                 baseCurrency = renderData.currency,
                                 labelColumnWidth = 32.dp,
                                 showCurrencyBreakdown = true
@@ -268,19 +312,25 @@ private fun CompactMetricSelector(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy((-1).dp) // Overlap borders for continuous look
     ) {
-        ChartMetric.entries.forEach { metric ->
+        val options = ChartMetric.entries
+        options.forEachIndexed { index, metric ->
             val isSelected = selectedMetric == metric
+            val shape = when (index) {
+                0 -> RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                options.size - 1 -> RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)
+                else -> androidx.compose.ui.graphics.RectangleShape
+            }
+
             Surface(
                 onClick = { onMetricChange(metric) },
-                shape = RoundedCornerShape(8.dp),
-                color = if (isSelected) AppColors.primary else AppColors.cardSurfaceProminent,
-                tonalElevation = if (isSelected) 0.dp else 2.dp,
+                shape = shape,
+                color = if (isSelected) AppColors.primaryContainer.copy(alpha = 0.5f) else AppColors.cardSurface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .alpha(if (isSelected) 1f else 0.8f)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -289,11 +339,10 @@ private fun CompactMetricSelector(
                     Text(
                         text = metric.name,
                         style = AppTextStyles.caption.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.sp
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
                         ),
-                        color = if (isSelected) AppColors.onPrimary else AppColors.contentPrimary
+                        color = if (isSelected) AppColors.primary else AppColors.contentPrimary
                     )
                 }
             }

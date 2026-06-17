@@ -217,8 +217,8 @@ class TagUpSetPlotCardComputer(
 
                     val amount = when (config.selectedMetric) {
                         ChartMetric.INCOME -> inc
-                        ChartMetric.EXPENSE -> exp.negate()
-                        ChartMetric.NET -> inc.subtract(exp)
+                        ChartMetric.EXPENSE -> exp
+                        ChartMetric.NET -> inc.add(exp)
                     }
 
                     TagUpSetIntersection(
@@ -243,8 +243,8 @@ class TagUpSetPlotCardComputer(
         val sets = tagTotals.map { (tag, stats) ->
             val total = when (config.selectedMetric) {
                 ChartMetric.INCOME -> stats.income
-                ChartMetric.EXPENSE -> stats.expense.negate()
-                ChartMetric.NET -> stats.income.subtract(stats.expense)
+                ChartMetric.EXPENSE -> stats.expense
+                ChartMetric.NET -> stats.income.add(stats.expense)
             }
             TagUpSetSet(
                 tagName = tag,

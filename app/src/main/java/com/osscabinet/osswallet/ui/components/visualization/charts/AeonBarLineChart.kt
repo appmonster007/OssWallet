@@ -101,7 +101,8 @@ fun AeonBarLineChart(
     xLabels: List<String?> = emptyList(),
     showXAxisLabels: Boolean = false,
     lineThicknessDp: Float = 0f,
-    showGrid: Boolean = true
+    showGrid: Boolean = true,
+    roundedBars: Boolean = false
 ) {
     val dualBarMode = incomeData.isNotEmpty() && expenseData.isNotEmpty()
     val effectiveBarData = when {
@@ -137,7 +138,7 @@ fun AeonBarLineChart(
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
         val xLabelExtraPx = with(density) { xLabelExtraDp.toPx() }
-        val leftPadding = with(density) { 50.dp.toPx() }
+        val leftPadding = with(density) { 44.dp.toPx() }
         val topPadding = with(density) { dims.spacingMd.toPx() }
         val rightPadding = with(density) { dims.spacingMd.toPx() }
         val bottomPadding = with(density) { dims.spacing2xl.toPx() } + xLabelExtraPx
@@ -192,6 +193,7 @@ fun AeonBarLineChart(
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
+        val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
         fun findIndex(offsetX: Float): Int {
             val total = effectiveBarData.size
@@ -248,8 +250,8 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            formatCurrency(tick),
-                            leftPadding - with(density) { 4.dp.toPx() },
+                            com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter().format(amount = tick, currencyCode = null, spec = chartSpec),
+                            leftPadding - with(density) { 6.dp.toPx() },
                             yPos + with(density) { 3.dp.toPx() },
                             labelPaint
                         )
@@ -270,28 +272,30 @@ fun AeonBarLineChart(
             if (dualBarMode) {
                 val totalBuckets = incomeData.size
                 val slotWidth = chartWidth / totalBuckets.coerceAtLeast(1)
-                val halfBarWidth = slotWidth * 0.35f  // each half-bar is 35% of the slot
+                val barWidth = slotWidth * 0.5f  // Unified bar width centered in the slot
 
-                incomeData.forEachIndexed { index, incomeVal ->
+                for (index in incomeData.indices) {
                     val slotCenterX = leftPadding + (index + 0.5f) * slotWidth
-                    val incomeX = slotCenterX - halfBarWidth / 2
+                    val x = slotCenterX - barWidth / 2
+
+                    // Income Bar (drawn upwards)
+                    val incomeVal = incomeData[index]
                     val incomeY = valueToY(incomeVal)
                     val animatedIncomeY = zeroY - (zeroY - incomeY) * animationProgress.value
 
                     val incomeTop = if (incomeVal >= BigDecimal.ZERO) animatedIncomeY else zeroY
                     val incomeBottom = if (incomeVal >= BigDecimal.ZERO) zeroY else animatedIncomeY
 
+                    val radiusPx = if (roundedBars) dims.spacingXs.toPx() else 0f
                     drawRoundRect(
                         color = barColorPositive.copy(alpha = 0.8f),
-                        topLeft = Offset(incomeX, incomeTop),
-                        size = Size(halfBarWidth, (incomeBottom - incomeTop).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                        topLeft = Offset(x, incomeTop),
+                        size = Size(barWidth, (incomeBottom - incomeTop).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(radiusPx, radiusPx)
                     )
-                }
 
-                expenseData.forEachIndexed { index, expenseVal ->
-                    val slotCenterX = leftPadding + (index + 0.5f) * slotWidth
-                    val expenseX = slotCenterX  // right half of the slot
+                    // Expense Bar (drawn downwards)
+                    val expenseVal = expenseData.getOrNull(index) ?: BigDecimal.ZERO
                     val expenseY = valueToY(expenseVal)
                     val animatedExpenseY = zeroY + (expenseY - zeroY) * animationProgress.value
 
@@ -300,9 +304,9 @@ fun AeonBarLineChart(
 
                     drawRoundRect(
                         color = barColorNegative.copy(alpha = 0.8f),
-                        topLeft = Offset(expenseX, expenseTop),
-                        size = Size(halfBarWidth, (expenseBottom - expenseTop).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                        topLeft = Offset(x, expenseTop),
+                        size = Size(barWidth, (expenseBottom - expenseTop).coerceAtLeast(1f)),
+                        cornerRadius = CornerRadius(radiusPx, radiusPx)
                     )
                 }
             } else {
@@ -317,11 +321,12 @@ fun AeonBarLineChart(
                     val top = if (value >= BigDecimal.ZERO) animatedY else zeroY
                     val bottom = if (value >= BigDecimal.ZERO) zeroY else animatedY
 
+                    val radiusPx = if (roundedBars) dims.spacingXs.toPx() else 0f
                     drawRoundRect(
                         color = color.copy(alpha = 0.8f),
                         topLeft = Offset(x - barWidth / 2, top),
                         size = Size(barWidth, (bottom - top).coerceAtLeast(1f)),
-                        cornerRadius = CornerRadius(dims.spacingXs.toPx(), dims.spacingXs.toPx())
+                        cornerRadius = CornerRadius(radiusPx, radiusPx)
                     )
                 }
             }
@@ -446,16 +451,23 @@ fun AeonBarLineChart(
             // 5. Draw X-Axis Labels
             if (showXAxisLabels && xLabels.isNotEmpty()) {
                 val total = xLabels.size
-                val lastIdx = total - 1
-                // Derive jump from the minimum pixel gap a label needs so they never overlap.
-                // "dd/MM" at 9sp is ~32dp wide; this scales correctly with chart width and data density.
-                val minLabelSpacingPx = with(density) { 32.dp.toPx() }
-                val jump =
-                    maxOf(1, kotlin.math.ceil(minLabelSpacingPx * total / chartWidth).toInt())
-                val threshold = (jump / 2).coerceAtLeast(1)
-                val nearestLowerJump = (lastIdx / jump) * jump
-                val skipNearestLowerJump =
-                    lastIdx % jump != 0 && (lastIdx - nearestLowerJump) <= threshold
+                
+                val firstValidIdx = xLabels.indexOfFirst { it != null }
+                val lastValidIdx = xLabels.indexOfLast { it != null }
+
+                val indicesToShow = mutableSetOf<Int>()
+                if (firstValidIdx != -1 && lastValidIdx != -1) {
+                    indicesToShow.add(firstValidIdx)
+                    indicesToShow.add(lastValidIdx)
+                    val range = lastValidIdx - firstValidIdx
+                    if (range > 0) {
+                        val interval = range.toFloat() / 6f
+                        for (i in 1..5) {
+                            indicesToShow.add(firstValidIdx + Math.round(i * interval))
+                        }
+                    }
+                }
+
                 val labelPaint = AndroidPaint().apply {
                     isAntiAlias = true
                     color = android.graphics.Color.argb(220, 180, 180, 180)
@@ -464,10 +476,7 @@ fun AeonBarLineChart(
                 }
                 val labelSlotWidth = if (dualBarMode) chartWidth / total.coerceAtLeast(1) else 0f
                 xLabels.forEachIndexed { index, label ->
-                    if (label == null) return@forEachIndexed
-                    val show = index == 1 || index == lastIdx ||
-                            (index > 1 && index % jump == 0 && !(skipNearestLowerJump && index == nearestLowerJump))
-                    if (show) {
+                    if (label != null && indicesToShow.contains(index)) {
                         val x = if (dualBarMode) {
                             leftPadding + (index + 0.5f) * labelSlotWidth
                         } else {

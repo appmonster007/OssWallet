@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -335,8 +337,12 @@ fun AeonUpSetPlot(
 
                         UpSetVerticalBar(
                             amount = formatCurrency(
-                                intersection.value,
-                                currency
+                                amount = intersection.value,
+                                currencyCode = currency,
+                                spec = CurrencyDisplaySpec(
+                                    precision = CurrencyService.precision,
+                                    shortenThreshold = 3
+                                )
                             ),
                             magnitudeRatio = magnitudeRatio,
                             isPositive = isPositive,
@@ -371,7 +377,14 @@ fun AeonUpSetPlot(
 
                     UpSetHorizontalBar(
                         name = set.name,
-                        amount = formatCurrency(set.total, currency),
+                        amount = formatCurrency(
+                            amount = set.total,
+                            currencyCode = currency,
+                            spec = CurrencyDisplaySpec(
+                                precision = CurrencyService.precision,
+                                shortenThreshold = 3
+                            )
+                        ),
                         magnitudeRatio = magnitudeRatio,
                         isPositive = isPositive,
                         onClick = { onSetClick(originalIdx) },

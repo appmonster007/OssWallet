@@ -111,7 +111,7 @@ fun CashFlowComparisonCard(
                 acc + when (selectedMetric) {
                     ChartMetric.NET -> p.net
                     ChartMetric.INCOME -> p.income
-                    ChartMetric.EXPENSE -> p.expense.negate()
+                    ChartMetric.EXPENSE -> p.expense
                 }
             }
             Text(
@@ -279,7 +279,7 @@ private fun buildSeriesList(
             val value = when (selectedMetric) {
                 ChartMetric.NET -> point.net
                 ChartMetric.INCOME -> point.income
-                ChartMetric.EXPENSE -> point.expense.negate()
+                ChartMetric.EXPENSE -> point.expense
             }
             running += value
             AeonLineChartPoint(

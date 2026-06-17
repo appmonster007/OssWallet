@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.card.CategorySpendingBucket
 import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -83,7 +84,7 @@ class CategorySpendingTrendCardComputer :
                     precision = 10
                 )
 
-                val shouldInclude = when (config.selectedMetric) {
+                val shouldInclude = !tx.transactionType.isTransfer && when (config.selectedMetric) {
                     ChartMetric.NET -> true
                     ChartMetric.INCOME -> converted.signum() > 0
                     ChartMetric.EXPENSE -> converted.signum() < 0

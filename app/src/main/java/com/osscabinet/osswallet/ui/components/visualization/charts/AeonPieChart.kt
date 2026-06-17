@@ -103,8 +103,10 @@ fun AeonPieChart(
         }
     }
 
-    val total = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
-    if (total.signum() == 0) {
+    val weightTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value.abs() }
+    val displayTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
+    
+    if (weightTotal.signum() == 0) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data to display", style = AppTextStyles.caption)
         }
@@ -131,7 +133,7 @@ fun AeonPieChart(
                 var currentAngle = 0f
                 slices.forEach { slice ->
                     val sweepAngle =
-                        (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP).toFloat() * 360f)
                     if (angle >= currentAngle && angle <= currentAngle + sweepAngle) {
                         return slice
                     }
@@ -203,7 +205,7 @@ fun AeonPieChart(
 
                 slices.forEach { slice ->
                     val sliceSweep =
-                        (slice.value.divide(total, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP).toFloat() * 360f)
                     val isSelected = selectedSlice == slice
 
                     // Modern Look: Precise radial gaps
@@ -317,7 +319,7 @@ fun AeonPieChart(
                 ) {
                     val formattedTotal =
                         formatCurrency(
-                            amount = total,
+                            amount = displayTotal,
                             currencyCode = currency,
                             spec = com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(precision = precision)
                         )
@@ -337,7 +339,7 @@ fun AeonPieChart(
 
                     // Comparison Delta
                     if (showComparison && !isAllTime && previousTotal != null && previousTotal.signum() != 0) {
-                        val delta = total.abs().subtract(previousTotal.abs())
+                        val delta = displayTotal.abs().subtract(previousTotal.abs())
                             .divide(previousTotal.abs(), 8, RoundingMode.HALF_UP)
                             .multiply(BigDecimal("100"))
 

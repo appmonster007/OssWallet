@@ -564,72 +564,24 @@ fun AeonLineChart(
                 // Show tooltip above the middle of the chart
                 val yPos = (topPadding).coerceIn(0f, (h - tooltipHeightPx).coerceAtLeast(0f))
 
-                Surface(
+                AeonChartTooltip(
                     modifier = Modifier
                         .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                         .width(tooltipWidth),
-                    shape = RoundedCornerShape(dims.spacingMd),
-                    color = AppColors.insetSurface.copy(alpha = 0.95f),
-                    tonalElevation = dims.spacingSm,
-                    shadowElevation = dims.spacingSm,
-                    border = androidx.compose.foundation.BorderStroke(
-                        (dims.spacingXs / 8),
-                        AppColors.border.copy(alpha = 0.2f)
-                    )
+                    title = label
                 ) {
-                    Column(modifier = Modifier.padding(dims.spacingMd)) {
-                        if (label != null) {
-                            Text(
-                                text = label,
-                                style = AppTextStyles.cardDelta,
-                                color = AppColors.contentPrimary,
-                                modifier = Modifier.padding(bottom = dims.spacingSm)
+                    series.forEach { s ->
+                        if (selectedIndex < s.dataPoints.size) {
+                            val p = s.dataPoints[selectedIndex]
+                            AeonTooltipEntry(
+                                label = s.name,
+                                value = currencyFormatter.format(
+                                    amount = p.y,
+                                    currencyCode = currency,
+                                    spec = chartSpec,
+                                ),
+                                color = s.color
                             )
-                        }
-
-                        series.forEach { s ->
-                            if (selectedIndex < s.dataPoints.size) {
-                                val p = s.dataPoints[selectedIndex]
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = (dims.spacingXs / 2)),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(dims.spacingSm)
-                                                .background(
-                                                    s.color,
-                                                    RoundedCornerShape(dims.spacingXs / 2)
-                                                )
-                                        )
-                                        Spacer(modifier = Modifier.width(dims.spacingSm))
-                                        Text(
-                                            text = s.name,
-                                            style = AppTextStyles.transactionSwipeAction,
-                                            color = AppColors.contentSecondary,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = currencyFormatter.format(
-                                            amount = p.y,
-                                            currencyCode = currency,
-                                            spec = chartSpec,
-                                        ),
-                                        style = AppTextStyles.formSectionLabel,
-                                        color = AppColors.contentPrimary
-                                    )
-                                }
-                            }
                         }
                     }
                 }

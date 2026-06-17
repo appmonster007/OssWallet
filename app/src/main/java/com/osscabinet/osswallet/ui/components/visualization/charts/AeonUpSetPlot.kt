@@ -206,6 +206,7 @@ fun AeonUpSetPlot(
     dotColorActive: Color = AppColors.primary,
     dotColorInactive: Color = AppColors.border.copy(alpha = 0.2f),
     lineColor: Color = AppColors.primary,
+    topStartContent: @Composable () -> Unit = {},
     onIntersectionClick: (AeonUpSetIntersection) -> Unit = {},
     onSetClick: (Int) -> Unit = {}
 ) {
@@ -300,7 +301,15 @@ fun AeonUpSetPlot(
     Column(modifier = modifier) {
         // Top row: Empty | Intersection Bars
         Row(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.width(leftPanelWidth))
+            Box(
+                modifier = Modifier
+                    .width(leftPanelWidth)
+                    .height(170.dp)
+                    .padding(bottom = 8.dp),
+                contentAlignment = Alignment.BottomStart
+            ) {
+                topStartContent()
+            }
 
             // Intersection Size Bars (Horizontal Scroll)
             Box(

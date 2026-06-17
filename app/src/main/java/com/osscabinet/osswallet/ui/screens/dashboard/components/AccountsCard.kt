@@ -136,6 +136,11 @@ fun AccountsCard(
                 }
             }
         } else {
+            val rowItemWidth = when (config.gridColumns) {
+                1 -> 280.dp
+                2 -> 180.dp
+                else -> 120.dp
+            }
             AeonLazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 4.dp)
@@ -148,7 +153,7 @@ fun AccountsCard(
                         config = config,
                         onAccountClick = callbacks.onAccountClick,
                         onRecordsClick = callbacks.onRecordsClick,
-                        modifier = Modifier.width(180.dp)
+                        modifier = Modifier.width(rowItemWidth)
                     )
                 }
                 if (config.showAddAccountCard) {
@@ -156,8 +161,8 @@ fun AccountsCard(
                         AeonAddAccountCard(
                             baseCurrency = baseCurrency,
                             onClick = callbacks.onManageClick,
-                            gridColumns = 2,
-                            modifier = Modifier.width(180.dp)
+                            gridColumns = config.gridColumns,
+                            modifier = Modifier.width(rowItemWidth)
                         )
                     }
                 }
@@ -179,12 +184,10 @@ private fun AccountsSettingsSheet(
                 layout = config.layout,
                 onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
             )
-            if (config.layout == "grid") {
-                AeonGridColumnsSettings(
-                    gridColumns = config.gridColumns,
-                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
-                )
-            }
+            AeonGridColumnsSettings(
+                gridColumns = config.gridColumns,
+                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
+            )
             EntrySwitchRow(
                 label = "Show Comparison",
                 subtitle = "Show change from previous period",
@@ -287,7 +290,7 @@ private fun AccountItemWrapper(
         account = account,
         accountSummaries = accountSummaries,
         baseCurrency = baseCurrency,
-        gridColumns = 2, // Medium card for row layout
+        gridColumns = config.gridColumns,
         displayMode = config.displayMode,
         excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
         onAccountClick = onAccountClick,

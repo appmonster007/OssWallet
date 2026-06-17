@@ -369,12 +369,12 @@ private fun NetWorthFlowColumn(
                 spec = CurrencyDisplaySpec(
                     useSemanticColor = false, 
                     forceShowPlus = forceShowPlus,
-                    shortenThreshold = 12
+                    shortenThreshold = 11
                 )
             ),
             style = AppTextStyles.transactionAmount.copy(
                 fontWeight = FontWeight.Medium,
-                fontSize = 17.sp,
+                fontSize = 14.sp,
                 letterSpacing = (-0.5).sp
             ),
             color = color,
@@ -549,7 +549,7 @@ private fun NetWorthCardPreviewContent() {
         netWorth = BigDecimal("15250.75"),
         cashFlow = CashFlowResult(
             totalIncomeInBase = BigDecimal("4500.00"),
-            totalExpensesInBase = BigDecimal("2350.50"),
+            totalExpensesInBase = BigDecimal("235000.50"),
             totalTransfersInBase = BigDecimal.ZERO,
             netInBase = BigDecimal("2149.50"),
             breakdown = emptyList(),

@@ -333,70 +333,24 @@ fun AeonBarChart(
                 (x - tooltipWidthPx / 2).coerceIn(0f, (widthPx - tooltipWidthPx).coerceAtLeast(0f))
             val yPos = (topPadding).coerceIn(0f, (heightPx - tooltipHeightPx).coerceAtLeast(0f))
 
-            Surface(
+            AeonChartTooltip(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth)
-                    .heightIn(max = 240.dp),
-                shape = RoundedCornerShape(dims.spacingMd),
-                color = AppColors.surfaceContainerHigh,
-                tonalElevation = dims.spacingSm,
-                shadowElevation = dims.spacingSm,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    AppColors.outlineVariant
-                )
+                    .heightIn(max = 240.dp)
+                    .verticalScroll(rememberScrollState()),
+                title = group.label
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(dims.spacingMd)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    Text(
-                        group.label,
-                        style = AppTextStyles.cardDelta,
-                        color = AppColors.contentPrimary
+                group.bars.forEach { bar ->
+                    AeonTooltipEntry(
+                        label = bar.label,
+                        value = currencyFormatter.format(
+                            amount = bar.value,
+                            currencyCode = currency,
+                            spec = chartSpec,
+                        ),
+                        color = bar.color
                     )
-                    Spacer(modifier = Modifier.height(dims.spacingSm))
-
-                    group.bars.forEach { bar ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(bar.color, RoundedCornerShape(2.dp))
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = bar.label,
-                                    style = AppTextStyles.transactionSwipeAction,
-                                    color = AppColors.contentSecondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = currencyFormatter.format(
-                                    amount = bar.value,
-                                    currencyCode = currency,
-                                    spec = chartSpec,
-                                ),
-                                style = AppTextStyles.formSectionLabel,
-                                color = AppColors.contentPrimary
-                            )
-                        }
-                    }
                 }
             }
         }

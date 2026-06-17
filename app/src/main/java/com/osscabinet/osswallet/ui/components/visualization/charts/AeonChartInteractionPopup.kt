@@ -49,6 +49,84 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import kotlin.math.roundToInt
 
+/**
+ * Standardized Tooltip Container for all Aeon charts.
+ */
+@Composable
+fun AeonChartTooltip(
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val dims = AeonTheme.dimensions
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(dims.componentCornerRadius),
+        color = AppColors.cardSurfaceProminent,
+        tonalElevation = dims.spacingSm,
+        shadowElevation = dims.spacingMd,
+        border = BorderStroke((dims.spacingXs / 4), AppColors.divider.copy(alpha = 0.15f))
+    ) {
+        Column(
+            modifier = Modifier.padding(dims.spacingMd),
+            verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
+        ) {
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = AppTextStyles.drawerItemLabel.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            content()
+        }
+    }
+}
+
+/**
+ * Standardized data entry row for chart tooltips.
+ */
+@Composable
+fun AeonTooltipEntry(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val dims = AeonTheme.dimensions
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dims.spacingSm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(dims.spacingSm)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            style = AppTextStyles.chartLegendLabel,
+            color = AppColors.contentSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = AppTextStyles.chartTooltipValue,
+            color = AppColors.contentPrimary
+        )
+    }
+}
+
+private typealias ColumnScope = androidx.compose.foundation.layout.ColumnScope
 
 @Composable
 fun AeonChartInteractionPopup(
@@ -71,9 +149,7 @@ fun AeonChartInteractionPopup(
 
     // Boundary-Aware Tooltip Positioning
     val tooltipWidth = if (hasSubcategories) 240.dp else 180.dp
-    // Height is dynamic based on content but we need an estimate for positioning
     val tooltipHeightPxEstimate = 140.dp.value * density
-
     val tooltipWidthPx = tooltipWidth.value * density
 
     val xPos = (touchPoint.x - (tooltipWidthPx / 2))
@@ -81,142 +157,109 @@ fun AeonChartInteractionPopup(
     val yPos = (touchPoint.y - tooltipHeightPxEstimate - 10f)
         .coerceIn(0f, (chartHeightPx - tooltipHeightPxEstimate).coerceAtLeast(0f))
 
-    Surface(
+    AeonChartTooltip(
         modifier = Modifier
             .offset { IntOffset(xPos.roundToInt(), yPos.roundToInt()) }
             .width(tooltipWidth),
-        shape = RoundedCornerShape(dims.containerCornerRadius),
-        color = AppColors.cardSurfaceProminent,
-        tonalElevation = dims.spacingSm,
-        shadowElevation = dims.spacingMd,
-        border = BorderStroke((dims.spacingXs / 8), AppColors.divider.copy(alpha = 0.3f))
+        title = name
     ) {
-        Column(
-            modifier = Modifier.padding(dims.spacingMd),
-            verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
-        ) {
-            // Header: Color + Name
+        // Content: Value + Global %
+        Column {
+            Text(
+                text = formatCurrency(
+                    amount = value,
+                    currencyCode = currency,
+                    spec = CurrencyDisplaySpec(precision = precision)
+                ),
+                style = AppTextStyles.screenSubTitle.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                ),
+                color = AppColors.primary
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
+                horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(dims.spacingSm)
-                        .clip(CircleShape)
-                        .background(color)
-                )
                 Text(
-                    text = name,
-                    style = AppTextStyles.drawerItemLabel.copy(
+                    text = "GLOBAL SHARE",
+                    style = AppTextStyles.metaLabel.copy(
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = AppColors.contentPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                        color = AppColors.contentSecondary.copy(alpha = 0.4f)
+                    )
                 )
-            }
-
-            // Content: Value + Global %
-            Column {
                 Text(
-                    text = formatCurrency(
-                        amount = value,
-                        currencyCode = currency,
-                        spec = CurrencyDisplaySpec(precision = precision)
-                    ),
-                    style = AppTextStyles.screenSubTitle.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp
-                    ),
-                    color = AppColors.primary
+                    text = "${"%.1f".format(percentageOfTotal * 100)}%",
+                    style = AppTextStyles.formSectionLabel,
+                    color = AppColors.contentSecondary
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(dims.spacingXs)
-                ) {
-                    Text(
-                        text = "GLOBAL SHARE",
-                        style = AppTextStyles.metaLabel.copy(
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AppColors.contentSecondary.copy(alpha = 0.4f)
-                        )
-                    )
-                    Text(
-                        text = "${"%.1f".format(percentageOfTotal * 100)}%",
-                        style = AppTextStyles.formSectionLabel,
-                        color = AppColors.contentSecondary
-                    )
-                }
             }
+        }
 
-            // Action Buttons - Compact Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
-            ) {
-                if (hasSubcategories && subcategoryCount > 1) {
-                    Button(
-                        onClick = onDrillInClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(dims.spacing2xl),
-                        contentPadding = PaddingValues(horizontal = dims.spacingSm),
-                        shape = RoundedCornerShape(dims.spacingSm),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = color,
-                            contentColor = if (ColorUtils.calculateLuminance(color.toArgb()) > 0.5) {
-                                ColorOnLight
-                            } else {
-                                ColorOnDark
-                            }
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.ZoomIn,
-                            null,
-                            modifier = Modifier.size(dims.iconSizeXs + 2.dp)
-                        )
-                        Spacer(modifier = Modifier.width(dims.spacingXs))
-                        Text(
-                            "DIVE IN ($subcategoryCount)",
-                            style = AppTextStyles.transactionSwipeAction.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 9.sp
-                            )
-                        )
-                    }
-                }
-
+        // Action Buttons - Compact Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingSm)
+        ) {
+            if (hasSubcategories && subcategoryCount > 1) {
                 Button(
-                    onClick = onNavigateToRecords,
+                    onClick = onDrillInClick,
                     modifier = Modifier
                         .weight(1f)
                         .height(dims.spacing2xl),
                     contentPadding = PaddingValues(horizontal = dims.spacingSm),
                     shape = RoundedCornerShape(dims.spacingSm),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AppColors.primary.copy(alpha = 0.1f),
-                        contentColor = AppColors.primary
+                        containerColor = color,
+                        contentColor = if (ColorUtils.calculateLuminance(color.toArgb()) > 0.5) {
+                            ColorOnLight
+                        } else {
+                            ColorOnDark
+                        }
                     )
                 ) {
                     Icon(
-                        Icons.Default.ChevronRight,
+                        Icons.Default.ZoomIn,
                         null,
                         modifier = Modifier.size(dims.iconSizeXs + 2.dp)
                     )
                     Spacer(modifier = Modifier.width(dims.spacingXs))
                     Text(
-                        "RECORDS",
+                        "DIVE IN ($subcategoryCount)",
                         style = AppTextStyles.transactionSwipeAction.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 9.sp
                         )
                     )
                 }
+            }
+
+            Button(
+                onClick = onNavigateToRecords,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(dims.spacing2xl),
+                contentPadding = PaddingValues(horizontal = dims.spacingSm),
+                shape = RoundedCornerShape(dims.spacingSm),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.primary.copy(alpha = 0.1f),
+                    contentColor = AppColors.primary
+                )
+            ) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    null,
+                    modifier = Modifier.size(dims.iconSizeXs + 2.dp)
+                )
+                Spacer(modifier = Modifier.width(dims.spacingXs))
+                Text(
+                    "RECORDS",
+                    style = AppTextStyles.transactionSwipeAction.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp
+                    )
+                )
             }
         }
     }

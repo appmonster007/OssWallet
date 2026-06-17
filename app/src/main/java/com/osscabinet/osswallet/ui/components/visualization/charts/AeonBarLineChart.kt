@@ -22,8 +22,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -535,118 +537,68 @@ fun AeonBarLineChart(
             val expenseVal = expenseData.getOrNull(index)
             val lineVal = lineData.getOrNull(index)
 
-            Surface(
+            AeonChartTooltip(
                 modifier = Modifier
                     .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
                     .width(tooltipWidth),
-                shape = RoundedCornerShape(dims.spacingMd),
-                color = AppColors.insetSurface,
-                tonalElevation = dims.spacingSm,
-                shadowElevation = dims.spacingSm,
-                border = androidx.compose.foundation.BorderStroke(
-                    (dims.spacingXs / 4),
-                    lineColor.copy(alpha = 0.5f)
-                )
+                title = label ?: "Period ${index + 1}"
             ) {
-                Column(modifier = Modifier.padding(dims.spacingSm)) {
-                    Text(
-                        label ?: "Period ${index + 1}",
-                        style = AppTextStyles.transactionSwipeAction,
-                        color = AppColors.contentSecondary
+                if (dualBarMode) {
+                    if (incomeVal != null) {
+                        AeonTooltipEntry(
+                            label = "Income",
+                            value = formatCurrency(incomeVal, currency, CurrencyDisplaySpec(precision = precision)),
+                            color = barColorPositive
+                        )
+                    }
+                    if (expenseVal != null) {
+                        AeonTooltipEntry(
+                            label = "Expense",
+                            value = formatCurrency(expenseVal, currency, CurrencyDisplaySpec(precision = precision)),
+                            color = barColorNegative
+                        )
+                    }
+                } else if (barVal != null) {
+                    AeonTooltipEntry(
+                        label = "Flow",
+                        value = formatCurrency(barVal, currency, CurrencyDisplaySpec(precision = precision)),
+                        color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
                     )
-                    Spacer(modifier = Modifier.height(dims.spacingXs))
+                }
 
-                    if (dualBarMode) {
-                        if (incomeVal != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Income:", style = AppTextStyles.transactionSwipeAction)
-                                Text(
-                                    formatCurrency(
-                                        incomeVal,
-                                        currency,
-                                        CurrencyDisplaySpec(precision = precision)
-                                    ),
-                                    style = AppTextStyles.managementItemSubtitle,
-                                    color = barColorPositive
-                                )
-                            }
-                        }
-                        if (expenseVal != null) {
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Expense:", style = AppTextStyles.transactionSwipeAction)
-                                Text(
-                                    formatCurrency(
-                                        expenseVal,
-                                        currency,
-                                        CurrencyDisplaySpec(precision = precision)
-                                    ),
-                                    style = AppTextStyles.managementItemSubtitle,
-                                    color = barColorNegative
-                                )
-                            }
-                        }
-                    } else if (barVal != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Flow:", style = AppTextStyles.transactionSwipeAction)
-                            Text(
-                                formatCurrency(barVal, currency, CurrencyDisplaySpec(precision = precision)),
-                                style = AppTextStyles.managementItemSubtitle,
-                                color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
-                            )
-                        }
-                    }
+                if (lineVal != null) {
+                    AeonTooltipEntry(
+                        label = "Net",
+                        value = formatCurrency(lineVal, currency, CurrencyDisplaySpec(precision = precision)),
+                        color = lineColor
+                    )
+                }
 
-                    if (lineVal != null) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Net:", style = AppTextStyles.transactionSwipeAction)
-                            Text(
-                                formatCurrency(lineVal, currency, CurrencyDisplaySpec(precision = precision)),
-                                style = AppTextStyles.managementItemSubtitle,
-                                color = lineColor
-                            )
-                        }
-                    }
-
-                    if (onNavigateToRecords != null) {
-                        Spacer(modifier = Modifier.height(dims.spacingSm))
-                        OutlinedButton(
-                            onClick = { onNavigateToRecords(index) },
-                            modifier = Modifier.height(dims.spacing2xl),
-                            contentPadding = PaddingValues(
-                                horizontal = dims.spacingMd,
-                                vertical = 0.dp
-                            ),
-                            shape = RoundedCornerShape(dims.spacingSm),
-                            border = androidx.compose.foundation.BorderStroke(
-                                (dims.spacingXs / 4),
-                                lineColor.copy(alpha = 0.5f)
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.ChevronRight,
-                                null,
-                                modifier = Modifier.size(dims.iconSizeLg / 2),
-                                tint = lineColor
-                            )
-                            Spacer(modifier = Modifier.width(dims.spacingXs))
-                            Text(
-                                "See Records",
-                                style = AppTextStyles.transactionSwipeAction,
-                                color = lineColor
-                            )
-                        }
+                if (onNavigateToRecords != null) {
+                    Button(
+                        onClick = { onNavigateToRecords(index) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(dims.spacing2xl),
+                        contentPadding = PaddingValues(horizontal = dims.spacingMd, vertical = 0.dp),
+                        shape = RoundedCornerShape(dims.spacingSm),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = lineColor.copy(alpha = 0.1f),
+                            contentColor = lineColor
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            null,
+                            modifier = Modifier.size(dims.iconSizeSm),
+                            tint = lineColor
+                        )
+                        Spacer(modifier = Modifier.width(dims.spacingXs))
+                        Text(
+                            "RECORDS",
+                            style = AppTextStyles.transactionSwipeAction.copy(fontWeight = FontWeight.Bold),
+                            color = lineColor
+                        )
                     }
                 }
             }

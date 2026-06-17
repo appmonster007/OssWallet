@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
@@ -553,8 +552,8 @@ fun AeonLineChart(
                 Surface(
                     modifier = Modifier
                         .offset(x = (xPos / density.density).dp, y = (yPos / density.density).dp)
-                        .width(tooltipWidth)
-                        .clip(RoundedCornerShape(dims.spacingMd)),
+                        .width(tooltipWidth),
+                    shape = RoundedCornerShape(dims.spacingMd),
                     color = AppColors.insetSurface.copy(alpha = 0.95f),
                     tonalElevation = dims.spacingSm,
                     shadowElevation = dims.spacingSm,

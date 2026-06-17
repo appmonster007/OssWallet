@@ -73,15 +73,15 @@ class TransactionQueryBuilder {
 
                 // Handle Metric Filters
                 val filterExpr = when (metric.filter) {
-                    MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType IN ('transfer_inflow','transfer_outflow') THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0 END"
-                    MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0 END"
+                    MetricConfig.MetricFilter.INCOME_ONLY -> "CASE WHEN transactionType = 'income' THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.EXPENSE_ONLY -> "CASE WHEN transactionType = 'expense' THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType IN ('transfer_inflow','transfer_outflow') THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column
                 }
 
@@ -92,12 +92,20 @@ class TransactionQueryBuilder {
                     MetricConfig.MetricTransform.NONE -> filterExpr
                 }
 
-                select.append("$func($finalExpr) AS $alias, ")
+                // Force REAL casting for numeric functions to preserve decimal precision during aggregation,
+                // then CAST the final aggregate result to TEXT to prevent Room/SQLite from using 
+                // floating point types that might round or use scientific notation.
+                val wrappedExpr = if (func != "COUNT") {
+                    "CAST($func(CAST($finalExpr AS REAL)) AS TEXT)"
+                } else {
+                    "$func($finalExpr)"
+                }
+                select.append("$wrappedExpr AS $alias, ")
             }
 
             // Pad metrics (RawAggregateResult has m1..m10)
             for (i in (plan.metrics.size + 1)..AggregationLimits.MAX_METRICS) {
-                select.append("0 AS m$i, ")
+                select.append("NULL AS m$i, ")
             }
 
             select.append("COUNT(*) AS count")

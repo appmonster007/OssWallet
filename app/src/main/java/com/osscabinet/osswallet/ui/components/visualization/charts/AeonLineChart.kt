@@ -114,12 +114,12 @@ fun AeonLineChart(
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val leftPadding = with(density) { 44.dp.toPx() }
-        val xLabelHeight = with(density) { 14.dp.toPx() }
+        val leftPadding = with(density) { 48.dp.toPx() }
+        val xLabelHeight = with(density) { 16.dp.toPx() }
         val bottomPadding =
-            with(density) { dims.spacing2xl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
+            with(density) { dims.spacingXl.toPx() } + if (showXAxisLabels) xLabelHeight else 0f
         val topPadding = with(density) { dims.spacingLg.toPx() }
-        val rightPadding = with(density) { dims.spacingMd.toPx() } 
+        val rightPadding = with(density) { dims.spacingMd.toPx() }
 
         val chartWidth = w - leftPadding - rightPadding
         val chartHeight = h - bottomPadding - topPadding
@@ -171,10 +171,11 @@ fun AeonLineChart(
         val gridLineColor = AppColors.outlineVariant.copy(alpha = 0.7f)
         val periodBarColor = AppColors.outlineVariant.copy(alpha = 0.3f)
 
+        val effectiveTotal = if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
+        val slotWidth = chartWidth / effectiveTotal.coerceAtLeast(1)
+
         fun indexToX(index: Float, total: Int): Float {
-            val effective = if (totalXSlots > 0) totalXSlots else total
-            if (effective <= 1) return leftPadding
-            return leftPadding + (index / (effective - 1)) * chartWidth
+            return leftPadding + (index + 0.5f) * slotWidth
         }
 
         fun findClosestIndex(offsetX: Float): Int {
@@ -258,20 +259,15 @@ fun AeonLineChart(
 
             // 1.5 Draw Period Background Bars
             if (showPeriodBars) {
-                val referenceSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
-                if (referenceSeries != null) {
-                    val totalPoints = if (totalXSlots > 0) totalXSlots else referenceSeries.dataPoints.size
-                    if (totalPoints > 1) {
-                        val slotWidth = chartWidth / (totalPoints - 1)
-                        for (i in 0 until totalPoints) {
-                            val centerX = indexToX(i.toFloat(), totalPoints)
-                            val barWidth = slotWidth * 0.9f
-                            drawRect(
-                                color = periodBarColor,
-                                topLeft = Offset(centerX - barWidth / 2, topPadding),
-                                size = Size(barWidth, chartHeight)
-                            )
-                        }
+                if (effectiveTotal > 0) {
+                    val periodBarWidth = slotWidth * 0.95f
+                    for (i in 0 until effectiveTotal) {
+                        val centerX = indexToX(i.toFloat(), effectiveTotal)
+                        drawRect(
+                            color = periodBarColor,
+                            topLeft = Offset(centerX - periodBarWidth / 2, topPadding),
+                            size = Size(periodBarWidth, chartHeight)
+                        )
                     }
                 }
             }
@@ -402,10 +398,7 @@ fun AeonLineChart(
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                 }
-                val labelY =
-                    topPadding + chartHeight + with(density) { dims.spacing2xl.toPx() } - with(
-                        density
-                    ) { 2.dp.toPx() }
+                val labelY = h - bottomPadding + with(density) { 14.dp.toPx() }
 
                 if (xAxisLabels.isNotEmpty()) {
                     val total = xAxisLabels.size

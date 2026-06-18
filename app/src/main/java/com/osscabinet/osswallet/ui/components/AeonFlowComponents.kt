@@ -194,7 +194,7 @@ fun AeonGridColumnsSettings(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "GRID COLUMNS",
+                "SIZE",
                 style = AppTextStyles.sectionOverline,
                 color = AppColors.primary
             )

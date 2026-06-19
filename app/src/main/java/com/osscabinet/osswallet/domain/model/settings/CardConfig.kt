@@ -449,6 +449,7 @@ data class CategorySpendingTrendCardConfig(
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
     val excludeSameCurrencyTransfers: Boolean = false,
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
+    val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {

@@ -124,7 +124,7 @@ fun CategorySpendingTrendCard(
             val wantColor = WarningColor
 
             // Stacked bar chart
-            val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor)
+            val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative)
             if (chartGroups.isNotEmpty()) {
                 AeonBarChart(
                     groups = chartGroups,
@@ -324,6 +324,12 @@ private fun CategorySpendingSettingsSheet(
     ) {
         CardSettingsSection("Display") {
             EntrySwitchRow(
+                label = "Cumulative",
+                checked = config.isCumulative,
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+                isFlush = true
+            )
+            EntrySwitchRow(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
                 onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
@@ -438,29 +444,47 @@ private fun buildChartGroups(
     renderData: CardRenderData.CategorySpendingTrend,
     mustColor: Color,
     needColor: Color,
-    wantColor: Color
+    wantColor: Color,
+    isCumulative: Boolean
 ): List<AeonBarChartGroup> {
+    val runningTotals = mutableMapOf<CategoryNature, BigDecimal>()
+
     return renderData.buckets.map { bucket ->
-        // Aggregate amounts by nature for a cleaner stacked view
-        val natureTotals = bucket.categoryAmounts
-            .filter { it.amount.signum() != 0 }
-            .groupBy { it.nature }
-            .map { (nature, amounts) ->
-                val total = amounts.map { it.amount }.fold(BigDecimal.ZERO, BigDecimal::add)
+        val finalBars = mutableListOf<AeonBarChartBar>()
+
+        CategoryNature.entries.forEach { nature ->
+            val currentAmount = bucket.categoryAmounts
+                .filter { it.nature == nature }
+                .map { it.amount }
+                .fold(BigDecimal.ZERO, BigDecimal::add)
+
+            if (isCumulative) {
+                val prevRunning = runningTotals[nature] ?: BigDecimal.ZERO
+                val newRunning = prevRunning.add(currentAmount)
+                runningTotals[nature] = newRunning
+            }
+
+            val displayValue = if (isCumulative) {
+                runningTotals[nature] ?: BigDecimal.ZERO
+            } else {
+                currentAmount
+            }
+
+            if (displayValue.signum() != 0) {
                 val color = when (nature) {
                     CategoryNature.MUST -> mustColor
                     CategoryNature.NEED -> needColor
                     CategoryNature.WANT -> wantColor
                 }
                 val label = nature.name.lowercase().replaceFirstChar { it.uppercase() }
-                AeonBarChartBar(value = total, label = label, color = color)
+                finalBars.add(AeonBarChartBar(value = displayValue, label = label, color = color))
             }
-            .sortedBy { it.value } // Consistent stacking order
+        }
 
-        // Empty buckets get a zero placeholder so the chart always renders axes and labels
         AeonBarChartGroup(
             label = bucket.label,
-            bars = natureTotals.ifEmpty { listOf(AeonBarChartBar(BigDecimal.ZERO, "", Color.Transparent)) }
+            bars = finalBars.sortedBy { it.value.abs() }
+                .ifEmpty { listOf(AeonBarChartBar(BigDecimal.ZERO, "", Color.Transparent)) }
         )
     }
 }

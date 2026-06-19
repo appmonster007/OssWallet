@@ -49,7 +49,7 @@ sealed class CardWithCallbacks {
     data class CategoryPieChart(
         val renderData: CardRenderData.CategoryPieChart,
         val callbacks: CardCallbacks.Analytics,
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
@@ -57,7 +57,7 @@ sealed class CardWithCallbacks {
     data class CategoryTreemap(
         val renderData: CardRenderData.CategoryTreemap,
         val callbacks: CardCallbacks.Analytics,
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
@@ -105,7 +105,7 @@ sealed class CardWithCallbacks {
     data class CashFlowComparison(
         val renderData: CardRenderData.CashFlowComparison,
         val callbacks: CardCallbacks.CashFlowComparison,
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
@@ -113,7 +113,7 @@ sealed class CardWithCallbacks {
     data class IncomeExpenseBar(
         val renderData: CardRenderData.IncomeExpenseBar,
         val callbacks: CardCallbacks.IncomeExpenseBar,
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
@@ -121,7 +121,7 @@ sealed class CardWithCallbacks {
     data class CategorySpendingTrend(
         val renderData: CardRenderData.CategorySpendingTrend,
         val callbacks: CardCallbacks.CategorySpendingTrend,
-        override val filterRules: CardFilterRules = CardFilterRules.SPENDING_LOCKED_CATEGORIES,
+        override val filterRules: CardFilterRules = CardFilterRules.CATEGORY_SELECTION_LOCKED,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()
@@ -130,7 +130,7 @@ sealed class CardWithCallbacks {
         val renderData: CardRenderData.TagUpSetPlot,
         val callbacks: CardCallbacks.TagUpSetPlot,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
-        override val filterRules: CardFilterRules = CardFilterRules.INCOME_OR_EXPENSE_ONLY,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
     ) : CardWithCallbacks()

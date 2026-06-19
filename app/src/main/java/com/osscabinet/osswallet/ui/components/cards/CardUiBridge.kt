@@ -102,11 +102,11 @@ fun rememberCardWithCallbacks(
                                 show
                             )
                         },
-                        onDisplayModeChange = { id, mode ->
-                            updateHandler.updateCardNetWorthDisplayMode(id, mode)
+                        onPerspectiveChange = { id, perspective ->
+                            updateHandler.updateCardPerspective(id, perspective)
                         },
                         onExcludeSameCurrencyTransfersChange = { id, exclude ->
-                            updateHandler.updateCardNetWorthExcludeSameCurrencyTransfers(id, exclude)
+                            updateHandler.updateCardExcludeSameCurrencyTransfers(id, exclude)
                         },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardNetWorthFilter(
@@ -135,6 +135,16 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickOutflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNet = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNetFlow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
@@ -216,8 +226,8 @@ fun rememberCardWithCallbacks(
                                 filter
                             )
                         },
-                        onDisplayModeChange = { id, mode ->
-                            updateHandler.updateCardCashFlowDisplayMode(id, mode)
+                        onPerspectiveChange = { id, perspective ->
+                            updateHandler.updateCardPerspective(id, perspective)
                         },
                         onShowNetColumnChange = { id, show ->
                             updateHandler.updateCardCashFlowShowNetColumn(id, show)
@@ -246,6 +256,16 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickOutflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNet = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNetFlow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
@@ -290,8 +310,8 @@ fun rememberCardWithCallbacks(
                                 show
                             )
                         },
-                        onDisplayModeChange = { id, mode ->
-                            updateHandler.updateCardAccountsDisplayMode(id, mode)
+                        onPerspectiveChange = { id, perspective ->
+                            updateHandler.updateCardPerspective(id, perspective)
                         },
                         onExcludeSameCurrencyTransfersChange = { id, exclude ->
                             updateHandler.updateCardAccountsExcludeSameCurrencyTransfers(id, exclude)
@@ -309,6 +329,16 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickOutflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNet = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNetFlow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )
@@ -389,8 +419,8 @@ fun rememberCardWithCallbacks(
                         onShowCurrencyBadgesChange = { id, show ->
                             updateHandler.updateCardHeroShowCurrencyBadges(id, show)
                         },
-                        onDisplayModeChange = { id, mode ->
-                            updateHandler.updateCardHeroDisplayMode(id, mode)
+                        onPerspectiveChange = { id, perspective ->
+                            updateHandler.updateCardPerspective(id, perspective)
                         },
                         onExcludeSameCurrencyTransfersChange = { id, exclude ->
                             updateHandler.updateCardHeroExcludeSameCurrencyTransfers(id, exclude)
@@ -422,6 +452,16 @@ fun rememberCardWithCallbacks(
                             )
                         },
                         onClickOutflow = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNet = { drillDown ->
+                            onRecordsClick(
+                                resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
+                            )
+                        },
+                        onClickNetFlow = { drillDown ->
                             onRecordsClick(
                                 resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline).merge(drillDown)
                             )

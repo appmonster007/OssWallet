@@ -5,13 +5,14 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
-import com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity
 import com.osscabinet.ossWallet.domain.card.CategoryAmount
 import com.osscabinet.ossWallet.domain.card.CategorySpendingBucket
 import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -84,10 +85,19 @@ class CategorySpendingTrendCardComputer :
                     precision = 10
                 )
 
-                val shouldInclude = !tx.transactionType.isTransfer && when (config.selectedMetric) {
-                    ChartMetric.NET -> true
-                    ChartMetric.INCOME -> converted.signum() > 0
-                    ChartMetric.EXPENSE -> converted.signum() < 0
+                val shouldInclude = when (config.perspective) {
+                    AccountingPerspective.ACCOUNTING -> when (config.selectedMetric) {
+                        ChartMetric.NET -> true
+                        ChartMetric.INCOME -> tx.transactionType == TransactionType.INCOME
+                        ChartMetric.EXPENSE -> tx.transactionType == TransactionType.EXPENSE
+                        ChartMetric.TRANSFER -> tx.transactionType.isTransfer
+                    }
+                    AccountingPerspective.CASH_FLOW -> when (config.selectedMetric) {
+                        ChartMetric.NET -> true
+                        ChartMetric.INCOME -> converted.signum() > 0
+                        ChartMetric.EXPENSE -> converted.signum() < 0
+                        ChartMetric.TRANSFER -> false
+                    }
                 }
 
                 if (shouldInclude) {

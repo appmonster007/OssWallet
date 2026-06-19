@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -254,6 +255,7 @@ fun IncomeExpenseBarCardPreview() {
             0,
             BigDecimal("5000"),
             BigDecimal("-3500"),
+            BigDecimal.ZERO,
             BigDecimal("1500")
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -261,6 +263,7 @@ fun IncomeExpenseBarCardPreview() {
             0,
             BigDecimal("5200"),
             BigDecimal("-4000"),
+            BigDecimal.ZERO,
             BigDecimal("1200")
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -268,6 +271,7 @@ fun IncomeExpenseBarCardPreview() {
             0,
             BigDecimal("4800"),
             BigDecimal("-3800"),
+            BigDecimal.ZERO,
             BigDecimal("1000")
         )
     )
@@ -306,5 +310,11 @@ private fun IncomeExpenseBarSettingsSheet(
                 isFlush = true
             )
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = { callbacks.onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+        )
     }
 }

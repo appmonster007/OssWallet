@@ -18,6 +18,65 @@ interface CardUpdateHandler {
     val cardRepository: CardRepository
     val cardScreenContext: ScreenContext
 
+    /**
+     * Updates the accounting perspective for any card that supports it.
+     */
+    fun updateCardPerspective(cardId: String, perspective: AccountingPerspective) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                val updated = when (config) {
+                    is NetWorthCardConfig -> config.copy(perspective = perspective)
+                    is CashFlowCardConfig -> config.copy(perspective = perspective)
+                    is AccountsCardConfig -> config.copy(perspective = perspective)
+                    is AccountHeroCardConfig -> config.copy(perspective = perspective)
+                    is CategoryPieChartCardConfig -> config.copy(perspective = perspective)
+                    is CategoryTreemapCardConfig -> config.copy(perspective = perspective)
+                    is CashFlowComparisonCardConfig -> config.copy(perspective = perspective)
+                    is IncomeExpenseBarCardConfig -> config.copy(perspective = perspective)
+                    is CategorySpendingTrendCardConfig -> config.copy(perspective = perspective)
+                    is TagUpSetPlotCardConfig -> config.copy(perspective = perspective)
+                    else -> config
+                }
+                
+                // Safety: If the card has a selected metric that's unsupported in the new
+                // perspective (e.g., TRANSFER in CASH_FLOW), reset it to NET.
+                val labels = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+                
+                when (updated) {
+                    is CategoryPieChartCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    is CategoryTreemapCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    is CashFlowComparisonCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    is CategorySpendingTrendCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    is TagUpSetPlotCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    else -> updated
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates the same-currency transfer exclusion for any card that supports it.
+     */
+    fun updateCardExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                when (config) {
+                    is NetWorthCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is CashFlowCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is AccountsCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is AccountHeroCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is CategoryPieChartCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is CategoryTreemapCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is CashFlowComparisonCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is IncomeExpenseBarCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is CategorySpendingTrendCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is TagUpSetPlotCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    else -> config
+                }
+            }
+        }
+    }
+
     // Net Worth
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         cardUpdateScope.launch {
@@ -31,17 +90,6 @@ interface CardUpdateHandler {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(showComparison = showComparison) else config
-            }
-        }
-    }
-
-    fun updateCardNetWorthDisplayMode(
-        cardId: String,
-        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-    ) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(displayMode = mode) else config
             }
         }
     }
@@ -112,17 +160,6 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardCashFlowDisplayMode(
-        cardId: String,
-        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-    ) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is CashFlowCardConfig) config.copy(displayMode = mode) else config
-            }
-        }
-    }
-
     fun updateCardCashFlowShowNetColumn(cardId: String, show: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
@@ -164,17 +201,6 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardAccountsDisplayMode(
-        cardId: String,
-        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-    ) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountsCardConfig) config.copy(displayMode = mode) else config
-            }
-        }
-    }
-
     fun updateCardAccountsExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
@@ -196,17 +222,6 @@ interface CardUpdateHandler {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
                 if (config is AccountHeroCardConfig) config.copy(showCurrencyBadges = show) else config
-            }
-        }
-    }
-
-    fun updateCardHeroDisplayMode(
-        cardId: String,
-        mode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
-    ) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountHeroCardConfig) config.copy(displayMode = mode) else config
             }
         }
     }

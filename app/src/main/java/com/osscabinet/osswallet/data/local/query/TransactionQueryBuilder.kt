@@ -78,8 +78,8 @@ class TransactionQueryBuilder {
                     MetricConfig.MetricFilter.TRANSFER_ONLY -> "CASE WHEN transactionType IN ('transfer_inflow','transfer_outflow') THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') THEN ${metric.column} ELSE 0.0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
-                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') AND (targetAccountId IS NULL OR currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_IN_ONLY -> "CASE WHEN (transactionType = 'transfer_inflow') AND (currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
+                    MetricConfig.MetricFilter.CROSS_CCY_TRANSFER_OUT_ONLY -> "CASE WHEN (transactionType = 'transfer_outflow') AND (currency <> targetCurrency) THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.POSITIVE_ONLY -> "CASE WHEN ${metric.column} > 0 THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.NEGATIVE_ONLY -> "CASE WHEN ${metric.column} < 0 THEN ${metric.column} ELSE 0.0 END"
                     MetricConfig.MetricFilter.NONE -> metric.column

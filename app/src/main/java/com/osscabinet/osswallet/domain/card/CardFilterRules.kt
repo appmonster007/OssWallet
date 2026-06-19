@@ -116,25 +116,8 @@ data class CardFilterRules(
     companion object {
         val DEFAULT = CardFilterRules()
 
-        /**
-         * Use for cards that only make sense for Income or Expense (e.g. Category Breakdown).
-         * Respects user's global selection if it's within these two, otherwise shows empty.
-         */
-        val INCOME_OR_EXPENSE_ONLY = CardFilterRules(
-            typeRule = CategoricalRule.Limited(setOf(TransactionType.INCOME, TransactionType.EXPENSE))
-        )
-
-        /**
-         * Use for cards that MUST show both Income and Expense to be meaningful,
-         * regardless of the global filter (e.g. Comparison charts).
-         */
-        val INCOME_AND_EXPENSE = CardFilterRules(
-            typeRule = CategoricalRule.Locked(setOf(TransactionType.INCOME, TransactionType.EXPENSE))
-        )
-
-        /** Rules for cards where category selection is locked to Income/Expense types. */
-        val SPENDING_LOCKED_CATEGORIES = CardFilterRules(
-            typeRule = CategoricalRule.Limited(setOf(TransactionType.INCOME, TransactionType.EXPENSE)),
+        /** Rules for cards where category selection is locked. */
+        val CATEGORY_SELECTION_LOCKED = CardFilterRules(
             categoryRule = CategoricalRule.Disabled()
         )
 

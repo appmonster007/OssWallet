@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.domain.model.analytics
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import java.math.BigDecimal
 
 /**
@@ -19,6 +20,28 @@ data class CashFlowResult(
     val breakdown: List<CashFlowBreakdownItem>,
     val filteredTransactions: List<Transaction>
 ) {
+    val totalNetTransferInBase: BigDecimal get() = totalTransferInInBase.add(totalTransferOutInBase)
+    val totalNetCrossCcyTransferInBase: BigDecimal get() = totalCrossCcyTransferInInBase.add(totalCrossCcyTransferOutInBase)
+
+    /**
+     * Transforms this result based on the requested perspective.
+     */
+    fun toPerspective(perspective: AccountingPerspective): CashFlowResult {
+        return when (perspective) {
+            AccountingPerspective.ACCOUNTING -> this
+            AccountingPerspective.CASH_FLOW -> this.copy(
+                totalIncomeInBase = totalIncomeInBase.add(totalTransferInInBase),
+                totalExpensesInBase = totalExpensesInBase.add(totalTransferOutInBase),
+                totalTransfersInBase = BigDecimal.ZERO,
+                totalTransferInInBase = BigDecimal.ZERO,
+                totalTransferOutInBase = BigDecimal.ZERO,
+                totalCrossCcyTransferInInBase = BigDecimal.ZERO,
+                totalCrossCcyTransferOutInBase = BigDecimal.ZERO,
+                breakdown = breakdown.map { it.toPerspective(perspective) }
+            )
+        }
+    }
+
     companion object {
         fun empty() = CashFlowResult(
             totalIncomeInBase = BigDecimal.ZERO,
@@ -60,7 +83,37 @@ data class CashFlowBreakdownItem(
     val crossCcyTransferInInBase: BigDecimal = BigDecimal.ZERO,
     val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO,
     val crossCcyTransferOutInBase: BigDecimal = BigDecimal.ZERO,
-)
+) {
+    val netTransfer: BigDecimal get() = transferIn.add(transferOut)
+    val netTransferInBase: BigDecimal get() = transferInInBase.add(transferOutInBase)
+    val netCrossCcyTransfer: BigDecimal get() = crossCcyTransferIn.add(crossCcyTransferOut)
+    val netCrossCcyTransferInBase: BigDecimal get() = crossCcyTransferInInBase.add(crossCcyTransferOutInBase)
+
+    /**
+     * Transforms this breakdown item based on the requested perspective.
+     */
+    fun toPerspective(perspective: AccountingPerspective): CashFlowBreakdownItem {
+        return when (perspective) {
+            AccountingPerspective.ACCOUNTING -> this
+            AccountingPerspective.CASH_FLOW -> this.copy(
+                income = income.add(transferIn),
+                incomeInBase = incomeInBase.add(transferInInBase),
+                expense = expense.add(transferOut),
+                expenseInBase = expenseInBase.add(transferOutInBase),
+                transfer = BigDecimal.ZERO,
+                transferInBase = BigDecimal.ZERO,
+                transferIn = BigDecimal.ZERO,
+                transferInInBase = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO,
+                transferOutInBase = BigDecimal.ZERO,
+                crossCcyTransferIn = BigDecimal.ZERO,
+                crossCcyTransferInInBase = BigDecimal.ZERO,
+                crossCcyTransferOut = BigDecimal.ZERO,
+                crossCcyTransferOutInBase = BigDecimal.ZERO
+            )
+        }
+    }
+}
 
 /**
  * Aggregated total for a single currency.
@@ -104,4 +157,23 @@ data class AccountFlowMetrics(
 ) {
     val netTransfer: BigDecimal get() = transferIn + transferOut
     val netCrossCcyTransfer: BigDecimal get() = crossCcyTransferIn + crossCcyTransferOut
+
+    /**
+     * Transforms these metrics based on the requested perspective.
+     * Accounting: keeps raw metrics.
+     * CASH_FLOW: merges transfers into income/expense as inflow/outflow.
+     */
+    fun toPerspective(perspective: AccountingPerspective): AccountFlowMetrics {
+        return when (perspective) {
+            AccountingPerspective.ACCOUNTING -> this
+            AccountingPerspective.CASH_FLOW -> AccountFlowMetrics(
+                income = income.add(transferIn),
+                expense = expense.add(transferOut),
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO,
+                crossCcyTransferIn = BigDecimal.ZERO,
+                crossCcyTransferOut = BigDecimal.ZERO
+            )
+        }
+    }
 }

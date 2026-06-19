@@ -37,6 +37,8 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -101,7 +103,8 @@ fun CashFlowComparisonCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Metric toggle row — purely display-local; no config persist needed
-            MetricToggleRow(
+            AeonMetricToggle(
+                perspective = config.perspective,
                 selectedMetric = selectedMetric,
                 onMetricChange = { metric -> selectedMetric = metric }
             )
@@ -112,6 +115,7 @@ fun CashFlowComparisonCard(
                     ChartMetric.NET -> p.net
                     ChartMetric.INCOME -> p.income
                     ChartMetric.EXPENSE -> p.expense
+                    ChartMetric.TRANSFER -> p.transfer
                 }
             }
             Text(
@@ -188,28 +192,6 @@ fun CashFlowComparisonCard(
     }
 }
 
-@Composable
-private fun MetricToggleRow(
-    selectedMetric: ChartMetric,
-    onMetricChange: (ChartMetric) -> Unit
-) {
-    val options = ChartMetric.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, metric ->
-            SegmentedButton(
-                selected = selectedMetric == metric,
-                onClick = { onMetricChange(metric) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = {
-                    Text(
-                        text = metric.name,
-                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
-                    )
-                }
-            )
-        }
-    }
-}
 
 @Composable
 private fun LegendRow(
@@ -280,6 +262,7 @@ private fun buildSeriesList(
                 ChartMetric.NET -> point.net
                 ChartMetric.INCOME -> point.income
                 ChartMetric.EXPENSE -> point.expense
+                ChartMetric.TRANSFER -> point.transfer
             }
             running += value
             AeonLineChartPoint(
@@ -399,6 +382,7 @@ fun CashFlowComparisonShorterPrevPreview() {
                     0,
                     BigDecimal("100"),
                     BigDecimal("50"),
+                    BigDecimal.ZERO,
                     BigDecimal("50")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -406,6 +390,7 @@ fun CashFlowComparisonShorterPrevPreview() {
                     0,
                     BigDecimal("120"),
                     BigDecimal("60"),
+                    BigDecimal.ZERO,
                     BigDecimal("60")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -413,6 +398,7 @@ fun CashFlowComparisonShorterPrevPreview() {
                     0,
                     BigDecimal("150"),
                     BigDecimal("70"),
+                    BigDecimal.ZERO,
                     BigDecimal("80")
                 )
             )
@@ -424,6 +410,7 @@ fun CashFlowComparisonShorterPrevPreview() {
                     0,
                     BigDecimal("80"),
                     BigDecimal("40"),
+                    BigDecimal.ZERO,
                     BigDecimal("40")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -431,6 +418,7 @@ fun CashFlowComparisonShorterPrevPreview() {
                     0,
                     BigDecimal("90"),
                     BigDecimal("45"),
+                    BigDecimal.ZERO,
                     BigDecimal("45")
                 )
             )
@@ -469,6 +457,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("100"),
                     BigDecimal("50"),
+                    BigDecimal.ZERO,
                     BigDecimal("50")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -476,6 +465,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("120"),
                     BigDecimal("60"),
+                    BigDecimal.ZERO,
                     BigDecimal("60")
                 )
             )
@@ -487,6 +477,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("80"),
                     BigDecimal("40"),
+                    BigDecimal.ZERO,
                     BigDecimal("40")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -494,6 +485,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("90"),
                     BigDecimal("45"),
+                    BigDecimal.ZERO,
                     BigDecimal("45")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -501,6 +493,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("100"),
                     BigDecimal("50"),
+                    BigDecimal.ZERO,
                     BigDecimal("50")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -508,6 +501,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("110"),
                     BigDecimal("55"),
+                    BigDecimal.ZERO,
                     BigDecimal("55")
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
@@ -515,6 +509,7 @@ fun CashFlowComparisonLongerPrevPreview() {
                     0,
                     BigDecimal("120"),
                     BigDecimal("60"),
+                    BigDecimal.ZERO,
                     BigDecimal("60")
                 )
             )
@@ -556,6 +551,7 @@ fun CashFlowComparisonTightMarkersPreview() {
                     0,
                     BigDecimal("120"),
                     BigDecimal("60"),
+                    BigDecimal.ZERO,
                     BigDecimal("60")
                 )
             )
@@ -567,6 +563,7 @@ fun CashFlowComparisonTightMarkersPreview() {
                     0,
                     BigDecimal("100"),
                     BigDecimal("50"),
+                    BigDecimal.ZERO,
                     BigDecimal("50")
                 )
             )
@@ -578,6 +575,7 @@ fun CashFlowComparisonTightMarkersPreview() {
                     0,
                     BigDecimal("100"),
                     BigDecimal("50"),
+                    BigDecimal.ZERO,
                     BigDecimal("50")
                 )
             )
@@ -643,5 +641,11 @@ private fun CashFlowComparisonSettingsSheet(
                 isFlush = true
             )
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = { callbacks.onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+        )
     }
 }

@@ -47,6 +47,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -146,6 +151,83 @@ private fun SheetBody(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CardPerspectiveSettings(
+    perspective: AccountingPerspective,
+    onPerspectiveChange: (AccountingPerspective) -> Unit,
+    excludeSameCurrencyTransfers: Boolean? = null,
+    onExcludeSameCurrencyTransfersChange: ((Boolean) -> Unit)? = null
+) {
+    CardSettingsSection("Perspective") {
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            AccountingPerspective.entries.forEachIndexed { index, mode ->
+                SegmentedButton(
+                    selected = perspective == mode,
+                    onClick = { onPerspectiveChange(mode) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
+                    label = {
+                        Text(
+                            if (mode == AccountingPerspective.ACCOUNTING) "Accounting" else "Cash Flow",
+                            style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                        )
+                    }
+                )
+            }
+        }
+        if (perspective == AccountingPerspective.CASH_FLOW && excludeSameCurrencyTransfers != null) {
+            com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
+                label = "Exclude same-currency transfers",
+                description = "Ignore internal movements that don't change liquidity",
+                checked = excludeSameCurrencyTransfers,
+                onCheckedChange = onExcludeSameCurrencyTransfersChange ?: {}
+            )
+        }
+    }
+}
+
+/**
+ * Shared metric selector for various chart cards.
+ * Standardizes the toggle row across all 10 cards.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AeonMetricToggle(
+    perspective: AccountingPerspective,
+    selectedMetric: ChartMetric,
+    onMetricChange: (ChartMetric) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val labels = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+    // Filter out metrics not supported by the current perspective (e.g., TRANSFER in Cash Flow)
+    val options = ChartMetric.entries.filter { it in labels }
+
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        options.forEachIndexed { index, metric ->
+            val label = labels[metric] ?: metric.name
+            SegmentedButton(
+                selected = selectedMetric == metric,
+                onClick = { onMetricChange(metric) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        text = label,
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                    )
+                }
+            )
+        }
+    }
+}
+
 @Composable
 fun CardSettingsSection(
     title: String,
@@ -181,13 +263,18 @@ fun CardSettingsSection(
 @Composable
 fun CardSettingsSheetPreview() {
     OssWalletTheme {
-        CardSettingsSheet(
-            title = "Preview Card",
-            onDismiss = {},
-            onDelete = {}
-        ) {
-            CardSettingsSection("Section 1") {
-                Text("Content 1", color = AppColors.contentPrimary)
+        Surface{
+            CardSettingsSheet(
+                title = "Card Settings",
+                onDismiss = {},
+                onDelete = {}
+            ) {
+                CardPerspectiveSettings(
+                    perspective = AccountingPerspective.ACCOUNTING,
+                    onPerspectiveChange = {},
+                    excludeSameCurrencyTransfers = true,
+                    onExcludeSameCurrencyTransfersChange = {}
+                )
             }
         }
     }

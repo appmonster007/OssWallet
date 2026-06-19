@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.service.financial
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import java.math.BigDecimal
 
 /**
@@ -24,6 +25,22 @@ data class FinancialSummary(
      * Net flow (income + expense)
      */
     val netFlow: BigDecimal get() = income + expense
+
+    /**
+     * Transforms this summary based on the requested perspective.
+     * Nature (ACCOUNTING): keeps raw metrics.
+     * Directional (CASH_FLOW): merges transfers into income/expense as inflow/outflow.
+     */
+    fun toPerspective(perspective: AccountingPerspective): FinancialSummary {
+        return when (perspective) {
+            AccountingPerspective.ACCOUNTING -> this
+            AccountingPerspective.CASH_FLOW -> this.copy(
+                income = income.add(transferIn),
+                expense = expense.add(transferOut),
+                transfer = BigDecimal.ZERO // Transfers are absorbed into inflow/outflow
+            )
+        }
+    }
 
     companion object {
         /**
@@ -114,13 +131,15 @@ data class CategoryTreeMetrics(
     val netBalance: BigDecimal,
     val income: BigDecimal,
     val expense: BigDecimal,
+    val transfer: BigDecimal = BigDecimal.ZERO,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryTreeMetrics> = emptyList(),
     val previousNetBalance: BigDecimal? = null,
     val previousIncome: BigDecimal? = null,
-    val previousExpense: BigDecimal? = null
+    val previousExpense: BigDecimal? = null,
+    val previousTransfer: BigDecimal? = null
 )
 
 /**

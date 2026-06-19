@@ -38,7 +38,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -131,7 +132,14 @@ fun NetWorthCard(
                         fontSize = baseFontSize,
                         letterSpacing = (-1).sp
                     ),
-                    color = contentColor
+                    color = contentColor,
+                    modifier = Modifier.clickable {
+                        if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                            callbacks.onClickNet?.invoke(config.filter)
+                        } else {
+                            callbacks.onClickNetFlow?.invoke(config.filter)
+                        }
+                    }
                 )
 
                 // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
@@ -175,8 +183,8 @@ fun NetWorthCard(
                 val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
                 val showTransfer = types.isEmpty() || types.any { it.isTransfer }
 
-                when (config.displayMode) {
-                    CashFlowDisplayMode.TYPE_DISTINCTION -> {
+                when (config.perspective) {
+                    AccountingPerspective.ACCOUNTING -> {
                         if (showIncome) {
                             NetWorthFlowColumn(
                                 label = "INC",
@@ -212,16 +220,9 @@ fun NetWorthCard(
                         }
                         if (showTransfer) {
                             if (showIncome || showExpense) NetWorthSeparator()
-                            val tx = if (excludeSameCcy) cf.totalCrossCcyTransferInInBase + cf.totalCrossCcyTransferOutInBase
-                            else cf.totalTransferInInBase + cf.totalTransferOutInBase
-                            val prevTx = if (prevCf != null) {
-                                if (excludeSameCcy) prevCf.totalCrossCcyTransferInInBase + prevCf.totalCrossCcyTransferOutInBase
-                                else prevCf.totalTransferInInBase + prevCf.totalTransferOutInBase
-                            } else null
-
                             NetWorthFlowColumn(
                                 label = "TRF",
-                                amount = tx,
+                                amount = if (excludeSameCcy) cf.totalNetCrossCcyTransferInBase else cf.totalNetTransferInBase,
                                 currency = displayCurrency,
                                 color = AppColors.accent,
                                 modifier = Modifier
@@ -231,13 +232,15 @@ fun NetWorthCard(
                                             config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
                                         )
                                     },
-                                previousAmount = if (config.showComparison) prevTx else null,
+                                previousAmount = if (config.showComparison) {
+                                    if (excludeSameCcy) prevCf?.totalNetCrossCcyTransferInBase else prevCf?.totalNetTransferInBase
+                                } else null,
                                 forceShowPlus = true
                             )
                         }
                     }
 
-                    CashFlowDisplayMode.INFLOW_OUTFLOW -> {
+                    AccountingPerspective.CASH_FLOW -> {
                         val txIn = if (excludeSameCcy) cf.totalCrossCcyTransferInInBase else cf.totalTransferInInBase
                         val txOut = if (excludeSameCcy) cf.totalCrossCcyTransferOutInBase else cf.totalTransferOutInBase
                         val prevTxIn = if (excludeSameCcy) prevCf?.totalCrossCcyTransferInInBase else prevCf?.totalTransferInInBase
@@ -426,42 +429,14 @@ private fun NetWorthSettingsSheet(
                 isFlush = true
             )
         }
-        CardSettingsSection("Layout") {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
-                    SegmentedButton(
-                        selected = config.displayMode == mode,
-                        onClick = { callbacks.onDisplayModeChange(config.cardId, mode) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = CashFlowDisplayMode.entries.size
-                        ),
-                        label = {
-                            Text(
-                                when (mode) {
-                                    CashFlowDisplayMode.TYPE_DISTINCTION -> "Type"
-                                    CashFlowDisplayMode.INFLOW_OUTFLOW -> "In / Out"
-                                }
-                            )
-                        }
-                    )
-                }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = {
+                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
             }
-            if (config.displayMode == CashFlowDisplayMode.INFLOW_OUTFLOW) {
-                com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
-                    label = "Exclude same-currency transfers",
-                    description = "Only used in Inflow / Outflow mode",
-                    checked = config.excludeSameCurrencyTransfers,
-                    onCheckedChange = {
-                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
-                    }
-                )
-            }
-        }
+        )
     }
 }
 
@@ -472,10 +447,12 @@ fun NetWorthCardGlassPreview() {
     val currentPeriodMetrics = NetWorthMetrics(
         netWorth = BigDecimal("152500.75"),
         cashFlow = CashFlowResult(
-            totalIncomeInBase = BigDecimal("4500000.00"),
-            totalExpensesInBase = BigDecimal("2350.50"),
-            totalTransfersInBase = BigDecimal.ZERO,
-            netInBase = BigDecimal("2149.50"),
+            totalIncomeInBase = BigDecimal("4500.00"),
+            totalExpensesInBase = BigDecimal("-2350.50"),
+            totalTransfersInBase = BigDecimal("500.00"),
+            totalTransferInInBase = BigDecimal("1000.00"),
+            totalTransferOutInBase = BigDecimal("-500.00"),
+            netInBase = BigDecimal("2649.50"),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -484,9 +461,11 @@ fun NetWorthCardGlassPreview() {
         netWorth = BigDecimal("14100.25"),
         cashFlow = CashFlowResult(
             totalIncomeInBase = BigDecimal("4200.00"),
-            totalExpensesInBase = BigDecimal("2100.00"),
-            totalTransfersInBase = BigDecimal.ZERO,
-            netInBase = BigDecimal("2100.00"),
+            totalExpensesInBase = BigDecimal("-2100.00"),
+            totalTransfersInBase = BigDecimal("400.00"),
+            totalTransferInInBase = BigDecimal("800.00"),
+            totalTransferOutInBase = BigDecimal("-400.00"),
+            netInBase = BigDecimal("2500.00"),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -549,9 +528,11 @@ private fun NetWorthCardPreviewContent() {
         netWorth = BigDecimal("15250.75"),
         cashFlow = CashFlowResult(
             totalIncomeInBase = BigDecimal("4500.00"),
-            totalExpensesInBase = BigDecimal("235000.50"),
-            totalTransfersInBase = BigDecimal.ZERO,
-            netInBase = BigDecimal("2149.50"),
+            totalExpensesInBase = BigDecimal("-2350.50"),
+            totalTransfersInBase = BigDecimal("500.00"),
+            totalTransferInInBase = BigDecimal("1000.00"),
+            totalTransferOutInBase = BigDecimal("-500.00"),
+            netInBase = BigDecimal("2649.50"),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )
@@ -560,9 +541,11 @@ private fun NetWorthCardPreviewContent() {
         netWorth = BigDecimal("14100.25"),
         cashFlow = CashFlowResult(
             totalIncomeInBase = BigDecimal("4200.00"),
-            totalExpensesInBase = BigDecimal("2100.00"),
-            totalTransfersInBase = BigDecimal.ZERO,
-            netInBase = BigDecimal("2100.00"),
+            totalExpensesInBase = BigDecimal("-2100.00"),
+            totalTransfersInBase = BigDecimal("400.00"),
+            totalTransferInInBase = BigDecimal("800.00"),
+            totalTransferOutInBase = BigDecimal("-400.00"),
+            netInBase = BigDecimal("2500.00"),
             breakdown = emptyList(),
             filteredTransactions = emptyList()
         )

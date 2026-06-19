@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
@@ -207,7 +208,7 @@ fun AeonAccountCardMedium(
 fun AeonAccountCardLarge(
     summary: AccountSummaryItem,
     baseCurrency: String,
-    displayMode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION,
+    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING,
     excludeSameCurrencyTransfers: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -217,7 +218,9 @@ fun AeonAccountCardLarge(
     onClickExpense: (() -> Unit)? = null,
     onClickTransfer: (() -> Unit)? = null,
     onClickInflow: (() -> Unit)? = null,
-    onClickOutflow: (() -> Unit)? = null
+    onClickOutflow: (() -> Unit)? = null,
+    onClickNet: (() -> Unit)? = null,
+    onClickNetFlow: (() -> Unit)? = null
 ) {
     val account = summary.account
     val dotColor = accountDotColor(account)
@@ -282,7 +285,15 @@ fun AeonAccountCardLarge(
                 nativeCurrency = account.currencyCode,
                 targetCurrency = baseCurrency,
                 convertedAmount = summary.balanceInBase,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (perspective == com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING) {
+                            onClickNet?.invoke()
+                        } else {
+                            onClickNetFlow?.invoke()
+                        }
+                    },
                 primaryStyle = AppTextStyles.transactionAmount.copy(
                     fontWeight = FontWeight.Normal,
                     fontSize = 24.sp
@@ -304,8 +315,8 @@ fun AeonAccountCardLarge(
                     .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                when (displayMode) {
-                        com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION -> {
+                when (perspective) {
+                        com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING -> {
                             AccountFlowReadout(
                                 label = "INC",
                                 amount = flow.income,
@@ -343,7 +354,7 @@ fun AeonAccountCardLarge(
                             )
                         }
 
-                        com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW -> {
+                        com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CASH_FLOW -> {
                             val txIn = if (excludeSameCurrencyTransfers) flow.crossCcyTransferIn else flow.transferIn
                             val txOut = if (excludeSameCurrencyTransfers) flow.crossCcyTransferOut else flow.transferOut
 

@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.data.repository
 
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
@@ -55,8 +54,7 @@ class CardRepositoryImpl @Inject constructor(
                 order = 0,
                 title = "CATEGORY PIE CHART",
                 filter = TransactionFilter(
-                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = setOf(TransactionType.EXPENSE)
+                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
                 ),
                 showLabels = true,
                 showLegend = true
@@ -66,8 +64,7 @@ class CardRepositoryImpl @Inject constructor(
                 order = 1,
                 title = "CATEGORY TREEMAP",
                 filter = TransactionFilter(
-                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-                    transactionTypes = setOf(TransactionType.EXPENSE)
+                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
                 ),
                 showLabels = true
             )

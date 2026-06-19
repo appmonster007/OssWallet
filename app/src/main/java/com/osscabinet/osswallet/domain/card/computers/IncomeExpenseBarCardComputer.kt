@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.card.CashFlowTimePoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
@@ -64,7 +65,8 @@ class IncomeExpenseBarCardComputer(
             profileId = input.profileId,
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
-            granularity = granularity
+            granularity = granularity,
+            perspective = config.perspective
         )
 
         return CardRenderData.IncomeExpenseBar(
@@ -82,7 +84,8 @@ class IncomeExpenseBarCardComputer(
         profileId: Int,
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
-        granularity: CashFlowComparisonGranularity
+        granularity: CashFlowComparisonGranularity,
+        perspective: AccountingPerspective
     ): CashFlowComparisonSeries {
         val points = buckets.map { (bucketStart, bucketEnd, label) ->
             val bucketFilter = baseFilter.copy(
@@ -92,39 +95,34 @@ class IncomeExpenseBarCardComputer(
                 queryService, profileId, bucketFilter
             ).getOrDefault(emptyMap())
 
-            var totalIncome = BigDecimal.ZERO
-            var totalExpense = BigDecimal.ZERO
+            var val1 = BigDecimal.ZERO // Income or Inflow
+            var val2 = BigDecimal.ZERO // Expense or Outflow
+            var valTrf = BigDecimal.ZERO // Transfer volume
 
             summaries.forEach { (currency, summary) ->
-                totalIncome = totalIncome.add(
-                    CurrencyService.convertAmount(
-                        summary.income,
-                        currency,
-                        baseCurrency,
-                        exchangeRates,
-                        10
-                    )
-                )
-                // expense is already negated in FinancialSummary
-                totalExpense = totalExpense.add(
-                    CurrencyService.convertAmount(
-                        summary.expense,
-                        currency,
-                        baseCurrency,
-                        exchangeRates,
-                        10
-                    )
-                )
+                val (inc, exp) = when (perspective) {
+                    AccountingPerspective.ACCOUNTING -> summary.income to summary.expense
+                    AccountingPerspective.CASH_FLOW -> {
+                        // Inflow = Income + TransferIn; Outflow = Expense + TransferOut
+                        val inflow = summary.income.add(summary.transferIn)
+                        val outflow = summary.expense.add(summary.transferOut)
+                        inflow to outflow
+                    }
+                }
+
+                val1 = val1.add(CurrencyService.convertAmount(inc, currency, baseCurrency, exchangeRates, 10))
+                val2 = val2.add(CurrencyService.convertAmount(exp, currency, baseCurrency, exchangeRates, 10))
+                valTrf = valTrf.add(CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10))
             }
 
             CashFlowTimePoint(
                 label = label,
                 epochMillis = bucketStart,
                 bucketEnd = bucketEnd,
-                income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                net = totalIncome.add(totalExpense)
-                    .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                income = val1.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expense = val2.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transfer = valTrf.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                net = val1.add(val2).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
             )
         }
 

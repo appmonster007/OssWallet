@@ -48,7 +48,7 @@ import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
@@ -174,7 +174,14 @@ fun AccountHeroCard(
                         fontSize = 36.sp,
                         letterSpacing = (-1).sp
                     ),
-                    color = contentColor
+                    color = contentColor,
+                    modifier = Modifier.clickable {
+                        if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                            callbacks.onClickNet?.invoke(config.filter)
+                        } else {
+                            callbacks.onClickNetFlow?.invoke(config.filter)
+                        }
+                    }
                 )
 
                 if (account.currencyCode != baseCurrency) {
@@ -206,8 +213,8 @@ fun AccountHeroCard(
                 val flow = summary.currentPeriodFlow
                 val prevFlow = summary.previousPeriodFlow
 
-                when (config.displayMode) {
-                    CashFlowDisplayMode.TYPE_DISTINCTION -> {
+                when (config.perspective) {
+                    AccountingPerspective.ACCOUNTING -> {
                         if (showIncome) {
                             FlowSummaryItem(
                                 label = "INCOME",
@@ -249,32 +256,27 @@ fun AccountHeroCard(
                             )
                         }
                         if (showTransfer) {
-                            val tx = if (excludeSameCcy) flow.netCrossCcyTransfer else flow.netTransfer
-                            val prevTx = if (prevFlow != null) {
-                                if (excludeSameCcy) prevFlow.netCrossCcyTransfer else prevFlow.netTransfer
-                            } else null
-
                             FlowSummaryItem(
                                 label = "TRANSFER",
-                                amount = tx,
+                                amount = if (excludeSameCcy) flow.netCrossCcyTransfer else flow.netTransfer,
                                 currency = account.currencyCode,
                                 icon = Icons.Rounded.SwapHoriz,
                                 color = accColor,
                                 contentColor = contentColor,
-                                previousAmount = prevTx,
-                                forceShowPlus = true,
+                                previousAmount = if (excludeSameCcy) prevFlow?.netCrossCcyTransfer else prevFlow?.netTransfer,
                                 onClick = {
                                     callbacks.onClickTransfer?.invoke(
                                         config.filter.copy(
                                             transactionTypes = TransactionType.TRANSFER_TYPES
                                         )
                                     )
-                                }
+                                },
+                                forceShowPlus = true
                             )
                         }
                     }
 
-                    CashFlowDisplayMode.INFLOW_OUTFLOW -> {
+                    AccountingPerspective.CASH_FLOW -> {
                         val txIn = if (excludeSameCcy) flow.crossCcyTransferIn else flow.transferIn
                         val txOut = if (excludeSameCcy) flow.crossCcyTransferOut else flow.transferOut
 
@@ -415,42 +417,14 @@ private fun AccountHeroSettingsSheet(
                 isFlush = true
             )
         }
-        CardSettingsSection("Layout") {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
-                    SegmentedButton(
-                        selected = config.displayMode == mode,
-                        onClick = { callbacks.onDisplayModeChange(config.cardId, mode) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = CashFlowDisplayMode.entries.size
-                        ),
-                        label = {
-                            Text(
-                                when (mode) {
-                                    CashFlowDisplayMode.TYPE_DISTINCTION -> "Type"
-                                    CashFlowDisplayMode.INFLOW_OUTFLOW -> "In / Out"
-                                }
-                            )
-                        }
-                    )
-                }
+        com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = {
+                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
             }
-            if (config.displayMode == CashFlowDisplayMode.INFLOW_OUTFLOW) {
-                com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
-                    label = "Exclude same-currency transfers",
-                    description = "Only used in Inflow / Outflow mode",
-                    checked = config.excludeSameCurrencyTransfers,
-                    onCheckedChange = {
-                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
-                    }
-                )
-            }
-        }
+        )
     }
 }
 // Badges sit directly on the full-bleed account color surface, so we use semi-transparent

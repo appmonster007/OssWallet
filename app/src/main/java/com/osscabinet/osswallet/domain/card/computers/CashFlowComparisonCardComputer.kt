@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.card.CashFlowTimePoint
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
@@ -63,7 +64,8 @@ class CashFlowComparisonCardComputer(
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             today = today,
-            excludeFuture = true // Always cap current line at today
+            excludeFuture = true, // Always cap current line at today
+            perspective = config.perspective
         )
 
         // 3. Compute Previous Period Series:
@@ -81,7 +83,8 @@ class CashFlowComparisonCardComputer(
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 today = today - shift, // Relative 'today' for the previous period
-                excludeFuture = excludeFuture
+                excludeFuture = excludeFuture,
+                perspective = config.perspective
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -104,7 +107,8 @@ class CashFlowComparisonCardComputer(
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
                 today = lastYearToday,
-                excludeFuture = excludeFuture
+                excludeFuture = excludeFuture,
+                perspective = config.perspective
             )
         }
 
@@ -151,13 +155,14 @@ class CashFlowComparisonCardComputer(
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
         today: Long,
-        excludeFuture: Boolean
+        excludeFuture: Boolean,
+        perspective: AccountingPerspective
     ): CashFlowComparisonSeries {
         val points = mutableListOf<CashFlowTimePoint>()
         for ((bucketStart, bucketEnd, label) in buckets) {
             if (excludeFuture && bucketStart > today) break
             val effectiveEnd = if (excludeFuture) minOf(bucketEnd, today) else bucketEnd
-            points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates))
+            points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates, perspective))
         }
         return CashFlowComparisonSeries(points)
     }
@@ -169,25 +174,35 @@ class CashFlowComparisonCardComputer(
         bucketEnd: Long,
         label: String,
         baseCurrency: String,
-        exchangeRates: ExchangeRateSnapshot
+        exchangeRates: ExchangeRateSnapshot,
+        perspective: AccountingPerspective
     ): CashFlowTimePoint {
         val summaries = TransactionAggregationService.getSummaryByCurrency(
             queryService, profileId,
             baseFilter.copy(timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd))
         ).getOrDefault(emptyMap())
 
-        var totalIncome = BigDecimal.ZERO
-        var totalExpense = BigDecimal.ZERO
+        var totalVal1 = BigDecimal.ZERO
+        var totalVal2 = BigDecimal.ZERO
+        var totalTrf = BigDecimal.ZERO
         summaries.forEach { (currency, summary) ->
-            totalIncome += CurrencyService.convertAmount(summary.income, currency, baseCurrency, exchangeRates, 10)
-            totalExpense += CurrencyService.convertAmount(summary.expense, currency, baseCurrency, exchangeRates, 10)
+            val (v1, v2) = when (perspective) {
+                AccountingPerspective.ACCOUNTING -> summary.income to summary.expense
+                AccountingPerspective.CASH_FLOW -> {
+                    summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
+                }
+            }
+            totalVal1 += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
+            totalVal2 += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
+            totalTrf += CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10)
         }
         return CashFlowTimePoint(
             label = label,
             epochMillis = bucketStart,
-            income = totalIncome.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            expense = totalExpense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            net = totalIncome.add(totalExpense).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+            income = totalVal1.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            expense = totalVal2.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            transfer = totalTrf.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+            net = totalVal1.add(totalVal2).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
         )
     }
 }

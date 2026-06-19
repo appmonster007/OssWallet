@@ -44,7 +44,7 @@ import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowBreakdownItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
@@ -53,6 +53,7 @@ import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -154,8 +155,8 @@ private fun CashFlowTable(
     val accentColor = AppColors.accent
 
     val columns: List<TableColumn> = remember(config, types, excludeSameCcy, result, positiveColor, negativeColor, accentColor) {
-        when (config.displayMode) {
-            CashFlowDisplayMode.TYPE_DISTINCTION -> buildList {
+        when (config.perspective) {
+            AccountingPerspective.ACCOUNTING -> buildList {
                 if (showIncome) add(
                     TableColumn(
                         label = "INCOME", key = "inc", color = positiveColor,
@@ -188,11 +189,10 @@ private fun CashFlowTable(
                 )
                 if (showTransfer) add(
                     TableColumn(
-                        label = "TRANSFER", key = "tx", color = accentColor,
-                        totalInBase = totalTxInBase + totalTxOutBase,
-                        nativeOf = { txIn(it) + txOut(it) },
-                        baseOf = { txInBase(it) + txOutBase(it) },
-                        isSigned = true,
+                        label = "TRANSFER", key = "trf", color = accentColor,
+                        totalInBase = if (excludeSameCcy) result.totalNetCrossCcyTransferInBase else result.totalNetTransferInBase,
+                        nativeOf = { if (excludeSameCcy) it.netCrossCcyTransfer else it.netTransfer },
+                        baseOf = { if (excludeSameCcy) it.netCrossCcyTransferInBase else it.netTransferInBase },
                         onCellClick = { ccy ->
                             callbacks.onClickTransfer?.invoke(
                                 baseFilterForDrill.copy(
@@ -200,11 +200,12 @@ private fun CashFlowTable(
                                     currencies = setOf(ccy),
                                 )
                             )
-                        }
+                        },
+                        isSigned = true
                     )
                 )
             }
-            CashFlowDisplayMode.INFLOW_OUTFLOW -> {
+            AccountingPerspective.CASH_FLOW -> {
                 val inflowTypes = buildSet {
                     if (showIncome) add(TransactionType.INCOME)
                     if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
@@ -264,7 +265,9 @@ private fun CashFlowTable(
     val netColumn: TableColumn? = if (config.showNetColumn) {
         val netTotalInBase = columns.fold(BigDecimal.ZERO) { acc, c -> acc + c.totalInBase }
         TableColumn(
-            label = "NET", key = "net", color = accentColor,
+            label = if (config.perspective == AccountingPerspective.ACCOUNTING) "NET" else "NET FLOW",
+            key = "net",
+            color = accentColor,
             totalInBase = netTotalInBase,
             nativeOf = { item ->
                 columns.fold(BigDecimal.ZERO) { acc, c ->
@@ -279,7 +282,13 @@ private fun CashFlowTable(
                 }
             },
             isSigned = true,
-            onCellClick = null,
+            onCellClick = { ccy ->
+                if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                    callbacks.onClickNet?.invoke(config.filter.copy(currencies = setOf(ccy)))
+                } else {
+                    callbacks.onClickNetFlow?.invoke(config.filter.copy(currencies = setOf(ccy)))
+                }
+            },
         )
     } else null
 
@@ -506,32 +515,6 @@ private fun CashFlowSettingsSheet(
                     callbacks.onShowBaseConversionChange(config.cardId, it)
                 }
             )
-        }
-        CardSettingsSection("Layout") {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
-                    SegmentedButton(
-                        selected = config.displayMode == mode,
-                        onClick = { callbacks.onDisplayModeChange(config.cardId, mode) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = CashFlowDisplayMode.entries.size
-                        ),
-                        label = {
-                            Text(
-                                when (mode) {
-                                    CashFlowDisplayMode.TYPE_DISTINCTION -> "Type"
-                                    CashFlowDisplayMode.INFLOW_OUTFLOW -> "In / Out"
-                                }
-                            )
-                        }
-                    )
-                }
-            }
             AeonSettingsToggle(
                 label = "Show NET column",
                 checked = config.showNetColumn,
@@ -539,17 +522,15 @@ private fun CashFlowSettingsSheet(
                     callbacks.onShowNetColumnChange(config.cardId, it)
                 }
             )
-            if (config.displayMode == CashFlowDisplayMode.INFLOW_OUTFLOW) {
-                AeonSettingsToggle(
-                    label = "Exclude same-currency transfers",
-                    description = "Only used in Inflow / Outflow mode",
-                    checked = config.excludeSameCurrencyTransfers,
-                    onCheckedChange = {
-                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
-                    }
-                )
-            }
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = {
+                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            }
+        )
     }
 }
 
@@ -589,28 +570,38 @@ fun CashFlowCardAmoledPreview() {
 private fun CashFlowCardPreviewContent() {
     val sampleBreakdown = listOf(
         CashFlowBreakdownItem(
-            "USD",
-            BigDecimal("5000.00"),
-            BigDecimal("5000.00"),
-            BigDecimal("3500.00"),
-            BigDecimal("3500.00"),
-            BigDecimal.ZERO,
-            BigDecimal.ZERO
+            currency = "USD",
+            income = BigDecimal("5000.00"),
+            incomeInBase = BigDecimal("5000.00"),
+            expense = BigDecimal("-3500.00"),
+            expenseInBase = BigDecimal("-3500.00"),
+            transfer = BigDecimal("200.00"),
+            transferInBase = BigDecimal("200.00"),
+            transferIn = BigDecimal("400.00"),
+            transferInInBase = BigDecimal("400.00"),
+            transferOut = BigDecimal("-200.00"),
+            transferOutInBase = BigDecimal("-200.00")
         ),
         CashFlowBreakdownItem(
-            "EUR",
-            BigDecimal("1000.00"),
-            BigDecimal("1100.00"),
-            BigDecimal("800.00"),
-            BigDecimal("880.00"),
-            BigDecimal.ZERO,
-            BigDecimal.ZERO
+            currency = "EUR",
+            income = BigDecimal("1000.00"),
+            incomeInBase = BigDecimal("1100.00"),
+            expense = BigDecimal("-800.00"),
+            expenseInBase = BigDecimal("-880.00"),
+            transfer = BigDecimal("100.00"),
+            transferInBase = BigDecimal("110.00"),
+            transferIn = BigDecimal("200.00"),
+            transferInInBase = BigDecimal("220.00"),
+            transferOut = BigDecimal("-100.00"),
+            transferOutInBase = BigDecimal("-110.00")
         )
     )
     val result = CashFlowResult(
         totalIncomeInBase = BigDecimal("6100.00"),
-        totalExpensesInBase = BigDecimal("4380.00"),
-        totalTransfersInBase = BigDecimal.ZERO,
+        totalExpensesInBase = BigDecimal("-4380.00"),
+        totalTransfersInBase = BigDecimal("310.00"),
+        totalTransferInInBase = BigDecimal("620.00"),
+        totalTransferOutInBase = BigDecimal("-310.00"),
         netInBase = BigDecimal("1720.00"),
         breakdown = sampleBreakdown,
         filteredTransactions = emptyList()

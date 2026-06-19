@@ -53,6 +53,8 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -110,7 +112,8 @@ fun CategorySpendingTrendCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricToggleRow(
+            AeonMetricToggle(
+                perspective = config.perspective,
                 selectedMetric = config.selectedMetric,
                 onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
             )
@@ -286,28 +289,6 @@ private fun formatCurrency(amount: BigDecimal, currency: String): String {
     return if (amount.signum() > 0) "+$formatted" else formatted
 }
 
-@Composable
-private fun MetricToggleRow(
-    selectedMetric: ChartMetric,
-    onMetricChange: (ChartMetric) -> Unit
-) {
-    val options = ChartMetric.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, metric ->
-            SegmentedButton(
-                selected = selectedMetric == metric,
-                onClick = { onMetricChange(metric) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = {
-                    Text(
-                        text = metric.name,
-                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
-                    )
-                }
-            )
-        }
-    }
-}
 
 @Composable
 private fun NatureChip(nature: CategoryNature) {
@@ -349,6 +330,12 @@ private fun CategorySpendingSettingsSheet(
                 isFlush = true
             )
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = { callbacks.onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+        )
     }
 }
 

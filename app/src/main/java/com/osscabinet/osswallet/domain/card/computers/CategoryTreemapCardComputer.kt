@@ -33,8 +33,8 @@ class CategoryTreemapCardComputer :
         // Expand category IDs to include children using the pre-computed cache
         val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
 
-        // Resolve transaction types: we now always fetch both to support the in-card toggle.
-        val resolvedTypes = setOf(TransactionType.EXPENSE, TransactionType.INCOME)
+        // Resolve transaction types: include all types to support Transfers as categories
+        val resolvedTypes = TransactionType.entries.toSet()
 
         val finalFilter = mergedFilter.copy(
             categoryIds = expandedCategoryIds,
@@ -63,14 +63,17 @@ class CategoryTreemapCardComputer :
             allCategories = input.categories,
             exchangeRates = input.exchangeRates.rates,
             baseCurrency = input.targetCurrency,
-            previousTransactions = previousTx
+            previousTransactions = previousTx,
+            perspective = config.perspective
         )
 
         val incomeTotal = tree.sumOf { it.income }
         val expenseTotal = tree.sumOf { it.expense }
+        val transferTotal = tree.sumOf { it.transfer }
 
         val previousIncomeTotal = previousTx?.let { tree.sumOf { it.previousIncome ?: BigDecimal.ZERO } }
         val previousExpenseTotal = previousTx?.let { tree.sumOf { it.previousExpense ?: BigDecimal.ZERO } }
+        val previousTransferTotal = previousTx?.let { tree.sumOf { it.previousTransfer ?: BigDecimal.ZERO } }
         val previousTotal = previousTx?.let { tree.sumOf { it.previousNetBalance ?: BigDecimal.ZERO } }
 
         return CardRenderData.CategoryTreemap(
@@ -80,8 +83,10 @@ class CategoryTreemapCardComputer :
             previousTotal = previousTotal,
             incomeTotal = incomeTotal,
             expenseTotal = expenseTotal,
+            transferTotal = transferTotal,
             previousIncomeTotal = previousIncomeTotal,
-            previousExpenseTotal = previousExpenseTotal
+            previousExpenseTotal = previousExpenseTotal,
+            previousTransferTotal = previousTransferTotal
         )
     }
 }

@@ -27,7 +27,7 @@ sealed class CardCallbacks {
     data class NetWorth(
         val onFontSizeChange: (String, String) -> Unit = { _, _ -> },
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
-        val onDisplayModeChange: (String, com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode) -> Unit = { _, _ -> },
+        val onPerspectiveChange: (String, com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) -> Unit = { _, _ -> },
         val onExcludeSameCurrencyTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
@@ -35,6 +35,8 @@ sealed class CardCallbacks {
         val onClickTransfer: ((TransactionFilter) -> Unit)? = null,
         val onClickInflow: ((TransactionFilter) -> Unit)? = null,
         val onClickOutflow: ((TransactionFilter) -> Unit)? = null,
+        val onClickNet: ((TransactionFilter) -> Unit)? = null,
+        val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
@@ -59,7 +61,7 @@ sealed class CardCallbacks {
      */
     data class CashFlow(
         val onShowBaseConversionChange: (String, Boolean) -> Unit = { _, _ -> },
-        val onDisplayModeChange: (String, com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode) -> Unit = { _, _ -> },
+        val onPerspectiveChange: (String, com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) -> Unit = { _, _ -> },
         val onShowNetColumnChange: (String, Boolean) -> Unit = { _, _ -> },
         val onExcludeSameCurrencyTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
@@ -68,6 +70,8 @@ sealed class CardCallbacks {
         val onClickTransfer: ((TransactionFilter) -> Unit)? = null,
         val onClickInflow: ((TransactionFilter) -> Unit)? = null,
         val onClickOutflow: ((TransactionFilter) -> Unit)? = null,
+        val onClickNet: ((TransactionFilter) -> Unit)? = null,
+        val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
@@ -89,7 +93,7 @@ sealed class CardCallbacks {
     data class AccountHero(
         val onShowCurrencyBadgesChange: (String, Boolean) -> Unit = { _, _ -> },
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
-        val onDisplayModeChange: (String, com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode) -> Unit = { _, _ -> },
+        val onPerspectiveChange: (String, com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) -> Unit = { _, _ -> },
         val onExcludeSameCurrencyTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onClickIncome: ((TransactionFilter) -> Unit)? = null,
@@ -97,6 +101,8 @@ sealed class CardCallbacks {
         val onClickTransfer: ((TransactionFilter) -> Unit)? = null,
         val onClickInflow: ((TransactionFilter) -> Unit)? = null,
         val onClickOutflow: ((TransactionFilter) -> Unit)? = null,
+        val onClickNet: ((TransactionFilter) -> Unit)? = null,
+        val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onClickCurrency: ((String) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onClick: (() -> Unit)? = null,
@@ -110,7 +116,7 @@ sealed class CardCallbacks {
         val onGridColumnsChange: (String, Int) -> Unit = { _, _ -> },
         val onLayoutChange: (String, String) -> Unit = { _, _ -> },
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
-        val onDisplayModeChange: (String, com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode) -> Unit = { _, _ -> },
+        val onPerspectiveChange: (String, com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) -> Unit = { _, _ -> },
         val onExcludeSameCurrencyTransfersChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onShowAddAccountCardChange: (String, Boolean) -> Unit = { _, _ -> },
@@ -122,6 +128,8 @@ sealed class CardCallbacks {
         val onClickTransfer: ((TransactionFilter) -> Unit)? = null,
         val onClickInflow: ((TransactionFilter) -> Unit)? = null,
         val onClickOutflow: ((TransactionFilter) -> Unit)? = null,
+        val onClickNet: ((TransactionFilter) -> Unit)? = null,
+        val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
         val onDelete: () -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}

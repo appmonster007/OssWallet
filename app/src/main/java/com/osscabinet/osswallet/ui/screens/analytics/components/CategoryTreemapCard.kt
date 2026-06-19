@@ -58,6 +58,8 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -176,7 +178,8 @@ fun CategoryTreemapCard(
             )
         }
     ) {
-        MetricToggleRow(
+        AeonMetricToggle(
+            perspective = config.perspective,
             selectedMetric = config.selectedMetric,
             onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
         )
@@ -436,28 +439,6 @@ fun CategoryTreemapCard(
 
 }
 
-@Composable
-private fun MetricToggleRow(
-    selectedMetric: ChartMetric,
-    onMetricChange: (ChartMetric) -> Unit
-) {
-    val options = ChartMetric.entries
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, metric ->
-            SegmentedButton(
-                selected = selectedMetric == metric,
-                onClick = { onMetricChange(metric) },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = {
-                    Text(
-                        text = metric.name,
-                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
-                    )
-                }
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -502,6 +483,12 @@ private fun CategoryTreemapSettingsSheet(
                 onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
             )
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = { onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+        )
     }
 }
 

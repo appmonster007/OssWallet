@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
@@ -113,6 +114,7 @@ fun UnifiedCardRenderer(
                 ChartMetric.INCOME -> renderData.incomeTotal.abs()
                 ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
                 ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
+                ChartMetric.TRANSFER -> renderData.transferTotal.abs()
             }
 
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData? {
@@ -120,12 +122,14 @@ fun UnifiedCardRenderer(
                     ChartMetric.INCOME -> metric.income
                     ChartMetric.EXPENSE -> metric.expense
                     ChartMetric.NET -> metric.netBalance
+                    ChartMetric.TRANSFER -> metric.transfer
                 }
 
                 val prevAmount = when (selectedMetric) {
                     ChartMetric.INCOME -> metric.previousIncome
                     ChartMetric.EXPENSE -> metric.previousExpense
                     ChartMetric.NET -> metric.previousNetBalance
+                    ChartMetric.TRANSFER -> metric.previousTransfer
                 }
 
                 val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }
@@ -181,6 +185,7 @@ fun UnifiedCardRenderer(
                 ChartMetric.INCOME -> renderData.incomeTotal.abs()
                 ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
                 ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
+                ChartMetric.TRANSFER -> renderData.transferTotal.abs()
             }
 
             fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData? {
@@ -188,12 +193,14 @@ fun UnifiedCardRenderer(
                     ChartMetric.INCOME -> metric.income
                     ChartMetric.EXPENSE -> metric.expense
                     ChartMetric.NET -> metric.netBalance
+                    ChartMetric.TRANSFER -> metric.transfer
                 }
 
                 val prevAmount = when (selectedMetric) {
                     ChartMetric.INCOME -> metric.previousIncome
                     ChartMetric.EXPENSE -> metric.previousExpense
                     ChartMetric.NET -> metric.previousNetBalance
+                    ChartMetric.TRANSFER -> metric.previousTransfer
                 }
 
                 val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }

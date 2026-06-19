@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
@@ -63,6 +64,8 @@ class TagUpSetPlotCardComputer(
         val tagMetrics = listOf(
             StandardMetrics.INCOME_SUM,
             StandardMetrics.EXPENSE_SUM,
+            StandardMetrics.TRANSFER_IN_SUM,
+            StandardMetrics.TRANSFER_OUT_SUM,
             StandardMetrics.COUNT
         )
 
@@ -76,47 +79,60 @@ class TagUpSetPlotCardComputer(
         val tagTotals =
             individualTagData.groupBy { it.dimensions[AggregationDimension.TAGS] ?: "unspecified" }
                 .mapValues { (_, rows) ->
-                    var incomeTotal = BigDecimal.ZERO
-                    var expenseTotal = BigDecimal.ZERO
+                    var val1Total = BigDecimal.ZERO // Income or Inflow
+                    var val2Total = BigDecimal.ZERO // Expense or Outflow
                     var countTotal = 0
 
                     rows.forEach { row ->
                         val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
                         val inc = row.metrics["income"] ?: BigDecimal.ZERO
                         val exp = row.metrics["expense"] ?: BigDecimal.ZERO
-                        incomeTotal += CurrencyService.convertAmount(
-                            inc,
-                            currency,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        )
-                        expenseTotal += CurrencyService.convertAmount(
-                            exp,
-                            currency,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        )
+                        val trIn = row.metrics["transferIn"] ?: BigDecimal.ZERO
+                        val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
+
+                        val (v1, v2) = when (config.perspective) {
+                            AccountingPerspective.ACCOUNTING -> {
+                                if (config.selectedMetric == ChartMetric.TRANSFER) {
+                                    trIn to trOut
+                                } else {
+                                    inc to exp
+                                }
+                            }
+                            AccountingPerspective.CASH_FLOW -> {
+                                inc.add(trIn) to exp.add(trOut)
+                            }
+                        }
+
+                        val1Total += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
+                        val2Total += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
                         countTotal += row.count
                     }
 
-                    val incomeByCurrency = rows.associate {
-                        (it.dimensions[AggregationDimension.CURRENCY]
-                            ?: baseCurrency) to (it.metrics["income"] ?: BigDecimal.ZERO)
-                    }.filterValues { it.signum() != 0 }
-
-                    val expenseByCurrency = rows.associate {
-                        (it.dimensions[AggregationDimension.CURRENCY]
-                            ?: baseCurrency) to (it.metrics["expense"] ?: BigDecimal.ZERO)
-                    }.filterValues { it.signum() != 0 }
+                    val (incByCurr, expByCurr) = rows.associate {
+                        val currency = it.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
+                        val inc = it.metrics["income"] ?: BigDecimal.ZERO
+                        val exp = it.metrics["expense"] ?: BigDecimal.ZERO
+                        val trIn = it.metrics["transferIn"] ?: BigDecimal.ZERO
+                        val trOut = it.metrics["transferOut"] ?: BigDecimal.ZERO
+                        
+                        val (v1, v2) = when (config.perspective) {
+                            AccountingPerspective.ACCOUNTING -> {
+                                if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
+                            }
+                            AccountingPerspective.CASH_FLOW -> inc.add(trIn) to exp.add(trOut)
+                        }
+                        currency to (v1 to v2)
+                    }.let { map ->
+                        map.mapValues { it.value.first }.filterValues { it.signum() != 0 } to
+                        map.mapValues { it.value.second }.filterValues { it.signum() != 0 }
+                    }
 
                     IndividualTagStats(
-                        incomeTotal,
-                        expenseTotal,
+                        val1Total,
+                        val2Total,
                         countTotal,
-                        incomeByCurrency,
-                        expenseByCurrency
+                        incByCurr,
+                        expByCurr
                     )
                 }
                 .filter { it.key != "unspecified" }
@@ -127,6 +143,7 @@ class TagUpSetPlotCardComputer(
                             ChartMetric.INCOME -> p.second.income
                             ChartMetric.EXPENSE -> p.second.expense
                             ChartMetric.NET -> p.second.income.add(p.second.expense)
+                            ChartMetric.TRANSFER -> p.second.income.add(p.second.expense) // In Accounting perspective, transfer metric uses income/expense fields for legs
                         }
                     }
                     when (config.tagSortMode) {
@@ -158,43 +175,41 @@ class TagUpSetPlotCardComputer(
                     val tags = tagSetString.split(",").filter { it.isNotEmpty() }.toSet()
                     val filteredTags = tags.intersect(topTags)
 
-                    var incomeTotal = BigDecimal.ZERO
-                    var expenseTotal = BigDecimal.ZERO
-                    val incByCurr = mutableMapOf<String, BigDecimal>()
-                    val expByCurr = mutableMapOf<String, BigDecimal>()
+                    var val1Total = BigDecimal.ZERO
+                    var val2Total = BigDecimal.ZERO
+                    val val1ByCurr = mutableMapOf<String, BigDecimal>()
+                    val val2ByCurr = mutableMapOf<String, BigDecimal>()
 
                     rows.forEach { row ->
                         val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
                         val inc = row.metrics["income"] ?: BigDecimal.ZERO
                         val exp = row.metrics["expense"] ?: BigDecimal.ZERO
-                        incomeTotal += CurrencyService.convertAmount(
-                            inc,
-                            currency,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        )
-                        expenseTotal += CurrencyService.convertAmount(
-                            exp,
-                            currency,
-                            baseCurrency,
-                            exchangeRates,
-                            10
-                        )
+                        val trIn = row.metrics["transferIn"] ?: BigDecimal.ZERO
+                        val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
 
-                        incByCurr[currency] = (incByCurr[currency] ?: BigDecimal.ZERO) + inc
-                        expByCurr[currency] = (expByCurr[currency] ?: BigDecimal.ZERO) + exp
+                        val (v1, v2) = when (config.perspective) {
+                            AccountingPerspective.ACCOUNTING -> {
+                                if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
+                            }
+                            AccountingPerspective.CASH_FLOW -> inc.add(trIn) to exp.add(trOut)
+                        }
+
+                        val1Total += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
+                        val2Total += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
+
+                        val1ByCurr[currency] = (val1ByCurr[currency] ?: BigDecimal.ZERO) + v1
+                        val2ByCurr[currency] = (val2ByCurr[currency] ?: BigDecimal.ZERO) + v2
                     }
 
                     val count = rows.sumOf { it.count }
 
                     TagUpSetIntersectionResult(
                         tags = filteredTags,
-                        income = incomeTotal,
-                        expense = expenseTotal,
-                        incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
-                        expenseByCurrency = expByCurr.filterValues { it.signum() != 0 },
-                        net = incomeTotal.add(expenseTotal),
+                        income = val1Total,
+                        expense = val2Total,
+                        incomeByCurrency = val1ByCurr.filterValues { it.signum() != 0 },
+                        expenseByCurrency = val2ByCurr.filterValues { it.signum() != 0 },
+                        net = val1Total.add(val2Total),
                         transactionCount = count
                     )
                 }
@@ -219,6 +234,7 @@ class TagUpSetPlotCardComputer(
                         ChartMetric.INCOME -> inc
                         ChartMetric.EXPENSE -> exp
                         ChartMetric.NET -> inc.add(exp)
+                        ChartMetric.TRANSFER -> inc.add(exp)
                     }
 
                     TagUpSetIntersection(
@@ -245,6 +261,7 @@ class TagUpSetPlotCardComputer(
                 ChartMetric.INCOME -> stats.income
                 ChartMetric.EXPENSE -> stats.expense
                 ChartMetric.NET -> stats.income.add(stats.expense)
+                ChartMetric.TRANSFER -> stats.income.add(stats.expense)
             }
             TagUpSetSet(
                 tagName = tag,

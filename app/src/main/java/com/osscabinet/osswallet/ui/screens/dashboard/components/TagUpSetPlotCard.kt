@@ -56,6 +56,10 @@ import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -118,11 +122,12 @@ fun TagUpSetPlotCard(
         }
     ) {
         val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
-            val getMetricValue = { s: TagUpSetSet ->
+            val getMetricValue: (TagUpSetSet) -> BigDecimal = { s ->
                 when (selectedMetric) {
                     ChartMetric.INCOME -> s.income
                     ChartMetric.EXPENSE -> s.expense
-                    ChartMetric.NET -> s.income.add(s.expense)
+                    ChartMetric.NET,
+                    ChartMetric.TRANSFER -> s.income.add(s.expense)
                 }
             }
 
@@ -163,7 +168,8 @@ fun TagUpSetPlotCard(
                     val amount = when (selectedMetric) {
                         ChartMetric.INCOME -> intersection.income
                         ChartMetric.EXPENSE -> intersection.expense
-                        ChartMetric.NET -> intersection.income.add(intersection.expense)
+                        ChartMetric.NET,
+                        ChartMetric.TRANSFER -> intersection.income.add(intersection.expense)
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,
@@ -195,6 +201,7 @@ fun TagUpSetPlotCard(
                     dynamicFilteringMode = config.dynamicFilteringMode,
                     topStartContent = {
                         CompactMetricSelector(
+                            perspective = config.perspective,
                             selectedMetric = selectedMetric,
                             onMetricChange = { metric ->
                                 selectedMetric = metric
@@ -306,17 +313,21 @@ fun TagUpSetPlotCard(
 
 @Composable
 private fun CompactMetricSelector(
+    perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val labels: Map<ChartMetric, String> = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+    val options = ChartMetric.entries.filter { it in labels }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy((-1).dp) // Overlap borders for continuous look
     ) {
-        val options = ChartMetric.entries
         options.forEachIndexed { index, metric ->
             val isSelected = selectedMetric == metric
+            val label = labels[metric] ?: metric.name
             val shape = when (index) {
                 0 -> RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                 options.size - 1 -> RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)
@@ -337,7 +348,7 @@ private fun CompactMetricSelector(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = metric.name,
+                        text = label,
                         style = AppTextStyles.caption.copy(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,

@@ -22,6 +22,7 @@ data class CashFlowTimePoint(
     val epochMillis: Long,
     val income: BigDecimal,
     val expense: BigDecimal,
+    val transfer: BigDecimal,
     val net: BigDecimal,
     val bucketEnd: Long = 0L
 )
@@ -85,8 +86,10 @@ sealed class CardRenderData {
         val previousTotal: BigDecimal? = null,
         val incomeTotal: BigDecimal = BigDecimal.ZERO,
         val expenseTotal: BigDecimal = BigDecimal.ZERO,
+        val transferTotal: BigDecimal = BigDecimal.ZERO,
         val previousIncomeTotal: BigDecimal? = null,
-        val previousExpenseTotal: BigDecimal? = null
+        val previousExpenseTotal: BigDecimal? = null,
+        val previousTransferTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class CategoryTreemap(
@@ -96,8 +99,10 @@ sealed class CardRenderData {
         val previousTotal: BigDecimal? = null,
         val incomeTotal: BigDecimal = BigDecimal.ZERO,
         val expenseTotal: BigDecimal = BigDecimal.ZERO,
+        val transferTotal: BigDecimal = BigDecimal.ZERO,
         val previousIncomeTotal: BigDecimal? = null,
-        val previousExpenseTotal: BigDecimal? = null
+        val previousExpenseTotal: BigDecimal? = null,
+        val previousTransferTotal: BigDecimal? = null
     ) : CardRenderData()
 
     data class PlannedPayments(

@@ -154,6 +154,10 @@ object CurrencyService {
             income = convertAmount(summary.income, fromCurrency, toCurrency, exchangeRates, precision),
             expense = convertAmount(summary.expense, fromCurrency, toCurrency, exchangeRates, precision),
             transfer = convertAmount(summary.transfer, fromCurrency, toCurrency, exchangeRates, precision),
+            transferIn = convertAmount(summary.transferIn, fromCurrency, toCurrency, exchangeRates, precision),
+            transferOut = convertAmount(summary.transferOut, fromCurrency, toCurrency, exchangeRates, precision),
+            crossCcyTransferIn = convertAmount(summary.crossCcyTransferIn, fromCurrency, toCurrency, exchangeRates, precision),
+            crossCcyTransferOut = convertAmount(summary.crossCcyTransferOut, fromCurrency, toCurrency, exchangeRates, precision),
             transactionCount = summary.transactionCount
         )
     }
@@ -173,6 +177,10 @@ object CurrencyService {
                 income = acc.income + summary.income,
                 expense = acc.expense + summary.expense,
                 transfer = acc.transfer + summary.transfer,
+                transferIn = acc.transferIn + summary.transferIn,
+                transferOut = acc.transferOut + summary.transferOut,
+                crossCcyTransferIn = acc.crossCcyTransferIn + summary.crossCcyTransferIn,
+                crossCcyTransferOut = acc.crossCcyTransferOut + summary.crossCcyTransferOut,
                 transactionCount = acc.transactionCount + summary.transactionCount
             )
         }

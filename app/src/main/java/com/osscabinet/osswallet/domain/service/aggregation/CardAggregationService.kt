@@ -44,7 +44,7 @@ object CardAggregationService {
             exchangeRates = input.exchangeRates
         )
 
-        val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter)
+        val cashFlow = computeCashFlowResult(queryService, profileId, input, currentFilter).toPerspective(config.perspective)
         val currentPeriodMetrics = NetWorthMetrics(netWorth, cashFlow)
 
         val previousPeriodMetrics: NetWorthMetrics? = if (config.showComparison) {
@@ -63,7 +63,7 @@ object CardAggregationService {
                     targetCurrency = input.targetCurrency,
                     exchangeRates = input.exchangeRates
                 )
-                val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter)
+                val prevCashFlow = computeCashFlowResult(queryService, profileId, input, prevFilter).toPerspective(config.perspective)
                 NetWorthMetrics(prevNetWorth, prevCashFlow)
             } else null
         } else null
@@ -86,7 +86,7 @@ object CardAggregationService {
         val mergedFilter = rawFilter.copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val result = computeCashFlowResult(queryService, profileId, input, mergedFilter)
+        val result = computeCashFlowResult(queryService, profileId, input, mergedFilter).toPerspective(config.perspective)
 
         return CardRenderData.CashFlow(
             config = config,
@@ -211,6 +211,7 @@ object CardAggregationService {
         )
 
         val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter)
+            .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
 
         val accountSummaries = if (config.showComparison) {
             val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
@@ -219,6 +220,7 @@ object CardAggregationService {
                     timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                 )
                 val previousPeriodAccountStats = computeAccountStats(queryService, profileId, input, prevFilter)
+                    .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
                 currentPeriodAccountStats.mapValues { (id, summary) ->
                     summary.copy(previousPeriodFlow = previousPeriodAccountStats[id]?.currentPeriodFlow)
                 }
@@ -376,8 +378,8 @@ object CardAggregationService {
                 exchangeRates = input.exchangeRates,
                 precision = 10
             ),
-            currentPeriodFlow = currentFlow,
-            previousPeriodFlow = previousFlow
+            currentPeriodFlow = currentFlow.toPerspective(config.perspective),
+            previousPeriodFlow = previousFlow?.toPerspective(config.perspective)
         )
 
         return CardRenderData.AccountHero(

@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -195,46 +196,20 @@ private fun AccountsSettingsSheet(
                 onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
                 isFlush = true
             )
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.entries.forEachIndexed { index, mode ->
-                    SegmentedButton(
-                        selected = config.displayMode == mode,
-                        onClick = { callbacks.onDisplayModeChange(config.cardId, mode) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.entries.size
-                        ),
-                        label = {
-                            Text(
-                                when (mode) {
-                                    com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION -> "Type"
-                                    com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW -> "In / Out"
-                                }
-                            )
-                        }
-                    )
-                }
-            }
-            if (config.displayMode == com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.INFLOW_OUTFLOW) {
-                AeonSettingsToggle(
-                    label = "Exclude same-currency transfers",
-                    description = "Only used in Inflow / Outflow mode",
-                    checked = config.excludeSameCurrencyTransfers,
-                    onCheckedChange = {
-                        callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
-                    }
-                )
-            }
             AeonSettingsToggle(
                 label = "Show add account card",
                 checked = config.showAddAccountCard,
                 onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) }
             )
         }
+        CardPerspectiveSettings(
+            perspective = config.perspective,
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+            onExcludeSameCurrencyTransfersChange = {
+                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            }
+        )
         OutlinedButton(
             onClick = { callbacks.onManageClick(); onDismiss() },
             modifier = Modifier.fillMaxWidth(),
@@ -267,7 +242,7 @@ private fun FlowRowScope.AccountItemWrapper(
         accountSummaries = accountSummaries,
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
-        displayMode = config.displayMode,
+        perspective = config.perspective,
         excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
@@ -291,7 +266,7 @@ private fun AccountItemWrapper(
         accountSummaries = accountSummaries,
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
-        displayMode = config.displayMode,
+        perspective = config.perspective,
         excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
@@ -306,7 +281,7 @@ private fun AccountItemContent(
     accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
     gridColumns: Int,
-    displayMode: com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode = com.osscabinet.ossWallet.domain.model.settings.CashFlowDisplayMode.TYPE_DISTINCTION,
+    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING,
     excludeSameCurrencyTransfers: Boolean = false,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
@@ -319,7 +294,7 @@ private fun AccountItemContent(
         1 -> AeonAccountCardLarge(
             summary = stats,
             baseCurrency = baseCurrency,
-            displayMode = displayMode,
+            perspective = perspective,
             excludeSameCurrencyTransfers = excludeSameCurrencyTransfers,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
@@ -360,6 +335,20 @@ private fun AccountItemContent(
                     filter.copy(
                         accountIds = setOf(account.id),
                         transactionTypes = TransactionType.TRANSFER_TYPES
+                    )
+                )
+            },
+            onClickNet = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = setOf(account.id)
+                    )
+                )
+            },
+            onClickNetFlow = {
+                onRecordsClick?.invoke(
+                    filter.copy(
+                        accountIds = setOf(account.id)
                     )
                 )
             }

@@ -33,8 +33,8 @@ data class FinancialSummary(
      */
     fun toPerspective(perspective: AccountingPerspective): FinancialSummary {
         return when (perspective) {
-            AccountingPerspective.ACCOUNTING -> this
-            AccountingPerspective.CASH_FLOW -> this.copy(
+            AccountingPerspective.Accounting -> this
+            is AccountingPerspective.CashFlow -> this.copy(
                 income = income.add(transferIn),
                 expense = expense.add(transferOut),
                 transfer = BigDecimal.ZERO // Transfers are absorbed into inflow/outflow

@@ -318,7 +318,7 @@ private fun CompactMetricSelector(
     onMetricChange: (ChartMetric) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val labels: Map<ChartMetric, String> = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+    val labels: Map<ChartMetric, String> = AccountingPerspective.labelsFor(perspective)
     val options = ChartMetric.entries.filter { it in labels }
 
     Column(
@@ -508,9 +508,7 @@ private fun TagUpSetSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) }
         )
         CardSettingsSection("Sorting") {
             Row(

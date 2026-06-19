@@ -509,8 +509,8 @@ private fun TagUpSetSettingsSheet(
         CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = { onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
         )
         CardSettingsSection("Sorting") {
             Row(

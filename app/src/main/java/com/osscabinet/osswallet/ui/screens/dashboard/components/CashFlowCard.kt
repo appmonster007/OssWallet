@@ -138,23 +138,12 @@ private fun CashFlowTable(
     val showIncome = types.isEmpty() || TransactionType.INCOME in types
     val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
     val showTransfer = types.isEmpty() || types.any { it.isTransfer }
-    val excludeSameCcy = config.excludeSameCurrencyTransfers
-
-    // Pick transfer source: cross-ccy-only when toggle is on, gross otherwise.
-    fun txIn(item: CashFlowBreakdownItem) = if (excludeSameCcy) item.crossCcyTransferIn else item.transferIn
-    fun txInBase(item: CashFlowBreakdownItem) = if (excludeSameCcy) item.crossCcyTransferInInBase else item.transferInInBase
-    fun txOut(item: CashFlowBreakdownItem) = if (excludeSameCcy) item.crossCcyTransferOut else item.transferOut
-    fun txOutBase(item: CashFlowBreakdownItem) = if (excludeSameCcy) item.crossCcyTransferOutInBase else item.transferOutInBase
-
-    val totalTxInBase = if (excludeSameCcy) result.totalCrossCcyTransferInInBase else result.totalTransferInInBase
-    val totalTxOutBase = if (excludeSameCcy) result.totalCrossCcyTransferOutInBase else result.totalTransferOutInBase
-
     val baseFilterForDrill = config.filter
     val positiveColor = AppColors.positive
     val negativeColor = AppColors.negative
     val accentColor = AppColors.accent
 
-    val columns: List<TableColumn> = remember(config, types, excludeSameCcy, result, positiveColor, negativeColor, accentColor) {
+    val columns: List<TableColumn> = remember(config, types, result, positiveColor, negativeColor, accentColor) {
         when (config.perspective) {
             AccountingPerspective.ACCOUNTING -> buildList {
                 if (showIncome) add(
@@ -190,9 +179,9 @@ private fun CashFlowTable(
                 if (showTransfer) add(
                     TableColumn(
                         label = "TRANSFER", key = "trf", color = accentColor,
-                        totalInBase = if (excludeSameCcy) result.totalNetCrossCcyTransferInBase else result.totalNetTransferInBase,
-                        nativeOf = { if (excludeSameCcy) it.netCrossCcyTransfer else it.netTransfer },
-                        baseOf = { if (excludeSameCcy) it.netCrossCcyTransferInBase else it.netTransferInBase },
+                        totalInBase = result.totalNetTransferInBase,
+                        nativeOf = { it.netTransfer },
+                        baseOf = { it.netTransferInBase },
                         onCellClick = { ccy ->
                             callbacks.onClickTransfer?.invoke(
                                 baseFilterForDrill.copy(
@@ -218,14 +207,14 @@ private fun CashFlowTable(
                     TableColumn(
                         label = "INFLOW", key = "in", color = positiveColor,
                         totalInBase = (if (showIncome) result.totalIncomeInBase else BigDecimal.ZERO) +
-                                (if (showTransfer) totalTxInBase else BigDecimal.ZERO),
+                                (if (showTransfer) result.totalTransferInInBase else BigDecimal.ZERO),
                         nativeOf = {
                             (if (showIncome) it.income else BigDecimal.ZERO) +
-                                    (if (showTransfer) txIn(it) else BigDecimal.ZERO)
+                                    (if (showTransfer) it.transferIn else BigDecimal.ZERO)
                         },
                         baseOf = {
                             (if (showIncome) it.incomeInBase else BigDecimal.ZERO) +
-                                    (if (showTransfer) txInBase(it) else BigDecimal.ZERO)
+                                    (if (showTransfer) it.transferInInBase else BigDecimal.ZERO)
                         },
                         onCellClick = { ccy ->
                             callbacks.onClickInflow?.invoke(
@@ -239,14 +228,14 @@ private fun CashFlowTable(
                     TableColumn(
                         label = "OUTFLOW", key = "out", color = negativeColor,
                         totalInBase = (if (showExpense) result.totalExpensesInBase else BigDecimal.ZERO) +
-                                (if (showTransfer) totalTxOutBase else BigDecimal.ZERO),
+                                (if (showTransfer) result.totalTransferOutInBase else BigDecimal.ZERO),
                         nativeOf = {
                             (if (showExpense) it.expense else BigDecimal.ZERO) +
-                                    (if (showTransfer) txOut(it) else BigDecimal.ZERO)
+                                    (if (showTransfer) it.transferOut else BigDecimal.ZERO)
                         },
                         baseOf = {
                             (if (showExpense) it.expenseInBase else BigDecimal.ZERO) +
-                                    (if (showTransfer) txOutBase(it) else BigDecimal.ZERO)
+                                    (if (showTransfer) it.transferOutInBase else BigDecimal.ZERO)
                         },
                         onCellClick = { ccy ->
                             callbacks.onClickOutflow?.invoke(
@@ -526,9 +515,9 @@ private fun CashFlowSettingsSheet(
         CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = {
-                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
             }
         )
     }

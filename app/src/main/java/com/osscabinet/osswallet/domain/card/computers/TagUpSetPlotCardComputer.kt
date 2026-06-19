@@ -54,7 +54,8 @@ class TagUpSetPlotCardComputer(
             input.screenOwnsTimeline
         )
         val mergedFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
         val profileId = input.profileId
         val baseCurrency = input.targetCurrency

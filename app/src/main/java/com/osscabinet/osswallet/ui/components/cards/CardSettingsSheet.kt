@@ -156,8 +156,8 @@ private fun SheetBody(
 fun CardPerspectiveSettings(
     perspective: AccountingPerspective,
     onPerspectiveChange: (AccountingPerspective) -> Unit,
-    excludeSameCurrencyTransfers: Boolean? = null,
-    onExcludeSameCurrencyTransfersChange: ((Boolean) -> Unit)? = null
+    excludeInternalTransfers: Boolean? = null,
+    onExcludeInternalTransfersChange: ((Boolean) -> Unit)? = null
 ) {
     CardSettingsSection("Perspective") {
         SingleChoiceSegmentedButtonRow(
@@ -179,12 +179,12 @@ fun CardPerspectiveSettings(
                 )
             }
         }
-        if (perspective == AccountingPerspective.CASH_FLOW && excludeSameCurrencyTransfers != null) {
+        if (excludeInternalTransfers != null) {
             com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
-                label = "Exclude same-currency transfers",
-                description = "Ignore internal movements that don't change liquidity",
-                checked = excludeSameCurrencyTransfers,
-                onCheckedChange = onExcludeSameCurrencyTransfersChange ?: {}
+                label = "Exclude internal transfers",
+                description = "Hides transfers between accounts within the selected scope",
+                checked = excludeInternalTransfers,
+                onCheckedChange = onExcludeInternalTransfersChange ?: {}
             )
         }
     }
@@ -272,8 +272,8 @@ fun CardSettingsSheetPreview() {
                 CardPerspectiveSettings(
                     perspective = AccountingPerspective.ACCOUNTING,
                     onPerspectiveChange = {},
-                    excludeSameCurrencyTransfers = true,
-                    onExcludeSameCurrencyTransfersChange = {}
+                    excludeInternalTransfers = true,
+                    onExcludeInternalTransfersChange = {}
                 )
             }
         }

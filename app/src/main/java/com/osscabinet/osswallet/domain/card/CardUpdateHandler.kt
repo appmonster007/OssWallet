@@ -55,22 +55,22 @@ interface CardUpdateHandler {
     }
 
     /**
-     * Updates the same-currency transfer exclusion for any card that supports it.
+     * Updates the internal transfer exclusion for any card that supports it.
      */
-    fun updateCardExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+    fun updateCardExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
                 when (config) {
-                    is NetWorthCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is CashFlowCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is AccountsCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is AccountHeroCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is CategoryPieChartCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is CategoryTreemapCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is CashFlowComparisonCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is IncomeExpenseBarCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is CategorySpendingTrendCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
-                    is TagUpSetPlotCardConfig -> config.copy(excludeSameCurrencyTransfers = exclude)
+                    is NetWorthCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CashFlowCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is AccountsCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is AccountHeroCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategoryPieChartCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategoryTreemapCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CashFlowComparisonCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is IncomeExpenseBarCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategorySpendingTrendCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is TagUpSetPlotCardConfig -> config.copy(excludeInternalTransfers = exclude)
                     else -> config
                 }
             }
@@ -94,10 +94,10 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardNetWorthExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+    fun updateCardNetWorthExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+                if (config is NetWorthCardConfig) config.copy(excludeInternalTransfers = exclude) else config
             }
         }
     }
@@ -168,10 +168,10 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardCashFlowExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+    fun updateCardCashFlowExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is CashFlowCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+                if (config is CashFlowCardConfig) config.copy(excludeInternalTransfers = exclude) else config
             }
         }
     }
@@ -201,10 +201,10 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardAccountsExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+    fun updateCardAccountsExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountsCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+                if (config is AccountsCardConfig) config.copy(excludeInternalTransfers = exclude) else config
             }
         }
     }
@@ -226,10 +226,10 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardHeroExcludeSameCurrencyTransfers(cardId: String, exclude: Boolean) {
+    fun updateCardHeroExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountHeroCardConfig) config.copy(excludeSameCurrencyTransfers = exclude) else config
+                if (config is AccountHeroCardConfig) config.copy(excludeInternalTransfers = exclude) else config
             }
         }
     }

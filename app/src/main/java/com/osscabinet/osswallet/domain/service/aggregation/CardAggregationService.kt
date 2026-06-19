@@ -30,7 +30,7 @@ object CardAggregationService {
         val currentFilter = rawFilter.copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
 
         // For absolute balances, we need cumulative totals up to the end of the period.
         // excludeInternalTransfers is never applied to balance queries — balance reflects all transactions.
@@ -88,7 +88,7 @@ object CardAggregationService {
         val mergedFilter = rawFilter.copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val result = computeCashFlowResult(queryService, profileId, input, mergedFilter, excludeInternal).toPerspective(config.perspective)
 
         return CardRenderData.CashFlow(
@@ -213,7 +213,7 @@ object CardAggregationService {
         val currentFilter = rawFilter.copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
 
         val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter, excludeInternal)
             .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
@@ -314,7 +314,7 @@ object CardAggregationService {
 
         // Period summary
         val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         
         // Lifetime balance (base scope) - Always show the true account balance.
         val baseFilter = TransactionFilter(

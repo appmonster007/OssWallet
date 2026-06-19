@@ -412,7 +412,9 @@ private fun AccountHeroSettingsSheet(
         }
         com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) }
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { callbacks.onExcludeInternalTransfersChange(config.cardId, it) }
         )
     }
 }

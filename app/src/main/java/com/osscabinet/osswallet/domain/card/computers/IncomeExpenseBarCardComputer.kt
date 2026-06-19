@@ -47,7 +47,7 @@ class IncomeExpenseBarCardComputer(
         val mergedFilter = withCategories.copy(
             accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
             mergedFilter.timelineRange,
             input.transactions

@@ -176,7 +176,7 @@ fun AccountHeroCard(
                     ),
                     color = contentColor,
                     modifier = Modifier.clickable {
-                        if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                        if (config.perspective is AccountingPerspective.Accounting) {
                             callbacks.onClickNet?.invoke(config.filter)
                         } else {
                             callbacks.onClickNetFlow?.invoke(config.filter)
@@ -213,7 +213,7 @@ fun AccountHeroCard(
                 val prevFlow = summary.previousPeriodFlow
 
                 when (config.perspective) {
-                    AccountingPerspective.ACCOUNTING -> {
+                    AccountingPerspective.Accounting -> {
                         if (showIncome) {
                             FlowSummaryItem(
                                 label = "INCOME",
@@ -275,7 +275,7 @@ fun AccountHeroCard(
                         }
                     }
 
-                    AccountingPerspective.CASH_FLOW -> {
+                    is AccountingPerspective.CashFlow -> {
                         val prevInflow = prevFlow?.let { (it.income) + it.transferIn }
                         val prevOutflow = prevFlow?.let { (it.expense) + it.transferOut }
 
@@ -412,11 +412,7 @@ private fun AccountHeroSettingsSheet(
         }
         com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
-            }
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) }
         )
     }
 }

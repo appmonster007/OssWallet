@@ -208,8 +208,7 @@ fun AeonAccountCardMedium(
 fun AeonAccountCardLarge(
     summary: AccountSummaryItem,
     baseCurrency: String,
-    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING,
-    excludeInternalTransfers: Boolean = true,
+    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardNumber: String? = null,
@@ -288,7 +287,7 @@ fun AeonAccountCardLarge(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (perspective == com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING) {
+                        if (perspective is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting) {
                             onClickNet?.invoke()
                         } else {
                             onClickNetFlow?.invoke()
@@ -316,7 +315,7 @@ fun AeonAccountCardLarge(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 when (perspective) {
-                        com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING -> {
+                    is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting -> {
                             AccountFlowReadout(
                                 label = "INC",
                                 amount = flow.income,
@@ -349,7 +348,7 @@ fun AeonAccountCardLarge(
                             )
                         }
 
-                        com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CASH_FLOW -> {
+                    is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow -> {
                             val prevInflow = prevFlow?.let { it.income + it.transferIn }
                             val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
 

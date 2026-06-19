@@ -7,9 +7,22 @@ import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.JsonClassDiscriminator
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardType
@@ -128,8 +141,7 @@ data class NetWorthCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)),
     val profileId: Int? = null
 ) : CardConfig() {
@@ -173,9 +185,8 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val showNetColumn: Boolean = true,
-    val excludeInternalTransfers: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASH_FLOW
@@ -197,8 +208,7 @@ data class AccountsCardConfig(
     val gridColumns: Int = 2,
     val showAddAccountCard: Boolean = true,
     val showComparison: Boolean = true,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNTS
@@ -217,8 +227,7 @@ data class CategoryPieChartCardConfig(
     override val order: Int = 5,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -243,8 +252,7 @@ data class CategoryTreemapCardConfig(
     override val order: Int = 7,
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -270,8 +278,7 @@ data class AccountHeroCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ACCOUNT_DETAIL,
     val showCurrencyBadges: Boolean = true,
     val showComparison: Boolean = true,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
@@ -387,28 +394,70 @@ data class RecentActivitiesCardConfig(
 @Serializable
 enum class ChartMetric { NET, INCOME, EXPENSE, TRANSFER }
 
+object AccountingPerspectiveSerializer : KSerializer<AccountingPerspective> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AccountingPerspective")
+
+    override fun serialize(encoder: Encoder, value: AccountingPerspective) {
+        val jsonEncoder = encoder as? JsonEncoder
+            ?: throw SerializationException("AccountingPerspective requires JSON encoding")
+        val element = when (value) {
+            is AccountingPerspective.Accounting -> buildJsonObject { put("type", JsonPrimitive("ACCOUNTING")) }
+            is AccountingPerspective.CashFlow -> buildJsonObject {
+                put("type", JsonPrimitive("CASH_FLOW"))
+                put("excludeInternalTransfers", JsonPrimitive(value.excludeInternalTransfers))
+            }
+        }
+        jsonEncoder.encodeJsonElement(element)
+    }
+
+    override fun deserialize(decoder: Decoder): AccountingPerspective {
+        val jsonDecoder = decoder as? JsonDecoder
+            ?: throw SerializationException("AccountingPerspective requires JSON decoding")
+        val element = jsonDecoder.decodeJsonElement()
+        return when {
+            element is JsonPrimitive && element.isString -> when (element.content) {
+                "ACCOUNTING" -> AccountingPerspective.Accounting
+                "CASH_FLOW" -> AccountingPerspective.CashFlow()
+                else -> throw SerializationException("Unknown AccountingPerspective: ${element.content}")
+            }
+            element is JsonObject -> when (element["type"]?.jsonPrimitive?.content) {
+                "ACCOUNTING" -> AccountingPerspective.Accounting
+                "CASH_FLOW" -> AccountingPerspective.CashFlow(
+                    excludeInternalTransfers = element["excludeInternalTransfers"]?.jsonPrimitive?.boolean ?: true
+                )
+                else -> throw SerializationException("Unknown AccountingPerspective type in: $element")
+            }
+            else -> throw SerializationException("Cannot deserialize AccountingPerspective from: $element")
+        }
+    }
+}
+
 /**
  * Defines the perspective used for financial calculations and display.
+ * CashFlow carries excludeInternalTransfers so the invalid state
+ * (exclude = true while in Accounting mode) is unrepresentable.
  */
-@Serializable
-enum class AccountingPerspective {
-    ACCOUNTING, // Focus on classification (Income, Expense, Transfer)
-    CASH_FLOW;  // Focus on directional movement (Inflow, Outflow)
+@Serializable(with = AccountingPerspectiveSerializer::class)
+sealed class AccountingPerspective {
+    data object Accounting : AccountingPerspective()
+    data class CashFlow(val excludeInternalTransfers: Boolean = true) : AccountingPerspective()
 
     companion object {
-        val LABELS: Map<AccountingPerspective, Map<ChartMetric, String>> = mapOf(
-            ACCOUNTING to mapOf(
+        fun labelsFor(perspective: AccountingPerspective): Map<ChartMetric, String> = when (perspective) {
+            is Accounting -> mapOf(
                 ChartMetric.INCOME to "INC",
                 ChartMetric.EXPENSE to "EXP",
                 ChartMetric.TRANSFER to "TRF",
                 ChartMetric.NET to "NET"
-            ),
-            CASH_FLOW to mapOf(
+            )
+            is CashFlow -> mapOf(
                 ChartMetric.INCOME to "IN",
                 ChartMetric.EXPENSE to "OUT",
                 ChartMetric.NET to "NET"
             )
-        )
+        }
+
+        val ALL: List<AccountingPerspective> = listOf(Accounting, CashFlow())
     }
 }
 
@@ -424,8 +473,7 @@ data class CashFlowComparisonCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val showCurrentPeriod: Boolean = true,
     val showPreviousPeriod: Boolean = true,
     val showSamePeriodLastYear: Boolean = true,
@@ -446,8 +494,7 @@ data class CategorySpendingTrendCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
@@ -466,8 +513,7 @@ data class IncomeExpenseBarCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val isCumulative: Boolean = false,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
@@ -484,8 +530,7 @@ data class TagUpSetPlotCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
-    val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeInternalTransfers: Boolean = true,
+    val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val maxTags: Int = 7,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,

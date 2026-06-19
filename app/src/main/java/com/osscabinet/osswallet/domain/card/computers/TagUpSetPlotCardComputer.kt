@@ -54,9 +54,9 @@ class TagUpSetPlotCardComputer(
             input.screenOwnsTimeline
         )
         val mergedFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
-            excludeInternalTransfers = config.excludeInternalTransfers
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
+        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
         val profileId = input.profileId
         val baseCurrency = input.targetCurrency
         val exchangeRates = input.exchangeRates
@@ -74,7 +74,8 @@ class TagUpSetPlotCardComputer(
             profileId = profileId,
             dimensions = listOf(AggregationDimension.TAGS, AggregationDimension.CURRENCY),
             metrics = tagMetrics,
-            filter = mergedFilter
+            filter = mergedFilter,
+            excludeInternalTransfers = excludeInternal
         ).getOrDefault(emptyList())
 
         val tagTotals =
@@ -92,14 +93,14 @@ class TagUpSetPlotCardComputer(
                         val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
 
                         val (v1, v2) = when (config.perspective) {
-                            AccountingPerspective.ACCOUNTING -> {
+                            is AccountingPerspective.Accounting -> {
                                 if (config.selectedMetric == ChartMetric.TRANSFER) {
                                     trIn to trOut
                                 } else {
                                     inc to exp
                                 }
                             }
-                            AccountingPerspective.CASH_FLOW -> {
+                            is AccountingPerspective.CashFlow -> {
                                 inc.add(trIn) to exp.add(trOut)
                             }
                         }
@@ -117,10 +118,10 @@ class TagUpSetPlotCardComputer(
                         val trOut = it.metrics["transferOut"] ?: BigDecimal.ZERO
                         
                         val (v1, v2) = when (config.perspective) {
-                            AccountingPerspective.ACCOUNTING -> {
+                            is AccountingPerspective.Accounting -> {
                                 if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
                             }
-                            AccountingPerspective.CASH_FLOW -> inc.add(trIn) to exp.add(trOut)
+                            is AccountingPerspective.CashFlow -> inc.add(trIn) to exp.add(trOut)
                         }
                         currency to (v1 to v2)
                     }.let { map ->
@@ -167,7 +168,8 @@ class TagUpSetPlotCardComputer(
                 AggregationDimension.CURRENCY
             ),
             metrics = tagMetrics,
-            filter = mergedFilter
+            filter = mergedFilter,
+            excludeInternalTransfers = excludeInternal
         ).getOrDefault(emptyList())
 
         val intersections =
@@ -189,10 +191,10 @@ class TagUpSetPlotCardComputer(
                         val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
 
                         val (v1, v2) = when (config.perspective) {
-                            AccountingPerspective.ACCOUNTING -> {
+                            is AccountingPerspective.Accounting -> {
                                 if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
                             }
-                            AccountingPerspective.CASH_FLOW -> inc.add(trIn) to exp.add(trOut)
+                            is AccountingPerspective.CashFlow -> inc.add(trIn) to exp.add(trOut)
                         }
 
                         val1Total += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)

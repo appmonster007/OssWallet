@@ -28,7 +28,6 @@ data class TransactionFilter(
     val matchAllTags: Boolean = true, // true = AND, false = OR
     val statuses: Set<TransactionStatus> = emptySet(),
     val linkedTransactionIds: Set<Long> = emptySet(),
-    val excludeInternalTransfers: Boolean = false,
 )
 
 /**

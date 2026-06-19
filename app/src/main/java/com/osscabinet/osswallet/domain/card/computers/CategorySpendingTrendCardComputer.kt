@@ -36,10 +36,10 @@ class CategorySpendingTrendCardComputer :
         config: CategorySpendingTrendCardConfig
     ): CardRenderData.CategorySpendingTrend {
         val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
         val mergedFilter = (if (rawFilter.categoryIds.isEmpty()) rawFilter
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))).copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
-            excludeInternalTransfers = config.excludeInternalTransfers
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
@@ -48,7 +48,7 @@ class CategorySpendingTrendCardComputer :
 
         // Single-pass filter against the correct transaction source (includes archived if explicitly selected)
         val txSource = input.transactionsFor(mergedFilter)
-        val filteredTx = TransactionFilterService.filter(txSource, mergedFilter)
+        val filteredTx = TransactionFilterService.filter(txSource, mergedFilter, excludeInternal)
 
         // Cap at today — future buckets always show 0
         val now = System.currentTimeMillis()
@@ -89,13 +89,13 @@ class CategorySpendingTrendCardComputer :
                 )
 
                 val shouldInclude = when (config.perspective) {
-                    AccountingPerspective.ACCOUNTING -> when (config.selectedMetric) {
+                    is AccountingPerspective.Accounting -> when (config.selectedMetric) {
                         ChartMetric.NET -> true
                         ChartMetric.INCOME -> tx.transactionType == TransactionType.INCOME
                         ChartMetric.EXPENSE -> tx.transactionType == TransactionType.EXPENSE
                         ChartMetric.TRANSFER -> tx.transactionType.isTransfer
                     }
-                    AccountingPerspective.CASH_FLOW -> when (config.selectedMetric) {
+                    is AccountingPerspective.CashFlow -> when (config.selectedMetric) {
                         ChartMetric.NET -> true
                         ChartMetric.INCOME -> converted.signum() > 0
                         ChartMetric.EXPENSE -> converted.signum() < 0

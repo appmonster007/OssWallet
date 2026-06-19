@@ -64,13 +64,15 @@ object TransactionAggregationService {
     suspend fun getSummaryByCurrency(
         queryService: DatabaseQueryService,
         profileId: Int,
-        filter: TransactionFilter = TransactionFilter()
+        filter: TransactionFilter = TransactionFilter(),
+        excludeInternalTransfers: Boolean = false
     ): Result<Map<String, FinancialSummary>> {
         return queryService.aggregate(
             profileId = profileId,
             dimensions = listOf(AggregationDimension.CURRENCY),
             metrics = StandardMetrics.defaultSet(),
-            filter = filter
+            filter = filter,
+            excludeInternalTransfers = excludeInternalTransfers
         ).map { dataList ->
             dataList.associate { data ->
                 val currency = data.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
@@ -86,13 +88,15 @@ object TransactionAggregationService {
     suspend fun getSummaryByAccountAndCurrency(
         queryService: DatabaseQueryService,
         profileId: Int,
-        filter: TransactionFilter = TransactionFilter()
+        filter: TransactionFilter = TransactionFilter(),
+        excludeInternalTransfers: Boolean = false
     ): Result<Map<String, Map<String, FinancialSummary>>> {
         return queryService.aggregate(
             profileId = profileId,
             dimensions = listOf(AggregationDimension.ACCOUNT, AggregationDimension.CURRENCY),
             metrics = StandardMetrics.defaultSet(),
-            filter = filter
+            filter = filter,
+            excludeInternalTransfers = excludeInternalTransfers
         ).map { dataList ->
             dataList.groupBy { it.dimensions[AggregationDimension.ACCOUNT] ?: "Unknown" }
                 .mapValues { (_, rows) ->

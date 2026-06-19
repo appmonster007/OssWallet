@@ -83,13 +83,14 @@ fun AeonSettingsToggle(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
+    enabled: Boolean = true,
     thumbContent: (@Composable () -> Unit)? = null
 ) {
     Surface(
-        color = AppColors.surfaceContainerLow,
+        color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(alpha = 0.5f),
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         modifier = modifier.fillMaxWidth(),
-        border = BorderStroke(1.dp, AppColors.outlineVariant)
+        border = BorderStroke(1.dp, AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -102,19 +103,20 @@ fun AeonSettingsToggle(
                 Text(
                     label.uppercase(),
                     style = AppTextStyles.sectionOverline,
-                    color = AppColors.primary
+                    color = if (enabled) AppColors.primary else AppColors.primary.copy(alpha = 0.4f)
                 )
                 if (description != null) {
                     Text(
                         description,
                         style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
+                        color = AppColors.contentSecondary.copy(alpha = if (enabled) 1f else 0.5f)
                     )
                 }
             }
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                enabled = enabled,
                 thumbContent = thumbContent,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = AppColors.primary,

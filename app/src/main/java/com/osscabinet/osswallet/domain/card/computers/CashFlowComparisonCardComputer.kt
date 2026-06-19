@@ -40,9 +40,9 @@ class CashFlowComparisonCardComputer(
         val withCategories = if (rawFilter.categoryIds.isEmpty()) rawFilter
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
         val mergedFilter = withCategories.copy(
-            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds },
-            excludeInternalTransfers = config.excludeInternalTransfers
+            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
         )
+        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
         val excludeFuture = mergedFilter.timelineRange.excludeFuture
@@ -66,7 +66,8 @@ class CashFlowComparisonCardComputer(
             exchangeRates = input.exchangeRates,
             today = today,
             excludeFuture = true, // Always cap current line at today
-            perspective = config.perspective
+            perspective = config.perspective,
+            excludeInternalTransfers = excludeInternal
         )
 
         // 3. Compute Previous Period Series:
@@ -83,9 +84,10 @@ class CashFlowComparisonCardComputer(
                 profileId = input.profileId,
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
-                today = today - shift, // Relative 'today' for the previous period
+                today = today - shift,
                 excludeFuture = excludeFuture,
-                perspective = config.perspective
+                perspective = config.perspective,
+                excludeInternalTransfers = excludeInternal
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -109,7 +111,8 @@ class CashFlowComparisonCardComputer(
                 exchangeRates = input.exchangeRates,
                 today = lastYearToday,
                 excludeFuture = excludeFuture,
-                perspective = config.perspective
+                perspective = config.perspective,
+                excludeInternalTransfers = excludeInternal
             )
         }
 
@@ -157,13 +160,14 @@ class CashFlowComparisonCardComputer(
         exchangeRates: ExchangeRateSnapshot,
         today: Long,
         excludeFuture: Boolean,
-        perspective: AccountingPerspective
+        perspective: AccountingPerspective,
+        excludeInternalTransfers: Boolean = false
     ): CashFlowComparisonSeries {
         val points = mutableListOf<CashFlowTimePoint>()
         for ((bucketStart, bucketEnd, label) in buckets) {
             if (excludeFuture && bucketStart > today) break
             val effectiveEnd = if (excludeFuture) minOf(bucketEnd, today) else bucketEnd
-            points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates, perspective))
+            points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates, perspective, excludeInternalTransfers))
         }
         return CashFlowComparisonSeries(points)
     }
@@ -176,11 +180,13 @@ class CashFlowComparisonCardComputer(
         label: String,
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
-        perspective: AccountingPerspective
+        perspective: AccountingPerspective,
+        excludeInternalTransfers: Boolean = false
     ): CashFlowTimePoint {
         val summaries = TransactionAggregationService.getSummaryByCurrency(
             queryService, profileId,
-            baseFilter.copy(timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd))
+            baseFilter.copy(timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd)),
+            excludeInternalTransfers
         ).getOrDefault(emptyMap())
 
         var totalVal1 = BigDecimal.ZERO
@@ -188,8 +194,8 @@ class CashFlowComparisonCardComputer(
         var totalTrf = BigDecimal.ZERO
         summaries.forEach { (currency, summary) ->
             val (v1, v2) = when (perspective) {
-                AccountingPerspective.ACCOUNTING -> summary.income to summary.expense
-                AccountingPerspective.CASH_FLOW -> {
+                is AccountingPerspective.Accounting -> summary.income to summary.expense
+                is AccountingPerspective.CashFlow -> {
                     summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
                 }
             }

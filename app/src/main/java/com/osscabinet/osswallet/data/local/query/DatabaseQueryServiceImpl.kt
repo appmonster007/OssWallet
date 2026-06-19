@@ -46,10 +46,11 @@ class DatabaseQueryServiceImpl(
         metrics: List<MetricConfig>,
         filter: TransactionFilter,
         timeGranularity: TimeGranularity?,
-        useCase: AggregationPlanner.UseCase
+        useCase: AggregationPlanner.UseCase,
+        excludeInternalTransfers: Boolean
     ): Result<List<AggregatedData>> {
         val cacheKey =
-            "agg_${profileId}_${dimensions}_${metrics}_${filter.hashCode()}_${timeGranularity}_$useCase"
+            "agg_${profileId}_${dimensions}_${metrics}_${filter.hashCode()}_${timeGranularity}_${useCase}_$excludeInternalTransfers"
 
         cache.get<List<AggregatedData>>(cacheKey)?.let {
             return Result.success(it)
@@ -57,7 +58,7 @@ class DatabaseQueryServiceImpl(
 
         return try {
             val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
-            val query = queryBuilder.buildAggregationQuery(profileId, filter, plan)
+            val query = queryBuilder.buildAggregationQuery(profileId, filter, plan, excludeInternalTransfers)
 
             val rawResults = transactionDao.aggregateTransactionsSync(query)
             val processed = processResults(rawResults, plan)

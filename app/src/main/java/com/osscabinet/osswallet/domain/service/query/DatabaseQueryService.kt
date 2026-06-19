@@ -23,7 +23,8 @@ interface DatabaseQueryService {
         metrics: List<MetricConfig>,
         filter: TransactionFilter = TransactionFilter(),
         timeGranularity: TimeGranularity? = null,
-        useCase: AggregationPlanner.UseCase = AggregationPlanner.UseCase.STANDARD_REPORT
+        useCase: AggregationPlanner.UseCase = AggregationPlanner.UseCase.STANDARD_REPORT,
+        excludeInternalTransfers: Boolean = false
     ): Result<List<AggregatedData>>
 
     /**

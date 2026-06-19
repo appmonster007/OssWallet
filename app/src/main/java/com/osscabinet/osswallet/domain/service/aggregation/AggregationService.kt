@@ -328,7 +328,7 @@ object AggregationService {
         baseCurrency: String? = null,
         precision: Int = CurrencyService.precision,
         previousTransactions: List<Transaction>? = null,
-        perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING
+        perspective: AccountingPerspective = AccountingPerspective.Accounting
     ): List<CategoryTreeMetrics> {
         val categoryMap = allCategories.associateBy { it.id }
 

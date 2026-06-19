@@ -134,7 +134,7 @@ fun NetWorthCard(
                     ),
                     color = contentColor,
                     modifier = Modifier.clickable {
-                        if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                        if (config.perspective is AccountingPerspective.Accounting) {
                             callbacks.onClickNet?.invoke(config.filter)
                         } else {
                             callbacks.onClickNetFlow?.invoke(config.filter)
@@ -183,7 +183,7 @@ fun NetWorthCard(
                 val showTransfer = types.isEmpty() || types.any { it.isTransfer }
 
                 when (config.perspective) {
-                    AccountingPerspective.ACCOUNTING -> {
+                    is AccountingPerspective.Accounting -> {
                         if (showIncome) {
                             NetWorthFlowColumn(
                                 label = "INC",
@@ -237,7 +237,7 @@ fun NetWorthCard(
                         }
                     }
 
-                    AccountingPerspective.CASH_FLOW -> {
+                    is AccountingPerspective.CashFlow -> {
                         val inflow = (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
                         val outflow = (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
 
@@ -423,11 +423,7 @@ private fun NetWorthSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
-            }
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) }
         )
     }
 }

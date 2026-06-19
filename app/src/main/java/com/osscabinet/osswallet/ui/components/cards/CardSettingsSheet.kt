@@ -155,9 +155,7 @@ private fun SheetBody(
 @Composable
 fun CardPerspectiveSettings(
     perspective: AccountingPerspective,
-    onPerspectiveChange: (AccountingPerspective) -> Unit,
-    excludeInternalTransfers: Boolean? = null,
-    onExcludeInternalTransfersChange: ((Boolean) -> Unit)? = null
+    onPerspectiveChange: (AccountingPerspective) -> Unit
 ) {
     CardSettingsSection("Perspective") {
         SingleChoiceSegmentedButtonRow(
@@ -165,26 +163,27 @@ fun CardPerspectiveSettings(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            AccountingPerspective.entries.forEachIndexed { index, mode ->
+            AccountingPerspective.ALL.forEachIndexed { index, mode ->
                 SegmentedButton(
-                    selected = perspective == mode,
+                    selected = perspective::class == mode::class,
                     onClick = { onPerspectiveChange(mode) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
                     label = {
                         Text(
-                            if (mode == AccountingPerspective.ACCOUNTING) "Accounting" else "Cash Flow",
+                            if (mode is AccountingPerspective.Accounting) "Accounting" else "Cash Flow",
                             style = AppTextStyles.caption.copy(fontSize = 11.sp)
                         )
                     }
                 )
             }
         }
-        if (excludeInternalTransfers != null) {
+        val cashFlow = perspective as? AccountingPerspective.CashFlow
+        if (cashFlow != null) {
             com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
                 label = "Exclude internal transfers",
                 description = "Hides transfers between accounts within the selected scope",
-                checked = excludeInternalTransfers,
-                onCheckedChange = onExcludeInternalTransfersChange ?: {}
+                checked = cashFlow.excludeInternalTransfers,
+                onCheckedChange = { onPerspectiveChange(AccountingPerspective.CashFlow(it)) }
             )
         }
     }
@@ -202,7 +201,7 @@ fun AeonMetricToggle(
     onMetricChange: (ChartMetric) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val labels = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+    val labels = AccountingPerspective.labelsFor(perspective)
     // Filter out metrics not supported by the current perspective (e.g., TRANSFER in Cash Flow)
     val options = ChartMetric.entries.filter { it in labels }
 
@@ -270,10 +269,8 @@ fun CardSettingsSheetPreview() {
                 onDelete = {}
             ) {
                 CardPerspectiveSettings(
-                    perspective = AccountingPerspective.ACCOUNTING,
-                    onPerspectiveChange = {},
-                    excludeInternalTransfers = true,
-                    onExcludeInternalTransfersChange = {}
+                    perspective = AccountingPerspective.Accounting,
+                    onPerspectiveChange = {}
                 )
             }
         }

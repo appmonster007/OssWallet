@@ -53,6 +53,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -178,14 +179,13 @@ fun CardPerspectiveSettings(
             }
         }
         val cashFlow = perspective as? AccountingPerspective.CashFlow
-        if (cashFlow != null) {
-            com.osscabinet.ossWallet.ui.components.AeonSettingsToggle(
-                label = "Exclude internal transfers",
-                description = "Hides transfers between accounts within the selected scope",
-                checked = cashFlow.excludeInternalTransfers,
-                onCheckedChange = { onPerspectiveChange(AccountingPerspective.CashFlow(it)) }
-            )
-        }
+        AeonSettingsToggle(
+            label = "Exclude internal transfers",
+            description = "Hides transfers between accounts within the selected scope",
+            enabled = perspective is AccountingPerspective.CashFlow,
+            checked = cashFlow?.excludeInternalTransfers ?: false,
+            onCheckedChange = { onPerspectiveChange(AccountingPerspective.CashFlow(it)) }
+        )
     }
 }
 

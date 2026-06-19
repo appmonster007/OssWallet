@@ -28,7 +28,8 @@ object CardAggregationService {
     ): CardRenderData.NetWorth {
         val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val currentFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
 
         // For absolute balances, we need cumulative totals up to the end of the period
@@ -84,7 +85,8 @@ object CardAggregationService {
     ): CardRenderData.CashFlow {
         val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val mergedFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
         val result = computeCashFlowResult(queryService, profileId, input, mergedFilter).toPerspective(config.perspective)
 
@@ -207,7 +209,8 @@ object CardAggregationService {
     ): CardRenderData.Accounts {
         val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
         val currentFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds },
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
 
         val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter)
@@ -308,6 +311,7 @@ object CardAggregationService {
 
         // Period summary
         val periodFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+            .copy(excludeInternalTransfers = config.excludeInternalTransfers)
         
         // Lifetime balance (base scope) - Always show the true account balance.
         val baseFilter = TransactionFilter(

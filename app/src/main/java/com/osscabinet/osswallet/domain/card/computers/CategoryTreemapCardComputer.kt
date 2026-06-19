@@ -37,8 +37,10 @@ class CategoryTreemapCardComputer :
         val resolvedTypes = TransactionType.entries.toSet()
 
         val finalFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds },
             categoryIds = expandedCategoryIds,
-            transactionTypes = resolvedTypes
+            transactionTypes = resolvedTypes,
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
 
         // Single-pass filter against the correct transaction source (includes archived if explicitly selected)

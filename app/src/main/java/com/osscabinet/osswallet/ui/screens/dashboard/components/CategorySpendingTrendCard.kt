@@ -339,8 +339,8 @@ private fun CategorySpendingSettingsSheet(
         CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = { callbacks.onUpdate(config.copy(excludeSameCurrencyTransfers = it)) }
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { callbacks.onUpdate(config.copy(excludeInternalTransfers = it)) }
         )
     }
 }

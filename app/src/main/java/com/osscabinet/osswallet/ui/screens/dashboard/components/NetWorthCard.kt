@@ -177,7 +177,6 @@ fun NetWorthCard(
             ) {
                 val cf = currentPeriodMetrics.cashFlow
                 val prevCf = previousPeriodMetrics?.cashFlow
-                val excludeSameCcy = config.excludeSameCurrencyTransfers
                 val types = config.filter.transactionTypes
                 val showIncome = types.isEmpty() || TransactionType.INCOME in types
                 val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
@@ -222,7 +221,7 @@ fun NetWorthCard(
                             if (showIncome || showExpense) NetWorthSeparator()
                             NetWorthFlowColumn(
                                 label = "TRF",
-                                amount = if (excludeSameCcy) cf.totalNetCrossCcyTransferInBase else cf.totalNetTransferInBase,
+                                amount = cf.totalNetTransferInBase,
                                 currency = displayCurrency,
                                 color = AppColors.accent,
                                 modifier = Modifier
@@ -232,28 +231,21 @@ fun NetWorthCard(
                                             config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
                                         )
                                     },
-                                previousAmount = if (config.showComparison) {
-                                    if (excludeSameCcy) prevCf?.totalNetCrossCcyTransferInBase else prevCf?.totalNetTransferInBase
-                                } else null,
+                                previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
                                 forceShowPlus = true
                             )
                         }
                     }
 
                     AccountingPerspective.CASH_FLOW -> {
-                        val txIn = if (excludeSameCcy) cf.totalCrossCcyTransferInInBase else cf.totalTransferInInBase
-                        val txOut = if (excludeSameCcy) cf.totalCrossCcyTransferOutInBase else cf.totalTransferOutInBase
-                        val prevTxIn = if (excludeSameCcy) prevCf?.totalCrossCcyTransferInInBase else prevCf?.totalTransferInInBase
-                        val prevTxOut = if (excludeSameCcy) prevCf?.totalCrossCcyTransferOutInBase else prevCf?.totalTransferOutInBase
+                        val inflow = (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
+                        val outflow = (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
 
-                        val inflow = (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) txIn else BigDecimal.ZERO)
-                        val outflow = (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) txOut else BigDecimal.ZERO)
-                        
                         val prevInflow = if (prevCf != null) {
-                            (if (showIncome) prevCf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) (prevTxIn ?: BigDecimal.ZERO) else BigDecimal.ZERO)
+                            (if (showIncome) prevCf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) prevCf.totalTransferInInBase else BigDecimal.ZERO)
                         } else null
                         val prevOutflow = if (prevCf != null) {
-                            (if (showExpense) prevCf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) (prevTxOut ?: BigDecimal.ZERO) else BigDecimal.ZERO)
+                            (if (showExpense) prevCf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) prevCf.totalTransferOutInBase else BigDecimal.ZERO)
                         } else null
 
                         NetWorthFlowColumn(
@@ -432,9 +424,9 @@ private fun NetWorthSettingsSheet(
         CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = {
-                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
             }
         )
     }

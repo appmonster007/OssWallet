@@ -105,8 +105,8 @@ fun rememberCardWithCallbacks(
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
                         },
-                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
-                            updateHandler.updateCardExcludeSameCurrencyTransfers(id, exclude)
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardExcludeInternalTransfers(id, exclude)
                         },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardNetWorthFilter(
@@ -232,8 +232,8 @@ fun rememberCardWithCallbacks(
                         onShowNetColumnChange = { id, show ->
                             updateHandler.updateCardCashFlowShowNetColumn(id, show)
                         },
-                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
-                            updateHandler.updateCardCashFlowExcludeSameCurrencyTransfers(id, exclude)
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardCashFlowExcludeInternalTransfers(id, exclude)
                         },
                         onClickIncome = { drillDown ->
                             onRecordsClick(
@@ -313,8 +313,8 @@ fun rememberCardWithCallbacks(
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
                         },
-                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
-                            updateHandler.updateCardAccountsExcludeSameCurrencyTransfers(id, exclude)
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardAccountsExcludeInternalTransfers(id, exclude)
                         },
                         onManageClick = callbacks.accountActions.onManageClick,
                         onAccountClick = callbacks.accountActions.onClick,
@@ -422,8 +422,8 @@ fun rememberCardWithCallbacks(
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
                         },
-                        onExcludeSameCurrencyTransfersChange = { id, exclude ->
-                            updateHandler.updateCardHeroExcludeSameCurrencyTransfers(id, exclude)
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardHeroExcludeInternalTransfers(id, exclude)
                         },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardHeroFilter(

@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
@@ -108,10 +109,14 @@ object TransactionFilterService {
         val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
         val matchesLinkedTransactions = filter.linkedTransactionIds.isEmpty() || tx.id in filter.linkedTransactionIds
 
+        val matchesInternalTransfer = if (filter.excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
+            !(tx.transactionType.isTransfer && tx.targetAccountId in filter.accountIds)
+        } else true
+
         return matchesAccounts && matchesCategories && matchesType && matchesAmount &&
                 matchesStatuses && matchesPayee && matchesNote && matchesCurrencies &&
                 matchesWarranty && inWarrantyRange && matchesPaymentMethod && matchesTags &&
-                matchesLinkedTransactions
+                matchesLinkedTransactions && matchesInternalTransfer
     }
 
     fun filterTransactionsWithBalance(

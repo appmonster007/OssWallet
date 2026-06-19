@@ -129,7 +129,7 @@ data class NetWorthCardConfig(
     val fontSize: String = "Medium",
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true)),
     val profileId: Int? = null
 ) : CardConfig() {
@@ -175,7 +175,7 @@ data class CashFlowCardConfig(
     val showBaseConversion: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
     val showNetColumn: Boolean = true,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.CASH_FLOW
@@ -198,7 +198,7 @@ data class AccountsCardConfig(
     val showAddAccountCard: Boolean = true,
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNTS
@@ -218,7 +218,7 @@ data class CategoryPieChartCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -244,7 +244,7 @@ data class CategoryTreemapCardConfig(
     override val screenContext: ScreenContext = ScreenContext.ANALYTICS,
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -271,7 +271,7 @@ data class AccountHeroCardConfig(
     val showCurrencyBadges: Boolean = true,
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
 ) : CardConfig() {
     override val cardType: CardType get() = CardType.ACCOUNT_HERO
@@ -425,7 +425,7 @@ data class CashFlowComparisonCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val showCurrentPeriod: Boolean = true,
     val showPreviousPeriod: Boolean = true,
     val showSamePeriodLastYear: Boolean = true,
@@ -447,7 +447,7 @@ data class CategorySpendingTrendCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
@@ -467,7 +467,7 @@ data class IncomeExpenseBarCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val isCumulative: Boolean = false,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.YEAR, excludeFuture = true))
 ) : CardConfig() {
@@ -485,7 +485,7 @@ data class TagUpSetPlotCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.ACCOUNTING,
-    val excludeSameCurrencyTransfers: Boolean = false,
+    val excludeInternalTransfers: Boolean = true,
     val maxTags: Int = 7,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,

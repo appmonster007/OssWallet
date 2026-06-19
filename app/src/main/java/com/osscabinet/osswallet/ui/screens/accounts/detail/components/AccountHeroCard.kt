@@ -204,7 +204,6 @@ fun AccountHeroCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val excludeSameCcy = config.excludeSameCurrencyTransfers
                 val types = config.filter.transactionTypes
                 val showIncome = types.isEmpty() || TransactionType.INCOME in types
                 val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
@@ -258,12 +257,12 @@ fun AccountHeroCard(
                         if (showTransfer) {
                             FlowSummaryItem(
                                 label = "TRANSFER",
-                                amount = if (excludeSameCcy) flow.netCrossCcyTransfer else flow.netTransfer,
+                                amount = flow.netTransfer,
                                 currency = account.currencyCode,
                                 icon = Icons.Rounded.SwapHoriz,
                                 color = accColor,
                                 contentColor = contentColor,
-                                previousAmount = if (excludeSameCcy) prevFlow?.netCrossCcyTransfer else prevFlow?.netTransfer,
+                                previousAmount = prevFlow?.netTransfer,
                                 onClick = {
                                     callbacks.onClickTransfer?.invoke(
                                         config.filter.copy(
@@ -277,18 +276,12 @@ fun AccountHeroCard(
                     }
 
                     AccountingPerspective.CASH_FLOW -> {
-                        val txIn = if (excludeSameCcy) flow.crossCcyTransferIn else flow.transferIn
-                        val txOut = if (excludeSameCcy) flow.crossCcyTransferOut else flow.transferOut
-
-                        val prevTxIn = if (excludeSameCcy) prevFlow?.crossCcyTransferIn else prevFlow?.transferIn
-                        val prevTxOut = if (excludeSameCcy) prevFlow?.crossCcyTransferOut else prevFlow?.transferOut
-
-                        val prevInflow = prevFlow?.let { (it.income) + (prevTxIn ?: BigDecimal.ZERO) }
-                        val prevOutflow = prevFlow?.let { (it.expense) + (prevTxOut ?: BigDecimal.ZERO) }
+                        val prevInflow = prevFlow?.let { (it.income) + it.transferIn }
+                        val prevOutflow = prevFlow?.let { (it.expense) + it.transferOut }
 
                         FlowSummaryItem(
                             label = "INFLOW",
-                            amount = (if (showIncome) flow.income else BigDecimal.ZERO) + (if (showTransfer) txIn else BigDecimal.ZERO),
+                            amount = (if (showIncome) flow.income else BigDecimal.ZERO) + (if (showTransfer) flow.transferIn else BigDecimal.ZERO),
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingUp,
                             color = posColor,
@@ -307,7 +300,7 @@ fun AccountHeroCard(
                         )
                         FlowSummaryItem(
                             label = "OUTFLOW",
-                            amount = (if (showExpense) flow.expense else BigDecimal.ZERO) + (if (showTransfer) txOut else BigDecimal.ZERO),
+                            amount = (if (showExpense) flow.expense else BigDecimal.ZERO) + (if (showTransfer) flow.transferOut else BigDecimal.ZERO),
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingDown,
                             color = negColor,
@@ -420,9 +413,9 @@ private fun AccountHeroSettingsSheet(
         com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = {
-                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
             }
         )
     }

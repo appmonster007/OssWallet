@@ -133,6 +133,11 @@ class TransactionQueryBuilder {
             where.append(" AND accountId IN ($placeholders)")
             args.addAll(filter.accountIds)
         }
+        if (filter.excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
+            val placeholders = filter.accountIds.joinToString(",") { "?" }
+            where.append(" AND NOT (transactionType IN ('transfer_inflow','transfer_outflow') AND targetAccountId IN ($placeholders))")
+            args.addAll(filter.accountIds)
+        }
         if (filter.categoryIds.isNotEmpty()) {
             val placeholders = filter.categoryIds.joinToString(",") { "?" }
             where.append(" AND categoryId IN ($placeholders)")

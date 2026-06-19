@@ -205,9 +205,9 @@ private fun AccountsSettingsSheet(
         CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
-            onExcludeSameCurrencyTransfersChange = {
-                callbacks.onExcludeSameCurrencyTransfersChange(config.cardId, it)
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
             }
         )
         OutlinedButton(
@@ -243,7 +243,7 @@ private fun FlowRowScope.AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
-        excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+        excludeInternalTransfers = config.excludeInternalTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -267,7 +267,7 @@ private fun AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
-        excludeSameCurrencyTransfers = config.excludeSameCurrencyTransfers,
+        excludeInternalTransfers = config.excludeInternalTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -282,7 +282,7 @@ private fun AccountItemContent(
     baseCurrency: String,
     gridColumns: Int,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING,
-    excludeSameCurrencyTransfers: Boolean = false,
+    excludeInternalTransfers: Boolean = true,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -295,7 +295,7 @@ private fun AccountItemContent(
             summary = stats,
             baseCurrency = baseCurrency,
             perspective = perspective,
-            excludeSameCurrencyTransfers = excludeSameCurrencyTransfers,
+            excludeInternalTransfers = excludeInternalTransfers,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
             onClickIncome = {

@@ -209,7 +209,7 @@ fun AeonAccountCardLarge(
     summary: AccountSummaryItem,
     baseCurrency: String,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.ACCOUNTING,
-    excludeSameCurrencyTransfers: Boolean = false,
+    excludeInternalTransfers: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     cardNumber: String? = null,
@@ -337,36 +337,25 @@ fun AeonAccountCardLarge(
                                 modifier = Modifier.weight(1f)
                             )
                             AccountFlowSeparator()
-                            val tx = if (excludeSameCurrencyTransfers) flow.netCrossCcyTransfer else flow.netTransfer
-                            val prevTx = if (prevFlow != null) {
-                                if (excludeSameCurrencyTransfers) prevFlow.netCrossCcyTransfer else prevFlow.netTransfer
-                            } else null
-
                             AccountFlowReadout(
                                 label = "TRF",
-                                amount = tx,
+                                amount = flow.netTransfer,
                                 currency = account.currencyCode,
                                 color = AppColors.accent,
                                 onClick = onClickTransfer,
-                                previousAmount = prevTx,
+                                previousAmount = prevFlow?.netTransfer,
                                 modifier = Modifier.weight(1f),
                                 forceShowPlus = true
                             )
                         }
 
                         com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CASH_FLOW -> {
-                            val txIn = if (excludeSameCurrencyTransfers) flow.crossCcyTransferIn else flow.transferIn
-                            val txOut = if (excludeSameCurrencyTransfers) flow.crossCcyTransferOut else flow.transferOut
-
-                            val prevTxIn = if (excludeSameCurrencyTransfers) prevFlow?.crossCcyTransferIn else prevFlow?.transferIn
-                            val prevTxOut = if (excludeSameCurrencyTransfers) prevFlow?.crossCcyTransferOut else prevFlow?.transferOut
-                            
-                            val prevInflow = prevFlow?.let { it.income + (prevTxIn ?: BigDecimal.ZERO) }
-                            val prevOutflow = prevFlow?.let { it.expense + (prevTxOut ?: BigDecimal.ZERO) }
+                            val prevInflow = prevFlow?.let { it.income + it.transferIn }
+                            val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
 
                             AccountFlowReadout(
                                 label = "IN",
-                                amount = flow.income + txIn,
+                                amount = flow.income + flow.transferIn,
                                 currency = account.currencyCode,
                                 color = AppColors.positive,
                                 onClick = onClickInflow,
@@ -376,7 +365,7 @@ fun AeonAccountCardLarge(
                             AccountFlowSeparator()
                             AccountFlowReadout(
                                 label = "OUT",
-                                amount = flow.expense + txOut,
+                                amount = flow.expense + flow.transferOut,
                                 currency = account.currencyCode,
                                 color = AppColors.negative,
                                 onClick = onClickOutflow,

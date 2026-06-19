@@ -45,7 +45,8 @@ class IncomeExpenseBarCardComputer(
         val withCategories = if (rawFilter.categoryIds.isEmpty()) rawFilter
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
         val mergedFilter = withCategories.copy(
-            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
+            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds },
+            excludeInternalTransfers = config.excludeInternalTransfers
         )
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
             mergedFilter.timelineRange,

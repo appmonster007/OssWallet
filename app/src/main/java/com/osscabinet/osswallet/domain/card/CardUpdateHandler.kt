@@ -40,7 +40,7 @@ interface CardUpdateHandler {
                 
                 // Safety: If the card has a selected metric that's unsupported in the new
                 // perspective (e.g., TRANSFER in CASH_FLOW), reset it to NET.
-                val labels = AccountingPerspective.LABELS[perspective] ?: emptyMap()
+                val labels = AccountingPerspective.labelsFor(perspective)
                 
                 when (updated) {
                     is CategoryPieChartCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
@@ -55,22 +55,26 @@ interface CardUpdateHandler {
     }
 
     /**
-     * Updates the internal transfer exclusion for any card that supports it.
+     * Updates excludeInternalTransfers for any card that supports it by updating the CashFlow
+     * perspective in-place. No-ops if the current perspective is Accounting.
      */
     fun updateCardExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                fun updatePerspective(current: AccountingPerspective): AccountingPerspective =
+                    if (current is AccountingPerspective.CashFlow) current.copy(excludeInternalTransfers = exclude)
+                    else current
                 when (config) {
-                    is NetWorthCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is CashFlowCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is AccountsCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is AccountHeroCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is CategoryPieChartCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is CategoryTreemapCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is CashFlowComparisonCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is IncomeExpenseBarCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is CategorySpendingTrendCardConfig -> config.copy(excludeInternalTransfers = exclude)
-                    is TagUpSetPlotCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is NetWorthCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is CashFlowCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is AccountsCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is AccountHeroCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is CategoryPieChartCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is CategoryTreemapCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is CashFlowComparisonCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is IncomeExpenseBarCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is CategorySpendingTrendCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is TagUpSetPlotCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
                     else -> config
                 }
             }
@@ -90,14 +94,6 @@ interface CardUpdateHandler {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
                 if (config is NetWorthCardConfig) config.copy(showComparison = showComparison) else config
-            }
-        }
-    }
-
-    fun updateCardNetWorthExcludeInternalTransfers(cardId: String, exclude: Boolean) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(excludeInternalTransfers = exclude) else config
             }
         }
     }
@@ -168,14 +164,6 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardCashFlowExcludeInternalTransfers(cardId: String, exclude: Boolean) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is CashFlowCardConfig) config.copy(excludeInternalTransfers = exclude) else config
-            }
-        }
-    }
-    
     // Accounts
     fun updateCardAccountsLayout(cardId: String, layout: String) {
         cardUpdateScope.launch {
@@ -201,14 +189,6 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardAccountsExcludeInternalTransfers(cardId: String, exclude: Boolean) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountsCardConfig) config.copy(excludeInternalTransfers = exclude) else config
-            }
-        }
-    }
-    
     fun updateCardAccountsFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
@@ -226,13 +206,7 @@ interface CardUpdateHandler {
         }
     }
 
-    fun updateCardHeroExcludeInternalTransfers(cardId: String, exclude: Boolean) {
-        cardUpdateScope.launch {
-            cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is AccountHeroCardConfig) config.copy(excludeInternalTransfers = exclude) else config
-            }
-        }
-    }
+
 
     fun updateCardHeroFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {

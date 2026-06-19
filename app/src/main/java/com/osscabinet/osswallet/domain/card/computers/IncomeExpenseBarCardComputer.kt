@@ -45,9 +45,9 @@ class IncomeExpenseBarCardComputer(
         val withCategories = if (rawFilter.categoryIds.isEmpty()) rawFilter
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))
         val mergedFilter = withCategories.copy(
-            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds },
-            excludeInternalTransfers = config.excludeInternalTransfers
+            accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
         )
+        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
         val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
             mergedFilter.timelineRange,
             input.transactions
@@ -67,7 +67,8 @@ class IncomeExpenseBarCardComputer(
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
             granularity = granularity,
-            perspective = config.perspective
+            perspective = config.perspective,
+            excludeInternalTransfers = excludeInternal
         )
 
         return CardRenderData.IncomeExpenseBar(
@@ -86,14 +87,15 @@ class IncomeExpenseBarCardComputer(
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
         granularity: CashFlowComparisonGranularity,
-        perspective: AccountingPerspective
+        perspective: AccountingPerspective,
+        excludeInternalTransfers: Boolean = false
     ): CashFlowComparisonSeries {
         val points = buckets.map { (bucketStart, bucketEnd, label) ->
             val bucketFilter = baseFilter.copy(
                 timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd)
             )
             val summaries = TransactionAggregationService.getSummaryByCurrency(
-                queryService, profileId, bucketFilter
+                queryService, profileId, bucketFilter, excludeInternalTransfers
             ).getOrDefault(emptyMap())
 
             var val1 = BigDecimal.ZERO // Income or Inflow
@@ -102,8 +104,8 @@ class IncomeExpenseBarCardComputer(
 
             summaries.forEach { (currency, summary) ->
                 val (inc, exp) = when (perspective) {
-                    AccountingPerspective.ACCOUNTING -> summary.income to summary.expense
-                    AccountingPerspective.CASH_FLOW -> {
+                    is AccountingPerspective.Accounting -> summary.income to summary.expense
+                    is AccountingPerspective.CashFlow -> {
                         // Inflow = Income + TransferIn; Outflow = Expense + TransferOut
                         val inflow = summary.income.add(summary.transferIn)
                         val outflow = summary.expense.add(summary.transferOut)

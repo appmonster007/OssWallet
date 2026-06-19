@@ -23,18 +23,20 @@ object TransactionFilterService {
      */
     fun filter(
         transactions: List<Transaction>,
-        filter: TransactionFilter
-    ): List<Transaction> = filterTransactions(transactions, filter)
+        filter: TransactionFilter,
+        excludeInternalTransfers: Boolean = false
+    ): List<Transaction> = filterTransactions(transactions, filter, excludeInternalTransfers)
 
     fun filterTransactions(
         transactions: List<Transaction>,
-        filter: TransactionFilter
+        filter: TransactionFilter,
+        excludeInternalTransfers: Boolean = false
     ): List<Transaction> {
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
         val now = System.currentTimeMillis()
 
         return transactions.filter { tx ->
-            matches(tx, filter, startTime, endTime, now)
+            matches(tx, filter, startTime, endTime, now, excludeInternalTransfers)
         }
     }
 
@@ -43,7 +45,8 @@ object TransactionFilterService {
         filter: TransactionFilter,
         startTime: Long? = null,
         endTime: Long? = null,
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        excludeInternalTransfers: Boolean = false
     ): Boolean {
         // 0. Future exclusion
         if (filter.timelineRange.excludeFuture && tx.timestamp > now) return false
@@ -109,7 +112,7 @@ object TransactionFilterService {
         val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
         val matchesLinkedTransactions = filter.linkedTransactionIds.isEmpty() || tx.id in filter.linkedTransactionIds
 
-        val matchesInternalTransfer = if (filter.excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
+        val matchesInternalTransfer = if (excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
             !(tx.transactionType.isTransfer && tx.targetAccountId in filter.accountIds)
         } else true
 
@@ -121,12 +124,13 @@ object TransactionFilterService {
 
     fun filterTransactionsWithBalance(
         items: List<TransactionWithBalance>,
-        filter: TransactionFilter
+        filter: TransactionFilter,
+        excludeInternalTransfers: Boolean = false
     ): List<TransactionWithBalance> {
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
         val now = System.currentTimeMillis()
 
-        return items.filter { matches(it.transaction, filter, startTime, endTime, now) }
+        return items.filter { matches(it.transaction, filter, startTime, endTime, now, excludeInternalTransfers) }
     }
 
     /**

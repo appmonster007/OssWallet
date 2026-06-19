@@ -145,7 +145,7 @@ private fun CashFlowTable(
 
     val columns: List<TableColumn> = remember(config, types, result, positiveColor, negativeColor, accentColor) {
         when (config.perspective) {
-            AccountingPerspective.ACCOUNTING -> buildList {
+            is AccountingPerspective.Accounting -> buildList {
                 if (showIncome) add(
                     TableColumn(
                         label = "INCOME", key = "inc", color = positiveColor,
@@ -194,7 +194,7 @@ private fun CashFlowTable(
                     )
                 )
             }
-            AccountingPerspective.CASH_FLOW -> {
+            is AccountingPerspective.CashFlow -> {
                 val inflowTypes = buildSet {
                     if (showIncome) add(TransactionType.INCOME)
                     if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
@@ -254,7 +254,7 @@ private fun CashFlowTable(
     val netColumn: TableColumn? = if (config.showNetColumn) {
         val netTotalInBase = columns.fold(BigDecimal.ZERO) { acc, c -> acc + c.totalInBase }
         TableColumn(
-            label = if (config.perspective == AccountingPerspective.ACCOUNTING) "NET" else "NET FLOW",
+            label = if (config.perspective is AccountingPerspective.Accounting) "NET" else "NET FLOW",
             key = "net",
             color = accentColor,
             totalInBase = netTotalInBase,
@@ -272,7 +272,7 @@ private fun CashFlowTable(
             },
             isSigned = true,
             onCellClick = { ccy ->
-                if (config.perspective == AccountingPerspective.ACCOUNTING) {
+                if (config.perspective is AccountingPerspective.Accounting) {
                     callbacks.onClickNet?.invoke(config.filter.copy(currencies = setOf(ccy)))
                 } else {
                     callbacks.onClickNetFlow?.invoke(config.filter.copy(currencies = setOf(ccy)))
@@ -514,11 +514,7 @@ private fun CashFlowSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(config.cardId, it)
-            }
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) }
         )
     }
 }

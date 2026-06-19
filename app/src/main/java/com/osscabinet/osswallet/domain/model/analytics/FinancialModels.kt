@@ -28,8 +28,8 @@ data class CashFlowResult(
      */
     fun toPerspective(perspective: AccountingPerspective): CashFlowResult {
         return when (perspective) {
-            AccountingPerspective.ACCOUNTING -> this
-            AccountingPerspective.CASH_FLOW -> this.copy(
+            is AccountingPerspective.Accounting -> this
+            is AccountingPerspective.CashFlow -> this.copy(
                 totalIncomeInBase = totalIncomeInBase.add(totalTransferInInBase),
                 totalExpensesInBase = totalExpensesInBase.add(totalTransferOutInBase),
                 totalTransfersInBase = BigDecimal.ZERO,
@@ -94,8 +94,8 @@ data class CashFlowBreakdownItem(
      */
     fun toPerspective(perspective: AccountingPerspective): CashFlowBreakdownItem {
         return when (perspective) {
-            AccountingPerspective.ACCOUNTING -> this
-            AccountingPerspective.CASH_FLOW -> this.copy(
+            is AccountingPerspective.Accounting -> this
+            is AccountingPerspective.CashFlow -> this.copy(
                 income = income.add(transferIn),
                 incomeInBase = incomeInBase.add(transferInInBase),
                 expense = expense.add(transferOut),
@@ -165,8 +165,8 @@ data class AccountFlowMetrics(
      */
     fun toPerspective(perspective: AccountingPerspective): AccountFlowMetrics {
         return when (perspective) {
-            AccountingPerspective.ACCOUNTING -> this
-            AccountingPerspective.CASH_FLOW -> AccountFlowMetrics(
+            is AccountingPerspective.Accounting -> this
+            is AccountingPerspective.CashFlow -> AccountFlowMetrics(
                 income = income.add(transferIn),
                 expense = expense.add(transferOut),
                 transferIn = BigDecimal.ZERO,

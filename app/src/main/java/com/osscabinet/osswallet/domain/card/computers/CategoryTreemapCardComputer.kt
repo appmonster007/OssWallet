@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
@@ -36,16 +37,16 @@ class CategoryTreemapCardComputer :
         // Resolve transaction types: include all types to support Transfers as categories
         val resolvedTypes = TransactionType.entries.toSet()
 
+        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
         val finalFilter = mergedFilter.copy(
             accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds },
             categoryIds = expandedCategoryIds,
-            transactionTypes = resolvedTypes,
-            excludeInternalTransfers = config.excludeInternalTransfers
+            transactionTypes = resolvedTypes
         )
 
         // Single-pass filter against the correct transaction source (includes archived if explicitly selected)
         val txSource = input.transactionsFor(finalFilter)
-        val filteredTx = TransactionFilterService.filter(txSource, finalFilter)
+        val filteredTx = TransactionFilterService.filter(txSource, finalFilter, excludeInternal)
 
         // Step 4: Compute previous period transactions if comparison is enabled
         val previousTx: List<Transaction>? =
@@ -55,7 +56,7 @@ class CategoryTreemapCardComputer :
                     val prevFilter = finalFilter.copy(
                         timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                     )
-                    TransactionFilterService.filter(txSource, prevFilter)
+                    TransactionFilterService.filter(txSource, prevFilter, excludeInternal)
                 } else null
             } else null
 

@@ -18,9 +18,10 @@ class TransactionQueryBuilder {
     fun buildAggregationQuery(
         profileId: Int,
         filter: TransactionFilter,
-        plan: AggregationPlanner.AggregationPlan
+        plan: AggregationPlanner.AggregationPlan,
+        excludeInternalTransfers: Boolean = false
     ): SupportSQLiteQuery {
-        return buildQuery(profileId, filter, plan = plan)
+        return buildQuery(profileId, filter, plan = plan, excludeInternalTransfers = excludeInternalTransfers)
     }
 
     fun buildListQuery(
@@ -35,7 +36,8 @@ class TransactionQueryBuilder {
         profileId: Int,
         filter: TransactionFilter,
         plan: AggregationPlanner.AggregationPlan? = null,
-        limit: Int? = null
+        limit: Int? = null,
+        excludeInternalTransfers: Boolean = false
     ): SupportSQLiteQuery {
         val select = StringBuilder("SELECT ")
         val group = StringBuilder("GROUP BY ")
@@ -133,7 +135,7 @@ class TransactionQueryBuilder {
             where.append(" AND accountId IN ($placeholders)")
             args.addAll(filter.accountIds)
         }
-        if (filter.excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
+        if (excludeInternalTransfers && filter.accountIds.isNotEmpty()) {
             val placeholders = filter.accountIds.joinToString(",") { "?" }
             where.append(" AND NOT (transactionType IN ('transfer_inflow','transfer_outflow') AND targetAccountId IN ($placeholders))")
             args.addAll(filter.accountIds)

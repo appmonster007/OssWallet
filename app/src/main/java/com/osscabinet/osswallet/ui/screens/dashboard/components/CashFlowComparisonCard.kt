@@ -643,7 +643,9 @@ private fun CashFlowComparisonSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) }
+            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { callbacks.onUpdate(config.copy(excludeInternalTransfers = it)) }
         )
     }
 }

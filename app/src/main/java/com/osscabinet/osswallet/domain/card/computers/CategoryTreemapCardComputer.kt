@@ -37,7 +37,7 @@ class CategoryTreemapCardComputer :
         // Resolve transaction types: include all types to support Transfers as categories
         val resolvedTypes = TransactionType.entries.toSet()
 
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val finalFilter = mergedFilter.copy(
             accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds },
             categoryIds = expandedCategoryIds,

@@ -36,7 +36,7 @@ class CategorySpendingTrendCardComputer :
         config: CategorySpendingTrendCardConfig
     ): CardRenderData.CategorySpendingTrend {
         val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val mergedFilter = (if (rawFilter.categoryIds.isEmpty()) rawFilter
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))).copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }

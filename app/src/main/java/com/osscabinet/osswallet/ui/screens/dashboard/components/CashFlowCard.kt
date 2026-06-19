@@ -514,7 +514,9 @@ private fun CashFlowSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) }
+            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            excludeInternalTransfers = config.excludeInternalTransfers,
+            onExcludeInternalTransfersChange = { callbacks.onExcludeInternalTransfersChange(config.cardId, it) }
         )
     }
 }

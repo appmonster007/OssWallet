@@ -55,26 +55,22 @@ interface CardUpdateHandler {
     }
 
     /**
-     * Updates excludeInternalTransfers for any card that supports it by updating the CashFlow
-     * perspective in-place. No-ops if the current perspective is Accounting.
+     * Updates excludeInternalTransfers for any card that supports it.
      */
     fun updateCardExcludeInternalTransfers(cardId: String, exclude: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                fun updatePerspective(current: AccountingPerspective): AccountingPerspective =
-                    if (current is AccountingPerspective.CashFlow) current.copy(excludeInternalTransfers = exclude)
-                    else current
                 when (config) {
-                    is NetWorthCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is CashFlowCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is AccountsCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is AccountHeroCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is CategoryPieChartCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is CategoryTreemapCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is CashFlowComparisonCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is IncomeExpenseBarCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is CategorySpendingTrendCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
-                    is TagUpSetPlotCardConfig -> config.copy(perspective = updatePerspective(config.perspective))
+                    is NetWorthCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CashFlowCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is AccountsCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is AccountHeroCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategoryPieChartCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategoryTreemapCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CashFlowComparisonCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is IncomeExpenseBarCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is CategorySpendingTrendCardConfig -> config.copy(excludeInternalTransfers = exclude)
+                    is TagUpSetPlotCardConfig -> config.copy(excludeInternalTransfers = exclude)
                     else -> config
                 }
             }

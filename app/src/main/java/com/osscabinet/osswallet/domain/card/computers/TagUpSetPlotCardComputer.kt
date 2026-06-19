@@ -56,7 +56,7 @@ class TagUpSetPlotCardComputer(
         val mergedFilter = rawFilter.copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val excludeInternal = (config.perspective as? AccountingPerspective.CashFlow)?.excludeInternalTransfers ?: false
+        val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
         val profileId = input.profileId
         val baseCurrency = input.targetCurrency
         val exchangeRates = input.exchangeRates

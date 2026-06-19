@@ -105,6 +105,9 @@ fun rememberCardWithCallbacks(
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
                         },
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardExcludeInternalTransfers(id, exclude)
+                        },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardNetWorthFilter(
                                 id,
@@ -226,6 +229,9 @@ fun rememberCardWithCallbacks(
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
                         },
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardExcludeInternalTransfers(id, exclude)
+                        },
                         onShowNetColumnChange = { id, show ->
                             updateHandler.updateCardCashFlowShowNetColumn(id, show)
                         },
@@ -306,6 +312,9 @@ fun rememberCardWithCallbacks(
                         },
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
+                        },
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardExcludeInternalTransfers(id, exclude)
                         },
                         onManageClick = callbacks.accountActions.onManageClick,
                         onAccountClick = callbacks.accountActions.onClick,
@@ -412,6 +421,9 @@ fun rememberCardWithCallbacks(
                         },
                         onPerspectiveChange = { id, perspective ->
                             updateHandler.updateCardPerspective(id, perspective)
+                        },
+                        onExcludeInternalTransfersChange = { id, exclude ->
+                            updateHandler.updateCardExcludeInternalTransfers(id, exclude)
                         },
                         onFilterChange = { id, filter ->
                             updateHandler.updateCardHeroFilter(

@@ -35,11 +35,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -156,36 +151,42 @@ private fun SheetBody(
 @Composable
 fun CardPerspectiveSettings(
     perspective: AccountingPerspective,
-    onPerspectiveChange: (AccountingPerspective) -> Unit
+    onPerspectiveChange: (AccountingPerspective) -> Unit,
+    excludeInternalTransfers: Boolean = true,
+    onExcludeInternalTransfersChange: (Boolean) -> Unit = {}
 ) {
     CardSettingsSection("Perspective") {
+        val allPerspectives = AccountingPerspective.ALL
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            AccountingPerspective.ALL.forEachIndexed { index, mode ->
+            allPerspectives.forEachIndexed { index, mode ->
                 SegmentedButton(
-                    selected = perspective::class == mode::class,
+                    selected = perspective == mode,
                     onClick = { onPerspectiveChange(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = allPerspectives.size),
                     label = {
                         Text(
-                            if (mode is AccountingPerspective.Accounting) "Accounting" else "Cash Flow",
+                            text = when (mode) {
+                                is AccountingPerspective.Accounting -> "Accounting"
+                                is AccountingPerspective.CashFlow -> "Cash Flow"
+                            },
                             style = AppTextStyles.caption.copy(fontSize = 11.sp)
                         )
                     }
                 )
             }
         }
-        val cashFlow = perspective as? AccountingPerspective.CashFlow
-        AeonSettingsToggle(
-            label = "Exclude internal transfers",
-            description = "Hides transfers between accounts within the selected scope",
-            enabled = perspective is AccountingPerspective.CashFlow,
-            checked = cashFlow?.excludeInternalTransfers ?: false,
-            onCheckedChange = { onPerspectiveChange(AccountingPerspective.CashFlow(it)) }
-        )
+        if (perspective is AccountingPerspective.CashFlow) {
+            AeonSettingsToggle(
+                label = "Exclude internal transfers",
+                description = "Hides transfers between accounts within the selected scope",
+                checked = excludeInternalTransfers,
+                onCheckedChange = onExcludeInternalTransfersChange
+            )
+        }
     }
 }
 

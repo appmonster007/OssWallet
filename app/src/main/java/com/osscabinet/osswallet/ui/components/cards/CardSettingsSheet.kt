@@ -22,7 +22,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,8 +37,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,9 +63,9 @@ import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
- * Shared scaffold for all card settings sheets.
- * Automatically selects between a standard ModalBottomSheet and a custom AeonGlassSheet
- * based on whether glassmorphism is enabled.
+ * Shared scaffold for all card settings.
+ * If used within an AeonExpressiveCard "Flip", it renders as an inline panel.
+ * Otherwise, it defaults to a BottomSheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,26 +77,110 @@ fun CardSettingsSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val glassEnabled = LocalGlassmorphismEnabled.current
+    // If we are inside an AeonExpressiveCard back-side, we render inline.
+    // We can detect this by checking if glassmorphism is explicitly disabled by the card.
+    val isInline = !LocalGlassmorphismEnabled.current
 
-    if (glassEnabled) {
-        AeonGlassSheet(
-            onDismiss = onDismiss,
-            modifier = modifier
-        ) {
-            SheetBody(title, onDismiss, onDelete, content)
-        }
+    if (isInline) {
+        CardSettingsPanel(title, onDismiss, onDelete, modifier, content)
     } else {
-        ModalBottomSheet(
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
-            containerColor = AppColors.cardSurfaceProminent,
-            dragHandle = { BottomSheetDefaults.DragHandle() },
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            contentWindowInsets = { WindowInsets.navigationBars },
-            modifier = modifier.statusBarsPadding()
+        val glassEnabled = LocalGlassmorphismEnabled.current
+        if (glassEnabled) {
+            AeonGlassSheet(
+                onDismiss = onDismiss,
+                modifier = modifier
+            ) {
+                SheetBody(title, onDismiss, onDelete, content)
+            }
+        } else {
+            ModalBottomSheet(
+                onDismissRequest = onDismiss,
+                sheetState = sheetState,
+                containerColor = AppColors.cardSurfaceProminent,
+                dragHandle = { BottomSheetDefaults.DragHandle() },
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                contentWindowInsets = { WindowInsets.navigationBars },
+                modifier = modifier.statusBarsPadding()
+            ) {
+                SheetBody(title, onDismiss, onDelete, content)
+            }
+        }
+    }
+}
+
+@Composable
+fun CardSettingsPanel(
+    title: String,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        // High-contrast Instrument Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            SheetBody(title, onDismiss, onDelete, content)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onDismiss)
+            ) {
+                Icon(
+                    Icons.Default.ChevronLeft,
+                    contentDescription = "Back",
+                    tint = AppColors.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        text = "CONFIGURATION",
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = title,
+                        style = AppTextStyles.cardSectionTitle,
+                        color = AppColors.contentPrimary
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = { onDelete(); onDismiss() },
+                modifier = Modifier.size(36.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = AppColors.error.copy(alpha = 0.1f),
+                    contentColor = AppColors.error
+                )
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
+            }
+        }
+
+        content()
+
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = AppColors.primary,
+                contentColor = Color.White
+            )
+        ) {
+            Text("APPLY CHANGES", style = AppTextStyles.buttonLabel)
         }
     }
 }

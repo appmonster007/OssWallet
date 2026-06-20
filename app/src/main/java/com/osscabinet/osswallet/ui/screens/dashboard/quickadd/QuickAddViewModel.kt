@@ -1,6 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -17,11 +20,12 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,15 +42,21 @@ data class QuickAddState(
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val accounts: List<Account> = emptyList(),
     val structureTypes: List<AccountStructureType> = emptyList(),
+    val accountBalances: Map<String, BigDecimal> = emptyMap(),
+    val exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    val baseCurrency: String = "USD",
     val isSaving: Boolean = false
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class QuickAddViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,
     private val transactionManager: TransactionManager,
+    private val transactionRepository: TransactionRepository,
+    private val computationRepository: ComputationRepository,
     templateRepository: TemplateRepository,
     categoryRepository: CategoryRepository,
 ) : BaseViewModel(settingsRepository) {
@@ -61,33 +71,53 @@ class QuickAddViewModel @Inject constructor(
         ?: EntryMode.EXPENSE
 
     val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Template>())
 
     val categories: StateFlow<List<Category>> = categoryRepository.categories
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Category>())
 
-    private val _state = MutableStateFlow(QuickAddState(entryMode = initialType))
-    val state: StateFlow<QuickAddState> = _state.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            val profileId = settingsRepository.currentProfileId.first()
-            val allAccounts = accountRepository.getAllAccounts(profileId).first()
-            val activeAccounts = allAccounts.filter { !it.isArchived }
-            val structureTypes = allAccounts.map { it.structureType }
-                .distinct()
-                .sortedBy { it.displayName }
-            
-            _state.update { it.copy(
-                accounts = activeAccounts,
-                structureTypes = structureTypes
-            ) }
-        }
-    }
+    private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
+    
+    val state: StateFlow<QuickAddState> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId ->
+            combine(
+                _uiState,
+                accountRepository.getAllAccounts(profileId),
+                transactionRepository.getAllTransactions(profileId),
+                settingsRepository.currency,
+                computationRepository.exchangeRates
+            ) { uiState, allAccounts, transactions, baseCurrency, rates ->
+                val activeAccounts = allAccounts.filter { !it.isArchived }
+                val structureTypes = allAccounts.map { it.structureType }
+                    .distinct()
+                    .sortedBy { it.displayName }
+                
+                val balances = activeAccounts.associate { acc ->
+                    acc.id to AggregationService.calculateAccountBalance(
+                        acc.id,
+                        transactions,
+                        baseCurrency,
+                        rates
+                    )
+                }
+                
+                uiState.copy(
+                    accounts = activeAccounts,
+                    structureTypes = structureTypes,
+                    accountBalances = balances,
+                    exchangeRates = rates,
+                    baseCurrency = baseCurrency
+                )
+            }
+        }.stateIn(
+            viewModelScope, 
+            SharingStarted.WhileSubscribed(5000), 
+            QuickAddState(entryMode = initialType)
+        )
 
     fun onTemplateSelected(template: Template) {
-        val account = _state.value.accounts.find { it.id == template.accountId }
-        _state.update {
+        val account = state.value.accounts.find { it.id == template.accountId }
+        _uiState.update {
             it.copy(
                 selectedTemplate = template,
                 selectedCategoryId = template.categoryId,
@@ -101,7 +131,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onCategorySelected(category: Category) {
-        _state.update {
+        _uiState.update {
             it.copy(
                 selectedTemplate = null,
                 selectedCategoryId = category.id,
@@ -114,16 +144,16 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAmountChanged(amount: BigDecimal) {
-        _state.update { it.copy(amount = amount) }
+        _uiState.update { it.copy(amount = amount) }
     }
 
     fun goToStep(step: Int) {
-        _state.update { it.copy(currentStep = step) }
+        _uiState.update { it.copy(currentStep = step) }
     }
 
     fun onAccountTapped(accountId: String) {
-        val account = _state.value.accounts.find { it.id == accountId }
-        _state.update {
+        val account = state.value.accounts.find { it.id == accountId }
+        _uiState.update {
             it.copy(
                 selectedAccountId = accountId,
                 selectedCurrency = account?.currencyCode ?: it.selectedCurrency,
@@ -133,11 +163,11 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onCurrencySelected(currency: String) {
-        _state.update { it.copy(selectedCurrency = currency) }
+        _uiState.update { it.copy(selectedCurrency = currency) }
     }
 
     fun toggleTransactionType() {
-        _state.update {
+        _uiState.update {
             val next = if (it.entryMode == EntryMode.EXPENSE)
                 EntryMode.INCOME else EntryMode.EXPENSE
             it.copy(entryMode = next)
@@ -145,7 +175,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun saveTransaction(onSuccess: () -> Unit) {
-        val s = _state.value
+        val s = state.value
         val accountId = s.selectedAccountId ?: return
         val amount = s.amount
         if (amount <= BigDecimal.ZERO) return
@@ -158,7 +188,7 @@ class QuickAddViewModel @Inject constructor(
             ?: "Quick Transaction"
 
         viewModelScope.launch {
-            _state.update { it.copy(isSaving = true) }
+            _uiState.update { it.copy(isSaving = true) }
             runCatching {
                 withProfile { profileId ->
                     transactionManager.handleSaveTransaction(
@@ -179,22 +209,22 @@ class QuickAddViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                _state.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isSaving = false) }
                 onSuccess()
             }.onFailure {
-                _state.update { it.copy(isSaving = false) }
+                _uiState.update { it.copy(isSaving = false) }
             }
         }
     }
 
     fun reset() {
-        val currentAccounts = _state.value.accounts
-        _state.value = QuickAddState(accounts = currentAccounts, entryMode = initialType)
+        val currentAccounts = state.value.accounts
+        _uiState.value = QuickAddState(accounts = currentAccounts, entryMode = initialType)
     }
 
     val canSave: Boolean
         get() {
-            val s = _state.value
+            val s = state.value
             return s.selectedAccountId != null && s.amount > BigDecimal.ZERO
         }
 }

@@ -166,14 +166,21 @@ fun CardPerspectiveSettings(
                             text = when (mode) {
                                 is AccountingPerspective.Accounting -> "Accounting"
                                 is AccountingPerspective.CashFlow -> "Cash Flow"
-                                else -> "Perspective"
                             },
                             style = AppTextStyles.caption.copy(
                                 fontSize = 11.sp,
                                 fontWeight = if (perspective == mode) FontWeight.Bold else FontWeight.Normal
                             )
                         )
-                    }
+                    },
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                        activeContentColor = AppColors.primary,
+                        inactiveContainerColor = Color.Transparent,
+                        inactiveContentColor = AppColors.contentSecondary,
+                        activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                        inactiveBorderColor = AppColors.outlineVariant
+                    )
                 )
             }
         }
@@ -219,7 +226,15 @@ fun AeonMetricToggle(
                             fontWeight = if (selectedMetric == metric) FontWeight.Bold else FontWeight.Normal
                         )
                     )
-                }
+                },
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                    activeContentColor = AppColors.primary,
+                    inactiveContainerColor = Color.Transparent,
+                    inactiveContentColor = AppColors.contentSecondary,
+                    activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                    inactiveBorderColor = AppColors.outlineVariant
+                )
             )
         }
     }
@@ -277,7 +292,7 @@ fun CardSettingsSection(
 @Composable
 fun CardSettingsStandardizationLab() {
     var perspective by remember { mutableStateOf<AccountingPerspective>(AccountingPerspective.Accounting) }
-    var metric by remember { mutableStateOf<ChartMetric>(ChartMetric.NET) }
+    var metric by remember { mutableStateOf(ChartMetric.NET) }
     var layout by remember { mutableStateOf("grid") }
     var columns by remember { mutableIntStateOf(2) }
 
@@ -344,7 +359,15 @@ fun CardSettingsStandardizationLab() {
                                             fontWeight = if (index == 1) FontWeight.Bold else FontWeight.Normal
                                         )
                                     )
-                                }
+                                },
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                                    activeContentColor = AppColors.primary,
+                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContentColor = AppColors.contentSecondary,
+                                    activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                                    inactiveBorderColor = AppColors.outlineVariant
+                                )
                             )
                         }
                     }

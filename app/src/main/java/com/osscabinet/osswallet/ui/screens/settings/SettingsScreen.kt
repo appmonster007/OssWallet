@@ -4,20 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -28,8 +25,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,13 +38,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -64,13 +60,16 @@ fun SettingsScreen(
     val currencyCode by viewModel.currency.collectAsStateWithLifecycle()
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
     val availableProviders = viewModel.availableProviders
+    val providerName = availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"
+    val providerAttribution = availableProviders.find { it.id == currencyProviderId }?.attribution ?: "Exchangerate.host"
 
     val scrollState = rememberScrollState()
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
-                containerColor = Color.Transparent
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0)
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -82,125 +81,101 @@ fun SettingsScreen(
                             .fillMaxSize()
                             .verticalScroll(scrollState)
                             .statusBarsPadding()
+                            .padding(innerPadding)
                             .padding(
                                 top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
-                                bottom = innerPadding.calculateBottomPadding() + 40.dp
+                                bottom = 40.dp
                             )
                             .padding(horizontal = AeonTheme.dimensions.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
                     ) {
+                        // ── Editorial hero ──────────────────────────────────
+                        HeroHeader()
+
+                        // ── PERSONALIZATION ─────────────────────────────────
                         AeonSettingsSection("PERSONALIZATION") {
                             SettingsNavigationItem(
                                 title = "Display & Style",
-                                subtitle = "Theme, fonts, and animations",
+                                subtitle = "THEME • FONTS • ANIMATIONS",
                                 icon = Icons.Rounded.Palette,
                                 onClick = actions.onDisplayClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Currency & Localization",
-                                subtitle = "$currencyCode • ${availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"}",
+                                subtitle = "$currencyCode  •  $providerName",
                                 icon = Icons.Rounded.CurrencyExchange,
                                 onClick = actions.onCurrencyClick
                             )
                         }
 
+                        // ── FINANCIAL SETUP ─────────────────────────────────
                         AeonSettingsSection("FINANCIAL SETUP") {
                             SettingsNavigationItem(
                                 title = "Accounts",
-                                subtitle = "Manage balances and visibility",
+                                subtitle = "BALANCES • VISIBILITY",
                                 icon = Icons.Rounded.AccountBalance,
                                 onClick = actions.onAccountsClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Categories",
-                                subtitle = "Income and expense classification",
+                                subtitle = "INCOME • EXPENSE CLASSIFICATION",
                                 icon = Icons.Rounded.Category,
                                 onClick = actions.onCategoriesClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Tags",
-                                subtitle = "Custom labeling for transactions",
+                                subtitle = "CUSTOM LABELS FOR TRANSACTIONS",
                                 icon = Icons.AutoMirrored.Rounded.Label,
                                 onClick = actions.onTagsClick
                             )
                         }
 
+                        // ── AUTOMATION & TOOLS ──────────────────────────────
                         AeonSettingsSection("AUTOMATION & TOOLS") {
                             SettingsNavigationItem(
                                 title = "Transaction Templates",
-                                subtitle = "Quick shortcuts for frequent entries",
+                                subtitle = "QUICK SHORTCUTS • FREQUENT ENTRIES",
                                 icon = Icons.Rounded.AutoAwesome,
                                 onClick = actions.onTemplatesClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Smart Suggestions",
-                                subtitle = "Discover recurring transactions",
+                                subtitle = "DISCOVER RECURRING TRANSACTIONS",
                                 icon = Icons.Rounded.AutoAwesome,
                                 onClick = actions.onSmartSuggestionsClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Saved Filters",
-                                subtitle = "Custom search presets",
+                                subtitle = "CUSTOM SEARCH PRESETS",
                                 icon = Icons.Rounded.FilterList,
                                 onClick = actions.onFiltersClick
                             )
                         }
 
+                        // ── PRIVACY & SAFETY ────────────────────────────────
                         AeonSettingsSection("PRIVACY & SAFETY") {
                             SettingsNavigationItem(
                                 title = "Security & Privacy",
-                                subtitle = "App lock, location, and web access",
+                                subtitle = "APP LOCK • LOCATION • WEB ACCESS",
                                 icon = Icons.Rounded.Lock,
                                 onClick = actions.onSecurityClick
                             )
                             SettingsDivider()
                             SettingsNavigationItem(
                                 title = "Data Management",
-                                subtitle = "Import, export, and backups",
+                                subtitle = "IMPORT • EXPORT • BACKUPS",
                                 icon = Icons.Rounded.CloudSync,
                                 onClick = actions.onDataManagementClick
                             )
                         }
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = AeonTheme.dimensions.spacingLg),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                        ) {
-                            Text(
-                                text = "OssWallet v1.1.0",
-                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
-                                color = AppColors.contentPrimary.copy(alpha = 0.8f)
-                            )
-                            Text(
-                                text = "Built for Modern Accounts",
-                                style = AppTextStyles.caption,
-                                color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                            )
-
-                            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-
-                            Text(
-                                "Currency rates provided by",
-                                style = AppTextStyles.transactionSwipeAction,
-                                color = AppColors.contentSecondary.copy(alpha = 0.5f)
-                            )
-                            Text(
-                                availableProviders.find { it.id == currencyProviderId }?.attribution
-                                    ?: "Exchangerate.host",
-                                style = AppTextStyles.transactionSwipeAction.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = AppColors.primary
-                            )
-                        }
+                        // ── Footer ──────────────────────────────────────────
+                        SettingsFooter(attribution = providerAttribution)
                     }
                 }
             }
@@ -214,6 +189,66 @@ fun SettingsScreen(
                         )
                     }
                 )
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroHeader() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = AeonTheme.dimensions.spacingMd),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+    ) {
+        Text(
+            text = "PREFERENCES",
+            style = AppTextStyles.sectionOverline,
+            color = AppColors.accent
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = "Settings",
+            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Light),
+            color = AppColors.contentPrimary
+        )
+        Text(
+            text = "v1.1.0",
+            style = AppTextStyles.metaLabel,
+            color = AppColors.contentSecondary
+        )
+    }
+}
+
+@Composable
+private fun SettingsFooter(attribution: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = AeonTheme.dimensions.spacingLg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "BUILT FOR MODERN ACCOUNTS",
+            style = AppTextStyles.sectionOverline,
+            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "RATES BY",
+                style = AppTextStyles.metaLabel,
+                color = AppColors.contentSecondary.copy(alpha = 0.45f)
+            )
+            Text(
+                text = attribution.uppercase(),
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Bold),
+                color = AppColors.accent.copy(alpha = 0.7f)
             )
         }
     }
@@ -239,7 +274,7 @@ private fun SettingsNavigationItem(
     subtitle: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    color: androidx.compose.ui.graphics.Color = AppColors.contentPrimary
+    color: Color = AppColors.contentPrimary
 ) {
     AeonSettingsItem(
         title = title,
@@ -252,9 +287,11 @@ private fun SettingsNavigationItem(
 
 @Composable
 private fun SettingsDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
-        thickness = 0.5.dp,
-        color = AppColors.divider.copy(alpha = 0.5f)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .padding(horizontal = AeonTheme.dimensions.cardPadding)
+            .aeonDottedUnderline(AppColors.outlineVariant)
     )
 }

@@ -54,12 +54,12 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
@@ -395,19 +395,17 @@ private fun AccountHeroSettingsSheet(
 ) {
     CardSettingsSheet(title = "Account Hero", onDismiss = onDismiss, onDelete = {}) {
         CardSettingsSection("Display") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Currency Badges",
-                subtitle = "Show breakdown of multi-currency balances",
+                description = "Show breakdown of multi-currency balances",
                 checked = config.showCurrencyBadges,
-                onCheckedChange = { callbacks.onShowCurrencyBadgesChange(config.cardId, it) },
-                isFlush = true
+                onCheckedChange = { callbacks.onShowCurrencyBadgesChange(config.cardId, it) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Comparison",
-                subtitle = "Show change from previous period",
+                description = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
-                isFlush = true
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
             )
         }
         com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(

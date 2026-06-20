@@ -27,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,7 +49,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -450,36 +449,36 @@ private fun CategoryTreemapSettingsSheet(
 ) {
     CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Show Labels",
                 config.showLabels,
-                subtitle = "Display category names on segments",
+                description = "Display category names on segments",
                 onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Show Legend",
                 config.showLegend,
-                subtitle = "Display list of categories beneath the map",
+                description = "Display list of categories beneath the map",
                 onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Rounded Visuals",
                 config.rounded,
-                subtitle = "Apply rounded corners and spacing to segments",
+                description = "Apply rounded corners and spacing to segments",
                 onCheckedChange = { onUpdate(config.copy(rounded = it)) }
             )
         }
         CardSettingsSection("Data") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Full Breakdown",
                 config.showFullBreakdown,
-                subtitle = "Show all categories instead of top 5",
+                description = "Show all categories instead of top 5",
                 onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Active Only",
                 config.showOnlyActiveCategories,
-                subtitle = "Only show categories with non-zero values",
+                description = "Only show categories with non-zero values",
                 onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
             )
         }

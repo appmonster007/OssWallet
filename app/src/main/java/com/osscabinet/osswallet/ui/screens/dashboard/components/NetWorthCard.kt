@@ -46,8 +46,8 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
@@ -413,12 +413,11 @@ private fun NetWorthSettingsSheet(
             }
         }
         CardSettingsSection("Display") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Comparison",
-                subtitle = "Show change from previous period",
+                description = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
-                isFlush = true
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
             )
         }
         CardPerspectiveSettings(

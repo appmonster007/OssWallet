@@ -40,7 +40,6 @@ import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonLazyRow
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardLarge
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
@@ -189,12 +188,11 @@ private fun AccountsSettingsSheet(
                 gridColumns = config.gridColumns,
                 onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Comparison",
-                subtitle = "Show change from previous period",
+                description = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
-                isFlush = true
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
             )
             AeonSettingsToggle(
                 label = "Show add account card",

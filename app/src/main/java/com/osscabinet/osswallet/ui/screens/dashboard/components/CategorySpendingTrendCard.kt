@@ -51,8 +51,8 @@ import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyUtil
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -323,17 +323,15 @@ private fun CategorySpendingSettingsSheet(
         onDelete = callbacks.onDelete
     ) {
         CardSettingsSection("Display") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Cumulative",
                 checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
             )
         }
         CardPerspectiveSettings(

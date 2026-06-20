@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
@@ -35,6 +36,7 @@ import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
@@ -53,6 +55,7 @@ fun QuickAddAmountStep(
     category: Category?,
     account: Account?,
     accountBalance: BigDecimal,
+    entryMode: EntryMode,
     exchangeRates: Map<String, BigDecimal>,
     baseCurrency: String,
     selectedCurrency: String,
@@ -74,11 +77,12 @@ fun QuickAddAmountStep(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Editorial Context Strip: [Icon] Template/Category · Account
+        // Editorial Context Strip: [Icon] Template/Category · Account + Balance
         EditorialContextStrip(
             template = template,
             category = category,
             account = account,
+            accountBalance = accountBalance,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
@@ -91,13 +95,14 @@ fun QuickAddAmountStep(
             header = { state, _, onHistory ->
                 AmountHeroPanel(
                     amount = state.display,
-                    expression = state.tokens.joinToString(" ") { it.toString() },
+                    expression = state.displayExpression,
                     currency = selectedCurrency.ifBlank { currencies.firstOrNull() ?: "USD" },
                     currencies = currencies,
                     onCurrencyChange = onCurrencySelected,
-                    accountName = account?.name ?: "Unknown",
                     accountBalance = accountBalance,
-                    accountCurrency = account?.currencyCode ?: "USD"
+                    accountCurrency = account?.currencyCode ?: "USD",
+                    entryMode = entryMode,
+                    inputAmount = amount
                 )
             }
         )
@@ -109,15 +114,21 @@ private fun EditorialContextStrip(
     template: Template?,
     category: Category?,
     account: Account?,
+    accountBalance: BigDecimal,
     modifier: Modifier = Modifier
 ) {
     val displayCategory = template?.categoryId?.let { _ -> category } ?: category
     val fallbackAccent = AppColors.accent
-    val accentColor = remember(displayCategory?.colorHex) {
+    val categoryColor = remember(displayCategory?.colorHex) {
         displayCategory?.colorHex
             ?.let { Color(it or (0xFF shl 24).toInt()) }
             ?: fallbackAccent
     }
+    val accountColor = remember(account?.colorHex) {
+        account?.colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+            ?: fallbackAccent
+    }
+    val accountCurrency = account?.currencyCode ?: "USD"
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
@@ -131,19 +142,19 @@ private fun EditorialContextStrip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Icon container
+            // Category Icon container
             Box(
                 modifier = Modifier
                     .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(accentColor.copy(alpha = 0.15f))
-                    .aeonHairlineBorder(RoundedCornerShape(10.dp), accent = accentColor.copy(alpha = 0.3f)),
+                    .clip(CircleShape)
+                    .background(categoryColor.copy(alpha = 0.15f))
+                    .aeonHairlineBorder(CircleShape, accent = categoryColor.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = getIconByName(displayCategory?.iconName),
                     contentDescription = null,
-                    tint = accentColor,
+                    tint = categoryColor,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -163,7 +174,7 @@ private fun EditorialContextStrip(
                 )
             }
 
-            // Separator
+            // Vertical Divider
             Box(
                 modifier = Modifier
                     .width(1.dp)
@@ -172,20 +183,40 @@ private fun EditorialContextStrip(
             )
 
             // Account info
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(accentColor)
-                )
                 Text(
                     text = account?.name ?: "No Account",
                     style = AppTextStyles.sectionOverline.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium),
-                    color = AppColors.contentSecondary
+                    color = AppColors.contentSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = formatCurrency(accountBalance, accountCurrency),
+                    style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                    color = AppColors.contentPrimary,
+                    maxLines = 1
+                )
+            }
+
+            // Account Icon container
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(accountColor.copy(alpha = 0.15f))
+                    .aeonHairlineBorder(CircleShape, accent = accountColor.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = getAccountIconByName(account?.icon),
+                    contentDescription = null,
+                    tint = accountColor,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
@@ -199,14 +230,20 @@ private fun AmountHeroPanel(
     currency: String,
     currencies: List<String>,
     onCurrencyChange: (String) -> Unit,
-    accountName: String,
     accountBalance: BigDecimal,
-    accountCurrency: String
+    accountCurrency: String,
+    entryMode: EntryMode,
+    inputAmount: BigDecimal
 ) {
     val (whole, decimal) = remember(amount) {
         val parts = amount.split(".")
         if (parts.size == 2) parts[0] + "." to parts[1]
         else amount + "." to "00"
+    }
+
+    val closingBalance = remember(accountBalance, inputAmount, entryMode) {
+        if (entryMode == EntryMode.INCOME) accountBalance + inputAmount
+        else accountBalance - inputAmount
     }
 
     Column(
@@ -241,7 +278,7 @@ private fun AmountHeroPanel(
                         style = AppTextStyles.heroAmountLarge.copy(
                             fontFamily = LocalAppFont.current.displayFamily,
                             fontWeight = FontWeight.Light,
-                            fontSize = 54.sp
+                            fontSize = 24.sp
                         ),
                         color = AppColors.contentPrimary
                     )
@@ -250,7 +287,7 @@ private fun AmountHeroPanel(
                         style = AppTextStyles.heroAmountLarge.copy(
                             fontFamily = LocalAppFont.current.displayFamily,
                             fontWeight = FontWeight.Light,
-                            fontSize = 38.sp
+                            fontSize = 18.sp
                         ),
                         color = AppColors.contentSecondary,
                         modifier = Modifier.padding(bottom = 6.dp)
@@ -260,7 +297,7 @@ private fun AmountHeroPanel(
                         modifier = Modifier
                             .padding(start = 6.dp, bottom = 10.dp)
                             .width(2.dp)
-                            .height(46.dp)
+                            .height(24.dp)
                             .background(AppColors.accent)
                     )
                 }
@@ -283,7 +320,7 @@ private fun AmountHeroPanel(
             }
 
             // Expression line
-            if (expression.isNotBlank() && expression != amount) {
+            if (expression.isNotBlank() && expression != amount && expression != "0") {
                 Text(
                     text = expression,
                     style = AppTextStyles.metaLabel.copy(fontSize = 11.sp),
@@ -311,34 +348,14 @@ private fun AmountHeroPanel(
         ) {
             Text(
                 text = "Today · Now",
-                style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
+                style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
                 color = AppColors.contentSecondary
             )
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Deduct from ",
-                    style = AppTextStyles.caption.copy(fontSize = 11.sp),
-                    color = AppColors.contentSecondary
-                )
-                Text(
-                    text = accountName,
-                    style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold),
-                    color = AppColors.contentPrimary
-                )
-            }
-        }
-        
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
+
             Text(
-                text = "Balance: ${formatCurrency(accountBalance, accountCurrency)}",
-                style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
-                color = AppColors.accent.copy(alpha = 0.8f)
+                text = "Closing: ${formatCurrency(closingBalance, accountCurrency)}",
+                style = AppTextStyles.metaLabel.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                color = AppColors.accent.copy(alpha = 0.9f)
             )
         }
     }
@@ -358,6 +375,7 @@ fun PreviewQuickAddAmountStep() {
                 category = mockCategory,
                 account = mockAccount,
                 accountBalance = BigDecimal("1500.00"),
+                entryMode = EntryMode.EXPENSE,
                 exchangeRates = emptyMap(),
                 baseCurrency = "USD",
                 selectedCurrency = "USD",

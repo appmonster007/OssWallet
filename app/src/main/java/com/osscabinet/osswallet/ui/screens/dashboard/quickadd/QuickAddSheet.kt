@@ -381,6 +381,7 @@ private fun QuickAddSheetContent(
                             category = selectedCategory,
                             account = selectedAccount,
                             accountBalance = state.accountBalances[state.selectedAccountId] ?: BigDecimal.ZERO,
+                            entryMode = state.entryMode,
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
                             selectedCurrency = state.selectedCurrency,

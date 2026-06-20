@@ -103,6 +103,17 @@ fun OssWalletNavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDest = navBackStackEntry?.destination
 
+    // Swipe-to-open only on top-level destinations — on sub-screens the left-edge
+    // swipe is reserved for predictive-back and opening the drawer there is disorienting.
+    val isTopLevelDestination = when {
+        currentDest?.hasRoute(DashboardRoute::class) == true          -> true
+        currentDest?.hasRoute(AnalyticsRoute::class) == true          -> true
+        currentDest?.hasRoute(ExchangeRatesRoute::class) == true      -> true
+        currentDest?.hasRoute(TransactionListRoute::class) == true    ->
+            navBackStackEntry?.toRoute<TransactionListRoute>()?.topLevel == true
+        else                                                           -> false
+    }
+
     val selectedRoute = when {
         currentDest?.hasRoute(DashboardRoute::class) == true          -> "dashboard"
         currentDest?.hasRoute(TransactionListRoute::class) == true    -> "transaction_list"
@@ -134,9 +145,7 @@ fun OssWalletNavGraph(
 
     ModalNavigationDrawer(
             drawerState = drawerState,
-            // Best Practice: Enable default gestures. Material 3 handles edge-swipe to open
-            // and background scrim taps to close automatically and robustly.
-            gesturesEnabled = true,
+            gesturesEnabled = isTopLevelDestination,
             drawerContent = {
                 AppDrawerContent(
                     drawerHazeState = drawerHazeState,

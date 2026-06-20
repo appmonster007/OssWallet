@@ -2,8 +2,8 @@ package com.osscabinet.ossWallet.ui.components
 
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.ArrowDownward
@@ -36,11 +35,9 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.EventRepeat
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.DrawerDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,14 +45,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -85,14 +79,22 @@ fun AppDrawerContent(
     // navigate-while-animating race that caused inconsistent tap behaviour.
     onNavigate: (() -> Unit) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
     val uiScale = AeonTheme.uiScale
     val drawerShape = RoundedCornerShape(
         topEnd = AeonTheme.dimensions.cardCornerRadius,
         bottomEnd = AeonTheme.dimensions.cardCornerRadius
     )
-    val glassStyle = GlassTokens.drawerStyle()
     val scrollState = rememberScrollState()
+
+    // H editorial: accent-tinted selected state, transparent unselected
+    val drawerItemColors = NavigationDrawerItemDefaults.colors(
+        selectedContainerColor = AppColors.accent.copy(alpha = 0.10f),
+        unselectedContainerColor = Color.Transparent,
+        selectedIconColor = AppColors.accent,
+        unselectedIconColor = AppColors.contentSecondary,
+        selectedTextColor = AppColors.contentPrimary,
+        unselectedTextColor = AppColors.contentPrimary
+    )
 
     GlassSurface(
         modifier = Modifier
@@ -100,7 +102,7 @@ fun AppDrawerContent(
             .fillMaxHeight(),
         shape = drawerShape,
         hazeState = drawerHazeState,
-        hazeStyle = glassStyle,
+        hazeStyle = GlassTokens.drawerStyle(),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Drawer,
         fallbackColor = AppColors.drawerSurface,
     ) {
@@ -114,7 +116,7 @@ fun AppDrawerContent(
                     .weight(1f)
                     .verticalScroll(scrollState)
             ) {
-                // Profile Header
+                // ── Profile header ───────────────────────────────────────
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -124,62 +126,56 @@ fun AppDrawerContent(
                             vertical = AeonTheme.dimensions.screenPadding
                         )
                 ) {
-                    Surface(
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSize2xl),
-                        shape = CircleShape,
-                        color = AppColors.primaryContainer
+                    // H editorial: inset square with initial letter
+                    val initial = (currentProfile?.name?.firstOrNull() ?: '?').uppercaseChar().toString()
+                    val avatarShape = RoundedCornerShape(10.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(AeonTheme.dimensions.iconSize2xl)
+                            .clip(avatarShape)
+                            .background(AppColors.screenBackground)
+                            .border(0.5.dp, AppColors.outlineVariant, avatarShape),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd),
-                                tint = AppColors.onPrimaryContainer
-                            )
-                        }
+                        Text(
+                            text = initial,
+                            style = AppTextStyles.sectionOverline,
+                            color = AppColors.accent
+                        )
                     }
                     Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
                     Text(
                         currentProfile?.name ?: "Intelligence",
-                        style = AppTextStyles.heroAmount
+                        style = AppTextStyles.heroAmount,
+                        color = AppColors.contentPrimary
                     )
                     Text(
-                        "Personal Account",
-                        style = AppTextStyles.transactionTitle,
+                        "PERSONAL ACCOUNT",
+                        style = AppTextStyles.metaLabel,
                         color = AppColors.contentSecondary
                     )
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding),
-                    color = AppColors.insetSurface.copy(alpha = 0.5f)
-                )
-
+                DrawerHairline()
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
-                // Navigation Items
+                // ── Primary navigation ───────────────────────────────────
                 val navItems = listOf(
                     Triple("DASHBOARD", "dashboard", Icons.Default.Dashboard),
                     Triple("RECORDS", "transaction_list", Icons.AutoMirrored.Filled.ListAlt),
                     Triple("ANALYTICS", "analytics", Icons.Default.AutoGraph),
                     Triple("EXCHANGE RATES", "exchange_rates", Icons.Default.CurrencyExchange)
                 )
-
                 navItems.forEach { (label, route, icon) ->
                     NavigationDrawerItem(
-                        label = {
-                            Text(
-                                label,
-                                style = AppTextStyles.listSectionHeader
-                            )
-                        },
+                        label = { Text(label, style = AppTextStyles.listSectionHeader) },
                         selected = selectedDestination == route,
                         onClick = {
                             onNavigate {
                                 when (route) {
-                                    "dashboard" -> onDashboardClick()
+                                    "dashboard"      -> onDashboardClick()
                                     "transaction_list" -> onRecordsClick()
-                                    "analytics" -> onAnalyticsClick()
+                                    "analytics"      -> onAnalyticsClick()
                                     "exchange_rates" -> onExchangeRatesClick()
                                 }
                             }
@@ -191,56 +187,30 @@ fun AppDrawerContent(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                             )
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
+                        colors = drawerItemColors
                     )
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(
-                        horizontal = AeonTheme.dimensions.listPadding,
-                        vertical = AeonTheme.dimensions.spacingSm
-                    ),
-                    color = AppColors.insetSurface.copy(alpha = 0.5f)
-                )
-
-                Text(
-                    "PLANNING",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(
-                        horizontal = AeonTheme.dimensions.listPadding,
-                        vertical = AeonTheme.dimensions.spacingSm
-                    )
-                )
+                // ── PLANNING ─────────────────────────────────────────────
+                DrawerSectionLabel("PLANNING")
 
                 val planningItems = listOf(
                     Triple("PLANNED PAYMENTS", "planned_payment_list", Icons.Rounded.EventRepeat),
                     Triple("BUDGETS", "budget_list", Icons.Default.Savings),
                     Triple("LOANS", "loan_list", Icons.Default.AccountBalance)
                 )
-
                 planningItems.forEach { (label, route, icon) ->
                     NavigationDrawerItem(
-                        label = {
-                            Text(
-                                label,
-                                style = AppTextStyles.listSectionHeader
-                            )
-                        },
+                        label = { Text(label, style = AppTextStyles.listSectionHeader) },
                         selected = selectedDestination == route,
                         onClick = {
                             onNavigate {
                                 when (route) {
                                     "planned_payment_list" -> onPlannedPaymentsClick()
-                                    "budget_list" -> onBudgetsClick()
-                                    "loan_list" -> onLoansClick()
+                                    "budget_list"          -> onBudgetsClick()
+                                    "loan_list"            -> onLoansClick()
                                 }
                             }
                         },
@@ -251,82 +221,49 @@ fun AppDrawerContent(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                             )
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
+                        colors = drawerItemColors
                     )
                 }
 
+                // ── QUICK ACCESS (starred templates) ─────────────────────
                 if (starredTemplates.isNotEmpty()) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(
-                            horizontal = AeonTheme.dimensions.listPadding,
-                            vertical = AeonTheme.dimensions.spacingSm
-                        ),
-                        color = AppColors.insetSurface.copy(alpha = 0.5f)
-                    )
-
-                    Text(
-                        "QUICK ACCESS",
-                        style = AppTextStyles.transactionSwipeAction.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        ),
-                        color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(
-                            horizontal = AeonTheme.dimensions.listPadding,
-                            vertical = AeonTheme.dimensions.spacingSm
-                        )
-                    )
+                    DrawerSectionLabel("QUICK ACCESS")
 
                     starredTemplates.forEach { template ->
                         NavigationDrawerItem(
-                            label = { Text(template.name, style = AppTextStyles.drawerItemLabel) },
+                            label = {
+                                Text(
+                                    template.name,
+                                    style = AppTextStyles.drawerItemLabel,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
                             selected = false,
                             onClick = { onNavigate { onTemplateClick(template) } },
                             icon = {
                                 Icon(
                                     when (template.entryMode) {
-                                        EntryMode.INCOME -> Icons.Rounded.ArrowUpward
+                                        EntryMode.INCOME   -> Icons.Rounded.ArrowUpward
                                         EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
-                                        else -> Icons.Rounded.ArrowDownward
+                                        else               -> Icons.Rounded.ArrowDownward
                                     },
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
-                                    tint = AppColors.primary
+                                    tint = AppColors.accent
                                 )
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(scaledDp(48f, uiScale)),
+                            modifier = Modifier.fillMaxWidth().height(scaledDp(48f, uiScale)),
                             shape = RectangleShape,
-                            colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
+                            colors = drawerItemColors
                         )
                     }
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(
-                        horizontal = AeonTheme.dimensions.listPadding,
-                        vertical = AeonTheme.dimensions.spacingSm
-                    ),
-                    color = AppColors.insetSurface.copy(alpha = 0.5f)
-                )
-
-                Text(
-                    "ACCOUNTS",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    color = AppColors.contentSecondary,
-                    modifier = Modifier.padding(
-                        horizontal = AeonTheme.dimensions.listPadding,
-                        vertical = AeonTheme.dimensions.spacingSm
-                    )
-                )
+                // ── ACCOUNTS ─────────────────────────────────────────────
+                DrawerSectionLabel("ACCOUNTS")
 
                 nonArchivedAccounts.sortedBy { it.name }.forEach { account ->
                     NavigationDrawerItem(
@@ -345,7 +282,7 @@ fun AppDrawerContent(
                                 )
                                 Text(
                                     account.currencyCode,
-                                    style = AppTextStyles.transactionSwipeAction,
+                                    style = AppTextStyles.metaLabel,
                                     color = AppColors.contentSecondary
                                 )
                             }
@@ -356,7 +293,7 @@ fun AppDrawerContent(
                             val accountColor = try {
                                 Color(AndroidColor.parseColor(account.colorHex))
                             } catch (_: Exception) {
-                                AppColors.primary
+                                AppColors.accent
                             }
                             Box(
                                 modifier = Modifier
@@ -365,32 +302,18 @@ fun AppDrawerContent(
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
                         shape = RectangleShape,
-                        colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
+                        colors = drawerItemColors
                     )
                 }
             }
 
-            // Static Footer
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(AppColors.panelSurface)
-            ) {
-                HorizontalDivider(
-                    color = AppColors.insetSurface.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.listPadding)
-                )
+            // ── Static footer — Settings ──────────────────────────────
+            Column(modifier = Modifier.fillMaxWidth()) {
+                DrawerHairline()
                 NavigationDrawerItem(
-                    label = {
-                        Text(
-                            "SETTINGS",
-                            style = AppTextStyles.listSectionHeader
-                        )
-                    },
+                    label = { Text("SETTINGS", style = AppTextStyles.listSectionHeader) },
                     selected = selectedDestination == "settings",
                     onClick = { onNavigate { onSettingsClick() } },
                     icon = {
@@ -400,15 +323,50 @@ fun AppDrawerContent(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RectangleShape,
-                    colors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = AppColors.transparent)
+                    colors = drawerItemColors
                 )
             }
         }
     }
+}
+
+/** Mono section overline with a hairline rule to the right — H editorial separator. */
+@Composable
+private fun DrawerSectionLabel(title: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                start = AeonTheme.dimensions.listPadding,
+                end = AeonTheme.dimensions.listPadding,
+                top = AeonTheme.dimensions.spacingMd,
+                bottom = AeonTheme.dimensions.spacingXs
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+    ) {
+        Text(title, style = AppTextStyles.sectionOverline, color = AppColors.accent)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(0.5.dp)
+                .background(AppColors.outlineVariant)
+        )
+    }
+}
+
+/** 0.5dp hairline — replaces HorizontalDivider in the drawer. */
+@Composable
+private fun DrawerHairline() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AeonTheme.dimensions.listPadding)
+            .height(0.5.dp)
+            .background(AppColors.outlineVariant)
+    )
 }
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)

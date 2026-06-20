@@ -128,13 +128,12 @@ fun AppDrawerContent(
                 ) {
                     // H editorial: inset square with initial letter
                     val initial = (currentProfile?.name?.firstOrNull() ?: '?').uppercaseChar().toString()
-                    val avatarShape = RoundedCornerShape(10.dp)
                     Box(
                         modifier = Modifier
                             .size(AeonTheme.dimensions.iconSize2xl)
-                            .clip(avatarShape)
+                            .clip(CircleShape)
                             .background(AppColors.screenBackground)
-                            .border(0.5.dp, AppColors.outlineVariant, avatarShape),
+                            .border(0.5.dp, AppColors.outlineVariant, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

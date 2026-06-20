@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,9 +46,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
+import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
@@ -77,12 +87,10 @@ fun CardSettingsSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    // If we are inside an AeonExpressiveCard back-side, we render inline.
-    // We can detect this by checking if glassmorphism is explicitly disabled by the card.
     val isInline = !LocalGlassmorphismEnabled.current
 
     if (isInline) {
-        CardSettingsPanel(title, onDismiss, onDelete, modifier, content)
+        AeonExpressiveCardConfig(title, onDismiss, onDelete, modifier, content)
     } else {
         val glassEnabled = LocalGlassmorphismEnabled.current
         if (glassEnabled) {
@@ -109,83 +117,6 @@ fun CardSettingsSheet(
 }
 
 @Composable
-fun CardSettingsPanel(
-    title: String,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-    ) {
-        // High-contrast Instrument Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(onClick = onDismiss)
-            ) {
-                Icon(
-                    Icons.Default.ChevronLeft,
-                    contentDescription = "Back",
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Column {
-                    Text(
-                        text = "CONFIGURATION",
-                        style = AppTextStyles.overlineLabel,
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = title,
-                        style = AppTextStyles.cardSectionTitle,
-                        color = AppColors.contentPrimary
-                    )
-                }
-            }
-
-            IconButton(
-                onClick = { onDelete(); onDismiss() },
-                modifier = Modifier.size(36.dp),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = AppColors.error.copy(alpha = 0.1f),
-                    contentColor = AppColors.error
-                )
-            ) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete card", modifier = Modifier.size(18.dp))
-            }
-        }
-
-        content()
-
-        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = AppColors.primary,
-                contentColor = Color.White
-            )
-        ) {
-            Text("APPLY CHANGES", style = AppTextStyles.buttonLabel)
-        }
-    }
-}
-
-@Composable
 private fun SheetBody(
     title: String,
     onDismiss: () -> Unit,
@@ -198,40 +129,19 @@ private fun SheetBody(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp)
-            .padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+            .padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        AeonExpressiveCardConfig(
+            title = title,
+            onDismiss = onDismiss,
+            onDelete = onDelete,
+            modifier = Modifier // Pass empty modifier to prevent double scrolling
         ) {
-            Text(
-                text = title,
-                style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = { onDelete(); onDismiss() },
-                colors = IconButtonDefaults.iconButtonColors(contentColor = AppColors.error)
-            ) {
-                Icon(Icons.Filled.Delete, contentDescription = "Delete card")
-            }
+            content()
         }
 
-        content()
-
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius)
-        ) {
-            Text("Done", style = AppTextStyles.buttonLabel)
-        }
-
-        Spacer(modifier = Modifier.height(navPadding + 24.dp))
+        Spacer(modifier = Modifier.height(navPadding + 16.dp))
     }
 }
 
@@ -245,11 +155,7 @@ fun CardPerspectiveSettings(
 ) {
     CardSettingsSection("Perspective") {
         val allPerspectives = AccountingPerspective.ALL
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             allPerspectives.forEachIndexed { index, mode ->
                 SegmentedButton(
                     selected = perspective == mode,
@@ -260,19 +166,25 @@ fun CardPerspectiveSettings(
                             text = when (mode) {
                                 is AccountingPerspective.Accounting -> "Accounting"
                                 is AccountingPerspective.CashFlow -> "Cash Flow"
+                                else -> "Perspective"
                             },
-                            style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                            style = AppTextStyles.caption.copy(
+                                fontSize = 11.sp,
+                                fontWeight = if (perspective == mode) FontWeight.Bold else FontWeight.Normal
+                            )
                         )
                     }
                 )
             }
         }
+        
         AeonSettingsToggle(
             label = "Exclude internal transfers",
-            description = "Hides transfers between accounts within the selected scope",
+            description = "Hides transfers between accounts",
             checked = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow,
             onCheckedChange = onExcludeInternalTransfersChange,
-            enabled = perspective is AccountingPerspective.CashFlow
+            enabled = perspective is AccountingPerspective.CashFlow,
+            showBackground = false
         )
     }
 }
@@ -290,14 +202,9 @@ fun AeonMetricToggle(
     modifier: Modifier = Modifier
 ) {
     val labels = AccountingPerspective.labelsFor(perspective)
-    // Filter out metrics not supported by the current perspective (e.g., TRANSFER in Cash Flow)
     val options = ChartMetric.entries.filter { it in labels }
 
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
+    SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {
         options.forEachIndexed { index, metric ->
             val label = labels[metric] ?: metric.name
             SegmentedButton(
@@ -307,7 +214,10 @@ fun AeonMetricToggle(
                 label = {
                     Text(
                         text = label,
-                        style = AppTextStyles.caption.copy(fontSize = 11.sp)
+                        style = AppTextStyles.caption.copy(
+                            fontSize = 11.sp,
+                            fontWeight = if (selectedMetric == metric) FontWeight.Bold else FontWeight.Normal
+                        )
                     )
                 }
             )
@@ -319,47 +229,142 @@ fun AeonMetricToggle(
 fun CardSettingsSection(
     title: String,
     modifier: Modifier = Modifier,
+    showBackground: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        color = AppColors.insetSurface.copy(alpha = 0.4f),
-        shape = RoundedCornerShape(20.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
+    val sectionContent = @Composable {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier.padding(vertical = if (showBackground) 16.dp else 8.dp),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
         ) {
             Text(
                 text = title.uppercase(),
-                style = AppTextStyles.transactionSwipeAction.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.2.sp,
-                    fontSize = 11.sp
+                style = AppTextStyles.overlineLabel.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.4.sp,
+                    fontSize = 10.sp
                 ),
                 color = AppColors.contentSecondary.copy(alpha = 0.6f),
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
-            content()
+            
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+            ) {
+                content()
+            }
+        }
+    }
+
+    if (showBackground) {
+        Surface(
+            color = AppColors.insetSurface.copy(alpha = 0.25f),
+            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+            modifier = modifier.fillMaxWidth()
+        ) {
+            sectionContent()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            sectionContent()
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Standardization Lab", heightDp = 1500)
 @Composable
-fun CardSettingsSheetPreview() {
+fun CardSettingsStandardizationLab() {
+    var perspective by remember { mutableStateOf<AccountingPerspective>(AccountingPerspective.Accounting) }
+    var metric by remember { mutableStateOf<ChartMetric>(ChartMetric.NET) }
+    var layout by remember { mutableStateOf("grid") }
+    var columns by remember { mutableIntStateOf(2) }
+
     OssWalletTheme {
-        Surface{
-            CardSettingsSheet(
-                title = "Card Settings",
+        Surface(
+            color = AppColors.background,
+        ) {
+            AeonExpressiveCardConfig(
+                title = "Standardization Lab",
                 onDismiss = {},
-                onDelete = {}
+                onDelete = {},
+                modifier = Modifier.fillMaxWidth()
             ) {
+                // 1. Perspective Section (Complex Group)
                 CardPerspectiveSettings(
-                    perspective = AccountingPerspective.Accounting,
-                    onPerspectiveChange = {}
+                    perspective = perspective,
+                    onPerspectiveChange = { perspective = it }
                 )
+
+                // 2. Metrics Section (Dynamic Segmented)
+                CardSettingsSection("Metric Selection") {
+                    AeonMetricToggle(
+                        perspective = perspective,
+                        selectedMetric = metric,
+                        onMetricChange = { metric = it }
+                    )
+                }
+
+                // 3. Layout & Visuals (Using showBackground = false for components with their own surfaces)
+                CardSettingsSection("Layout & Visuals", showBackground = false) {
+                    AeonLayoutToggle(layout = layout, onLayoutChange = { layout = it }, showBackground = false)
+                    AeonGridColumnsSettings(gridColumns = columns, onGridColumnsChange = { columns = it }, showBackground = false)
+                }
+
+                // 4. Display Flags (Unified Boolean Controls)
+                CardSettingsSection("Display Flags") {
+                    AeonSettingsToggle(
+                        label = "Show Comparison",
+                        description = "Show change from previous period",
+                        checked = true,
+                        onCheckedChange = { },
+                        showBackground = false
+                    )
+                    AeonSettingsToggle(
+                        label = "Show Labels",
+                        checked = false,
+                        onCheckedChange = { },
+                        showBackground = false
+                    )
+                }
+
+                // 5. General Configuration (Standard Pickers)
+                CardSettingsSection("General") {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        listOf("S", "M", "L", "XL").forEachIndexed { index, size ->
+                            SegmentedButton(
+                                selected = index == 1,
+                                onClick = { },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
+                                label = {
+                                    Text(
+                                        size,
+                                        style = AppTextStyles.caption.copy(
+                                            fontWeight = if (index == 1) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // 6. Actions (Outlined variant)
+                CardSettingsSection("Actions", showBackground = false) {
+                    OutlinedButton(
+                        onClick = { },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.outlineVariant)
+                    ) {
+                        Icon(Icons.Default.Settings, null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Manage Connected Entities", style = AppTextStyles.buttonLabel.copy(fontSize = 13.sp))
+                    }
+                }
             }
         }
     }

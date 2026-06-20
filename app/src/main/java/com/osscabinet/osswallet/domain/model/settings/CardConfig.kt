@@ -411,6 +411,7 @@ sealed class AccountingPerspective {
                 ChartMetric.EXPENSE to "OUT",
                 ChartMetric.NET to "NET"
             )
+            else -> emptyMap()
         }
 
         val ALL: List<AccountingPerspective> = listOf(Accounting, CashFlow)

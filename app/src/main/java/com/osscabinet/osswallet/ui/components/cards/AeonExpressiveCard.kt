@@ -24,13 +24,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +61,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -531,6 +540,109 @@ fun AeonCardFilterButton(
                 tint = color,
                 modifier = Modifier.size(16.dp),
             )
+        }
+    }
+}
+
+/**
+ * The unified container for card configuration.
+ * Mirroring AeonExpressiveCard aesthetics but optimized for control inputs.
+ */
+@Composable
+fun AeonExpressiveCardConfig(
+    title: String,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(AeonTheme.dimensions.cardPadding),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+    ) {
+        // Aesthetic Header - Mirroring AeonExpressiveCard's exact proportions
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+        ) {
+            // Circular Back Navigation logo
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .clip(CircleShape)
+                    .clickable(onClick = onDismiss),
+                shape = CircleShape,
+                color = AppColors.primary.copy(alpha = 0.15f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronLeft,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = AppColors.primary,
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = AppTextStyles.cardSectionTitle,
+                    color = AppColors.contentPrimary,
+                )
+                Text(
+                    text = "CONFIGURATION",
+                    style = AppTextStyles.cardPeriodReadout,
+                    color = AppColors.contentSecondary,
+                )
+            }
+
+            // Circular Delete Button to balance the back button
+            Surface(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = { onDelete(); onDismiss() }),
+                shape = CircleShape,
+                color = AppColors.error.copy(alpha = 0.08f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = "Delete card",
+                        modifier = Modifier.size(18.dp),
+                        tint = AppColors.error,
+                    )
+                }
+            }
+        }
+
+        // Scrollable content area
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (modifier == Modifier) Modifier else Modifier.verticalScroll(rememberScrollState())),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        ) {
+            content()
+        }
+
+        // Primary Action
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AppColors.primary,
+                contentColor = Color.White
+            )
+        ) {
+            Text("APPLY CHANGES", style = AppTextStyles.buttonLabel.copy(letterSpacing = 1.sp))
         }
     }
 }

@@ -182,22 +182,26 @@ private fun AccountsSettingsSheet(
         CardSettingsSection("Layout") {
             AeonLayoutToggle(
                 layout = config.layout,
-                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
+                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+                showBackground = false
             )
             AeonGridColumnsSettings(
                 gridColumns = config.gridColumns,
-                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
+                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Comparison",
                 description = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show add account card",
                 checked = config.showAddAccountCard,
-                onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) }
+                onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) },
+                showBackground = false
             )
         }
         CardPerspectiveSettings(

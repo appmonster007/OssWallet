@@ -173,12 +173,14 @@ private fun CurrencyBalancesSettingsSheet(
         CardSettingsSection("Display") {
             AeonLayoutToggle(
                 layout = config.layout,
-                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) }
+                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+                showBackground = false
             )
             if (config.layout == "grid") {
                 AeonGridColumnsSettings(
                     gridColumns = config.gridColumns,
-                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) }
+                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
+                    showBackground = false
                 )
             }
             AeonBaseConversionToggle(
@@ -189,7 +191,8 @@ private fun CurrencyBalancesSettingsSheet(
                         config.cardId,
                         it
                     )
-                }
+                },
+                showBackground = false
             )
         }
     }

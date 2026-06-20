@@ -391,7 +391,7 @@ private fun NetWorthSettingsSheet(
             SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                     SegmentedButton(
@@ -417,7 +417,8 @@ private fun NetWorthSettingsSheet(
                 label = "Show Comparison",
                 description = "Show change from previous period",
                 checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
+                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+                showBackground = false
             )
         }
         CardPerspectiveSettings(

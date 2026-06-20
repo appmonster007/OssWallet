@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -190,7 +191,8 @@ fun CardPerspectiveSettings(
             checked = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow,
             onCheckedChange = onExcludeInternalTransfersChange,
             enabled = perspective is AccountingPerspective.CashFlow,
-            showBackground = false
+            showBackground = false,
+            showBorder = false
         )
     }
 }
@@ -264,7 +266,7 @@ fun CardSettingsSection(
             
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
             ) {
                 content()
             }
@@ -273,9 +275,10 @@ fun CardSettingsSection(
 
     if (showBackground) {
         Surface(
-            color = AppColors.insetSurface.copy(alpha = 0.25f),
+            color = AppColors.surfaceContainerLow.copy(alpha = 0.7f),
             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            modifier = modifier.fillMaxWidth()
+            modifier = modifier.fillMaxWidth(),
+            border = BorderStroke(0.5.dp, AppColors.outlineVariant.copy(alpha = 0.3f))
         ) {
             sectionContent()
         }
@@ -380,7 +383,7 @@ fun CardSettingsStandardizationLab() {
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.outlineVariant)
+                        border = BorderStroke(1.dp, AppColors.outlineVariant)
                     ) {
                         Icon(Icons.Default.Settings, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))

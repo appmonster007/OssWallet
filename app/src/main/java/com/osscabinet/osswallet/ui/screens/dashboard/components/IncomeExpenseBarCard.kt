@@ -306,7 +306,8 @@ private fun IncomeExpenseBarSettingsSheet(
             AeonSettingsToggle(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+                showBackground = false
             )
         }
         CardPerspectiveSettings(

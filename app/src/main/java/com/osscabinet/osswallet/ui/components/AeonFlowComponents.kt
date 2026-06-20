@@ -152,14 +152,16 @@ fun AeonBaseConversionToggle(
     baseCurrency: String,
     showBaseConversion: Boolean,
     onShowBaseConversionChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showBackground: Boolean = true
 ) {
     AeonSettingsToggle(
         label = "BASE CONVERSION",
         description = "Show estimated value in $baseCurrency",
         checked = showBaseConversion,
         onCheckedChange = onShowBaseConversionChange,
-        modifier = modifier
+        modifier = modifier,
+        showBackground = showBackground
     )
 }
 

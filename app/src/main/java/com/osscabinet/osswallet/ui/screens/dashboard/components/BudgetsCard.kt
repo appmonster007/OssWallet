@@ -109,7 +109,8 @@ private fun BudgetsSettingsSheet(
             AeonSettingsToggle(
                 label = "Show archived budgets",
                 checked = config.showArchived,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
+                showBackground = false
             )
         }
     }

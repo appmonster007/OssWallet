@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.TableRows
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -32,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -89,15 +94,18 @@ fun SettingsScreen(
                             .padding(horizontal = AeonTheme.dimensions.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
                     ) {
-                        // ── Editorial hero ──────────────────────────────────
                         HeroHeader()
 
                         // ── PERSONALIZATION ─────────────────────────────────
-                        AeonSettingsSection("PERSONALIZATION") {
+                        AeonSettingsSection(
+                            title = "PERSONALIZATION",
+                            accentBar = AppColors.accent
+                        ) {
                             SettingsNavigationItem(
                                 title = "Display & Style",
                                 subtitle = "THEME • FONTS • ANIMATIONS",
                                 icon = Icons.Rounded.Palette,
+                                iconTint = AppColors.accent,
                                 onClick = actions.onDisplayClick
                             )
                             SettingsDivider()
@@ -105,16 +113,21 @@ fun SettingsScreen(
                                 title = "Currency & Localization",
                                 subtitle = "$currencyCode  •  $providerName",
                                 icon = Icons.Rounded.CurrencyExchange,
+                                iconTint = AppColors.accent,
                                 onClick = actions.onCurrencyClick
                             )
                         }
 
                         // ── FINANCIAL SETUP ─────────────────────────────────
-                        AeonSettingsSection("FINANCIAL SETUP") {
+                        AeonSettingsSection(
+                            title = "FINANCIAL SETUP",
+                            accentBar = AppColors.positive
+                        ) {
                             SettingsNavigationItem(
                                 title = "Accounts",
                                 subtitle = "BALANCES • VISIBILITY",
                                 icon = Icons.Rounded.AccountBalance,
+                                iconTint = AppColors.positive,
                                 onClick = actions.onAccountsClick
                             )
                             SettingsDivider()
@@ -122,6 +135,7 @@ fun SettingsScreen(
                                 title = "Categories",
                                 subtitle = "INCOME • EXPENSE CLASSIFICATION",
                                 icon = Icons.Rounded.Category,
+                                iconTint = AppColors.positive,
                                 onClick = actions.onCategoriesClick
                             )
                             SettingsDivider()
@@ -129,16 +143,21 @@ fun SettingsScreen(
                                 title = "Tags",
                                 subtitle = "CUSTOM LABELS FOR TRANSACTIONS",
                                 icon = Icons.AutoMirrored.Rounded.Label,
+                                iconTint = AppColors.positive,
                                 onClick = actions.onTagsClick
                             )
                         }
 
                         // ── AUTOMATION & TOOLS ──────────────────────────────
-                        AeonSettingsSection("AUTOMATION & TOOLS") {
+                        AeonSettingsSection(
+                            title = "AUTOMATION & TOOLS",
+                            accentBar = AppColors.accent.copy(alpha = 0.5f)
+                        ) {
                             SettingsNavigationItem(
                                 title = "Transaction Templates",
                                 subtitle = "QUICK SHORTCUTS • FREQUENT ENTRIES",
-                                icon = Icons.Rounded.AutoAwesome,
+                                icon = Icons.Rounded.TableRows,
+                                iconTint = AppColors.accent.copy(alpha = 0.7f),
                                 onClick = actions.onTemplatesClick
                             )
                             SettingsDivider()
@@ -146,6 +165,7 @@ fun SettingsScreen(
                                 title = "Smart Suggestions",
                                 subtitle = "DISCOVER RECURRING TRANSACTIONS",
                                 icon = Icons.Rounded.AutoAwesome,
+                                iconTint = AppColors.accent.copy(alpha = 0.7f),
                                 onClick = actions.onSmartSuggestionsClick
                             )
                             SettingsDivider()
@@ -153,16 +173,21 @@ fun SettingsScreen(
                                 title = "Saved Filters",
                                 subtitle = "CUSTOM SEARCH PRESETS",
                                 icon = Icons.Rounded.FilterList,
+                                iconTint = AppColors.accent.copy(alpha = 0.7f),
                                 onClick = actions.onFiltersClick
                             )
                         }
 
                         // ── PRIVACY & SAFETY ────────────────────────────────
-                        AeonSettingsSection("PRIVACY & SAFETY") {
+                        AeonSettingsSection(
+                            title = "PRIVACY & SAFETY",
+                            accentBar = AppColors.negative
+                        ) {
                             SettingsNavigationItem(
                                 title = "Security & Privacy",
                                 subtitle = "APP LOCK • LOCATION • WEB ACCESS",
                                 icon = Icons.Rounded.Lock,
+                                iconTint = AppColors.negative,
                                 onClick = actions.onSecurityClick
                             )
                             SettingsDivider()
@@ -170,11 +195,11 @@ fun SettingsScreen(
                                 title = "Data Management",
                                 subtitle = "IMPORT • EXPORT • BACKUPS",
                                 icon = Icons.Rounded.CloudSync,
+                                iconTint = AppColors.negative,
                                 onClick = actions.onDataManagementClick
                             )
                         }
 
-                        // ── Footer ──────────────────────────────────────────
                         SettingsFooter(attribution = providerAttribution)
                     }
                 }
@@ -213,11 +238,28 @@ private fun HeroHeader() {
             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Light),
             color = AppColors.contentPrimary
         )
-        Text(
-            text = "v1.1.0",
-            style = AppTextStyles.metaLabel,
-            color = AppColors.contentSecondary
-        )
+        Spacer(modifier = Modifier.height(2.dp))
+        // Version badge pill — accDim bg with 4dp accent dot
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(AppColors.accent.copy(alpha = 0.10f))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.accent)
+            )
+            Text(
+                text = "v1.1.0",
+                style = AppTextStyles.metaLabel,
+                color = AppColors.accent
+            )
+        }
     }
 }
 
@@ -230,6 +272,14 @@ private fun SettingsFooter(attribution: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        // Footer separator
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(0.5.dp)
+                .background(AppColors.outlineVariant)
+        )
+        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
         Text(
             text = "BUILT FOR MODERN ACCOUNTS",
             style = AppTextStyles.sectionOverline,
@@ -274,14 +324,16 @@ private fun SettingsNavigationItem(
     subtitle: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    color: Color = AppColors.contentPrimary
+    color: Color = AppColors.contentPrimary,
+    iconTint: Color = AppColors.contentSecondary,
 ) {
     AeonSettingsItem(
         title = title,
         subtitle = subtitle,
         icon = icon,
         onClick = onClick,
-        color = color
+        color = color,
+        iconTint = iconTint,
     )
 }
 

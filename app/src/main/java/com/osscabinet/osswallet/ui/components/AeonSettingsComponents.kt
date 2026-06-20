@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -32,11 +34,15 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 /**
- * H editorial settings section — solid hairline panel with mono overline
- * and extending hairline rule inside the panel top.
+ * H editorial settings section — solid hairline panel with mono overline,
+ * gradient hairline rule, and optional 2dp left accent rail per section.
  */
 @Composable
-fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+fun AeonSettingsSection(
+    title: String,
+    accentBar: Color = Color.Unspecified,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
     Box(
         modifier = Modifier
@@ -44,9 +50,17 @@ fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Un
             .clip(shape)
             .background(AppColors.cardSurfaceProminent)
             .aeonHairlineBorder(shape)
+            // 2dp left accent rail — clipped by shape so corners round naturally
+            .then(
+                if (accentBar != Color.Unspecified)
+                    Modifier.drawBehind {
+                        drawRect(color = accentBar, size = size.copy(width = 2.dp.toPx()))
+                    }
+                else Modifier
+            )
     ) {
         Column {
-            // Overline inside the panel with right-extending hairline rule
+            // Overline inside the panel with right-fading gradient hairline rule
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -66,7 +80,11 @@ fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Un
                     modifier = Modifier
                         .weight(1f)
                         .height(0.5.dp)
-                        .background(AppColors.outlineVariant)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(AppColors.outlineVariant, Color.Transparent)
+                            )
+                        )
                 )
             }
             content()
@@ -75,8 +93,8 @@ fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Un
 }
 
 /**
- * H editorial settings row — inset square icon (monochrome), Inter title,
- * JetBrains Mono subtitle, champagne chevron.
+ * H editorial settings row — circular icon with optional section-scoped tint,
+ * Inter title, JetBrains Mono subtitle, champagne chevron.
  */
 @Composable
 fun AeonSettingsItem(
@@ -86,10 +104,10 @@ fun AeonSettingsItem(
     onClick: (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     color: Color = AppColors.contentPrimary,
-    showChevron: Boolean = onClick != null && trailingContent == null
+    iconTint: Color = AppColors.contentSecondary,
+    showChevron: Boolean = onClick != null && trailingContent == null,
 ) {
     val dims = AeonTheme.dimensions
-    val iconShape = CircleShape
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -98,19 +116,18 @@ fun AeonSettingsItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
     ) {
-        // Inset square icon — monochrome, no saturated fill
         Box(
             modifier = Modifier
                 .size(dims.iconSizeLg)
-                .clip(iconShape)
+                .clip(CircleShape)
                 .background(AppColors.screenBackground)
-                .border(0.5.dp, AppColors.outlineVariant, iconShape),
+                .border(0.5.dp, AppColors.outlineVariant, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = AppColors.contentSecondary,
+                tint = iconTint,
                 modifier = Modifier.size(16.dp)
             )
         }

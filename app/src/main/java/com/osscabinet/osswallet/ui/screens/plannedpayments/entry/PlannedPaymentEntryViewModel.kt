@@ -122,16 +122,15 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         source = TransactionSide(
                             account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.accountId)
                                       else AccountRef.fromStored(template.accountId),
-                            amount = template.amount.abs().stripTrailingZeros().toPlainString(),
+                            amount = if (template.amount.signum() != 0) template.amount.abs().stripTrailingZeros().toPlainString() else "",
                             currency = template.currency,
                             categoryId = template.categoryId
                         ),
                         destination = TransactionSide(
                             account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.targetAccountId)
                                       else AccountRef.fromStored(template.targetAccountId),
-                            amount = template.amount.abs().multiply(template.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString(),
+                            amount = if (template.amount.signum() != 0) template.amount.abs().multiply(template.transferRate)
+                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString() else "",
                             currency = template.targetCurrency ?: ""
                         ),
                         entryMode = template.entryMode,
@@ -487,18 +486,16 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             source = TransactionSide(
                                 account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.accountId)
                                           else AccountRef.fromStored(event.template.accountId),
-                                amount = event.template.amount.abs().stripTrailingZeros()
-                                    .toPlainString(),
+                                amount = if (event.template.amount.signum() != 0) event.template.amount.abs().stripTrailingZeros().toPlainString() else "",
                                 currency = event.template.currency,
                                 categoryId = event.template.categoryId
                             ),
                             destination = TransactionSide(
                                 account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.targetAccountId)
                                           else AccountRef.fromStored(event.template.targetAccountId),
-                                amount = event.template.amount.abs()
+                                amount = if (event.template.amount.signum() != 0) event.template.amount.abs()
                                     .multiply(event.template.transferRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                    .toPlainString(),
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString() else "",
                                 currency = event.template.targetCurrency ?: ""
                             ),
                             entryMode = event.template.entryMode,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -385,7 +386,8 @@ fun MainDisplaySettings(
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
-                containerColor = Color.Transparent
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0)
             ) { innerPadding ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     Column(
@@ -394,9 +396,10 @@ fun MainDisplaySettings(
                             .verticalScroll(rememberScrollState())
                             .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                             .statusBarsPadding()
+                            .padding(innerPadding)
                             .padding(
                                 top = AeonSize.D64.value + AeonTheme.dimensions.screenPadding,
-                                bottom = innerPadding.calculateBottomPadding()
+                                bottom = 40.dp
                             )
                             .padding(horizontal = AeonTheme.dimensions.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)

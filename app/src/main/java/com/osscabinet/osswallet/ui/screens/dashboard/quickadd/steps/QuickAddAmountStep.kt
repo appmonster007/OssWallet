@@ -192,15 +192,19 @@ private fun EditorialContextStrip(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = account?.name ?: "No Account",
-                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp, fontWeight = FontWeight.Medium),
-                    color = AppColors.contentSecondary,
+                    text = account?.name?.uppercase() ?: "No Account",
+                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp),
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = formatCurrency(accountBalance, accountCurrency),
-                    style = AppTextStyles.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.caption.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        fontFamily = LocalAppFont.current.monoFamily
+                    ),
                     color = AppColors.contentPrimary,
                     maxLines = 1
                 )

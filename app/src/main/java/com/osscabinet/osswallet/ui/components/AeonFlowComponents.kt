@@ -92,7 +92,7 @@ fun AeonSettingsToggle(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 8.dp)),
+                .padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 4.dp)),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -101,7 +101,7 @@ fun AeonSettingsToggle(
                     label.uppercase(),
                     style = AppTextStyles.overlineLabel.copy(
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
+                        letterSpacing = 1.2.sp,
                         fontSize = 10.sp
                     ),
                     color = if (enabled) AppColors.primary else AppColors.primary.copy(alpha = 0.4f)
@@ -207,14 +207,14 @@ fun AeonGridColumnsSettings(
 ) {
     val content = @Composable {
         Column(
-            modifier = Modifier.padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 8.dp)),
+            modifier = Modifier.padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 4.dp)),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "SIZE",
+                "GRID COLUMNS",
                 style = AppTextStyles.overlineLabel.copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
+                    letterSpacing = 1.2.sp,
                     fontSize = 10.sp
                 ),
                 color = AppColors.primary
@@ -229,12 +229,21 @@ fun AeonGridColumnsSettings(
                             index = index,
                             count = maxColumns
                         ),
-                        label = { Text(count.toString(), style = AppTextStyles.chipLabel) },
+                        label = {
+                            Text(
+                                text = count.toString(),
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = if (gridColumns == count) FontWeight.Bold else FontWeight.Normal
+                                )
+                            )
+                        },
                         colors = SegmentedButtonDefaults.colors(
-                            activeContainerColor = AppColors.primary,
-                            activeContentColor = AppColors.onPrimary,
-                            inactiveContainerColor = AppColors.surfaceContainerHigh,
-                            inactiveContentColor = AppColors.contentSecondary
+                            activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                            activeContentColor = AppColors.primary,
+                            inactiveContainerColor = Color.Transparent,
+                            inactiveContentColor = AppColors.contentSecondary,
+                            activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                            inactiveBorderColor = AppColors.outlineVariant
                         )
                     )
                 }

@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -68,7 +70,10 @@ fun QuickAddTemplateStep(
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
-    var showCategories by rememberSaveable { mutableStateOf(false) }
+    val hasTemplates = templates.isNotEmpty()
+    var showCategories by rememberSaveable(hasTemplates) { 
+        mutableStateOf(!hasTemplates) 
+    }
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -91,19 +96,6 @@ fun QuickAddTemplateStep(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            AtelierSegmentedToggle(
-                segments = listOf(
-                    AtelierSegment("TEMPLATES", Icons.Rounded.Dashboard),
-                    AtelierSegment("CATEGORIES", Icons.Rounded.Category)
-                ),
-                selectedIndex = if (showCategories) 1 else 0,
-                onSelect = { idx ->
-                    showCategories = idx == 1
-                    query = ""
-                    categoryNavStack = emptyList()
-                }
-            )
-
             val overline = when {
                 query.isNotBlank() -> "Results"
                 showCategories -> "Categories"
@@ -114,7 +106,7 @@ fun QuickAddTemplateStep(
                 overline = overline,
                 modifier = Modifier.weight(1f, fill = false),
             ) {
-                if (!showCategories) {
+                if (!showCategories && hasTemplates) {
                     TemplatesGrid(
                         templates = templates,
                         categories = categories,
@@ -145,12 +137,66 @@ fun QuickAddTemplateStep(
                 }
             }
 
-            AeonSearchField(
-                query = query,
-                onQueryChange = { query = it },
-                placeholder = if (showCategories) "Search categories" else "Search templates",
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                focusRequester = focusRequester
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (hasTemplates) {
+                    AtelierModeToggle(
+                        showCategories = showCategories,
+                        onClick = {
+                            showCategories = !showCategories
+                            query = ""
+                            categoryNavStack = emptyList()
+                        }
+                    )
+                }
+
+                AeonSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = if (showCategories) "Search categories" else "Search templates",
+                    modifier = Modifier.weight(1f),
+                    focusRequester = focusRequester
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AtelierModeToggle(
+    showCategories: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val label = if (showCategories) "CATEGORIES" else "TEMPLATES"
+    val icon = if (showCategories) Icons.Rounded.Category else Icons.Rounded.Dashboard
+
+    Surface(
+        onClick = onClick,
+        shape = shape,
+        color = AppColors.recessedSurface,
+        modifier = Modifier
+            .height(42.dp)
+            .aeonHairlineBorder(shape)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AppColors.accent,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.accent
             )
         }
     }

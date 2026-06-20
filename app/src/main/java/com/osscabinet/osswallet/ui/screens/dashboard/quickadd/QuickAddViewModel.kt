@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -36,6 +37,7 @@ data class QuickAddState(
     val selectedCurrency: String = "",
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val accounts: List<Account> = emptyList(),
+    val structureTypes: List<AccountStructureType> = emptyList(),
     val isSaving: Boolean = false
 )
 
@@ -70,10 +72,16 @@ class QuickAddViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val accounts = accountRepository.getAllAccounts(profileId)
-                .first()
-                .filter { !it.isArchived }
-            _state.update { it.copy(accounts = accounts) }
+            val allAccounts = accountRepository.getAllAccounts(profileId).first()
+            val activeAccounts = allAccounts.filter { !it.isArchived }
+            val structureTypes = allAccounts.map { it.structureType }
+                .distinct()
+                .sortedBy { it.displayName }
+            
+            _state.update { it.copy(
+                accounts = activeAccounts,
+                structureTypes = structureTypes
+            ) }
         }
     }
 

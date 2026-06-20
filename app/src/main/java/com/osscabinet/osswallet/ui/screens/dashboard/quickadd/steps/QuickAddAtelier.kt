@@ -1,0 +1,334 @@
+package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.copyStyle
+
+/** Shared 4/5-column tile grid used by the QuickAdd Atelier steps. */
+@Composable
+internal fun AtelierGrid(
+    numColumns: Int,
+    modifier: Modifier = Modifier,
+    content: LazyGridScope.() -> Unit
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(numColumns),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(bottom = 2.dp),
+        modifier = modifier.fillMaxWidth(),
+        content = content
+    )
+}
+
+/** Mono overline with a fading hairline rule — the panel section header. */
+@Composable
+internal fun PanelOverline(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = text,
+            style = AppTextStyles.sectionOverline,
+            color = AppColors.accent
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(0.5.dp)
+                .background(AppColors.outlineVariant.copy(alpha = 0.6f))
+        )
+    }
+}
+
+@Composable
+internal fun EmptyState(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            message,
+            style = AppTextStyles.listItemSubtitle,
+            color = AppColors.contentSecondary.copy(alpha = 0.6f)
+        )
+    }
+}
+
+/**
+ * Square Atelier tile — thin icon in [iconColor] over a recessed, hairline-bordered
+ * surface with an Inter label below. Selected tiles take a [selectionColor] border,
+ * a faint tint, and a check badge. An optional [hasChildren] chevron hints drill-down.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun AtelierTile(
+    label: String,
+    icon: ImageVector,
+    iconColor: Color,
+    isSelected: Boolean,
+    onTap: () -> Unit,
+    modifier: Modifier = Modifier,
+    selectionColor: Color = AppColors.accent,
+    selectionContentColor: Color = AppColors.onAccent,
+    hasChildren: Boolean = false,
+    onLongPress: (() -> Unit)? = null
+) {
+    val tileShape = RoundedCornerShape(16.dp)
+    val bg = if (isSelected) selectionColor.copy(alpha = 0.10f) else AppColors.recessedSurface
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(tileShape)
+                .background(bg)
+                .then(
+                    if (isSelected) Modifier.selectedBorder(tileShape, selectionColor)
+                    else Modifier.aeonHairlineBorder(tileShape)
+                )
+                .combinedClickable(onClick = onTap, onLongClick = onLongPress),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconColor,
+                modifier = Modifier.size(22.dp)
+            )
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(15.dp)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(selectionColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = selectionContentColor,
+                        modifier = Modifier.size(9.dp)
+                    )
+                }
+            } else if (hasChildren) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(14.dp)
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(AppColors.contentSecondary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = "Long press for sub-categories",
+                        tint = AppColors.contentSecondary,
+                        modifier = Modifier.size(10.dp)
+                    )
+                }
+            }
+        }
+        Text(
+            text = label,
+            style = AppTextStyles.chartAxisLabel,
+            color = AppColors.contentPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun Modifier.selectedBorder(shape: Shape, color: Color): Modifier =
+    this.border(1.dp, color, shape)
+
+/**
+ * Two-tab segmented toggle with a sliding indicator. Used as the editorial
+ * mode-switch on QuickAdd Atelier steps (Templates/Categories, Expense/Income).
+ * [activeColor] tints the indicator pill so semantic steps can pass a type color.
+ */
+internal data class AtelierSegment(val label: String, val icon: ImageVector)
+
+@Composable
+internal fun AtelierSegmentedToggle(
+    segments: List<AtelierSegment>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    activeColor: Color = AppColors.accent,
+    activeContentColor: Color = AppColors.onAccent,
+    height: Dp = 40.dp,
+) {
+    require(segments.size == 2) { "AtelierSegmentedToggle expects exactly 2 segments" }
+    val outerShape = RoundedCornerShape(12.dp)
+    val pillShape = RoundedCornerShape(9.dp)
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(outerShape)
+            .background(AppColors.recessedSurface)
+            .aeonHairlineBorder(outerShape)
+            .padding(3.dp)
+    ) {
+        val itemWidth = maxWidth / segments.size
+
+        // Sliding indicator
+        Box(
+            modifier = Modifier
+                .width(itemWidth)
+                .fillMaxHeight()
+                .graphicsLayer { translationX = selectedIndex * itemWidth.toPx() }
+                .clip(pillShape)
+                .background(activeColor)
+        )
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            segments.forEachIndexed { index, seg ->
+                val isSelected = index == selectedIndex
+                val contentColor by animateColorAsState(
+                    targetValue = if (isSelected) activeContentColor else AppColors.contentSecondary,
+                    label = "segTabColor"
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(pillShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { if (!isSelected) onSelect(index) }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        Icon(
+                            imageVector = seg.icon,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = seg.label,
+                            style = AppTextStyles.sectionOverline,
+                            color = contentColor
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The editorial "panel" container — a recessed glass surface with a gradient
+ * hairline border that hosts the grid and its overline. Hooks into the sheet's
+ * AeonGlassHost so the panel blurs the contour pixels behind the sheet.
+ *
+ * Pass [modifier] carrying `weight(1f, fill = false)` so the panel flexes
+ * between the pinned header and footer.
+ */
+@Composable
+internal fun AtelierPanel(
+    overline: String,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(20.dp),
+    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 14.dp),
+    spacing: Dp = 12.dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    GlassSurface(
+        modifier = modifier.fillMaxWidth(),
+        shape = shape,
+        hazeLayer = HazeLayer.Overlay,
+        hazeStyle = GlassTokens.itemStyle().copyStyle(
+            bgColor = AppColors.background,
+            alpha = 0.55f
+        ),
+        glassVariant = GlassVariant.Item,
+        fallbackColor = AppColors.background,
+        borderColor = AppColors.outlineVariant.copy(alpha = 0.6f),
+        borderWidth = 0.5.dp,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(spacing)
+        ) {
+            PanelOverline(overline)
+            content()
+        }
+    }
+}
+

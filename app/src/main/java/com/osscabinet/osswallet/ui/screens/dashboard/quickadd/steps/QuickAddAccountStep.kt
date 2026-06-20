@@ -31,6 +31,14 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Dp
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -48,10 +56,11 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
  * Selection takes on the semantic transaction-type color (red for expense,
  * green for income).
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddAccountStep(
     accounts: List<Account>,
+    structureTypes: List<AccountStructureType>,
     selectedAccountId: String?,
     entryMode: EntryMode,
     isStepActive: Boolean = false,
@@ -65,10 +74,6 @@ fun QuickAddAccountStep(
 
     LaunchedEffect(isStepActive) {
         if (isStepActive) focusRequester.requestFocus()
-    }
-
-    val structureTypes = remember(accounts) {
-        accounts.map { it.structureType }.distinct().sortedBy { it.displayName }
     }
 
     val filtered = remember(accounts, searchQuery, structureFilter) {
@@ -96,21 +101,6 @@ fun QuickAddAccountStep(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Expense / Income segmented toggle — active pill tinted with semantic typeColor.
-            AtelierSegmentedToggle(
-                segments = listOf(
-                    AtelierSegment("EXPENSE", Icons.AutoMirrored.Rounded.TrendingDown),
-                    AtelierSegment("INCOME", Icons.AutoMirrored.Rounded.TrendingUp)
-                ),
-                selectedIndex = if (entryMode == EntryMode.INCOME) 1 else 0,
-                onSelect = { idx ->
-                    val target = if (idx == 0) EntryMode.EXPENSE else EntryMode.INCOME
-                    if (target != entryMode) onToggleType()
-                },
-                activeColor = typeColor,
-                activeContentColor = Color.White
-            )
-
             // Editorial structure-type filter rail
             StructureChipRail(
                 structures = structureTypes,
@@ -148,13 +138,25 @@ fun QuickAddAccountStep(
                 }
             }
 
-            AeonSearchField(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                placeholder = "Search accounts",
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                focusRequester = focusRequester
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                AtelierTypeToggle(
+                    entryMode = entryMode,
+                    onClick = onToggleType,
+                    activeColor = typeColor
+                )
+
+                AeonSearchField(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    placeholder = "Search accounts",
+                    modifier = Modifier.weight(1f),
+                    focusRequester = focusRequester
+                )
+            }
         }
     }
 }
@@ -189,6 +191,7 @@ private fun StructureChipRail(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AtelierChip(
     label: String,
@@ -199,26 +202,69 @@ private fun AtelierChip(
     val shape = RoundedCornerShape(10.dp)
     val bg = if (isSelected) activeColor.copy(alpha = 0.14f) else AppColors.recessedSurface
     val contentColor = if (isSelected) activeColor else AppColors.contentSecondary
+
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+        Surface(
+            onClick = onClick,
+            shape = shape,
+            color = Color.Transparent,
+            modifier = Modifier
+                .height(28.dp)
+                .clip(shape)
+                .background(bg)
+                .then(
+                    if (isSelected) Modifier.aeonHairlineBorder(shape, accent = activeColor)
+                    else Modifier.aeonHairlineBorder(shape)
+                )
+        ) {
+            Box(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    style = AppTextStyles.sectionOverline,
+                    color = contentColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AtelierTypeToggle(
+    entryMode: EntryMode,
+    onClick: () -> Unit,
+    activeColor: Color,
+) {
+    val shape = RoundedCornerShape(12.dp)
+    val label = if (entryMode == EntryMode.INCOME) "INCOME" else "EXPENSE"
+    val icon = if (entryMode == EntryMode.INCOME) Icons.AutoMirrored.Rounded.TrendingUp
+    else Icons.AutoMirrored.Rounded.TrendingDown
+
     Surface(
         onClick = onClick,
         shape = shape,
-        color = Color.Transparent,
+        color = AppColors.recessedSurface,
         modifier = Modifier
-            .clip(shape)
-            .background(bg)
-            .then(
-                if (isSelected) Modifier.aeonHairlineBorder(shape, accent = activeColor)
-                else Modifier.aeonHairlineBorder(shape)
-            )
+            .height(42.dp)
+            .aeonHairlineBorder(shape)
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = activeColor,
+                modifier = Modifier.size(16.dp)
+            )
             Text(
-                text = label,
+                text = label.take(2),
                 style = AppTextStyles.sectionOverline,
-                color = contentColor
+                color = activeColor,
             )
         }
     }
@@ -237,6 +283,7 @@ fun PreviewQuickAddAccountStep() {
         Box(modifier = Modifier.background(AppColors.background)) {
             QuickAddAccountStep(
                 accounts = mockAccounts,
+                structureTypes = AccountStructureType.entries,
                 selectedAccountId = "1",
                 entryMode = EntryMode.EXPENSE,
                 onAccountTapped = {},

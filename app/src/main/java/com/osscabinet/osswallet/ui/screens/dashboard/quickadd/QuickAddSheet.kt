@@ -361,6 +361,7 @@ private fun QuickAddSheetContent(
 
                     STEP_ACCOUNT -> QuickAddAccountStep(
                         accounts = state.accounts,
+                        structureTypes = state.structureTypes,
                         selectedAccountId = state.selectedAccountId,
                         entryMode = state.entryMode,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
@@ -436,12 +437,12 @@ private fun EditorialHeader(title: String) {
                 color = AppColors.contentSecondary.copy(alpha = 0.85f)
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = title,
             style = AppTextStyles.screenTitle.copy(
                 fontWeight = FontWeight.Light,
-                fontSize = 26.sp
+                fontSize = 18.sp
             ),
             color = AppColors.contentPrimary
         )

@@ -24,21 +24,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,15 +47,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -331,7 +322,6 @@ fun AeonExpressiveCard(
                     }
                     .then(if (isFrontVisible) Modifier.height(0.dp) else Modifier)
                     .background(AppColors.cardSurfaceProminent)
-                    .padding(AeonTheme.dimensions.cardPadding)
             ) {
                 displaySettings?.invoke {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -545,8 +535,9 @@ fun AeonCardFilterButton(
 }
 
 /**
- * The unified container for card configuration.
- * Mirroring AeonExpressiveCard aesthetics but optimized for control inputs.
+ * The unified container for card configuration — renders on the back side of a flipped
+ * [AeonExpressiveCard]. Header structure mirrors the front side exactly: same icon circle
+ * sizing, spacing tokens, and text styles.
  */
 @Composable
 fun AeonExpressiveCardConfig(
@@ -560,29 +551,26 @@ fun AeonExpressiveCardConfig(
         modifier = modifier
             .fillMaxWidth()
             .padding(AeonTheme.dimensions.cardPadding),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
     ) {
-        // Aesthetic Header - Mirroring AeonExpressiveCard's exact proportions
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
         ) {
-            // Circular Back Navigation logo
             Surface(
                 modifier = Modifier
                     .size(AeonTheme.dimensions.iconSizeLg)
-                    .clip(CircleShape)
                     .clickable(onClick = onDismiss),
                 shape = CircleShape,
-                color = AppColors.primary.copy(alpha = 0.15f),
+                color = AppColors.contentPrimary.copy(alpha = 0.15f),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.ChevronLeft,
                         contentDescription = "Back",
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = AppColors.primary,
+                        tint = AppColors.contentPrimary,
                     )
                 }
             }
@@ -600,50 +588,25 @@ fun AeonExpressiveCardConfig(
                 )
             }
 
-            // Circular Delete Button to balance the back button
             Surface(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
+                    .size(AeonTheme.dimensions.iconSizeLg)
                     .clickable(onClick = { onDelete(); onDismiss() }),
                 shape = CircleShape,
-                color = AppColors.error.copy(alpha = 0.08f),
+                color = AppColors.error.copy(alpha = 0.10f),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = "Delete card",
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
                         tint = AppColors.error,
                     )
                 }
             }
         }
 
-        // Scrollable content area
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(if (modifier == Modifier) Modifier else Modifier.verticalScroll(rememberScrollState())),
-            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
-        ) {
-            content()
-        }
-
-        // Primary Action
-        Button(
-            onClick = onDismiss,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = AppColors.primary,
-                contentColor = Color.White
-            )
-        ) {
-            Text("APPLY CHANGES", style = AppTextStyles.buttonLabel.copy(letterSpacing = 1.sp))
-        }
+        content()
     }
 }
 

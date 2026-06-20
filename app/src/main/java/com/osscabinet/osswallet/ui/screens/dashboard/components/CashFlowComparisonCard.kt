@@ -35,8 +35,8 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -608,37 +608,32 @@ private fun CashFlowComparisonSettingsSheet(
         onDelete = callbacks.onDelete
     ) {
         CardSettingsSection("Display") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Cumulative",
                 checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
             )
         }
         CardSettingsSection("Series") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Current Period",
                 checked = config.showCurrentPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Previous Period",
                 checked = config.showPreviousPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Same Period Last Year",
                 checked = config.showSamePeriodLastYear,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
             )
         }
         CardPerspectiveSettings(

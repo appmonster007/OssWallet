@@ -28,8 +28,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -222,78 +222,67 @@ private fun RecentActivitiesSettingsSheet(
         }
 
         CardSettingsSection("Components") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Use Note as Header",
                 checked = config.useNoteAsHeader,
-                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Account",
                 checked = config.showAccount,
-                onCheckedChange = { onUpdate(config.copy(showAccount = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showAccount = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Category",
                 checked = config.showCategory,
-                onCheckedChange = { onUpdate(config.copy(showCategory = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showCategory = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Note",
                 checked = config.showNote,
-                onCheckedChange = { onUpdate(config.copy(showNote = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showNote = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Tags",
                 checked = config.showTags,
-                onCheckedChange = { onUpdate(config.copy(showTags = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showTags = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Timestamp",
                 checked = config.showTimestamp,
-                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Icon",
                 checked = config.showIcon,
-                onCheckedChange = { onUpdate(config.copy(showIcon = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showIcon = it)) }
             )
         }
 
         CardSettingsSection("Balances") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Opening Balance",
                 enabled = config.allTxnBreakdown,
                 checked = config.allTxnBreakdown && config.showOpeningBalance,
-                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Closing Balance",
                 enabled = config.allTxnBreakdown,
                 checked = config.allTxnBreakdown && config.showClosingBalance,
-                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show Currency Breakdown",
                 checked = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Period Overview",
-                subtitle = "Show full period totals regardless of active filter",
+                description = "Show full period totals regardless of active filter",
                 checked = config.allTxnBreakdown,
                 enabled = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) },
-                isFlush = true
+                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) }
             )
         }
     }

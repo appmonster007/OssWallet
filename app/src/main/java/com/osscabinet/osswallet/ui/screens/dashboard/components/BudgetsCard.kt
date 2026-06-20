@@ -30,10 +30,10 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
@@ -106,11 +106,10 @@ private fun BudgetsSettingsSheet(
 ) {
     CardSettingsSheet(title = "Budgets", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
         CardSettingsSection("Display") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 label = "Show archived budgets",
                 checked = config.showArchived,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
-                isFlush = true
+                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) }
             )
         }
     }

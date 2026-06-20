@@ -45,7 +45,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -360,40 +360,40 @@ private fun CategoryPieChartSettingsSheet(
 ) {
     CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Show Labels",
                 config.showLabels,
                 onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Show Legend",
                 config.showLegend,
                 onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Rounded Visuals",
                 config.rounded,
-                subtitle = "Apply spacing and modern segment styles",
+                description = "Apply spacing and modern segment styles",
                 onCheckedChange = { onUpdate(config.copy(rounded = it)) }
             )
         }
         CardSettingsSection("Data") {
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Full Breakdown",
                 config.showFullBreakdown,
-                subtitle = "Show all categories instead of top 5",
+                description = "Show all categories instead of top 5",
                 onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Active Only",
                 config.showOnlyActiveCategories,
-                subtitle = "Only show categories with non-zero values",
+                description = "Only show categories with non-zero values",
                 onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
             )
-            EntrySwitchRow(
+            AeonSettingsToggle(
                 "Show Comparison",
                 config.showComparison,
-                subtitle = "Compare to previous period in chart center",
+                description = "Compare to previous period in chart center",
                 onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
             )
         }

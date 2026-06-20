@@ -179,14 +179,13 @@ fun CardPerspectiveSettings(
                 )
             }
         }
-        if (perspective is AccountingPerspective.CashFlow) {
-            AeonSettingsToggle(
-                label = "Exclude internal transfers",
-                description = "Hides transfers between accounts within the selected scope",
-                checked = excludeInternalTransfers,
-                onCheckedChange = onExcludeInternalTransfersChange
-            )
-        }
+        AeonSettingsToggle(
+            label = "Exclude internal transfers",
+            description = "Hides transfers between accounts within the selected scope",
+            checked = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow,
+            onCheckedChange = onExcludeInternalTransfersChange,
+            enabled = perspective is AccountingPerspective.CashFlow
+        )
     }
 }
 

@@ -156,7 +156,7 @@ fun QuickAddTemplateStep(
                 AeonSearchField(
                     query = query,
                     onQueryChange = { query = it },
-                    placeholder = if (showCategories) "Categories" else "Templates",
+                    placeholder = "Search",
                     modifier = Modifier.weight(1f),
                     focusRequester = focusRequester
                 )

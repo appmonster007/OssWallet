@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +22,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -190,14 +193,14 @@ private fun EditorialContextStrip(
             ) {
                 Text(
                     text = account?.name ?: "No Account",
-                    style = AppTextStyles.sectionOverline.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium),
+                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp, fontWeight = FontWeight.Medium),
                     color = AppColors.contentSecondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = formatCurrency(accountBalance, accountCurrency),
-                    style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold),
+                    style = AppTextStyles.caption.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
                     color = AppColors.contentPrimary,
                     maxLines = 1
                 )
@@ -235,12 +238,6 @@ private fun AmountHeroPanel(
     entryMode: EntryMode,
     inputAmount: BigDecimal
 ) {
-    val (whole, decimal) = remember(amount) {
-        val parts = amount.split(".")
-        if (parts.size == 2) parts[0] + "." to parts[1]
-        else amount + "." to "00"
-    }
-
     val closingBalance = remember(accountBalance, inputAmount, entryMode) {
         if (entryMode == EntryMode.INCOME) accountBalance + inputAmount
         else accountBalance - inputAmount
@@ -249,13 +246,13 @@ private fun AmountHeroPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp)
+//            .padding(horizontal = 20.dp, vertical = 8.dp)
             .background(AppColors.background, RoundedCornerShape(20.dp))
             .aeonHairlineBorder(RoundedCornerShape(20.dp)),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+//        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // Hero Content
-        Column(modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 18.dp)) {
+        Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "AMOUNT",
@@ -268,40 +265,9 @@ private fun AmountHeroPanel(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Hero Amount Display
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = whole,
-                        style = AppTextStyles.heroAmountLarge.copy(
-                            fontFamily = LocalAppFont.current.displayFamily,
-                            fontWeight = FontWeight.Light,
-                            fontSize = 24.sp
-                        ),
-                        color = AppColors.contentPrimary
-                    )
-                    Text(
-                        text = decimal,
-                        style = AppTextStyles.heroAmountLarge.copy(
-                            fontFamily = LocalAppFont.current.displayFamily,
-                            fontWeight = FontWeight.Light,
-                            fontSize = 18.sp
-                        ),
-                        color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    // Blinking cursor
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 6.dp, bottom = 10.dp)
-                            .width(2.dp)
-                            .height(24.dp)
-                            .background(AppColors.accent)
-                    )
-                }
-
                 // Currency Pill
                 if (currencies.size > 1) {
                     CurrencySelector(
@@ -315,6 +281,22 @@ private fun AmountHeroPanel(
                         style = AppTextStyles.sectionOverline,
                         color = AppColors.contentSecondary,
                         modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
+                // Hero Amount Display
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+//                    modifier = Modifier.padding(bottom = 4.dp)
+                ) {
+                    Text(
+                        text = amount,
+                        style = AppTextStyles.heroAmountLarge.copy(
+                            fontFamily = LocalAppFont.current.displayFamily,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 24.sp
+                        ),
+                        color = AppColors.contentPrimary
                     )
                 }
             }
@@ -331,18 +313,39 @@ private fun AmountHeroPanel(
         }
 
         // Footer
-        Box(
+
+        val dividerColor = AppColors.divider.copy(alpha = 0.45f)
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+////                .padding(top = 4.dp)
+//                .height(1.dp)
+//                .background(AppColors.divider.copy(alpha = 0.45f))
+//
+//        )
+
+        Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp)
+                .padding(top = 4.dp)
                 .height(1.dp)
-                .background(AppColors.divider.copy(alpha = 0.3f))
-        )
+        ) {
+            drawLine(
+                color = dividerColor,
+                start = Offset(0f, 0f),
+                end = Offset(size.width, 0f),
+                strokeWidth = size.height, // 1.dp thickness
+                pathEffect = PathEffect.dashPathEffect(
+                    intervals = floatArrayOf(20f, 10f), // 20px dash, 10px space
+                    phase = 0f
+                )
+            )
+        }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {

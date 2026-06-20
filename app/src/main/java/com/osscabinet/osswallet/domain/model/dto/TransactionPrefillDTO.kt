@@ -103,12 +103,7 @@ data class TransactionPrefillDTO(
                 exchangeRate = template.transferRate.toPlainString(),
                 transactionType = when {
                     template.entryMode == EntryMode.INCOME -> com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
-                    template.entryMode == EntryMode.TRANSFER -> {
-                        // Infer from account presence
-                        if (template.accountId == null && template.targetAccountId != null)
-                            com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
-                        else com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
-                    }
+                    template.entryMode == EntryMode.TRANSFER -> com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
                     else -> com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE
                 },
                 sourceTemplateId = template.id
@@ -139,11 +134,7 @@ data class TransactionPrefillDTO(
                 exchangeRate = payment.transferRate.toPlainString(),
                 transactionType = when {
                     payment.entryMode == EntryMode.INCOME -> com.osscabinet.ossWallet.domain.model.TransactionType.INCOME
-                    payment.entryMode == EntryMode.TRANSFER -> {
-                        if (payment.accountId == null && payment.targetAccountId != null)
-                            com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
-                        else com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
-                    }
+                    payment.entryMode == EntryMode.TRANSFER -> com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW
                     else -> com.osscabinet.ossWallet.domain.model.TransactionType.EXPENSE
                 },
                 sourcePlannedPaymentId = payment.id,

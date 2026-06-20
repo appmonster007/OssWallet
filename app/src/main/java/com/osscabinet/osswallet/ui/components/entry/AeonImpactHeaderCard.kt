@@ -142,6 +142,7 @@ fun AeonImpactHeaderCard(
         nameIcon = nameIcon,
         showAmount = showAmount,
         showTypeSelector = showTypeSelector,
+        isTransfer = isTransfer,
         targetAccountId = targetAccountId,
         transferRate = transferRate,
         onExchangeRateClick = onExchangeRateClick,
@@ -218,9 +219,7 @@ fun <T> AeonImpactHeaderCard(
             val primaryPrefix  = if (isOutsideSource) "+" else amountPrefix
             val primaryColor   = if (isOutsideSource) (target?.color ?: AppColors.contentPrimary) else activeAmountColor
 
-            // Show when: not a transfer, OR source is outside wallet (target amount or entry placeholder),
-            // OR source has content/label (standard wallet source)
-            if (showAmount && (!isTransfer || isOutsideSource || source.value.isNotEmpty() || source.label != null)) {
+            if (showAmount) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {
                     EntryAmountDisplay(
                         amount = primaryAmount.value,

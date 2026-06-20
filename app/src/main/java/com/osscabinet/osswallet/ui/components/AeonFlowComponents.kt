@@ -84,31 +84,32 @@ fun AeonSettingsToggle(
     modifier: Modifier = Modifier,
     description: String? = null,
     enabled: Boolean = true,
+    showBackground: Boolean = true,
+    showBorder: Boolean = true,
     thumbContent: (@Composable () -> Unit)? = null
 ) {
-    Surface(
-        color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(alpha = 0.5f),
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        modifier = modifier.fillMaxWidth(),
-        border = BorderStroke(1.dp, AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f))
-    ) {
+    val content = @Composable {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(AeonTheme.dimensions.cardPadding),
+                .padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 8.dp)),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label.uppercase(),
-                    style = AppTextStyles.sectionOverline,
+                    style = AppTextStyles.overlineLabel.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        fontSize = 10.sp
+                    ),
                     color = if (enabled) AppColors.primary else AppColors.primary.copy(alpha = 0.4f)
                 )
                 if (description != null) {
                     Text(
                         description,
-                        style = AppTextStyles.caption,
+                        style = AppTextStyles.caption.copy(fontSize = 12.sp),
                         color = AppColors.contentSecondary.copy(alpha = if (enabled) 1f else 0.5f)
                     )
                 }
@@ -127,6 +128,21 @@ fun AeonSettingsToggle(
                     uncheckedBorderColor = AppColors.outline
                 )
             )
+        }
+    }
+
+    if (showBackground) {
+        Surface(
+            color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            modifier = modifier.fillMaxWidth(),
+            border = if (showBorder) BorderStroke(1.dp, AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f)) else null
+        ) {
+            content()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            content()
         }
     }
 }
@@ -152,13 +168,15 @@ fun AeonLayoutToggle(
     layout: String,
     onLayoutChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "LAYOUT"
+    label: String = "LAYOUT",
+    showBackground: Boolean = true
 ) {
     AeonSettingsToggle(
         label = label,
         description = if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
         checked = layout == "grid",
         onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
+        showBackground = showBackground,
         thumbContent = {
             if (layout == "grid") {
                 Icon(
@@ -183,21 +201,22 @@ fun AeonGridColumnsSettings(
     gridColumns: Int,
     onGridColumnsChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    maxColumns: Int = 3
+    maxColumns: Int = 3,
+    showBackground: Boolean = true,
+    showBorder: Boolean = true
 ) {
-    Surface(
-        color = AppColors.surfaceContainerLow,
-        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        modifier = modifier.fillMaxWidth(),
-        border = BorderStroke(1.dp, AppColors.outlineVariant)
-    ) {
+    val content = @Composable {
         Column(
-            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 8.dp)),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 "SIZE",
-                style = AppTextStyles.sectionOverline,
+                style = AppTextStyles.overlineLabel.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    fontSize = 10.sp
+                ),
                 color = AppColors.primary
             )
 
@@ -220,6 +239,21 @@ fun AeonGridColumnsSettings(
                     )
                 }
             }
+        }
+    }
+
+    if (showBackground) {
+        Surface(
+            color = AppColors.surfaceContainerLow,
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            modifier = modifier.fillMaxWidth(),
+            border = if (showBorder) BorderStroke(1.dp, AppColors.outlineVariant) else null
+        ) {
+            content()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            content()
         }
     }
 }

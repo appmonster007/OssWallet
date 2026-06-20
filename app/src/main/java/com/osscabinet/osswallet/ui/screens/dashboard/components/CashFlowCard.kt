@@ -501,14 +501,16 @@ private fun CashFlowSettingsSheet(
                 showBaseConversion = config.showBaseConversion,
                 onShowBaseConversionChange = {
                     callbacks.onShowBaseConversionChange(config.cardId, it)
-                }
+                },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show NET column",
                 checked = config.showNetColumn,
                 onCheckedChange = {
                     callbacks.onShowNetColumnChange(config.cardId, it)
-                }
+                },
+                showBackground = false
             )
         }
         CardPerspectiveSettings(

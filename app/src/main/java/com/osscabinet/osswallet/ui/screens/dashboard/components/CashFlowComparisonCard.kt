@@ -611,29 +611,34 @@ private fun CashFlowComparisonSettingsSheet(
             AeonSettingsToggle(
                 label = "Cumulative",
                 checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Grid Lines",
                 checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+                showBackground = false
             )
         }
         CardSettingsSection("Series") {
             AeonSettingsToggle(
                 label = "Current Period",
                 checked = config.showCurrentPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Previous Period",
                 checked = config.showPreviousPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Same Period Last Year",
                 checked = config.showSamePeriodLastYear,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) }
+                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
+                showBackground = false
             )
         }
         CardPerspectiveSettings(

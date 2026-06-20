@@ -193,7 +193,7 @@ private fun PlannedPaymentsSettingsSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = dims.cardPadding, vertical = dims.spacingXs),
+                        .padding(vertical = dims.spacingXs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -209,7 +209,7 @@ private fun PlannedPaymentsSettingsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = dims.cardPadding, vertical = dims.spacingSm),
+                    .padding(vertical = dims.spacingSm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

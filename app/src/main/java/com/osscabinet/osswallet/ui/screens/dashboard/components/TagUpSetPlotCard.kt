@@ -374,7 +374,7 @@ private fun TagUpSetSettingsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -414,12 +414,11 @@ private fun TagUpSetSettingsSheet(
             HorizontalDivider(
                 thickness = 0.5.dp,
                 color = AppColors.divider.copy(alpha = 0.3f),
-                modifier = Modifier.padding(horizontal = 16.dp)
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -461,11 +460,10 @@ private fun TagUpSetSettingsSheet(
             HorizontalDivider(
                 thickness = 0.5.dp,
                 color = AppColors.divider.copy(alpha = 0.3f),
-                modifier = Modifier.padding(horizontal = 16.dp)
             )
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             ) {
                 Text(
                     "DYNAMIC FILTERING",
@@ -516,7 +514,7 @@ private fun TagUpSetSettingsSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -564,12 +562,11 @@ private fun TagUpSetSettingsSheet(
             HorizontalDivider(
                 thickness = 0.5.dp,
                 color = AppColors.divider.copy(alpha = 0.3f),
-                modifier = Modifier.padding(horizontal = 16.dp)
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {

@@ -198,7 +198,7 @@ private fun RecentActivitiesSettingsSheet(
             SingleChoiceSegmentedButtonRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
             ) {
                 TransactionGroupingType.entries.forEachIndexed { index, type ->
                     SegmentedButton(
@@ -225,37 +225,44 @@ private fun RecentActivitiesSettingsSheet(
             AeonSettingsToggle(
                 label = "Use Note as Header",
                 checked = config.useNoteAsHeader,
-                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) }
+                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Account",
                 checked = config.showAccount,
-                onCheckedChange = { onUpdate(config.copy(showAccount = it)) }
+                onCheckedChange = { onUpdate(config.copy(showAccount = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Category",
                 checked = config.showCategory,
-                onCheckedChange = { onUpdate(config.copy(showCategory = it)) }
+                onCheckedChange = { onUpdate(config.copy(showCategory = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Note",
                 checked = config.showNote,
-                onCheckedChange = { onUpdate(config.copy(showNote = it)) }
+                onCheckedChange = { onUpdate(config.copy(showNote = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Tags",
                 checked = config.showTags,
-                onCheckedChange = { onUpdate(config.copy(showTags = it)) }
+                onCheckedChange = { onUpdate(config.copy(showTags = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Timestamp",
                 checked = config.showTimestamp,
-                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) }
+                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Icon",
                 checked = config.showIcon,
-                onCheckedChange = { onUpdate(config.copy(showIcon = it)) }
+                onCheckedChange = { onUpdate(config.copy(showIcon = it)) },
+                showBackground = false
             )
         }
 
@@ -264,25 +271,29 @@ private fun RecentActivitiesSettingsSheet(
                 label = "Show Opening Balance",
                 enabled = config.allTxnBreakdown,
                 checked = config.allTxnBreakdown && config.showOpeningBalance,
-                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) }
+                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Closing Balance",
                 enabled = config.allTxnBreakdown,
                 checked = config.allTxnBreakdown && config.showClosingBalance,
-                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) }
+                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Show Currency Breakdown",
                 checked = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) }
+                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
+                showBackground = false
             )
             AeonSettingsToggle(
                 label = "Period Overview",
                 description = "Show full period totals regardless of active filter",
                 checked = config.allTxnBreakdown,
                 enabled = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) }
+                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) },
+                showBackground = false
             )
         }
     }

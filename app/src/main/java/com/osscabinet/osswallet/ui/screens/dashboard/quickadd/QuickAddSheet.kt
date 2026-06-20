@@ -18,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,9 +26,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
@@ -58,7 +61,9 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
@@ -120,18 +125,16 @@ fun QuickAddSheet(
         visibleState.targetState = false
     }
 
-    // Predictive Back Handling (Modern SDK)
+    // Predictive Back Handling (Modern SDK) — system/gesture back always dismisses
+    // the whole sheet, regardless of step. Stepping back is done via the in-sheet
+    // back chevron in the footer.
     var backProgress by remember { mutableStateOf(0f) }
     PredictiveBackHandler(enabled = visibleState.targetState) { progress ->
         try {
             progress.collect { event ->
                 backProgress = event.progress
             }
-            if (state.currentStep == STEP_TEMPLATE) {
-                animateDismiss()
-            } else {
-                viewModel.goToStep(state.currentStep - 1)
-            }
+            animateDismiss()
         } catch (e: Exception) {
             backProgress = 0f
         }
@@ -156,11 +159,16 @@ fun QuickAddSheet(
             )
         }
 
-        // Anchor layer
+        // Anchor layer — capped below the status bar so the sheet can grow with its
+        // grid content but never overlaps the system status bar.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+                .windowInsetsPadding(
+                    WindowInsets.statusBars
+                        .union(WindowInsets.ime)
+                        .union(WindowInsets.navigationBars)
+                )
         ) {
             AnimatedVisibility(
                 visibleState = visibleState,
@@ -177,32 +185,40 @@ fun QuickAddSheet(
             ) {
                 val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
                 val sheetBody: @Composable () -> Unit = {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        // Drag handle
-                        Box(
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val maxSheetHeight = maxHeight
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 12.dp, bottom = 4.dp),
-                            contentAlignment = Alignment.Center
+                                .heightIn(max = maxSheetHeight)
                         ) {
+                            // Drag handle
                             Box(
                                 modifier = Modifier
-                                    .width(40.dp)
-                                    .height(4.dp)
-                                    .clip(CircleShape)
-                                    .background(AppColors.divider.copy(alpha = 0.4f))
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp, bottom = 4.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(40.dp)
+                                        .height(4.dp)
+                                        .clip(CircleShape)
+                                        .background(AppColors.divider.copy(alpha = 0.4f))
+                                )
+                            }
+
+                            QuickAddSheetContent(
+                                state = state,
+                                templates = templates,
+                                categories = categories,
+                                viewModel = viewModel,
+                                hideKeyboard = ::hideKeyboard,
+                                onDismiss = { animateDismiss() }, // Trigger exit animation instead of instant finish
+                                onSettled = {},
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                         }
-
-                        QuickAddSheetContent(
-                            state = state,
-                            templates = templates,
-                            categories = categories,
-                            viewModel = viewModel,
-                            hideKeyboard = ::hideKeyboard,
-                            onDismiss = { animateDismiss() }, // Trigger exit animation instead of instant finish
-                            onSettled = {}
-                        )
                     }
                 }
 
@@ -255,26 +271,15 @@ private fun QuickAddSheetContent(
     viewModel: QuickAddViewModel,
     hideKeyboard: () -> Unit,
     onDismiss: () -> Unit,
-    onSettled: () -> Unit
+    onSettled: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var isSheetSettled by remember { mutableStateOf(false) }
     val windowInfo = LocalWindowInfo.current
 
-    val navBtnSize  = 28.dp
-    val navIconSize = 14.dp
-    val navVPad     = 3.dp
-    val dotActive   = 6.dp
-    val dotInactive = 5.dp
-
-    fun goBack() {
-        when (state.currentStep) {
-            STEP_TEMPLATE -> {
-                hideKeyboard(); onDismiss()
-            }
-
-            else -> {
-                hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
-            }
+    fun goBackStep() {
+        if (state.currentStep > STEP_TEMPLATE) {
+            hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
         }
     }
 
@@ -283,15 +288,34 @@ private fun QuickAddSheetContent(
         viewModel.goToStep(state.currentStep + 1)
     }
 
+    val canGoNext = when (state.currentStep) {
+        STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
+        STEP_ACCOUNT -> state.selectedAccountId != null
+        STEP_AMOUNT -> state.amount > BigDecimal.ZERO
+        else -> false
+    }
+    val isLastStep = state.currentStep == STEP_AMOUNT
+    val title = when (state.currentStep) {
+        STEP_TEMPLATE -> "What did you spend on?"
+        STEP_ACCOUNT -> "Which account?"
+        STEP_AMOUNT -> "How much?"
+        else -> ""
+    }
+    val ctaLabel = when (state.currentStep) {
+        STEP_TEMPLATE -> "ACCOUNT"
+        STEP_ACCOUNT -> "AMOUNT"
+        STEP_AMOUNT -> "SAVE"
+        else -> ""
+    }
+
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coords ->
                 if (!isSheetSettled) {
                     val windowHeight = windowInfo.containerSize.height
                     val selfHeight = coords.size.height
                     val yInWindow = coords.positionInWindow().y
-                    // When the sheet reaches the bottom of the screen (or near it)
                     if (yInWindow >= (windowHeight - selfHeight).toFloat() - 5f) {
                         isSheetSettled = true
                         onSettled()
@@ -299,110 +323,11 @@ private fun QuickAddSheetContent(
                 }
             }
     ) {
-        // Back / step dots / next row
-        val canGoNext = when (state.currentStep) {
-            STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
-            STEP_ACCOUNT -> state.selectedAccountId != null
-            STEP_AMOUNT -> state.amount > BigDecimal.ZERO
-            else -> false
-        }
-        val isLastStep = state.currentStep == STEP_AMOUNT
+        // ── Editorial header ───────────────────────────────────────────────────
+        EditorialHeader(title = title)
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = navVPad),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Back button
-            Surface(
-                onClick = ::goBack,
-                shape = CircleShape,
-                color = AppColors.recessedSurface,
-                modifier = Modifier.size(navBtnSize)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = AppColors.contentSecondary,
-                        modifier = Modifier.size(navIconSize)
-                    )
-                }
-            }
-
-            // Step dots centred
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(TOTAL_STEPS) { index ->
-                    val isActive = state.currentStep == index
-                    Box(
-                        modifier = Modifier
-                            .size(if (isActive) dotActive else dotInactive)
-                            .clip(CircleShape)
-                            .background(
-                                if (isActive) AppColors.primary
-                                else AppColors.divider.copy(alpha = 0.4f)
-                            )
-                    )
-                    if (index < TOTAL_STEPS - 1) Spacer(modifier = Modifier.width(6.dp))
-                }
-            }
-
-            // Next / Save button
-            if (isLastStep) {
-                Surface(
-                    onClick = {
-                        if (!state.isSaving) {
-                            viewModel.saveTransaction(onSuccess = onDismiss)
-                        }
-                    },
-                    shape = CircleShape,
-                    color = if (state.selectedAccountId != null) AppColors.primary
-                    else AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.size(navBtnSize)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (state.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(navIconSize),
-                                color = AppColors.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                Icons.Rounded.Done,
-                                contentDescription = "Save",
-                                tint = AppColors.onPrimary,
-                                modifier = Modifier.size(navIconSize)
-                            )
-                        }
-                    }
-                }
-            } else {
-                Surface(
-                    onClick = { if (canGoNext) goNext() },
-                    shape = CircleShape,
-                    color = if (canGoNext) AppColors.primary
-                    else AppColors.divider.copy(alpha = 0.5f),
-                    modifier = Modifier.size(navBtnSize)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = "Next",
-                            tint = AppColors.onPrimary,
-                            modifier = Modifier.size(navIconSize)
-                        )
-                    }
-                }
-            }
-        }
-
-        AeonGlassHost {
+        // ── Step body (the flexible region) ────────────────────────────────────
+        AeonGlassHost(modifier = Modifier.weight(1f, fill = false)) {
             AnimatedContent(
                 targetState = state.currentStep,
                 modifier = Modifier.fillMaxWidth(),
@@ -470,20 +395,150 @@ private fun QuickAddSheetContent(
             }
         }
 
-        // Step label hint
-        val stepLabel = when (state.currentStep) {
-            STEP_TEMPLATE -> "Pick a template or category"
-            STEP_ACCOUNT -> "Choose account & transaction type"
-            STEP_AMOUNT -> "Enter amount"
-            else -> ""
-        }
-        Text(
-            text = stepLabel,
-            style = AppTextStyles.chartAxisLabel,
-            color = AppColors.contentSecondary.copy(alpha = 0.5f),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 8.dp)
+        // ── Footer: back chevron · step dots · champagne CTA ───────────────────
+        QuickAddFooter(
+            currentStep = state.currentStep,
+            showBack = state.currentStep > STEP_TEMPLATE,
+            ctaLabel = ctaLabel,
+            ctaEnabled = canGoNext,
+            isLastStep = isLastStep,
+            isSaving = state.isSaving,
+            onBack = ::goBackStep,
+            onCta = {
+                if (isLastStep) {
+                    if (!state.isSaving) viewModel.saveTransaction(onSuccess = onDismiss)
+                } else if (canGoNext) {
+                    goNext()
+                }
+            }
         )
+    }
+}
+
+@Composable
+private fun EditorialHeader(title: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .width(16.dp)
+                    .height(1.dp)
+                    .background(AppColors.accent.copy(alpha = 0.7f))
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "NEW ENTRY",
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.contentSecondary.copy(alpha = 0.85f)
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = title,
+            style = AppTextStyles.screenTitle.copy(
+                fontWeight = FontWeight.Light,
+                fontSize = 26.sp
+            ),
+            color = AppColors.contentPrimary
+        )
+    }
+}
+
+@Composable
+private fun QuickAddFooter(
+    currentStep: Int,
+    showBack: Boolean,
+    ctaLabel: String,
+    ctaEnabled: Boolean,
+    isLastStep: Boolean,
+    isSaving: Boolean,
+    onBack: () -> Unit,
+    onCta: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (showBack) {
+            Surface(
+                onClick = onBack,
+                shape = CircleShape,
+                color = AppColors.recessedSurface,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Previous step",
+                        tint = AppColors.contentSecondary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+        }
+
+        // Step dots
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            repeat(TOTAL_STEPS) { index ->
+                val isActive = currentStep == index
+                Box(
+                    modifier = Modifier
+                        .height(4.dp)
+                        .width(if (isActive) 20.dp else 4.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isActive) AppColors.accent
+                            else AppColors.divider.copy(alpha = 0.5f)
+                        )
+                )
+            }
+        }
+
+        Spacer(Modifier.width(12.dp))
+
+        // Champagne CTA
+        Surface(
+            onClick = onCta,
+            shape = RoundedCornerShape(20.dp),
+            color = if (ctaEnabled) AppColors.accent else AppColors.divider.copy(alpha = 0.5f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = ctaLabel,
+                    style = AppTextStyles.sectionOverline,
+                    color = if (ctaEnabled) AppColors.onAccent else AppColors.contentSecondary
+                )
+                if (isLastStep && isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(13.dp),
+                        color = AppColors.onAccent,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isLastStep) Icons.Rounded.Done
+                        else Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        tint = if (ctaEnabled) AppColors.onAccent else AppColors.contentSecondary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+        }
     }
 }

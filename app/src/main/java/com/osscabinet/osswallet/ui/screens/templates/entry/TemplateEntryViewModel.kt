@@ -109,7 +109,8 @@ class TemplateEntryViewModel @Inject constructor(
                         templateId = null,
                         name = prefill.name,
                         source = TransactionSide(
-                            account = AccountRef.fromStored(prefill.accountId),
+                            account = if (prefill.entryMode == EntryMode.TRANSFER) AccountRef.fromTransferSide(prefill.accountId)
+                                      else AccountRef.fromStored(prefill.accountId),
                             amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
                             currency = prefill.currency ?: "USD",
                             categoryId = prefill.categoryId

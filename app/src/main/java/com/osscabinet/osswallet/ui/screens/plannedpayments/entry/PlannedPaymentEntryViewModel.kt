@@ -112,6 +112,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             if (prefill != null) {
                 val template = prefill.template
                 val schedule = prefill.schedule
+                val isTemplateTransfer = template.entryMode == EntryMode.TRANSFER
                 _state.update {
                     it.copy(
                         isEditMode = false,
@@ -119,13 +120,15 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         linkedTemplate = null,
                         name = template.name,
                         source = TransactionSide(
-                            account = AccountRef.fromStored(template.accountId),
+                            account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.accountId)
+                                      else AccountRef.fromStored(template.accountId),
                             amount = template.amount.abs().stripTrailingZeros().toPlainString(),
                             currency = template.currency,
                             categoryId = template.categoryId
                         ),
                         destination = TransactionSide(
-                            account = AccountRef.fromStored(template.targetAccountId),
+                            account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.targetAccountId)
+                                      else AccountRef.fromStored(template.targetAccountId),
                             amount = template.amount.abs().multiply(template.transferRate)
                                 .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                                 .toPlainString(),
@@ -477,18 +480,21 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetLinkedTemplate -> {
                 _state.update { state ->
                     if (event.template != null) {
+                        val isTemplateTransfer = event.template.entryMode == EntryMode.TRANSFER
                         state.copy(
                             linkedTemplate = event.template,
                             name = event.template.name,
                             source = TransactionSide(
-                                account = AccountRef.fromStored(event.template.accountId),
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.accountId)
+                                          else AccountRef.fromStored(event.template.accountId),
                                 amount = event.template.amount.abs().stripTrailingZeros()
                                     .toPlainString(),
                                 currency = event.template.currency,
                                 categoryId = event.template.categoryId
                             ),
                             destination = TransactionSide(
-                                account = AccountRef.fromStored(event.template.targetAccountId),
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.targetAccountId)
+                                          else AccountRef.fromStored(event.template.targetAccountId),
                                 amount = event.template.amount.abs()
                                     .multiply(event.template.transferRate)
                                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()

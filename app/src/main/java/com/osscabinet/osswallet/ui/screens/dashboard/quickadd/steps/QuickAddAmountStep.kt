@@ -238,6 +238,15 @@ private fun AmountHeroPanel(
     entryMode: EntryMode,
     inputAmount: BigDecimal
 ) {
+    val (whole, decimal) = remember(amount) {
+        val parts = amount.split(".")
+        if (parts.size == 2) {
+            parts[0] + "." to parts[1]
+        } else {
+            amount + "." to "00"
+        }
+    }
+
     val closingBalance = remember(accountBalance, inputAmount, entryMode) {
         if (entryMode == EntryMode.INCOME) accountBalance + inputAmount
         else accountBalance - inputAmount
@@ -246,10 +255,8 @@ private fun AmountHeroPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-//            .padding(horizontal = 20.dp, vertical = 8.dp)
             .background(AppColors.background, RoundedCornerShape(20.dp))
-            .aeonHairlineBorder(RoundedCornerShape(20.dp)),
-//        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .aeonHairlineBorder(RoundedCornerShape(20.dp))
     ) {
         // Hero Content
         Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp)) {
@@ -263,40 +270,59 @@ private fun AmountHeroPanel(
                 HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
             }
 
+            Spacer(Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Currency Pill
-                if (currencies.size > 1) {
-                    CurrencySelector(
-                        selectedCurrency = currency,
-                        onCurrencySelected = onCurrencyChange,
-                        supportedCurrencies = currencies
-                    )
-                } else {
-                    Text(
-                        text = currency,
-                        style = AppTextStyles.sectionOverline,
-                        color = AppColors.contentSecondary,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
+                // Currency Pill (Left)
+                Box {
+                    if (currencies.size > 1) {
+                        CurrencySelector(
+                            selectedCurrency = currency,
+                            onCurrencySelected = onCurrencyChange,
+                            supportedCurrencies = currencies
+                        )
+                    } else {
+                        Text(
+                            text = currency,
+                            style = AppTextStyles.sectionOverline.copy(
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.sp
+                            ),
+                            color = AppColors.contentSecondary,
+                            modifier = Modifier
+                                .background(AppColors.recessedSurface.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
                 }
 
-                // Hero Amount Display
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-//                    modifier = Modifier.padding(bottom = 4.dp)
-                ) {
+                // Hero Amount Display (Right)
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = amount,
+                        text = whole,
                         style = AppTextStyles.heroAmountLarge.copy(
                             fontFamily = LocalAppFont.current.displayFamily,
                             fontWeight = FontWeight.Light,
-                            fontSize = 24.sp
+                            fontSize = 24.sp,
+                            lineHeight = 24.sp
                         ),
                         color = AppColors.contentPrimary
+                    )
+                    Text(
+                        text = decimal,
+                        style = AppTextStyles.heroAmountLarge.copy(
+                            fontFamily = LocalAppFont.current.displayFamily,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 20.sp,
+                            lineHeight = 20.sp
+                        ),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f),
+//                        modifier = Modifier.padding(bottom = 3.dp)
                     )
                 }
             }
@@ -305,38 +331,32 @@ private fun AmountHeroPanel(
             if (expression.isNotBlank() && expression != amount && expression != "0") {
                 Text(
                     text = expression,
-                    style = AppTextStyles.metaLabel.copy(fontSize = 11.sp),
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(top = 4.dp)
+                    style = AppTextStyles.metaLabel.copy(
+                        fontSize = 10.sp,
+                        fontFamily = LocalAppFont.current.monoFamily
+                    ),
+                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 1.dp, bottom = 8.dp)
                 )
+            } else {
+                Spacer(Modifier.height(8.dp))
             }
         }
 
         // Footer
-
         val dividerColor = AppColors.divider.copy(alpha = 0.45f)
-//        Box(
-//            modifier = Modifier
-//                .fillMaxWidth()
-////                .padding(top = 4.dp)
-//                .height(1.dp)
-//                .background(AppColors.divider.copy(alpha = 0.45f))
-//
-//        )
-
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 4.dp)
                 .height(1.dp)
         ) {
             drawLine(
                 color = dividerColor,
                 start = Offset(0f, 0f),
                 end = Offset(size.width, 0f),
-                strokeWidth = size.height, // 1.dp thickness
+                strokeWidth = size.height,
                 pathEffect = PathEffect.dashPathEffect(
-                    intervals = floatArrayOf(20f, 10f), // 20px dash, 10px space
+                    intervals = floatArrayOf(15f, 8f),
                     phase = 0f
                 )
             )
@@ -351,13 +371,17 @@ private fun AmountHeroPanel(
         ) {
             Text(
                 text = "Today · Now",
-                style = AppTextStyles.metaLabel.copy(fontSize = 10.sp),
+                style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
                 color = AppColors.contentSecondary
             )
 
             Text(
                 text = "Closing: ${formatCurrency(closingBalance, accountCurrency)}",
-                style = AppTextStyles.metaLabel.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                style = AppTextStyles.metaLabel.copy(
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = LocalAppFont.current.monoFamily
+                ),
                 color = AppColors.accent.copy(alpha = 0.9f)
             )
         }

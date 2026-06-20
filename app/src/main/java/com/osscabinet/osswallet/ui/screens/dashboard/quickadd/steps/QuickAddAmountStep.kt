@@ -50,6 +50,8 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalAppFont
 import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 
 @Composable
 fun QuickAddAmountStep(
@@ -105,7 +107,9 @@ fun QuickAddAmountStep(
                     accountBalance = accountBalance,
                     accountCurrency = account?.currencyCode ?: "USD",
                     entryMode = entryMode,
-                    inputAmount = amount
+                    inputAmount = amount,
+                    exchangeRates = exchangeRates,
+                    baseCurrency = baseCurrency
                 )
             }
         )
@@ -240,7 +244,9 @@ private fun AmountHeroPanel(
     accountBalance: BigDecimal,
     accountCurrency: String,
     entryMode: EntryMode,
-    inputAmount: BigDecimal
+    inputAmount: BigDecimal,
+    exchangeRates: Map<String, BigDecimal>,
+    baseCurrency: String
 ) {
     val (whole, decimal) = remember(amount) {
         val parts = amount.split(".")
@@ -251,9 +257,20 @@ private fun AmountHeroPanel(
         }
     }
 
-    val closingBalance = remember(accountBalance, inputAmount, entryMode) {
-        if (entryMode == EntryMode.INCOME) accountBalance + inputAmount
-        else accountBalance - inputAmount
+    val closingBalance = remember(accountBalance, inputAmount, entryMode, currency, accountCurrency, exchangeRates, baseCurrency) {
+        val convertedInput = if (currency == accountCurrency) {
+            inputAmount
+        } else {
+            CurrencyService.convertAmount(
+                amount = inputAmount,
+                fromCurrency = currency,
+                toCurrency = accountCurrency,
+                exchangeRates = ExchangeRateSnapshot(anchor = baseCurrency, rates = exchangeRates)
+            )
+        }
+
+        if (entryMode == EntryMode.INCOME) accountBalance + convertedInput
+        else accountBalance - convertedInput
     }
 
     Column(

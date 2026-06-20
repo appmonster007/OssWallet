@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
@@ -209,13 +210,17 @@ object CardAggregationService {
         input: CardInput,
         config: AccountsCardConfig
     ): CardRenderData.Accounts {
-        val rawFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
-        val currentFilter = rawFilter.copy(
-            accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
-        )
+        val currentFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        
+        val targetAccounts = if (currentFilter.accountIds.isNotEmpty()) {
+            input.accounts.filter { it.id in currentFilter.accountIds }
+        } else {
+            input.effectiveAccounts
+        }
+
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
 
-        val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter, excludeInternal)
+        val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter, targetAccounts, excludeInternal)
             .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
 
         val accountSummaries = if (config.showComparison) {
@@ -224,7 +229,7 @@ object CardAggregationService {
                 val prevFilter = currentFilter.copy(
                     timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
                 )
-                val previousPeriodAccountStats = computeAccountStats(queryService, profileId, input, prevFilter, excludeInternal)
+                val previousPeriodAccountStats = computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
                     .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
                 currentPeriodAccountStats.mapValues { (id, summary) ->
                     summary.copy(previousPeriodFlow = previousPeriodAccountStats[id]?.currentPeriodFlow)
@@ -234,7 +239,7 @@ object CardAggregationService {
 
         return CardRenderData.Accounts(
             config = config,
-            updatedAccounts = input.effectiveAccounts,
+            updatedAccounts = targetAccounts,
             accountSummaries = accountSummaries,
             currency = input.targetCurrency,
             currentTheme = "light",
@@ -247,6 +252,7 @@ object CardAggregationService {
         profileId: Int,
         input: CardInput,
         filter: TransactionFilter,
+        accounts: List<Account>,
         excludeInternalTransfers: Boolean = false
     ): Map<String, AccountSummaryItem> {
         val balanceFilter = filter.toBalanceFilter()
@@ -257,7 +263,7 @@ object CardAggregationService {
         val summariesByAccountAndCurrencyPeriod = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, filter, excludeInternalTransfers)
             .getOrDefault(emptyMap())
 
-        return input.effectiveAccounts.associate { account ->
+        return accounts.associate { account ->
             val balanceSummaries = summariesByAccountAndCurrencyBalance[account.id] ?: emptyMap()
             val periodSummaries = summariesByAccountAndCurrencyPeriod[account.id] ?: emptyMap()
             

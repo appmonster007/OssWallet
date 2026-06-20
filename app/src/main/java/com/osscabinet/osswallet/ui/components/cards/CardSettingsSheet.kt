@@ -136,7 +136,6 @@ private fun SheetBody(
             title = title,
             onDismiss = onDismiss,
             onDelete = onDelete,
-            modifier = Modifier // Pass empty modifier to prevent double scrolling
         ) {
             content()
         }

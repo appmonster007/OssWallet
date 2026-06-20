@@ -381,20 +381,6 @@ fun AeonPieChart(
                 }
             }
 
-            // Dismissal layer for Tooltip
-            if (selectedSlice != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                selectedSlice = null
-                                touchPoint = null
-                            }
-                        }
-                )
-            }
-
             // Tooltip Overlay
             selectedSlice?.let { slice ->
                 touchPoint?.let { point ->
@@ -411,6 +397,10 @@ fun AeonPieChart(
                         density = density.density,
                         currency = currency,
                         precision = precision,
+                        onDismissRequest = {
+                            selectedSlice = null
+                            touchPoint = null
+                        },
                         onDrillInClick = {
                             selectedSlice = null
                             onDrillInClick(slice)

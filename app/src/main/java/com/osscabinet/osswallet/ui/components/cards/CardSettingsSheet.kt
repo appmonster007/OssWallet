@@ -290,7 +290,7 @@ fun CardSettingsSection(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, name = "Standardization Lab", heightDp = 1500)
+@Preview(showBackground = true, name = "Standardization Lab", heightDp = 1200)
 @Composable
 fun CardSettingsStandardizationLab() {
     var perspective by remember { mutableStateOf<AccountingPerspective>(AccountingPerspective.Accounting) }

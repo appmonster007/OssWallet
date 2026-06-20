@@ -271,13 +271,12 @@ class TransactionEntryViewModel @Inject constructor(
         val isOpenedAsReceiver = prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
 
         // Use prefill data if available, otherwise fallback to current selection.
-        // DTO carries the legacy String? convention (null/blank = absent). The form's typed
-        // AccountRef preserves that convention via fromStored. For TRANSFER edit-mode
-        // prefills, a missing id means Outside Wallet (matching DB encoding).
-        val isTransferEditPrefill = txType == EntryMode.TRANSFER && currentState.isEditMode
+        // In TRANSFER mode: null id means Outside Wallet (DB convention) for all prefill sources.
+        // In non-TRANSFER mode: null id means "no preference", keep current selection.
         fun decode(prefId: String?, fallback: AccountRef): AccountRef = when {
-            prefId != null -> if (isTransferEditPrefill) AccountRef.fromTransferSide(prefId) else AccountRef.fromStored(prefId)
-            else -> fallback
+            txType != EntryMode.TRANSFER -> if (prefId != null) AccountRef.fromStored(prefId) else fallback
+            prefId != null -> AccountRef.fromTransferSide(prefId)
+            else -> AccountRef.Outside
         }
         var sourceRef = decode(prefill.accountId, currentState.source.account)
         var targetRef = decode(prefill.targetAccountId, currentState.destination.account)
@@ -311,10 +310,12 @@ class TransactionEntryViewModel @Inject constructor(
             sourceCurrency = targetCurr
             targetCurr = originalSourceCurr
 
-            targetAmtBD = amountBD.stripTrailingZeros()
-            amountBD = if (rateBD.signum() != 0) {
-                targetAmtBD.divide(rateBD, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-            } else targetAmtBD
+            // Swap amounts: pre-flip source becomes destination, pre-flip destination becomes source.
+            // Capture both before either is overwritten.
+            val preFlipSource = amountBD.stripTrailingZeros()
+            val preFlipTarget = targetAmtBD.stripTrailingZeros()
+            amountBD = preFlipTarget
+            targetAmtBD = preFlipSource
 
             categoryId = if (Category.isInitialBalance(prefill.categoryId))
                 Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
@@ -322,6 +323,12 @@ class TransactionEntryViewModel @Inject constructor(
             categoryId = if (Category.isInitialBalance(prefill.categoryId))
                 Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
         }
+
+        // After a receiver flip the stored rate is the inflow inverse; invert it so it reads
+        // source→destination from the form's now-normalised perspective.
+        val effectiveRate = if (txType == EntryMode.TRANSFER && isOpenedAsReceiver && rateBD.signum() != 0)
+            BigDecimal.ONE.divide(rateBD, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+        else rateBD
 
         _state.update {
             it.copy(
@@ -334,7 +341,7 @@ class TransactionEntryViewModel @Inject constructor(
                 ),
                 destination = TransactionSide(
                     account = targetRef,
-                    amount = targetAmtBD.toPlainString(),
+                    amount = if (prefill.amount.isNotEmpty()) targetAmtBD.toPlainString() else it.destination.amount,
                     currency = targetCurr
                 ),
                 selectedTags = prefill.tags,
@@ -351,7 +358,7 @@ class TransactionEntryViewModel @Inject constructor(
                 linkedTransactionIds = prefill.clonedFromTransactionId?.let { listOf(it) }
                     ?: prefill.linkedTransactionIds,
                 selectedDateMillis = prefill.timestamp ?: it.selectedDateMillis,
-                exchangeRate = rateBD,
+                exchangeRate = effectiveRate,
                 selectedTemplateName = if (prefill.sourceTemplateId != null) prefill.name else it.selectedTemplateName,
                 prefillDto = prefill,
                 isSplitMode = prefill.isSplitMode,
@@ -369,9 +376,9 @@ class TransactionEntryViewModel @Inject constructor(
             )
         }
 
-        // Post-prefill logic for transfers
-        // Only recalculate if the prefill didn't provide a custom exchange rate (1.0 is default)
-        if (txType == EntryMode.TRANSFER && prefill.exchangeRate == "1.0") {
+        // Recalculate live rate only when no custom rate was provided (rate == 1 is the default).
+        // Use numeric comparison: BigDecimal("1").compareTo avoids "1" vs "1.0" string mismatch.
+        if (txType == EntryMode.TRANSFER && rateBD.compareTo(BigDecimal.ONE) == 0) {
             recalculateExchangeRate()
         }
     }
@@ -584,7 +591,7 @@ class TransactionEntryViewModel @Inject constructor(
                         it.copy(
                             destination = it.destination.copy(
                                 account = newRef,
-                                currency = event.account?.currencyCode ?: it.targetCurrency
+                                currency = event.account?.currencyCode?.ifBlank { null } ?: it.targetCurrency
                             )
                         )
                     }

@@ -45,12 +45,6 @@ fun TransactionEntryScreen(
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(config.prefillDto) {
-        if (config.prefillDto != null && (config.prefillDto != state.prefillDto)) {
-            viewModel.onEvent(TransactionEntryEvent.ApplyPrefill(config.prefillDto))
-        }
-    }
-
     DisposableEffect(Unit) {
         onDispose {
             viewModel.clearPrefillDto()

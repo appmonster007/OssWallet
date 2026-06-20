@@ -37,7 +37,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
  */
 @Composable
 fun AeonSettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    val shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+    val shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
     Box(
         modifier = Modifier
             .fillMaxWidth()

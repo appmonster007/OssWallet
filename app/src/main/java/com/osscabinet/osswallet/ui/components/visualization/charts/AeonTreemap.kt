@@ -221,20 +221,6 @@ fun AeonTreemap(
                 }
             }
 
-            // Dismissal layer for Tooltip
-            if (selectedNode != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures {
-                                selectedNode = null
-                                touchPoint = null
-                            }
-                        }
-                )
-            }
-
             // Overlay labels for larger segments
             if (showLabels) {
                 layouts.forEach { (node, rect) ->
@@ -332,6 +318,10 @@ fun AeonTreemap(
                         density = density.density,
                         currency = currency,
                         precision = precision,
+                        onDismissRequest = {
+                            selectedNode = null
+                            touchPoint = null
+                        },
                         onDrillInClick = {
                             selectedNode = null
                             onDrillInClick(node)

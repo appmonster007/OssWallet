@@ -71,7 +71,7 @@ fun AeonPieChart(
     currency: String = "USD",
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     isDonut: Boolean = true,
-    animate: Boolean = true,
+    animate: Boolean = false,
     rounded: Boolean = true,
     previousTotal: BigDecimal? = null,
     showComparison: Boolean = false,

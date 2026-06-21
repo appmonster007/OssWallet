@@ -85,7 +85,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val cardAnimationEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[CARD_ANIMATION_ENABLED_KEY] ?: true
+        preferences[CARD_ANIMATION_ENABLED_KEY] ?: false
     }
 
     val expandableFabEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->

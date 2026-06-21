@@ -41,6 +41,7 @@ import kotlin.math.sqrt
 fun CategoryBreakdownPieChart(
     data: List<CategoryPieChartData>,
     modifier: Modifier = Modifier,
+    animate: Boolean = false,
     onSegmentClick: (CategoryPieChartData) -> Unit = {},
     onSegmentDoubleClick: (CategoryPieChartData) -> Unit = {},
     showLabels: Boolean = true

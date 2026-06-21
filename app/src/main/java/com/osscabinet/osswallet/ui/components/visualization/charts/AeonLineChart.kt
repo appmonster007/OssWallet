@@ -78,7 +78,7 @@ fun AeonLineChart(
     precision: Int = CurrencyService.precision,
     showGrid: Boolean = true,
     showPeriodBars: Boolean = true,
-    animate: Boolean = true,
+    animate: Boolean = false,
     lineThicknessDp: Float = 0f,
     showXAxisLabels: Boolean = false,
     // When > 0, all series share this x-range denominator so shorter series don't stretch to fill the chart.

@@ -66,6 +66,7 @@ fun AeonTreemap(
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     showLabels: Boolean = true,
     rounded: Boolean = true,
+    animate: Boolean = false,
     onNodeClick: (AeonTreemapNode) -> Unit = {},
     onDrillInClick: (AeonTreemapNode) -> Unit = {},
     onNavigateToRecords: (AeonTreemapNode) -> Unit = {}

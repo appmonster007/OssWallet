@@ -97,7 +97,7 @@ fun AeonBarLineChart(
     barColorPositive: Color = ChartColorGreen,
     barColorNegative: Color = ChartColorRed,
     lineColor: Color = ChartColorBlue,
-    animate: Boolean = true,
+    animate: Boolean = false,
     smaData: List<Double>? = null,
     onNavigateToRecords: ((Int) -> Unit)? = null,
     // New parameters for income/expense dual-bar mode

@@ -83,6 +83,7 @@ fun CategoryTreemapCard(
     currency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
+    animate: Boolean = false,
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
@@ -272,6 +273,7 @@ fun CategoryTreemapCard(
                     modifier = Modifier.fillMaxSize(),
                     showLabels = config.showLabels,
                     rounded = config.rounded,
+                    animate = animate,
                     onNodeClick = { _ ->
                         // Interaction feedback
                     },

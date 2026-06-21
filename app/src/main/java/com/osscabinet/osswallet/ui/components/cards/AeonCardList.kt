@@ -1,13 +1,16 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -71,6 +74,7 @@ fun AeonCardList(
     disableFilterSheet: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
     cardDataMap: Map<String, CardRenderData> = emptyMap(),
+    isCardsLoading: Boolean = false,
     state: LazyListState = rememberLazyListState()
 ) {
     val sortedCards = remember(cards) { cards.sortedBy { it.order } }
@@ -136,12 +140,13 @@ fun AeonCardList(
                     onRecordsClick = onRecordsClick,
                     callbacks = callbacks,
                     preComputedData = preComputedData,
+                    serverDriven = isCardsLoading,
                     filterSheetEnabled = !disableFilterSheet
                 )
 
                 when (val card = cardWithCallbacks) {
                     is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
-                    null -> Box(modifier = Modifier.size(0.dp))
+                    null -> if (isCardsLoading) CardShimmerPlaceholder() else Box(modifier = Modifier.size(0.dp))
                     else -> {
                         val effectiveCard = card.copyWithRules(
                             rules = card.filterRules.layeredWith(screenRules),
@@ -298,6 +303,17 @@ fun CardErrorState(message: String?) {
             )
         }
     }
+}
+
+@Composable
+fun CardShimmerPlaceholder() {
+    val brush = rememberShimmerBrush(horizontal = true)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .background(brush, RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius))
+    )
 }
 
 @Preview(showBackground = true)

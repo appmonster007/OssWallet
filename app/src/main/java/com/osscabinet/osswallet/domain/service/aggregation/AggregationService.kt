@@ -364,13 +364,23 @@ object AggregationService {
             ).associateBy { it.key }
         }
 
+        return buildCategoryTreeFromBreakdowns(categoryBreakdowns, previousBreakdowns, allCategories, precision)
+    }
+
+    fun buildCategoryTreeFromBreakdowns(
+        categoryBreakdowns: Map<Long, FinancialMetrics<Long>>,
+        previousBreakdowns: Map<Long, FinancialMetrics<Long>>?,
+        allCategories: List<Category>,
+        precision: Int = CurrencyService.precision
+    ): List<CategoryTreeMetrics> {
+        val categoryMap = allCategories.associateBy { it.id }
         val globalTotal = categoryBreakdowns.values.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.totalAmount.abs()) }
 
         fun buildSubTree(categoryId: Long): CategoryTreeMetrics? {
             val entity = categoryMap[categoryId] ?: return null
             val breakdown = categoryBreakdowns[categoryId] ?: FinancialMetrics(categoryId, FinancialSummary.EMPTY, emptyMap())
             val previousBreakdown = previousBreakdowns?.get(categoryId)
-            
+
             val childrenEntities = allCategories.filter { it.parentId == entity.id }
             val actualChildrenData = childrenEntities.mapNotNull { buildSubTree(it.id) }
             val combinedChildren = mutableListOf<CategoryTreeMetrics>()
@@ -403,20 +413,17 @@ object AggregationService {
             val totalExpense = if (actualChildrenData.isEmpty()) breakdown.expense else combinedChildren.sumOf { it.expense }
             val totalTransfer = if (actualChildrenData.isEmpty()) breakdown.financialSummary.transfer else combinedChildren.sumOf { it.transfer }
             val totalNet = totalIncome + totalExpense + totalTransfer
-            
-            val totalPrevNet = if (previousTransactions != null) {
+
+            val totalPrevNet = if (previousBreakdowns != null) {
                 if (actualChildrenData.isEmpty()) previousBreakdown?.totalAmount ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousNetBalance ?: BigDecimal.ZERO }
             } else null
-
-            val totalPrevIncome = if (previousTransactions != null) {
+            val totalPrevIncome = if (previousBreakdowns != null) {
                 if (actualChildrenData.isEmpty()) previousBreakdown?.income ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousIncome ?: BigDecimal.ZERO }
             } else null
-
-            val totalPrevExpense = if (previousTransactions != null) {
+            val totalPrevExpense = if (previousBreakdowns != null) {
                 if (actualChildrenData.isEmpty()) previousBreakdown?.expense ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousExpense ?: BigDecimal.ZERO }
             } else null
-
-            val totalPrevTransfer = if (previousTransactions != null) {
+            val totalPrevTransfer = if (previousBreakdowns != null) {
                 if (actualChildrenData.isEmpty()) previousBreakdown?.financialSummary?.transfer ?: BigDecimal.ZERO else combinedChildren.sumOf { it.previousTransfer ?: BigDecimal.ZERO }
             } else null
 

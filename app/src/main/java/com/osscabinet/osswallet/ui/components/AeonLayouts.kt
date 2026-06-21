@@ -177,20 +177,7 @@ fun DetailDrawer(
 }
 
 @Composable
-fun AeonShimmer(
-    innerPadding: PaddingValues,
-    showNetWorth: Boolean = true,
-    showCurrency: Boolean = true,
-    showCashflow: Boolean = true,
-    showAccounts: Boolean = true,
-    showBudgets: Boolean = false
-) {
-    val shimmerColors = listOf(
-        AppColors.insetSurface.copy(alpha = 0.6f),
-        AppColors.insetSurface.copy(alpha = 0.2f),
-        AppColors.insetSurface.copy(alpha = 0.6f),
-    )
-
+fun rememberShimmerBrush(horizontal: Boolean = false): Brush {
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnim by transition.animateFloat(
         initialValue = 0f,
@@ -199,14 +186,38 @@ fun AeonShimmer(
             animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "shimmer"
+        label = "shimmer_translate"
     )
+    val colors = listOf(
+        AppColors.insetSurface.copy(alpha = 0.6f),
+        AppColors.insetSurface.copy(alpha = 0.2f),
+        AppColors.insetSurface.copy(alpha = 0.6f),
+    )
+    return if (horizontal) {
+        Brush.linearGradient(
+            colors = colors,
+            start = Offset(x = translateAnim - 300f, y = 0f),
+            end = Offset(x = translateAnim + 300f, y = 0f)
+        )
+    } else {
+        Brush.linearGradient(
+            colors = colors,
+            start = Offset.Zero,
+            end = Offset(x = translateAnim, y = translateAnim)
+        )
+    }
+}
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset.Zero,
-        end = Offset(x = translateAnim, y = translateAnim)
-    )
+@Composable
+fun AeonShimmer(
+    innerPadding: PaddingValues,
+    showNetWorth: Boolean = true,
+    showCurrency: Boolean = true,
+    showCashflow: Boolean = true,
+    showAccounts: Boolean = true,
+    showBudgets: Boolean = false
+) {
+    val brush = rememberShimmerBrush()
 
     LazyColumn(
         modifier = Modifier

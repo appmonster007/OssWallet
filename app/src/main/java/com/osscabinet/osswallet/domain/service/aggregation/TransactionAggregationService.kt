@@ -108,6 +108,33 @@ object TransactionAggregationService {
         }
     }
 
+    /**
+     * Gets summaries grouped by category and currency.
+     * Returns Map<CategoryId, Map<Currency, FinancialSummary>>
+     */
+    suspend fun getSummaryByCategoryAndCurrency(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        filter: TransactionFilter = TransactionFilter(),
+        excludeInternalTransfers: Boolean = false
+    ): Result<Map<Long, Map<String, FinancialSummary>>> {
+        return queryService.aggregate(
+            profileId = profileId,
+            dimensions = listOf(AggregationDimension.CATEGORY, AggregationDimension.CURRENCY),
+            metrics = StandardMetrics.defaultSet(),
+            filter = filter,
+            excludeInternalTransfers = excludeInternalTransfers
+        ).map { dataList ->
+            dataList.groupBy { it.dimensions[AggregationDimension.CATEGORY]?.toLongOrNull() ?: -1L }
+                .mapValues { (_, rows) ->
+                    rows.associate { data ->
+                        val currency = data.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
+                        currency to mapToFinancialSummary(data)
+                    }
+                }
+        }
+    }
+
     private fun mapToFinancialSummary(data: AggregatedData): FinancialSummary {
         val income = data.metrics["income"] ?: BigDecimal.ZERO
         val expense = data.metrics["expense"] ?: BigDecimal.ZERO

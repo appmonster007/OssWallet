@@ -45,6 +45,24 @@ class CsvImportServiceInstrumentedTest {
         db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
+        
+        // Insert system categories as executeImport defaults to Category.SYSTEM_OTHERS (1000L)
+        runBlocking {
+            com.osscabinet.ossWallet.domain.model.SystemCategory.entries.forEach { sc ->
+                db.categoryDao().insertCategory(
+                    CategoryEntity(
+                        id = sc.id,
+                        name = sc.displayName,
+                        iconName = sc.iconName,
+                        colorHex = sc.colorHex,
+                        isDefault = true,
+                        parentId = sc.parentId,
+                        nature = sc.nature
+                    )
+                )
+            }
+        }
+
         settingsDataStore = SettingsDataStore(context)
         service = CsvImportServiceImpl(
             accountDao = db.accountDao(),
@@ -73,7 +91,7 @@ class CsvImportServiceInstrumentedTest {
         val csv = "$budgetBakersHeader\nSavings;Food;INR;-500;;Expenses;Cash;;Groceries;2024-03-15 10:00:00;;;;;0;false;;"
         val session = service.parseHeaders(ByteArrayInputStream(csv.toByteArray()))
 
-        assertEquals(null, session.sourceApp)
+        assertEquals(com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp.BUDGET_BAKERS, session.sourceApp)
         assertEquals(';', session.delimiter)
     }
 

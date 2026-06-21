@@ -31,11 +31,12 @@ import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
-import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -45,13 +46,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -66,18 +69,17 @@ enum class DashboardSection {
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
-    private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
-    private val computeCardUseCase: ComputeCardUseCase,
     internal val cardComputerRegistry: CardComputerRegistry,
     internal val transactionManager: TransactionManager,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
     private val tagRepository: TagRepository,
+    private val databaseQueryService: DatabaseQueryService
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -128,7 +130,7 @@ class DashboardViewModel @Inject constructor(
                 tagRepository.getAllTags()
             combine(
                 accountRepository.getAllAccounts(profileId),
-                transactionUseCases.getTransactions(profileId),
+                databaseQueryService.observeFilteredTransactions(profileId, TransactionFilter(), limit = 100),
                 categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
@@ -145,7 +147,7 @@ class DashboardViewModel @Inject constructor(
                     val accounts = args[0] as List<Account>
 
                     @Suppress("UNCHECKED_CAST")
-                    val allTransactions = args[1] as List<Transaction>
+                    val recentTransactions = args[1] as List<Transaction>
 
                     @Suppress("UNCHECKED_CAST")
                     val categories = args[2] as List<Category>
@@ -177,12 +179,12 @@ class DashboardViewModel @Inject constructor(
                         args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
 
                     val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                    val activeTransactions = allTransactions.filter { it.accountId in activeAccountIds }
+                    val groupedLoanPayments = loanPayments.groupBy { it.loanId }
 
                     val baseInput = CardInput(
                         profileId = profileId,
-                        transactions = activeTransactions,
-                        allProfileTransactions = allTransactions,
+                        transactions = emptyList(),
+                        allProfileTransactions = emptyList(),
                         accounts = accounts,
                         categories = categories,
                         tags = tags,
@@ -194,60 +196,25 @@ class DashboardViewModel @Inject constructor(
                         plannedPayments = plannedPayments,
                         budgets = budgets,
                         loans = loans,
-                        loanPayments = loanPayments.groupBy { it.loanId },
+                        loanPayments = groupedLoanPayments,
                         filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true)),
                         screenContext = ScreenContext.DASHBOARD,
                         commonFilterEnabled = false
                     )
 
-                    flow<DashboardUiState> {
-                        val cardDataMap = computeCardUseCase.computeAll(
-                            configs = cardsCfg.cards,
-                            input = baseInput
+                    channelFlow<DashboardUiState> {
+                        // --- Phase 1: Structural data — renders before any card computes ---
+                        val transactionsWithBalance = CardAggregationService.computeRecentBalances(
+                            recentTransactions.filter { it.accountId in activeAccountIds },
+                            accounts,
+                            baseCurrency,
+                            rates
                         )
-
-                        // Compute transactionsWithBalance for active accounts only
-                        val transactionsWithBalance = activeTransactions
-                            .asSequence()
-                            .sortedBy { it.timestamp }
-                            .groupBy { it.accountId }
-                            .flatMap { (accId, accountTransactions) ->
-                                val account = accounts.find { it.id == accId }
-                                val accountCurrency = account?.currencyCode ?: baseCurrency
-
-                                var runningBalance = BigDecimal.ZERO
-                                accountTransactions.map { transaction ->
-                                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
-                                        amount = transaction.amount,
-                                        fromCurrency = transaction.currency,
-                                        toCurrency = accountCurrency,
-                                        exchangeRates = rates
-                                    )
-
-                                    val balanceBefore = runningBalance
-                                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
-                                    TransactionWithBalance(
-                                        transaction = transaction,
-                                        balanceBefore = balanceBefore.setScale(
-                                            CurrencyService.precision,
-                                            RoundingMode.HALF_UP
-                                        ),
-                                        balanceAfter = runningBalance.setScale(
-                                            CurrencyService.precision,
-                                            RoundingMode.HALF_UP
-                                        )
-                                    )
-                                }
-                            }
-                            .toList()
-
                         val now = System.currentTimeMillis()
                         val visibleTransactions = transactionsWithBalance
-                            .filter { it.transaction.timestamp <= now } // Dashboard default: hide future
-                            .sortedByDescending { it.transaction.timestamp }
+                            .filter { it.transaction.timestamp <= now }
                             .take(20)
                             .toList()
-
                         val groups = TimelineService.getGroupedData(
                             transactions = visibleTransactions,
                             absoluteHistory = transactionsWithBalance,
@@ -259,27 +226,60 @@ class DashboardViewModel @Inject constructor(
                             exchangeRates = rates
                         )
 
-                        emit(
-                            DashboardUiState.Success(
-                                profileId = profileId,
-                                accounts = accounts.filter { !it.isArchived },
-                                allAccounts = accounts,
-                                cardDataMap = cardDataMap,
-                                allTransactions = allTransactions,
-                                recentActivitiesState = TransactionListState(
-                                    groups = groups,
-                                    isEmpty = groups.isEmpty()
-                                ),
-                                allCategories = categories,
-                                allTags = tags,
-                                baseCurrency = baseCurrency,
-                                exchangeRates = rates,
-                                plannedPayments = plannedPayments,
-                                budgets = budgets,
-                                loans = loans,
-                                loanPayments = loanPayments.groupBy { it.loanId }
-                            )
+                        fun buildSuccess(
+                            cardDataMap: Map<String, CardRenderData>,
+                            isCardsComputing: Boolean
+                        ) = DashboardUiState.Success(
+                            profileId = profileId,
+                            accounts = accounts.filter { !it.isArchived },
+                            allAccounts = accounts,
+                            cardDataMap = cardDataMap,
+                            isCardsComputing = isCardsComputing,
+                            allTransactions = recentTransactions,
+                            recentActivitiesState = TransactionListState(
+                                groups = groups,
+                                isEmpty = groups.isEmpty()
+                            ),
+                            allCategories = categories,
+                            allTags = tags,
+                            baseCurrency = baseCurrency,
+                            exchangeRates = rates,
+                            plannedPayments = plannedPayments,
+                            budgets = budgets,
+                            loans = loans,
+                            loanPayments = groupedLoanPayments
                         )
+
+                        val configs = cardsCfg.cards
+                        if (configs.isEmpty()) {
+                            send(buildSuccess(emptyMap(), isCardsComputing = false))
+                            return@channelFlow
+                        }
+
+                        send(buildSuccess(emptyMap(), isCardsComputing = true))
+
+                        // --- Phase 2: Each card computes in parallel; state updates as each finishes ---
+                        val enrichedInput = baseInput.copy(
+                            categoryHierarchy = CategoryHierarchyCache.build(baseInput.categories)
+                        )
+                        val mutex = Mutex()
+                        val partialMap = mutableMapOf<String, CardRenderData>()
+                        var completed = 0
+
+                        configs.forEach { config ->
+                            launch {
+                                val result = runCatching {
+                                    cardComputerRegistry.compute(config.cardType, enrichedInput, config)
+                                }
+                                val snapshot: Pair<Map<String, CardRenderData>, Boolean>
+                                mutex.withLock {
+                                    result.onSuccess { data -> partialMap[config.cardId] = data }
+                                    completed++
+                                    snapshot = partialMap.toMap() to (completed < configs.size)
+                                }
+                                send(buildSuccess(snapshot.first, snapshot.second))
+                            }
+                        }
                     }
                 }
         }
@@ -370,6 +370,7 @@ sealed class DashboardUiState {
         val accounts: List<Account>,          // active (non-archived) — for dashboard account cards
         val allAccounts: List<Account> = emptyList(), // all accounts including archived — for filter pickers
         val cardDataMap: Map<String, CardRenderData>,
+        val isCardsComputing: Boolean = false,
         val allTransactions: List<Transaction>,
         val recentActivitiesState: TransactionListState,
         val allCategories: List<Category>,

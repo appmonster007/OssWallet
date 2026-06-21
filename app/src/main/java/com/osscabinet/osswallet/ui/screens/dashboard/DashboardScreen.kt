@@ -904,6 +904,7 @@ fun DashboardGlanceTab(
         cards = cardsConfig.cards,
         state = listState,
         cardDataMap = state.cardDataMap,
+        isCardsLoading = state.isCardsComputing,
         cardInput = sharedCardInput,
         cardComputerRegistry = cardComputerRegistry,
         cardUpdateHandler = cardUpdateHandler,

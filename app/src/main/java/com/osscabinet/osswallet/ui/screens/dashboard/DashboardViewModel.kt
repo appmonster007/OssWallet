@@ -53,6 +53,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -186,6 +187,9 @@ class DashboardViewModel @Inject constructor(
             }
 
             combine(ratesFlow, profileFlow) { r, p -> r to p }
+                // Suppress recomputation when Room re-emits due to unrelated table writes
+                // but the queried data is structurally identical to the previous emission.
+                .distinctUntilChanged()
                 .flatMapLatest { (ratesData, profile) ->
                     val accounts = ratesData.core.accounts
                     val recentTransactions = ratesData.core.recentTransactions

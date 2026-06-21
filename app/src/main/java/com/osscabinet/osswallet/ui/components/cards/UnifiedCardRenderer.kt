@@ -40,6 +40,7 @@ fun UnifiedCardRenderer(
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
     screenOwnsTimeline: Boolean = false,
+    animate: Boolean = false,
 ) {
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
@@ -164,6 +165,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = uiData,
                 currency = renderData.currency,
+                animate = animate,
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -235,6 +237,7 @@ fun UnifiedCardRenderer(
                 config = renderData.config,
                 data = uiData,
                 currency = renderData.currency,
+                animate = animate,
                 callbacks = cb,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -386,6 +389,7 @@ fun UnifiedCardRenderer(
                 filterRules = cardWithCallbacks.filterRules,
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
+                animate = animate,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -404,6 +408,7 @@ fun UnifiedCardRenderer(
                 filterRules = cardWithCallbacks.filterRules,
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
+                animate = animate,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )
@@ -419,6 +424,7 @@ fun UnifiedCardRenderer(
                 filterRules = cardWithCallbacks.filterRules,
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
+                animate = animate,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier
             )

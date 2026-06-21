@@ -78,6 +78,7 @@ fun CategorySpendingTrendCard(
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
+    animate: Boolean = false,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -134,7 +135,8 @@ fun CategorySpendingTrendCard(
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
-                    roundedBars = false
+                    roundedBars = false,
+                    animate = animate
                 )
             }
 

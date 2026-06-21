@@ -76,7 +76,7 @@ fun AeonBarChart(
     modifier: Modifier = Modifier,
     currency: String = "USD",
     precision: Int = CurrencyService.precision,
-    animate: Boolean = true,
+    animate: Boolean = false,
     showGrid: Boolean = true,
     showPeriodBars: Boolean = true,
     showXAxisLabels: Boolean = true,
@@ -389,7 +389,7 @@ fun AeonBarChart(
     currency: String = "USD",
     precision: Int = CurrencyService.precision,
     barColor: Color = ChartColorBlue,
-    animate: Boolean = true,
+    animate: Boolean = false,
     roundedBars: Boolean = false
 ) {
     val groups = remember(data, barColor) {

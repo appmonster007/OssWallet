@@ -34,7 +34,7 @@ fun AeonProgressBar(
     color: Color = AppColors.primary,
     trackColor: Color = AppColors.insetSurface,
     height: Dp = 12.dp,
-    animate: Boolean = true
+    animate: Boolean = false
 ) {
     var targetProgress by remember { mutableStateOf(if (animate) 0f else progress) }
 

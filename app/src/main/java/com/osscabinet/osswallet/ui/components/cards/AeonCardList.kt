@@ -67,8 +67,7 @@ fun AeonCardList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(AeonTheme.dimensions.screenPadding),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-    @Suppress("UNUSED_PARAMETER")
-    animateCards: Boolean = true, // no-op: animateItem() is now built into ReorderableItem
+    animateCards: Boolean = false,
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     baseFilter: TransactionFilter = TransactionFilter(),
@@ -164,6 +163,7 @@ fun AeonCardList(
                                 filterContext = filterContext,
                                 inheritedFilter = cardInput.filter,
                                 screenOwnsTimeline = cardInput.screenOwnsTimeline,
+                                animate = animateCards,
                             )
                         }
                     }

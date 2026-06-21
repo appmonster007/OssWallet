@@ -68,6 +68,7 @@ fun CashFlowComparisonCard(
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
+    animate: Boolean = false,
     headerModifier: Modifier = Modifier,
 ) {
     val config = renderData.config
@@ -170,6 +171,7 @@ fun CashFlowComparisonCard(
                     totalXSlots = totalXSlots,
                     xAxisLabels = xAxisLabels,
                     markers = markers,
+                    animate = animate,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)

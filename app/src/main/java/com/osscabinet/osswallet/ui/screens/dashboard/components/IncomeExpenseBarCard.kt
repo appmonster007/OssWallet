@@ -59,6 +59,7 @@ fun IncomeExpenseBarCard(
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
+    animate: Boolean = false,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
 ) {
@@ -176,6 +177,7 @@ fun IncomeExpenseBarCard(
                     lineColor = ChartColorBlue,
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
+                    animate = animate,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)

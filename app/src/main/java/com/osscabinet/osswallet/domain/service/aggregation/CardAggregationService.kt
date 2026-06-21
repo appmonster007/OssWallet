@@ -25,6 +25,9 @@ import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -308,9 +311,8 @@ object CardAggregationService {
             val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
             val spent = signedSpent(spentSummary.totalAmount, budget)
 
-            // Rollover calculation (recursive)
             val rollover = if (budget.rollover) {
-                computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, 0, now, effectiveFilter.timelineRange.excludeFuture)
+                computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, now, effectiveFilter.timelineRange.excludeFuture)
             } else BigDecimal.ZERO
 
             BudgetService.buildProgress(budget, spent, rollover)
@@ -323,43 +325,54 @@ object CardAggregationService {
         )
     }
 
+    // Replaces the old recursive approach: collects up to 12 previous period ranges, queries
+    // all of them in parallel, then folds rollover in-memory from oldest period to newest.
+    // This reduces worst-case sequential DB round trips from 12×N to a single parallel batch.
     private suspend fun computeBudgetRollover(
         queryService: DatabaseQueryService,
         profileId: Int,
         budget: Budget,
         input: CardInput,
         effectiveAccountIds: Set<String>,
-        depth: Int,
         now: Long,
         excludeFuture: Boolean
     ): BigDecimal {
-        if (depth >= 12) return BigDecimal.ZERO
+        // Walk backwards to collect up to 12 previous period ranges (index 0 = most recent past).
+        val periodRanges = mutableListOf<Pair<Long, Long>>()
+        var referenceNow = now
+        var rangeForPrev = budget.timelineRange
+        repeat(12) {
+            val (prevStart, prevEnd) = TimelineService.getPreviousRange(rangeForPrev, referenceNow)
+            if (prevStart == null || prevEnd == null) return@repeat
+            periodRanges.add(prevStart to prevEnd)
+            rangeForPrev = TimelineRange.CustomRange(prevStart, prevEnd)
+            referenceNow = (prevStart + prevEnd) / 2
+        }
+        if (periodRanges.isEmpty()) return BigDecimal.ZERO
 
-        val previousRange = TimelineService.getPreviousRange(budget.timelineRange, referenceTime = now)
-        val (prevStart, prevEnd) = previousRange
-        if (prevStart == null || prevEnd == null) return BigDecimal.ZERO
+        // Query all periods in parallel.
+        val spentByPeriod: List<BigDecimal> = coroutineScope {
+            periodRanges.map { (start, end) ->
+                async {
+                    val filter = BudgetService.buildTransactionFilter(
+                        budget = budget.copy(timelineRange = TimelineRange.CustomRange(start, end)),
+                        now = (start + end) / 2,
+                        allCategories = input.categories,
+                        excludeFuture = excludeFuture
+                    ).copy(accountIds = if (budget.accountIds.isEmpty()) effectiveAccountIds else budget.accountIds)
+                    val summaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, filter)
+                        .getOrDefault(emptyMap())
+                    signedSpent(CurrencyService.calculateTotalFinancialSummary(summaries, budget.currency, input.exchangeRates).totalAmount, budget)
+                }
+            }.awaitAll()
+        }
 
-        val prevFilter = BudgetService.buildTransactionFilter(
-            budget = budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)),
-            now = (prevStart + prevEnd) / 2,
-            allCategories = input.categories,
-            excludeFuture = excludeFuture
-        ).copy(
-            accountIds = if (budget.accountIds.isEmpty()) effectiveAccountIds else budget.accountIds
-        )
-
-        val spentSummaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevFilter)
-            .getOrDefault(emptyMap())
-        val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
-        val spent = signedSpent(spentSummary.totalAmount, budget)
-
-        val prevRollover = computeBudgetRollover(
-            queryService, profileId, budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)),
-            input, effectiveAccountIds, depth + 1, (prevStart + prevEnd) / 2, excludeFuture
-        )
-
-        val previousEffectiveLimit = budget.limitAmount.add(prevRollover)
-        return previousEffectiveLimit.subtract(spent).max(BigDecimal.ZERO)
+        // Fold from oldest period to most recent (periodRanges[0] is most recent, so reverse).
+        var rollover = BigDecimal.ZERO
+        for (spent in spentByPeriod.reversed()) {
+            rollover = budget.limitAmount.add(rollover).subtract(spent).max(BigDecimal.ZERO)
+        }
+        return rollover
     }
 
     suspend fun computeLoansCard(
@@ -434,8 +447,20 @@ object CardAggregationService {
             accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val txs = queryService.observeFilteredTransactions(profileId, effectiveFilter, limit = 200).first()
-        
-        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates.rates)
+
+        // Fetch actual account balances at the start of the window so running balances are correct.
+        val startingBalances: Map<String, BigDecimal> = if (txs.isNotEmpty()) {
+            val windowStart = txs.minOf { it.timestamp }
+            TransactionAggregationService.getSummaryByAccountAndCurrency(
+                queryService, profileId,
+                TransactionFilter(timelineRange = TimelineRange.CustomRange(end = windowStart - 1))
+            ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
+                val accountCurrency = input.accounts.find { it.id == accountId }?.currencyCode ?: input.targetCurrency
+                CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, input.exchangeRates).totalAmount
+            }
+        } else emptyMap()
+
+        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates.rates, startingBalances)
 
         val groups = TimelineService.getGroupedData(
             transactions = transactionsWithBalance.take(20),
@@ -585,7 +610,8 @@ object CardAggregationService {
         transactions: List<Transaction>,
         accounts: List<Account>,
         baseCurrency: String,
-        rates: Map<String, BigDecimal>
+        rates: Map<String, BigDecimal>,
+        startingBalances: Map<String, BigDecimal> = emptyMap()
     ): List<TransactionWithBalance> {
         return transactions.asSequence()
             .sortedBy { it.timestamp }
@@ -595,7 +621,7 @@ object CardAggregationService {
                 val account = accounts.find { it.id == accId }
                 val accountCurrency = account?.currencyCode ?: baseCurrency
 
-                var runningBalance = BigDecimal.ZERO // Start from 0 since we skip reverse engineering for now
+                var runningBalance = startingBalances[accId] ?: BigDecimal.ZERO
                 accountTransactions.map { transaction ->
                     val txAmountInAccountCurrency = CurrencyService.convertAmount(
                         amount = transaction.amount,

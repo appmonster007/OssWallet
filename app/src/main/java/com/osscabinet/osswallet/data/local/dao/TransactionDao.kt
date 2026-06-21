@@ -135,6 +135,9 @@ abstract class TransactionDao {
         query: String
     ): Flow<List<TransactionEntity>>
 
+    @Query("SELECT MIN(timestamp) FROM transactions WHERE profileId = :profileId")
+    abstract suspend fun getMinTransactionTimestamp(profileId: Int): Long?
+
     @Query("SELECT DISTINCT payee FROM transactions WHERE profileId = :profileId AND payee IS NOT NULL AND payee != '' ORDER BY payee ASC")
     abstract suspend fun getUniquePayees(profileId: Int): List<String>
 

@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.cache.CardRenderCache
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -78,7 +79,8 @@ class DashboardViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
     private val tagRepository: TagRepository,
-    private val databaseQueryService: DatabaseQueryService
+    private val databaseQueryService: DatabaseQueryService,
+    private val cardRenderCache: CardRenderCache
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     override val cardUpdateScope = viewModelScope
@@ -251,21 +253,28 @@ class DashboardViewModel @Inject constructor(
                             return@channelFlow
                         }
 
-                        // First launch only: rates not cached yet — show structure with card shimmers.
-                        // When rates arrive, hasLoadedExchangeRates flows to true → combine re-fires → Phase 2 runs.
-                        if (!hasLoadedExchangeRates) {
+                        val cachedCards = cardRenderCache[profileId]
+
+                        if (cachedCards != null) {
+                            // Cache hit: show last-known cards immediately — no shimmers, no blanks.
+                            send(buildSuccess(cachedCards, isCardsComputing = false))
+                        } else {
+                            // First launch for this profile: no cache yet, show card shimmers.
                             send(buildSuccess(emptyMap(), isCardsComputing = true))
-                            return@channelFlow
                         }
 
-                        send(buildSuccess(emptyMap(), isCardsComputing = true))
+                        // First launch only: rates not in DB yet. Phase 1 is shown with shimmers.
+                        // Combine re-fires when rates arrive → new channelFlow starts → Phase 2 runs.
+                        if (!hasLoadedExchangeRates) return@channelFlow
 
-                        // --- Phase 2: Each card computes in parallel; state updates as each finishes ---
+                        // Phase 2: Recompute all cards in parallel.
+                        // Cache hit → seed partialMap with stale data so cards update silently (no shimmer flash).
+                        // No cache → partialMap starts empty, cards pop in as they finish.
                         val enrichedInput = baseInput.copy(
                             categoryHierarchy = CategoryHierarchyCache.build(baseInput.categories)
                         )
                         val mutex = Mutex()
-                        val partialMap = mutableMapOf<String, CardRenderData>()
+                        val partialMap = cachedCards?.toMutableMap() ?: mutableMapOf()
                         var completed = 0
 
                         configs.forEach { config ->
@@ -278,9 +287,15 @@ class DashboardViewModel @Inject constructor(
                                     result.onSuccess { data -> partialMap[config.cardId] = data }
                                     result.onFailure { e -> partialMap[config.cardId] = CardRenderData.Error(e.message) }
                                     completed++
+                                    if (completed == configs.size) {
+                                        cardRenderCache[profileId] = partialMap
+                                            .filterValues { it !is CardRenderData.Error }
+                                    }
                                     snapshot = partialMap.toMap() to (completed < configs.size)
                                 }
-                                send(buildSuccess(snapshot.first, snapshot.second))
+                                // Cache hit: silent background refresh (isCardsComputing always false).
+                                // No cache: show progress so shimmers resolve as cards finish.
+                                send(buildSuccess(snapshot.first, if (cachedCards != null) false else snapshot.second))
                             }
                         }
                     }

@@ -6,11 +6,15 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CurrencyDao {
     @Query("SELECT * FROM currency_rates")
     suspend fun getAllRates(): List<CurrencyRateEntity>
+
+    @Query("SELECT * FROM currency_rates")
+    fun observeAllRates(): Flow<List<CurrencyRateEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRates(rates: List<CurrencyRateEntity>)

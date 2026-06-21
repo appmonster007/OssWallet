@@ -54,6 +54,11 @@ fun rememberCardWithCallbacks(
         mutableStateOf(preComputedData)
     }
 
+    // Error sentinel from ViewModel parallel computation
+    if (preComputedData is CardRenderData.Error) {
+        return CardWithCallbacks.ComputeError(cardId = config.cardId, message = preComputedData.message)
+    }
+
     // Sync path: ViewModel provides preComputedData (Dashboard progressive loading).
     if (preComputedData != null) {
         LaunchedEffect(preComputedData) {

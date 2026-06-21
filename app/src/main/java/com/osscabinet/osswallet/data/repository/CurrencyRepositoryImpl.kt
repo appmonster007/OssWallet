@@ -7,8 +7,11 @@ import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.math.BigDecimal
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +21,11 @@ class CurrencyRepositoryImpl @Inject constructor(
     private val dao: CurrencyDao,
     private val settingsRepository: SettingsRepository
 ) : CurrencyRepository {
+
+    override val ratesFlow: Flow<Map<String, BigDecimal>> =
+        dao.observeAllRates().map { entities ->
+            entities.associate { it.currencyCode to BigDecimal.valueOf(it.rate) }
+        }
 
     override suspend fun fetchFreshRates(baseCurrency: String): CurrencyRates {
         return withContext(Dispatchers.IO) {

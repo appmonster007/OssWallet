@@ -380,6 +380,16 @@ internal fun CardRenderData.toPayloadDto(
         previousNetWorth = null,
         currency = summary.account.currencyCode
     )
+
+    is CardRenderData.Error -> CardPayloadDto.NetWorth(
+        netWorth = 0.0,
+        income = 0.0,
+        expense = 0.0,
+        transfer = 0.0,
+        cashFlow = 0.0,
+        previousNetWorth = null,
+        currency = ""
+    )
 }
 
 internal fun Filter.toDto(): FilterDto {

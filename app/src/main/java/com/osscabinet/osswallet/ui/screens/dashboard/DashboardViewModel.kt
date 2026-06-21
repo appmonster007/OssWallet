@@ -133,6 +133,7 @@ class DashboardViewModel @Inject constructor(
                 categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
+                computationRepository.hasLoadedExchangeRates,
                 cardsConfig,
                 plannedPaymentsFlow,
                 budgetsFlow,
@@ -153,31 +154,32 @@ class DashboardViewModel @Inject constructor(
                     @Suppress("UNCHECKED_CAST")
                     val rates = args[3] as Map<String, BigDecimal>
                     val baseCurrency = args[4] as String
-                    val cardsCfg = args[5] as DashboardCardsConfig
+                    val hasLoadedExchangeRates = args[5] as Boolean
+                    val cardsCfg = args[6] as DashboardCardsConfig
 
                     @Suppress("UNCHECKED_CAST")
-                    val plannedPayments = args[6] as List<PlannedPayment>
+                    val plannedPayments = args[7] as List<PlannedPayment>
 
                     @Suppress("UNCHECKED_CAST")
-                    val budgets = args[7] as List<Budget>
+                    val budgets = args[8] as List<Budget>
 
                     @Suppress("UNCHECKED_CAST")
-                    val loans = args[8] as List<Loan>
+                    val loans = args[9] as List<Loan>
 
                     @Suppress("UNCHECKED_CAST")
-                    val tags = args[9] as List<com.osscabinet.ossWallet.domain.model.Tag>
+                    val tags = args[10] as List<com.osscabinet.ossWallet.domain.model.Tag>
 
                     @Suppress("UNCHECKED_CAST")
                     val loanPayments =
-                        args[10] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
+                        args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
 
                     val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
                     val groupedLoanPayments = loanPayments.groupBy { it.loanId }
 
                     val baseInput = CardInput(
                         profileId = profileId,
-                        transactions = emptyList(),
-                        allProfileTransactions = emptyList(),
+                        transactions = recentTransactions,
+                        allProfileTransactions = recentTransactions,
                         accounts = accounts,
                         categories = categories,
                         tags = tags,
@@ -249,6 +251,13 @@ class DashboardViewModel @Inject constructor(
                             return@channelFlow
                         }
 
+                        // First launch only: rates not cached yet — show structure with card shimmers.
+                        // When rates arrive, hasLoadedExchangeRates flows to true → combine re-fires → Phase 2 runs.
+                        if (!hasLoadedExchangeRates) {
+                            send(buildSuccess(emptyMap(), isCardsComputing = true))
+                            return@channelFlow
+                        }
+
                         send(buildSuccess(emptyMap(), isCardsComputing = true))
 
                         // --- Phase 2: Each card computes in parallel; state updates as each finishes ---
@@ -267,6 +276,7 @@ class DashboardViewModel @Inject constructor(
                                 val snapshot: Pair<Map<String, CardRenderData>, Boolean>
                                 mutex.withLock {
                                     result.onSuccess { data -> partialMap[config.cardId] = data }
+                                    result.onFailure { e -> partialMap[config.cardId] = CardRenderData.Error(e.message) }
                                     completed++
                                     snapshot = partialMap.toMap() to (completed < configs.size)
                                 }

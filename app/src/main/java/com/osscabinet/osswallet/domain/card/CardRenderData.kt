@@ -181,6 +181,8 @@ sealed class CardRenderData {
         val intersections: List<TagUpSetIntersection>,
         val currency: String
     ) : CardRenderData()
+
+    data class Error(val message: String?) : CardRenderData()
 }
 
 data class TagUpSetSet(

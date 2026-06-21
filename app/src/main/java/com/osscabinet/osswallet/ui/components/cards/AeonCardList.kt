@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -120,7 +121,8 @@ fun AeonCardList(
                 key = cardConfig.cardId,
                 modifier = Modifier
                     .reorderableSemantics(state = reorderState, key = cardConfig.cardId)
-                    .graphicsLayer { this.alpha = alpha },
+                    .graphicsLayer { this.alpha = alpha }
+                    .animateContentSize(),
             ) { isDraggingThis ->
                 // Card-header-only drag affordance: only the header initiates a drag, the rest of
                 // the card body remains tappable / scrollable.

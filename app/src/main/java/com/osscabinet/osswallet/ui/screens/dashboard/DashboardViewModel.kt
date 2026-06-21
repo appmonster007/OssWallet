@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
@@ -123,6 +124,7 @@ class DashboardViewModel @Inject constructor(
         val accounts: List<Account>,
         val recentTransactions: List<Transaction>,
         val categories: List<Category>,
+        val categoryHierarchy: CategoryHierarchyCache,
         val rates: Map<String, BigDecimal>,
         val baseCurrency: String
     )
@@ -162,7 +164,7 @@ class DashboardViewModel @Inject constructor(
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency
             ) { accounts, transactions, categories, rates, currency ->
-                DashboardCoreData(accounts, transactions, categories, rates, currency)
+                DashboardCoreData(accounts, transactions, categories, CategoryHierarchyCache.build(categories), rates, currency)
             }
 
             val ratesFlow = combine(
@@ -188,6 +190,7 @@ class DashboardViewModel @Inject constructor(
                     val accounts = ratesData.core.accounts
                     val recentTransactions = ratesData.core.recentTransactions
                     val categories = ratesData.core.categories
+                    val categoryHierarchy = ratesData.core.categoryHierarchy
                     val rates = ratesData.core.rates
                     val baseCurrency = ratesData.core.baseCurrency
                     val hasLoadedExchangeRates = ratesData.hasLoadedRates
@@ -224,19 +227,28 @@ class DashboardViewModel @Inject constructor(
 
                     channelFlow<DashboardUiState> {
                         // --- Phase 1: Structural data — renders before any card computes ---
+                        val activeTransactions = recentTransactions.filter { it.accountId in activeAccountIds }
+                        val exchangeRateSnapshot = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(baseCurrency, rates)
+
+                        // Fetch real account balances before the transaction window for accurate running totals.
+                        val startingBalances: Map<String, BigDecimal> = if (activeTransactions.isNotEmpty()) {
+                            val windowStart = activeTransactions.minOf { it.timestamp }
+                            TransactionAggregationService.getSummaryByAccountAndCurrency(
+                                databaseQueryService, profileId,
+                                TransactionFilter(timelineRange = TimelineRange.CustomRange(end = windowStart - 1))
+                            ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
+                                val accountCurrency = accounts.find { it.id == accountId }?.currencyCode ?: baseCurrency
+                                CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, exchangeRateSnapshot).totalAmount
+                            }
+                        } else emptyMap()
+
                         val transactionsWithBalance = withContext(Dispatchers.Default) {
-                            CardAggregationService.computeRecentBalances(
-                                recentTransactions.filter { it.accountId in activeAccountIds },
-                                accounts,
-                                baseCurrency,
-                                rates
-                            )
+                            CardAggregationService.computeRecentBalances(activeTransactions, accounts, baseCurrency, rates, startingBalances)
                         }
                         val now = System.currentTimeMillis()
                         val visibleTransactions = transactionsWithBalance
                             .filter { it.transaction.timestamp <= now }
                             .take(20)
-                            .toList()
                         val groups = TimelineService.getGroupedData(
                             transactions = visibleTransactions,
                             absoluteHistory = transactionsWithBalance,
@@ -295,9 +307,7 @@ class DashboardViewModel @Inject constructor(
                         // Phase 2: Recompute all cards in parallel.
                         // Cache hit → seed partialMap with stale data so cards update silently (no shimmer flash).
                         // No cache → partialMap starts empty, cards pop in as they finish.
-                        val enrichedInput = baseInput.copy(
-                            categoryHierarchy = CategoryHierarchyCache.build(baseInput.categories)
-                        )
+                        val enrichedInput = baseInput.copy(categoryHierarchy = categoryHierarchy)
                         val mutex = Mutex()
                         val partialMap = cachedCards?.toMutableMap() ?: mutableMapOf()
                         var completed = 0

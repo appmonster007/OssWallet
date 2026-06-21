@@ -47,4 +47,7 @@ interface DatabaseQueryService {
         filter: TransactionFilter,
         limit: Int? = null
     ): Flow<List<Transaction>>
+
+    /** Returns the earliest transaction timestamp for the profile, or null if no transactions exist. */
+    suspend fun getMinTransactionTimestamp(profileId: Int): Long?
 }

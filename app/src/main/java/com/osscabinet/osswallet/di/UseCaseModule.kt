@@ -69,7 +69,7 @@ object UseCaseModule {
                 CategoryTreemapCardComputer(databaseQueryService),
                 CashFlowComparisonCardComputer(databaseQueryService),
                 IncomeExpenseBarCardComputer(databaseQueryService),
-                CategorySpendingTrendCardComputer(),
+                CategorySpendingTrendCardComputer(databaseQueryService),
                 TagUpSetPlotCardComputer(databaseQueryService)
             )
         )

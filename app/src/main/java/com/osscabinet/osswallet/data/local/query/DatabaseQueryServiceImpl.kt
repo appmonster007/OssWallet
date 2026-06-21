@@ -97,6 +97,9 @@ class DatabaseQueryServiceImpl(
         }
     }
 
+    override suspend fun getMinTransactionTimestamp(profileId: Int): Long? =
+        transactionDao.getMinTransactionTimestamp(profileId)
+
     private fun processResults(
         raw: List<RawAggregateResult>,
         plan: AggregationPlanner.AggregationPlan

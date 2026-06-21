@@ -26,6 +26,21 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+private suspend fun resolveTimeBoundsFromDb(
+    timelineRange: TimelineRange,
+    profileId: Int,
+    queryService: DatabaseQueryService
+): Pair<Long, Long> {
+    val (start, end) = TimelineService.getDateRange(timelineRange)
+    if (start != null && end != null) return start to end
+    val now = System.currentTimeMillis()
+    val minTs = queryService.getMinTransactionTimestamp(profileId) ?: return now to now
+    val zone = TimelineService.systemZoneId
+    val resolvedStart = Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate()
+        .atStartOfDay(zone).toInstant().toEpochMilli()
+    return resolvedStart to now
+}
+
 class IncomeExpenseBarCardComputer(
     private val queryService: DatabaseQueryService
 ) : CardDataComputer<IncomeExpenseBarCardConfig, CardRenderData.IncomeExpenseBar> {
@@ -48,10 +63,7 @@ class IncomeExpenseBarCardComputer(
             accountIds = withCategories.accountIds.ifEmpty { input.effectiveAccountIds }
         )
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
-        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(
-            mergedFilter.timelineRange,
-            input.transactions
-        )
+        val (currentStart, currentEnd) = resolveTimeBoundsFromDb(mergedFilter.timelineRange, input.profileId, queryService)
 
         val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
 

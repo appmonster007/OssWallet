@@ -10,24 +10,21 @@ import com.osscabinet.ossWallet.domain.card.CategorySpendingBucket
 import com.osscabinet.ossWallet.domain.card.CategorySummary
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.DayOfWeek
 import java.time.Instant
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-class CategorySpendingTrendCardComputer :
-    CardDataComputer<CategorySpendingTrendCardConfig, CardRenderData.CategorySpendingTrend> {
+class CategorySpendingTrendCardComputer(
+    private val queryService: DatabaseQueryService
+) : CardDataComputer<CategorySpendingTrendCardConfig, CardRenderData.CategorySpendingTrend> {
 
     override val supportedType = CardType.CATEGORY_SPENDING_TREND
 
@@ -41,77 +38,52 @@ class CategorySpendingTrendCardComputer :
             else rawFilter.copy(categoryIds = input.categoryHierarchy.expand(rawFilter.categoryIds))).copy(
             accountIds = rawFilter.accountIds.ifEmpty { input.effectiveAccountIds }
         )
-        val (currentStart, currentEnd) = TimelineService.resolveBoundRange(mergedFilter.timelineRange, input.transactions)
 
-        // Build category nature lookup from full categories list
+        val (currentStart, currentEnd) = resolveTimeBounds(mergedFilter.timelineRange, input.profileId)
         val categoryNatureById = input.categories.associate { it.id to it.nature }
-
-        // Single-pass filter against the correct transaction source (includes archived if explicitly selected)
-        val txSource = input.transactionsFor(mergedFilter)
-        val filteredTx = TransactionFilterService.filter(txSource, mergedFilter, excludeInternal)
-
-        // Cap at today — future buckets always show 0
         val now = System.currentTimeMillis()
-        val pastFilteredTx = filteredTx.filter { it.timestamp <= now }
-
-        // Further filter by selected nature
-        val natureTx = if (config.selectedNatures.size == CategoryNature.entries.size) {
-            pastFilteredTx
-        } else {
-            pastFilteredTx.filter { tx ->
-                val nature = categoryNatureById[tx.categoryId]
-                nature != null && nature in config.selectedNatures
-            }
-        }
-
         val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
+        // Cap chart at today — future buckets always show 0
+        val rawBuckets = CardComputerUtils.generateBuckets(currentStart, minOf(currentEnd, now), granularity)
 
-        val rawBuckets = CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity)
-
-        // Track total per category across all buckets (for active categories list)
         val categoryTotalsMap = mutableMapOf<Long, BigDecimal>()
 
         val buckets = rawBuckets.map { (bucketStart, bucketEnd, label) ->
-            val bucketTx = natureTx.filter { tx ->
-                tx.timestamp in bucketStart..bucketEnd
-            }
+            val bucketFilter = mergedFilter.copy(
+                timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd)
+            )
+            val summariesByCategory = TransactionAggregationService.getSummaryByCategoryAndCurrency(
+                queryService, input.profileId, bucketFilter, excludeInternal
+            ).getOrDefault(emptyMap())
 
-            // Group by categoryId, sum converted amounts (properly signed)
             val amountsByCategory = mutableMapOf<Long, BigDecimal>()
-            bucketTx.forEach { tx ->
-                val catId = tx.categoryId
-                val converted = CurrencyService.convertAmount(
-                    amount = tx.amount, // Respect sign: expenses are negative, income is positive
-                    fromCurrency = tx.currency,
-                    toCurrency = input.targetCurrency,
-                    exchangeRates = input.exchangeRates,
-                    precision = 10
-                )
+            summariesByCategory.forEach { (catId, byCurrency) ->
+                val nature = categoryNatureById[catId] ?: return@forEach
+                if (config.selectedNatures.size < CategoryNature.entries.size && nature !in config.selectedNatures) return@forEach
 
-                val shouldInclude = when (config.perspective) {
+                val summary = CurrencyService.calculateTotalFinancialSummary(byCurrency, input.targetCurrency, input.exchangeRates)
+                val amount = when (config.perspective) {
                     is AccountingPerspective.Accounting -> when (config.selectedMetric) {
-                        ChartMetric.NET -> true
-                        ChartMetric.INCOME -> tx.transactionType == TransactionType.INCOME
-                        ChartMetric.EXPENSE -> tx.transactionType == TransactionType.EXPENSE
-                        ChartMetric.TRANSFER -> tx.transactionType.isTransfer
+                        ChartMetric.NET -> summary.income.add(summary.expense).add(summary.transfer)
+                        ChartMetric.INCOME -> summary.income
+                        ChartMetric.EXPENSE -> summary.expense
+                        ChartMetric.TRANSFER -> summary.transfer
                     }
                     is AccountingPerspective.CashFlow -> when (config.selectedMetric) {
-                        ChartMetric.NET -> true
-                        ChartMetric.INCOME -> converted.signum() > 0
-                        ChartMetric.EXPENSE -> converted.signum() < 0
-                        ChartMetric.TRANSFER -> false
+                        ChartMetric.NET -> summary.income.add(summary.expense).add(summary.transferIn).add(summary.transferOut)
+                        ChartMetric.INCOME -> summary.income.add(summary.transferIn)
+                        ChartMetric.EXPENSE -> summary.expense.add(summary.transferOut)
+                        ChartMetric.TRANSFER -> BigDecimal.ZERO
                     }
                 }
-
-                if (shouldInclude) {
-                    amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO) + converted
-                    categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO) + converted
+                if (amount.signum() != 0) {
+                    amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO).add(amount)
+                    categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO).add(amount)
                 }
             }
 
             val categoryAmounts = amountsByCategory.mapNotNull { (catId, amount) ->
                 val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
-
                 CategoryAmount(
                     categoryId = catId,
                     categoryName = cat.name,
@@ -121,17 +93,11 @@ class CategorySpendingTrendCardComputer :
                 )
             }.sortedBy { it.amount }
 
-            CategorySpendingBucket(
-                label = label,
-                epochMillis = bucketStart,
-                categoryAmounts = categoryAmounts
-            )
+            CategorySpendingBucket(label = label, epochMillis = bucketStart, categoryAmounts = categoryAmounts)
         }
 
-        // Build active categories (those with any transaction in the period)
         val activeCategories = categoryTotalsMap.mapNotNull { (catId, total) ->
             val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
-
             CategorySummary(
                 categoryId = catId,
                 name = cat.name,
@@ -148,5 +114,19 @@ class CategorySpendingTrendCardComputer :
             activeCategories = activeCategories,
             currency = input.targetCurrency
         )
+    }
+
+    private suspend fun resolveTimeBounds(timelineRange: TimelineRange, profileId: Int): Pair<Long, Long> {
+        // For explicit ranges (month, year, custom), derive bounds without hitting the DB.
+        val (start, end) = TimelineService.getDateRange(timelineRange)
+        if (start != null && end != null) return start to end
+
+        // AllTime: query the DB for the earliest transaction so the chart spans the full history.
+        val now = System.currentTimeMillis()
+        val minTs = queryService.getMinTransactionTimestamp(profileId) ?: return now to now
+        val zone = TimelineService.systemZoneId
+        val resolvedStart = Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate()
+            .atStartOfDay(zone).toInstant().toEpochMilli()
+        return resolvedStart to now
     }
 }

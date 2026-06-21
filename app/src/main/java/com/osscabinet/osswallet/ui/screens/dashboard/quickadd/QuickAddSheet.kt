@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -64,7 +65,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
@@ -74,7 +75,6 @@ import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAmou
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddTemplateStep
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.ColorScrimDark
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
@@ -128,14 +128,14 @@ fun QuickAddSheet(
     // Predictive Back Handling (Modern SDK) — system/gesture back always dismisses
     // the whole sheet, regardless of step. Stepping back is done via the in-sheet
     // back chevron in the footer.
-    var backProgress by remember { mutableStateOf(0f) }
+    var backProgress by remember { mutableFloatStateOf(0f) }
     PredictiveBackHandler(enabled = visibleState.targetState) { progress ->
         try {
             progress.collect { event ->
                 backProgress = event.progress
             }
             animateDismiss()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             backProgress = 0f
         }
     }

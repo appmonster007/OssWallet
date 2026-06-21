@@ -54,9 +54,14 @@ fun TransactionFormBody(
     contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
-    val targetCurrencies = remember(state.targetAccount, state.fullProviderCurrencies) {
+    val sourceCurrencies = remember(state.selectedAccount, state.shortlistedCurrencies) {
+        state.selectedAccount?.allowedCurrencies?.ifEmpty { null }
+            ?: state.shortlistedCurrencies.ifEmpty { listOf("USD") }
+    }
+
+    val targetCurrencies = remember(state.targetAccount, state.shortlistedCurrencies) {
         state.targetAccount?.allowedCurrencies?.ifEmpty { null }
-            ?: state.fullProviderCurrencies.ifEmpty { emptyList() }
+            ?: state.shortlistedCurrencies.ifEmpty { emptyList() }
     }
 
     Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
@@ -78,7 +83,7 @@ fun TransactionFormBody(
                     onValueClick = { onEvent(TransactionEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
                     onCurrencyClick = { onEvent(TransactionEntryEvent.SetCurrency(it)) },
                     label = "SOURCE AMOUNT",
-                    supportedCurrencies = state.selectedAccount?.allowedCurrencies ?: listOf("USD"),
+                    supportedCurrencies = sourceCurrencies,
                     isError = state.hasError(EntryField.AMOUNT)
                 ),
                 target = AeonAmountData(

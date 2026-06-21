@@ -77,9 +77,8 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showAccountSheet) {
-        val baseList = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
+        val filteredAccounts = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
                        else state.accounts
-        val filteredAccounts = baseList.filter { it.id != state.targetAccountId }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
@@ -90,8 +89,7 @@ fun PlannedPaymentEntrySheets(
     }
 
     if (state.showTargetAccountSheet) {
-        val baseList = listOf(Account.OUTSIDE_WALLET) + state.accounts
-        val filteredAccounts = baseList.filter { it.id != state.selectedAccountId }
+        val filteredAccounts = listOf(Account.OUTSIDE_WALLET) + state.accounts
 
         AeonAccountSelection(
             accounts = filteredAccounts,

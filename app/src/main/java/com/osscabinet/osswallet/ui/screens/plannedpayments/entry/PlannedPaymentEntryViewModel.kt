@@ -342,49 +342,31 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetAccountId -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.id)
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = true,
-                    newAccount = newRef,
-                    otherSide = s.destination.account
-                )
-
-                if (isValid || !s.isTransfer) {
-                    _state.update { state ->
-                        val account = state.accounts.find { it.id == event.id }
-                        state.copy(
-                            source = state.source.copy(
-                                account = newRef,
-                                currency = account?.currencyCode ?: state.currency
-                            )
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.id }
+                    state.copy(
+                        source = state.source.copy(
+                            account = newRef,
+                            currency = account?.currencyCode ?: state.currency
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.id)
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = false,
-                    newAccount = newRef,
-                    otherSide = s.source.account
-                )
-
-                if (isValid) {
-                    _state.update { state ->
-                        val account = state.accounts.find { it.id == event.id }
-                        state.copy(
-                            destination = state.destination.copy(
-                                account = newRef,
-                                currency = account?.currencyCode ?: state.targetCurrency
-                            )
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.id }
+                    state.copy(
+                        destination = state.destination.copy(
+                            account = newRef,
+                            currency = account?.currencyCode ?: state.targetCurrency
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetCurrency -> {

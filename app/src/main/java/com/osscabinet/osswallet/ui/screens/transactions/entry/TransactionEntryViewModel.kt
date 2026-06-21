@@ -547,27 +547,16 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetAccount -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.account?.id)
-
-                // Identity Exclusion & Wallet Minimum Rule
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = true,
-                    newAccount = newRef,
-                    otherSide = s.destination.account
-                )
-
-                if (isValid || !s.isTransfer) {
-                    update {
-                        it.copy(
-                            source = it.source.copy(
-                                account = newRef,
-                                currency = event.account?.currencyCode?.ifBlank { null } ?: it.selectedCurrency
-                            )
+                update {
+                    it.copy(
+                        source = it.source.copy(
+                            account = newRef,
+                            currency = event.account?.currencyCode?.ifBlank { null } ?: it.selectedCurrency
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetCurrency -> {
@@ -576,27 +565,16 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTargetAccount -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.account?.id)
-
-                // Identity Exclusion & Wallet Minimum Rule
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = false,
-                    newAccount = newRef,
-                    otherSide = s.source.account
-                )
-
-                if (isValid) {
-                    update {
-                        it.copy(
-                            destination = it.destination.copy(
-                                account = newRef,
-                                currency = event.account?.currencyCode?.ifBlank { null } ?: it.targetCurrency
-                            )
+                update {
+                    it.copy(
+                        destination = it.destination.copy(
+                            account = newRef,
+                            currency = event.account?.currencyCode?.ifBlank { null } ?: it.targetCurrency
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetTargetCurrency -> {
@@ -913,20 +891,6 @@ class TransactionEntryViewModel @Inject constructor(
             targetCurrency = currentState.targetCurrency,
             transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
         )
-    }
-
-    /**
-     * Mark the target side as Outside Wallet (for outside-of-wallet transfers).
-     */
-    fun clearTargetAccount() {
-        update {
-            it.copy(
-                destination = it.destination.copy(
-                    account = AccountRef.Outside,
-                    currency = ""
-                )
-            )
-        }
     }
 
     /**

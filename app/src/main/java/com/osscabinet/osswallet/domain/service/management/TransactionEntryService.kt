@@ -107,37 +107,11 @@ object TransactionEntryService {
             }
         }
 
-        // 2. Identity Exclusion: Source != Target. Only matters when both are concrete wallets.
-        val srcAcc = newSource.account
-        val dstAcc = newDestination.account
-        val finalDestination = if (srcAcc is AccountRef.Wallet && dstAcc is AccountRef.Wallet && srcAcc.id == dstAcc.id) {
-            newDestination.copy(account = AccountRef.Unselected, currency = "")
-        } else newDestination
-
         return TypeTransitionResult(
             newMode = newMode,
             source = newSource,
-            destination = finalDestination,
+            destination = newDestination,
             isSplitModeAllowed = newMode != EntryMode.TRANSFER && isSplitMode
         )
-    }
-
-    /**
-     * Logic for selecting a new account on either side of a transfer.
-     * Rule 1: Source != Target (Identity Exclusion).
-     * Rule 2: At least one side must be a managed wallet (No Outside-to-Outside).
-     */
-    fun validateAccountSelection(
-        isSourceSide: Boolean,
-        newAccount: AccountRef,
-        otherSide: AccountRef
-    ): Boolean {
-        // Identity Exclusion
-        if (newAccount is AccountRef.Wallet && otherSide is AccountRef.Wallet && newAccount.id == otherSide.id) {
-            return false
-        }
-        // Wallet Minimum Rule (No Outside-to-Outside)
-        if (newAccount is AccountRef.Outside && otherSide is AccountRef.Outside) return false
-        return true
     }
 }

@@ -352,3 +352,10 @@ object AppColors {
     // Not theme tokens — safe to use where a hard "no fill" value is required.
     val transparent: Color get() = Color.Transparent
 }
+
+/**
+ * Lifts a 24-bit RGB int (e.g. `Category.colorHex`, which is signed and may have
+ * a zero alpha byte) into an opaque [Color]. Centralises the `or (0xFF shl 24)`
+ * bit-trick so UI files don't have to reason about ARGB packing.
+ */
+fun Int.toOpaqueColor(): Color = Color(this or (0xFF shl 24))

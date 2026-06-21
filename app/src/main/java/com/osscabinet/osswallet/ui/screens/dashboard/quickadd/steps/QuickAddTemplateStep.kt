@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.toOpaqueColor
 
 /**
  * Step 1 — "Atelier Grid". Editorial template/category picker.
@@ -71,9 +72,11 @@ fun QuickAddTemplateStep(
 ) {
     var query by remember { mutableStateOf("") }
     val hasTemplates = templates.isNotEmpty()
-    var showCategories by rememberSaveable(hasTemplates) { 
-        mutableStateOf(!hasTemplates) 
-    }
+    // Default to categories only on the first composition where templates are empty;
+    // do NOT re-key on `hasTemplates`, otherwise a late template arrival or async
+    // refresh would silently overwrite the user's manual mode choice.
+    val initialShowCategories = remember { templates.isEmpty() }
+    var showCategories by rememberSaveable { mutableStateOf(initialShowCategories) }
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -179,7 +182,7 @@ private fun AtelierModeToggle(
         shape = shape,
         color = AppColors.recessedSurface,
         modifier = Modifier
-            .height(42.dp)
+            .height(48.dp)
             .aeonHairlineBorder(shape)
     ) {
         Row(
@@ -230,7 +233,7 @@ private fun ColumnScope.TemplatesGrid(
             AtelierTile(
                 label = template.name,
                 icon = getIconByName(category?.iconName),
-                iconColor = category?.colorHex?.let { Color(it or (0xFF shl 24)) }
+                iconColor = category?.colorHex?.toOpaqueColor()
                     ?: AppColors.contentSecondary,
                 isSelected = template.id == selectedTemplateId,
                 onTap = { onTemplateSelected(template) }
@@ -277,7 +280,7 @@ private fun ColumnScope.CategoriesGrid(
                 AtelierTile(
                     label = category.name,
                     icon = getIconByName(category.iconName),
-                    iconColor = Color(category.colorHex or (0xFF shl 24)),
+                    iconColor = category.colorHex.toOpaqueColor(),
                     isSelected = category.id == selectedCategoryId && selectedTemplateId == null,
                     hasChildren = childrenMap[category.id]?.isNotEmpty() == true,
                     onTap = { onCategorySelected(category) },
@@ -320,7 +323,7 @@ private fun ColumnScope.CategoriesGrid(
                         AtelierTile(
                             label = category.name,
                             icon = getIconByName(category.iconName),
-                            iconColor = Color(category.colorHex or (0xFF shl 24)),
+                            iconColor = category.colorHex.toOpaqueColor(),
                             isSelected = category.id == selectedCategoryId && selectedTemplateId == null,
                             hasChildren = childrenMap[category.id]?.isNotEmpty() == true,
                             onTap = { onCategorySelected(category) },
@@ -367,7 +370,7 @@ private fun DrillBackHeader(
                 Icon(
                     getIconByName(parent.iconName),
                     contentDescription = null,
-                    tint = Color(parent.colorHex or (0xFF shl 24)),
+                    tint = parent.colorHex.toOpaqueColor(),
                     modifier = Modifier.size(16.dp)
                 )
                 Text(

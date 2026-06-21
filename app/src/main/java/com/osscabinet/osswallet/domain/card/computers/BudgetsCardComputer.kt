@@ -4,73 +4,24 @@ import com.osscabinet.ossWallet.domain.card.CardDataComputer
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
-import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
-import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
-import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 
-class BudgetsCardComputer : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
+class BudgetsCardComputer(
+    private val queryService: DatabaseQueryService
+) : CardDataComputer<BudgetsCardConfig, CardRenderData.Budgets> {
     override val supportedType = CardType.BUDGETS
 
     override suspend fun compute(
         input: CardInput,
         config: BudgetsCardConfig
     ): CardRenderData.Budgets {
-        val now = System.currentTimeMillis()
-
-        // Budgets should NOT follow the global timeline filter (e.g. Dashboard "Today")
-        // but should respect global Account/Category filters if explicitly merged.
-        // We use a clean filter for budgets that ignores the timeline of input.filter.
-        val baseBudgetFilter =
-            input.filter.copy(timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime())
-        val mergedFilter = resolveEffectiveFilter(
-            baseBudgetFilter,
-            config.filter,
-            config.filterRules,
-            input.screenOwnsTimeline
-        )
-        val effectiveFilter = mergedFilter.copy(
-            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
-        )
-        val allTransactions = input.allProfileTransactions.ifEmpty { input.transactions }
-        val filteredTx = TransactionFilterService.filter(allTransactions, effectiveFilter)
-
-        val baseBudgets = if (config.showArchived) input.budgets
-        else input.budgets.filter { !it.isArchived }
-
-        val budgets = baseBudgets.filter { budget ->
-            (mergedFilter.accountIds.isEmpty() || budget.accountIds.isEmpty() || budget.accountIds.any { it in mergedFilter.accountIds }) &&
-                    (mergedFilter.categoryIds.isEmpty() || budget.categoryIds.isEmpty() || budget.categoryIds.any { it in mergedFilter.categoryIds }) &&
-                    (mergedFilter.currencies.isEmpty() || budget.currency in mergedFilter.currencies) &&
-                    (mergedFilter.tags.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in mergedFilter.tags })
-        }
-
-        val items = budgets.take(config.maxItems).map { budget ->
-            val rollover = BudgetService.calculateRollover(
-                budget = budget,
-                transactions = filteredTx,
-                exchangeRates = input.exchangeRates.rates,
-                baseCurrency = input.targetCurrency,
-                now = now,
-                allCategories = input.categories,
-                excludeFuture = mergedFilter.timelineRange.excludeFuture
-            )
-            val spent = BudgetService.calculateSpent(
-                budget = budget,
-                transactions = filteredTx,
-                exchangeRates = input.exchangeRates.rates,
-                baseCurrency = input.targetCurrency,
-                now = now,
-                allCategories = input.categories,
-                excludeFuture = mergedFilter.timelineRange.excludeFuture
-            )
-            BudgetService.buildProgress(budget, spent, rollover)
-        }
-
-        return CardRenderData.Budgets(
-            config = config,
-            items = items,
-            currency = input.targetCurrency
+        return CardAggregationService.computeBudgetsCard(
+            queryService,
+            input.profileId,
+            input,
+            config
         )
     }
 }

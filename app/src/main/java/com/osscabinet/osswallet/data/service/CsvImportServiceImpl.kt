@@ -227,23 +227,34 @@ class CsvImportServiceImpl @Inject constructor(
             val firstLine = bufferedReader.readLine()
                 ?: return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null)
 
-            if (firstLine.contains(';')) {
+            val (headers, previewRows, delimiter) = if (firstLine.contains(';')) {
                 val remaining = firstLine + "\n" + bufferedReader.readText()
                 val records = CSVParser.parse(remaining.reader(), buildBudgetBakersCsvFormat()).records
                 if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ';')
-                val headers = records.first().toList().map { it.trim().lowercase() }
-                val previewRows = records.drop(1).take(5).map { it.toList() }
-                CsvImportSession(headers, previewRows, emptyMap(), null, ';')
+                val h = records.first().toList().map { it.trim().lowercase() }
+                val p = records.drop(1).take(5).map { it.toList() }
+                Triple(h, p, ';')
             } else {
                 val commaFormat = CSVFormat.DEFAULT.builder()
                     .setDelimiter(',').setQuote('"').setIgnoreEmptyLines(true).setTrim(true).build()
                 val remaining = firstLine + "\n" + bufferedReader.readText()
                 val records = CSVParser.parse(remaining.reader(), commaFormat).records
                 if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ',')
-                val headers = records.first().toList().map { it.trim().lowercase() }
-                val previewRows = records.drop(1).take(5).map { it.toList() }
-                CsvImportSession(headers, previewRows, emptyMap(), null, ',')
+                val h = records.first().toList().map { it.trim().lowercase() }
+                val p = records.drop(1).take(5).map { it.toList() }
+                Triple(h, p, ',')
             }
+
+            // Detect source app if possible
+            val detectedApp = if (headers.toSet().containsAll(budgetBakersHeaders)) {
+                ImportSourceApp.BUDGET_BAKERS
+            } else {
+                null
+            }
+
+            val mapping = buildInitialMapping(headers, detectedApp ?: ImportSourceApp.GENERIC)
+
+            CsvImportSession(headers, previewRows, mapping, detectedApp, delimiter)
         }
 
     private fun buildInitialMapping(
@@ -612,7 +623,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 )
                             )
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            val insertedId = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: Category.SYSTEM_OTHERS
                             categoryMap[em.unknownName.lowercase()] = insertedId
                             if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
@@ -929,7 +940,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val categoryId = resolveCategory(row, existingCategoryEntities)
                         ?: run {
                             val displayName = unresolvedCategoryName(row)
-                            categoryMap[displayName.lowercase()] ?: 1000L
+                            categoryMap[displayName.lowercase()] ?: Category.SYSTEM_OTHERS
                         }
 
                     val finalAmount = when (txType) {
@@ -1154,7 +1165,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 parentId = resolvedParentId
                             ))
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            val insertedId = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: Category.SYSTEM_OTHERS
                             categoryMap[em.unknownName.lowercase()] = insertedId
                             if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
@@ -1353,7 +1364,7 @@ class CsvImportServiceImpl @Inject constructor(
 
                     val categoryId = existingCategoryEntities.find { it.name.equals(leafName, ignoreCase = true) }?.id
                         ?: categoryMap[leafName.lowercase()]
-                        ?: 1000L
+                        ?: Category.SYSTEM_OTHERS
 
                     val isRepetitive = row["type"]?.contains("repetitive", ignoreCase = true) == true
                     val baseTagNames: Set<String> = if (isRepetitive) setOf("Planned") else emptySet()
@@ -1473,7 +1484,7 @@ class CsvImportServiceImpl @Inject constructor(
                                 )
                             )
                             val inserted = categoryDao.getCategoryByName(em.unknownName)
-                            val insertedId = inserted?.id ?: 1000L
+                            val insertedId = inserted?.id ?: Category.SYSTEM_OTHERS
                             categoryMap[em.unknownName.lowercase()] = insertedId
                             if (resolvedParentId == null) newCategoryColorMap[insertedId] = catColor
                         }
@@ -1509,7 +1520,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val accountId = accountMap[accountName.lowercase()]
                     if (accountId == null) { skipped++; return@forEachIndexed }
 
-                    val categoryId = categoryMap[categoryName.lowercase()] ?: 1000L
+                    val categoryId = categoryMap[categoryName.lowercase()] ?: Category.SYSTEM_OTHERS
 
                     val txType = when {
                         isTransferStr.equals("true", ignoreCase = true) -> TransactionType.TRANSFER_OUTFLOW

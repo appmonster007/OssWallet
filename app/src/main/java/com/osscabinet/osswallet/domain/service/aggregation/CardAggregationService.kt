@@ -6,13 +6,26 @@ import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanSummary
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -245,6 +258,363 @@ object CardAggregationService {
             currentTheme = "light",
             exchangeRates = input.exchangeRates
         )
+    }
+
+    private fun signedSpent(totalAmount: BigDecimal, budget: Budget): BigDecimal {
+        val isIncomeOnly = budget.trackTypes.isNotEmpty() && budget.trackTypes.all { it == TransactionType.INCOME }
+        return if (isIncomeOnly) totalAmount else totalAmount.negate()
+    }
+
+    suspend fun computeBudgetsCard(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        config: BudgetsCardConfig
+    ): CardRenderData.Budgets {
+        val now = System.currentTimeMillis()
+
+        // Budgets should NOT follow the global timeline filter (e.g. Dashboard "Today")
+        // but should respect global Account/Category filters if explicitly merged.
+        val baseBudgetFilter = input.filter.copy(timelineRange = TimelineRange.AllTime())
+        val mergedFilter = resolveEffectiveFilter(
+            baseBudgetFilter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
+        val effectiveFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
+
+        val baseBudgets = if (config.showArchived) input.budgets
+        else input.budgets.filter { !it.isArchived }
+
+        val budgets = baseBudgets.filter { budget ->
+            (mergedFilter.accountIds.isEmpty() || budget.accountIds.isEmpty() || budget.accountIds.any { it in mergedFilter.accountIds }) &&
+                    (mergedFilter.categoryIds.isEmpty() || budget.categoryIds.isEmpty() || budget.categoryIds.any { it in mergedFilter.categoryIds }) &&
+                    (mergedFilter.currencies.isEmpty() || budget.currency in mergedFilter.currencies) &&
+                    (mergedFilter.tags.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in mergedFilter.tags })
+        }
+
+        val items = budgets.take(config.maxItems).map { budget ->
+            val budgetFilter = BudgetService.buildTransactionFilter(budget, now, input.categories, effectiveFilter.timelineRange.excludeFuture)
+            val finalFilter = budgetFilter.copy(
+                accountIds = if (budget.accountIds.isEmpty()) effectiveFilter.accountIds else budget.accountIds
+            )
+
+            // Current spent
+            val spentSummaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, finalFilter)
+                .getOrDefault(emptyMap())
+            val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
+            val spent = signedSpent(spentSummary.totalAmount, budget)
+
+            // Rollover calculation (recursive)
+            val rollover = if (budget.rollover) {
+                computeBudgetRollover(queryService, profileId, budget, input, effectiveFilter.accountIds, 0, now, effectiveFilter.timelineRange.excludeFuture)
+            } else BigDecimal.ZERO
+
+            BudgetService.buildProgress(budget, spent, rollover)
+        }
+
+        return CardRenderData.Budgets(
+            config = config,
+            items = items,
+            currency = input.targetCurrency
+        )
+    }
+
+    private suspend fun computeBudgetRollover(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        budget: Budget,
+        input: CardInput,
+        effectiveAccountIds: Set<String>,
+        depth: Int,
+        now: Long,
+        excludeFuture: Boolean
+    ): BigDecimal {
+        if (depth >= 12) return BigDecimal.ZERO
+
+        val previousRange = TimelineService.getPreviousRange(budget.timelineRange, referenceTime = now)
+        val (prevStart, prevEnd) = previousRange
+        if (prevStart == null || prevEnd == null) return BigDecimal.ZERO
+
+        val prevFilter = BudgetService.buildTransactionFilter(
+            budget = budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)),
+            now = (prevStart + prevEnd) / 2,
+            allCategories = input.categories,
+            excludeFuture = excludeFuture
+        ).copy(
+            accountIds = if (budget.accountIds.isEmpty()) effectiveAccountIds else budget.accountIds
+        )
+
+        val spentSummaries = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, prevFilter)
+            .getOrDefault(emptyMap())
+        val spentSummary = CurrencyService.calculateTotalFinancialSummary(spentSummaries, budget.currency, input.exchangeRates)
+        val spent = signedSpent(spentSummary.totalAmount, budget)
+
+        val prevRollover = computeBudgetRollover(
+            queryService, profileId, budget.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)),
+            input, effectiveAccountIds, depth + 1, (prevStart + prevEnd) / 2, excludeFuture
+        )
+
+        val previousEffectiveLimit = budget.limitAmount.add(prevRollover)
+        return previousEffectiveLimit.subtract(spent).max(BigDecimal.ZERO)
+    }
+
+    suspend fun computeLoansCard(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        config: LoansCardConfig
+    ): CardRenderData.Loans {
+        val mergedFilter = resolveEffectiveFilter(
+            input.filter,
+            config.filter,
+            config.filterRules,
+            input.screenOwnsTimeline
+        )
+        val now = System.currentTimeMillis()
+
+        val baseFiltered = when (config.showType) {
+            "LENT" -> input.loans.filter { it.loanType == LoanType.LENT }
+            "BORROWED" -> input.loans.filter { it.loanType == LoanType.BORROWED }
+            else -> input.loans
+        }
+
+        val filtered = baseFiltered.filter { loan ->
+            (mergedFilter.accountIds.isEmpty() || loan.linkedAccountId.isBlank() || loan.linkedAccountId in mergedFilter.accountIds) &&
+                    (mergedFilter.currencies.isEmpty() || loan.currency in mergedFilter.currencies)
+        }
+
+        val items = filtered.take(config.maxItems).map { loan: Loan ->
+            val loanFilter = LoanService.buildTransactionFilter(loan, input.categories)
+            
+            val summaryByCurrency = TransactionAggregationService.getSummaryByCurrency(queryService, profileId, loanFilter)
+                .getOrDefault(emptyMap())
+
+            val totalPaid = summaryByCurrency.entries.fold(BigDecimal.ZERO) { acc, entry ->
+                val (curr, summary) = entry
+                // Match old amount.signum() logic: positive amounts (income + transferIn) repay
+                // LENT loans; negative amounts (expense + transferOut) repay BORROWED loans.
+                val repaymentAmount = when (loan.loanType) {
+                    LoanType.LENT -> summary.income.abs() + summary.transferIn.abs()
+                    LoanType.BORROWED -> summary.expense.abs() + summary.transferOut.abs()
+                }
+                val converted = CurrencyService.convertAmount(repaymentAmount, curr, loan.currency, input.exchangeRates)
+                acc + converted
+            }
+
+            val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
+            val interest = LoanService.calculateInterestAccrued(loan, now)
+
+            LoanSummary(
+                loan = loan,
+                totalPaid = totalPaid.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                remainingBalance = remaining.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                interestAccrued = interest.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+            )
+        }
+        return CardRenderData.Loans(
+            config = config,
+            items = items,
+            currency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
+        )
+    }
+
+    suspend fun computeRecentActivitiesCard(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        config: RecentActivitiesCardConfig
+    ): CardRenderData.RecentActivities {
+        val mergedFilter = resolveEffectiveFilter(input.filter, config.filter, config.filterRules, input.screenOwnsTimeline)
+        val effectiveFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds }
+        )
+        val txs = queryService.observeFilteredTransactions(profileId, effectiveFilter, limit = 200).first()
+        
+        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates.rates)
+
+        val groups = TimelineService.getGroupedData(
+            transactions = transactionsWithBalance.take(20),
+            absoluteHistory = transactionsWithBalance,
+            groupingType = config.groupBy,
+            accounts = input.accounts,
+            categories = input.categories,
+            allTags = input.tags,
+            baseCurrency = input.targetCurrency,
+            exchangeRates = input.exchangeRates.rates,
+            allTxnBreakdown = config.allTxnBreakdown,
+        )
+
+        return CardRenderData.RecentActivities(
+            config = config,
+            listState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
+            currency = input.targetCurrency,
+            exchangeRates = input.exchangeRates
+        )
+    }
+
+    suspend fun computeCategoryPieChartCard(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        config: CategoryPieChartCardConfig
+    ): CardRenderData.CategoryPieChart {
+        val (tree, totals) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
+        return CardRenderData.CategoryPieChart(
+            config = config,
+            items = tree,
+            currency = input.targetCurrency,
+            previousTotal = totals.previousTotal,
+            incomeTotal = totals.incomeTotal,
+            expenseTotal = totals.expenseTotal,
+            transferTotal = totals.transferTotal,
+            previousIncomeTotal = totals.previousIncomeTotal,
+            previousExpenseTotal = totals.previousExpenseTotal,
+            previousTransferTotal = totals.previousTransferTotal
+        )
+    }
+
+    suspend fun computeCategoryTreemapCard(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        config: CategoryTreemapCardConfig
+    ): CardRenderData.CategoryTreemap {
+        val (tree, totals) = computeCategoryChartData(queryService, profileId, input, config.filter, config.filterRules, config.perspective, config.showComparison, config.excludeInternalTransfers)
+        return CardRenderData.CategoryTreemap(
+            config = config,
+            items = tree,
+            currency = input.targetCurrency,
+            previousTotal = totals.previousTotal,
+            incomeTotal = totals.incomeTotal,
+            expenseTotal = totals.expenseTotal,
+            transferTotal = totals.transferTotal,
+            previousIncomeTotal = totals.previousIncomeTotal,
+            previousExpenseTotal = totals.previousExpenseTotal,
+            previousTransferTotal = totals.previousTransferTotal
+        )
+    }
+
+    private data class CategoryChartTotals(
+        val incomeTotal: BigDecimal,
+        val expenseTotal: BigDecimal,
+        val transferTotal: BigDecimal,
+        val previousTotal: BigDecimal?,
+        val previousIncomeTotal: BigDecimal?,
+        val previousExpenseTotal: BigDecimal?,
+        val previousTransferTotal: BigDecimal?
+    )
+
+    private suspend fun computeCategoryChartData(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        cardFilter: TransactionFilter?,
+        filterRules: com.osscabinet.ossWallet.domain.card.CardFilterRules,
+        perspective: AccountingPerspective,
+        showComparison: Boolean,
+        excludeInternalTransfers: Boolean
+    ): Pair<List<CategoryTreeMetrics>, CategoryChartTotals> {
+        val mergedFilter = resolveEffectiveFilter(input.filter, cardFilter ?: TransactionFilter(), filterRules, input.screenOwnsTimeline)
+        val expandedCategoryIds = input.categoryHierarchy.expand(mergedFilter.categoryIds)
+        val excludeInternal = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow
+        val finalFilter = mergedFilter.copy(
+            accountIds = mergedFilter.accountIds.ifEmpty { input.effectiveAccountIds },
+            categoryIds = expandedCategoryIds,
+            transactionTypes = emptySet() // Include all types to support Transfers-as-categories
+        )
+        val tree = computeCategoryTree(queryService, profileId, input, finalFilter, perspective, showComparison, excludeInternal)
+        val totals = CategoryChartTotals(
+            incomeTotal = tree.sumOf { it.income },
+            expenseTotal = tree.sumOf { it.expense },
+            transferTotal = tree.sumOf { it.transfer },
+            previousTotal = if (showComparison) tree.sumOf { it.previousNetBalance ?: BigDecimal.ZERO } else null,
+            previousIncomeTotal = if (showComparison) tree.sumOf { it.previousIncome ?: BigDecimal.ZERO } else null,
+            previousExpenseTotal = if (showComparison) tree.sumOf { it.previousExpense ?: BigDecimal.ZERO } else null,
+            previousTransferTotal = if (showComparison) tree.sumOf { it.previousTransfer ?: BigDecimal.ZERO } else null
+        )
+        return tree to totals
+    }
+
+    private suspend fun computeCategoryTree(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        input: CardInput,
+        filter: TransactionFilter,
+        perspective: AccountingPerspective,
+        showComparison: Boolean,
+        excludeInternalTransfers: Boolean = false
+    ): List<CategoryTreeMetrics> {
+        val currentSummaries = TransactionAggregationService.getSummaryByCategoryAndCurrency(queryService, profileId, filter, excludeInternalTransfers)
+            .getOrDefault(emptyMap())
+
+        val previousSummaries = if (showComparison && filter.timelineRange !is TimelineRange.AllTime) {
+            val (prevStart, prevEnd) = TimelineService.getPreviousRange(filter.timelineRange)
+            if (prevStart != null && prevEnd != null) {
+                val prevFilter = filter.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
+                TransactionAggregationService.getSummaryByCategoryAndCurrency(queryService, profileId, prevFilter, excludeInternalTransfers)
+                    .getOrDefault(emptyMap())
+            } else emptyMap()
+        } else emptyMap()
+
+        fun toBreakdowns(summaries: Map<Long, Map<String, FinancialSummary>>): Map<Long, FinancialMetrics<Long>> =
+            summaries.mapValues { (categoryId, byCurrency) ->
+                val converted = byCurrency.mapValues { (curr, summary) ->
+                    CurrencyService.convertFinancialSummaryToBase(summary, curr, input.targetCurrency, input.exchangeRates)
+                }
+                val perspectiveSummaries = converted.mapValues { it.value.toPerspective(perspective) }
+                FinancialMetrics(
+                    key = categoryId,
+                    financialSummary = FinancialSummary.aggregate(perspectiveSummaries.values),
+                    currencyBreakdown = perspectiveSummaries
+                )
+            }
+
+        return AggregationService.buildCategoryTreeFromBreakdowns(
+            categoryBreakdowns = toBreakdowns(currentSummaries),
+            previousBreakdowns = if (showComparison) toBreakdowns(previousSummaries) else null,
+            allCategories = input.categories
+        )
+    }
+
+    fun computeRecentBalances(
+        transactions: List<Transaction>,
+        accounts: List<Account>,
+        baseCurrency: String,
+        rates: Map<String, BigDecimal>
+    ): List<TransactionWithBalance> {
+        return transactions.asSequence()
+            .sortedBy { it.timestamp }
+            .groupBy { it.accountId }
+            .flatMap { entry ->
+                val (accId, accountTransactions) = entry
+                val account = accounts.find { it.id == accId }
+                val accountCurrency = account?.currencyCode ?: baseCurrency
+
+                var runningBalance = BigDecimal.ZERO // Start from 0 since we skip reverse engineering for now
+                accountTransactions.map { transaction ->
+                    val txAmountInAccountCurrency = CurrencyService.convertAmount(
+                        amount = transaction.amount,
+                        fromCurrency = transaction.currency,
+                        toCurrency = accountCurrency,
+                        exchangeRates = rates
+                    )
+
+                    val balanceBefore = runningBalance
+                    runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                    TransactionWithBalance(
+                        transaction = transaction,
+                        balanceBefore = balanceBefore.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                        balanceAfter = runningBalance.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                    )
+                }
+            }
+            .sortedByDescending { it.transaction.timestamp }
+            .toList()
     }
 
     private suspend fun computeAccountStats(

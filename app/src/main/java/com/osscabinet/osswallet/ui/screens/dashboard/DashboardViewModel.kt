@@ -50,7 +50,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -134,7 +133,6 @@ class DashboardViewModel @Inject constructor(
                 categoryRepository.categories,
                 computationRepository.exchangeRates,
                 computationRepository.selectedCurrency,
-                computationRepository.hasLoadedExchangeRates,
                 cardsConfig,
                 plannedPaymentsFlow,
                 budgetsFlow,
@@ -155,28 +153,23 @@ class DashboardViewModel @Inject constructor(
                     @Suppress("UNCHECKED_CAST")
                     val rates = args[3] as Map<String, BigDecimal>
                     val baseCurrency = args[4] as String
-                    val hasLoadedExchangeRates = args[5] as Boolean
-                    val cardsCfg = args[6] as DashboardCardsConfig
-
-                    if (!hasLoadedExchangeRates) {
-                        return@flatMapLatest flowOf(DashboardUiState.Loading)
-                    }
+                    val cardsCfg = args[5] as DashboardCardsConfig
 
                     @Suppress("UNCHECKED_CAST")
-                    val plannedPayments = args[7] as List<PlannedPayment>
+                    val plannedPayments = args[6] as List<PlannedPayment>
 
                     @Suppress("UNCHECKED_CAST")
-                    val budgets = args[8] as List<Budget>
+                    val budgets = args[7] as List<Budget>
 
                     @Suppress("UNCHECKED_CAST")
-                    val loans = args[9] as List<Loan>
+                    val loans = args[8] as List<Loan>
 
                     @Suppress("UNCHECKED_CAST")
-                    val tags = args[10] as List<com.osscabinet.ossWallet.domain.model.Tag>
+                    val tags = args[9] as List<com.osscabinet.ossWallet.domain.model.Tag>
 
                     @Suppress("UNCHECKED_CAST")
                     val loanPayments =
-                        args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
+                        args[10] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
 
                     val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
                     val groupedLoanPayments = loanPayments.groupBy { it.loanId }

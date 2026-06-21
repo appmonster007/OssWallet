@@ -102,7 +102,6 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.theme.AeonSize
-import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
 import com.osscabinet.ossWallet.ui.components.ContourBackground
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
@@ -422,9 +421,7 @@ fun DashboardScreenLayout(
                         }
 
                         when (val state = uiState) {
-                            is DashboardUiState.Loading -> {
-                                AeonShimmer(innerPadding = innerPadding)
-                            }
+                            is DashboardUiState.Loading -> Unit
 
                             is DashboardUiState.Success -> {
                                 DashboardContent(

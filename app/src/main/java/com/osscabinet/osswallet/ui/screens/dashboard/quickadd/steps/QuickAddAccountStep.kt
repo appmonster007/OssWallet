@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,14 +32,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -56,7 +58,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
  * Selection takes on the semantic transaction-type color (red for expense,
  * green for income).
  */
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickAddAccountStep(
     accounts: List<Account>,
@@ -191,7 +193,12 @@ private fun StructureChipRail(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Visually 28dp tall, but the tappable region extends to a 48dp minimum so the
+ * chip meets Android's touch-target guidance. The pill is rendered inside a
+ * larger transparent clickable Box rather than fighting Material's
+ * `LocalMinimumInteractiveComponentSize`.
+ */
 @Composable
 private fun AtelierChip(
     label: String,
@@ -202,35 +209,47 @@ private fun AtelierChip(
     val shape = RoundedCornerShape(10.dp)
     val bg = if (isSelected) activeColor.copy(alpha = 0.14f) else AppColors.recessedSurface
     val contentColor = if (isSelected) activeColor else AppColors.contentSecondary
+    val borderModifier = if (isSelected)
+        Modifier.aeonHairlineBorder(shape, accent = activeColor)
+    else Modifier.aeonHairlineBorder(shape)
 
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-        Surface(
-            onClick = onClick,
-            shape = shape,
-            color = Color.Transparent,
+    Box(
+        modifier = Modifier
+            .defaultMinSize(minHeight = 48.dp)
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
             modifier = Modifier
                 .height(28.dp)
                 .clip(shape)
                 .background(bg)
-                .then(
-                    if (isSelected) Modifier.aeonHairlineBorder(shape, accent = activeColor)
-                    else Modifier.aeonHairlineBorder(shape)
-                )
+                .then(borderModifier)
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = label,
-                    style = AppTextStyles.sectionOverline,
-                    color = contentColor
-                )
-            }
+            Text(
+                text = label,
+                style = AppTextStyles.sectionOverline,
+                color = contentColor
+            )
         }
     }
 }
 
+/**
+ * Icon-only transaction-type toggle (Expense ↔ Income). Renders the
+ * current mode as a high-contrast directional arrow (TrendingDown for
+ * Expense, TrendingUp for Income) at 22dp inside a 48dp tappable surface.
+ * The surface picks up a faint [activeColor] tint so the mode is legible
+ * at a glance; the icon is the redundant signal. Full word goes to the
+ * semantics layer for screen-reader users.
+ */
 @Composable
 private fun AtelierTypeToggle(
     entryMode: EntryMode,
@@ -238,33 +257,30 @@ private fun AtelierTypeToggle(
     activeColor: Color,
 ) {
     val shape = RoundedCornerShape(12.dp)
-    val label = if (entryMode == EntryMode.INCOME) "INCOME" else "EXPENSE"
-    val icon = if (entryMode == EntryMode.INCOME) Icons.AutoMirrored.Rounded.TrendingUp
+    val isIncome = entryMode == EntryMode.INCOME
+    val icon = if (isIncome) Icons.AutoMirrored.Rounded.TrendingUp
     else Icons.AutoMirrored.Rounded.TrendingDown
+    val a11yLabel = if (isIncome) "Income, tap to switch to Expense"
+    else "Expense, tap to switch to Income"
 
     Surface(
         onClick = onClick,
         shape = shape,
-        color = AppColors.recessedSurface,
+        color = activeColor.copy(alpha = 0.10f),
         modifier = Modifier
-            .height(42.dp)
-            .aeonHairlineBorder(shape)
+            .size(width = 56.dp, height = 48.dp)
+            .aeonHairlineBorder(shape, accent = activeColor)
+            .semantics {
+                role = Role.Button
+                contentDescription = a11yLabel
+            }
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = activeColor,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = label.take(2),
-                style = AppTextStyles.sectionOverline,
-                color = activeColor,
+                modifier = Modifier.size(22.dp)
             )
         }
     }

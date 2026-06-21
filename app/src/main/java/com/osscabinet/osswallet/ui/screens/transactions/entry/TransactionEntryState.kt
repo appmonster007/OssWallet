@@ -125,11 +125,6 @@ data class TransactionEntryState(
                 // Both sides must be explicitly chosen (Unselected = not yet picked)
                 if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
                 if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
-                // Wallet minimum: both sides can't be Outside Wallet
-                if (source.account is AccountRef.Outside && destination.account is AccountRef.Outside) {
-                    add(EntryField.ACCOUNT)
-                    add(EntryField.TARGET_ACCOUNT)
-                }
             } else {
                 if (source.account !is AccountRef.Wallet) add(EntryField.ACCOUNT)
             }

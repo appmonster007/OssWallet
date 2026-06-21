@@ -75,10 +75,10 @@ fun PlannedPaymentFormBody(
                 ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
         }
 
-    val targetCurrencies = remember(state.targetAccountId, state.accounts) {
+    val targetCurrencies = remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
         state.accounts.find { it.id == state.targetAccountId }
             ?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: CurrencyService.getAllCurrencies()
+            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
     Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {

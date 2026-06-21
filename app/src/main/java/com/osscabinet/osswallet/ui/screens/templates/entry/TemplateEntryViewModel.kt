@@ -293,49 +293,31 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetAccount -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.accountId)
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = true,
-                    newAccount = newRef,
-                    otherSide = s.destination.account
-                )
-
-                if (isValid || !s.isTransfer) {
-                    _state.update { state ->
-                        val account = state.accounts.find { it.id == event.accountId }
-                        state.copy(
-                            source = state.source.copy(
-                                account = newRef,
-                                currency = account?.currencyCode ?: state.currency
-                            )
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.accountId }
+                    state.copy(
+                        source = state.source.copy(
+                            account = newRef,
+                            currency = account?.currencyCode ?: state.currency
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetAccount -> {
-                val s = _state.value
                 val newRef = AccountRef.fromStored(event.accountId)
-                val isValid = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.validateAccountSelection(
-                    isSourceSide = false,
-                    newAccount = newRef,
-                    otherSide = s.source.account
-                )
-
-                if (isValid) {
-                    _state.update { state ->
-                        val account = state.accounts.find { it.id == event.accountId }
-                        state.copy(
-                            destination = state.destination.copy(
-                                account = newRef,
-                                currency = account?.currencyCode ?: state.targetCurrency ?: ""
-                            )
+                _state.update { state ->
+                    val account = state.accounts.find { it.id == event.accountId }
+                    state.copy(
+                        destination = state.destination.copy(
+                            account = newRef,
+                            currency = account?.currencyCode ?: state.targetCurrency ?: ""
                         )
-                    }
-                    recalculateExchangeRate()
+                    )
                 }
+                recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetCurrency -> {

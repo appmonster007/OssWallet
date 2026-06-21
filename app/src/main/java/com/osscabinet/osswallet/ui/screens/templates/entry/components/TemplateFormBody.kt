@@ -56,9 +56,10 @@ fun TemplateFormBody(
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
-    val targetCurrencies = remember(state.selectedTargetAccount) {
-        state.selectedTargetAccount?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: CurrencyService.getAllCurrencies()
+    val targetCurrencies = remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
+        state.accounts.find { it.id == state.targetAccountId }
+            ?.allowedCurrencies?.toList()?.ifEmpty { null }
+            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
     Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {

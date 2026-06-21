@@ -61,9 +61,8 @@ fun TransactionEntrySheets(
 
     // Account Selection
     if (state.showAccountSheet) {
-        val baseList = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
+        val filteredAccounts = if (state.isTransfer) listOf(Account.OUTSIDE_WALLET) + state.accounts
                        else state.accounts
-        val filteredAccounts = baseList.filter { it.id != state.targetAccount?.id }
 
         AeonAccountSelection(
             accounts = filteredAccounts,
@@ -81,8 +80,7 @@ fun TransactionEntrySheets(
 
     // Target Account Selection (for transfers)
     if (state.showTargetAccountSheet) {
-        val baseList = listOf(Account.OUTSIDE_WALLET) + state.accounts
-        val filteredAccounts = baseList.filter { it.id != state.selectedAccount?.id }
+        val filteredAccounts = listOf(Account.OUTSIDE_WALLET) + state.accounts
 
         AeonAccountSelection(
             accounts = filteredAccounts,

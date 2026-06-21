@@ -117,10 +117,10 @@ data class PlannedPaymentEntryState(
             if (amountValue <= BigDecimal.ZERO) add(EntryField.AMOUNT)
             if (selectedCategoryId <= 0) add(EntryField.CATEGORY)
             if (isTransfer) {
-                if (selectedAccountId.isNullOrBlank()) add(EntryField.ACCOUNT)
-                if (targetAccountId.isNullOrBlank()) add(EntryField.TARGET_ACCOUNT)
+                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
+                if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
             } else {
-                if (selectedAccountId.isNullOrBlank()) add(EntryField.ACCOUNT)
+                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
             }
         }
 

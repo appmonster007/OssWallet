@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickAdd Stage 1 — Template/Category Variants</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+:root{
+  --bg:#0B0B0A; --panel:#131312; --card:#1A1A18;
+  --ivory:#ECE8DD; --ivory-2:#9A958A;
+  --recessed:rgba(236,232,221,.05); --hair:rgba(236,232,221,.09); --divider:rgba(236,232,221,.12);
+  --gold:#D6C189; --gold-ink:#1B1914; --scrim:rgba(0,0,0,.4);
+  --pos:#7FBF8E; --neg:#D88379;
+  --mono:'Courier New',monospace; --serif:'Georgia',serif; --body:system-ui,sans-serif;
+}
+body{background:var(--bg);min-height:100vh;padding:24px;font-family:var(--mono);}
+.title{font-size:11px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+.sub{font-size:11px;color:var(--ivory-2);margin-bottom:28px;}
+.row{display:flex;gap:32px;align-items:flex-start;}
+.col{display:flex;flex-direction:column;align-items:flex-start;}
+.label{font-size:10px;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.slabel{font-size:10px;color:var(--ivory-2);margin-bottom:12px;max-width:360px;line-height:1.5;}
+
+.sheet{width:380px;background:var(--panel);border-radius:28px;border:.5px solid var(--hair);padding:0 0 14px;}
+.drag{width:36px;height:4px;border-radius:2px;background:rgba(236,232,221,.18);margin:12px auto 8px;}
+.nav{display:flex;align-items:center;padding:4px 14px;}
+.nav-btn{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.nav-back{background:rgba(236,232,221,.07);border:.5px solid rgba(236,232,221,.1);color:var(--ivory-2);}
+.nav-fwd{background:var(--gold);color:var(--gold-ink);}
+.nav-fwd.off{background:rgba(236,232,221,.12);color:var(--ivory-2);}
+.dots{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;}
+.dot{border-radius:50%;}
+.dot-on{width:6px;height:6px;background:var(--gold);}
+.dot-off{width:5px;height:5px;background:rgba(236,232,221,.25);}
+.content{padding:0 16px;}
+
+/* tiles */
+.grid{display:grid;gap:8px;margin-top:10px;}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.tile{aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:.5px solid rgba(236,232,221,.08);position:relative;padding-top:4px;}
+.tic{font-size:20px;line-height:1;}
+.tlb{font-family:var(--mono);font-size:10px;color:var(--ivory);text-align:center;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%;}
+.sel{border:1.5px solid var(--gold)!important;}
+.chk{position:absolute;top:4px;right:4px;width:14px;height:14px;background:var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--gold-ink);}
+
+/* toggle */
+.toggle{width:100%;height:40px;border-radius:10px;background:rgba(236,232,221,.04);border:.5px solid rgba(236,232,221,.09);padding:3px;display:flex;margin-top:8px;}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;border-radius:8px;letter-spacing:.04em;}
+.tab-on{background:var(--gold);color:var(--gold-ink);}
+.tab-off{color:var(--ivory-2);}
+
+/* search */
+.search{width:100%;height:40px;border-radius:10px;background:rgba(236,232,221,.04);border:.5px solid rgba(236,232,221,.09);display:flex;align-items:center;padding:0 12px;gap:8px;margin-top:8px;}
+.s-ic{font-size:13px;}.s-ph{font-size:12px;color:var(--ivory-2);letter-spacing:.04em;}
+.hint{font-size:11px;color:rgba(154,149,138,.5);text-align:center;padding:8px 0 2px;letter-spacing:.04em;}
+
+/* section overline */
+.over{font-size:9px;letter-spacing:.14em;color:var(--ivory-2);text-transform:uppercase;margin:12px 2px 2px;display:flex;align-items:center;gap:8px;}
+.over::after{content:"";flex:1;height:1px;background:var(--hair);}
+
+/* B: starred strip */
+.strip{display:flex;gap:8px;overflow:hidden;margin-top:4px;}
+.scard{min-width:84px;border-radius:14px;border:.5px solid rgba(236,232,221,.08);padding:10px;display:flex;flex-direction:column;gap:6px;}
+.scard .tic{font-size:18px;}
+.scard .nm{font-size:10px;color:var(--ivory);}
+.scard .am{font-family:var(--serif);font-size:13px;color:var(--gold);}
+
+/* C: big tile */
+.bgtile{aspect-ratio:1/.9;border-radius:18px;border:.5px solid rgba(236,232,221,.08);padding:12px;display:flex;flex-direction:column;justify-content:space-between;position:relative;}
+.bgtile .tic{font-size:24px;}
+.bgtile .nm{font-size:12px;color:var(--ivory);}
+.bgtile .am{font-family:var(--serif);font-size:14px;color:var(--ivory-2);}
+
+.note{border-left:2px solid var(--gold);padding-left:12px;margin-top:14px;max-width:360px;}
+.note div{font-size:11px;color:var(--ivory-2);line-height:1.7;}
+</style>
+</head>
+<body>
+
+<p class="title">QuickAdd — Stage 1 · Template / Category</p>
+<p class="sub">Three layout directions. All share the H token system (warm-black, ivory, champagne accent). Pick one — then we implement and move to Stage 2.</p>
+
+<div class="row">
+
+  <!-- ── A: REFINED GRID ── -->
+  <div class="col">
+    <p class="label">A — Refined grid</p>
+    <p class="slabel">Tightest, comp-faithful. 4-col square tiles, category-tinted. Selected = champagne border + check. Toggle pill, then search. Editorial and dense.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="nav">
+        <div class="nav-btn nav-back">←</div>
+        <div class="dots"><div class="dot dot-on"></div><div class="dot dot-off"></div><div class="dot dot-off"></div></div>
+        <div class="nav-btn nav-fwd">→</div>
+      </div>
+      <div class="content">
+        <div class="grid g4">
+          <div class="tile sel" style="background:rgba(201,162,80,.18)"><div class="chk">✓</div><div class="tic">☕</div><div class="tlb">Coffee</div></div>
+          <div class="tile" style="background:rgba(91,188,176,.18)"><div class="tic">🚇</div><div class="tlb">Transit</div></div>
+          <div class="tile" style="background:rgba(107,159,212,.18)"><div class="tic">🏋</div><div class="tlb">Gym</div></div>
+          <div class="tile" style="background:rgba(127,191,142,.18)"><div class="tic">🛒</div><div class="tlb">Grocery</div></div>
+          <div class="tile" style="background:rgba(212,149,107,.18)"><div class="tic">⛽</div><div class="tlb">Fuel</div></div>
+          <div class="tile" style="background:rgba(155,142,196,.18)"><div class="tic">🎬</div><div class="tlb">Cinema</div></div>
+          <div class="tile" style="background:rgba(196,127,174,.18)"><div class="tic">💊</div><div class="tlb">Health</div></div>
+          <div class="tile" style="background:rgba(216,131,121,.18)"><div class="tic">🍕</div><div class="tlb">Pizza</div></div>
+        </div>
+        <div class="toggle"><div class="tab tab-on">🗂 Templates</div><div class="tab tab-off">≡ Categories</div></div>
+        <div class="search"><span class="s-ic">🔍</span><span class="s-ph">Search …</span></div>
+        <div class="hint">Pick a template or category</div>
+      </div>
+    </div>
+    <div class="note"><div>Most compact — fits 8 on screen</div><div>Closest to existing build</div><div>No spending context per tile</div></div>
+  </div>
+
+  <!-- ── B: STARRED + GRID ── -->
+  <div class="col">
+    <p class="label">B — Starred strip + grid</p>
+    <p class="slabel">Adds hierarchy: a horizontal "Starred" strip of rich cards (icon · name · amount) over a labelled grid of the rest. More premium, surfaces frequent picks first.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="nav">
+        <div class="nav-btn nav-back">←</div>
+        <div class="dots"><div class="dot dot-on"></div><div class="dot dot-off"></div><div class="dot dot-off"></div></div>
+        <div class="nav-btn nav-fwd">→</div>
+      </div>
+      <div class="content">
+        <div class="over">Starred</div>
+        <div class="strip">
+          <div class="scard sel" style="background:rgba(201,162,80,.16)"><div class="tic">☕</div><div class="nm">Coffee</div><div class="am">$4.50</div></div>
+          <div class="scard" style="background:rgba(127,191,142,.14)"><div class="tic">🛒</div><div class="nm">Grocery</div><div class="am">$60</div></div>
+          <div class="scard" style="background:rgba(107,159,212,.14)"><div class="tic">🏋</div><div class="nm">Gym</div><div class="am">$25</div></div>
+        </div>
+        <div class="over">All templates</div>
+        <div class="grid g4" style="margin-top:4px">
+          <div class="tile" style="background:rgba(91,188,176,.18)"><div class="tic">🚇</div><div class="tlb">Transit</div></div>
+          <div class="tile" style="background:rgba(212,149,107,.18)"><div class="tic">⛽</div><div class="tlb">Fuel</div></div>
+          <div class="tile" style="background:rgba(155,142,196,.18)"><div class="tic">🎬</div><div class="tlb">Cinema</div></div>
+          <div class="tile" style="background:rgba(196,127,174,.18)"><div class="tic">💊</div><div class="tlb">Health</div></div>
+        </div>
+        <div class="toggle"><div class="tab tab-on">🗂 Templates</div><div class="tab tab-off">≡ Categories</div></div>
+        <div class="search"><span class="s-ic">🔍</span><span class="s-ph">Search …</span></div>
+        <div class="hint">Pick a template or category</div>
+      </div>
+    </div>
+    <div class="note"><div>Surfaces frequent picks + amounts</div><div>Strongest hierarchy / "premium" read</div><div>Taller; fewer items before scroll</div></div>
+  </div>
+
+  <!-- ── C: EXPRESSIVE BIG TILES ── -->
+  <div class="col">
+    <p class="label">C — Expressive tiles</p>
+    <p class="slabel">3-col larger tiles. Each shows icon, name and last amount — more tactile and information-rich. Fewer per row, bolder presence.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="nav">
+        <div class="nav-btn nav-back">←</div>
+        <div class="dots"><div class="dot dot-on"></div><div class="dot dot-off"></div><div class="dot dot-off"></div></div>
+        <div class="nav-btn nav-fwd">→</div>
+      </div>
+      <div class="content">
+        <div class="grid g3">
+          <div class="bgtile sel" style="background:rgba(201,162,80,.16)"><div class="chk">✓</div><div class="tic">☕</div><div><div class="nm">Coffee</div><div class="am">$4.50</div></div></div>
+          <div class="bgtile" style="background:rgba(127,191,142,.14)"><div class="tic">🛒</div><div><div class="nm">Grocery</div><div class="am">$60</div></div></div>
+          <div class="bgtile" style="background:rgba(107,159,212,.14)"><div class="tic">🏋</div><div><div class="nm">Gym</div><div class="am">$25</div></div></div>
+          <div class="bgtile" style="background:rgba(91,188,176,.14)"><div class="tic">🚇</div><div><div class="nm">Transit</div><div class="am">$2.75</div></div></div>
+          <div class="bgtile" style="background:rgba(212,149,107,.14)"><div class="tic">⛽</div><div><div class="nm">Fuel</div><div class="am">$48</div></div></div>
+          <div class="bgtile" style="background:rgba(155,142,196,.14)"><div class="tic">🎬</div><div><div class="nm">Cinema</div><div class="am">$15</div></div></div>
+        </div>
+        <div class="toggle"><div class="tab tab-on">🗂 Templates</div><div class="tab tab-off">≡ Categories</div></div>
+        <div class="search"><span class="s-ic">🔍</span><span class="s-ph">Search …</span></div>
+        <div class="hint">Pick a template or category</div>
+      </div>
+    </div>
+    <div class="note"><div>Most tactile / information-rich</div><div>Amounts give instant context</div><div>Only 6 visible; categories (no amount) look emptier</div></div>
+  </div>
+
+</div>
+</body>
+</html>

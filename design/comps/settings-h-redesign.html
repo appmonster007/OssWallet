@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OssWallet — Settings · H Editorial Instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Base / reset
+───────────────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{
+  background:#1A1915;
+  font-family:'Inter',system-ui,sans-serif;
+  padding:48px 32px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:40px;
+}
+
+/* page-level header */
+.page-title{
+  font:'Inter',sans-serif;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+  color:#5F5B52;
+  text-align:center;
+}
+.page-title b{color:#ECE8DD;font-weight:600}
+
+.pair{
+  display:flex;
+  gap:32px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.variant-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:#5F5B52;
+  margin-bottom:10px;
+  text-align:center;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Phone shell
+───────────────────────────────────────────────────────────── */
+.phone{
+  width:393px;
+  height:852px;
+  border-radius:50px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 48px 100px rgba(0,0,0,.80), inset 0 0 0 1px rgba(236,232,221,.07);
+  flex-shrink:0;
+}
+
+/* scrollable screen */
+.screen{
+  height:100%;
+  overflow-y:auto;
+  scrollbar-width:none;
+  position:relative;
+  z-index:1;
+}
+.screen::-webkit-scrollbar{display:none}
+
+/* ─────────────────────────────────────────────────────────────
+   DARK variant tokens
+───────────────────────────────────────────────────────────── */
+.dk{
+  --bg:#0B0B0A;
+  --panel:#131312;
+  --inset:#0F0F0E;
+  --ivory:#ECE8DD;
+  --m2:#9A958A;
+  --m3:#5F5B52;
+  --hair:rgba(236,232,221,.09);
+  --hairS:rgba(236,232,221,.16);
+  --acc:#D6C189;
+  --accDim:rgba(214,193,137,.10);
+  --onAcc:#17150E;
+  --eg1:rgba(214,193,137,.32);
+  --egM:rgba(236,232,221,.06);
+  --eg2:rgba(214,193,137,.11);
+  --neg:#D88379;
+  --neg-dim:rgba(216,131,121,.1);
+  background:var(--bg);
+  color:var(--ivory);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHT variant tokens
+───────────────────────────────────────────────────────────── */
+.lt{
+  --bg:#F2EFE7;
+  --panel:#FAF8F1;
+  --inset:#EDEAE0;
+  --ivory:#1B1914;
+  --m2:#5C564A;
+  --m3:#8C867A;
+  --hair:#DED9CC;
+  --hairS:#BCB6A6;
+  --acc:#8A6F3C;
+  --accDim:rgba(138,111,60,.1);
+  --onAcc:#FAF8F1;
+  --eg1:rgba(138,111,60,.38);
+  --egM:rgba(27,25,20,.06);
+  --eg2:rgba(138,111,60,.14);
+  --neg:#9B3B30;
+  --neg-dim:rgba(155,59,48,.08);
+  background:var(--bg);
+  color:var(--ivory);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Status bar
+───────────────────────────────────────────────────────────── */
+.status-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 28px 0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  font-weight:500;
+  color:var(--m3);
+}
+.status-icons{display:flex;gap:6px;align-items:center}
+.status-icons svg{opacity:.7}
+
+/* ─────────────────────────────────────────────────────────────
+   Ambient glow
+───────────────────────────────────────────────────────────── */
+.glow{
+  position:absolute;
+  width:420px;height:420px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(214,193,137,.06), transparent 64%);
+  top:-170px;right:-130px;
+  pointer-events:none;
+  z-index:0;
+}
+.lt .glow{
+  background:radial-gradient(circle, rgba(138,111,60,.08), transparent 64%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page header — editorial serif display
+───────────────────────────────────────────────────────────── */
+.page-hd{
+  padding:28px 24px 0;
+  position:relative;
+  z-index:1;
+}
+.page-overline{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8.5px;
+  font-weight:500;
+  letter-spacing:.36em;
+  text-transform:uppercase;
+  color:var(--m3);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+.page-overline::before{
+  content:'';
+  width:18px;height:1px;
+  background:var(--acc);
+  opacity:.7;
+  flex-shrink:0;
+}
+.page-overline em{font-style:normal;color:var(--acc)}
+.page-title-text{
+  font-family:'Fraunces',Georgia,serif;
+  font-size:44px;
+  font-weight:300;
+  line-height:1;
+  color:var(--ivory);
+  letter-spacing:-.01em;
+}
+.page-title-text em{
+  font-style:italic;
+  color:var(--m2);
+  font-size:38px;
+}
+.page-subtitle{
+  margin-top:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8.5px;
+  font-weight:500;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--m3);
+}
+.page-subtitle em{font-style:normal;color:var(--acc)}
+
+/* back row */
+.back-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 24px 0;
+  position:relative;
+  z-index:1;
+}
+.back-btn{
+  width:32px;height:32px;
+  border-radius:50%;
+  border:1px solid var(--hair);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.back-btn svg{color:var(--m2)}
+
+/* ─────────────────────────────────────────────────────────────
+   Settings body
+───────────────────────────────────────────────────────────── */
+.settings-body{
+  padding:28px 16px 48px;
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Section group: hairline panel with gradient border
+───────────────────────────────────────────────────────────── */
+.s-section{
+  background:var(--panel);
+  border-radius:20px;
+  position:relative;
+  overflow:hidden;
+}
+.s-section::before{
+  content:'';
+  position:absolute;inset:0;
+  border-radius:20px;
+  padding:1px;
+  background:linear-gradient(135deg, var(--eg1), var(--egM) 42%, var(--egM) 68%, var(--eg2));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+}
+
+/* Section overline label */
+.s-overline{
+  padding:14px 18px 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.36em;
+  text-transform:uppercase;
+  color:var(--m3);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.s-overline::after{
+  content:'';
+  flex:1;height:1px;
+  background:var(--hair);
+}
+
+/* Row */
+.s-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 18px;
+  border-bottom:1px dotted var(--hair);
+  cursor:pointer;
+  position:relative;
+  transition:background .12s;
+}
+.s-row:last-child{border-bottom:none;padding-bottom:16px}
+.s-row:hover{background:rgba(236,232,221,.03)}
+.lt .s-row:hover{background:rgba(27,25,20,.03)}
+
+/* row icon */
+.s-icon{
+  width:36px;height:36px;
+  border-radius:10px;
+  border:1px solid var(--hair);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  background:var(--inset);
+}
+.s-icon svg{
+  width:15px;height:15px;
+  stroke:var(--m2);
+  fill:none;
+  stroke-width:1.5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* row text */
+.s-text{flex:1;min-width:0}
+.s-label{
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  font-weight:500;
+  color:var(--ivory);
+  line-height:1.2;
+}
+.s-sub{
+  margin-top:2px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  font-weight:400;
+  color:var(--m3);
+  letter-spacing:.04em;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.s-sub em{font-style:normal;color:var(--acc)}
+
+/* right side: value or chevron */
+.s-right{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+  margin-left:auto;
+}
+.s-value{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  font-weight:500;
+  color:var(--acc);
+  letter-spacing:.06em;
+}
+.s-chevron{
+  width:16px;height:16px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--m3);
+}
+.s-chevron svg{
+  width:12px;height:12px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+/* Toggle pill */
+.s-toggle{
+  width:40px;height:23px;
+  border-radius:12px;
+  background:var(--accDim);
+  border:1px solid var(--acc);
+  position:relative;
+  flex-shrink:0;
+  cursor:pointer;
+}
+.s-toggle.on{
+  background:var(--acc);
+  border-color:var(--acc);
+}
+.s-toggle-knob{
+  position:absolute;
+  top:3px;left:3px;
+  width:15px;height:15px;
+  border-radius:50%;
+  background:var(--m3);
+  transition:left .18s;
+}
+.s-toggle.on .s-toggle-knob{
+  left:20px;
+  background:var(--onAcc);
+}
+
+/* Destructive section */
+.s-section.danger .s-overline{color:var(--neg)}
+.s-section.danger .s-overline::after{background:rgba(216,131,121,.15)}
+.dk .s-section.danger{
+  background:rgba(216,131,121,.04);
+}
+.lt .s-section.danger{
+  background:rgba(155,59,48,.03);
+}
+.s-section.danger::before{
+  background:linear-gradient(135deg, rgba(216,131,121,.24), rgba(216,131,121,.06) 42%, rgba(216,131,121,.04) 68%, rgba(216,131,121,.10));
+}
+.lt .s-section.danger::before{
+  background:linear-gradient(135deg, rgba(155,59,48,.22), rgba(155,59,48,.05) 42%, rgba(155,59,48,.04) 68%, rgba(155,59,48,.09));
+}
+.s-row.destructive .s-label{color:var(--neg)}
+.s-row.destructive .s-icon svg{stroke:var(--neg)}
+.s-row.destructive .s-icon{border-color:var(--neg-dim);background:var(--neg-dim)}
+
+/* ─────────────────────────────────────────────────────────────
+   Divider between rows (inside panel, not visible border)
+───────────────────────────────────────────────────────────── */
+.s-row + .s-row::before{
+  content:'';
+  position:absolute;
+  top:0;left:18px;right:18px;
+  height:1px;
+  /* handled by border-bottom:dotted on .s-row */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Footer watermark
+───────────────────────────────────────────────────────────── */
+.settings-footer{
+  padding:4px 24px 0;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  position:relative;
+  z-index:1;
+}
+.footer-version{
+  font-family:'Fraunces',Georgia,serif;
+  font-size:14px;
+  font-weight:400;
+  font-style:italic;
+  color:var(--m2);
+}
+.footer-tagline{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  font-weight:500;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--m3);
+}
+.footer-attr{
+  margin-top:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  font-weight:400;
+  letter-spacing:.1em;
+  color:var(--m3);
+}
+.footer-attr em{font-style:normal;color:var(--acc);letter-spacing:.04em}
+
+/* ─────────────────────────────────────────────────────────────
+   Hairline divider between sections (outside panels)
+───────────────────────────────────────────────────────────── */
+.section-gap{height:6px}
+
+</style>
+</head>
+<body>
+
+<p class="page-title"><b>H · Editorial Instrument</b> — Settings Screen Redesign</p>
+<p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#5F5B52;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-top:4px;">PERSONALIZATION · FINANCIAL SETUP · PRIVACY &amp; SAFETY · ABOUT</p>
+
+<div class="pair">
+
+  <!-- ═══════════════════════════════════════════════════════
+       DARK VARIANT
+  ════════════════════════════════════════════════════════ -->
+  <div>
+    <p class="variant-label">DARK</p>
+    <div class="phone dk">
+      <div class="glow"></div>
+      <div class="screen">
+
+        <!-- status -->
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-icons">
+            <!-- signal -->
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <rect x="0" y="6" width="3" height="6" rx="1" fill="currentColor" opacity=".4"/>
+              <rect x="4.5" y="4" width="3" height="8" rx="1" fill="currentColor" opacity=".6"/>
+              <rect x="9" y="1.5" width="3" height="10.5" rx="1" fill="currentColor" opacity=".8"/>
+              <rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="currentColor"/>
+            </svg>
+            <!-- wifi -->
+            <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
+              <path d="M7.5 8.5l1 1.5-1 1-1-1z" fill="currentColor"/>
+              <path d="M4.5 6.5C5.4 5.6 6.4 5 7.5 5s2.1.6 3 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+              <path d="M2 4C3.6 2.4 5.4 1.5 7.5 1.5S11.4 2.4 13 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            </svg>
+            <!-- battery -->
+            <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
+              <rect x=".5" y=".5" width="18" height="11" rx="2.5" stroke="currentColor" opacity=".5"/>
+              <rect x="2" y="2" width="14" height="8" rx="1.5" fill="currentColor"/>
+              <path d="M19.5 4v4c.8-.4 1.3-1.1 1.3-2S20.3 4.4 19.5 4z" fill="currentColor" opacity=".4"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- back + page header -->
+        <div class="back-row">
+          <div class="back-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 1L3 7l6 6"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="page-hd">
+          <div class="page-overline">PREFERENCES <em>&bull;</em> DISPLAY</div>
+          <div class="page-title-text">Settings</div>
+          <div class="page-subtitle">OssWallet <em>&bull;</em> v1.1.0</div>
+        </div>
+
+        <div class="settings-body">
+
+          <!-- PERSONALIZATION -->
+          <div class="s-section">
+            <div class="s-overline">Personalization</div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- palette icon -->
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Display &amp; Style</div>
+                <div class="s-sub">Theme, fonts &amp; animations</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">DARK</span>
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- currency exchange icon -->
+                <svg viewBox="0 0 24 24"><path d="M8 7h12m0 0-3-3m3 3-3 3M16 17H4m0 0 3 3m-3-3 3-3"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Currency &amp; Localization</div>
+                <div class="s-sub"><em>USD</em> &bull; Exchangerate.host</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FINANCIAL SETUP -->
+          <div class="s-section">
+            <div class="s-overline">Financial Setup</div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- bank icon -->
+                <svg viewBox="0 0 24 24"><path d="M3 10h18M12 3l9 6H3l9-6zM5 10v8M10 10v8M14 10v8M19 10v8M3 18h18"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Accounts</div>
+                <div class="s-sub">Balances &amp; visibility</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">4</span>
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- category icon -->
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><circle cx="17" cy="17" r="4"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Categories</div>
+                <div class="s-sub">Income &amp; expense classification</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- tag icon -->
+                <svg viewBox="0 0 24 24"><path d="M3 7l6-4 12 9-6 8-6-4"/><path d="M3 7v10l6 4"/><circle cx="14" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Tags</div>
+                <div class="s-sub">Custom transaction labels</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUTOMATION & TOOLS -->
+          <div class="s-section">
+            <div class="s-overline">Automation &amp; Tools</div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- template/sparkle icon -->
+                <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Transaction Templates</div>
+                <div class="s-sub">Quick shortcuts for frequent entries</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- brain/suggestions icon -->
+                <svg viewBox="0 0 24 24"><path d="M9 3C6.2 3 4 5.2 4 8c0 1.4.5 2.7 1.4 3.6C4.5 12.3 4 13.6 4 15a5 5 0 0 0 5 5v-4M15 3c2.8 0 5 2.2 5 5 0 1.4-.5 2.7-1.4 3.6.9.7 1.4 2 1.4 3.4a5 5 0 0 1-5 5v-4"/><line x1="12" y1="20" x2="12" y2="13"/><path d="M9 13h6"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Smart Suggestions</div>
+                <div class="s-sub">Discover recurring patterns</div>
+              </div>
+              <div class="s-right">
+                <!-- toggle ON -->
+                <div class="s-toggle on"><div class="s-toggle-knob"></div></div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- filter icon -->
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Saved Filters</div>
+                <div class="s-sub">Custom search presets</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">3</span>
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRIVACY & SAFETY -->
+          <div class="s-section">
+            <div class="s-overline">Privacy &amp; Safety</div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- lock icon -->
+                <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Security &amp; Privacy</div>
+                <div class="s-sub">App lock, biometrics, web access</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">ON</span>
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="s-row">
+              <div class="s-icon">
+                <!-- cloud-sync icon -->
+                <svg viewBox="0 0 24 24"><path d="M16 16a4 4 0 0 0 0-8 4 4 0 0 0-7.6-1.6A4 4 0 1 0 6 16h10z"/><path d="M12 16v5M9 19l3 2 3-2"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Data Management</div>
+                <div class="s-sub">Import, export &amp; backups</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DANGER ZONE -->
+          <div class="s-section danger">
+            <div class="s-overline">Danger Zone</div>
+
+            <div class="s-row destructive">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Clear All Data</div>
+                <div class="s-sub" style="color:var(--neg);opacity:.7">Wipe database — irreversible</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12" stroke="var(--neg)"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div class="settings-footer">
+            <div class="footer-version">OssWallet v1.1.0</div>
+            <div class="footer-tagline">Built for Modern Accounts</div>
+            <div class="footer-attr">Currency rates by <em>Exchangerate.host</em></div>
+          </div>
+
+        </div><!-- /settings-body -->
+      </div><!-- /screen -->
+    </div><!-- /phone.dk -->
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LIGHT VARIANT
+  ════════════════════════════════════════════════════════ -->
+  <div>
+    <p class="variant-label">LIGHT</p>
+    <div class="phone lt">
+      <!-- no ambient glow blob in light — subtle tone instead -->
+      <div class="screen">
+
+        <!-- status -->
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-icons">
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <rect x="0" y="6" width="3" height="6" rx="1" fill="currentColor" opacity=".4"/>
+              <rect x="4.5" y="4" width="3" height="8" rx="1" fill="currentColor" opacity=".6"/>
+              <rect x="9" y="1.5" width="3" height="10.5" rx="1" fill="currentColor" opacity=".8"/>
+              <rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="currentColor"/>
+            </svg>
+            <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
+              <path d="M7.5 8.5l1 1.5-1 1-1-1z" fill="currentColor"/>
+              <path d="M4.5 6.5C5.4 5.6 6.4 5 7.5 5s2.1.6 3 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+              <path d="M2 4C3.6 2.4 5.4 1.5 7.5 1.5S11.4 2.4 13 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            </svg>
+            <svg width="22" height="12" viewBox="0 0 22 12" fill="none">
+              <rect x=".5" y=".5" width="18" height="11" rx="2.5" stroke="currentColor" opacity=".5"/>
+              <rect x="2" y="2" width="14" height="8" rx="1.5" fill="currentColor"/>
+              <path d="M19.5 4v4c.8-.4 1.3-1.1 1.3-2S20.3 4.4 19.5 4z" fill="currentColor" opacity=".4"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="back-row">
+          <div class="back-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 1L3 7l6 6"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="page-hd">
+          <div class="page-overline">PREFERENCES <em>&bull;</em> DISPLAY</div>
+          <div class="page-title-text">Settings</div>
+          <div class="page-subtitle">OssWallet <em>&bull;</em> v1.1.0</div>
+        </div>
+
+        <div class="settings-body">
+
+          <!-- PERSONALIZATION -->
+          <div class="s-section">
+            <div class="s-overline">Personalization</div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="16.5" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Display &amp; Style</div>
+                <div class="s-sub">Theme, fonts &amp; animations</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">LIGHT</span>
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h12m0 0-3-3m3 3-3 3M16 17H4m0 0 3 3m-3-3 3-3"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Currency &amp; Localization</div>
+                <div class="s-sub"><em>USD</em> &bull; Exchangerate.host</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FINANCIAL SETUP -->
+          <div class="s-section">
+            <div class="s-overline">Financial Setup</div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M12 3l9 6H3l9-6zM5 10v8M10 10v8M14 10v8M19 10v8M3 18h18"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Accounts</div>
+                <div class="s-sub">Balances &amp; visibility</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">4</span>
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><circle cx="17" cy="17" r="4"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Categories</div>
+                <div class="s-sub">Income &amp; expense classification</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6-4 12 9-6 8-6-4"/><path d="M3 7v10l6 4"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Tags</div>
+                <div class="s-sub">Custom transaction labels</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AUTOMATION -->
+          <div class="s-section">
+            <div class="s-overline">Automation &amp; Tools</div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Transaction Templates</div>
+                <div class="s-sub">Quick shortcuts for frequent entries</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3C6.2 3 4 5.2 4 8c0 1.4.5 2.7 1.4 3.6C4.5 12.3 4 13.6 4 15a5 5 0 0 0 5 5v-4M15 3c2.8 0 5 2.2 5 5 0 1.4-.5 2.7-1.4 3.6.9.7 1.4 2 1.4 3.4a5 5 0 0 1-5 5v-4"/><line x1="12" y1="20" x2="12" y2="13"/><path d="M9 13h6"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Smart Suggestions</div>
+                <div class="s-sub">Discover recurring patterns</div>
+              </div>
+              <div class="s-right">
+                <div class="s-toggle on"><div class="s-toggle-knob"></div></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Saved Filters</div>
+                <div class="s-sub">Custom search presets</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">3</span>
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRIVACY -->
+          <div class="s-section">
+            <div class="s-overline">Privacy &amp; Safety</div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Security &amp; Privacy</div>
+                <div class="s-sub">App lock, biometrics, web access</div>
+              </div>
+              <div class="s-right">
+                <span class="s-value">ON</span>
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+            <div class="s-row">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16a4 4 0 0 0 0-8 4 4 0 0 0-7.6-1.6A4 4 0 1 0 6 16h10z"/><path d="M12 16v5M9 19l3 2 3-2"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Data Management</div>
+                <div class="s-sub">Import, export &amp; backups</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron"><svg viewBox="0 0 12 12"><path d="M4 2l4 4-4 4"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DANGER -->
+          <div class="s-section danger">
+            <div class="s-overline">Danger Zone</div>
+            <div class="s-row destructive">
+              <div class="s-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+              </div>
+              <div class="s-text">
+                <div class="s-label">Clear All Data</div>
+                <div class="s-sub" style="color:var(--neg);opacity:.7">Wipe database — irreversible</div>
+              </div>
+              <div class="s-right">
+                <div class="s-chevron">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="var(--neg)" stroke-width="2" stroke-linecap="round"><path d="M4 2l4 4-4 4"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div class="settings-footer">
+            <div class="footer-version">OssWallet v1.1.0</div>
+            <div class="footer-tagline">Built for Modern Accounts</div>
+            <div class="footer-attr">Currency rates by <em>Exchangerate.host</em></div>
+          </div>
+
+        </div>
+      </div><!-- /screen -->
+    </div><!-- /phone.lt -->
+  </div>
+
+</div><!-- /pair -->
+
+<!-- Design annotations -->
+<div style="max-width:820px;margin:48px auto 0;border-top:1px solid #2A2820;padding-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+  <div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:500;letter-spacing:.28em;color:#5F5B52;text-transform:uppercase;margin-bottom:14px">Design Decisions</p>
+    <ul style="font-family:'Inter',system-ui;font-size:12.5px;color:#9A958A;line-height:1.8;list-style:none;display:flex;flex-direction:column;gap:8px">
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">01</span> Fraunces 300 at 44px for the hero "Settings" — the page title acts as editorial display, not a functional nav label</li>
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">02</span> Section overlines use JetBrains Mono 8px / .36em tracking — same rhythm as card readouts in the dashboard</li>
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">03</span> Row icons are 36×36 hairline-bordered inset squares — monochrome thin-line SVGs, no fill, no color coding</li>
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">04</span> Row separators use dotted 1px hairline (matching ledger rows across all H comps), not solid dividers</li>
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">05</span> Active values (currency code, count, toggle state) render in champagne accent using JetBrains Mono — same as dashboard readouts</li>
+      <li style="display:flex;gap:10px"><span style="color:#D6C189;flex-shrink:0">06</span> Destructive section gets a separate panel with low-opacity red border gradient and red overline — never mixed into functional groups</li>
+    </ul>
+  </div>
+  <div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:500;letter-spacing:.28em;color:#5F5B52;text-transform:uppercase;margin-bottom:14px">Token Reference</p>
+    <div style="display:flex;flex-direction:column;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px">
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">bg</span><span style="color:#ECE8DD">#0B0B0A / #F2EFE7</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">panel</span><span style="color:#ECE8DD">#131312 / #FAF8F1</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">accent dark</span><span style="color:#D6C189">#D6C189 champagne</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">accent light</span><span style="color:#8A6F3C">#8A6F3C bronze</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">negative</span><span style="color:#D88379">#D88379 / #9B3B30</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">display</span><span style="color:#ECE8DD">Fraunces 300 / italic</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">body</span><span style="color:#ECE8DD">Inter 400 / 500</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#131312;border-radius:6px;border:1px solid rgba(236,232,221,.06)">
+        <span style="color:#9A958A">micro</span><span style="color:#ECE8DD">JetBrains Mono 500</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

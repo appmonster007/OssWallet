@@ -97,7 +97,7 @@ fun Route.dashboardRoutes(
                             now,
                             categoryMap,
                             accountMap
-                        )
+                        ) ?: CardPayloadDto.Error("Card computation produced an error state")
                     }.getOrElse { e ->
                         CardPayloadDto.Error(e.message ?: "Computation failed")
                     }

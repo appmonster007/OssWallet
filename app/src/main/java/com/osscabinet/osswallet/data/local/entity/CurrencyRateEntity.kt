@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -8,7 +9,8 @@ data class CurrencyRateEntity(
     @PrimaryKey
     val currencyCode: String,
     val baseCurrency: String,
-    val rate: Double,
+    @ColumnInfo(name = "rate")
+    val rate: String,
     val timestamp: Long,
     val nextUpdate: Long
 )

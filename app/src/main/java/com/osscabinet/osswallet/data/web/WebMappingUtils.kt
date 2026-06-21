@@ -126,7 +126,7 @@ internal fun CardRenderData.toPayloadDto(
     now: Long,
     categoryMap: Map<Long, Category>,
     accountMap: Map<String, Account>
-): CardPayloadDto = when (this) {
+): CardPayloadDto? = when (this) {
     is CardRenderData.NetWorth -> CardPayloadDto.NetWorth(
         netWorth = currentPeriodMetrics.netWorth.toDouble(),
         income = currentPeriodMetrics.cashFlow.totalIncomeInBase.toDouble(),
@@ -381,15 +381,7 @@ internal fun CardRenderData.toPayloadDto(
         currency = summary.account.currencyCode
     )
 
-    is CardRenderData.Error -> CardPayloadDto.NetWorth(
-        netWorth = 0.0,
-        income = 0.0,
-        expense = 0.0,
-        transfer = 0.0,
-        cashFlow = 0.0,
-        previousNetWorth = null,
-        currency = ""
-    )
+    is CardRenderData.Error -> null
 }
 
 internal fun Filter.toDto(): FilterDto {

@@ -1069,7 +1069,7 @@ class BackupRepositoryImpl @Inject constructor(
             CurrencyRateEntity(
                 currencyCode = p["currencyCode"] ?: "",
                 baseCurrency = p["baseCurrency"] ?: "USD",
-                rate = p["rate"]?.toDoubleOrNull() ?: 1.0,
+                rate = p["rate"] ?: "1.0",
                 timestamp = p["timestamp"]?.toLongOrNull() ?: 0,
                 nextUpdate = p["nextUpdate"]?.toLongOrNull() ?: 0
             )

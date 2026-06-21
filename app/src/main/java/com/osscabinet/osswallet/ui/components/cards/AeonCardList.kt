@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -121,8 +122,7 @@ fun AeonCardList(
                 key = cardConfig.cardId,
                 modifier = Modifier
                     .reorderableSemantics(state = reorderState, key = cardConfig.cardId)
-                    .graphicsLayer { this.alpha = alpha }
-                    .animateContentSize(),
+                    .graphicsLayer { this.alpha = alpha },
             ) { isDraggingThis ->
                 // Card-header-only drag affordance: only the header initiates a drag, the rest of
                 // the card body remains tappable / scrollable.
@@ -156,14 +156,16 @@ fun AeonCardList(
                             filterSheetEnabled = !disableFilterSheet
                         )
 
-                        UnifiedCardRenderer(
-                            cardWithCallbacks = effectiveCard,
-                            modifier = Modifier.fillMaxWidth(),
-                            headerModifier = dragHandleModifier,
-                            filterContext = filterContext,
-                            inheritedFilter = cardInput.filter,
-                            screenOwnsTimeline = cardInput.screenOwnsTimeline,
-                        )
+                        Box(modifier = Modifier.animateContentSize(animationSpec = tween(durationMillis = 250))) {
+                            UnifiedCardRenderer(
+                                cardWithCallbacks = effectiveCard,
+                                modifier = Modifier.fillMaxWidth(),
+                                headerModifier = dragHandleModifier,
+                                filterContext = filterContext,
+                                inheritedFilter = cardInput.filter,
+                                screenOwnsTimeline = cardInput.screenOwnsTimeline,
+                            )
+                        }
                     }
                 }
             }
@@ -309,7 +311,7 @@ fun CardErrorState(message: String?) {
 
 @Composable
 fun CardShimmerPlaceholder() {
-    val brush = rememberShimmerBrush(horizontal = true)
+    val brush = rememberShimmerBrush(horizontal = true, label = "card_shimmer")
     Box(
         modifier = Modifier
             .fillMaxWidth()

@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OssWallet — Settings · Current State + Refined Comp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0; padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: #111110;
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 56px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PAGE HEADER
+───────────────────────────────────────────────────────────────────────────── */
+.page-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.page-header-overline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #5F5B52;
+  margin-bottom: 10px;
+}
+.page-header-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 28px;
+  font-weight: 300;
+  color: #ECE8DD;
+  margin-bottom: 6px;
+}
+.page-header-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: #5F5B52;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION LABEL
+───────────────────────────────────────────────────────────────────────────── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #5F5B52;
+  text-align: center;
+  margin: 0 auto 16px;
+}
+.section-label span {
+  color: #D6C189;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LAYOUT: PAIR ROW
+───────────────────────────────────────────────────────────────────────────── */
+.variant-row {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 80px;
+}
+.variant-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.variant-col-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #5F5B52;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PHONE SHELL
+───────────────────────────────────────────────────────────────────────────── */
+.phone {
+  width: 393px;
+  height: 852px;
+  border-radius: 50px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.08),
+    0 0 0 10px #1A1915,
+    0 0 0 11px rgba(255,255,255,0.05),
+    0 32px 80px rgba(0,0,0,0.7),
+    0 8px 24px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+.phone.light-phone {
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.08),
+    0 0 0 10px #E8E4DB,
+    0 0 0 11px rgba(0,0,0,0.06),
+    0 32px 80px rgba(0,0,0,0.35),
+    0 8px 24px rgba(0,0,0,0.18);
+}
+
+/* Dynamic island notch */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCREEN SCROLLABLE AREA
+───────────────────────────────────────────────────────────────────────────── */
+.screen {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DARK THEME TOKENS
+───────────────────────────────────────────────────────────────────────────── */
+.dark {
+  --bg:            #0B0B0A;
+  --panel:         #131312;
+  --inset:         #0F0F0E;
+  --prominent:     #161614;
+  --ivory:         #ECE8DD;
+  --m2:            #9A958A;
+  --m3:            #5F5B52;
+  --accent:        #D6C189;
+  --acc-dim:       rgba(214,193,137,0.10);
+  --hairline:      rgba(236,232,221,0.09);
+  --hairline-mid:  rgba(236,232,221,0.14);
+  --negative:      #D88379;
+  --positive:      #7FBF8E;
+  --icon-bg:       #0F0F0E;
+  --divider-dot:   rgba(236,232,221,0.13);
+  --footer-sub:    rgba(154,149,138,0.5);
+  --footer-attr:   rgba(214,193,137,0.7);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LIGHT THEME TOKENS
+───────────────────────────────────────────────────────────────────────────── */
+.light {
+  --bg:            #F2EFE7;
+  --panel:         #FAF8F1;
+  --inset:         #EDEAE0;
+  --prominent:     #F4F1E9;
+  --ivory:         #1B1914;
+  --m2:            #5C564A;
+  --m3:            #8A8376;
+  --accent:        #8A6F3C;
+  --acc-dim:       rgba(138,111,60,0.10);
+  --hairline:      #DED9CC;
+  --hairline-mid:  #C9C2B2;
+  --negative:      #9B3B30;
+  --positive:      #2C6E49;
+  --icon-bg:       #EDEAE0;
+  --divider-dot:   #DED9CC;
+  --footer-sub:    rgba(92,86,74,0.45);
+  --footer-attr:   rgba(138,111,60,0.75);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCREEN CONTENT WRAPPER
+───────────────────────────────────────────────────────────────────────────── */
+.screen-bg {
+  background-color: var(--bg);
+  min-height: 100%;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TOP APP BAR — glass blur floating bar
+───────────────────────────────────────────────────────────────────────────── */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  padding: 52px 14px 10px;  /* 52px = status bar + dynamic island clearance */
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+}
+.dark .top-bar {
+  background: rgba(11,11,10,0.80);
+  border-bottom: 0.5px solid rgba(236,232,221,0.07);
+}
+.light .top-bar {
+  background: rgba(242,239,231,0.82);
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+}
+.dark .nav-pill {
+  background: rgba(236,232,221,0.07);
+  border: 0.5px solid rgba(236,232,221,0.10);
+}
+.light .nav-pill {
+  background: rgba(27,25,20,0.05);
+  border: 0.5px solid rgba(27,25,20,0.08);
+}
+
+.nav-pill-arrow {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.nav-pill-arrow svg { display: block; }
+
+.nav-pill-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ivory);
+  letter-spacing: 0.01em;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SCROLL CONTENT
+───────────────────────────────────────────────────────────────────────────── */
+.scroll-content {
+  padding: 16px 14px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HERO HEADER
+───────────────────────────────────────────────────────────────────────────── */
+.hero {
+  padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.hero-overline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.hero-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1.15;
+  color: var(--ivory);
+  margin-bottom: 6px;
+}
+.hero-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: var(--m2);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SETTINGS SECTION PANEL
+───────────────────────────────────────────────────────────────────────────── */
+.settings-section {
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+}
+.dark .settings-section {
+  background: var(--prominent);
+  border: 0.5px solid var(--hairline);
+  /* Champagne gradient hairline border */
+  box-shadow:
+    0 0 0 0.5px rgba(214,193,137,0.12),
+    inset 0 0 0 0.5px rgba(236,232,221,0.05);
+}
+.light .settings-section {
+  background: var(--panel);
+  border: 0.5px solid var(--hairline);
+  box-shadow:
+    0 0 0 0.5px rgba(138,111,60,0.10),
+    0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Section overline row inside panel */
+.section-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 10px;
+}
+.section-header-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.section-header-rule {
+  flex: 1;
+  height: 0.5px;
+  background: var(--hairline);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SETTINGS ITEM ROW
+───────────────────────────────────────────────────────────────────────────── */
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.dark .settings-item:active,
+.dark .settings-item:hover {
+  background: rgba(236,232,221,0.03);
+}
+.light .settings-item:active,
+.light .settings-item:hover {
+  background: rgba(27,25,20,0.03);
+}
+
+/* Circular icon container */
+.item-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--icon-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.dark .item-icon-wrap {
+  border: 0.5px solid rgba(236,232,221,0.09);
+}
+.light .item-icon-wrap {
+  border: 0.5px solid rgba(27,25,20,0.09);
+}
+.item-icon-wrap svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  color: var(--m2);
+}
+
+/* Text block */
+.item-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.item-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ivory);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.10em;
+  color: var(--m2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+/* Accent chevron */
+.item-chevron {
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.8;
+}
+.item-chevron svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DOTTED UNDERLINE DIVIDER between rows
+───────────────────────────────────────────────────────────────────────────── */
+.item-divider {
+  height: 1px;
+  margin: 0 16px;
+  /* Dotted line via gradient */
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--divider-dot) 0px,
+    var(--divider-dot) 3px,
+    transparent 3px,
+    transparent 7px
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────────────────────────────────────────── */
+.settings-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 8px;
+}
+.footer-tagline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--footer-sub);
+}
+.footer-attribution {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.footer-attr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--footer-sub);
+}
+.footer-attr-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--footer-attr);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION DIVIDER — between variant groups
+───────────────────────────────────────────────────────────────────────────── */
+.comp-divider {
+  width: 100%;
+  max-width: 960px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(214,193,137,0.15) 20%,
+    rgba(214,193,137,0.25) 50%,
+    rgba(214,193,137,0.15) 80%,
+    transparent
+  );
+  margin: 16px 0 56px;
+}
+.comp-divider-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #5F5B52;
+  margin-bottom: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANNOTATION CALLOUTS (design notes below phones)
+───────────────────────────────────────────────────────────────────────────── */
+.annotation-row {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 960px;
+  margin-top: 24px;
+}
+.annotation {
+  width: 393px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.025);
+  border: 0.5px solid rgba(255,255,255,0.06);
+}
+.annotation-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #D6C189;
+}
+.annotation-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.annotation-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #D6C189;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.annotation-text {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #9A958A;
+}
+.annotation-text b {
+  color: #ECE8DD;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   REFINED VARIANT ADDITIONS
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Version badge pill */
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--acc-dim);
+  border: 0.5px solid rgba(214,193,137,0.20);
+  margin-top: 2px;
+  width: fit-content;
+}
+.light .version-badge {
+  border-color: rgba(138,111,60,0.18);
+}
+.version-badge-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.7;
+}
+.version-badge-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  color: var(--accent);
+}
+
+/* Coloured section accent bar (left inset glow per section) */
+.section-accent-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 2px 0 0 2px;
+  opacity: 0.5;
+}
+
+/* Section colour differentiation per section */
+.accent-personalization { background: #D6C189; }  /* champagne — stays brand */
+.accent-financial       { background: #7FBF8E; }  /* income green */
+.accent-automation      { background: #89B4D6; }  /* cool blue */
+.accent-privacy         { background: #D68989; }  /* warm red */
+
+/* Icon tint per section in refined variant */
+.refined .icon-personalization svg { color: #D6C189; }
+.refined .icon-financial svg       { color: #7FBF8E; }
+.refined .icon-automation svg      { color: #89B4D6; }
+.refined .icon-privacy svg         { color: #D68989; }
+.refined.light .icon-personalization svg { color: #8A6F3C; }
+.refined.light .icon-financial svg       { color: #2C6E49; }
+.refined.light .icon-automation svg      { color: #2F5E8A; }
+.refined.light .icon-privacy svg         { color: #9B3B30; }
+
+/* Refined: slightly more space between overline and first row */
+.refined .section-header-row {
+  padding-bottom: 8px;
+}
+
+/* Refined: section header rule extends with a gradient fade */
+.refined .section-header-rule {
+  background: linear-gradient(to right, var(--hairline-mid), transparent);
+}
+
+/* Refined: item hover state is more pronounced */
+.refined.dark .settings-item:hover {
+  background: rgba(214,193,137,0.04);
+}
+
+/* Reduced-opacity skeleton state row (showing loading) */
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+.skeleton-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--hairline);
+  flex-shrink: 0;
+}
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.skeleton-line {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--hairline);
+}
+.skeleton-line.short { width: 55%; }
+
+/* Animation for shimmer */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--hairline) 0%,
+    var(--divider-dot) 50%,
+    var(--hairline) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Refined footer — add a full-width separator before footer */
+.refined .footer-sep {
+  display: block;
+  width: 100%;
+  height: 0.5px;
+  background: var(--hairline);
+  margin-bottom: 16px;
+}
+.footer-sep { display: none; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   REFINED CALLOUT BOX (improvement proposals)
+───────────────────────────────────────────────────────────────────────────── */
+.proposal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  max-width: 900px;
+  margin: 32px auto 0;
+}
+.proposal-card {
+  background: rgba(255,255,255,0.02);
+  border: 0.5px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.proposal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(214,193,137,0.08);
+  border: 0.5px solid rgba(214,193,137,0.15);
+  width: fit-content;
+}
+.proposal-tag-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: #D6C189;
+}
+.proposal-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ECE8DD;
+}
+.proposal-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #9A958A;
+}
+.proposal-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: rgba(214,193,137,0.08);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #D6C189;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE: stack on narrow viewports
+───────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .proposal-grid { grid-template-columns: 1fr; max-width: 480px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PAGE HEADER
+═══════════════════════════════════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="page-header-overline">OssWallet · Design Comp</div>
+  <div class="page-header-title">Settings Screen</div>
+  <div class="page-header-sub">Current Implementation + Refined Proposals &mdash; June 2026</div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION A — CURRENT IMPLEMENTATION
+═══════════════════════════════════════════════════════════════════════════ -->
+<div class="section-label">A &mdash; <span>Current Implementation</span> &mdash; Accurate render of AeonSettingsSection + AeonSettingsItem</div>
+
+<div class="variant-row">
+
+  <!-- DARK PHONE — current -->
+  <div class="variant-col">
+    <div class="variant-col-label">Dark</div>
+    <div class="phone">
+      <div class="screen dark">
+        <div class="screen-bg">
+
+          <!-- Top bar -->
+          <div class="top-bar">
+            <div class="nav-pill">
+              <div class="nav-pill-arrow">
+                <!-- Back arrow icon -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="nav-pill-label">Settings</span>
+            </div>
+          </div>
+
+          <!-- Scroll content -->
+          <div class="scroll-content">
+
+            <!-- Hero -->
+            <div class="hero">
+              <div class="hero-overline">Preferences</div>
+              <div class="hero-title">Settings</div>
+              <div class="hero-version">v1.1.0</div>
+            </div>
+
+            <!-- PERSONALIZATION -->
+            <div class="settings-section dark">
+              <div class="section-header-row">
+                <span class="section-header-label">Personalization</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Palette icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.477-1.129-1.932-1.944-1.932-5.17 0-7.114C14.87 10.617 16.432 10 18 10c2.21 0 4-1.79 4-4C22 4.243 17.523 2 12 2z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Display &amp; Style</span>
+                  <span class="item-subtitle">Theme &bull; Fonts &bull; Animations</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Currency exchange icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M9 2l3 3-3 3M15 16l3 3-3 3" opacity="0.4"/>
+                    <path d="M8 6h3M13 18h3" opacity="0.4"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Currency &amp; Localization</span>
+                  <span class="item-subtitle">USD &bull; Exchangerate.Host</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- FINANCIAL SETUP -->
+            <div class="settings-section dark">
+              <div class="section-header-row">
+                <span class="section-header-label">Financial Setup</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Account balance icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="8" width="18" height="12" rx="2"/>
+                    <path d="M8 8V6a4 4 0 018 0v2"/>
+                    <path d="M3 12h18"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Accounts</span>
+                  <span class="item-subtitle">Balances &bull; Visibility</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Category icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Categories</span>
+                  <span class="item-subtitle">Income &bull; Expense Classification</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Label / tag icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                    <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Tags</span>
+                  <span class="item-subtitle">Custom Labels For Transactions</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- AUTOMATION & TOOLS -->
+            <div class="settings-section dark">
+              <div class="section-header-row">
+                <span class="section-header-label">Automation &amp; Tools</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Auto awesome icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Transaction Templates</span>
+                  <span class="item-subtitle">Quick Shortcuts &bull; Frequent Entries</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Smart Suggestions</span>
+                  <span class="item-subtitle">Discover Recurring Transactions</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Filter list icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Saved Filters</span>
+                  <span class="item-subtitle">Custom Search Presets</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIVACY & SAFETY -->
+            <div class="settings-section dark">
+              <div class="section-header-row">
+                <span class="section-header-label">Privacy &amp; Safety</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Lock icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M8 11V7a4 4 0 018 0v4"/>
+                    <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Security &amp; Privacy</span>
+                  <span class="item-subtitle">App Lock &bull; Location &bull; Web Access</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Cloud sync icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Data Management</span>
+                  <span class="item-subtitle">Import &bull; Export &bull; Backups</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="settings-footer">
+              <div class="footer-tagline">Built For Modern Accounts</div>
+              <div class="footer-attribution">
+                <span class="footer-attr-label">Rates By</span>
+                <span class="footer-attr-value">Exchangerate.Host</span>
+              </div>
+            </div>
+
+          </div><!-- /scroll-content -->
+        </div><!-- /screen-bg -->
+      </div><!-- /screen -->
+    </div><!-- /phone -->
+  </div><!-- /variant-col -->
+
+  <!-- LIGHT PHONE — current -->
+  <div class="variant-col">
+    <div class="variant-col-label">Light</div>
+    <div class="phone light-phone">
+      <div class="screen light">
+        <div class="screen-bg">
+
+          <div class="top-bar">
+            <div class="nav-pill">
+              <div class="nav-pill-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="nav-pill-label">Settings</span>
+            </div>
+          </div>
+
+          <div class="scroll-content">
+
+            <div class="hero">
+              <div class="hero-overline">Preferences</div>
+              <div class="hero-title">Settings</div>
+              <div class="hero-version">v1.1.0</div>
+            </div>
+
+            <!-- PERSONALIZATION light -->
+            <div class="settings-section light">
+              <div class="section-header-row">
+                <span class="section-header-label">Personalization</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.477-1.129-1.932-1.944-1.932-5.17 0-7.114C14.87 10.617 16.432 10 18 10c2.21 0 4-1.79 4-4C22 4.243 17.523 2 12 2z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Display &amp; Style</span>
+                  <span class="item-subtitle">Theme &bull; Fonts &bull; Animations</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Currency &amp; Localization</span>
+                  <span class="item-subtitle">USD &bull; Exchangerate.Host</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- FINANCIAL SETUP light -->
+            <div class="settings-section light">
+              <div class="section-header-row">
+                <span class="section-header-label">Financial Setup</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="8" width="18" height="12" rx="2"/>
+                    <path d="M8 8V6a4 4 0 018 0v2"/>
+                    <path d="M3 12h18"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Accounts</span>
+                  <span class="item-subtitle">Balances &bull; Visibility</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Categories</span>
+                  <span class="item-subtitle">Income &bull; Expense Classification</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                    <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Tags</span>
+                  <span class="item-subtitle">Custom Labels For Transactions</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- AUTOMATION light -->
+            <div class="settings-section light">
+              <div class="section-header-row">
+                <span class="section-header-label">Automation &amp; Tools</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Transaction Templates</span>
+                  <span class="item-subtitle">Quick Shortcuts &bull; Frequent Entries</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Smart Suggestions</span>
+                  <span class="item-subtitle">Discover Recurring Transactions</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Saved Filters</span>
+                  <span class="item-subtitle">Custom Search Presets</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- PRIVACY light -->
+            <div class="settings-section light">
+              <div class="section-header-row">
+                <span class="section-header-label">Privacy &amp; Safety</span>
+                <div class="section-header-rule"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M8 11V7a4 4 0 018 0v4"/>
+                    <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Security &amp; Privacy</span>
+                  <span class="item-subtitle">App Lock &bull; Location &bull; Web Access</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Data Management</span>
+                  <span class="item-subtitle">Import &bull; Export &bull; Backups</span>
+                </div>
+                <div class="item-chevron">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer light -->
+            <div class="settings-footer">
+              <div class="footer-tagline">Built For Modern Accounts</div>
+              <div class="footer-attribution">
+                <span class="footer-attr-label">Rates By</span>
+                <span class="footer-attr-value">Exchangerate.Host</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /variant-row A -->
+
+<!-- Annotations for current state -->
+<div class="annotation-row">
+  <div class="annotation">
+    <div class="annotation-title">Current State — Dark Observations</div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Nav pill top bar:</b> glass blur backdrop, champagne back arrow, Inter semi-bold label inside a frosted pill on the screen background tint.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Hero triple stack:</b> JetBrains Mono "PREFERENCES" overline in accent / Fraunces 300 "Settings" display / JetBrains Mono "v1.1.0" in m2 — gap between overline and title is 4dp + 2dp spacer.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Section panels:</b> 28dp corner radius, <code>#161614</code> prominent surface, 0.5px champagne hairline border. Overline left-aligned inside panel, rule extends to right edge via <code>weight(1f)</code>.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Item rows:</b> 32dp circular icon (<code>screenBackground</code> fill + 0.5px outlineVariant border, 16dp icon inside), Inter Bold 12sp title + JetBrains Mono 9sp ALL-CAPS subtitle, champagne ChevronRight 24dp.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Dividers:</b> Dotted repeating gradient, 1px height, inset 16dp from edges via <code>aeonDottedUnderline</code> modifier applied to a 1dp Box.</div>
+    </div>
+  </div>
+  <div class="annotation">
+    <div class="annotation-title">Current State — Known Issues</div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Icon duplication:</b> Both "Transaction Templates" and "Smart Suggestions" use <code>Icons.Rounded.AutoAwesome</code> — identical icons for visually distinct features create scanability loss.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Version as plain text:</b> "v1.1.0" sits as bare mono text with no visual container — easy to overlook. A pill badge would give it functional affordance (e.g. tap for changelog).</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>All icons same tint:</b> Every icon uses <code>contentSecondary</code> regardless of section category. No colour-based scanability across 4 very different domains.</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Footer visual weight:</b> Footer text sits directly after last panel at 32dp spacing — same gap as between panels. It needs a separator or increased breathing room to signal "end of config".</div>
+    </div>
+    <div class="annotation-item">
+      <div class="annotation-bullet"></div>
+      <div class="annotation-text"><b>Section header rule:</b> 0.5px hairline extends full width to card edge but abruptly ends. A gradient fade-to-transparent would feel more editorial.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Divider between variants ─── -->
+<div style="margin-top: 64px; width: 100%; max-width: 960px; display: flex; flex-direction: column; align-items: center;">
+  <div class="comp-divider-label">B &mdash; Refined Variant &mdash; Proposed Improvements</div>
+  <div class="comp-divider"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION B — REFINED VARIANT
+═══════════════════════════════════════════════════════════════════════════ -->
+<div class="section-label">B &mdash; <span>Refined Variant</span> &mdash; Version badge pill, section colour differentiation, gradient rule, footer separator</div>
+
+<div class="variant-row">
+
+  <!-- DARK REFINED -->
+  <div class="variant-col">
+    <div class="variant-col-label">Dark · Refined</div>
+    <div class="phone">
+      <div class="screen dark">
+        <div class="screen-bg refined dark">
+
+          <div class="top-bar">
+            <div class="nav-pill">
+              <div class="nav-pill-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="nav-pill-label">Settings</span>
+            </div>
+          </div>
+
+          <div class="scroll-content">
+
+            <!-- Refined hero: version badge pill replaces bare text -->
+            <div class="hero">
+              <div class="hero-overline">Preferences</div>
+              <div class="hero-title">Settings</div>
+              <!-- Version badge pill instead of bare mono text -->
+              <div class="version-badge">
+                <div class="version-badge-dot"></div>
+                <span class="version-badge-text">v1.1.0</span>
+              </div>
+            </div>
+
+            <!-- PERSONALIZATION — champagne accent bar -->
+            <div class="settings-section dark" style="position: relative;">
+              <div class="section-accent-bar accent-personalization"></div>
+              <div class="section-header-row refined">
+                <span class="section-header-label">Personalization</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, rgba(236,232,221,0.18), transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap icon-personalization">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #D6C189;">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.477-1.129-1.932-1.944-1.932-5.17 0-7.114C14.87 10.617 16.432 10 18 10c2.21 0 4-1.79 4-4C22 4.243 17.523 2 12 2z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Display &amp; Style</span>
+                  <span class="item-subtitle">Theme &bull; Fonts &bull; Animations</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap icon-personalization">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #D6C189;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Currency &amp; Localization</span>
+                  <span class="item-subtitle">USD &bull; Exchangerate.Host</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- FINANCIAL SETUP — income green accent -->
+            <div class="settings-section dark" style="position: relative;">
+              <div class="section-accent-bar accent-financial"></div>
+              <div class="section-header-row refined">
+                <span class="section-header-label">Financial Setup</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, rgba(236,232,221,0.18), transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #7FBF8E;">
+                    <rect x="3" y="8" width="18" height="12" rx="2"/>
+                    <path d="M8 8V6a4 4 0 018 0v2"/>
+                    <path d="M3 12h18"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Accounts</span>
+                  <span class="item-subtitle">Balances &bull; Visibility</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #7FBF8E;">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Categories</span>
+                  <span class="item-subtitle">Income &bull; Expense Classification</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #7FBF8E;">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                    <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Tags</span>
+                  <span class="item-subtitle">Custom Labels For Transactions</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- AUTOMATION — cool blue accent, distinct icons -->
+            <div class="settings-section dark" style="position: relative;">
+              <div class="section-accent-bar accent-automation"></div>
+              <div class="section-header-row refined">
+                <span class="section-header-label">Automation &amp; Tools</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, rgba(236,232,221,0.18), transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Template icon: distinct from AutoAwesome -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #89B4D6;">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Transaction Templates</span>
+                  <span class="item-subtitle">Quick Shortcuts &bull; Frequent Entries</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <!-- Distinct sparkle/brain icon for suggestions -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #89B4D6;">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Smart Suggestions</span>
+                  <span class="item-subtitle">Discover Recurring Transactions</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #89B4D6;">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Saved Filters</span>
+                  <span class="item-subtitle">Custom Search Presets</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- PRIVACY — warm red accent -->
+            <div class="settings-section dark" style="position: relative;">
+              <div class="section-accent-bar accent-privacy"></div>
+              <div class="section-header-row refined">
+                <span class="section-header-label">Privacy &amp; Safety</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, rgba(236,232,221,0.18), transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #D68989;">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M8 11V7a4 4 0 018 0v4"/>
+                    <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Security &amp; Privacy</span>
+                  <span class="item-subtitle">App Lock &bull; Location &bull; Web Access</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #D68989;">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Data Management</span>
+                  <span class="item-subtitle">Import &bull; Export &bull; Backups</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- Refined footer with separator -->
+            <div class="settings-footer">
+              <div class="footer-sep"></div>
+              <div class="footer-tagline">Built For Modern Accounts</div>
+              <div class="footer-attribution">
+                <span class="footer-attr-label">Rates By</span>
+                <span class="footer-attr-value">Exchangerate.Host</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT REFINED -->
+  <div class="variant-col">
+    <div class="variant-col-label">Light · Refined</div>
+    <div class="phone light-phone">
+      <div class="screen light">
+        <div class="screen-bg refined light">
+
+          <div class="top-bar">
+            <div class="nav-pill">
+              <div class="nav-pill-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="nav-pill-label">Settings</span>
+            </div>
+          </div>
+
+          <div class="scroll-content">
+
+            <div class="hero">
+              <div class="hero-overline">Preferences</div>
+              <div class="hero-title">Settings</div>
+              <div class="version-badge">
+                <div class="version-badge-dot"></div>
+                <span class="version-badge-text">v1.1.0</span>
+              </div>
+            </div>
+
+            <!-- PERSONALIZATION light refined -->
+            <div class="settings-section light" style="position: relative;">
+              <div class="section-accent-bar" style="background: #8A6F3C; opacity: 0.4;"></div>
+              <div class="section-header-row">
+                <span class="section-header-label">Personalization</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, #C9C2B2, transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #8A6F3C;">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.477-1.129-1.932-1.944-1.932-5.17 0-7.114C14.87 10.617 16.432 10 18 10c2.21 0 4-1.79 4-4C22 4.243 17.523 2 12 2z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Display &amp; Style</span>
+                  <span class="item-subtitle">Theme &bull; Fonts &bull; Animations</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #8A6F3C;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Currency &amp; Localization</span>
+                  <span class="item-subtitle">USD &bull; Exchangerate.Host</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- FINANCIAL SETUP light refined -->
+            <div class="settings-section light" style="position: relative;">
+              <div class="section-accent-bar" style="background: #2C6E49; opacity: 0.45;"></div>
+              <div class="section-header-row">
+                <span class="section-header-label">Financial Setup</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, #C9C2B2, transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2C6E49;">
+                    <rect x="3" y="8" width="18" height="12" rx="2"/>
+                    <path d="M8 8V6a4 4 0 018 0v2"/>
+                    <path d="M3 12h18"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Accounts</span>
+                  <span class="item-subtitle">Balances &bull; Visibility</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2C6E49;">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Categories</span>
+                  <span class="item-subtitle">Income &bull; Expense Classification</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2C6E49;">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                    <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Tags</span>
+                  <span class="item-subtitle">Custom Labels For Transactions</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- AUTOMATION light refined -->
+            <div class="settings-section light" style="position: relative;">
+              <div class="section-accent-bar" style="background: #2F5E8A; opacity: 0.4;"></div>
+              <div class="section-header-row">
+                <span class="section-header-label">Automation &amp; Tools</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, #C9C2B2, transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2F5E8A;">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Transaction Templates</span>
+                  <span class="item-subtitle">Quick Shortcuts &bull; Frequent Entries</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2F5E8A;">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Smart Suggestions</span>
+                  <span class="item-subtitle">Discover Recurring Transactions</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #2F5E8A;">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Saved Filters</span>
+                  <span class="item-subtitle">Custom Search Presets</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- PRIVACY light refined -->
+            <div class="settings-section light" style="position: relative;">
+              <div class="section-accent-bar" style="background: #9B3B30; opacity: 0.4;"></div>
+              <div class="section-header-row">
+                <span class="section-header-label">Privacy &amp; Safety</span>
+                <div class="section-header-rule" style="background: linear-gradient(to right, #C9C2B2, transparent);"></div>
+              </div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #9B3B30;">
+                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                    <path d="M8 11V7a4 4 0 018 0v4"/>
+                    <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Security &amp; Privacy</span>
+                  <span class="item-subtitle">App Lock &bull; Location &bull; Web Access</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+              <div class="item-divider"></div>
+              <div class="settings-item">
+                <div class="item-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #9B3B30;">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+                  </svg>
+                </div>
+                <div class="item-text">
+                  <span class="item-title">Data Management</span>
+                  <span class="item-subtitle">Import &bull; Export &bull; Backups</span>
+                </div>
+                <div class="item-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+              </div>
+            </div>
+
+            <!-- Refined footer -->
+            <div class="settings-footer">
+              <div class="footer-sep" style="display: block; background: #DED9CC;"></div>
+              <div class="footer-tagline">Built For Modern Accounts</div>
+              <div class="footer-attribution">
+                <span class="footer-attr-label">Rates By</span>
+                <span class="footer-attr-value">Exchangerate.Host</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /variant-row B -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DESIGN PROPOSALS GRID
+═══════════════════════════════════════════════════════════════════════════ -->
+<div style="width: 100%; max-width: 960px; margin: 0 auto;">
+  <div class="comp-divider-label" style="margin-top: 48px; margin-bottom: 20px;">Implementation Proposals — Compose Code Notes</div>
+
+  <div class="proposal-grid">
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Hero</span></div>
+      <div class="proposal-title">Version badge pill</div>
+      <div class="proposal-body">
+        Replace the bare <code>Text("v1.1.0", style = metaLabel)</code> with a small pill container using <code>Surface(shape = CircleShape, color = AppColors.accent.copy(alpha=0.10f))</code>. Add a 4dp dot using a 4x4 <code>Box(CircleShape)</code> tinted <code>accent.copy(alpha=0.7f)</code>. This turns the version into a tappable affordance for a future "What's new" sheet.
+        <br><br>The pill keeps the same JetBrains Mono 9sp text but the container anchors it visually and separates it from the hero title's vertical rhythm.
+      </div>
+    </div>
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Section Icons</span></div>
+      <div class="proposal-title">Section-scoped icon colour</div>
+      <div class="proposal-body">
+        Pass an optional <code>iconTint: Color = AppColors.contentSecondary</code> parameter to <code>AeonSettingsItem</code> and default it to <code>contentSecondary</code> to stay backward-compatible. In <code>SettingsScreen</code> pass section-specific tints:
+        <br><br>
+        Personalization: <code>AppColors.accent</code> (champagne)<br>
+        Financial Setup: <code>AppColors.incomeGreen</code><br>
+        Automation: a cool-steel tint (<code>Color(0xFF89B4D6)</code>)<br>
+        Privacy: <code>AppColors.expenseRed.copy(alpha=0.85f)</code>
+        <br><br>
+        This is a single-field change to the section call sites — no architecture change required.
+      </div>
+    </div>
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Section Header</span></div>
+      <div class="proposal-title">Gradient rule + left accent bar</div>
+      <div class="proposal-body">
+        Two targeted changes to <code>AeonSettingsSection</code>:
+        <br><br>
+        1. Replace the flat <code>background(AppColors.outlineVariant)</code> on the hairline <code>Box</code> with a <code>Brush.horizontalGradient(listOf(AppColors.outlineVariant, Color.Transparent))</code>. One line change.
+        <br><br>
+        2. Add an optional <code>accentColor: Color? = null</code> parameter. When non-null, render a 2dp wide <code>Box(Modifier.fillMaxHeight().width(2.dp).background(accentColor.copy(alpha=0.5f)))</code> absolutely positioned at <code>start=0</code> inside the outer <code>Box</code>.
+      </div>
+    </div>
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Icon Dedup</span></div>
+      <div class="proposal-title">Distinct icon for Templates vs Suggestions</div>
+      <div class="proposal-body">
+        Both "Transaction Templates" and "Smart Suggestions" currently use <code>Icons.Rounded.AutoAwesome</code>. Replace Templates with <code>Icons.Rounded.TableRows</code> or <code>Icons.Rounded.ViewCompact</code> (grid-like, structured) and keep <code>AutoAwesome</code> for Suggestions (sparkle = AI / smart). This is a one-character change per call site in <code>SettingsScreen.kt</code>.
+      </div>
+    </div>
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Footer</span></div>
+      <div class="proposal-title">Hairline separator before footer</div>
+      <div class="proposal-body">
+        The footer currently floats at the same <code>spacing2xl</code> (32dp) gap as inter-section spacing — nothing signals "content ends here". Add a <code>HorizontalDivider(color = AppColors.outlineVariant, thickness = 0.5.dp)</code> inside <code>SettingsFooter</code> before the tagline text, then increase vertical padding to <code>spacingXl</code> (24dp) above the tagline. Keeps the footer from blending into the settings list.
+      </div>
+    </div>
+
+    <div class="proposal-card">
+      <div class="proposal-tag"><span class="proposal-tag-text">Motion</span></div>
+      <div class="proposal-title">Staggered entrance animation cues</div>
+      <div class="proposal-body">
+        The screen currently has no entrance choreography. Recommend wrapping each <code>AeonSettingsSection</code> in an <code>AnimatedVisibility(visible = sectionVisible, enter = fadeIn(tween(280)) + slideInVertically(tween(280, easing = EaseOutExpo), initialOffsetY = { it / 4 }))</code>. Use a <code>LaunchedEffect</code> with stagger: section 1 at 0ms, section 2 at 60ms, section 3 at 120ms, section 4 at 180ms. No VM change needed — pure composable state with <code>remember { mutableStateOf(false) }</code>.
+      </div>
+    </div>
+
+  </div><!-- /proposal-grid -->
+</div>
+
+<!-- Page foot -->
+<div style="margin-top: 64px; font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: #3A3830; text-align: center;">
+  OssWallet &bull; Aeon Design System &bull; Settings Comp &bull; June 2026
+</div>
+
+</body>
+</html>

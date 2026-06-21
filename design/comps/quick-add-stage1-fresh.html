@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickAdd Stage 1 — From Scratch</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+:root{
+  --bg:#0B0B0A; --panel:#121211; --card:#1A1A18;
+  --ivory:#ECE8DD; --ivory-2:#9A958A; --ivory-3:#6E6A61;
+  --recessed:rgba(236,232,221,.05); --hair:rgba(236,232,221,.08); --divider:rgba(236,232,221,.12);
+  --gold:#D6C189; --gold-soft:rgba(214,193,137,.14); --gold-ink:#1B1914;
+  --pos:#7FBF8E; --neg:#D88379;
+  --mono:'Courier New',monospace; --serif:'Georgia',serif; --body:system-ui,-apple-system,sans-serif;
+}
+body{background:#070706;min-height:100vh;padding:32px;font-family:var(--mono);}
+.title{font-size:11px;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+.sub{font-size:11px;color:var(--ivory-2);margin-bottom:30px;max-width:880px;line-height:1.6;}
+.row{display:flex;gap:34px;align-items:flex-start;}
+.col{display:flex;flex-direction:column;align-items:flex-start;}
+.label{font-size:10px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.slabel{font-size:10px;color:var(--ivory-2);margin-bottom:14px;max-width:380px;line-height:1.55;height:42px;}
+
+.sheet{width:384px;background:linear-gradient(180deg,#161614,#101010);border-radius:30px;border:.5px solid var(--hair);
+  box-shadow:0 -1px 0 rgba(236,232,221,.04) inset, 0 30px 60px rgba(0,0,0,.5);overflow:hidden;}
+.drag{width:34px;height:4px;border-radius:2px;background:rgba(236,232,221,.16);margin:12px auto 0;}
+.body{padding:14px 18px 16px;}
+
+/* shared bottom dots + cta */
+.foot{display:flex;align-items:center;gap:10px;margin-top:14px;}
+.dots{flex:1;display:flex;gap:6px;align-items:center;}
+.dot{height:5px;border-radius:3px;background:rgba(236,232,221,.2);width:5px;}
+.dot.on{width:18px;background:var(--gold);}
+.cta{height:34px;padding:0 16px;border-radius:18px;background:var(--gold);color:var(--gold-ink);font-size:11px;
+  letter-spacing:.08em;display:flex;align-items:center;gap:6px;text-transform:uppercase;}
+
+.note{border-left:2px solid var(--gold);padding-left:12px;margin-top:16px;max-width:384px;}
+.note div{font-size:11px;color:var(--ivory-2);line-height:1.7;}
+
+/* ════════ A — COMMAND BAR ════════ */
+.a-eyebrow{font-size:9px;letter-spacing:.16em;color:var(--ivory-3);text-transform:uppercase;margin-bottom:10px;}
+.a-cmd{display:flex;align-items:center;gap:10px;height:50px;border-radius:16px;background:var(--recessed);
+  border:.5px solid var(--divider);padding:0 14px;box-shadow:0 0 0 1px rgba(214,193,137,.18);}
+.a-cmd .ic{font-size:15px;color:var(--gold);}
+.a-cmd .ph{font-size:14px;color:var(--ivory);font-family:var(--body);}
+.a-cmd .bar{width:1.5px;height:18px;background:var(--gold);animation:blink 1.1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.a-sec{font-size:9px;letter-spacing:.14em;color:var(--ivory-3);text-transform:uppercase;margin:18px 2px 8px;display:flex;align-items:center;gap:8px;}
+.a-sec::after{content:"";flex:1;height:1px;background:var(--hair);}
+.a-list{display:flex;flex-direction:column;gap:4px;}
+.a-rowitem{display:flex;align-items:center;gap:12px;height:52px;border-radius:14px;padding:0 12px;}
+.a-rowitem.sel{background:var(--gold-soft);box-shadow:inset 0 0 0 1px rgba(214,193,137,.35);}
+.a-ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.a-meta{flex:1;display:flex;flex-direction:column;gap:2px;}
+.a-nm{font-size:13px;color:var(--ivory);font-family:var(--body);}
+.a-cat{font-size:9px;color:var(--ivory-2);letter-spacing:.08em;text-transform:uppercase;}
+.a-am{font-family:var(--serif);font-size:15px;color:var(--gold);}
+.a-kbd{font-size:9px;color:var(--ivory-3);border:.5px solid var(--hair);border-radius:5px;padding:2px 5px;}
+
+/* ════════ B — EDITORIAL MENU ════════ */
+.b-tabs{display:flex;gap:20px;border-bottom:1px solid var(--hair);padding:2px 2px 0;margin-bottom:4px;}
+.b-tab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ivory-3);padding:6px 2px 10px;position:relative;}
+.b-tab.on{color:var(--gold);}
+.b-tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);border-radius:2px;}
+.b-list{display:flex;flex-direction:column;}
+.b-item{display:flex;align-items:center;gap:14px;padding:13px 4px;border-bottom:.5px solid var(--hair);}
+.b-item.sel{}
+.b-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.b-icn{font-size:17px;width:22px;text-align:center;}
+.b-nm{flex:1;font-family:var(--serif);font-size:17px;color:var(--ivory);letter-spacing:.2px;}
+.b-item.sel .b-nm{color:var(--gold);}
+.b-tag{font-size:9px;color:var(--ivory-2);letter-spacing:.06em;text-transform:uppercase;}
+.b-am{font-family:var(--serif);font-size:15px;color:var(--ivory-2);min-width:48px;text-align:right;}
+.b-item.sel .b-am{color:var(--gold);}
+.b-search{display:flex;align-items:center;gap:8px;height:42px;border-radius:12px;background:var(--recessed);border:.5px solid var(--hair);padding:0 12px;margin-top:12px;}
+.b-search .ic{font-size:13px;color:var(--ivory-2);}.b-search .ph{font-size:12px;color:var(--ivory-2);}
+
+/* ════════ C — TACTILE DECK ════════ */
+.c-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.c-h-l{font-size:9px;letter-spacing:.14em;color:var(--ivory-3);text-transform:uppercase;}
+.c-seg{display:flex;background:var(--recessed);border:.5px solid var(--hair);border-radius:9px;padding:2px;}
+.c-seg span{font-size:9px;padding:4px 9px;border-radius:7px;color:var(--ivory-2);letter-spacing:.06em;text-transform:uppercase;}
+.c-seg span.on{background:var(--gold);color:var(--gold-ink);}
+.c-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.c-card{border-radius:18px;padding:14px;height:96px;display:flex;flex-direction:column;justify-content:space-between;
+  border:.5px solid rgba(236,232,221,.07);position:relative;overflow:hidden;}
+.c-card.sel{box-shadow:inset 0 0 0 1.5px var(--gold);transform:translateY(-2px);}
+.c-card .glow{position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;filter:blur(24px);opacity:.5;}
+.c-top{display:flex;align-items:center;justify-content:space-between;}
+.c-ic{font-size:22px;}
+.c-cnt{font-size:9px;color:var(--ivory-2);letter-spacing:.04em;border:.5px solid var(--hair);border-radius:6px;padding:2px 6px;}
+.c-bot .nm{font-size:13px;color:var(--ivory);font-family:var(--body);margin-bottom:2px;}
+.c-bot .am{font-family:var(--serif);font-size:16px;color:var(--gold);}
+.c-search{display:flex;align-items:center;gap:8px;height:42px;border-radius:12px;background:var(--recessed);border:.5px solid var(--hair);padding:0 12px;margin-top:12px;}
+.c-search .ic{font-size:13px;color:var(--ivory-2);}.c-search .ph{font-size:12px;color:var(--ivory-2);}
+</style>
+</head>
+<body>
+
+<p class="title">QuickAdd — Stage 1 · Designed from scratch</p>
+<p class="sub">Three distinct paradigms for "what am I logging." Only the app's warm-black / ivory / champagne identity is retained — structure, interaction model and hierarchy are reconsidered. Goal: log in seconds, feel like a premium instrument.</p>
+
+<div class="row">
+
+  <!-- ════════ A — COMMAND BAR ════════ -->
+  <div class="col">
+    <p class="label">A — Command bar</p>
+    <p class="slabel">Search is the hero and auto-focuses. One unified, type-to-filter list spanning templates + categories. Frequent picks sit ready as large rows. Fast, keyboard-forward, Raycast-calm.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="body">
+        <div class="a-eyebrow">New entry</div>
+        <div class="a-cmd"><span class="ic">⌕</span><span class="ph">Coffee</span><span class="bar"></span></div>
+
+        <div class="a-sec">Frequent</div>
+        <div class="a-list">
+          <div class="a-rowitem sel">
+            <div class="a-ic" style="background:rgba(201,162,80,.2)">☕</div>
+            <div class="a-meta"><span class="a-nm">Morning Coffee</span><span class="a-cat">Template · Food</span></div>
+            <span class="a-am">$4.50</span>
+          </div>
+          <div class="a-rowitem">
+            <div class="a-ic" style="background:rgba(127,191,142,.18)">🛒</div>
+            <div class="a-meta"><span class="a-nm">Groceries</span><span class="a-cat">Template · Food</span></div>
+            <span class="a-am">$60</span>
+          </div>
+          <div class="a-rowitem">
+            <div class="a-ic" style="background:rgba(107,159,212,.18)">🏋</div>
+            <div class="a-meta"><span class="a-nm">Gym</span><span class="a-cat">Category</span></div>
+            <span class="a-kbd">↵</span>
+          </div>
+          <div class="a-rowitem">
+            <div class="a-ic" style="background:rgba(212,149,107,.18)">⛽</div>
+            <div class="a-meta"><span class="a-nm">Fuel</span><span class="a-cat">Category</span></div>
+            <span class="a-kbd">↵</span>
+          </div>
+        </div>
+
+        <div class="foot">
+          <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="cta">Next →</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><div>Fastest for power users — type & enter</div><div>Templates + categories in one model</div><div>Leans on keyboard; list scrolls</div></div>
+  </div>
+
+  <!-- ════════ B — EDITORIAL MENU ════════ -->
+  <div class="col">
+    <p class="label">B — Editorial menu</p>
+    <p class="slabel">A curated vertical list — serif names, colour dot, right-aligned last amount in champagne. Reads like a fine-dining menu / statement. Calm, luxurious, highly scannable.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="body">
+        <div class="b-tabs"><span class="b-tab on">Templates</span><span class="b-tab">Categories</span></div>
+        <div class="b-list">
+          <div class="b-item sel"><span class="b-dot" style="background:#C9A250"></span><span class="b-icn">☕</span><span class="b-nm">Morning Coffee</span><span class="b-am">$4.50</span></div>
+          <div class="b-item"><span class="b-dot" style="background:#7FBF8E"></span><span class="b-icn">🛒</span><span class="b-nm">Groceries</span><span class="b-am">$60</span></div>
+          <div class="b-item"><span class="b-dot" style="background:#6B9FD4"></span><span class="b-icn">🏋</span><span class="b-nm">Gym Pass</span><span class="b-am">$25</span></div>
+          <div class="b-item"><span class="b-dot" style="background:#D4956B"></span><span class="b-icn">⛽</span><span class="b-nm">Fuel</span><span class="b-am">$48</span></div>
+          <div class="b-item"><span class="b-dot" style="background:#9B8EC4"></span><span class="b-icn">🎬</span><span class="b-nm">Cinema</span><span class="b-am">$15</span></div>
+        </div>
+        <div class="b-search"><span class="ic">🔍</span><span class="ph">Search templates …</span></div>
+        <div class="foot">
+          <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="cta">Next →</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><div>Most "editorial / luxury" feel</div><div>Names + amounts read instantly</div><div>One per row — more scrolling than a grid</div></div>
+  </div>
+
+  <!-- ════════ C — TACTILE DECK ════════ -->
+  <div class="col">
+    <p class="label">C — Tactile deck</p>
+    <p class="slabel">Two-column rich cards with colour glow, usage count and last amount. Selected card lifts. Bold, spatial, tappable — feels like a deck of premium cards.</p>
+    <div class="sheet">
+      <div class="drag"></div>
+      <div class="body">
+        <div class="c-head">
+          <span class="c-h-l">Choose entry</span>
+          <div class="c-seg"><span class="on">Templates</span><span>Categories</span></div>
+        </div>
+        <div class="c-grid">
+          <div class="c-card sel" style="background:rgba(201,162,80,.12)"><div class="glow" style="background:#C9A250"></div>
+            <div class="c-top"><span class="c-ic">☕</span><span class="c-cnt">42×</span></div>
+            <div class="c-bot"><div class="nm">Morning Coffee</div><div class="am">$4.50</div></div></div>
+          <div class="c-card" style="background:rgba(127,191,142,.1)"><div class="glow" style="background:#7FBF8E"></div>
+            <div class="c-top"><span class="c-ic">🛒</span><span class="c-cnt">18×</span></div>
+            <div class="c-bot"><div class="nm">Groceries</div><div class="am">$60</div></div></div>
+          <div class="c-card" style="background:rgba(107,159,212,.1)"><div class="glow" style="background:#6B9FD4"></div>
+            <div class="c-top"><span class="c-ic">🏋</span><span class="c-cnt">9×</span></div>
+            <div class="c-bot"><div class="nm">Gym Pass</div><div class="am">$25</div></div></div>
+          <div class="c-card" style="background:rgba(212,149,107,.1)"><div class="glow" style="background:#D4956B"></div>
+            <div class="c-top"><span class="c-ic">⛽</span><span class="c-cnt">6×</span></div>
+            <div class="c-bot"><div class="nm">Fuel</div><div class="am">$48</div></div></div>
+        </div>
+        <div class="c-search"><span class="ic">🔍</span><span class="ph">Search …</span></div>
+        <div class="foot">
+          <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+          <div class="cta">Next →</div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><div>Most tactile / spatial presence</div><div>Usage count + amount = rich context</div><div>Heaviest; ~4–6 visible before scroll</div></div>
+  </div>
+
+</div>
+</body>
+</html>

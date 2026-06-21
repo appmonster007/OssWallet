@@ -38,6 +38,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/.claude/worktrees/agent-aee5ae50cab2bc581/app/src/debug/assets/transactions.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/_bmad/_config/bmad-help.csv">
           <value>
             <Attribute>

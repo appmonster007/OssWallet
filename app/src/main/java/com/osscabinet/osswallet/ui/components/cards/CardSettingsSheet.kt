@@ -163,9 +163,11 @@ fun CardPerspectiveSettings(
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = allPerspectives.size),
                     label = {
                         Text(
-                            text = when (mode) {
+                            text = @Suppress("REDUNDANT_ELSE_IN_WHEN")
+                            when (mode) {
                                 is AccountingPerspective.Accounting -> "Accounting"
                                 is AccountingPerspective.CashFlow -> "Cash Flow"
+                                else -> "Accounting"
                             },
                             style = AppTextStyles.caption.copy(
                                 fontSize = 11.sp,
@@ -188,7 +190,7 @@ fun CardPerspectiveSettings(
         AeonSettingsToggle(
             label = "Exclude internal transfers",
             description = "Hides transfers between accounts",
-            checked = excludeInternalTransfers && perspective is AccountingPerspective.CashFlow,
+            checked = excludeInternalTransfers,
             onCheckedChange = onExcludeInternalTransfersChange,
             enabled = perspective is AccountingPerspective.CashFlow,
             showBackground = false,

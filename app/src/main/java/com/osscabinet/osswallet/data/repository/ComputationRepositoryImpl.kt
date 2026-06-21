@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import java.math.BigDecimal
+import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,10 +28,13 @@ class ComputationRepositoryImpl @Inject constructor(
     // Room-backed: emits immediately from DB on any launch after the first.
     // Re-bases rates to the selected currency when currency changes.
     override val exchangeRates: Flow<Map<String, BigDecimal>> =
-        combine(currencyRepository.ratesFlow, selectedCurrency) { entities, _ ->
-            if (entities.isEmpty()) return@combine emptyMap()
-            // Re-base: entities are stored relative to the base currency at fetch time
-            entities
+        combine(currencyRepository.ratesFlow, selectedCurrency) { rateMap, targetBase ->
+            if (rateMap.isEmpty()) return@combine emptyMap()
+            val pivotRate = rateMap[targetBase] ?: return@combine rateMap
+            if (pivotRate.signum() == 0) return@combine rateMap
+            rateMap.mapValues { (_, rate) ->
+                rate.divide(pivotRate, 10, RoundingMode.HALF_UP)
+            }
         }
 
     // True as soon as Room has any cached rates — immediately true after first launch.

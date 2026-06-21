@@ -177,8 +177,8 @@ fun DetailDrawer(
 }
 
 @Composable
-fun rememberShimmerBrush(horizontal: Boolean = false): Brush {
-    val transition = rememberInfiniteTransition(label = "shimmer")
+fun rememberShimmerBrush(horizontal: Boolean = false, label: String = "shimmer"): Brush {
+    val transition = rememberInfiniteTransition(label = label)
     val translateAnim by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
@@ -186,7 +186,7 @@ fun rememberShimmerBrush(horizontal: Boolean = false): Brush {
             animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "shimmer_translate"
+        label = "${label}_translate"
     )
     val colors = listOf(
         AppColors.insetSurface.copy(alpha = 0.6f),
@@ -217,7 +217,7 @@ fun AeonShimmer(
     showAccounts: Boolean = true,
     showBudgets: Boolean = false
 ) {
-    val brush = rememberShimmerBrush()
+    val brush = rememberShimmerBrush(label = "aeon_shimmer")
 
     LazyColumn(
         modifier = Modifier

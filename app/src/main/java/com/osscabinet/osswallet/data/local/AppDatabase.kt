@@ -60,7 +60,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,6 +83,28 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // SQLite cannot ALTER COLUMN type, so recreate the table with rate as TEXT
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS currency_rates_new (
+                        currencyCode TEXT NOT NULL PRIMARY KEY,
+                        baseCurrency TEXT NOT NULL,
+                        rate TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        nextUpdate INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("""
+                    INSERT INTO currency_rates_new
+                    SELECT currencyCode, baseCurrency, CAST(rate AS TEXT), timestamp, nextUpdate
+                    FROM currency_rates
+                """)
+                db.execSQL("DROP TABLE currency_rates")
+                db.execSQL("ALTER TABLE currency_rates_new RENAME TO currency_rates")
+            }
         }
 
         val MIGRATION_14_15 = object : Migration(14, 15) {
@@ -448,7 +470,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_11_12,
                         MIGRATION_12_13,
                         MIGRATION_13_14,
-                        MIGRATION_14_15
+                        MIGRATION_14_15,
+                        MIGRATION_15_16
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

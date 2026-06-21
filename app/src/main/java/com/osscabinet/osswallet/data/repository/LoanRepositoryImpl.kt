@@ -38,6 +38,9 @@ class LoanRepositoryImpl @Inject constructor(
     override fun getAllPayments(): Flow<List<LoanPayment>> =
         loanPaymentDao.getAllPayments().map { list -> list.map { it.toDomain() } }
 
+    override fun getAllPayments(profileId: Int): Flow<List<LoanPayment>> =
+        loanPaymentDao.getAllPaymentsByProfile(profileId).map { list -> list.map { it.toDomain() } }
+
     override suspend fun getPaymentsForLoanSync(loanId: Long): List<LoanPayment> =
         loanPaymentDao.getPaymentsForLoanSync(loanId).map { it.toDomain() }
 

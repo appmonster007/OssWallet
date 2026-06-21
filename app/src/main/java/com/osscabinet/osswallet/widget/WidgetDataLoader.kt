@@ -34,7 +34,7 @@ object WidgetDataLoader {
         TimelineService.precision = precision
 
         val exchangeRates = ep.db().currencyDao().getAllRates()
-            .associate { it.currencyCode to BigDecimal.valueOf(it.rate) }
+            .associate { it.currencyCode to it.rate.toBigDecimal() }
 
         return CommonData(
             profileId = profileId,

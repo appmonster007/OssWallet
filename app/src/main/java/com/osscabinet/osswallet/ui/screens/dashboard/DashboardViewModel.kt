@@ -37,16 +37,18 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.cache.CardRenderCache
+import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -55,6 +57,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -116,6 +119,28 @@ class DashboardViewModel @Inject constructor(
         _viewFocus.value = ViewFocus()
     }
 
+    private data class DashboardCoreData(
+        val accounts: List<Account>,
+        val recentTransactions: List<Transaction>,
+        val categories: List<Category>,
+        val rates: Map<String, BigDecimal>,
+        val baseCurrency: String
+    )
+
+    private data class DashboardRatesData(
+        val core: DashboardCoreData,
+        val hasLoadedRates: Boolean,
+        val cardsConfig: DashboardCardsConfig
+    )
+
+    private data class DashboardProfileData(
+        val plannedPayments: List<PlannedPayment>,
+        val budgets: List<Budget>,
+        val loans: List<Loan>,
+        val tags: List<com.osscabinet.ossWallet.domain.model.Tag>,
+        val loanPayments: List<com.osscabinet.ossWallet.domain.model.LoanPayment>
+    )
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
@@ -126,54 +151,52 @@ class DashboardViewModel @Inject constructor(
             val loansFlow: Flow<List<Loan>> =
                 loanRepository.getAllLoans(profileId)
             val loanPaymentsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.LoanPayment>> =
-                loanRepository.getAllPayments()
+                loanRepository.getAllPayments(profileId)
             val tagsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.Tag>> =
                 tagRepository.getAllTags()
-            combine(
+
+            val coreFlow = combine(
                 accountRepository.getAllAccounts(profileId),
-                databaseQueryService.observeFilteredTransactions(profileId, TransactionFilter(), limit = 100),
+                databaseQueryService.observeFilteredTransactions(profileId, TransactionFilter(), limit = DASHBOARD_TRANSACTION_FEED_LIMIT),
                 categoryRepository.categories,
                 computationRepository.exchangeRates,
-                computationRepository.selectedCurrency,
+                computationRepository.selectedCurrency
+            ) { accounts, transactions, categories, rates, currency ->
+                DashboardCoreData(accounts, transactions, categories, rates, currency)
+            }
+
+            val ratesFlow = combine(
+                coreFlow,
                 computationRepository.hasLoadedExchangeRates,
-                cardsConfig,
+                cardsConfig
+            ) { core, hasLoaded, config ->
+                DashboardRatesData(core, hasLoaded, config)
+            }
+
+            val profileFlow = combine(
                 plannedPaymentsFlow,
                 budgetsFlow,
                 loansFlow,
                 tagsFlow,
                 loanPaymentsFlow
-            ) { args: Array<Any> -> args }
-                .flatMapLatest { args ->
-                    @Suppress("UNCHECKED_CAST")
-                    val accounts = args[0] as List<Account>
+            ) { payments, budgets, loans, tags, loanPayments ->
+                DashboardProfileData(payments, budgets, loans, tags, loanPayments)
+            }
 
-                    @Suppress("UNCHECKED_CAST")
-                    val recentTransactions = args[1] as List<Transaction>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val categories = args[2] as List<Category>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val rates = args[3] as Map<String, BigDecimal>
-                    val baseCurrency = args[4] as String
-                    val hasLoadedExchangeRates = args[5] as Boolean
-                    val cardsCfg = args[6] as DashboardCardsConfig
-
-                    @Suppress("UNCHECKED_CAST")
-                    val plannedPayments = args[7] as List<PlannedPayment>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val budgets = args[8] as List<Budget>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val loans = args[9] as List<Loan>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val tags = args[10] as List<com.osscabinet.ossWallet.domain.model.Tag>
-
-                    @Suppress("UNCHECKED_CAST")
-                    val loanPayments =
-                        args[11] as List<com.osscabinet.ossWallet.domain.model.LoanPayment>
+            combine(ratesFlow, profileFlow) { r, p -> r to p }
+                .flatMapLatest { (ratesData, profile) ->
+                    val accounts = ratesData.core.accounts
+                    val recentTransactions = ratesData.core.recentTransactions
+                    val categories = ratesData.core.categories
+                    val rates = ratesData.core.rates
+                    val baseCurrency = ratesData.core.baseCurrency
+                    val hasLoadedExchangeRates = ratesData.hasLoadedRates
+                    val cardsCfg = ratesData.cardsConfig
+                    val plannedPayments = profile.plannedPayments
+                    val budgets = profile.budgets
+                    val loans = profile.loans
+                    val tags = profile.tags
+                    val loanPayments = profile.loanPayments
 
                     val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
                     val groupedLoanPayments = loanPayments.groupBy { it.loanId }
@@ -201,12 +224,14 @@ class DashboardViewModel @Inject constructor(
 
                     channelFlow<DashboardUiState> {
                         // --- Phase 1: Structural data — renders before any card computes ---
-                        val transactionsWithBalance = CardAggregationService.computeRecentBalances(
-                            recentTransactions.filter { it.accountId in activeAccountIds },
-                            accounts,
-                            baseCurrency,
-                            rates
-                        )
+                        val transactionsWithBalance = withContext(Dispatchers.Default) {
+                            CardAggregationService.computeRecentBalances(
+                                recentTransactions.filter { it.accountId in activeAccountIds },
+                                accounts,
+                                baseCurrency,
+                                rates
+                            )
+                        }
                         val now = System.currentTimeMillis()
                         val visibleTransactions = transactionsWithBalance
                             .filter { it.transaction.timestamp <= now }
@@ -257,7 +282,7 @@ class DashboardViewModel @Inject constructor(
 
                         if (cachedCards != null) {
                             // Cache hit: show last-known cards immediately — no shimmers, no blanks.
-                            send(buildSuccess(cachedCards, isCardsComputing = false))
+                            send(buildSuccess(cachedCards, isCardsComputing = true))
                         } else {
                             // First launch for this profile: no cache yet, show card shimmers.
                             send(buildSuccess(emptyMap(), isCardsComputing = true))
@@ -278,7 +303,7 @@ class DashboardViewModel @Inject constructor(
                         var completed = 0
 
                         configs.forEach { config ->
-                            launch {
+                            launch(Dispatchers.Default) {
                                 val result = runCatching {
                                     cardComputerRegistry.compute(config.cardType, enrichedInput, config)
                                 }
@@ -293,14 +318,14 @@ class DashboardViewModel @Inject constructor(
                                     }
                                     snapshot = partialMap.toMap() to (completed < configs.size)
                                 }
-                                // Cache hit: silent background refresh (isCardsComputing always false).
-                                // No cache: show progress so shimmers resolve as cards finish.
-                                send(buildSuccess(snapshot.first, if (cachedCards != null) false else snapshot.second))
+                                // Always reflect true computing state regardless of cache availability.
+                                send(buildSuccess(snapshot.first, snapshot.second))
                             }
                         }
                     }
                 }
-        }
+            }
+        .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -379,6 +404,10 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun clearUndoAction() { _lastUndoAction.value = null }
+
+    private companion object {
+        const val DASHBOARD_TRANSACTION_FEED_LIMIT = 100
+    }
 }
 
 sealed class DashboardUiState {

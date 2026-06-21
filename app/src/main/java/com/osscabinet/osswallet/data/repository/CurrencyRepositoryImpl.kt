@@ -24,7 +24,7 @@ class CurrencyRepositoryImpl @Inject constructor(
 
     override val ratesFlow: Flow<Map<String, BigDecimal>> =
         dao.observeAllRates().map { entities ->
-            entities.associate { it.currencyCode to BigDecimal.valueOf(it.rate) }
+            entities.associate { it.currencyCode to it.rate.toBigDecimal() }
         }
 
     override suspend fun fetchFreshRates(baseCurrency: String): CurrencyRates {
@@ -48,7 +48,7 @@ class CurrencyRepositoryImpl @Inject constructor(
             CurrencyRateEntity(
                 currencyCode = it.key,
                 baseCurrency = baseCurrency,
-                rate = it.value,
+                rate = it.value.toBigDecimal().toPlainString(),
                 timestamp = rates.lastUpdated,
                 nextUpdate = nextUpdateMillis
             )
@@ -65,7 +65,7 @@ class CurrencyRepositoryImpl @Inject constructor(
 
             // If cache is valid and matches our base currency, use it
             if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first())) {
-                val rates = localRates.associate { it.currencyCode to it.rate }
+                val rates = localRates.associate { it.currencyCode to it.rate.toDouble() }
 
                 if (localRates.first().baseCurrency == baseCurrency) {
                     return@withContext rates
@@ -87,17 +87,16 @@ class CurrencyRepositoryImpl @Inject constructor(
                     CurrencyRateEntity(
                         currencyCode = it.key,
                         baseCurrency = baseCurrency,
-                        rate = it.value,
+                        rate = it.value.toBigDecimal().toPlainString(),
                         timestamp = System.currentTimeMillis(),
                         nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000L // 24h fallback
                     )
                 }
-                dao.deleteAllRates()
-                dao.insertRates(entities)
+                dao.replaceRates(entities)
                 return@withContext rates
             }
 
-            localRates.associate { it.currencyCode to it.rate }
+            localRates.associate { it.currencyCode to it.rate.toDouble() }
         }
     }
 

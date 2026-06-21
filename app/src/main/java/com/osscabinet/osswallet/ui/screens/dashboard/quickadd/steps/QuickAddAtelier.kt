@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -131,75 +133,77 @@ internal fun AtelierTile(
     val tileShape = RoundedCornerShape(16.dp)
     val bg = if (isSelected) selectionColor.copy(alpha = 0.10f) else AppColors.recessedSurface
 
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(tileShape)
+            .background(bg)
+            .then(
+                if (isSelected) Modifier.selectedBorder(tileShape, selectionColor)
+                else Modifier.aeonHairlineBorder(tileShape)
+            )
+            .combinedClickable(onClick = onTap, onLongClick = onLongPress),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(tileShape)
-                .background(bg)
-                .then(
-                    if (isSelected) Modifier.selectedBorder(tileShape, selectionColor)
-                    else Modifier.aeonHairlineBorder(tileShape)
-                )
-                .combinedClickable(onClick = onTap, onLongClick = onLongPress),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
                 tint = iconColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(20.dp)
             )
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(15.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(selectionColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint = selectionContentColor,
-                        modifier = Modifier.size(9.dp)
-                    )
-                }
-            } else if (hasChildren) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(14.dp)
-                        .clip(RoundedCornerShape(7.dp))
-                        .background(AppColors.contentSecondary.copy(alpha = 0.18f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                        contentDescription = "Long press for sub-categories",
-                        tint = AppColors.contentSecondary,
-                        modifier = Modifier.size(10.dp)
-                    )
-                }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = AppTextStyles.chartAxisLabel.copy(fontSize = 8.sp),
+                color = AppColors.contentPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(15.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(selectionColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = selectionContentColor,
+                    modifier = Modifier.size(9.dp)
+                )
+            }
+        } else if (hasChildren) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(14.dp)
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(AppColors.contentSecondary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "Long press for sub-categories",
+                    tint = AppColors.contentSecondary,
+                    modifier = Modifier.size(10.dp)
+                )
             }
         }
-        Text(
-            text = label,
-            style = AppTextStyles.chartAxisLabel,
-            color = AppColors.contentPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 

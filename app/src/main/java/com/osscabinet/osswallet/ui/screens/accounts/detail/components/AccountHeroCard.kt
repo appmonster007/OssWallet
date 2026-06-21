@@ -53,6 +53,7 @@ import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -111,12 +112,6 @@ fun AccountHeroCard(
         if (isDarkBg) Color(0xFFE27974) else Color(0xFFC8463F)
     }
 
-    val accColor = if (isH) {
-        if (isDarkBg) Color(0xFFD6C189) else Color(0xFF8A6F3C)
-    } else {
-        if (isDarkBg) Color(0xFFDDE2FA) else Color(0xFF2F3A88)
-    }
-
     val subColor = if (isDarkBg) contentColor.copy(alpha = 0.7f) else AppColors.contentSecondary
 
     val balanceInBase = summary.balanceInBase
@@ -150,7 +145,7 @@ fun AccountHeroCard(
             // Main Balance Section
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = "TOTAL BALANCE",
+                    text = if (config.perspective is AccountingPerspective.Accounting) "TOTAL BALANCE" else "NET CASH FLOW",
                     style = AppTextStyles.overlineLabel.copy(
                         letterSpacing = 1.5.sp
                     ),
@@ -199,100 +194,114 @@ fun AccountHeroCard(
                 }
             }
 
-            // Income/Expense Flow Column (Tabular)
+            // Income/Expense/Inflow/Outflow Grid
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                val types = config.filter.transactionTypes
-                val showIncome = types.isEmpty() || TransactionType.INCOME in types
-                val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
-                val showTransfer = types.isEmpty() || types.any { it.isTransfer }
-
                 val flow = summary.currentPeriodFlow
                 val prevFlow = summary.previousPeriodFlow
 
-                when (config.perspective) {
-                    AccountingPerspective.Accounting -> {
-                        if (showIncome) {
-                            FlowSummaryItem(
-                                label = "INCOME",
-                                amount = flow.income,
-                                currency = account.currencyCode,
-                                icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                                color = posColor,
-                                contentColor = contentColor,
-                                previousAmount = prevFlow?.income,
-                                onClick = {
-                                    callbacks.onClickIncome?.invoke(
-                                        config.filter.copy(
-                                            transactionTypes = setOf(
-                                                TransactionType.INCOME
-                                            )
-                                        )
-                                    )
-                                }
-                            )
-                        }
-                        if (showExpense) {
-                            FlowSummaryItem(
-                                label = "EXPENSE",
-                                amount = flow.expense,
-                                currency = account.currencyCode,
-                                icon = Icons.AutoMirrored.Rounded.TrendingDown,
-                                color = negColor,
-                                contentColor = contentColor,
-                                previousAmount = prevFlow?.expense,
-                                onClick = {
-                                    callbacks.onClickExpense?.invoke(
-                                        config.filter.copy(
-                                            transactionTypes = setOf(
-                                                TransactionType.EXPENSE
-                                            )
-                                        )
-                                    )
-                                }
-                            )
-                        }
-                        if (showTransfer) {
-                            FlowSummaryItem(
-                                label = "TRANSFER",
-                                amount = flow.netTransfer,
-                                currency = account.currencyCode,
-                                icon = Icons.Rounded.SwapHoriz,
-                                color = accColor,
-                                contentColor = contentColor,
-                                previousAmount = prevFlow?.netTransfer,
-                                onClick = {
-                                    callbacks.onClickTransfer?.invoke(
-                                        config.filter.copy(
-                                            transactionTypes = TransactionType.TRANSFER_TYPES
-                                        )
-                                    )
-                                },
-                                forceShowPlus = true
-                            )
-                        }
+                if (config.perspective is AccountingPerspective.Accounting) {
+                    // Row 1: Income / Expense
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        FlowSummaryItem(
+                            label = "INCOME",
+                            amount = flow.income,
+                            currency = account.currencyCode,
+                            icon = Icons.AutoMirrored.Rounded.TrendingUp,
+                            color = posColor,
+                            contentColor = contentColor,
+                            previousAmount = prevFlow?.income,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                callbacks.onClickIncome?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))
+                                )
+                            }
+                        )
+                        FlowSummaryItem(
+                            label = "EXPENSE",
+                            amount = flow.expense,
+                            currency = account.currencyCode,
+                            icon = Icons.AutoMirrored.Rounded.TrendingDown,
+                            color = negColor,
+                            contentColor = contentColor,
+                            previousAmount = prevFlow?.expense,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                callbacks.onClickExpense?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))
+                                )
+                            }
+                        )
                     }
 
-                    is AccountingPerspective.CashFlow -> {
-                        val prevInflow = prevFlow?.let { (it.income) + it.transferIn }
-                        val prevOutflow = prevFlow?.let { (it.expense) + it.transferOut }
+                    // Row 2: Transfer In / Transfer Out
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        FlowSummaryItem(
+                            label = "TRF IN",
+                            amount = flow.transferIn,
+                            currency = account.currencyCode,
+                            icon = Icons.Rounded.SwapHoriz,
+                            color = contentColor.copy(alpha = 0.9f),
+                            contentColor = contentColor,
+                            previousAmount = prevFlow?.transferIn,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                callbacks.onClickTransfer?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+                                )
+                            }
+                        )
+                        FlowSummaryItem(
+                            label = "TRF OUT",
+                            amount = flow.transferOut,
+                            currency = account.currencyCode,
+                            icon = Icons.Rounded.SwapHoriz,
+                            color = contentColor.copy(alpha = 0.9f),
+                            contentColor = contentColor,
+                            previousAmount = prevFlow?.transferOut,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                callbacks.onClickTransfer?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+                                )
+                            }
+                        )
+                    }
+                } else {
+                    // Cash Flow Perspective: strictly Inflow and Outflow
+                    val inflow = flow.income + flow.transferIn
+                    val outflow = flow.expense + flow.transferOut
+                    val prevInflow = prevFlow?.let { it.income + it.transferIn }
+                    val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         FlowSummaryItem(
                             label = "INFLOW",
-                            amount = (if (showIncome) flow.income else BigDecimal.ZERO) + (if (showTransfer) flow.transferIn else BigDecimal.ZERO),
+                            amount = inflow,
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingUp,
                             color = posColor,
                             contentColor = contentColor,
                             previousAmount = prevInflow,
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 callbacks.onClickInflow?.invoke(
                                     config.filter.copy(
                                         transactionTypes = buildSet {
-                                            if (showIncome) add(TransactionType.INCOME)
-                                            if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
+                                            add(TransactionType.INCOME)
+                                            add(TransactionType.TRANSFER_INFLOW)
                                         }
                                     )
                                 )
@@ -300,18 +309,19 @@ fun AccountHeroCard(
                         )
                         FlowSummaryItem(
                             label = "OUTFLOW",
-                            amount = (if (showExpense) flow.expense else BigDecimal.ZERO) + (if (showTransfer) flow.transferOut else BigDecimal.ZERO),
+                            amount = outflow,
                             currency = account.currencyCode,
                             icon = Icons.AutoMirrored.Rounded.TrendingDown,
                             color = negColor,
                             contentColor = contentColor,
                             previousAmount = prevOutflow,
+                            modifier = Modifier.weight(1f),
                             onClick = {
                                 callbacks.onClickOutflow?.invoke(
                                     config.filter.copy(
                                         transactionTypes = buildSet {
-                                            if (showExpense) add(TransactionType.EXPENSE)
-                                            if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
+                                            add(TransactionType.EXPENSE)
+                                            add(TransactionType.TRANSFER_OUTFLOW)
                                         }
                                     )
                                 )
@@ -432,84 +442,81 @@ private fun FlowSummaryItem(
     onClick: () -> Unit = {}
 ) {
     Surface(
-        color = contentColor.copy(alpha = 0.1f),
+        color = contentColor.copy(alpha = 0.14f),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, contentColor.copy(alpha = 0.12f)),
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.18f)),
         modifier = modifier.clickable { onClick() }
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color.copy(alpha = 0.9f),
-                modifier = Modifier.size(14.dp)
-            )
-            Text(
-                text = label,
-                style = AppTextStyles.overlineLabel.copy(
-                    letterSpacing = 0.5.sp,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = contentColor.copy(alpha = 0.5f),
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = contentColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        text = label.uppercase(),
+                        style = AppTextStyles.overlineLabel.copy(
+                            letterSpacing = 1.sp,
+                            fontSize = 9.sp
+                        ),
+                        color = contentColor.copy(alpha = 0.6f)
+                    )
+                }
 
+                if (previousAmount != null) {
+                    val change = amount.subtract(previousAmount)
+                    if (change.signum() != 0 && previousAmount.signum() != 0) {
+                        val percentage = change.multiply(BigDecimal("100"))
+                            .divide(previousAmount.abs(), 1, java.math.RoundingMode.HALF_UP)
+                        val up = change.signum() > 0
+
+                        val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
+                            "${if (percentage.signum() > 0) ">999" else "<-999"}%"
+                        } else {
+                            "${if (up) "+" else ""}$percentage%"
+                        }
+
+                        Text(
+                            text = "${if (up) "▲" else "▼"} $displayPercentage",
+                            style = AppTextStyles.metaLabel.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp
+                            ),
+                            color = color,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
             Text(
-                text = CurrencyReprUi.formatCurrencyAnnotated(
+                text = formatCurrency(
                     amount = amount,
                     currencyCode = currency,
                     spec = CurrencyDisplaySpec(
                         useSemanticColor = false,
                         forceShowPlus = forceShowPlus,
-                        shortenThreshold = 20
+                        shortenThreshold = 13
                     )
                 ),
-                style = AppTextStyles.transactionAmount.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                style = AppTextStyles.screenSubTitle.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 16.sp
                 ),
-                color = color,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = color
             )
-
-            if (previousAmount != null) {
-                val change = amount.subtract(previousAmount)
-                if (change.signum() != 0 && previousAmount.signum() != 0) {
-                    val percentage = change.multiply(BigDecimal("100"))
-                        .divide(previousAmount.abs(), 1, java.math.RoundingMode.HALF_UP)
-                    val up = change.signum() > 0
-
-                    val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
-                        "${if (percentage.signum() > 0) ">999" else "<-999"}%"
-                    } else {
-                        "${if (up) "+" else ""}$percentage%"
-                    }
-
-                    Text(
-                        text = "${if (up) "▲" else "▼"} $displayPercentage",
-                        style = AppTextStyles.metaLabel.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp
-                        ),
-                        color = color,
-                        modifier = Modifier.widthIn(min = 44.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                        maxLines = 1
-                    )
-                } else {
-                    Box(modifier = Modifier.width(44.dp))
-                }
-            }
         }
     }
 }

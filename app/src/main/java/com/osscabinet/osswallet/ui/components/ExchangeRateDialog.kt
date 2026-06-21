@@ -25,7 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import java.math.BigDecimal
@@ -49,29 +49,30 @@ fun ExchangeRateDialog(
         title = {
             Text(
                 "Exchange Rate",
-                style = AppTextStyles.heroAmount
+                style = AppTextStyles.cardTitle
             )
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
+                horizontalAlignment = Alignment.Start,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     "Enter the exchange rate for this transfer",
-                    style = AppTextStyles.transactionTitle,
+                    style = AppTextStyles.caption,
                     color = AppColors.contentSecondary
                 )
 
                 OutlinedTextField(
                     value = rateText,
                     onValueChange = { rateText = it },
-                    label = { Text("Rate") },
+                    label = { Text("Rate", style = AppTextStyles.formFieldHint) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                    textStyle = AppTextStyles.formFieldValue
                 )
             }
         },
@@ -80,24 +81,29 @@ fun ExchangeRateDialog(
                 onClick = {
                     rateText.toBigDecimalOrNull()?.let { onConfirm(it) }
                 },
-                shape = RoundedCornerShape(12.dp),
-                enabled = rateText.toBigDecimalOrNull() != null
+                shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+                enabled = rateText.toBigDecimalOrNull() != null,
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = AppColors.primary,
+                    contentColor = AppColors.onPrimary
+                )
             ) {
                 Icon(
                     Icons.Rounded.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Confirm")
+                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm))
+                Text("Confirm", style = AppTextStyles.buttonLabel)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.primary)
             }
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius),
+        containerColor = AppColors.panelSurface
     )
 }
 

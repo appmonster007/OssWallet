@@ -82,10 +82,13 @@ fun rememberCardWithCallbacks(
 
     val renderData = renderDataState ?: return null
 
+    // Only key on the CardInput fields that the callbacks actually read.
+    // The full `input` object changes on every transaction write; keying on it would
+    // rebuild all ~120 lambdas even when only account balances changed.
     return remember(
         config,
-        input,
-        registry,
+        input.filter,
+        input.screenOwnsTimeline,
         updateHandler,
         onDelete,
         onRecordsClick,

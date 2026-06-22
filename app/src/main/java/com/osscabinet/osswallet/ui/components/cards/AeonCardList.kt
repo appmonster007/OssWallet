@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -81,6 +82,8 @@ fun AeonCardList(
     val sortedCards = remember(cards) { cards.sortedBy { it.order } }
     val sortedCardsRef by rememberUpdatedState(sortedCards)
     val onReorderRef by rememberUpdatedState(onReorder)
+    // Wrap in State so that per-card derivedStateOf inside items() can track individual slices.
+    val cardDataMapState = rememberUpdatedState(cardDataMap)
     val headerOffset = if (header != null) 1 else 0
 
     val reorderState = rememberReorderableLazyListState(
@@ -130,7 +133,9 @@ fun AeonCardList(
                     key = cardConfig.cardId,
                 )
 
-                val preComputedData = cardDataMap[cardConfig.cardId]
+                val preComputedData by remember(cardConfig.cardId) {
+                    derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
+                }
 
                 val cardWithCallbacks = rememberCardWithCallbacks(
                     config = cardConfig,

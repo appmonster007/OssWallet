@@ -56,10 +56,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -309,31 +309,36 @@ class DashboardViewModel @Inject constructor(
                         if (!hasLoadedExchangeRates) return@channelFlow
 
                         // Phase 2: Recompute all cards in parallel.
-                        // Cache hit → seed partialMap with stale data so cards update silently (no shimmer flash).
-                        // No cache → partialMap starts empty, cards pop in as they finish.
+                        // Cache hit → seed cardDataFlow with stale data so cards update silently (no shimmer flash).
+                        // No cache → cardDataFlow starts empty, cards pop in as they finish.
                         val enrichedInput = baseInput.copy(categoryHierarchy = categoryHierarchy)
-                        val mutex = Mutex()
-                        val partialMap = cachedCards?.toMutableMap() ?: mutableMapOf()
-                        var completed = 0
+                        val seedMap = cachedCards?.toMap() ?: emptyMap()
+                        val cardDataFlow = MutableStateFlow(seedMap)
+                        val completedCount = AtomicInteger(0)
+
+                        // Single collector emits consolidated state — coalesces rapid concurrent card completions.
+                        launch {
+                            cardDataFlow.collect { cardData ->
+                                val isComputing = completedCount.get() < configs.size
+                                send(buildSuccess(cardData, isComputing))
+                            }
+                        }
 
                         configs.forEach { config ->
                             launch(Dispatchers.Default) {
                                 val result = runCatching {
                                     cardComputerRegistry.compute(config.cardType, enrichedInput, config)
                                 }
-                                val snapshot: Pair<Map<String, CardRenderData>, Boolean>
-                                mutex.withLock {
-                                    result.onSuccess { data -> partialMap[config.cardId] = data }
-                                    result.onFailure { e -> partialMap[config.cardId] = CardRenderData.Error(e.message) }
-                                    completed++
-                                    if (completed == configs.size) {
-                                        cardRenderCache[profileId] = partialMap
-                                            .filterValues { it !is CardRenderData.Error }
-                                    }
-                                    snapshot = partialMap.toMap() to (completed < configs.size)
+                                cardDataFlow.update { current ->
+                                    val updated = current.toMutableMap()
+                                    result.onSuccess { data -> updated[config.cardId] = data }
+                                    result.onFailure { e -> updated[config.cardId] = CardRenderData.Error(e.message) }
+                                    updated
                                 }
-                                // Always reflect true computing state regardless of cache availability.
-                                send(buildSuccess(snapshot.first, snapshot.second))
+                                if (completedCount.incrementAndGet() == configs.size) {
+                                    cardRenderCache[profileId] = cardDataFlow.value
+                                        .filterValues { it !is CardRenderData.Error }
+                                }
                             }
                         }
                     }

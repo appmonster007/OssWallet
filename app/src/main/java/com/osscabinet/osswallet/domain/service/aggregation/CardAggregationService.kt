@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
@@ -468,7 +469,7 @@ object CardAggregationService {
             }
         } else emptyMap()
 
-        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates.rates, startingBalances)
+        val transactionsWithBalance = computeRecentBalances(txs, input.accounts, input.targetCurrency, input.exchangeRates, startingBalances)
 
         val groups = TimelineService.getGroupedData(
             transactions = transactionsWithBalance.take(20),
@@ -618,7 +619,7 @@ object CardAggregationService {
         transactions: List<Transaction>,
         accounts: List<Account>,
         baseCurrency: String,
-        rates: Map<String, BigDecimal>,
+        rates: ExchangeRateSnapshot,
         startingBalances: Map<String, BigDecimal> = emptyMap()
     ): List<TransactionWithBalance> {
         val accountById = accounts.associateBy { it.id }

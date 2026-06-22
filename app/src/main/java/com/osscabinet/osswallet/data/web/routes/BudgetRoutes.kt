@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.*
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -45,10 +46,13 @@ fun Route.budgetRoutes(
                     budgetRepository.getActiveBudgetsSync(profileId)
                 }
                 val categories = categoryRepository.getAllCategoriesSync()
-                val exchangeRates = runCatching {
-                    currencyRepository.getExchangeRates(baseCurrency)
-                        .mapValues { BigDecimal.valueOf(it.value) }
-                }.getOrDefault(emptyMap())
+                val exchangeRates = ExchangeRateSnapshot(
+                    anchor = baseCurrency,
+                    rates = runCatching {
+                        currencyRepository.getExchangeRates(baseCurrency)
+                            .mapValues { BigDecimal.valueOf(it.value) }
+                    }.getOrDefault(emptyMap())
+                )
 
                 val cal = Calendar.getInstance()
                 val periodLabel = "${cal.get(Calendar.YEAR)}-${
@@ -160,10 +164,13 @@ fun Route.budgetRoutes(
                 val allTransactions =
                     transactionRepository.getAllTransactionsSync(profileId)
                 val categories = categoryRepository.getAllCategoriesSync()
-                val exchangeRates = runCatching {
-                    currencyRepository.getExchangeRates(baseCurrency)
-                        .mapValues { BigDecimal.valueOf(it.value) }
-                }.getOrDefault(emptyMap())
+                val exchangeRates = ExchangeRateSnapshot(
+                    anchor = baseCurrency,
+                    rates = runCatching {
+                        currencyRepository.getExchangeRates(baseCurrency)
+                            .mapValues { BigDecimal.valueOf(it.value) }
+                    }.getOrDefault(emptyMap())
+                )
                 val cal = Calendar.getInstance()
                 val periodLabel = "${cal.get(Calendar.YEAR)}-${
                     (cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')

@@ -7,15 +7,19 @@ import javax.inject.Singleton
 
 @Singleton
 class CardRenderCache @Inject constructor() {
-    // ConcurrentHashMap is intentional: reads (operator get) are lock-free and happen outside
-    // the ViewModel's Mutex. Writes (operator set) always occur inside mutex.withLock{} in the
-    // calling ViewModel, so the full read-filter-write sequence is externally serialized.
-    // A plain HashMap would require synchronization for the unsynchronized reads.
-    private val cache = ConcurrentHashMap<Int, Map<String, CardRenderData>>()
+    // Key = (profileId, currency) so a currency change automatically misses the cache,
+    // preventing stale cards computed with the old exchange rates from being shown.
+    // ConcurrentHashMap: lock-free reads, externally serialized writes via ViewModel Mutex.
+    private val cache = ConcurrentHashMap<Pair<Int, String>, Map<String, CardRenderData>>()
 
-    operator fun get(profileId: Int): Map<String, CardRenderData>? = cache[profileId]
+    operator fun get(profileId: Int, currency: String): Map<String, CardRenderData>? =
+        cache[profileId to currency]
 
-    operator fun set(profileId: Int, data: Map<String, CardRenderData>) {
-        cache[profileId] = data
+    operator fun set(profileId: Int, currency: String, data: Map<String, CardRenderData>) {
+        cache[profileId to currency] = data
+    }
+
+    fun invalidateProfile(profileId: Int) {
+        cache.keys.removeAll { (pid, _) -> pid == profileId }
     }
 }

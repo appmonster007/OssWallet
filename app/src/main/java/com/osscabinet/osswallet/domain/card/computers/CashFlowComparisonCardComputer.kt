@@ -227,6 +227,21 @@ class CashFlowComparisonCardComputer(
             }
         }
 
+        // Pre-compute one conversion factor per source currency to avoid repeated
+        // map lookups and BigDecimal divides inside the bucket loop.
+        val anchor = exchangeRates.anchor
+        val toRate = if (baseCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[baseCurrency]
+        val conversionFactors: Map<String, BigDecimal> = byBucket.values
+            .flatMap { it.keys }
+            .toSet()
+            .mapNotNull { currency ->
+                if (currency == baseCurrency) return@mapNotNull currency to BigDecimal.ONE
+                val fromRate = if (currency == anchor) BigDecimal.ONE else exchangeRates.rates[currency]
+                if (fromRate == null || toRate == null || fromRate.signum() == 0) return@mapNotNull null
+                currency to toRate.divide(fromRate, 14, RoundingMode.HALF_UP)
+            }
+            .toMap()
+
         val points = mutableListOf<CashFlowTimePoint>()
         for ((idx, triple) in buckets.withIndex()) {
             val (bucketStart, _, label) = triple
@@ -237,15 +252,16 @@ class CashFlowComparisonCardComputer(
             var totalVal2 = BigDecimal.ZERO
             var totalTrf = BigDecimal.ZERO
             summaries.forEach { (currency, summary) ->
+                val factor = conversionFactors[currency] ?: return@forEach
                 val (v1, v2) = when (perspective) {
                     is AccountingPerspective.Accounting -> summary.income to summary.expense
                     is AccountingPerspective.CashFlow -> {
                         summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
                     }
                 }
-                totalVal1 += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
-                totalVal2 += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
-                totalTrf += CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10)
+                totalVal1 = totalVal1.add(v1.multiply(factor))
+                totalVal2 = totalVal2.add(v2.multiply(factor))
+                totalTrf = totalTrf.add(summary.transfer.multiply(factor))
             }
             points.add(
                 CashFlowTimePoint(

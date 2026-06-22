@@ -8,6 +8,8 @@ import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -91,9 +93,9 @@ object LoanService {
     fun buildSummaryFromTransactions(
         loan: Loan,
         transactions: List<Transaction>,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         now: Long,
-        precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+        precision: Int = CurrencyService.precision,
         allCategories: List<com.osscabinet.ossWallet.domain.model.Category> = emptyList()
     ): LoanSummary {
         val filteredTransactions = filterTransactionsForLoan(loan, transactions, allCategories)
@@ -103,7 +105,7 @@ object LoanService {
                 LoanType.BORROWED -> tx.amount.signum() < 0 // Paid money (Expense)
             }
             if (isRepayment) {
-                val converted = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                val converted = CurrencyService.convertAmount(
                     amount = tx.amount.abs(),
                     fromCurrency = tx.currency,
                     toCurrency = loan.currency,

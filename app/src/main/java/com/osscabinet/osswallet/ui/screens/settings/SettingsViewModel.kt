@@ -125,7 +125,7 @@ class SettingsViewModel @Inject constructor(
 
     val isOnboardingCompleted: StateFlow<Boolean?> = settingsRepository.isOnboardingCompleted
         .map { it as Boolean? }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val profiles: StateFlow<List<Profile>> = profileRepository.getAllProfiles()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -209,7 +209,9 @@ class SettingsViewModel @Inject constructor(
     fun setCurrency(currencyCode: String) {
         viewModelScope.launch {
             settingsRepository.saveCurrency(currencyCode)
-            fetchAndSaveRates(currencyCode)
+            // ComputationRepository reacts to the currency change and fetches fresh rates
+            // automatically. fetchAndSaveRates is NOT called here to avoid a concurrent
+            // duplicate fetch race condition.
         }
     }
 

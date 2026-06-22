@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -84,12 +85,15 @@ fun BudgetsCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
+            val onBudgetClick = callbacks::onBudgetClick
             Column(modifier = Modifier.fillMaxWidth()) {
                 items.forEachIndexed { index, progress ->
+                    val budgetId = progress.budget.id
+                    val onClick = remember(budgetId) { { onBudgetClick(budgetId) } }
                     BudgetProgressRow(
                         progress = progress,
                         showDivider = index < items.lastIndex,
-                        onClick = { callbacks.onBudgetClick(progress.budget.id) }
+                        onClick = onClick
                     )
                 }
             }

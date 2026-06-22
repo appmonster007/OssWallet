@@ -57,6 +57,7 @@ class PlannedPaymentsCardComputer :
 
         // Strip items that are already in overdue from the upcoming list
         val upcomingNonOverdue = allUpcoming.filter { !it.isOverdue }
+        val upcomingById = upcomingNonOverdue.associateBy { it.plannedPayment.id }
 
         val (shownOverdue, shownUpcoming) = when (config.viewMode) {
             PlannedPaymentsViewMode.OVERDUE_ONLY -> overdue to emptyList()
@@ -65,9 +66,7 @@ class PlannedPaymentsCardComputer :
                 // One nearest upcoming occurrence per active payment schedule
                 val futureOnly = input.plannedPayments
                     .filter { it.status == PlannedPaymentStatus.ACTIVE }
-                    .mapNotNull { payment ->
-                        allUpcoming.firstOrNull { it.plannedPayment.id == payment.id && !it.isOverdue }
-                    }
+                    .mapNotNull { payment -> upcomingById[payment.id] }
                     .sortedBy { it.scheduledDate }
                     .take(config.maxItems)
                 emptyList<com.osscabinet.ossWallet.domain.model.PlannedPayment>() to futureOnly

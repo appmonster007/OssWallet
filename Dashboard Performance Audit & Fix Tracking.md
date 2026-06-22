@@ -741,14 +741,14 @@ ISS-41 · MEDIUM · resolveTimeBoundsFromDb duplicated across 3 card computers
     - domain/card/computers/CashFlowComparisonCardComputer.kt (private top-level function line 29)
     - domain/card/computers/IncomeExpenseBarCardComputer.kt (private top-level function line 29)
 - Root Cause: Identical resolveTimeBoundsFromDb function copied 3 times. Any fix to its logic
-  (e.g., ISS-52 below) must be applied in 3 places or one copy silently diverges.
+  (e.g., ISS-53 below) must be applied in 3 places or one copy silently diverges.
 - Fix: Extract to a shared utility object (e.g., CardComputerUtils.resolveTimeBoundsFromDb()) and
   replace all 3 private copies with a call to the shared version.
-- Acceptance: Single definition, zero duplication. ISS-52 fix only needs one change.
+- Acceptance: Single definition, zero duplication. ISS-53 fix only needs one change.
 - [ ] Status
 
  ---
-ISS-55 · MEDIUM · CurrencyRateEntity.rate toDouble() silently produces NaN on corrupted migration data
+ISS-42 · MEDIUM · CurrencyRateEntity.rate toDouble() silently produces NaN on corrupted migration data
 
 - Severity: P2 — Silent NaN corruption of all exchange rate calculations
 - File: data/repository/CurrencyRepositoryImpl.kt line 68
@@ -771,7 +771,7 @@ ISS-55 · MEDIUM · CurrencyRateEntity.rate toDouble() silently produces NaN on 
 - [ ] Status
 
  ---
-ISS-42 · HIGH SECURITY · LoanPaymentDao.getAllPayments() lacks profileId filter
+ISS-43 · HIGH SECURITY · LoanPaymentDao.getAllPayments() lacks profileId filter
 
 - Severity: P1 — Cross-profile loan payment data visible
 - File: data/local/dao/LoanPaymentDao.kt
@@ -784,7 +784,7 @@ ISS-42 · HIGH SECURITY · LoanPaymentDao.getAllPayments() lacks profileId filte
 - [ ] Status
 
  ---
-ISS-43 · CRITICAL DATA INTEGRITY · toBalanceFilter() leaks category/tag filters into account balance queries
+ISS-44 · CRITICAL DATA INTEGRITY · toBalanceFilter() leaks category/tag filters into account balance queries
 
 - Severity: P0 — Account balances silently wrong when any category or tag filter is active
 - File: domain/service/aggregation/CardAggregationService.kt lines 802–813
@@ -818,7 +818,7 @@ ISS-43 · CRITICAL DATA INTEGRITY · toBalanceFilter() leaks category/tag filter
 - [ ] Status
 
  ---
-ISS-44 · CRITICAL UX · First-launch infinite loading when app is offline
+ISS-45 · CRITICAL UX · First-launch infinite loading when app is offline
 
 - Severity: P0 — App appears permanently broken on first install without network
 - Files:
@@ -842,7 +842,7 @@ ISS-44 · CRITICAL UX · First-launch infinite loading when app is offline
 - [ ] Status
 
  ---
-ISS-45 · MEDIUM · Card animations default silently flipped to false
+ISS-46 · MEDIUM · Card animations default silently flipped to false
 
 - Severity: P2 — Regression: card animations disabled for all users after update
 - File: data/local/SettingsDataStore.kt
@@ -856,7 +856,7 @@ ISS-45 · MEDIUM · Card animations default silently flipped to false
 - [ ] Status
 
  ---
-ISS-46 · HIGH DATA INTEGRITY · Self-transfer validation removed (validateAccountSelection deleted)
+ISS-47 · HIGH DATA INTEGRITY · Self-transfer validation removed (validateAccountSelection deleted)
 
 - Severity: P1 — User can submit a transfer from Account A to Account A, creating a phantom
   transaction that adds balance to the account without a corresponding debit
@@ -873,10 +873,10 @@ ISS-46 · HIGH DATA INTEGRITY · Self-transfer validation removed (validateAccou
 - [ ] Status
 
  ---
-ISS-47 · MEDIUM UX · Target account picker does not exclude the source account
+ISS-48 · MEDIUM UX · Target account picker does not exclude the source account
 
 - Severity: P2 — Users can accidentally pick the same account for both sides of a transfer
-  (separate from ISS-46 which handles the save-time guard; this is a UX-layer issue)
+  (separate from ISS-47 which handles the save-time guard; this is a UX-layer issue)
 - File: ui/screens/transactions/entry/components/TransactionEntrySheets.kt lines 83–98
 - Root Cause: Target account list is built as listOf(Account.OUTSIDE_WALLET) + state.accounts
   with no filter excluding the currently selected source account.
@@ -888,7 +888,7 @@ ISS-47 · MEDIUM UX · Target account picker does not exclude the source account
 - [ ] Status
 
  ---
-ISS-48 · HIGH DATA INTEGRITY · Outside-to-Outside transfers allowed (Wallet Minimum Rule removed)
+ISS-49 · HIGH DATA INTEGRITY · Outside-to-Outside transfers allowed (Wallet Minimum Rule removed)
 
 - Severity: P1 — A transfer with source = OUTSIDE_WALLET and target = OUTSIDE_WALLET creates a
   record that moves money out of nowhere into nowhere, corrupting net worth calculations
@@ -905,7 +905,7 @@ ISS-48 · HIGH DATA INTEGRITY · Outside-to-Outside transfers allowed (Wallet Mi
 - [ ] Status
 
  ---
-ISS-49 · MEDIUM UX · Cannot clear target account (clearTargetAccount deleted)
+ISS-50 · MEDIUM UX · Cannot clear target account (clearTargetAccount deleted)
 
 - Severity: P2 — Once a target account is set, the user has no way to remove it; the only
   escape is switching transaction type away from Transfer and back
@@ -918,7 +918,7 @@ ISS-49 · MEDIUM UX · Cannot clear target account (clearTargetAccount deleted)
 - [ ] Status
 
  ---
-ISS-50 · DESIGN DECISION · PredictiveBackHandler in QuickAddSheet always dismisses the full sheet
+ISS-51 · DESIGN DECISION · PredictiveBackHandler in QuickAddSheet always dismisses the full sheet
 
 - Severity: DESIGN DECISION (not a bug)
 - File: ui/screens/dashboard/quickadd/QuickAddSheet.kt lines 128–141
@@ -931,7 +931,7 @@ ISS-50 · DESIGN DECISION · PredictiveBackHandler in QuickAddSheet always dismi
 - [x] Status: CLOSED — intentional design, not a defect. Re-open only if UX requirement changes.
 
  ---
-ISS-51 · HIGH UX · Quick Add category search LaunchedEffect removed — search conflicts with drilldown navigation
+ISS-52 · HIGH UX · Quick Add category search LaunchedEffect removed — search conflicts with drilldown navigation
 
 - Severity: P1 — Opening a sub-category from search results in QuickAdd navigates to the
   sub-category screen but loses the previously selected parent, breaking the category selection flow
@@ -952,7 +952,7 @@ ISS-51 · HIGH UX · Quick Add category search LaunchedEffect removed — search
 - [ ] Status
 
  ---
-ISS-52 · HIGH DATA INTEGRITY · resolveTimeBoundsFromDb uses global minimum timestamp, ignoring card filter scope
+ISS-53 · HIGH DATA INTEGRITY · resolveTimeBoundsFromDb uses global minimum timestamp, ignoring card filter scope
 
 - Severity: P1 — Time-series charts (CategorySpendingTrend, CashFlowComparison,
   IncomeExpenseBar) show data from ALL TIME even when a date-scoped filter is applied to the card
@@ -981,7 +981,7 @@ ISS-52 · HIGH DATA INTEGRITY · resolveTimeBoundsFromDb uses global minimum tim
 - [ ] Status
 
  ---
-ISS-53 · HIGH DATA DISPLAY · Loans card shows principal-only as the primary amount, ignoring accrued interest
+ISS-54 · HIGH DATA DISPLAY · Loans card shows principal-only as the primary amount, ignoring accrued interest
 
 - Severity: P1 (downgraded from P0 — `LoanSummary` has both fields; the card chooses which to show)
 - Files:
@@ -1004,7 +1004,7 @@ ISS-53 · HIGH DATA DISPLAY · Loans card shows principal-only as the primary am
 - [ ] Status
 
  ---
-ISS-54 · CRITICAL DATA INTEGRITY · Running balance drift in Recent Activities card
+ISS-55 · CRITICAL DATA INTEGRITY · Running balance drift in Recent Activities card
 
 - Severity: P0 — Cumulative running balances in the Recent Activities timeline are wrong when
   any non-temporal filter (category, tag, account) is active
@@ -1039,8 +1039,8 @@ Issue Count by Priority
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
 │ INVALID  │ 1     │ ISS-01 (audit correction — not a crash)                                               │
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
-│ P0       │ 6     │ ISS-02 (template leak), ISS-39 (exchange rate fallback), ISS-43 (balance filter leak),│
-│          │       │ ISS-44 (offline loading), ISS-53 (loan interest), ISS-54 (running balance drift)      │
+│ P0       │ 6     │ ISS-02 (template leak), ISS-39 (exchange rate fallback), ISS-44 (balance filter leak),│
+│          │       │ ISS-45 (offline loading), ISS-54 (loan interest), ISS-55 (running balance drift)      │
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
 │ P1       │ 24    │ Critical perf + security + data integrity issues                                      │
 │          │       │ (ISS-03,04,05,06,11,12,13,14,15,16,17,18,19,20,21,25,26,27,28,29,30,31,42,46,48,      │
@@ -1065,19 +1065,19 @@ Note: ISS-01 was INVALID — removed. Added new P0 data integrity fixes.
 ┌─────┬────────────────────────────────────────────────────────────────────────────────┬─────────────┬──────┐
 │  #  │                                   Issue                                        │ Est. Effort │ Risk │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 1   │ ISS-53 — add loan interest to remaining balance (1-line fix, P0 data bug)      │ 15min       │ None │
+│ 1   │ ISS-54 — add loan interest to remaining balance (1-line fix, P0 data bug)      │ 15min       │ None │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 2   │ ISS-43 — fix toBalanceFilter() to strip category/tag filters (P0 data bug)     │ 30min       │ Low  │
+│ 2   │ ISS-44 — fix toBalanceFilter() to strip category/tag filters (P0 data bug)     │ 30min       │ Low  │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 3   │ ISS-54 — apply same filter to startingBalances as to txs (P0 data bug)         │ 1h          │ Low  │
+│ 3   │ ISS-55 — apply same filter to startingBalances as to txs (P0 data bug)         │ 1h          │ Low  │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 4   │ ISS-46 — re-add self-transfer guard (validateAccountSelection)                 │ 30min       │ None │
+│ 4   │ ISS-47 — re-add self-transfer guard (validateAccountSelection)                 │ 30min       │ None │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 5   │ ISS-48 — re-add outside-to-outside transfer guard (Wallet Minimum Rule)        │ 30min       │ None │
+│ 5   │ ISS-49 — re-add outside-to-outside transfer guard (Wallet Minimum Rule)        │ 30min       │ None │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
 │ 6   │ ISS-02, ISS-03 — add profileId filters to TemplateDao / TransactionDao         │ 2h          │ Low  │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 7   │ ISS-42 — add profileId filter to LoanPaymentDao.getAllPayments()                │ 1h          │ Low  │
+│ 7   │ ISS-43 — add profileId filter to LoanPaymentDao.getAllPayments()                │ 1h          │ Low  │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
 │ 8   │ ISS-04 — add composite DB index (profileId, timestamp) + migration             │ 2h          │ Low  │
 ├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
@@ -1193,13 +1193,13 @@ Per-Issue Verification
 - ISS-30: Cold dashboard load produces ≤ 3 UI emissions (visible via Flow emission logging)
 - ISS-31: Delete account #3; verify accounts #4+ do not recompose (Layout Inspector)
 - ISS-39: When target base rate is missing, log warning appears and last valid rates are used
-- ISS-43: Account balances identical regardless of active category/tag filter
-- ISS-44: On first install with no network, cards render within 2s with "rates unavailable" indicator
-- ISS-46/48: Attempting self-transfer or outside-to-outside transfer shows inline error
-- ISS-50: Back gesture on Step 2+ of QuickAdd returns to previous step, not dismiss
-- ISS-52: Card configured for "last 6 months" shows exactly 6 months of data
-- ISS-53: $10,000 loan at 5% interest shows ~$10,500 remaining after 1 year, not $10,000
-- ISS-54: Running balance with "Food" filter starts from filtered baseline, not global account balance                                                                                
+- ISS-44: Account balances identical regardless of active category/tag filter
+- ISS-45: On first install with no network, cards render within 2s with "rates unavailable" indicator
+- ISS-47/48: Attempting self-transfer or outside-to-outside transfer shows inline error
+- ISS-51: Back gesture on Step 2+ of QuickAdd returns to previous step, not dismiss
+- ISS-53: Card configured for "last 6 months" shows exactly 6 months of data
+- ISS-54: $10,000 loan at 5% interest shows ~$10,500 remaining after 1 year, not $10,000
+- ISS-55: Running balance with "Food" filter starts from filtered baseline, not global account balance                                                                                
                                                                                                                                                                     
 End-to-End Performance Targets                                                                                                                                      
                                                                                                                                                                     

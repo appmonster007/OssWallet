@@ -476,6 +476,75 @@ Many individual issues are symptoms of a small number of root architectural deci
 
 ---
 
+# Layer 6.5 — Dashboard Scroll Jank (verified 2026-06-22)
+
+User-observed symptom: records-list flings smoothly; dashboard cards stutter. Each issue below was confirmed against current `feature/tagv43` source. The cards stutter because every visible card carries 4–5 per-frame work sources that compound during fling, whereas the records list is a flat row layout. Fix order matters: ARC-74 + ARC-76 will give the biggest win and should land together.
+
+## ARC-74 · Double `animateContentSize` per card [P1 · trivial]
+- **Files:** `ui/components/cards/AeonCardList.kt:163` AND `ui/components/cards/AeonExpressiveCard.kt:206`
+- **RCA:** Every list item wraps its card in `Box(Modifier.animateContentSize(tween(250)))`; the card shell `AeonExpressiveCard` *also* wraps its content in `Modifier.animateContentSize(tween(400))`. Two `SizeAnimationModifier`s per item.
+- **Why fix:** `animateContentSize` forces the `LazyColumn` to track delta height per item *every measurement pass*. Doubled, it doubles measure cost. During a fling Compose runs measure for items entering the viewport at full frame rate — this is the single biggest per-card cost.
+- **Impact:** Visible stutter on fling; dropped frames most pronounced on mid-tier devices.
+- **Fix:** Keep ONE — preferably the inner one on `AeonExpressiveCard` (it's the surface that actually changes height when content reflows). Delete the wrapping `Box` in `AeonCardList.kt:163-173`. If size-change animation is desired for whole-card insert/delete, use `LazyColumn`'s `Modifier.animateItem()` instead.
+- **Best practice:** One animation modifier per concept per item. Item-level animation belongs to the list (`animateItem`), content-level animation belongs to the leaf composable.
+- **Side effects of fix:** Card height transitions become slightly less "rubber-band". Likely imperceptible.
+- **Verify by:** Layout Inspector → recomposition count on each card during fling; or use Macrobenchmark `MeasureRepeated { swipe down }` and confirm `frame.durationMs < 16.6` improves measurably.
+
+## ARC-75 · Heavy recursive sort inside `CategoryPieChart`/`CategoryTreemap` composables [P1 · easy]
+- **File:** `ui/components/cards/UnifiedCardRenderer.kt:109-179` (Pie) and `181-251` (Treemap)
+- **RCA:** Both branches define a local `fun mapMetrics(...)` that recurses into `metric.subcategoryData.mapNotNull(::mapMetrics).sortedByDescending { ... }`. The recursion + sort runs **every recomposition** of the card. There is no `remember`. With 50 categories × N subcategories, this is hundreds of `BigDecimal.abs()` compares + multiple list allocations per recompose.
+- **Why fix:** When the card enters the viewport during fling, this work runs on the main thread mid-scroll.
+- **Impact:** Dropped frames specifically when Pie/Treemap cards appear; worse if the user has many categories.
+- **Fix:** Two options:
+  - **A (recommended)** — move the entire `mapMetrics` transformation into `CategoryPieChartCardComputer` / `CategoryTreemapCardComputer`. The computer already runs on `Dispatchers.Default`. Push `CategoryPieChartData`/`CategoryTreemapData` lists into `CardRenderData.CategoryPieChart` / `.CategoryTreemap` so the composable only consumes the ready-to-draw model.
+  - **B (interim)** — wrap the call site with `val uiData = remember(renderData, selectedMetric) { renderData.items.mapNotNull(::mapMetrics).sortedByDescending { it.amount.abs() } }`.
+- **Best practice:** Composables describe UI, not compute it. Anything more than a `when`/`map` belongs upstream.
+- **Side effects of fix:** Option A modifies `CardRenderData.CategoryPieChart`/`.CategoryTreemap` shape (breaking) and the computers. Tests on those computers may need new fixtures.
+- **Verify by:** add `SideEffect { println("piechart map") }` in the current code, fling — see the spam; after fix it fires only on data/metric change.
+
+## ARC-76 · `DashboardViewModel` emits per-card-completion with no debounce [P1 · easy]
+- **File:** `ui/screens/dashboard/DashboardViewModel.kt:316-342`
+- **RCA:** A single collector calls `send(buildSuccess(cardData, isComputing))` on every `cardDataFlow.update`. `MutableStateFlow.collect` conflates only what the consumer can't keep up with; on dashboard load 10–15 cards complete within milliseconds, producing 10–15 distinct emissions, each reconstructing `DashboardUiState.Success` with a fresh `Map`. If the user starts scrolling at that moment, the list recomposes per emission.
+- **Why fix:** This is the second compounding factor (with ARC-74) for fling jank during initial load — and any time the cache is invalidated.
+- **Impact:** Brief but reproducible stutter immediately after profile/currency change, dashboard cold-load, and after saving a transaction.
+- **Fix:** Window the emissions with `cardDataFlow.sample(80)` (or `debounce`) before the collector. Always emit a final post-all-complete state once `completedCount == configs.size` so the UI doesn't sit on stale data if the last emission was sampled-away.
+- **Best practice:** Coalesce high-frequency UI state updates within one frame budget (~16 ms) plus headroom. 80 ms is a safe compromise between perceived responsiveness and frame budget.
+- **Side effects of fix:** Cards appear in a single batch ≤ 80 ms later than they would individually; barely perceptible. Requires a guaranteed terminal emission to avoid the "last card never shown" trap.
+- **Verify by:** add an emission counter in the collector; on cold load it should drop from ~15 to ~2 (initial cached + final).
+
+## ARC-77 · `effectiveCard` allocated outside `remember` per recomposition [P2 · trivial]
+- **File:** `ui/components/cards/AeonCardList.kt:157-161`
+- **RCA:** `val effectiveCard = card.copyWithRules(...)` runs on every recomposition. Each call allocates a new `CardWithCallbacks` subtype, layered filter rules object, and (because rules layering touches lambdas) potentially new lambdas inside. Downstream `UnifiedCardRenderer` receives a different reference each time; Compose can't apply skip-skipping.
+- **Why fix:** Adds allocation pressure on the hot recomposition path; defeats the recent `@Stable` work on CardCallbacks.
+- **Impact:** Smaller than ARC-74/75/76 individually but compounds with them — extra GC during fling.
+- **Fix:**
+  ```kotlin
+  val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
+      card.copyWithRules(
+          rules = card.filterRules.layeredWith(screenRules),
+          baseFilter = baseFilter,
+          filterSheetEnabled = !disableFilterSheet
+      )
+  }
+  ```
+- **Best practice:** Any non-trivial allocation in an item composable should be `remember`-keyed on its actual inputs.
+- **Side effects of fix:** Zero — pure performance.
+- **Verify by:** Layout Inspector → `UnifiedCardRenderer` recomposition count drops sharply when scrolling.
+
+## ARC-78 · `graphicsLayer` per-card transform math (cameraDistance, rotation, elevation, alpha) [P2 · medium]
+- **File:** `ui/components/cards/AeonExpressiveCard.kt:184-199`
+- **RCA:** Each card's `graphicsLayer` block computes `cameraDistance = 20f * density`, `shadowElevation = (2.dp + (8.dp * elevationProgress)).toPx()`, `alpha = 1f - (elevationProgress * 0.15f)` per draw, *for every card visible*, even when no card is being flipped (i.e., `rotation == 0f` — the math runs anyway).
+- **Why fix:** With 5–8 cards on screen during fling, the per-draw layer math is duplicated work. `cameraDistance` in particular changes nothing while rotation is 0 but is still issued to the layer each frame.
+- **Impact:** Less severe than ARC-74/75/76 but contributes to the cumulative per-frame cost.
+- **Fix:** Two ways:
+  - **A** — gate the entire `graphicsLayer` block on `isFlipped || rotation != 0f`. When the card is in normal state, skip the layer entirely (or use a much cheaper one with just `clip` + `shape`).
+  - **B** — `derivedStateOf` the computed values so the layer block reads from already-evaluated state, only when rotation changes.
+- **Best practice:** Layer transforms should be cheap or guarded. Don't pay for animations no one can see.
+- **Side effects of fix:** Need to verify the flip animation still feels smooth after the gate (the first frame of the flip must apply the layer). Easiest: keep the layer but make its lambda body short-circuit when `rotation == 0f`.
+- **Verify by:** Profile GPU rendering (developer options) on dashboard scroll — the green bars (issue draw commands) should drop.
+
+---
+
 # Layer 7 — Web Server, Widget, Backup, Misc
 
 ## ARC-56 · Web routes can leak internal exception messages [P1 · easy]
@@ -593,8 +662,8 @@ Many individual issues are symptoms of a small number of root architectural deci
 
 Sequenced to minimize risk and maximize value per sprint. Each sprint should land in its own PR(s).
 
-## Sprint A — Stop the bleeding (P0 currency + isolation)
-Goal: eliminate silent-wrong-value and cross-profile leak paths.
+## Sprint A — Stop the bleeding (P0 currency + isolation + scroll-jank quick wins)
+Goal: eliminate silent-wrong-value and cross-profile leak paths; land the highest-value scroll-jank fixes since they're tiny.
 
 | # | Issue | Effort |
 |---|---|---|
@@ -605,6 +674,8 @@ Goal: eliminate silent-wrong-value and cross-profile leak paths.
 | 5 | ARC-19 — clear `QueryCache` on profile change | medium |
 | 6 | ARC-39 — replace `channelFlow + AtomicInteger` with safe Flow primitives | hard |
 | 7 | ARC-64 — verify ProGuard Room rules | trivial |
+| 8 | **ARC-74 + ARC-76 + ARC-77 — dashboard scroll jank trio** (drop double animateContentSize, sample card emissions, remember effectiveCard) | trivial / easy |
+| 9 | **ARC-75 — move pie/treemap mapping into the computer** | easy |
 
 ## Sprint B — Architectural hygiene (services + cards)
 Goal: undo the singleton lock-in; collapse the card plugin duplication.
@@ -643,7 +714,8 @@ Goal: undo the singleton lock-in; collapse the card plugin duplication.
 | 25 | ARC-58 + ARC-59 — widget timeouts + config validation | medium |
 | 26 | ARC-65 + ARC-66 + ARC-67 + ARC-69 — test infrastructure | medium |
 | 27 | ARC-3, ARC-6, ARC-7, ARC-11, ARC-12 — close the deprecated currency surface | easy |
-| 28 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies |
+| 28 | ARC-78 — gate `AeonExpressiveCard` graphicsLayer math when rotation == 0 | medium |
+| 29 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies |
 
 ---
 

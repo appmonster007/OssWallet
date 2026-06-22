@@ -24,16 +24,14 @@ Each issue is numbered for tracking. Status: [ ] open · [x] fixed · [~] in pro
 LAYER 0: CRASH / DATA INTEGRITY
 
  ---
-ISS-01 · CRASH · Missing recentActivitiesBreakdown StateFlow
+ISS-01 · INVALID (audit correction) · recentActivitiesBreakdown is NOT missing
 
-- Severity: P0 — Crash on dashboard load
-- File: ui/screens/dashboard/DashboardScreen.kt lines 239, 258, 301, 453, 634, 711, 935
-- Root Cause: dashboardViewModel.recentActivitiesBreakdown is collected in 7 places in the screen composable, but the property is never declared in DashboardViewModel. This
-  is a NoSuchPropertyException / compilation error.
-- Fix: Identify whether this flow was renamed (grep for similar flows in the ViewModel) and either add the missing StateFlow<BreakdownData?> backed by appropriate domain
-  logic, or update all 7 call sites to the correct existing property name.
-- Acceptance: Dashboard launches without crash. recentActivitiesBreakdown data appears correctly in the Recent Activities card.
-- Status
+- Severity: N/A — No crash. Initial audit was incorrect.
+- Audit Note: The original audit claimed dashboardViewModel.recentActivitiesBreakdown was never declared. Code inspection of
+  ui/util/BaseViewModel.kt line 20 shows the property IS defined there as StateFlow<Boolean>, and DashboardViewModel
+  (ui/screens/dashboard/DashboardViewModel.kt line 89) extends BaseViewModel, so the property is accessible via inheritance.
+  This issue does NOT exist and requires no fix.
+- [x] Status: CLOSED — invalid finding
 
  ---
 ISS-02 · SECURITY / DATA INTEGRITY · Cross-profile template data leak
@@ -691,54 +689,396 @@ ISS-38 · LOW · Debug Log.d calls in hot recomposition paths
 - Status
 
  ---
+LAYER 4: DATA CORRECTNESS / SECURITY (new issues discovered in code review)
+
+ ---
+ISS-39 · CRITICAL · Exchange rate pivot fallback emits stale un-rebased map
+
+- Severity: P0 — Wrong exchange rates applied to all multi-currency card computations
+- File: data/repository/ComputationRepositoryImpl.kt (exchange rate rebase logic)
+- Root Cause:
+  val pivotRate = rateMap[targetBase] ?: return@combine rateMap  // emits stale un-rebased map
+  When the target base currency's rate is not found in the fetched map (e.g., rate service returned
+  a partial update), the operator silently returns the original rateMap without rebasing it. All
+  downstream card computers then use rates expressed in the wrong base currency, producing silently
+  incorrect totals and charts.
+- Fix: Replace the early return with an explicit error emission or a logged warning + use a cached
+  last-known-good rebase result. Never silently return an un-rebased map when rebasing fails:
+  val pivotRate = rateMap[targetBase]
+  if (pivotRate == null) {
+      Timber.w("Exchange rate pivot not found for $targetBase, using last good rates")
+      return@combine lastValidRebased  // cached from previous successful rebase
+  }
+- Acceptance: When the target base rate is missing, card computations use the last successfully
+  rebased rate, not the raw un-rebased map. A logcat warning appears.
+- [ ] Status
+
+ ---
+ISS-40 · HIGH · Unbounded CardRenderCache grows indefinitely with profiles
+
+- Severity: P1 — Memory leak for multi-profile users
+- File: domain/cache/CardRenderCache.kt
+- Root Cause: CardRenderCache is a singleton ConcurrentHashMap<Int, Map<String, CardRenderData>>
+  keyed by profileId. Entries are never evicted. A user who switches between 5 profiles will
+  accumulate 5 × (15 cards × CardRenderData size) indefinitely. No TTL, no max size, no cleanup
+  on profile deletion.
+- Fix: Bound the cache to the most recent N profiles (e.g., 2) using a LinkedHashMap with
+  removeEldestEntry, or use an LRU cache with max size 3. Also wire a cache invalidation call
+  to profile deletion events.
+- Acceptance: Memory Profiler shows CardRenderCache size stays bounded regardless of how many
+  profiles are accessed.
+- [ ] Status
+
+ ---
+ISS-41 · MEDIUM · resolveTimeBoundsFromDb duplicated across 3 card computers
+
+- Severity: P2 — Code smell; divergence risk when logic needs updating
+- Files:
+    - domain/card/computers/CategorySpendingTrendCardComputer.kt (private method lines 119–131)
+    - domain/card/computers/CashFlowComparisonCardComputer.kt (private top-level function line 29)
+    - domain/card/computers/IncomeExpenseBarCardComputer.kt (private top-level function line 29)
+- Root Cause: Identical resolveTimeBoundsFromDb function copied 3 times. Any fix to its logic
+  (e.g., ISS-52 below) must be applied in 3 places or one copy silently diverges.
+- Fix: Extract to a shared utility object (e.g., CardComputerUtils.resolveTimeBoundsFromDb()) and
+  replace all 3 private copies with a call to the shared version.
+- Acceptance: Single definition, zero duplication. ISS-52 fix only needs one change.
+- [ ] Status
+
+ ---
+ISS-42 · HIGH SECURITY · LoanPaymentDao.getAllPayments() lacks profileId filter
+
+- Severity: P1 — Cross-profile loan payment data visible
+- File: data/local/dao/LoanPaymentDao.kt
+- Root Cause: getAllPayments() uses SELECT * FROM loan_payments with no WHERE profileId = :profileId
+  clause. Loan payments from all profiles are returned together. Any screen or card that calls this
+  DAO exposes data across profile boundaries.
+- Fix: Add profileId: Long parameter and WHERE profileId = :profileId to the query. Update all
+  call sites to pass the active profileId. Add composite index (profileId, loanId).
+- Acceptance: Loan payments created in Profile A do NOT appear in Profile B's loan cards.
+- [ ] Status
+
+ ---
+ISS-43 · CRITICAL DATA INTEGRITY · toBalanceFilter() leaks category/tag filters into account balance queries
+
+- Severity: P0 — Account balances silently wrong when any category or tag filter is active
+- File: domain/service/aggregation/CardAggregationService.kt lines 802–813
+- Root Cause: toBalanceFilter() only strips the timeline range portion of the filter. It does NOT
+  strip categoryIds, tags, or currencies:
+  private fun TransactionFilter.toBalanceFilter(): TransactionFilter {
+      return when (val range = this.timelineRange) {
+          is TimelineRange.AllTime -> this
+          else -> {
+              val (_, end) = TimelineService.getDateRange(range)
+              this.copy(
+                  timelineRange = if (end != null) TimelineRange.CustomRange(end = end, ...)
+                                 else TimelineRange.AllTime(...)
+              )
+          }
+      }
+  }
+  When a card filter has categoryIds = ["Food"] set, the balance query runs with that category
+  filter active, so only "Food" transactions count toward the account balance. Balances appear
+  artificially low or zero for accounts that have no "Food" transactions.
+- Fix: Strip all non-temporal filter fields when computing a balance baseline:
+  private fun TransactionFilter.toBalanceFilter(): TransactionFilter = this.copy(
+      categoryIds = emptyList(),
+      tags = emptyList(),
+      currencies = emptyList(),
+      paymentMethods = emptyList(),
+      statuses = emptyList()
+  )
+- Acceptance: Account balances shown in balance-baseline cards are identical regardless of which
+  category/tag filter is active.
+- [ ] Status
+
+ ---
+ISS-44 · CRITICAL UX · First-launch infinite loading when app is offline
+
+- Severity: P0 — App appears permanently broken on first install without network
+- Files:
+    - data/repository/ComputationRepositoryImpl.kt — hasLoadedExchangeRates definition
+    - ui/screens/dashboard/DashboardViewModel.kt line 309
+- Root Cause:
+  override val hasLoadedExchangeRates: Flow<Boolean> =
+      currencyRepository.ratesFlow.map { it.isNotEmpty() }
+  On first install, the DB has no exchange rates. If the device is offline, the rate fetch fails
+  silently and ratesFlow never emits a non-empty list. DashboardViewModel gates all card rendering:
+  if (!hasLoadedExchangeRates) return@channelFlow
+  Cards never render. The user sees a permanent loading spinner with no feedback.
+- Fix: Treat empty rates as "rates not yet available" but not as a blocker. Fall back to 1:1
+  conversion (or use the app's last-known base currency as a single-currency fallback):
+  val effectiveRates = if (exchangeRates.isEmpty()) {
+      mapOf(selectedCurrency to BigDecimal.ONE)  // single-currency fallback
+  } else exchangeRates
+  Emit a UI warning banner ("exchange rates unavailable") but render cards with local-currency data.
+- Acceptance: On first install with no network, dashboard cards render within 2 seconds showing
+  local-currency totals, with a subtle "rates unavailable" indicator.
+- [ ] Status
+
+ ---
+ISS-45 · MEDIUM · Card animations default silently flipped to false
+
+- Severity: P2 — Regression: card animations disabled for all users after update
+- File: data/local/SettingsDataStore.kt
+- Root Cause: The DataStore preference read uses:
+  preferences[CARD_ANIMATION_ENABLED_KEY] ?: false  // was ?: true
+  The default was changed from true to false. All existing users who never explicitly set this
+  preference now have animations disabled without any notification or opt-in.
+- Fix: Restore the default to true. If the intent was to disable animations, add a one-time
+  migration flag that shows users a "we turned off animations — re-enable in settings" prompt.
+- Acceptance: A fresh install shows card animations enabled by default.
+- [ ] Status
+
+ ---
+ISS-46 · HIGH DATA INTEGRITY · Self-transfer validation removed (validateAccountSelection deleted)
+
+- Severity: P1 — User can submit a transfer from Account A to Account A, creating a phantom
+  transaction that adds balance to the account without a corresponding debit
+- Files: ui/screens/transactions/entry/ (validateAccountSelection no longer exists)
+- Root Cause: The validateAccountSelection function that checked source != target was deleted
+  during the refactor. No replacement validation exists.
+- Fix: Add guard in TransactionEntryViewModel or TransactionEntryEvent processing:
+  if (isTransfer && selectedAccount?.id == targetAccount?.id && selectedAccount != null) {
+      emitEffect(TransactionEntryEffect.ShowError("Source and target accounts cannot be the same"))
+      return
+  }
+- Acceptance: Attempting to save a transfer with identical source and target accounts shows an
+  inline error and does not create the transaction.
+- [ ] Status
+
+ ---
+ISS-47 · MEDIUM UX · Target account picker does not exclude the source account
+
+- Severity: P2 — Users can accidentally pick the same account for both sides of a transfer
+  (separate from ISS-46 which handles the save-time guard; this is a UX-layer issue)
+- File: ui/screens/transactions/entry/components/TransactionEntrySheets.kt lines 83–98
+- Root Cause: Target account list is built as listOf(Account.OUTSIDE_WALLET) + state.accounts
+  with no filter excluding the currently selected source account.
+- Fix: Filter out the source account from the target account picker list:
+  val filteredTargetAccounts = (listOf(Account.OUTSIDE_WALLET) + state.accounts)
+      .filter { it.id != state.selectedAccount?.id }
+- Acceptance: When Account B is selected as source, Account B does not appear in the target
+  account dropdown.
+- [ ] Status
+
+ ---
+ISS-48 · HIGH DATA INTEGRITY · Outside-to-Outside transfers allowed (Wallet Minimum Rule removed)
+
+- Severity: P1 — A transfer with source = OUTSIDE_WALLET and target = OUTSIDE_WALLET creates a
+  record that moves money out of nowhere into nowhere, corrupting net worth calculations
+- Files: ui/screens/transactions/entry/ (wallet minimum rule enforcement removed)
+- Root Cause: The original validation that required at least one side of a transfer to be an
+  internal wallet account was removed with no replacement.
+- Fix: Re-add the guard before saving:
+  if (isTransfer && selectedAccount == Account.OUTSIDE_WALLET && targetAccount == Account.OUTSIDE_WALLET) {
+      emitEffect(TransactionEntryEffect.ShowError("At least one account must be a wallet account"))
+      return
+  }
+- Acceptance: Attempting to save OUTSIDE → OUTSIDE transfer shows an error. Internal → OUTSIDE
+  and OUTSIDE → Internal transfers remain allowed.
+- [ ] Status
+
+ ---
+ISS-49 · MEDIUM UX · Cannot clear target account (clearTargetAccount deleted)
+
+- Severity: P2 — Once a target account is set, the user has no way to remove it; the only
+  escape is switching transaction type away from Transfer and back
+- Files: ui/screens/transactions/entry/ (clearTargetAccount function removed)
+- Root Cause: clearTargetAccount() was deleted with no replacement. The target account field
+  has no clear/remove action.
+- Fix: Re-add TransactionEntryEvent.ClearTargetAccount and handle it in the ViewModel to set
+  targetAccount = null. Wire a "×" or "clear" button in the target account field UI.
+- Acceptance: Tapping the clear icon on the target account field resets it to unset state.
+- [ ] Status
+
+ ---
+ISS-50 · HIGH UX · PredictiveBackHandler in QuickAddSheet always dismisses the full sheet
+
+- Severity: P1 — Navigating back on Step 3 of Quick Add discards all entered data and closes
+  the sheet instead of returning to Step 2
+- File: ui/screens/dashboard/quickadd/QuickAddSheet.kt lines 128–141
+- Root Cause: The PredictiveBackHandler is wired to call animateDismiss() unconditionally,
+  regardless of which step is currently active. The code comment explicitly acknowledges this:
+  // system/gesture back always dismisses the whole sheet, regardless of step.
+- Fix: Check the current step index before deciding to dismiss or step back:
+  PredictiveBackHandler(enabled = visibleState.targetState) { progress ->
+      try {
+          progress.collect { event -> backProgress = event.progress }
+          if (currentStep > 0) {
+              goToPreviousStep()  // step back
+          } else {
+              animateDismiss()   // on first step, dismiss
+          }
+      } catch (_: Exception) { backProgress = 0f }
+  }
+- Acceptance: Back gesture on Step 3 returns to Step 2 with data intact. Back on Step 1 dismisses.
+- [ ] Status
+
+ ---
+ISS-51 · HIGH UX · Quick Add category search LaunchedEffect removed — search conflicts with drilldown navigation
+
+- Severity: P1 — Opening a sub-category from search results in QuickAdd navigates to the
+  sub-category screen but loses the previously selected parent, breaking the category selection flow
+- Files: ui/screens/dashboard/quickadd/ (LaunchedEffect that cleared drilldown stack on search removed)
+- Root Cause: A LaunchedEffect that cleared the category drill-down navigation stack when the
+  user started a new search was removed during the refactor. Now, if the user drills into a
+  subcategory, then searches, the search results coexist with the previous drill-down state,
+  causing navigation inconsistency.
+- Fix: Re-add the LaunchedEffect that resets drilldown state when the search query changes to
+  a non-empty string:
+  LaunchedEffect(searchQuery) {
+      if (searchQuery.isNotBlank()) {
+          categoryNavController.popBackStack(root, inclusive = false)
+      }
+  }
+- Acceptance: Typing in the search box clears the subcategory drilldown. Clearing the search
+  returns the user to the last manual navigation position.
+- [ ] Status
+
+ ---
+ISS-52 · HIGH DATA INTEGRITY · resolveTimeBoundsFromDb uses global minimum timestamp, ignoring card filter scope
+
+- Severity: P1 — Time-series charts (CategorySpendingTrend, CashFlowComparison,
+  IncomeExpenseBar) show data from ALL TIME even when a date-scoped filter is applied to the card
+- Files:
+    - domain/card/computers/CategorySpendingTrendCardComputer.kt lines 119–131
+    - domain/card/computers/CashFlowComparisonCardComputer.kt line 29
+    - domain/card/computers/IncomeExpenseBarCardComputer.kt line 29
+- Root Cause: resolveTimeBoundsFromDb calls getMinTransactionTimestamp(profileId) which returns
+  the absolute earliest transaction date across the entire profile. When a card has a filter like
+  "last 6 months", the bounds resolution ignores that filter and expands to "all time", causing
+  the chart to display more history than the user configured.
+- Fix: Pass the card's effective filter into resolveTimeBoundsFromDb and apply it when querying
+  the min timestamp:
+  suspend fun resolveTimeBoundsFromDb(
+      queryService: DatabaseQueryService,
+      profileId: Long,
+      effectiveFilter: TransactionFilter  // ADD
+  ): Pair<Long, Long> {
+      val minTs = queryService.getMinTransactionTimestamp(profileId, effectiveFilter)
+      ...
+  }
+  Or, more correctly: if the card config specifies an explicit time range, never override it with
+  a DB-derived bound — only fall back to the DB bound when the config says "all time".
+- Acceptance: A card configured for "last 6 months" shows exactly 6 months of data, not data
+  from 3 years ago.
+- [ ] Status
+
+ ---
+ISS-53 · CRITICAL DATA INTEGRITY · Loan interest calculated but never added to remaining balance
+
+- Severity: P0 — Loan "remaining balance" shown in the Loans card is wrong for all interest-bearing loans
+- File: domain/service/aggregation/CardAggregationService.kt lines 421–422
+- Root Cause:
+  val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
+  val interest = calculateAccruedInterest(loan, totalPaid)
+  // interest is computed but never used — remaining is returned without interest
+- The interest variable is computed but the method returns remaining without adding interest,
+  so all interest-bearing loans show the principal-only balance as if interest is $0.
+- Fix:
+  val principalRemaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
+  val interest = calculateAccruedInterest(loan, principalRemaining)
+  val remaining = principalRemaining + interest
+- Note: The coerceAtLeast should be applied BEFORE passing to interest calculation so negative
+  principal (overpaid) doesn't cause negative interest.
+- Acceptance: A $10,000 loan at 5% annual interest after 1 year with $0 paid shows a remaining
+  balance of approximately $10,500, not $10,000.
+- [ ] Status
+
+ ---
+ISS-54 · CRITICAL DATA INTEGRITY · Running balance drift in Recent Activities card
+
+- Severity: P0 — Cumulative running balances in the Recent Activities timeline are wrong when
+  any non-temporal filter (category, tag, account) is active
+- File: domain/service/aggregation/CardAggregationService.kt lines 449–463
+- Root Cause: The computation mixes two incompatible data scopes:
+  - startingBalances is fetched with a bare TransactionFilter(timelineRange = ...) — no
+    category/account/tag filters applied
+  - txs (the transactions to display) is fetched with effectiveFilter — which includes all
+    active filters (category, tag, account, etc.)
+  The running balance adds filtered transaction deltas on top of an unfiltered absolute baseline,
+  producing numbers that drift further from reality with each transaction shown.
+  Example: If the filter is "Food category only", startingBalances includes ALL transactions
+  up to the start date (food + rent + salary), but the running deltas only add food transactions.
+  The balance line starts too high and each food transaction moves it by the wrong amount.
+- Fix: Apply the same effective filter to both the starting balance query AND the delta
+  transactions. If the filter is category-scoped, both the baseline and deltas must be category-
+  scoped:
+  val startingBalances = queryService.getBalanceAtDate(
+      profileId,
+      startDate,
+      effectiveFilter  // same filter as txs
+  )
+- Acceptance: With a "Food" filter, the running balance line starts at $0 (no food balance
+  prior to the range) and correctly tracks cumulative food spending.
+- [ ] Status
+
+ ---
 Issue Count by Priority
 
-┌──────────┬───────┬────────────────────────────────────┐
-│ Priority │ Count │            Description             │
-├──────────┼───────┼────────────────────────────────────┤
-│ P0       │ 2     │ ISS-01 (crash), ISS-02 (data leak) │
-├──────────┼───────┼────────────────────────────────────┤
-│ P1       │ 18    │ Critical perf + security issues    │
-├──────────┼───────┼────────────────────────────────────┤
-│ P2       │ 9     │ Medium perf issues                 │
-├──────────┼───────┼────────────────────────────────────┤
-│ P3       │ 4     │ Low / cleanup issues               │
-├──────────┼───────┼────────────────────────────────────┤
-│ Total    │ 33    │                                    │
-└──────────┴───────┴────────────────────────────────────┘
+┌──────────┬───────┬───────────────────────────────────────────────────────────────────────────────────────┐
+│ Priority │ Count │ Description                                                                           │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ INVALID  │ 1     │ ISS-01 (audit correction — not a crash)                                               │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ P0       │ 6     │ ISS-02 (template leak), ISS-39 (exchange rate fallback), ISS-43 (balance filter leak),│
+│          │       │ ISS-44 (offline loading), ISS-53 (loan interest), ISS-54 (running balance drift)      │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ P1       │ 24    │ Critical perf + security + data integrity issues                                      │
+│          │       │ (ISS-03,04,05,06,11,12,13,14,15,16,17,18,19,20,21,25,26,27,28,29,30,31,42,46,48,      │
+│          │       │ 50,51,52)                                                                             │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ P2       │ 13    │ Medium perf + UX issues                                                               │
+│          │       │ (ISS-07,08,09,22,23,32,33,34,35,36,40,41,45,47,49)                                   │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ P3       │ 4     │ Low / cleanup (ISS-10,24,37,38)                                                       │
+├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
+│ Total    │ 53    │ (54 entries, 1 invalid)                                                               │
+└──────────┴───────┴───────────────────────────────────────────────────────────────────────────────────────┘
 
  ---
 Implementation Roadmap
 
-Sprint 1 — Stop the Bleeding (P0 + quick P1 wins)
+Sprint 1 — Stop the Bleeding (P0 data integrity + quick P1 wins)
 
-Goal: Fix crash, data leak, and the cheapest high-impact perf improvements.
+Goal: Fix silent data corruption, data leaks, and cheapest high-impact perf improvements.
+Note: ISS-01 was INVALID — removed. Added new P0 data integrity fixes.
 
-┌─────┬────────────────────────────────────────────────────────────────────────┬─────────────┬──────┐
-│  #  │                                 Issue                                  │ Est. Effort │ Risk │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 1   │ ISS-01 — add missing recentActivitiesBreakdown StateFlow               │ 2h          │ Low  │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 2   │ ISS-02, ISS-03 — add profileId filters to TemplateDao / TransactionDao │ 2h          │ Low  │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 3   │ ISS-04 — add composite DB index (profileId, timestamp) + migration     │ 2h          │ Low  │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 4   │ ISS-05 — add composite DB index on templates                           │ 1h          │ Low  │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 5   │ ISS-13 — fix O(n²) in CategorySpendingTrendCardComputer                │ 30min       │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 6   │ ISS-15 — remove double-sort in computeRecentBalances                   │ 30min       │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 7   │ ISS-16 — convert filter lists to HashSet in aggregation/filter loops   │ 1h          │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 8   │ ISS-18 — fix O(n²) in PlannedPaymentsCardComputer                      │ 30min       │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 9   │ ISS-19 — pre-build account map in computeRecentBalances                │ 15min       │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 10  │ ISS-12 (Phase A) — change effectiveAccounts/effectiveAccountIds to val │ 15min       │ None │
-├─────┼────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
-│ 11  │ ISS-31 — add key = { it.id } to all list items                         │ 30min       │ None │
-└─────┴────────────────────────────────────────────────────────────────────────┴─────────────┴──────┘
+┌─────┬────────────────────────────────────────────────────────────────────────────────┬─────────────┬──────┐
+│  #  │                                   Issue                                        │ Est. Effort │ Risk │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 1   │ ISS-53 — add loan interest to remaining balance (1-line fix, P0 data bug)      │ 15min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 2   │ ISS-43 — fix toBalanceFilter() to strip category/tag filters (P0 data bug)     │ 30min       │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 3   │ ISS-54 — apply same filter to startingBalances as to txs (P0 data bug)         │ 1h          │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 4   │ ISS-46 — re-add self-transfer guard (validateAccountSelection)                 │ 30min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 5   │ ISS-48 — re-add outside-to-outside transfer guard (Wallet Minimum Rule)        │ 30min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 6   │ ISS-02, ISS-03 — add profileId filters to TemplateDao / TransactionDao         │ 2h          │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 7   │ ISS-42 — add profileId filter to LoanPaymentDao.getAllPayments()                │ 1h          │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 8   │ ISS-04 — add composite DB index (profileId, timestamp) + migration             │ 2h          │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 9   │ ISS-05 — add composite DB index on templates                                   │ 1h          │ Low  │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 10  │ ISS-13 — fix O(n²) in CategorySpendingTrendCardComputer                        │ 30min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 11  │ ISS-15 — remove double-sort in computeRecentBalances                           │ 30min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 12  │ ISS-16 — convert filter lists to HashSet in aggregation/filter loops           │ 1h          │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 13  │ ISS-18 — fix O(n²) in PlannedPaymentsCardComputer                              │ 30min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 14  │ ISS-19 — pre-build account map in computeRecentBalances                        │ 15min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 15  │ ISS-12 (Phase A) — change effectiveAccounts/effectiveAccountIds to val         │ 15min       │ None │
+├─────┼────────────────────────────────────────────────────────────────────────────────┼─────────────┼──────┤
+│ 16  │ ISS-31 — add key = { it.id } to all list items                                 │ 30min       │ None │
+└─────┴────────────────────────────────────────────────────────────────────────────────┴─────────────┴──────┘
 
  ---
 Sprint 2 — UI Stability (P1 UI issues)
@@ -823,23 +1163,25 @@ Verification Checklist
 
 Per-Issue Verification
 
-- ISS-01: Dashboard loads without crash; Recent Activities card shows data
-- ISS-02/03: Profile A templates/transactions not visible in Profile B
+- ISS-02/03/42: Profile A templates/transactions/loan payments not visible in Profile B
 - ISS-04/05: EXPLAIN QUERY PLAN shows index usage for filtered queries
 - ISS-06: Dashboard feed DAO query returns exactly DASHBOARD_TRANSACTION_FEED_LIMIT rows
 - ISS-11: Adding 1 transaction recomputes only data-dependent cards (verify via logcat tag on each computer's compute())
-- ISS-01: Dashboard loads without crash; Recent Activities card shows data                                                                                          
-- ISS-02/03: Profile A templates/transactions not visible in Profile B                                                                                              
-- ISS-04/05: EXPLAIN QUERY PLAN shows index usage for filtered queries                                                                                              
-- ISS-06: Dashboard feed DAO query returns exactly DASHBOARD_TRANSACTION_FEED_LIMIT rows                                                                            
-- ISS-11: Adding 1 transaction recomputes only data-dependent cards (verify via logcat tag on each computer's compute())                                            
-- ISS-13: CategorySpendingTrendCardComputer unit test with 200 categories + 50 results < 5ms                                                                        
-- ISS-14: Systrace shows CategorySpendingTrend making 1 DB call, not 12; CashFlowComparison 3, not 36                                                               
-- ISS-15: Unit test for computeRecentBalances with 1,000 transactions produces identical output before/after; executes in ≤ 50% of original time                    
-- ISS-16: Budget filter with 50 budgets × 10 filter IDs runs in < 1ms                                                                                               
-- ISS-25/29: Layout Inspector recomposition count on all card bodies = 0 when lastUndoAction toggles                                                                
-- ISS-30: Cold dashboard load produces ≤ 3 UI emissions (visible via Flow emission logging)                                                                         
-- ISS-31: Delete account #3; verify accounts #4+ do not recompose (Layout Inspector)                                                                                
+- ISS-13: CategorySpendingTrendCardComputer unit test with 200 categories + 50 results < 5ms
+- ISS-14: Systrace shows CategorySpendingTrend making 1 DB call, not 12; CashFlowComparison 3, not 36
+- ISS-15: Unit test for computeRecentBalances with 1,000 transactions produces identical output before/after; executes in ≤ 50% of original time
+- ISS-16: Budget filter with 50 budgets × 10 filter IDs runs in < 1ms
+- ISS-25/29: Layout Inspector recomposition count on all card bodies = 0 when lastUndoAction toggles
+- ISS-30: Cold dashboard load produces ≤ 3 UI emissions (visible via Flow emission logging)
+- ISS-31: Delete account #3; verify accounts #4+ do not recompose (Layout Inspector)
+- ISS-39: When target base rate is missing, log warning appears and last valid rates are used
+- ISS-43: Account balances identical regardless of active category/tag filter
+- ISS-44: On first install with no network, cards render within 2s with "rates unavailable" indicator
+- ISS-46/48: Attempting self-transfer or outside-to-outside transfer shows inline error
+- ISS-50: Back gesture on Step 2+ of QuickAdd returns to previous step, not dismiss
+- ISS-52: Card configured for "last 6 months" shows exactly 6 months of data
+- ISS-53: $10,000 loan at 5% interest shows ~$10,500 remaining after 1 year, not $10,000
+- ISS-54: Running balance with "Food" filter starts from filtered baseline, not global account balance                                                                                
                                                                                                                                                                     
 End-to-End Performance Targets                                                                                                                                      
                                                                                                                                                                     

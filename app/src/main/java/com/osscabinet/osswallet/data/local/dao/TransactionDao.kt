@@ -138,6 +138,24 @@ abstract class TransactionDao {
         query: String
     ): Flow<List<TransactionEntity>>
 
+    @Query(
+        """
+        SELECT transactions.* FROM transactions
+        JOIN transactions_fts ON transactions.id = transactions_fts.rowid
+        WHERE transactions_fts MATCH :ftsQuery AND profileId = :profileId
+        UNION
+        SELECT transactions.* FROM transactions
+        JOIN categories ON transactions.categoryId = categories.id
+        WHERE categories.name LIKE '%' || :categoryQuery || '%' AND transactions.profileId = :profileId
+        ORDER BY timestamp DESC
+    """
+    )
+    abstract fun searchTransactionsUnified(
+        profileId: Int,
+        ftsQuery: String,
+        categoryQuery: String
+    ): Flow<List<TransactionEntity>>
+
     @Query("SELECT MIN(timestamp) FROM transactions WHERE profileId = :profileId")
     abstract suspend fun getMinTransactionTimestamp(profileId: Int): Long?
 

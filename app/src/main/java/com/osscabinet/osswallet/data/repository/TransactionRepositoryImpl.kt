@@ -16,7 +16,6 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -360,11 +359,8 @@ class TransactionRepositoryImpl @Inject constructor(
         return if (sanitizedQuery.isBlank()) {
             getAllTransactions(profileId)
         } else {
-            val ftsFlow = transactionDao.searchTransactions(profileId, sanitizedQuery)
-            val categoryFlow = transactionDao.searchTransactionsByCategoryName(profileId, trimmed)
-            combine(ftsFlow, categoryFlow) { ftsResults, categoryResults ->
-                (ftsResults + categoryResults).distinctBy { it.id }
-            }.mapToDomain { it.toDomain() }
+            transactionDao.searchTransactionsUnified(profileId, sanitizedQuery, trimmed)
+                .mapToDomain { it.toDomain() }
         }
     }
 

@@ -40,8 +40,8 @@ class TagRepositoryImpl @Inject constructor(
         tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
     }
 
-    override suspend fun getTransactionCountForTag(tagName: String): Int {
-        return transactionDao.getTransactionsWithTag(tagName).size
+    override suspend fun getTransactionCountForTag(tagName: String, profileId: Int): Int {
+        return transactionDao.getTransactionsWithTag(tagName, profileId).size
     }
 
     override suspend fun updateTag(oldName: String, newTag: Tag) {

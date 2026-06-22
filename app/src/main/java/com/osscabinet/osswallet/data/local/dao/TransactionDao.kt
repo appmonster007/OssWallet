@@ -112,6 +112,9 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%'")
     abstract suspend fun getTransactionsWithTag(tagName: String): List<TransactionEntity>
 
+    @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%' AND profileId = :profileId")
+    abstract suspend fun getTransactionsWithTag(tagName: String, profileId: Int): List<TransactionEntity>
+
     @Query(
         """
         SELECT transactions.* FROM transactions 

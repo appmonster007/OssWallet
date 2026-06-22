@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,7 +34,8 @@ class TagViewModel @Inject constructor(
     }
 
     suspend fun getTransactionCountForTag(tagName: String): Int {
-        return repository.getTransactionCountForTag(tagName)
+        val profileId = settingsRepository.currentProfileId.first()
+        return repository.getTransactionCountForTag(tagName, profileId)
     }
 
     fun updateTag(oldName: String, newTag: Tag) {

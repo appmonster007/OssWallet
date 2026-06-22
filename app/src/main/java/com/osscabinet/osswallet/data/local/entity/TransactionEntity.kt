@@ -30,7 +30,9 @@ import java.math.BigDecimal
         Index(value = ["categoryId"]),
         Index(value = ["profileId"]),
         Index(value = ["timestamp"]),
-        Index(value = ["status"])
+        Index(value = ["status"]),
+        Index(value = ["profileId", "timestamp"]),
+        Index(value = ["profileId", "accountId"])
     ]
 )
 data class TransactionEntity(

@@ -19,7 +19,10 @@ import java.math.BigDecimal
             onDelete = ForeignKey.RESTRICT
         )
     ],
-    indices = [Index(value = ["categoryId"])]
+    indices = [
+        Index(value = ["categoryId"]),
+        Index(value = ["profileId", "isStarred"])
+    ]
 )
 data class TemplateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

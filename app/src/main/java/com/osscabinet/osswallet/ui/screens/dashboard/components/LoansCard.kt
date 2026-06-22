@@ -183,7 +183,7 @@ private fun LoanSummaryRow(
             }
 
             com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
-                amount = summary.remainingBalance,
+                amount = summary.remainingBalance + summary.interestAccrued,
                 nativeCurrency = summary.loan.currency,
                 targetCurrency = targetCurrency,
                 rates = exchangeRates,

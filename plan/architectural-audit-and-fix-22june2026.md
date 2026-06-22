@@ -37,6 +37,54 @@ Issues already fixed on this branch (currency snapshot propagation, FTS5 migrati
 
 ---
 
+## Curator's reassessment (added after honest review)
+
+This section was added after re-reviewing the plan against the actual usage patterns of OssWallet (single-user mobile + optional web companion, solo-dev FOSS pace, low card-add frequency). Several entries in the catalog below are textbook "best practice" that don't justify their cost for *this* project. Where I gave you the dogmatic answer, I record the simpler pragmatic alternative here. **Nothing in the catalog is deleted** — this section reframes priority and adds caveats so you can pick the right answer instead of just executing the list.
+
+### Items where the right answer is simpler than what the catalog says
+
+- **ARC-08 (composite PK on `currency_rates`)** — likely **over-engineering**. The app only keeps one active base at a time. A scoped `DELETE WHERE baseCurrency=?` (ARC-09) is sufficient. Skip the PK change unless you actually want to cache multiple bases simultaneously.
+- **ARC-43 (convert every `object` service to DI)** — **over-broad**. The only service with a real problem is `CurrencyService` (mutable state — ARC-05). Pure-function services like `TimelineService`, `TransactionFilterService`, `BudgetService` (post-snapshot fix) gain nothing from DI. Fix ARC-05; leave the rest as `object` until a concrete need arises.
+- **ARC-31 (true plugin pattern for cards)** — **probably not worth it**. Cards are added rarely. Cheaper alternative: one Konsist or unit test that iterates `CardType.values()` and asserts the registry/Config/RenderData/Callbacks/renderer parity exists. Catches "forgetting step 13" without rebuilding the framework. Track this as **ARC-31-alt** if you choose it.
+- **ARC-21 / ARC-22 (FilterEntity primitives only)** — **probably skip**. Room + a kotlinx-serialization TypeConverter for sealed classes is a common, supported pattern. The CLAUDE.md "no domain types in entities" rule is slightly dogmatic. Verify a TypeConverter for `TimelineRange` exists and works; if so, leave `FilterEntity` alone.
+- **ARC-44 (replace `AggregationPlanner` with typed DAO methods)** — **conditional**. Decide by census: count unique `AggregationDimension`/`MetricConfig` combinations in the codebase. ≤5 → simplify; >10 → keep, just fix the magic-alias bug (ARC-45).
+- **ARC-30 (split `CardInput` into typed subsets)** — **defer**. After the recent `distinctUntilChanged` + recompute-key tightening, the marginal win is allocation pressure only. Hard refactor for small ROI. Revisit only if memory profiling shows allocation is the bottleneck.
+
+### Items where I led with the wrong option
+
+- **ARC-75 (pie/treemap mapping in composable):** lead with **Option B** (wrap with `remember(renderData, selectedMetric) { ... }`) — 3 lines, no data-model change, ~95% of the benefit. Option A (move into the computer) only if you want cleaner architecture for unrelated reasons.
+- **ARC-78 (`graphicsLayer` gating):** lead with **Option B** (`derivedStateOf` so the layer body short-circuits when `rotation == 0f`). Option A (conditionally apply the whole layer) risks breaking the flip animation's first frame. Drop or de-emphasize A.
+- **ARC-76 (`.sample(80)` on `cardDataFlow`):** the fix is correct but `sample` *drops trailing emissions*. Use `.sample(80).onCompletion { emit(latest) }` OR a windowing operator, AND add a unit test asserting the final card state is always emitted. The footgun is real.
+
+### Items that need a product call, not an engineering one
+
+- **ARC-18 (per-profile vs shared categories):** depends on whether profiles represent different *people* (per-profile) or different *contexts for one user* (shared). Answer before fixing.
+- **ARC-29 (versioned backup):** decide between (a) full backward-compat with up-migration on import, or (b) refuse old versions outright. Spec choice.
+
+### Items where I probably overstated severity
+
+- **ARC-25 (`AccountDao.upsertAccount` race):** marked P1, but on mobile the UI is the sole writer in nearly all flows. Realistically P3 unless the web server competes for writes — needs a quick trace before sizing.
+- **ARC-49 ("multiple aggregation services overlap"):** vague — may be fine. Probably P3 or drop.
+- **ARC-55 (Aeon naming):** P3 is right; honestly cosmetic; likely never worth doing.
+
+### Items to drop / verify before acting
+
+- **ARC-54 (`CardWithCallbacks.ComputeError` "possibly undefined"):** confirmed it IS handled at `AeonCardList.kt:154`. Drop — agent hallucination I didn't catch.
+- All entries tagged **(UNVERIFIED)** in the catalog — confirm file/line still match before estimating; some are agent inferences from limited reads.
+
+### Recommended actual execution order (overrides the Sprint A–E table below)
+
+1. **Data isolation profileId fixes** (ARC-13 → ARC-19) — non-negotiable.
+2. **Currency anchoring** (ARC-01, ARC-02, ARC-04, ARC-09, ARC-12) — finishes the work already started this session.
+3. **Scroll-jank trio in one PR** (ARC-74 + ARC-77 + **ARC-75 Option B**) — one afternoon, biggest user-visible improvement.
+4. **ARC-76** with the trailing-emission test — separate PR.
+5. **ARC-05** (remove `CurrencyService` mutable state) — important; skip the rest of ARC-43.
+6. **ARC-28** `@Transaction` audit — easy correctness win.
+7. **ARC-39** (channelFlow race) — before any further dashboard work.
+8. Everything else: backlog, revisit only when symptoms appear.
+
+---
+
 ## Cross-cutting themes
 
 Many individual issues are symptoms of a small number of root architectural decisions. Fixing the roots is more valuable than fixing each symptom.
@@ -123,6 +171,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** grep `ExchangeRateSnapshot.EMPTY` → migrate.
 
 ## ARC-08 · `CurrencyRateEntity` PK = `currencyCode` only [P0 · medium]
+> **Curator note:** likely over-engineering for this project — app only keeps one active base at a time. ARC-09's scoped delete is sufficient. Skip unless you actually need multi-base caching.
 - **File:** `data/local/entity/CurrencyRateEntity.kt:8-10`
 - **RCA:** Primary key is just `currencyCode`. The `baseCurrency` column is stored but cannot uniquely identify the row. With `OnConflictStrategy.REPLACE` (which `replaceRates` uses), fetching EUR rates overwrites the row that USD rates wrote earlier under the same key.
 - **Why fix:** Foundational correctness for the rate cache. Without it, ARC-02 cannot be fully fixed.
@@ -201,6 +250,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Fix:** Same as ARC-16.
 
 ## ARC-18 · `CategoryDao` has no profile dimension at all [P1 · hard]
+> **Curator note:** needs a *product* decision before engineering. If profiles = different people, scope per profile. If profiles = different contexts for one user (personal vs business), keep shared. Don't migrate until you've answered.
 - **File:** `data/local/dao/CategoryDao.kt`, `data/local/entity/CategoryEntity.kt`
 - **RCA:** Categories are global. System categories (IDs <1000) are intentionally shared. Custom categories should arguably be per-profile but aren't.
 - **Why fix:** Two profiles with the same custom "Food" category create id collisions in cards keyed by `categoryId`. The dashboard's category card silently aggregates across profiles for shared ids if it ever queries the global list.
@@ -229,6 +279,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 # Layer 3 — Database Schema, DAOs, Migrations
 
 ## ARC-21 · `FilterEntity` embeds domain types directly [P2 · medium]
+> **Curator note:** probably skip. Room + kotlinx-serialization TypeConverters supports sealed-class storage well. The "no domain types in entities" CLAUDE.md rule is slightly dogmatic. Verify the TypeConverter exists; if so, leave as-is.
 - **File:** `data/local/entity/FilterEntity.kt`
 - **RCA:** Stores `TransactionType`, `PaymentMethod`, `TransactionStatus`, `TimelineRange` as fields. Per CLAUDE.md the data layer must not import domain models.
 - **Why fix:** Domain enum renames force a schema migration. Tight coupling prevents independent evolution.
@@ -257,6 +308,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** EXPLAIN shows index seeks on `transaction_tag_cross_ref`.
 
 ## ARC-25 · `AccountDao.upsertAccount` race [P1 · medium]
+> **Curator note:** severity overstated. On mobile the UI is the sole writer in nearly all flows. Likely P3 unless the web server competes for writes — trace before sizing.
 - **File:** `data/local/dao/AccountDao.kt:18-22` (UNVERIFIED)
 - **RCA:** String PK + REPLACE; concurrent edits silently last-write-wins.
 - **Fix:** Mutex per accountId in `AccountRepositoryImpl`, OR add `version: Int` column with optimistic locking (`WHERE id=? AND version=?`).
@@ -283,6 +335,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** force-throw between steps; assert all rows reverted.
 
 ## ARC-29 · Backup ZIP carries no `schema_version` [P1 · medium]
+> **Curator note:** needs a product call. Pick (a) full backward-compat with up-migration on import, or (b) refuse old versions outright. (b) is much less work but unkinder to users.
 - **File:** `data/repository/BackupRepositoryImpl.kt` (export + import)
 - **RCA:** Export writes CSV; import assumes columns match. Adding a column means old backups silently drop the field, NULL-fill it, or crash.
 - **Fix:** Add `schema_version.txt` to the ZIP with the current DB version. On import, refuse if newer; offer up-migration if older.
@@ -294,6 +347,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 # Layer 4 — Cache, Concurrency, Coroutines
 
 ## ARC-30 · `CardInput` god object drives unnecessary recomputes [P2 · hard]
+> **Curator note:** defer. After the recent `distinctUntilChanged` + recompute-key tightening, the remaining win is mostly allocation pressure. Hard refactor for small ROI. Revisit only if memory profiling shows allocation as the bottleneck.
 - **File:** `domain/card/CardInput.kt`
 - **RCA:** 14 fields. Any change in any field re-equates the data class as non-equal (despite `data class` equality, new list references from Room emissions trip equality). Every card recomputes.
 - **Why fix:** Renaming an account triggers the `TagUpSetPlot` to recompute. Memory pressure from per-emission allocation.
@@ -303,6 +357,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** add a Log to each computer's compute; rename an account → only computers consuming accounts should fire.
 
 ## ARC-31 · `CardType` plugin pattern spread across 15 files [P2 · hard]
+> **Curator note:** probably not worth the rewrite. Cheaper alternative — **ARC-31-alt:** one Konsist or unit test that iterates `CardType.values()` and asserts every type has matching entries in registry, Config, RenderData, Callbacks, and renderer. Makes "forgetting step 13" a test failure without the refactor.
 - **File:** CLAUDE.md explicitly documents this. Files: `CardType.kt`, `CardConfig.kt`, `CardRenderData.kt`, `CardComputer.kt` (new), `CardComputerRegistry.kt`, `CardUpdateHandler.kt`, `CardCallbacks.kt`, `CardWithCallbacks.kt`, `CardUiBridge.kt`, `UnifiedCardRenderer.kt`, `XxxCard.kt` (new), `CardRepositoryImpl.kt` (three `reorder*` branches), `CardLayoutViewModel.kt`, plus nav routes.
 - **RCA:** Sealed-class polymorphism repeated six times — each subsystem (config, render, compute, update, callbacks, renderer) has its own parallel sealed hierarchy keyed by the same `CardType`.
 - **Why fix:** Adding a card is a multi-hour ceremony with a silent runtime-only failure mode (CLAUDE.md notes "missing any causes a silent runtime crash on card reorder, not a compile error").
@@ -389,6 +444,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 # Layer 5 — Service Layer (Singletons, Aggregation Framework)
 
 ## ARC-43 · Domain services are `object` singletons [P1 · hard]
+> **Curator note:** over-broad. Pure-function services (`TimelineService`, `TransactionFilterService`, `BudgetService` post-snapshot fix) gain nothing from DI. The *only* genuinely problematic singleton is `CurrencyService` because of its mutable state — that's ARC-05. Fix ARC-05; leave the rest as `object`.
 - **Files:** `domain/service/aggregation/TransactionAggregationService.kt`, `CardAggregationService.kt`, `AggregationService.kt`, `currency/CurrencyService.kt`, `management/BudgetService.kt`, `LoanService.kt`, `TransactionManager.kt`, `PlannedPaymentService.kt`, `timeline/TimelineService.kt`, `filter/TransactionFilterService.kt`.
 - **RCA:** Convenience choice early in the project. Now blocks dispatcher injection, testing with fakes, configuration via DI, and feature flags.
 - **Why fix:** Tests resort to `mockkObject(...)` which has known fragility and forbids parallel test execution. CurrencyService specifically holds mutable state (see ARC-05).
@@ -398,6 +454,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** unit test injects a fake `TransactionAggregationService` without `mockkObject`.
 
 ## ARC-44 · `AggregationPlanner` / `TransactionQueryBuilder` over-engineered for actual usage [P2 · hard]
+> **Curator note:** conditional. Census first — count distinct `AggregationDimension`/`MetricConfig` combinations actually constructed in the codebase. ≤5 → simplify; >10 → keep the framework and just fix the magic-alias bug (ARC-45). Don't blind-refactor.
 - **Files:** `data/local/query/TransactionQueryBuilder.kt`, `domain/service/query/AggregationPlanner.kt`, `query/DatabaseQueryServiceImpl.kt`
 - **RCA:** A bespoke analytical-query DSL built on top of Room. Each call constructs SQL at runtime via `AggregationDimension`/`MetricConfig`. The flexibility exceeds the actual call patterns (which are a handful of fixed shapes).
 - **Why fix:** Hard to optimize (you can't see the SQL until runtime), hard to test (need fakes for the whole pipeline), produces magic-string aliases (`m1`, `m2`, `d1`, …) decoded positionally downstream (ARC-45).
@@ -431,6 +488,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** craft a recursive split request; should throw, not stack-overflow.
 
 ## ARC-49 · Multiple aggregation services duplicate concerns [P2 · medium]
+> **Curator note:** vague entry — may be fine as-is. Realistically P3 or drop entirely. Don't act unless you encounter the confusion in practice.
 - **Files:** `CardAggregationService`, `TransactionAggregationService`, `AggregationService`
 - **RCA:** Naming and responsibilities overlap. Newcomers don't know which to call.
 - **Fix:** Audit usages; merge or clearly delineate (e.g., "TransactionAggregationService = DB-facing; CardAggregationService = card-shaped wrappers").
@@ -464,11 +522,13 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** add a log to the effect; should fire only when meaningful inputs change.
 
 ## ARC-54 · `CardWithCallbacks.ComputeError` referenced but possibly undefined [P3 · trivial]
+> **Curator note: DROP.** Confirmed during reassessment — the variant exists and IS handled at `AeonCardList.kt:154` (`is CardWithCallbacks.ComputeError -> CardErrorState(card.message)`). Original agent finding was inaccurate.
 - **File:** `ui/components/cards/CardUiBridge.kt:58-59` references it; verify it exists in `CardWithCallbacks.kt`.
 - **Fix:** If missing, add; ensure `UnifiedCardRenderer` has an `is ComputeError ->` branch.
 - **Verify by:** compile check.
 
 ## ARC-55 · Inconsistent component naming (`Aeon*` vs `*Card`) [P3 · medium]
+> **Curator note:** cosmetic. Honestly P4. Likely never worth the rename cost.
 - **Files:** `ui/components/`, `ui/screens/dashboard/components/`
 - **RCA:** No documented convention. Mix of design-system-prefixed and domain-named composables.
 - **Fix:** Convention: `Aeon*` = design-system primitive; `*Card`/`*Sheet`/`*Row` = domain component. Rename outliers.
@@ -491,6 +551,7 @@ User-observed symptom: records-list flings smoothly; dashboard cards stutter. Ea
 - **Verify by:** Layout Inspector → recomposition count on each card during fling; or use Macrobenchmark `MeasureRepeated { swipe down }` and confirm `frame.durationMs < 16.6` improves measurably.
 
 ## ARC-75 · Heavy recursive sort inside `CategoryPieChart`/`CategoryTreemap` composables [P1 · easy]
+> **Curator note: lead with Option B (`remember`).** Three lines, no `CardRenderData` shape change, no test rewrite, ~95% of the benefit. Reserve Option A (move into the computer) for when you're separately cleaning up those computers.
 - **File:** `ui/components/cards/UnifiedCardRenderer.kt:109-179` (Pie) and `181-251` (Treemap)
 - **RCA:** Both branches define a local `fun mapMetrics(...)` that recurses into `metric.subcategoryData.mapNotNull(::mapMetrics).sortedByDescending { ... }`. The recursion + sort runs **every recomposition** of the card. There is no `remember`. With 50 categories × N subcategories, this is hundreds of `BigDecimal.abs()` compares + multiple list allocations per recompose.
 - **Why fix:** When the card enters the viewport during fling, this work runs on the main thread mid-scroll.
@@ -503,6 +564,7 @@ User-observed symptom: records-list flings smoothly; dashboard cards stutter. Ea
 - **Verify by:** add `SideEffect { println("piechart map") }` in the current code, fling — see the spam; after fix it fires only on data/metric change.
 
 ## ARC-76 · `DashboardViewModel` emits per-card-completion with no debounce [P1 · easy]
+> **Curator note: footgun.** `sample(80)` *drops trailing emissions* — if no further update arrives within the window, the last card state can be lost. Use `.sample(80).onCompletion { emit(latestValue) }` OR a custom windowing operator. Required: a unit test asserting the final post-all-complete state is always emitted to the UI.
 - **File:** `ui/screens/dashboard/DashboardViewModel.kt:316-342`
 - **RCA:** A single collector calls `send(buildSuccess(cardData, isComputing))` on every `cardDataFlow.update`. `MutableStateFlow.collect` conflates only what the consumer can't keep up with; on dashboard load 10–15 cards complete within milliseconds, producing 10–15 distinct emissions, each reconstructing `DashboardUiState.Success` with a fresh `Map`. If the user starts scrolling at that moment, the list recomposes per emission.
 - **Why fix:** This is the second compounding factor (with ARC-74) for fling jank during initial load — and any time the cache is invalidated.
@@ -532,6 +594,7 @@ User-observed symptom: records-list flings smoothly; dashboard cards stutter. Ea
 - **Verify by:** Layout Inspector → `UnifiedCardRenderer` recomposition count drops sharply when scrolling.
 
 ## ARC-78 · `graphicsLayer` per-card transform math (cameraDistance, rotation, elevation, alpha) [P2 · medium]
+> **Curator note: lead with Option B (`derivedStateOf`).** Keeps the layer always applied (preserving the flip animation's first-frame correctness) but the lambda body short-circuits when `rotation == 0f`. Option A (conditionally apply the layer) risks visible flip-animation glitches.
 - **File:** `ui/components/cards/AeonExpressiveCard.kt:184-199`
 - **RCA:** Each card's `graphicsLayer` block computes `cameraDistance = 20f * density`, `shadowElevation = (2.dp + (8.dp * elevationProgress)).toPx()`, `alpha = 1f - (elevationProgress * 0.15f)` per draw, *for every card visible*, even when no card is being flipped (i.e., `rotation == 0f` — the math runs anyway).
 - **Why fix:** With 5–8 cards on screen during fling, the per-draw layer math is duplicated work. `cameraDistance` in particular changes nothing while rotation is 0 but is still issued to the layer each frame.

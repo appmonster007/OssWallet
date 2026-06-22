@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.runtime.Stable
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -9,6 +10,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
  * This ensures type safety at the compiler level, eliminating the need for unsafe casts
  * in the renderer.
  */
+@Stable
 sealed class CardWithCallbacks {
     abstract val filterRules: CardFilterRules
     abstract val baseFilter: TransactionFilter

@@ -27,12 +27,17 @@ class PlannedPaymentsCardComputer :
         )
         val now = System.currentTimeMillis()
 
+        val accountIdSet = mergedFilter.accountIds.toHashSet()
+        val categoryIdSet = mergedFilter.categoryIds.toHashSet()
+        val currencySet = mergedFilter.currencies.toHashSet()
+        val tagSet = mergedFilter.tags.toHashSet()
+
         // Filter planned payments based on the merged filter (categories, accounts, etc.)
         val filteredPayments = input.plannedPayments.filter { pp ->
-            (mergedFilter.accountIds.isEmpty() || pp.accountId in mergedFilter.accountIds) &&
-                    (mergedFilter.categoryIds.isEmpty() || pp.categoryId in mergedFilter.categoryIds) &&
-                    (mergedFilter.currencies.isEmpty() || pp.currency in mergedFilter.currencies) &&
-                    (mergedFilter.tags.isEmpty() || pp.tags.any { it in mergedFilter.tags })
+            (accountIdSet.isEmpty() || pp.accountId in accountIdSet) &&
+                    (categoryIdSet.isEmpty() || pp.categoryId in categoryIdSet) &&
+                    (currencySet.isEmpty() || pp.currency in currencySet) &&
+                    (tagSet.isEmpty() || pp.tags.any { it in tagSet })
         }
 
         val (rangeStart, rangeEnd) = TimelineService.getDateRange(mergedFilter.timelineRange)

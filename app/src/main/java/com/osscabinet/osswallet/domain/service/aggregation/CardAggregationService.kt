@@ -292,11 +292,16 @@ object CardAggregationService {
         val baseBudgets = if (config.showArchived) input.budgets
         else input.budgets.filter { !it.isArchived }
 
+        val accountIdSet = mergedFilter.accountIds.toHashSet()
+        val categoryIdSet = mergedFilter.categoryIds.toHashSet()
+        val currencySet = mergedFilter.currencies.toHashSet()
+        val tagSet = mergedFilter.tags.toHashSet()
+
         val budgets = baseBudgets.filter { budget ->
-            (mergedFilter.accountIds.isEmpty() || budget.accountIds.isEmpty() || budget.accountIds.any { it in mergedFilter.accountIds }) &&
-                    (mergedFilter.categoryIds.isEmpty() || budget.categoryIds.isEmpty() || budget.categoryIds.any { it in mergedFilter.categoryIds }) &&
-                    (mergedFilter.currencies.isEmpty() || budget.currency in mergedFilter.currencies) &&
-                    (mergedFilter.tags.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in mergedFilter.tags })
+            (accountIdSet.isEmpty() || budget.accountIds.isEmpty() || budget.accountIds.any { it in accountIdSet }) &&
+                    (categoryIdSet.isEmpty() || budget.categoryIds.isEmpty() || budget.categoryIds.any { it in categoryIdSet }) &&
+                    (currencySet.isEmpty() || budget.currency in currencySet) &&
+                    (tagSet.isEmpty() || budget.tags.isEmpty() || budget.tags.any { it in tagSet })
         }
 
         val items = budgets.take(config.maxItems).map { budget ->

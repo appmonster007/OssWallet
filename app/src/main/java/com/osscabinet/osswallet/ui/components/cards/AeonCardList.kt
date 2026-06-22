@@ -1,8 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -154,23 +152,28 @@ fun AeonCardList(
                     is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
                     null -> if (isCardsLoading) CardShimmerPlaceholder() else Box(modifier = Modifier.size(0.dp))
                     else -> {
-                        val effectiveCard = card.copyWithRules(
-                            rules = card.filterRules.layeredWith(screenRules),
-                            baseFilter = baseFilter,
-                            filterSheetEnabled = !disableFilterSheet
-                        )
-
-                        Box(modifier = Modifier.animateContentSize(animationSpec = tween(durationMillis = 250))) {
-                            UnifiedCardRenderer(
-                                cardWithCallbacks = effectiveCard,
-                                modifier = Modifier.fillMaxWidth(),
-                                headerModifier = dragHandleModifier,
-                                filterContext = filterContext,
-                                inheritedFilter = cardInput.filter,
-                                screenOwnsTimeline = cardInput.screenOwnsTimeline,
-                                animate = animateCards,
+                        // ARC-77: memoize the layered copy so scrolling recompositions don't allocate
+                        // a fresh CardWithCallbacks subtype per frame.
+                        val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
+                            card.copyWithRules(
+                                rules = card.filterRules.layeredWith(screenRules),
+                                baseFilter = baseFilter,
+                                filterSheetEnabled = !disableFilterSheet
                             )
                         }
+
+                        // ARC-74: removed redundant Box(Modifier.animateContentSize(...)).
+                        // AeonExpressiveCard already applies animateContentSize on its shell;
+                        // wrapping it again doubled the LazyColumn measure cost per item per frame.
+                        UnifiedCardRenderer(
+                            cardWithCallbacks = effectiveCard,
+                            modifier = Modifier.fillMaxWidth(),
+                            headerModifier = dragHandleModifier,
+                            filterContext = filterContext,
+                            inheritedFilter = cardInput.filter,
+                            screenOwnsTimeline = cardInput.screenOwnsTimeline,
+                            animate = animateCards,
+                        )
                     }
                 }
             }

@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.*
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -151,7 +152,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("-100"), timestamp = outOfPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
+        val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
         assertEquals(0, BigDecimal("500").compareTo(spent))
     }
 
@@ -166,7 +167,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("500"), transactionType = TransactionType.INCOME, timestamp = inPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
+        val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
         assertEquals(0, BigDecimal("200").compareTo(spent))
     }
 
@@ -181,7 +182,7 @@ class BudgetServiceTest {
             makeTransaction(BigDecimal("-300"), categoryId = 2L, timestamp = inPeriod)
         )
 
-        val spent = BudgetService.calculateSpent(budget, transactions, emptyMap(), "USD", now)
+        val spent = BudgetService.calculateSpent(budget, transactions, ExchangeRateSnapshot.EMPTY, "USD", now)
         assertEquals(0, BigDecimal("200").compareTo(spent))
     }
 }

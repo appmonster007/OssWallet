@@ -43,12 +43,19 @@ This section was added after re-reviewing the plan against the actual usage patt
 
 ### Items where the right answer is simpler than what the catalog says
 
-- **ARC-08 (composite PK on `currency_rates`)** — likely **over-engineering**. The app only keeps one active base at a time. A scoped `DELETE WHERE baseCurrency=?` (ARC-09) is sufficient. Skip the PK change unless you actually want to cache multiple bases simultaneously.
+- **ARC-08 (composite PK on `currency_rates`)** — **do the composite PK.** Multi-base caching is a product requirement. ARC-08 + ARC-09 + ARC-10 land together.
 - **ARC-43 (convert every `object` service to DI)** — **over-broad**. The only service with a real problem is `CurrencyService` (mutable state — ARC-05). Pure-function services like `TimelineService`, `TransactionFilterService`, `BudgetService` (post-snapshot fix) gain nothing from DI. Fix ARC-05; leave the rest as `object` until a concrete need arises.
-- **ARC-31 (true plugin pattern for cards)** — **probably not worth it**. Cards are added rarely. Cheaper alternative: one Konsist or unit test that iterates `CardType.values()` and asserts the registry/Config/RenderData/Callbacks/renderer parity exists. Catches "forgetting step 13" without rebuilding the framework. Track this as **ARC-31-alt** if you choose it.
 - **ARC-21 / ARC-22 (FilterEntity primitives only)** — **probably skip**. Room + a kotlinx-serialization TypeConverter for sealed classes is a common, supported pattern. The CLAUDE.md "no domain types in entities" rule is slightly dogmatic. Verify a TypeConverter for `TimelineRange` exists and works; if so, leave `FilterEntity` alone.
-- **ARC-44 (replace `AggregationPlanner` with typed DAO methods)** — **conditional**. Decide by census: count unique `AggregationDimension`/`MetricConfig` combinations in the codebase. ≤5 → simplify; >10 → keep, just fix the magic-alias bug (ARC-45).
 - **ARC-30 (split `CardInput` into typed subsets)** — **defer**. After the recent `distinctUntilChanged` + recompute-key tightening, the marginal win is allocation pressure only. Hard refactor for small ROI. Revisit only if memory profiling shows allocation is the bottleneck.
+
+### Items explicitly postponed (decided 2026-06-23)
+
+These are real issues with confirmed intent, but the user has chosen to defer them to a future cycle. Keep the catalog entries below for context; do not schedule into any current sprint.
+
+- **ARC-31** — plugin pattern for cards. User wants it eventually; not now.
+- **ARC-44** — simplify / replace the aggregation framework. User confirms it's overkill and causes bulky DB calls; tackling later.
+
+**Note:** ARC-45 (typed `MetricKey` for SQL aliases) stays **in scope**. It's a silent-corruption bug that can be fixed independently of the ARC-44 framework decision — the same alias-to-extractor coupling is needed whether the framework lives or is replaced.
 
 ### Items where I led with the wrong option
 
@@ -56,14 +63,14 @@ This section was added after re-reviewing the plan against the actual usage patt
 - **ARC-78 (`graphicsLayer` gating):** lead with **Option B** (`derivedStateOf` so the layer body short-circuits when `rotation == 0f`). Option A (conditionally apply the whole layer) risks breaking the flip animation's first frame. Drop or de-emphasize A.
 - **ARC-76 (`.sample(80)` on `cardDataFlow`):** the fix is correct but `sample` *drops trailing emissions*. Use `.sample(80).onCompletion { emit(latest) }` OR a windowing operator, AND add a unit test asserting the final card state is always emitted. The footgun is real.
 
-### Items that need a product call, not an engineering one
+### Resolved product calls (decided 2026-06-22)
 
-- **ARC-18 (per-profile vs shared categories):** depends on whether profiles represent different *people* (per-profile) or different *contexts for one user* (shared). Answer before fixing.
-- **ARC-29 (versioned backup):** decide between (a) full backward-compat with up-migration on import, or (b) refuse old versions outright. Spec choice.
+- **ARC-18 (per-profile vs shared categories):** profiles = different contexts for the same user → categories stay shared (current behavior is correct). Action narrows to documenting this decision in code + `.gemini/database.md`; no migration work.
+- **ARC-29 (versioned backup):** option (a) — full backward-compat with up-migration on import. Effort bumps from `medium` to `hard`; introduces a `BackupMigration_NM_to_(N+1)M` chain.
 
 ### Items where I probably overstated severity
 
-- **ARC-25 (`AccountDao.upsertAccount` race):** marked P1, but on mobile the UI is the sole writer in nearly all flows. Realistically P3 unless the web server competes for writes — needs a quick trace before sizing.
+- **ARC-25 (`AccountDao.upsertAccount` race):** confirmed P3. Offline-only app, single human writer at a time — race is theoretical. Action: doc-comment the single-writer assumption; no code change.
 - **ARC-49 ("multiple aggregation services overlap"):** vague — may be fine. Probably P3 or drop.
 - **ARC-55 (Aeon naming):** P3 is right; honestly cosmetic; likely never worth doing.
 
@@ -81,7 +88,8 @@ This section was added after re-reviewing the plan against the actual usage patt
 5. **ARC-05** (remove `CurrencyService` mutable state) — important; skip the rest of ARC-43.
 6. **ARC-28** `@Transaction` audit — easy correctness win.
 7. **ARC-39** (channelFlow race) — before any further dashboard work.
-8. Everything else: backlog, revisit only when symptoms appear.
+8. **ARC-45** (typed `MetricKey`) — small, self-contained, kills the silent-zero bug; doesn't depend on the postponed ARC-44.
+9. Everything else: backlog, revisit only when symptoms appear.
 
 ---
 
@@ -171,7 +179,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** grep `ExchangeRateSnapshot.EMPTY` → migrate.
 
 ## ARC-08 · `CurrencyRateEntity` PK = `currencyCode` only [P0 · medium]
-> **Curator note:** likely over-engineering for this project — app only keeps one active base at a time. ARC-09's scoped delete is sufficient. Skip unless you actually need multi-base caching.
+> **Curator note (user-confirmed 2026-06-22):** multi-base caching IS a requirement. Do the composite PK + migration. ARC-09 (scoped delete) and ARC-10 (index) become *mandatory companions*, not alternatives — without them the composite PK is unusable.
 - **File:** `data/local/entity/CurrencyRateEntity.kt:8-10`
 - **RCA:** Primary key is just `currencyCode`. The `baseCurrency` column is stored but cannot uniquely identify the row. With `OnConflictStrategy.REPLACE` (which `replaceRates` uses), fetching EUR rates overwrites the row that USD rates wrote earlier under the same key.
 - **Why fix:** Foundational correctness for the rate cache. Without it, ARC-02 cannot be fully fixed.
@@ -250,7 +258,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Fix:** Same as ARC-16.
 
 ## ARC-18 · `CategoryDao` has no profile dimension at all [P1 · hard]
-> **Curator note:** needs a *product* decision before engineering. If profiles = different people, scope per profile. If profiles = different contexts for one user (personal vs business), keep shared. Don't migrate until you've answered.
+> **Curator note (user-confirmed 2026-06-22): RESOLVED — categories stay shared.** Profiles represent different contexts for the *same user* (personal / business / travel etc.), not different people. Shared categories are the correct design. **Action:** document this decision in `CategoryEntity` KDoc and in `.gemini/database.md` so a future contributor doesn't re-open the question. Drop the engineering work; keep the documentation task only.
 - **File:** `data/local/dao/CategoryDao.kt`, `data/local/entity/CategoryEntity.kt`
 - **RCA:** Categories are global. System categories (IDs <1000) are intentionally shared. Custom categories should arguably be per-profile but aren't.
 - **Why fix:** Two profiles with the same custom "Food" category create id collisions in cards keyed by `categoryId`. The dashboard's category card silently aggregates across profiles for shared ids if it ever queries the global list.
@@ -308,7 +316,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** EXPLAIN shows index seeks on `transaction_tag_cross_ref`.
 
 ## ARC-25 · `AccountDao.upsertAccount` race [P1 · medium]
-> **Curator note:** severity overstated. On mobile the UI is the sole writer in nearly all flows. Likely P3 unless the web server competes for writes — trace before sizing.
+> **Curator note (user-confirmed 2026-06-22): downgrade to P3.** OssWallet is offline-only; the human user interacts from one surface at a time (mobile UI OR web UI). Bulk imports run from one source. The concurrent-upsert race is theoretical, not practical. **Action:** add a one-line code comment near `upsertAccount` documenting "single-writer assumption" so it isn't accidentally violated when (if) sync ever lands; otherwise no work.
 - **File:** `data/local/dao/AccountDao.kt:18-22` (UNVERIFIED)
 - **RCA:** String PK + REPLACE; concurrent edits silently last-write-wins.
 - **Fix:** Mutex per accountId in `AccountRepositoryImpl`, OR add `version: Int` column with optimistic locking (`WHERE id=? AND version=?`).
@@ -335,7 +343,12 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** force-throw between steps; assert all rows reverted.
 
 ## ARC-29 · Backup ZIP carries no `schema_version` [P1 · medium]
-> **Curator note:** needs a product call. Pick (a) full backward-compat with up-migration on import, or (b) refuse old versions outright. (b) is much less work but unkinder to users.
+> **Curator note (user-confirmed 2026-06-22): option (a) — full backward-compat with up-migration on import.** Reasoning recorded: users may restore old backups across app upgrades; refusing them is unkind. **Implementation outline:**
+> 1. Embed `schema_version.txt` in the export ZIP (DB version + app version + export format version).
+> 2. On import: parse versions; if older, run a chain of in-memory "backup migration" transformations (each one bumps the data to the next version) before insertion.
+> 3. If newer than the running app: refuse with a clear error ("Backup made with newer app version; please update").
+> 4. Bump migration effort up — this is now `hard`, not `medium`. Maintain a `BackupMigration_NM_to_(N+1)M` chain alongside the Room `MIGRATION_N_(N+1)` chain.
+> 5. Tests: round-trip every supported old version → import → assert all rows present with expected current-version shape.
 - **File:** `data/repository/BackupRepositoryImpl.kt` (export + import)
 - **RCA:** Export writes CSV; import assumes columns match. Adding a column means old backups silently drop the field, NULL-fill it, or crash.
 - **Fix:** Add `schema_version.txt` to the ZIP with the current DB version. On import, refuse if newer; offer up-migration if older.
@@ -357,7 +370,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** add a Log to each computer's compute; rename an account → only computers consuming accounts should fire.
 
 ## ARC-31 · `CardType` plugin pattern spread across 15 files [P2 · hard]
-> **Curator note:** probably not worth the rewrite. Cheaper alternative — **ARC-31-alt:** one Konsist or unit test that iterates `CardType.values()` and asserts every type has matching entries in registry, Config, RenderData, Callbacks, and renderer. Makes "forgetting step 13" a test failure without the refactor.
+> **Curator note: POSTPONED (decided 2026-06-23).** User confirms plugin pattern is desired (future contributors should be able to add custom cards), but defers the work to a future cycle. Catalog entry kept for context.
 - **File:** CLAUDE.md explicitly documents this. Files: `CardType.kt`, `CardConfig.kt`, `CardRenderData.kt`, `CardComputer.kt` (new), `CardComputerRegistry.kt`, `CardUpdateHandler.kt`, `CardCallbacks.kt`, `CardWithCallbacks.kt`, `CardUiBridge.kt`, `UnifiedCardRenderer.kt`, `XxxCard.kt` (new), `CardRepositoryImpl.kt` (three `reorder*` branches), `CardLayoutViewModel.kt`, plus nav routes.
 - **RCA:** Sealed-class polymorphism repeated six times — each subsystem (config, render, compute, update, callbacks, renderer) has its own parallel sealed hierarchy keyed by the same `CardType`.
 - **Why fix:** Adding a card is a multi-hour ceremony with a silent runtime-only failure mode (CLAUDE.md notes "missing any causes a silent runtime crash on card reorder, not a compile error").
@@ -453,8 +466,8 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Side effects of fix:** Wide; do one service at a time. Each ViewModel/Repository that calls the service needs to inject it.
 - **Verify by:** unit test injects a fake `TransactionAggregationService` without `mockkObject`.
 
-## ARC-44 · `AggregationPlanner` / `TransactionQueryBuilder` over-engineered for actual usage [P2 · hard]
-> **Curator note:** conditional. Census first — count distinct `AggregationDimension`/`MetricConfig` combinations actually constructed in the codebase. ≤5 → simplify; >10 → keep the framework and just fix the magic-alias bug (ARC-45). Don't blind-refactor.
+## ARC-44 · `AggregationPlanner` / `TransactionQueryBuilder` over-engineered for actual usage [P1 · hard]
+> **Curator note: POSTPONED (decided 2026-06-23).** User confirms the framework is overkill and causes frequent bulky DB calls (priority bumped to P1 to reflect that), but defers the simplification to a future cycle. Catalog entry kept for context.
 - **Files:** `data/local/query/TransactionQueryBuilder.kt`, `domain/service/query/AggregationPlanner.kt`, `query/DatabaseQueryServiceImpl.kt`
 - **RCA:** A bespoke analytical-query DSL built on top of Room. Each call constructs SQL at runtime via `AggregationDimension`/`MetricConfig`. The flexibility exceeds the actual call patterns (which are a handful of fixed shapes).
 - **Why fix:** Hard to optimize (you can't see the SQL until runtime), hard to test (need fakes for the whole pipeline), produces magic-string aliases (`m1`, `m2`, `d1`, …) decoded positionally downstream (ARC-45).
@@ -464,6 +477,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** count `@Query` annotations in DAOs (will grow); count `MetricConfig` constructions (should shrink).
 
 ## ARC-45 · Magic string aliases (`m1`, `d1`, …) decoded positionally [P1 · medium]
+> **Curator note (user-confirmed 2026-06-23): IN SCOPE — fix independently.** ARC-44 is postponed, but this alias-to-extractor coupling produces silent zeros on alias reordering. Fix even while the framework remains. The typed `MetricKey` abstraction is small and self-contained.
 - **File:** `data/local/query/TransactionQueryBuilder.kt:76-129`
 - **RCA:** `AggregatedData(Map<String, Any>)` returns rows keyed by ordinal aliases. The mapping back to `FinancialSummary` (`mapToFinancialSummary`) relies on the alias names matching the order. A reordering silently produces zeros.
 - **Why fix:** Silent data corruption mode (cards show $0 instead of an error).
@@ -767,18 +781,19 @@ Goal: undo the singleton lock-in; collapse the card plugin duplication.
 | 19 | ARC-38 — split `TransactionViewModel` | hard |
 | 20 | ARC-50 + ARC-51 — `@Stable`/`@Immutable` pass | easy |
 | 21 | ARC-52 + ARC-53 — `CardUiBridge` lambda hygiene | medium |
-| 22 | ARC-31 — true plugin pattern for cards | hard |
+| 22 | ARC-45 — typed `MetricKey` (independent of ARC-44; fixes silent-zero bug) | medium |
 | 23 | ARC-43 cont — finish singleton → DI for remaining services | hard |
 
 ## Sprint E — Polish & guardrails
 | # | Issue | Effort |
 |---|---|---|
-| 24 | ARC-44 + ARC-45 — typed `MetricKey`, prune query DSL where overkill | hard |
-| 25 | ARC-58 + ARC-59 — widget timeouts + config validation | medium |
-| 26 | ARC-65 + ARC-66 + ARC-67 + ARC-69 — test infrastructure | medium |
-| 27 | ARC-3, ARC-6, ARC-7, ARC-11, ARC-12 — close the deprecated currency surface | easy |
-| 28 | ARC-78 — gate `AeonExpressiveCard` graphicsLayer math when rotation == 0 | medium |
-| 29 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies |
+| 24 | ARC-58 + ARC-59 — widget timeouts + config validation | medium |
+| 25 | ARC-65 + ARC-66 + ARC-67 + ARC-69 — test infrastructure | medium |
+| 26 | ARC-3, ARC-6, ARC-7, ARC-11, ARC-12 — close the deprecated currency surface | easy |
+| 27 | ARC-78 — gate `AeonExpressiveCard` graphicsLayer math when rotation == 0 | medium |
+| 28 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies |
+
+> **Postponed (not scheduled):** ARC-31 (card plugin pattern), ARC-44 (aggregation framework simplification). See Curator's reassessment for the deferral rationale.
 
 ---
 

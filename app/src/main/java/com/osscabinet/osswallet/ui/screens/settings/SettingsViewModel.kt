@@ -137,6 +137,36 @@ class SettingsViewModel @Inject constructor(
         profiles.find { it.id == id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    data class DashboardDisplayPrefs(
+        val currentProfileName: String?,
+        val cardAnimationEnabled: Boolean,
+        val expandableFabEnabled: Boolean,
+        val recentActivitiesBreakdown: Boolean
+    )
+
+    val dashboardDisplayPrefs: StateFlow<DashboardDisplayPrefs> = combine(
+        currentProfile,
+        cardAnimationEnabled,
+        expandableFabEnabled,
+        recentActivitiesBreakdown
+    ) { profile, anim, fab, breakdown ->
+        DashboardDisplayPrefs(
+            currentProfileName = profile?.name,
+            cardAnimationEnabled = anim,
+            expandableFabEnabled = fab,
+            recentActivitiesBreakdown = breakdown
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        DashboardDisplayPrefs(
+            currentProfileName = null,
+            cardAnimationEnabled = true,
+            expandableFabEnabled = true,
+            recentActivitiesBreakdown = true
+        )
+    )
+
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState
 

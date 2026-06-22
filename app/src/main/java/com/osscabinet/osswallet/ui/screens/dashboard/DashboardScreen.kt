@@ -222,13 +222,7 @@ fun DashboardScreen(
     val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
-    val currentProfile by settingsViewModel.currentProfile.collectAsStateWithLifecycle()
-    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
-        initialValue = true
-    )
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(
-        initialValue = true
-    )
+    val displayPrefs by settingsViewModel.dashboardDisplayPrefs.collectAsStateWithLifecycle()
 
     val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
     val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
@@ -236,7 +230,6 @@ fun DashboardScreen(
 
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val recentActivitiesBreakdown by dashboardViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
 
     val isTopLevel = remember(initialViewContext, config.isTopLevel) {
         config.isTopLevel || initialViewContext == DashboardViewContext.None
@@ -247,15 +240,15 @@ fun DashboardScreen(
         initialViewContext = initialViewContext,
         uiState = dashboardUiState,
         cardsConfig = cardsConfig,
-        currentProfileName = currentProfile?.name,
-        cardAnimationEnabled = cardAnimationEnabled,
-        expandableFabEnabled = expandableFabEnabled,
+        currentProfileName = displayPrefs.currentProfileName,
+        cardAnimationEnabled = displayPrefs.cardAnimationEnabled,
+        expandableFabEnabled = displayPrefs.expandableFabEnabled,
         allTemplates = allTemplates,
         allCategories = allCategories,
         lastUndoAction = lastUndoAction,
         savedFilters = savedFilters,
         revealedCardIds = revealedCardIds,
-        recentActivitiesBreakdown = recentActivitiesBreakdown,
+        recentActivitiesBreakdown = displayPrefs.recentActivitiesBreakdown,
         actions = actions,
         onResetView = dashboardViewModel::resetToInitialView,
         onUndoAction = dashboardViewModel::undoLastPlannedPaymentAction,

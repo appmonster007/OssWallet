@@ -17,8 +17,7 @@ import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
         )
     ],
     indices = [
-        Index(value = ["plannedPaymentId"]),
-        Index(value = ["scheduledDate"]),
+        Index(value = ["plannedPaymentId", "scheduledDate"]),
         Index(value = ["status"])
     ]
 )

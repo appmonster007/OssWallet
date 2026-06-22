@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TemplateDao {
-    @Query("SELECT * FROM templates ORDER BY name COLLATE NOCASE ASC")
-    fun getAllTemplates(): Flow<List<TemplateEntity>>
+    @Query("SELECT * FROM templates WHERE profileId = :profileId ORDER BY name COLLATE NOCASE ASC")
+    fun getAllTemplates(profileId: Int): Flow<List<TemplateEntity>>
 
     @Query("SELECT * FROM templates WHERE isStarred = 1 ORDER BY displayOrder ASC")
     fun getStarredTemplates(): Flow<List<TemplateEntity>>
@@ -40,6 +40,9 @@ interface TemplateDao {
 
     @Update
     suspend fun updateTemplates(templates: List<TemplateEntity>)
+
+    @Query("SELECT * FROM templates WHERE profileId = :profileId ORDER BY name COLLATE NOCASE ASC")
+    suspend fun getAllTemplatesSync(profileId: Int): List<TemplateEntity>
 
     @Query("SELECT * FROM templates ORDER BY name COLLATE NOCASE ASC")
     suspend fun getAllTemplatesSync(): List<TemplateEntity>

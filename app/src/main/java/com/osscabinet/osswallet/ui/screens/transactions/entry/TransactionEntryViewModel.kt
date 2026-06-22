@@ -91,7 +91,7 @@ class TransactionEntryViewModel @Inject constructor(
             val accounts = accountRepository.getAllAccounts(profileId).first()
             val categories = categoryRepository.categories.first()
             val tags = tagRepository.getAllTags().first()
-            val templates = templateRepository.getAllTemplates().first()
+            val templates = templateRepository.getAllTemplatesSync(profileId)
             val payees = transactionUseCases.getUniquePayees(profileId)
             val notes = transactionUseCases.getUniqueNotes(profileId)
             val mapsAccess = settingsRepository.mapsAccessEnabled.first()

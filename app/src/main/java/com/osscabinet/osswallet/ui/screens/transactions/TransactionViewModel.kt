@@ -329,7 +329,7 @@ class TransactionViewModel @Inject constructor(
                     profileId,
                     TransactionFilter(timelineRange = TimelineRange.AllTime())
                 ),
-                templateRepository.getAllTemplates(),
+                templateRepository.getAllTemplates(profileId),
                 plannedPaymentRepository.getAllPlannedPayments(profileId)
             ) { transactions, templates, plannedPayments ->
                 val rawPatterns = PatternDiscoveryService.discoverPatterns(transactions)
@@ -611,7 +611,8 @@ class TransactionViewModel @Inject constructor(
      */
     fun setTemplatePrefill(templateId: Long) {
         viewModelScope.launch {
-            val templates = templateRepository.getAllTemplates().first()
+            val profileId = settingsRepository.currentProfileId.first()
+            val templates = templateRepository.getAllTemplatesSync(profileId)
             val template = templates.find { it.id == templateId }
             if (template != null) {
                 _prefillDto.value = TransactionPrefillDTO.fromTemplate(template)

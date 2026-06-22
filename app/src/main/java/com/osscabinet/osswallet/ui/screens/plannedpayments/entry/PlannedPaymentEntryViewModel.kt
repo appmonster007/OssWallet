@@ -77,7 +77,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
-                    templateRepository.getAllTemplates(),
+                    templateRepository.getAllTemplates(profileId),
                     tagRepository.getAllTags()
                 ) { accounts, categories, templates, tags ->
                     _state.update { current ->

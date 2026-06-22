@@ -51,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -809,63 +810,66 @@ fun DashboardGlanceTab(
         modifier = Modifier
             .fillMaxSize()
     ) {
-    val sharedCallbacks = remember(
-        onManageAccountsClick,
-        onAccountClick,
-        onNavigateToBudgetDetail,
-        onNavigateToBudgetList,
-        onNavigateToLoanDetail,
-        onNavigateToLoanList,
-        onEditTransactionClick,
-        onItemExpanded,
-        onItemCollapsed,
-        onStatusChange,
-        onCloneTransactionClick,
-        onDeleteTransaction,
-        onSplitTransactionClick,
-        onFullSwipeRight,
-        onNavigateToPlannedPaymentDetail,
-        onQuickConfirm,
-        onQuickSkip,
-        onNavigateToPlannedPaymentList,
-        onSaveFilterClick,
-        onAddTag
-    ) {
+    // Capture each callback in rememberUpdatedState so the AeonInteractionCallbacks object is
+    // created once. Each lambda dereferences the State at invocation time, so callers always
+    // get the latest value without forcing a rebuild of the entire callbacks tree.
+    val onManageAccountsRef by rememberUpdatedState(onManageAccountsClick)
+    val onAccountClickRef by rememberUpdatedState(onAccountClick)
+    val onBudgetDetailRef by rememberUpdatedState(onNavigateToBudgetDetail)
+    val onBudgetListRef by rememberUpdatedState(onNavigateToBudgetList)
+    val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
+    val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
+    val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
+    val onItemExpandedRef by rememberUpdatedState(onItemExpanded)
+    val onItemCollapsedRef by rememberUpdatedState(onItemCollapsed)
+    val onStatusChangeRef by rememberUpdatedState(onStatusChange)
+    val onCloneTxRef by rememberUpdatedState(onCloneTransactionClick)
+    val onDeleteTxRef by rememberUpdatedState(onDeleteTransaction)
+    val onSplitTxRef by rememberUpdatedState(onSplitTransactionClick)
+    val onFullSwipeRightRef by rememberUpdatedState(onFullSwipeRight)
+    val onPaymentDetailRef by rememberUpdatedState(onNavigateToPlannedPaymentDetail)
+    val onQuickConfirmRef by rememberUpdatedState(onQuickConfirm)
+    val onQuickSkipRef by rememberUpdatedState(onQuickSkip)
+    val onPaymentListRef by rememberUpdatedState(onNavigateToPlannedPaymentList)
+    val onSaveFilterRef by rememberUpdatedState(onSaveFilterClick)
+    val onAddTagRef by rememberUpdatedState(onAddTag)
+
+    val sharedCallbacks = remember {
         AeonInteractionCallbacks(
             accountActions = AccountActions(
-                onManageClick = onManageAccountsClick,
-                onClick = onAccountClick,
-                onSeeAll = onManageAccountsClick
+                onManageClick = { onManageAccountsRef() },
+                onClick = { id -> onAccountClickRef(id) },
+                onSeeAll = { onManageAccountsRef() }
             ),
             budgetActions = BudgetActions(
-                onClick = onNavigateToBudgetDetail,
-                onSeeAll = onNavigateToBudgetList
+                onClick = { id -> onBudgetDetailRef(id) },
+                onSeeAll = { onBudgetListRef() }
             ),
             loanActions = LoanActions(
-                onClick = onNavigateToLoanDetail,
-                onSeeAll = onNavigateToLoanList
+                onClick = { id -> onLoanDetailRef(id) },
+                onSeeAll = { onLoanListRef() }
             ),
             transactionActions = TransactionActions(
-                onClick = onEditTransactionClick,
-                onItemExpanded = onItemExpanded,
-                onItemCollapsed = onItemCollapsed,
-                onStatusChange = onStatusChange,
-                onClone = onCloneTransactionClick,
-                onDelete = onDeleteTransaction,
-                onSplit = onSplitTransactionClick,
-                onFullSwipeRight = onFullSwipeRight
+                onClick = { id -> onEditTxRef(id) },
+                onItemExpanded = { id -> onItemExpandedRef(id) },
+                onItemCollapsed = { id -> onItemCollapsedRef(id) },
+                onStatusChange = { id, status -> onStatusChangeRef(id, status) },
+                onClone = { id -> onCloneTxRef(id) },
+                onDelete = { id -> onDeleteTxRef(id) },
+                onSplit = { id -> onSplitTxRef(id) },
+                onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
             ),
             paymentActions = PaymentActions(
-                onClick = onNavigateToPlannedPaymentDetail,
-                onConfirm = onQuickConfirm,
-                onSkip = onQuickSkip,
-                onSeeAll = onNavigateToPlannedPaymentList
+                onClick = { id -> onPaymentDetailRef(id) },
+                onConfirm = { id, date -> onQuickConfirmRef(id, date) },
+                onSkip = { id, date -> onQuickSkipRef(id, date) },
+                onSeeAll = { onPaymentListRef() }
             ),
             filterActions = FilterActions(
-                onSaveClick = onSaveFilterClick
+                onSaveClick = { filter -> onSaveFilterRef(filter) }
             ),
             tagActions = TagActions(
-                onAdd = onAddTag
+                onAdd = { name, profile -> onAddTagRef(name, profile) }
             )
         )
     }

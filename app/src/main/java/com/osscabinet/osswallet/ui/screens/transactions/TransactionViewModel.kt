@@ -698,6 +698,10 @@ class TransactionViewModel @Inject constructor(
      * Uses FTS-backed repository search.
      */
     fun searchTransactions(query: String): Flow<List<Transaction>> = flow {
+        if (query.trim().length < 2) {
+            emit(emptyList())
+            return@flow
+        }
         withProfile { profileId ->
             emitAll(transactionUseCases.searchTransactions(profileId, query))
         }

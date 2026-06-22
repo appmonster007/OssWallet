@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -22,10 +23,12 @@ class TemplateViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
-    val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
+    val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val starredTemplates: StateFlow<List<Template>> = templateRepository.getStarredTemplates()
+    val starredTemplates: StateFlow<List<Template>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> templateRepository.getStarredTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleStar(template: Template) {

@@ -14,8 +14,8 @@ import javax.inject.Singleton
 class TemplateRepositoryImpl @Inject constructor(
     private val templateDao: TemplateDao
 ) : TemplateRepository {
-    override fun getAllTemplates(): Flow<List<Template>> =
-        templateDao.getAllTemplates().map { list -> list.map { it.toDomain() } }
+    override fun getAllTemplates(profileId: Int): Flow<List<Template>> =
+        templateDao.getAllTemplates(profileId).map { list -> list.map { it.toDomain() } }
 
     override fun getStarredTemplates(): Flow<List<Template>> =
         templateDao.getStarredTemplates().map { list -> list.map { it.toDomain() } }
@@ -44,8 +44,8 @@ class TemplateRepositoryImpl @Inject constructor(
     override suspend fun updateTemplates(templates: List<Template>) =
         templateDao.updateTemplates(templates.map { it.toEntity() })
 
-    override suspend fun getAllTemplatesSync(): List<Template> =
-        templateDao.getAllTemplatesSync().map { it.toDomain() }
+    override suspend fun getAllTemplatesSync(profileId: Int): List<Template> =
+        templateDao.getAllTemplatesSync(profileId).map { it.toDomain() }
 
     override suspend fun clearAll() = templateDao.clearAll()
 }

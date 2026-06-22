@@ -70,7 +70,8 @@ class QuickAddViewModel @Inject constructor(
         ?.let { runCatching { EntryMode.valueOf(it) }.getOrNull() }
         ?: EntryMode.EXPENSE
 
-    val templates: StateFlow<List<Template>> = templateRepository.getAllTemplates()
+    val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Template>())
 
     val categories: StateFlow<List<Category>> = categoryRepository.categories

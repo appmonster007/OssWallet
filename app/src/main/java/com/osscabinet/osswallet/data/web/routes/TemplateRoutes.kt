@@ -25,7 +25,8 @@ fun Route.templateRoutes(
         get {
             if (!authenticate(authSessionManager)) return@get
             try {
-                val templates = templateRepository.getAllTemplates().first()
+                val profileId = settingsRepository.currentProfileId.first()
+                val templates = templateRepository.getAllTemplates(profileId).first()
                 val dtos = templates.map { it.toTemplateDto() }
                 call.respond(ApiResponse(success = true, data = dtos))
             } catch (e: Exception) {

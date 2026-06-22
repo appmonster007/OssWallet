@@ -34,3 +34,36 @@ The system prioritizes "not crashing" over "data integrity."
 ### 1.7 Weak Gating in Dashboard Rendering
 *   **The Flaw**: `DashboardViewModel` gates the high-performance "Phase 2" rendering on `hasLoadedExchangeRates`, which only checks `isNotEmpty()`. 
 *   **The Impact**: It does not verify if the rates are relevant to the current `selectedCurrency`, causing the UI to flash incorrect values (using previous currency's rates) before the new rates are fetched.
+
+## 2. Over-engineering and Pattern Abuse
+
+### 2.1 The "Aggregation Framework" Over-engineering
+The project implements a complex "Query/Aggregation Engine" (`AggregationPlanner`, `TransactionQueryBuilder`, `DatabaseQueryServiceImpl`) that mimics a full database analytical layer.
+*   **The Flaw**: Instead of using simple, optimized DAO methods, it uses a generic system where queries are built at runtime based on "Aggregation Dimensions" and "Metric Configs."
+*   **The Impact**: This adds layers of abstraction that make the code harder to follow, test, and optimize. It also introduces overhead for simple queries that could be handled by Room's standard `@Query` annotations.
+
+### 2.2 Stale-While-Recompute Cache Inconsistency
+The `CardRenderCache` is used to provide immediate UI feedback, but it lacks data versioning.
+*   **The Flaw**: When a transaction is modified, the `DashboardViewModel` immediately emits the stale data from `CardRenderCache` while starting a background recomputation.
+*   **The Impact**: The user sees the old balance/totals for several hundred milliseconds after saving a transaction, followed by a jump to the new value. This "flicker" breaks the illusion of immediate reactivity and can be confusing.
+
+### 2.3 God Objects: CardInput & BaseViewModel
+*   **The Flaw**: `CardInput` is a "God Object" that carries almost the entire database state to every single card computer. Similarly, `BaseViewModel` injects global settings and exposes them to all ViewModels regardless of need.
+*   **The Impact**: High memory pressure and unnecessary recomputations. A change to a single `Loan` triggers a recomputation of the `NetWorthCard` even though `NetWorthCard` might only need the aggregated balance, because `CardInput` (the dependency) changed.
+
+### 2.4 Leaky Aggregation Abstraction
+*   **The Flaw**: The aggregation layer returns a generic `AggregatedData` object (basically a `Map<String, Any>`).
+*   **The Impact**: This forces domain services like `TransactionAggregationService` to manually map magic strings (e.g., `"income"`, `"expense"`) back to `FinancialSummary` objects. If the SQL alias in `TransactionQueryBuilder` changes, the mapping silently fails or returns zeros.
+
+### 2.5 Inefficient Search and Tagging (Database Anti-pattern)
+*   **The Flaw**: The search logic and tag filtering use `%LIKE%` queries on unindexed columns.
+*   **The Impact**: As the transaction table grows to thousands of rows, searching by note or filtering by tag will cause full table scans, leading to UI jank and battery drain. The project lacks FTS (Full Text Search) implementation which is the standard for this scale.
+
+### 2.6 Fragmented "Service" Layer
+The project has `CardAggregationService`, `TransactionAggregationService`, `AggregationService`, `BudgetService`, and `LoanService`.
+*   **The Flaw**: These are implemented as `object` (singletons) rather than injected classes. 
+*   **The Impact**: This makes unit testing extremely difficult (requiring static mocking) and leads to procedural code that bypasses Hilt's dependency management, making it harder to track state and lifecycle.
+
+### 2.7 Complex "Phase-based" ViewModel Logic
+*   **The Flaw**: `DashboardViewModel` manages its data loading in "Phases" (Structural vs. Card Compute) using a complex `channelFlow` with nested `launch` blocks and manual `AtomicInteger` counters.
+*   **The Impact**: This is highly prone to race conditions and memory leaks. It bypasses the safety of structured concurrency provided by standard `Flow` operators like `combine` and `flatMapLatest`.

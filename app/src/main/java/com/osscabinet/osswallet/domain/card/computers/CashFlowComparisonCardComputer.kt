@@ -16,11 +16,11 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -62,81 +62,93 @@ class CashFlowComparisonCardComputer(
 
         val excludeFuture = mergedFilter.timelineRange.excludeFuture
         val today = System.currentTimeMillis()
-
-        // 1. Determine the visual period for the chart (X-axis labels and markers).
-        // If excludeFuture is true, the entire chart truncates at 'today'.
-        val masterEnd = if (excludeFuture) minOf(currentEnd, today) else currentEnd
-
-        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
-
         val zone = TimelineService.systemZoneId
+        val dayFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+        val masterEnd = if (excludeFuture) minOf(currentEnd, today) else currentEnd
+        val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
         val masterBuckets = CardComputerUtils.generateBuckets(currentStart, masterEnd, granularity)
 
-        // 2. Compute Current Series (always stop at 'today' for the line)
-        val currentSeries = computeSeriesFromBucketsWithFutureCap(
+        // 1. Current series — single DB call for full range, partitioned in-memory
+        val currentDailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
+            queryService, input.profileId,
+            mergedFilter.copy(timelineRange = TimelineRange.CustomRange(currentStart, masterEnd)),
+            excludeInternal
+        ).getOrDefault(emptyMap())
+
+        val currentSeries = buildSeriesFromDailyData(
             buckets = masterBuckets,
-            baseFilter = mergedFilter,
-            profileId = input.profileId,
+            dailyData = currentDailyData,
+            effectiveToday = today,
+            excludeFuture = true,
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
-            today = today,
-            excludeFuture = true, // Always cap current line at today
             perspective = config.perspective,
-            excludeInternalTransfers = excludeInternal
+            zone = zone,
+            dayFormatter = dayFormatter
         )
 
-        // 3. Compute Previous Period Series:
-        // If excludeFuture is true, we shift previous period data to align with masterBuckets relative to 'today'.
+        // 2. Previous period series — shift master buckets back, single DB call
         val (prevStart, prevEnd) = TimelineService.getPreviousRange(mergedFilter.timelineRange)
         val previousSeries = if (prevStart != null && prevEnd != null) {
             val shift = currentStart - prevStart
-            val prevBuckets = masterBuckets.map { (start, end, label) ->
-                Triple(start - shift, end - shift, label)
-            }
-            computeSeriesFromBucketsWithFutureCap(
+            val prevBuckets = masterBuckets.map { (s, e, l) -> Triple(s - shift, e - shift, l) }
+            val prevEffectiveToday = today - shift
+            val prevRangeEnd = if (excludeFuture) minOf(prevBuckets.last().second, prevEffectiveToday) else prevBuckets.last().second
+
+            val prevDailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
+                queryService, input.profileId,
+                mergedFilter.copy(timelineRange = TimelineRange.CustomRange(prevBuckets.first().first, prevRangeEnd)),
+                excludeInternal
+            ).getOrDefault(emptyMap())
+
+            buildSeriesFromDailyData(
                 buckets = prevBuckets,
-                baseFilter = mergedFilter,
-                profileId = input.profileId,
+                dailyData = prevDailyData,
+                effectiveToday = prevEffectiveToday,
+                excludeFuture = excludeFuture,
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
-                today = today - shift,
-                excludeFuture = excludeFuture,
                 perspective = config.perspective,
-                excludeInternalTransfers = excludeInternal
+                zone = zone,
+                dayFormatter = dayFormatter
             )
         } else CashFlowComparisonSeries(emptyList())
 
-        // 4. Compute Last Year Series (Shifted by exactly 1 year)
-        val lastYearSeries = run {
-            val lastYearBuckets = masterBuckets.map { (start, end, label) ->
-                val shiftedStart = ZonedDateTime.ofInstant(Instant.ofEpochMilli(start), zone)
-                    .minusYears(1).toInstant().toEpochMilli()
-                val shiftedEnd = ZonedDateTime.ofInstant(Instant.ofEpochMilli(end), zone)
-                    .minusYears(1).toInstant().toEpochMilli()
-                Triple(shiftedStart, shiftedEnd, label)
-            }
-            val lastYearToday = ZonedDateTime.ofInstant(Instant.ofEpochMilli(today), zone)
-                .minusYears(1).toInstant().toEpochMilli()
-
-            computeSeriesFromBucketsWithFutureCap(
-                buckets = lastYearBuckets,
-                baseFilter = mergedFilter,
-                profileId = input.profileId,
-                baseCurrency = input.targetCurrency,
-                exchangeRates = input.exchangeRates,
-                today = lastYearToday,
-                excludeFuture = excludeFuture,
-                perspective = config.perspective,
-                excludeInternalTransfers = excludeInternal
+        // 3. Last year series — shift by 1 calendar year, single DB call
+        val lastYearToday = ZonedDateTime.ofInstant(Instant.ofEpochMilli(today), zone)
+            .minusYears(1).toInstant().toEpochMilli()
+        val lastYearBuckets = masterBuckets.map { (s, e, l) ->
+            Triple(
+                ZonedDateTime.ofInstant(Instant.ofEpochMilli(s), zone).minusYears(1).toInstant().toEpochMilli(),
+                ZonedDateTime.ofInstant(Instant.ofEpochMilli(e), zone).minusYears(1).toInstant().toEpochMilli(),
+                l
             )
         }
+        val lyRangeEnd = if (excludeFuture) minOf(lastYearBuckets.last().second, lastYearToday) else lastYearBuckets.last().second
 
-        // 5. Total bucket counts for markers.
-        // We calculate what the full period length would be if it wasn't truncated by 'today'.
+        val lastYearDailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
+            queryService, input.profileId,
+            mergedFilter.copy(timelineRange = TimelineRange.CustomRange(lastYearBuckets.first().first, lyRangeEnd)),
+            excludeInternal
+        ).getOrDefault(emptyMap())
+
+        val lastYearSeries = buildSeriesFromDailyData(
+            buckets = lastYearBuckets,
+            dailyData = lastYearDailyData,
+            effectiveToday = lastYearToday,
+            excludeFuture = excludeFuture,
+            baseCurrency = input.targetCurrency,
+            exchangeRates = input.exchangeRates,
+            perspective = config.perspective,
+            zone = zone,
+            dayFormatter = dayFormatter
+        )
+
         val fullCurrentBuckets = if (excludeFuture) masterBuckets.size else CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity).size
-        
+
         val fullPrevBucketsCount = if (excludeFuture) {
-            masterBuckets.size 
+            masterBuckets.size
         } else if (prevStart != null && prevEnd != null) {
             CardComputerUtils.generateBuckets(prevStart, prevEnd, granularity).size
         } else 0
@@ -165,66 +177,87 @@ class CashFlowComparisonCardComputer(
         )
     }
 
-    // Current / Previous / Last Year series: drop future buckets entirely if excludeFuture is true.
-    // If excludeFuture is false, we show all buckets in the requested range.
-    private suspend fun computeSeriesFromBucketsWithFutureCap(
+    private fun buildSeriesFromDailyData(
         buckets: List<Triple<Long, Long, String>>,
-        baseFilter: TransactionFilter,
-        profileId: Int,
+        dailyData: Map<String, Map<String, FinancialSummary>>,
+        effectiveToday: Long,
+        excludeFuture: Boolean,
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
-        today: Long,
-        excludeFuture: Boolean,
         perspective: AccountingPerspective,
-        excludeInternalTransfers: Boolean = false
+        zone: java.time.ZoneId,
+        dayFormatter: DateTimeFormatter
     ): CashFlowComparisonSeries {
+        val bucketStartMillis = buckets.map { it.first }
+
+        // Map each day key to its bucket index, filtering out future days if needed.
+        val dayToBucketIdx: Map<String, Int> = dailyData.keys.mapNotNull { dayKey ->
+            val dayStart = try {
+                LocalDate.parse(dayKey, dayFormatter).atStartOfDay(zone).toInstant().toEpochMilli()
+            } catch (_: Exception) { return@mapNotNull null }
+            if (excludeFuture && dayStart > effectiveToday) return@mapNotNull null
+            val idx = bucketStartMillis.indexOfLast { it <= dayStart }
+            if (idx < 0) return@mapNotNull null
+            val (_, bucketEnd, _) = buckets[idx]
+            val effectiveEnd = if (excludeFuture) minOf(bucketEnd, effectiveToday) else bucketEnd
+            if (dayStart > effectiveEnd) return@mapNotNull null
+            dayKey to idx
+        }.toMap()
+
+        // Aggregate daily summaries into buckets.
+        val byBucket: Map<Int, Map<String, FinancialSummary>> = buildMap {
+            dayToBucketIdx.forEach { (dayKey, bucketIdx) ->
+                val daySummaries = dailyData[dayKey] ?: return@forEach
+                val existing = getOrDefault(bucketIdx, emptyMap()).toMutableMap()
+                daySummaries.forEach { (currency, summary) ->
+                    val prev = existing[currency]
+                    existing[currency] = if (prev == null) summary else FinancialSummary(
+                        totalAmount = prev.totalAmount.add(summary.totalAmount),
+                        income = prev.income.add(summary.income),
+                        expense = prev.expense.add(summary.expense),
+                        transfer = prev.transfer.add(summary.transfer),
+                        transferIn = prev.transferIn.add(summary.transferIn),
+                        transferOut = prev.transferOut.add(summary.transferOut),
+                        crossCcyTransferIn = prev.crossCcyTransferIn.add(summary.crossCcyTransferIn),
+                        crossCcyTransferOut = prev.crossCcyTransferOut.add(summary.crossCcyTransferOut),
+                        transactionCount = prev.transactionCount + summary.transactionCount
+                    )
+                }
+                put(bucketIdx, existing)
+            }
+        }
+
         val points = mutableListOf<CashFlowTimePoint>()
-        for ((bucketStart, bucketEnd, label) in buckets) {
-            if (excludeFuture && bucketStart > today) break
-            val effectiveEnd = if (excludeFuture) minOf(bucketEnd, today) else bucketEnd
-            points.add(queryBucket(baseFilter, profileId, bucketStart, effectiveEnd, label, baseCurrency, exchangeRates, perspective, excludeInternalTransfers))
+        for ((idx, triple) in buckets.withIndex()) {
+            val (bucketStart, _, label) = triple
+            if (excludeFuture && bucketStart > effectiveToday) break
+            val summaries = byBucket[idx] ?: emptyMap()
+
+            var totalVal1 = BigDecimal.ZERO
+            var totalVal2 = BigDecimal.ZERO
+            var totalTrf = BigDecimal.ZERO
+            summaries.forEach { (currency, summary) ->
+                val (v1, v2) = when (perspective) {
+                    is AccountingPerspective.Accounting -> summary.income to summary.expense
+                    is AccountingPerspective.CashFlow -> {
+                        summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
+                    }
+                }
+                totalVal1 += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
+                totalVal2 += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
+                totalTrf += CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10)
+            }
+            points.add(
+                CashFlowTimePoint(
+                    label = label,
+                    epochMillis = bucketStart,
+                    income = totalVal1.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    expense = totalVal2.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    transfer = totalTrf.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    net = totalVal1.add(totalVal2).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                )
+            )
         }
         return CashFlowComparisonSeries(points)
-    }
-
-    private suspend fun queryBucket(
-        baseFilter: TransactionFilter,
-        profileId: Int,
-        bucketStart: Long,
-        bucketEnd: Long,
-        label: String,
-        baseCurrency: String,
-        exchangeRates: ExchangeRateSnapshot,
-        perspective: AccountingPerspective,
-        excludeInternalTransfers: Boolean = false
-    ): CashFlowTimePoint {
-        val summaries = TransactionAggregationService.getSummaryByCurrency(
-            queryService, profileId,
-            baseFilter.copy(timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd)),
-            excludeInternalTransfers
-        ).getOrDefault(emptyMap())
-
-        var totalVal1 = BigDecimal.ZERO
-        var totalVal2 = BigDecimal.ZERO
-        var totalTrf = BigDecimal.ZERO
-        summaries.forEach { (currency, summary) ->
-            val (v1, v2) = when (perspective) {
-                is AccountingPerspective.Accounting -> summary.income to summary.expense
-                is AccountingPerspective.CashFlow -> {
-                    summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
-                }
-            }
-            totalVal1 += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
-            totalVal2 += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
-            totalTrf += CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10)
-        }
-        return CashFlowTimePoint(
-            label = label,
-            epochMillis = bucketStart,
-            income = totalVal1.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            expense = totalVal2.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            transfer = totalTrf.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-            net = totalVal1.add(totalVal2).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
-        )
     }
 }

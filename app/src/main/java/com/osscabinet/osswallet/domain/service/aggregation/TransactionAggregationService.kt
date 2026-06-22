@@ -138,6 +138,36 @@ object TransactionAggregationService {
     }
 
     /**
+     * Fetches currency summaries for a date range in a single DB call, partitioned by day.
+     * Returns Map<"YYYY-MM-DD" → Map<Currency → FinancialSummary>>.
+     * Use this instead of calling getSummaryByCurrency once per bucket.
+     */
+    suspend fun getSummaryByCurrencyByDay(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        filter: TransactionFilter,
+        excludeInternalTransfers: Boolean = false
+    ): Result<Map<String, Map<String, FinancialSummary>>> {
+        return queryService.aggregate(
+            profileId = profileId,
+            dimensions = listOf(AggregationDimension.CURRENCY, AggregationDimension.TIME),
+            metrics = StandardMetrics.defaultSet(),
+            filter = filter,
+            timeGranularity = TimeGranularity.DAY,
+            useCase = AggregationPlanner.UseCase.DASHBOARD,
+            excludeInternalTransfers = excludeInternalTransfers
+        ).map { dataList ->
+            dataList.groupBy { it.dimensions[AggregationDimension.TIME] ?: "" }
+                .mapValues { (_, dayRows) ->
+                    dayRows.associate { row ->
+                        val currency = row.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
+                        currency to mapToFinancialSummary(row)
+                    }
+                }
+        }
+    }
+
+    /**
      * Fetches category+currency summaries for a date range in a single DB call, partitioned by day.
      * Returns Map<"YYYY-MM-DD" → Map<CategoryId → Map<Currency → FinancialSummary>>>.
      * Use this instead of calling getSummaryByCategoryAndCurrency once per bucket.

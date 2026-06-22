@@ -330,10 +330,9 @@ class DashboardViewModel @Inject constructor(
                                     cardComputerRegistry.compute(config.cardType, enrichedInput, config)
                                 }
                                 cardDataFlow.update { current ->
-                                    val updated = current.toMutableMap()
-                                    result.onSuccess { data -> updated[config.cardId] = data }
-                                    result.onFailure { e -> updated[config.cardId] = CardRenderData.Error(e.message) }
-                                    updated
+                                    val newData = result.getOrElse { e -> CardRenderData.Error(e.message) }
+                                    if (current[config.cardId] == newData) current
+                                    else current + (config.cardId to newData)
                                 }
                                 if (completedCount.incrementAndGet() == configs.size) {
                                     cardRenderCache[profileId] = cardDataFlow.value

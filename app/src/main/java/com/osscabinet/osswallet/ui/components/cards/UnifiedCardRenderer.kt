@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
@@ -158,8 +159,13 @@ fun UnifiedCardRenderer(
                 )
             }
 
-            val uiData = renderData.items.mapNotNull { mapMetrics(it) }
-                .sortedByDescending { it.amount.abs() }
+            // ARC-75 (Option B): memoize the recursive mapMetrics + sort so it doesn't
+            // re-run on every recomposition (especially during scroll). Keyed on the
+            // renderData and the selected metric — the only inputs the transform reads.
+            val uiData = remember(renderData, selectedMetric) {
+                renderData.items.mapNotNull { mapMetrics(it) }
+                    .sortedByDescending { it.amount.abs() }
+            }
 
             CategoryPieChartCard(
                 config = renderData.config,
@@ -230,8 +236,11 @@ fun UnifiedCardRenderer(
                 )
             }
 
-            val uiData = renderData.items.mapNotNull { mapMetrics(it) }
-                .sortedByDescending { it.amount.abs() }
+            // ARC-75 (Option B): same memoization as the Pie chart above.
+            val uiData = remember(renderData, selectedMetric) {
+                renderData.items.mapNotNull { mapMetrics(it) }
+                    .sortedByDescending { it.amount.abs() }
+            }
 
             CategoryTreemapCard(
                 config = renderData.config,

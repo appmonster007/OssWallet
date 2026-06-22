@@ -142,7 +142,7 @@ private fun CashFlowTable(
     val negativeColor = AppColors.negative
     val accentColor = AppColors.accent
 
-    val columns: List<TableColumn> = remember(config, types, result, positiveColor, negativeColor, accentColor) {
+    val columns: List<TableColumn> = remember(config, types, result, positiveColor.value, negativeColor.value, accentColor.value) {
         when (config.perspective) {
             is AccountingPerspective.Accounting -> buildList {
                 if (showIncome) add(

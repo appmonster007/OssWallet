@@ -800,11 +800,18 @@ object CardAggregationService {
     }
 
     private fun TransactionFilter.toBalanceFilter(): TransactionFilter {
-        return when (val range = this.timelineRange) {
-            is TimelineRange.AllTime -> this
+        val baseFilter = this.copy(
+            categoryIds = emptyList(),
+            tags = emptyList(),
+            currencies = emptyList(),
+            paymentMethods = emptyList(),
+            statuses = emptyList()
+        )
+        return when (val range = baseFilter.timelineRange) {
+            is TimelineRange.AllTime -> baseFilter
             else -> {
                 val (_, end) = TimelineService.getDateRange(range)
-                this.copy(
+                baseFilter.copy(
                     timelineRange = if (end != null) TimelineRange.CustomRange(end = end, excludeFuture = range.excludeFuture)
                                    else TimelineRange.AllTime(excludeFuture = range.excludeFuture)
                 )

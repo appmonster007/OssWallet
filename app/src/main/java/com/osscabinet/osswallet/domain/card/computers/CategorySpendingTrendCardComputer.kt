@@ -41,6 +41,7 @@ class CategorySpendingTrendCardComputer(
 
         val (currentStart, currentEnd) = resolveTimeBounds(mergedFilter.timelineRange, input.profileId)
         val categoryNatureById = input.categories.associate { it.id to it.nature }
+        val categoryById = input.categories.associateBy { it.id }
         val now = System.currentTimeMillis()
         val granularity = CardComputerUtils.resolveGranularity(currentStart, currentEnd)
         // Cap chart at today — future buckets always show 0
@@ -83,7 +84,7 @@ class CategorySpendingTrendCardComputer(
             }
 
             val categoryAmounts = amountsByCategory.mapNotNull { (catId, amount) ->
-                val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
+                val cat = categoryById[catId] ?: return@mapNotNull null
                 CategoryAmount(
                     categoryId = catId,
                     categoryName = cat.name,

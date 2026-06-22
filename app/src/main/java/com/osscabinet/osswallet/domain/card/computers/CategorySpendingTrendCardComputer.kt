@@ -15,12 +15,15 @@ import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardC
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class CategorySpendingTrendCardComputer(
     private val queryService: DatabaseQueryService
@@ -49,15 +52,62 @@ class CategorySpendingTrendCardComputer(
 
         val categoryTotalsMap = mutableMapOf<Long, BigDecimal>()
 
-        val buckets = rawBuckets.map { (bucketStart, bucketEnd, label) ->
-            val bucketFilter = mergedFilter.copy(
-                timelineRange = TimelineRange.CustomRange(bucketStart, bucketEnd)
-            )
-            val summariesByCategory = TransactionAggregationService.getSummaryByCategoryAndCurrency(
-                queryService, input.profileId, bucketFilter, excludeInternal
-            ).getOrDefault(emptyMap())
+        // Single DB call for the full range, partitioned by day — replaces one call per bucket.
+        val fullRangeFilter = mergedFilter.copy(
+            timelineRange = TimelineRange.CustomRange(currentStart, minOf(currentEnd, now))
+        )
+        val dailyData = TransactionAggregationService.getSummaryByCategoryAndCurrencyByDay(
+            queryService, input.profileId, fullRangeFilter, excludeInternal
+        ).getOrDefault(emptyMap())
 
+        // Pre-assign each "YYYY-MM-DD" day key to a bucket index using sorted bucket starts.
+        val zone = TimelineService.systemZoneId
+        val dayFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val bucketStartMillis = rawBuckets.map { it.first }
+
+        val dayToBucketIdx: Map<String, Int> = dailyData.keys.mapNotNull { dayKey ->
+            val dayStart = try {
+                LocalDate.parse(dayKey, dayFormatter).atStartOfDay(zone).toInstant().toEpochMilli()
+            } catch (_: Exception) { return@mapNotNull null }
+            val idx = bucketStartMillis.indexOfLast { it <= dayStart }
+            if (idx < 0) return@mapNotNull null
+            val (_, bucketEnd, _) = rawBuckets[idx]
+            if (dayStart > bucketEnd) return@mapNotNull null
+            dayKey to idx
+        }.toMap()
+
+        // Group daily rows by bucket index.
+        val byBucket: Map<Int, Map<Long, Map<String, com.osscabinet.ossWallet.domain.service.financial.FinancialSummary>>> =
+            buildMap {
+                dayToBucketIdx.forEach { (dayKey, bucketIdx) ->
+                    val daySummaries = dailyData[dayKey] ?: return@forEach
+                    val existing = getOrDefault(bucketIdx, emptyMap()).toMutableMap()
+                    daySummaries.forEach { (catId, byCurrency) ->
+                        val merged = existing.getOrDefault(catId, emptyMap()).toMutableMap()
+                        byCurrency.forEach { (currency, summary) ->
+                            val prev = merged[currency]
+                            merged[currency] = if (prev == null) summary else FinancialSummary(
+                                totalAmount = prev.totalAmount.add(summary.totalAmount),
+                                income = prev.income.add(summary.income),
+                                expense = prev.expense.add(summary.expense),
+                                transfer = prev.transfer.add(summary.transfer),
+                                transferIn = prev.transferIn.add(summary.transferIn),
+                                transferOut = prev.transferOut.add(summary.transferOut),
+                                crossCcyTransferIn = prev.crossCcyTransferIn.add(summary.crossCcyTransferIn),
+                                crossCcyTransferOut = prev.crossCcyTransferOut.add(summary.crossCcyTransferOut),
+                                transactionCount = prev.transactionCount + summary.transactionCount
+                            )
+                        }
+                        existing[catId] = merged
+                    }
+                    put(bucketIdx, existing)
+                }
+            }
+
+        val buckets = rawBuckets.mapIndexed { idx, (bucketStart, _, label) ->
+            val summariesByCategory = byBucket[idx] ?: emptyMap()
             val amountsByCategory = mutableMapOf<Long, BigDecimal>()
+
             summariesByCategory.forEach { (catId, byCurrency) ->
                 val nature = categoryNatureById[catId] ?: return@forEach
                 if (config.selectedNatures.size < CategoryNature.entries.size && nature !in config.selectedNatures) return@forEach

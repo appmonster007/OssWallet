@@ -85,11 +85,11 @@ fun BudgetsCard(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
-            val onBudgetClick = callbacks::onBudgetClick
+            val onBudgetClick = callbacks.onBudgetClick
             Column(modifier = Modifier.fillMaxWidth()) {
                 items.forEachIndexed { index, progress ->
                     val budgetId = progress.budget.id
-                    val onClick = remember(budgetId) { { onBudgetClick(budgetId) } }
+                    val onClick = remember(budgetId, onBudgetClick) { { onBudgetClick(budgetId) } }
                     BudgetProgressRow(
                         progress = progress,
                         showDivider = index < items.lastIndex,

@@ -220,21 +220,23 @@ val effectiveAccountIds: Set<String> = effectiveAccounts.mapTo(HashSet()) { it.i
 - Status
 
  ---
-ISS-13 · CRITICAL PERF · O(n²) category lookups in CategorySpendingTrendCardComputer
+ISS-13 · HIGH PERF · Remaining linear category lookups in CategorySpendingTrendCardComputer
 
-- Severity: P1
+- Severity: P1 (partially fixed — O(n²) on nature lookups resolved; O(n) on category details remains)
 - File: domain/card/computers/CategorySpendingTrendCardComputer.kt lines 86, 100
-- Root Cause: For every result item, a linear scan of input.categories is done:
-  val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
-- With 50 result categories × 200 categories in input.categories = 10,000 comparisons per compute.
+- Root Cause: The inner-loop nature lookup at line 61 was fixed (uses pre-built `categoryNatureById`
+  map). BUT lines 86 and 100 still call:
+    val cat = input.categories.find { it.id == catId } ?: return@mapNotNull null
+  These run once per distinct category per bucket (not per transaction), so it is
+  O(buckets × distinct_categories), not O(transactions). Still eliminable with a pre-built map.
 - Fix:
-  // ADD before the loop:
+  // ADD at top of compute() alongside categoryNatureById:
   val categoryById = input.categories.associateBy { it.id }
 
-// REPLACE in loop:
-val cat = categoryById[catId] ?: return@mapNotNull null
-- Acceptance: Unit test with 200 categories + 50 results completes in <5ms (vs ~50ms with linear scan).
-- Status
+  // REPLACE at lines 86 and 100:
+  val cat = categoryById[catId] ?: return@mapNotNull null
+- Acceptance: Unit test with 200 categories + 12 buckets completes with 0 linear scans.
+- [~] Status: PARTIAL FIX — nature lookup O(1); category detail lookup at lines 86/100 still O(n)
 
  ---
 ISS-14 · CRITICAL PERF · 12–36 DB round-trips per card compute (bucket-based cards)
@@ -584,7 +586,7 @@ ISS-31 · HIGH PERF · No key {} lambda in card list or account list items
 // AccountsCard:
 items(accounts, key = { it.id }) { account -> ... }
 - Acceptance: Deleting account #3 triggers recomposition of only the deleted item's slot, not all subsequent accounts.
-- Status
+- [x] Status: FIXED — AeonCardList.kt line 110 confirmed: items(sortedCards, key = { it.cardId })
 
  ---
 ISS-32 · MEDIUM PERF · sharedCallbacks remember block has 19 dependency keys
@@ -916,27 +918,17 @@ ISS-49 · MEDIUM UX · Cannot clear target account (clearTargetAccount deleted)
 - [ ] Status
 
  ---
-ISS-50 · HIGH UX · PredictiveBackHandler in QuickAddSheet always dismisses the full sheet
+ISS-50 · DESIGN DECISION · PredictiveBackHandler in QuickAddSheet always dismisses the full sheet
 
-- Severity: P1 — Navigating back on Step 3 of Quick Add discards all entered data and closes
-  the sheet instead of returning to Step 2
+- Severity: DESIGN DECISION (not a bug)
 - File: ui/screens/dashboard/quickadd/QuickAddSheet.kt lines 128–141
-- Root Cause: The PredictiveBackHandler is wired to call animateDismiss() unconditionally,
-  regardless of which step is currently active. The code comment explicitly acknowledges this:
-  // system/gesture back always dismisses the whole sheet, regardless of step.
-- Fix: Check the current step index before deciding to dismiss or step back:
-  PredictiveBackHandler(enabled = visibleState.targetState) { progress ->
-      try {
-          progress.collect { event -> backProgress = event.progress }
-          if (currentStep > 0) {
-              goToPreviousStep()  // step back
-          } else {
-              animateDismiss()   // on first step, dismiss
-          }
-      } catch (_: Exception) { backProgress = 0f }
-  }
-- Acceptance: Back gesture on Step 3 returns to Step 2 with data intact. Back on Step 1 dismisses.
-- [ ] Status
+- Note (code review validation): The code comment at line 128 explicitly documents:
+  "system/gesture back always dismisses the whole sheet, regardless of step.
+   Stepping back is done via the in-sheet back chevron in the footer."
+  Per-step navigation uses the in-sheet chevron (line 475), not the system back gesture.
+  This is an intentional UX choice: system back = close sheet, chevron = step back.
+  If the product decision changes (back gesture should navigate steps), update accordingly.
+- [x] Status: CLOSED — intentional design, not a defect. Re-open only if UX requirement changes.
 
  ---
 ISS-51 · HIGH UX · Quick Add category search LaunchedEffect removed — search conflicts with drilldown navigation
@@ -989,24 +981,26 @@ ISS-52 · HIGH DATA INTEGRITY · resolveTimeBoundsFromDb uses global minimum tim
 - [ ] Status
 
  ---
-ISS-53 · CRITICAL DATA INTEGRITY · Loan interest calculated but never added to remaining balance
+ISS-53 · HIGH DATA DISPLAY · Loans card shows principal-only as the primary amount, ignoring accrued interest
 
-- Severity: P0 — Loan "remaining balance" shown in the Loans card is wrong for all interest-bearing loans
-- File: domain/service/aggregation/CardAggregationService.kt lines 421–422
-- Root Cause:
-  val remaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
-  val interest = calculateAccruedInterest(loan, totalPaid)
-  // interest is computed but never used — remaining is returned without interest
-- The interest variable is computed but the method returns remaining without adding interest,
-  so all interest-bearing loans show the principal-only balance as if interest is $0.
-- Fix:
-  val principalRemaining = (loan.principalAmount - totalPaid).coerceAtLeast(BigDecimal.ZERO)
-  val interest = calculateAccruedInterest(loan, principalRemaining)
-  val remaining = principalRemaining + interest
-- Note: The coerceAtLeast should be applied BEFORE passing to interest calculation so negative
-  principal (overpaid) doesn't cause negative interest.
-- Acceptance: A $10,000 loan at 5% annual interest after 1 year with $0 paid shows a remaining
-  balance of approximately $10,500, not $10,000.
+- Severity: P1 (downgraded from P0 — `LoanSummary` has both fields; the card chooses which to show)
+- Files:
+    - domain/service/aggregation/CardAggregationService.kt lines 421–428
+    - ui/screens/dashboard/components/LoansCard.kt line 186
+- Root Cause: `LoanSummary` has two separate fields:
+    - `remainingBalance = principalAmount - totalPaid` (principal only)
+    - `interestAccrued` (computed separately)
+  `LoansCard.kt` line 186 shows `summary.remainingBalance` as the primary figure without adding
+  interest. For a $10,000 loan at 5% APR with $0 paid after 1 year, the card shows $10,000
+  instead of $10,500 — understating what the user actually owes by the accrued interest amount.
+  `interestAccrued` is populated in `LoanSummary` but is NOT displayed anywhere in the dashboard
+  Loans card (only the detail screen at `LoanHeroCard.kt` line 79 also shows principal-only).
+- Fix Option A (additive): Show `remainingBalance + interestAccrued` as "Total Owed" and
+  display `interestAccrued` as a sub-line.
+- Fix Option B (field rename + recompute): Make `remainingBalance` represent total owed
+  (principal + interest - paid) and add a separate `principalRemaining` field.
+- Acceptance: For a $10,000 loan at 5% APR with $0 paid after 1 year, the Loans card shows
+  ~$10,500 as the primary amount (or clearly shows $10,000 + $500 accrued).
 - [ ] Status
 
  ---
@@ -1112,7 +1106,7 @@ Goal: Prevent cascading recompositions across all cards.
 ┌─────┬────────────────────────────────────────────────────────────────────┬─────────────┬────────┐
 │  #  │                               Issue                                │ Est. Effort │  Risk  │
 ├─────┼────────────────────────────────────────────────────────────────────┼─────────────┼────────┤
-│ 12  │ ISS-11 (Phase A) — add distinctUntilChanged() before card compute  │ 1h          │ Low    │
+│ 12  │ ISS-11 (Phase A) — ALREADY DONE (.distinctUntilChanged() at VM:192) │ ✅ done     │ —      │
 ├─────┼────────────────────────────────────────────────────────────────────┼─────────────┼────────┤
 │ 13  │ ISS-26 — fix remember(state) key in DashboardScreen                │ 1h          │ Low    │
 ├─────┼────────────────────────────────────────────────────────────────────┼─────────────┼────────┤

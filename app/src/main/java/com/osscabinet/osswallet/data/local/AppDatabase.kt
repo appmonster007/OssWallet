@@ -60,7 +60,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,6 +83,46 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Upgrade from FTS4 to FTS5 for better search performance and ranking.
+                // FTS5 uses a different delete mechanism: special 'delete' command insert.
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+                db.execSQL("DROP TABLE IF EXISTS transactions_fts")
+
+                db.execSQL(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
+                    "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(transactions_fts, rowid, note, payee, name) VALUES ('delete', old.id, old.note, old.payee, old.name);
+                      INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(transactions_fts, rowid, note, payee, name) VALUES ('delete', old.id, old.note, old.payee, old.name);
+                    END
+                    """.trimIndent()
+                )
+                // Rebuild the FTS5 index from existing transactions.
+                db.execSQL("INSERT INTO transactions_fts(rowid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+            }
         }
 
         val MIGRATION_17_18 = object : Migration(17, 18) {
@@ -488,7 +528,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_14_15,
                         MIGRATION_15_16,
                         MIGRATION_16_17,
-                        MIGRATION_17_18
+                        MIGRATION_17_18,
+                        MIGRATION_18_19
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

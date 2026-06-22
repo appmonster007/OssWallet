@@ -7,14 +7,13 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -22,7 +21,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,7 +28,7 @@ class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
-    private val currencyRepository: CurrencyRepository,
+    private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -57,35 +55,20 @@ class BudgetViewModel @Inject constructor(
         .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _exchangeRates = MutableStateFlow<Map<String, BigDecimal>>(emptyMap())
-
     @OptIn(ExperimentalCoroutinesApi::class)
     val budgetProgress: StateFlow<Map<Long, BudgetProgress>> = combine(
         budgets,
         transactions,
-        settingsRepository.currency,
-        _exchangeRates,
+        computationRepository.exchangeRatesSnapshot,
         categories
-    ) { arr ->
-        @Suppress("UNCHECKED_CAST")
-        val budgetsList = arr[0] as List<Budget>
-
-        @Suppress("UNCHECKED_CAST")
-        val transactionsList = arr[1] as List<Transaction>
-        val baseCurrency = arr[2] as String
-
-        @Suppress("UNCHECKED_CAST")
-        val rates = arr[3] as Map<String, BigDecimal>
-
-        @Suppress("UNCHECKED_CAST")
-        val categoriesList = arr[4] as List<Category>
-
+    ) { budgetsList, transactionsList, snapshot, categoriesList ->
+        val baseCurrency = snapshot.anchor
         val now = System.currentTimeMillis()
         budgetsList.associate { budget ->
             val rollover = BudgetService.calculateRollover(
                 budget,
                 transactionsList,
-                rates,
+                snapshot,
                 baseCurrency,
                 now,
                 categoriesList
@@ -93,7 +76,7 @@ class BudgetViewModel @Inject constructor(
             val spent = BudgetService.calculateSpent(
                 budget,
                 transactionsList,
-                rates,
+                snapshot,
                 baseCurrency,
                 now,
                 categoriesList
@@ -101,18 +84,6 @@ class BudgetViewModel @Inject constructor(
             budget.id to BudgetService.buildProgress(budget, spent, rollover)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
-
-    init {
-        viewModelScope.launch {
-            settingsRepository.currency.collect { base ->
-                try {
-                    val rates = currencyRepository.getExchangeRates(base)
-                    _exchangeRates.value = rates.mapValues { (_, v) -> BigDecimal.valueOf(v) }
-                } catch (_: Exception) {
-                }
-            }
-        }
-    }
 
     fun delete(budgetId: Long) {
         viewModelScope.launch {

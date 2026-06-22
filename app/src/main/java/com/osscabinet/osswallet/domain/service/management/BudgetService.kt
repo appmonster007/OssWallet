@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
@@ -24,7 +25,7 @@ object BudgetService {
     fun calculateSpent(
         budget: Budget,
         transactions: List<Transaction>,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         baseCurrency: String,
         now: Long,
         allCategories: List<Category> = emptyList(),
@@ -130,7 +131,7 @@ object BudgetService {
     fun calculateRollover(
         budget: Budget,
         transactions: List<Transaction>,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         baseCurrency: String,
         now: Long,
         allCategories: List<Category> = emptyList(),

@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -35,6 +36,11 @@ class ComputationRepositoryImpl @Inject constructor(
             rateMap.mapValues { (_, rate) ->
                 rate.divide(pivotRate, 10, RoundingMode.HALF_UP)
             }
+        }
+
+    override val exchangeRatesSnapshot: Flow<ExchangeRateSnapshot> =
+        combine(exchangeRates, selectedCurrency) { rates, currency ->
+            ExchangeRateSnapshot(anchor = currency, rates = rates)
         }
 
     // True as soon as Room has any cached rates — immediately true after first launch.

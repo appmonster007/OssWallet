@@ -247,7 +247,7 @@ class DashboardViewModel @Inject constructor(
                         } else emptyMap()
 
                         val transactionsWithBalance = withContext(Dispatchers.Default) {
-                            CardAggregationService.computeRecentBalances(activeTransactions, accounts, baseCurrency, rates, startingBalances)
+                            CardAggregationService.computeRecentBalances(activeTransactions, accounts, baseCurrency, exchangeRateSnapshot, startingBalances)
                         }
                         val now = System.currentTimeMillis()
                         val visibleTransactions = transactionsWithBalance
@@ -294,13 +294,13 @@ class DashboardViewModel @Inject constructor(
                             return@channelFlow
                         }
 
-                        val cachedCards = cardRenderCache[profileId]
+                        val cachedCards = cardRenderCache[profileId, baseCurrency]
 
                         if (cachedCards != null) {
                             // Cache hit: show last-known cards immediately — no shimmers, no blanks.
                             send(buildSuccess(cachedCards, isCardsComputing = true))
                         } else {
-                            // First launch for this profile: no cache yet, show card shimmers.
+                            // First launch for this profile/currency: no cache yet, show card shimmers.
                             send(buildSuccess(emptyMap(), isCardsComputing = true))
                         }
 
@@ -335,7 +335,7 @@ class DashboardViewModel @Inject constructor(
                                     else current + (config.cardId to newData)
                                 }
                                 if (completedCount.incrementAndGet() == configs.size) {
-                                    cardRenderCache[profileId] = cardDataFlow.value
+                                    cardRenderCache[profileId, baseCurrency] = cardDataFlow.value
                                         .filterValues { it !is CardRenderData.Error }
                                 }
                             }

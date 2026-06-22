@@ -147,6 +147,21 @@ class IncomeExpenseBarCardComputer(
             }
         }
 
+        // Pre-compute one conversion factor per source currency to avoid repeated
+        // map lookups and BigDecimal divides inside the bucket loop.
+        val anchor = exchangeRates.anchor
+        val toRate = if (baseCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[baseCurrency]
+        val conversionFactors: Map<String, BigDecimal> = byBucket.values
+            .flatMap { it.keys }
+            .toSet()
+            .mapNotNull { currency ->
+                if (currency == baseCurrency) return@mapNotNull currency to BigDecimal.ONE
+                val fromRate = if (currency == anchor) BigDecimal.ONE else exchangeRates.rates[currency]
+                if (fromRate == null || toRate == null || fromRate.signum() == 0) return@mapNotNull null
+                currency to toRate.divide(fromRate, 14, RoundingMode.HALF_UP)
+            }
+            .toMap()
+
         val points = buckets.mapIndexed { idx, (bucketStart, bucketEnd, label) ->
             val summaries = byBucket[idx] ?: emptyMap()
             var val1 = BigDecimal.ZERO
@@ -154,14 +169,15 @@ class IncomeExpenseBarCardComputer(
             var valTrf = BigDecimal.ZERO
 
             summaries.forEach { (currency, summary) ->
+                val factor = conversionFactors[currency] ?: return@forEach
                 val (inc, exp) = when (perspective) {
                     is AccountingPerspective.Accounting -> summary.income to summary.expense
                     is AccountingPerspective.CashFlow ->
                         summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
                 }
-                val1 = val1.add(CurrencyService.convertAmount(inc, currency, baseCurrency, exchangeRates, 10))
-                val2 = val2.add(CurrencyService.convertAmount(exp, currency, baseCurrency, exchangeRates, 10))
-                valTrf = valTrf.add(CurrencyService.convertAmount(summary.transfer, currency, baseCurrency, exchangeRates, 10))
+                val1 = val1.add(inc.multiply(factor))
+                val2 = val2.add(exp.multiply(factor))
+                valTrf = valTrf.add(summary.transfer.multiply(factor))
             }
 
             CashFlowTimePoint(

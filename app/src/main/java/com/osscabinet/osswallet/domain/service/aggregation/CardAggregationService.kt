@@ -621,12 +621,13 @@ object CardAggregationService {
         rates: Map<String, BigDecimal>,
         startingBalances: Map<String, BigDecimal> = emptyMap()
     ): List<TransactionWithBalance> {
+        val accountById = accounts.associateBy { it.id }
         return transactions.asSequence()
             .sortedBy { it.timestamp }
             .groupBy { it.accountId }
             .flatMap { entry ->
                 val (accId, accountTransactions) = entry
-                val account = accounts.find { it.id == accId }
+                val account = accountById[accId]
                 val accountCurrency = account?.currencyCode ?: baseCurrency
 
                 var runningBalance = startingBalances[accId] ?: BigDecimal.ZERO

@@ -47,11 +47,9 @@ data class CardInput(
      */
     val screenOwnsTimeline: Boolean get() = screenContext.ownsTimeline(commonFilterEnabled)
 
-    val effectiveAccounts: List<Account>
-        get() = accounts.filter { !it.isArchived }
+    val effectiveAccounts: List<Account> = accounts.filter { !it.isArchived }
 
-    val effectiveAccountIds: Set<String>
-        get() = effectiveAccounts.map { it.id }.toSet()
+    val effectiveAccountIds: Set<String> = effectiveAccounts.mapTo(HashSet()) { it.id }
 
     /**
      * Returns the correct transaction source for a given filter.

@@ -5,6 +5,8 @@ import com.osscabinet.ossWallet.domain.model.query.AggregatedData
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.MetricConfig
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
+import com.osscabinet.ossWallet.domain.model.query.TimeGranularity
+import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import kotlinx.coroutines.flow.Flow
@@ -135,7 +137,40 @@ object TransactionAggregationService {
         }
     }
 
-    private fun mapToFinancialSummary(data: AggregatedData): FinancialSummary {
+    /**
+     * Fetches category+currency summaries for a date range in a single DB call, partitioned by day.
+     * Returns Map<"YYYY-MM-DD" → Map<CategoryId → Map<Currency → FinancialSummary>>>.
+     * Use this instead of calling getSummaryByCategoryAndCurrency once per bucket.
+     */
+    suspend fun getSummaryByCategoryAndCurrencyByDay(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        filter: TransactionFilter,
+        excludeInternalTransfers: Boolean = false
+    ): Result<Map<String, Map<Long, Map<String, FinancialSummary>>>> {
+        return queryService.aggregate(
+            profileId = profileId,
+            dimensions = listOf(AggregationDimension.CATEGORY, AggregationDimension.CURRENCY, AggregationDimension.TIME),
+            metrics = StandardMetrics.defaultSet(),
+            filter = filter,
+            timeGranularity = TimeGranularity.DAY,
+            useCase = AggregationPlanner.UseCase.DASHBOARD,
+            excludeInternalTransfers = excludeInternalTransfers
+        ).map { dataList ->
+            dataList.groupBy { it.dimensions[AggregationDimension.TIME] ?: "" }
+                .mapValues { (_, dayRows) ->
+                    dayRows.groupBy { it.dimensions[AggregationDimension.CATEGORY]?.toLongOrNull() ?: -1L }
+                        .mapValues { (_, catRows) ->
+                            catRows.associate { row ->
+                                val currency = row.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
+                                currency to mapToFinancialSummary(row)
+                            }
+                        }
+                }
+        }
+    }
+
+    internal fun mapToFinancialSummary(data: AggregatedData): FinancialSummary {
         val income = data.metrics["income"] ?: BigDecimal.ZERO
         val expense = data.metrics["expense"] ?: BigDecimal.ZERO
         val transfer = data.metrics["transfer"] ?: BigDecimal.ZERO

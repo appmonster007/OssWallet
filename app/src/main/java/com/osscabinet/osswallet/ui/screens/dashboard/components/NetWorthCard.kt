@@ -21,6 +21,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -133,11 +134,13 @@ fun NetWorthCard(
                         letterSpacing = (-1).sp
                     ),
                     color = contentColor,
-                    modifier = Modifier.clickable {
-                        if (config.perspective is AccountingPerspective.Accounting) {
-                            callbacks.onClickNet?.invoke(config.filter)
-                        } else {
-                            callbacks.onClickNetFlow?.invoke(config.filter)
+                    modifier = remember(config.perspective, config.filter, callbacks) {
+                        Modifier.clickable {
+                            if (config.perspective is AccountingPerspective.Accounting) {
+                                callbacks.onClickNet?.invoke(config.filter)
+                            } else {
+                                callbacks.onClickNetFlow?.invoke(config.filter)
+                            }
                         }
                     }
                 )

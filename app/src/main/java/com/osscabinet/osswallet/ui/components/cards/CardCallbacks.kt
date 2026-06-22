@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
+import androidx.compose.runtime.Stable
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -7,10 +8,11 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 /**
  * Sealed class hierarchy for unified card callbacks.
  * Each subtype represents the callbacks available for a specific card type.
- * 
+ *
  * Note: Callbacks match the actual signatures expected by card components,
  * which often include cardId as the first parameter.
  */
+@Stable
 sealed class CardCallbacks {
 
     /**

@@ -810,11 +810,11 @@ object CardAggregationService {
 
     private fun TransactionFilter.toBalanceFilter(): TransactionFilter {
         val baseFilter = this.copy(
-            categoryIds = emptyList(),
-            tags = emptyList(),
-            currencies = emptyList(),
-            paymentMethods = emptyList(),
-            statuses = emptyList()
+            categoryIds = emptySet(),
+            tags = emptySet(),
+            currencies = emptySet(),
+            paymentMethods = emptySet(),
+            statuses = emptySet()
         )
         return when (val range = baseFilter.timelineRange) {
             is TimelineRange.AllTime -> baseFilter

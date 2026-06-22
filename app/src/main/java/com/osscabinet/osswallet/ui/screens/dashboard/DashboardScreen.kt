@@ -877,7 +877,19 @@ fun DashboardGlanceTab(
         )
     }
 
-    val sharedCardInput = remember(state) {
+    val sharedCardInput = remember(
+        state.profileId,
+        state.allTransactions,
+        state.allAccounts,
+        state.allCategories,
+        state.allTags,
+        state.exchangeRates,
+        state.baseCurrency,
+        state.plannedPayments,
+        state.budgets,
+        state.loans,
+        state.loanPayments
+    ) {
         CardInput(
             profileId = state.profileId,
             transactions = state.allTransactions,

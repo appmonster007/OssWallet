@@ -448,12 +448,15 @@ object CardAggregationService {
         )
         val txs = queryService.observeFilteredTransactions(profileId, effectiveFilter, limit = 200).first()
 
-        // Fetch actual account balances at the start of the window so running balances are correct.
+        // Fetch account balances at window start using the same account/currency scope as the card
+        // filter so baseline and deltas are computed on the same transaction population.
         val startingBalances: Map<String, BigDecimal> = if (txs.isNotEmpty()) {
             val windowStart = txs.minOf { it.timestamp }
+            val balanceFilter = effectiveFilter.toBalanceFilter().copy(
+                timelineRange = TimelineRange.CustomRange(end = windowStart - 1)
+            )
             TransactionAggregationService.getSummaryByAccountAndCurrency(
-                queryService, profileId,
-                TransactionFilter(timelineRange = TimelineRange.CustomRange(end = windowStart - 1))
+                queryService, profileId, balanceFilter
             ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
                 val accountCurrency = input.accounts.find { it.id == accountId }?.currencyCode ?: input.targetCurrency
                 CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, input.exchangeRates).totalAmount

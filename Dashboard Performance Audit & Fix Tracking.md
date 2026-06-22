@@ -97,17 +97,20 @@ ISS-05 · HIGH PERF · Missing composite index on templates(profileId, isStarred
 - Status
 
  ---
-ISS-06 · HIGH PERF · No DB-level pagination — UI applies take(20) after full load
+ISS-06 · MEDIUM PERF · Dashboard feed over-fetches 100 rows to display 20
 
-- Severity: P1 — Entire transaction history loaded for a 20-item feed
+- Severity: P2 (downgraded) — SQL LIMIT is now applied; still 5× over-fetches
 - Files:
-    - data/local/dao/TransactionDao.kt — dashboard feed query
-    - ui/screens/dashboard/DashboardViewModel.kt — caller
-- Root Cause: The DAO query fetches all recent transactions. DashboardViewModel passes limit = DASHBOARD_TRANSACTION_FEED_LIMIT as a constant but this is applied in Kotlin
-  (.take(limit)) not in SQL.
-- Fix: Add LIMIT :limit to the SQL query string. Pass DASHBOARD_TRANSACTION_FEED_LIMIT as a bind parameter to the DAO.
-- Acceptance: SQLite query for the dashboard feed returns exactly N rows, not all rows.
-- Status
+    - ui/screens/dashboard/DashboardViewModel.kt lines 163, 255
+    - data/local/query/DatabaseQueryServiceImpl.kt line 94
+- Root Cause (current state): observeFilteredTransactions is called with limit = DASHBOARD_TRANSACTION_FEED_LIMIT
+  (100). DatabaseQueryServiceImpl.buildListQuery() applies this as SQL LIMIT 100 — no full table scan.
+  But DashboardViewModel line 255 then does .filter { it.transaction.timestamp <= now }.take(20),
+  discarding 80 of the 100 fetched rows. Display shows 20.
+- Fix: Lower DASHBOARD_TRANSACTION_FEED_LIMIT to match the display count + a small buffer:
+  observeFilteredTransactions(profileId, TransactionFilter(), limit = 25)  // display 20, buffer 5
+- Acceptance: SQLite query returns ≤25 rows, not 100.
+- [~] Status: PARTIAL FIX — SQL LIMIT applied by DatabaseQueryServiceImpl; constant value still over-fetches 5×
 
  ---
 ISS-07 · MEDIUM PERF · LIKE queries on unindexed note and payee columns
@@ -167,11 +170,9 @@ ISS-11 · CRITICAL PERF · All 15 cards recompute on ANY upstream Flow emission
 
 - Example: User renames an account → accounts Flow emits → ALL 15 cards recompute, including PlannedPaymentsCard (doesn't use account names), TagUpSetPlotCard (doesn't need
   account names), etc.
-- Fix — Phase A (immediate, low risk): Add .distinctUntilChanged() before flatMapLatest:
-  combine(...)
-  .distinctUntilChanged()  // ADD: suppress if CardInput is structurally identical
-  .flatMapLatest { ... }
-- Requires CardInput fields to implement structural equals (data classes do this automatically).
+- Fix — Phase A (immediate, low risk): Add .distinctUntilChanged() before flatMapLatest.
+  ✅ ALREADY IMPLEMENTED — DashboardViewModel.kt line 192 has .distinctUntilChanged() applied.
+  The suppression of redundant recomputation on unrelated Room table writes is working.
 - Fix — Phase B (architectural): Add fun inputKey(input: CardInput): Any to CardDataComputer. Each computer returns a minimal snapshot of only the fields it reads. The
   registry checks if a computer's key changed before re-invoking it:
   interface CardDataComputer<C, R> {
@@ -181,7 +182,7 @@ ISS-11 · CRITICAL PERF · All 15 cards recompute on ANY upstream Flow emission
 - CardComputerRegistry.compute() caches the last inputKey per cardType; only recomputes if the key changed.
 - Acceptance: Add one transaction. Verify (via logging or Layout Inspector) that only NetWorthCard, CashFlowCard, RecentActivitiesCard, BudgetsCard recompute — not
   PlannedPaymentsCard or LoansCard.
-- Status
+- [~] Status: PHASE A DONE — Phase B (per-card inputKey scoping) still open
 
  ---
 ISS-12 · CRITICAL PERF · CardInput is a 8–15 MB god object passed to all card computers
@@ -745,6 +746,29 @@ ISS-41 · MEDIUM · resolveTimeBoundsFromDb duplicated across 3 card computers
 - [ ] Status
 
  ---
+ISS-55 · MEDIUM · CurrencyRateEntity.rate toDouble() silently produces NaN on corrupted migration data
+
+- Severity: P2 — Silent NaN corruption of all exchange rate calculations
+- File: data/repository/CurrencyRepositoryImpl.kt line 68
+- Root Cause: The DB migration 15→16 changes the rate column from REAL to TEXT via
+  CAST(rate AS TEXT). Post-migration, getExchangeRates() reads the string and calls:
+    val rates = localRates.associate { it.currencyCode to it.rate.toDouble() }
+  If any rate string is "NaN" or "Infinity" (produced if a REAL NaN/Inf was ever stored),
+  String.toDouble() returns Double.NaN without throwing. Then at line 75:
+    if (newBaseRate != null && newBaseRate != 0.0) { return@withContext rates.mapValues { it.value / newBaseRate } }
+  The check `newBaseRate != 0.0` passes for NaN (NaN != 0.0 is true), so division proceeds and
+  produces a map full of NaN values. These silently propagate into BigDecimal arithmetic, causing
+  ArithmeticException deep in card computation with no visible user error.
+  Additionally, ratesFlow (line 27) uses toBigDecimal() which THROWS on "NaN" strings, causing
+  a crash on first data load if any rate row is corrupted.
+- Fix: Use safe parsing in both paths:
+  val rate = it.rate.toBigDecimalOrNull() ?: run { Timber.w("Invalid rate string for ${it.currencyCode}: ${it.rate}"); return@associate null }
+  For the toDouble() path: check isNaN() / isInfinite() after parsing and skip those entries.
+- Acceptance: A DB with one rate row containing "NaN" does NOT crash the app and does NOT
+  produce incorrect calculations for other currencies.
+- [ ] Status
+
+ ---
 ISS-42 · HIGH SECURITY · LoanPaymentDao.getAllPayments() lacks profileId filter
 
 - Severity: P1 — Cross-profile loan payment data visible
@@ -1028,12 +1052,12 @@ Issue Count by Priority
 │          │       │ (ISS-03,04,05,06,11,12,13,14,15,16,17,18,19,20,21,25,26,27,28,29,30,31,42,46,48,      │
 │          │       │ 50,51,52)                                                                             │
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
-│ P2       │ 13    │ Medium perf + UX issues                                                               │
-│          │       │ (ISS-07,08,09,22,23,32,33,34,35,36,40,41,45,47,49)                                   │
+│ P2       │ 14    │ Medium perf + UX issues                                                               │
+│          │       │ (ISS-07,08,09,22,23,32,33,34,35,36,40,41,45,47,49,55)                                │
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
 │ P3       │ 4     │ Low / cleanup (ISS-10,24,37,38)                                                       │
 ├──────────┼───────┼───────────────────────────────────────────────────────────────────────────────────────┤
-│ Total    │ 53    │ (54 entries, 1 invalid)                                                               │
+│ Total    │ 54    │ (55 entries, 1 invalid)                                                               │
 └──────────┴───────┴───────────────────────────────────────────────────────────────────────────────────────┘
 
  ---

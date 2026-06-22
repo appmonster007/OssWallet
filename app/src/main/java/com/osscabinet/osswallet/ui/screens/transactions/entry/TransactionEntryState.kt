@@ -125,6 +125,18 @@ data class TransactionEntryState(
                 // Both sides must be explicitly chosen (Unselected = not yet picked)
                 if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
                 if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
+                // Self-transfer guard: source and destination must not be the same wallet account
+                if (source.account is AccountRef.Wallet &&
+                    destination.account is AccountRef.Wallet &&
+                    source.account.id == (destination.account as AccountRef.Wallet).id) {
+                    add(EntryField.ACCOUNT)
+                    add(EntryField.TARGET_ACCOUNT)
+                }
+                // Wallet minimum rule: at least one side must be an internal wallet account
+                if (source.account is AccountRef.Outside && destination.account is AccountRef.Outside) {
+                    add(EntryField.ACCOUNT)
+                    add(EntryField.TARGET_ACCOUNT)
+                }
             } else {
                 if (source.account !is AccountRef.Wallet) add(EntryField.ACCOUNT)
             }

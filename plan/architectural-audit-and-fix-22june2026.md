@@ -61,7 +61,7 @@ These are real issues with confirmed intent, but the user has chosen to defer th
 
 - **ARC-75 (pie/treemap mapping in composable):** lead with **Option B** (wrap with `remember(renderData, selectedMetric) { ... }`) — 3 lines, no data-model change, ~95% of the benefit. Option A (move into the computer) only if you want cleaner architecture for unrelated reasons.
 - **ARC-78 (`graphicsLayer` gating):** lead with **Option B** (`derivedStateOf` so the layer body short-circuits when `rotation == 0f`). Option A (conditionally apply the whole layer) risks breaking the flip animation's first frame. Drop or de-emphasize A.
-- **ARC-76 (`.sample(80)` on `cardDataFlow`):** the fix is correct but `sample` *drops trailing emissions*. Use `.sample(80).onCompletion { emit(latest) }` OR a windowing operator, AND add a unit test asserting the final card state is always emitted. The footgun is real.
+- **ARC-76 (`.sample(80)` on `cardDataFlow`):** ~~the fix is correct but `sample` drops trailing emissions~~ **WITHDRAWN 2026-06-23**. Finance app — every computed value should be visible the instant it exists, no debounce delay. The actual scroll-jank root causes (ARC-74/75/77) plus per-card `derivedStateOf` slicing in `AeonCardList` already make per-card emissions cheap.
 
 ### Resolved product calls (decided 2026-06-22)
 
@@ -84,7 +84,7 @@ These are real issues with confirmed intent, but the user has chosen to defer th
 1. **Data isolation profileId fixes** (ARC-13 → ARC-19) — non-negotiable.
 2. **Currency anchoring** (ARC-01, ARC-02, ARC-04, ARC-09, ARC-12) — finishes the work already started this session.
 3. **Scroll-jank trio in one PR** (ARC-74 + ARC-77 + **ARC-75 Option B**) — one afternoon, biggest user-visible improvement.
-4. **ARC-76** with the trailing-emission test — separate PR.
+4. **ARC-76** — withdrawn. No debounce on financial data emissions.
 5. **ARC-05** (remove `CurrencyService` mutable state) — important; skip the rest of ARC-43.
 6. **ARC-28** `@Transaction` audit — easy correctness win.
 7. **ARC-39** (channelFlow race) — before any further dashboard work.
@@ -552,7 +552,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 
 # Layer 6.5 — Dashboard Scroll Jank (verified 2026-06-22)
 
-User-observed symptom: records-list flings smoothly; dashboard cards stutter. Each issue below was confirmed against current `feature/tagv43` source. The cards stutter because every visible card carries 4–5 per-frame work sources that compound during fling, whereas the records list is a flat row layout. Fix order matters: ARC-74 + ARC-76 will give the biggest win and should land together.
+User-observed symptom: records-list flings smoothly; dashboard cards stutter. Each issue below was confirmed against current `feature/tagv43` source. The cards stutter because every visible card carries 4–5 per-frame work sources that compound during fling, whereas the records list is a flat row layout. Fix order matters: ARC-74 + ARC-75 + ARC-77 give the biggest win and were landed together. ARC-76 was withdrawn — see its entry.
 
 ## ARC-74 · Double `animateContentSize` per card [P1 · trivial]
 - **Files:** `ui/components/cards/AeonCardList.kt:163` AND `ui/components/cards/AeonExpressiveCard.kt:206`
@@ -578,7 +578,7 @@ User-observed symptom: records-list flings smoothly; dashboard cards stutter. Ea
 - **Verify by:** add `SideEffect { println("piechart map") }` in the current code, fling — see the spam; after fix it fires only on data/metric change.
 
 ## ARC-76 · `DashboardViewModel` emits per-card-completion with no debounce [P1 · easy]
-> **Curator note: footgun.** `sample(80)` *drops trailing emissions* — if no further update arrives within the window, the last card state can be lost. Use `.sample(80).onCompletion { emit(latestValue) }` OR a custom windowing operator. Required: a unit test asserting the final post-all-complete state is always emitted to the UI.
+> **Curator note (revised 2026-06-23): WITHDRAWN.** Finance-app correctness wins over scroll smoothness — the user should see every computed value the instant it exists, with no debounce-induced delay (even ~80 ms). The actual scroll-jank root causes are already addressed by ARC-74 (double `animateContentSize`), ARC-75 Option B (memoized pie/treemap mapping), and ARC-77 (`remember`-d `effectiveCard`), combined with `AeonCardList`'s per-card `derivedStateOf` slicing which makes Compose recompose only the card whose data changed. The original ~15 cardDataFlow emissions during cold-load are now harmless because each one drives recomposition of at most one card composable, not the whole list.
 - **File:** `ui/screens/dashboard/DashboardViewModel.kt:316-342`
 - **RCA:** A single collector calls `send(buildSuccess(cardData, isComputing))` on every `cardDataFlow.update`. `MutableStateFlow.collect` conflates only what the consumer can't keep up with; on dashboard load 10–15 cards complete within milliseconds, producing 10–15 distinct emissions, each reconstructing `DashboardUiState.Success` with a fresh `Map`. If the user starts scrolling at that moment, the list recomposes per emission.
 - **Why fix:** This is the second compounding factor (with ARC-74) for fling jank during initial load — and any time the cache is invalidated.
@@ -751,7 +751,7 @@ Goal: eliminate silent-wrong-value and cross-profile leak paths; land the highes
 | 5 | ARC-19 — clear `QueryCache` on profile change | medium |
 | 6 | ARC-39 — replace `channelFlow + AtomicInteger` with safe Flow primitives | hard |
 | 7 | ARC-64 — verify ProGuard Room rules | trivial |
-| 8 | **ARC-74 + ARC-76 + ARC-77 — dashboard scroll jank trio** (drop double animateContentSize, sample card emissions, remember effectiveCard) | trivial / easy |
+| 8 | **ARC-74 + ARC-77 — dashboard scroll jank pair** (drop double animateContentSize, remember effectiveCard). ARC-76 withdrawn — finance data emissions must not be debounced. | trivial / easy |
 | 9 | **ARC-75 — move pie/treemap mapping into the computer** | easy |
 
 ## Sprint B — Architectural hygiene (services + cards)

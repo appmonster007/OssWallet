@@ -29,8 +29,8 @@ class AccountRepositoryImpl @Inject constructor(
         accountDao.upsertAccount(account.toEntity(profileId))
     }
 
-    override suspend fun deleteAccount(accountId: String) {
-        accountDao.getAccountById(accountId)?.let {
+    override suspend fun deleteAccount(accountId: String, profileId: Int) {
+        accountDao.getAccountById(accountId, profileId)?.let {
             accountDao.deleteAccount(it)
         }
     }

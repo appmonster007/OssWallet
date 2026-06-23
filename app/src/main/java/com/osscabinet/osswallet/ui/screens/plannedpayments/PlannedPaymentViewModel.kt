@@ -205,7 +205,9 @@ class PlannedPaymentViewModel @Inject constructor(
                     )
                 }
                 is UndoAction.ConfirmUndo -> {
-                    transactionManager.deleteTransaction(action.transactionId)
+                    withProfile { profileId ->
+                        transactionManager.deleteTransaction(action.transactionId, profileId)
+                    }
                     val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
                     if (occ != null) {
                         plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)

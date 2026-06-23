@@ -62,7 +62,7 @@ class TransactionManager(
     ): Long = andRefresh {
         transactionUseCases.runAtomically {
             if (existingTransactionId != null) {
-                transactionUseCases.deleteTransaction(existingTransactionId)
+                transactionUseCases.deleteTransaction(existingTransactionId, profileId)
             }
 
             val splitIds = splits.map { split ->
@@ -214,7 +214,7 @@ class TransactionManager(
                         transactionUseCases.addTransactionLink(targetId, existingTransaction.id)
                     } else {
                         linkedIds.forEach { linkedId ->
-                            val linkedTx = transactionUseCases.getTransactionById(linkedId)
+                            val linkedTx = transactionUseCases.getTransactionById(linkedId, profileId)
                             if (linkedTx != null && Category.isTransfer(linkedTx.categoryId)) {
                                 // Update the target side to match the new metadata from source
                                 val updatedTarget = targetTransaction.copy(id = linkedId)
@@ -313,8 +313,8 @@ class TransactionManager(
         }
     }
 
-    suspend fun deleteTransaction(id: Long) = andRefresh {
-        val transaction = transactionUseCases.getTransactionById(id)
+    suspend fun deleteTransaction(id: Long, profileId: Int) = andRefresh {
+        val transaction = transactionUseCases.getTransactionById(id, profileId)
         if (transaction != null && Category.isTransfer(transaction.categoryId)) {
             // Decouple from linked transfers instead of deleting them.
             // This converts internal transfers into standalone "Outside Wallet" transfers.
@@ -325,18 +325,18 @@ class TransactionManager(
                 transactionUseCases.removeTransactionLink(linkedId, id)
             }
         }
-        transactionUseCases.deleteTransaction(id)
+        transactionUseCases.deleteTransaction(id, profileId)
     }
 
     suspend fun cloneTransaction(transactionId: Long, profileId: Int): Long? {
-        val transaction = transactionUseCases.getTransactionById(transactionId) ?: return null
+        val transaction = transactionUseCases.getTransactionById(transactionId, profileId) ?: return null
         return transactionUseCases.insertTransaction(
             transaction.copy(id = 0, timestamp = System.currentTimeMillis()), profileId
         ).also { widgetRefreshTrigger.trigger() }
     }
 
     suspend fun toggleStatus(transactionId: Long, profileId: Int): TransactionStatus? {
-        val transaction = transactionUseCases.getTransactionById(transactionId) ?: return null
+        val transaction = transactionUseCases.getTransactionById(transactionId, profileId) ?: return null
         val newStatus = when (transaction.status) {
             TransactionStatus.CLEARED -> TransactionStatus.UNCLEARED
             TransactionStatus.UNCLEARED -> TransactionStatus.CLEARED
@@ -355,7 +355,7 @@ class TransactionManager(
         newStatus: TransactionStatus,
         profileId: Int
     ): Boolean {
-        val transaction = transactionUseCases.getTransactionById(transactionId) ?: return false
+        val transaction = transactionUseCases.getTransactionById(transactionId, profileId) ?: return false
         transactionUseCases.updateTransaction(
             transaction,
             transaction.copy(status = newStatus),

@@ -441,10 +441,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTagNames = event.tags) }
             is PlannedPaymentEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
-                    settingsRepository.currentProfileId.first()
+                    val profileId = settingsRepository.currentProfileId.first()
                     // Fetch specific transactions by ID for display
                     val transactions = event.ids.mapNotNull { id ->
-                        transactionUseCases.getTransactionById(id)
+                        transactionUseCases.getTransactionById(id, profileId)
                     }
                     _state.update { it.copy(displayLinkedTxs = transactions) }
                 }

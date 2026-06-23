@@ -272,8 +272,8 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteTransaction(id: Long) {
-        val transaction = transactionDao.getTransactionById(id)
+    override suspend fun deleteTransaction(id: Long, profileId: Int) {
+        val transaction = transactionDao.getTransactionById(id, profileId)
         transaction?.let {
             transactionDao.deleteTransactionWithBalanceUpdate(it, accountDao)
         }
@@ -287,8 +287,8 @@ class TransactionRepositoryImpl @Inject constructor(
             .mapToDomain { it.toDomain() }
     }
 
-    override suspend fun getTransactionById(id: Long): Transaction? {
-        return transactionDao.getTransactionById(id)?.toDomain()
+    override suspend fun getTransactionById(id: Long, profileId: Int): Transaction? {
+        return transactionDao.getTransactionById(id, profileId)?.toDomain()
     }
 
     override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? {

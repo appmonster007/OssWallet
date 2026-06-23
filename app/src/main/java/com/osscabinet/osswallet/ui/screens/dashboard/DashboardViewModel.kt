@@ -410,7 +410,8 @@ class DashboardViewModel @Inject constructor(
                     )
                 }
                 is UndoAction.ConfirmUndo -> {
-                    transactionManager.deleteTransaction(action.transactionId)
+                    val profileId = settingsRepository.currentProfileId.first()
+                    transactionManager.deleteTransaction(action.transactionId, profileId)
                     val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
                     if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
                     plannedPaymentRepository.update(

@@ -98,7 +98,7 @@ class TransactionEntryViewModel @Inject constructor(
 
             val isEditMode = transactionId != null && transactionId != -1L
             val existingTransaction = if (isEditMode) {
-                transactionUseCases.getTransactionById(transactionId!!)
+                transactionUseCases.getTransactionById(transactionId!!, profileId)
             } else null
 
             val linkedTxs = if (isEditMode) {
@@ -517,13 +517,15 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.AddLinkedTransaction -> {
                 viewModelScope.launch {
-                    val tx = transactionUseCases.getTransactionById(event.id)
-                    tx?.let { newTx ->
-                        update {
-                            it.copy(
-                                linkedTransactionIds = it.linkedTransactionIds + event.id,
-                                linkedTxs = (it.linkedTxs + newTx).distinctBy { t -> t.id }
-                            )
+                    withProfile { profileId ->
+                        val tx = transactionUseCases.getTransactionById(event.id, profileId)
+                        tx?.let { newTx ->
+                            update {
+                                it.copy(
+                                    linkedTransactionIds = it.linkedTransactionIds + event.id,
+                                    linkedTxs = (it.linkedTxs + newTx).distinctBy { t -> t.id }
+                                )
+                            }
                         }
                     }
                 }
@@ -541,8 +543,10 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
-                    val txs = event.ids.mapNotNull { transactionUseCases.getTransactionById(it) }
-                    update { it.copy(linkedTransactionIds = event.ids, linkedTxs = txs) }
+                    withProfile { profileId ->
+                        val txs = event.ids.mapNotNull { transactionUseCases.getTransactionById(it, profileId) }
+                        update { it.copy(linkedTransactionIds = event.ids, linkedTxs = txs) }
+                    }
                 }
             }
 
@@ -899,7 +903,9 @@ class TransactionEntryViewModel @Inject constructor(
     fun deleteTransaction(onDeleted: () -> Unit = {}) {
         viewModelScope.launch {
             _state.value.transactionId?.let { id ->
-                transactionManager.deleteTransaction(id)
+                withProfile { profileId ->
+                    transactionManager.deleteTransaction(id, profileId)
+                }
                 onDeleted()
             }
         }

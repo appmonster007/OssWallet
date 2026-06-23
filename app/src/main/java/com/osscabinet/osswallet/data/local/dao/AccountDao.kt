@@ -12,8 +12,8 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE profileId = :profileId ORDER BY displayOrder ASC")
     fun getAllAccounts(profileId: Int): Flow<List<AccountEntity>>
 
-    @Query("SELECT * FROM accounts WHERE id = :id")
-    suspend fun getAccountById(id: String): AccountEntity?
+    @Query("SELECT * FROM accounts WHERE id = :id AND profileId = :profileId")
+    suspend fun getAccountById(id: String, profileId: Int): AccountEntity?
 
     @Upsert
     suspend fun upsertAccounts(accounts: List<AccountEntity>)

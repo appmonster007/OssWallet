@@ -14,6 +14,12 @@ interface TemplateDao {
     @Query("SELECT * FROM templates WHERE profileId = :profileId ORDER BY name COLLATE NOCASE ASC")
     fun getAllTemplates(profileId: Int): Flow<List<TemplateEntity>>
 
+    /**
+     * Intentionally cross-profile — reserved for future features that need a
+     * global view of starred templates (e.g., template sharing/sync). DO NOT
+     * use from profile-scoped UI; prefer the [getStarredTemplates] overload
+     * that takes a profileId.
+     */
     @Query("SELECT * FROM templates WHERE isStarred = 1 ORDER BY displayOrder ASC")
     fun getStarredTemplates(): Flow<List<TemplateEntity>>
 

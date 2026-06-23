@@ -199,6 +199,7 @@ fun TransactionEntrySheets(
             currency = state.selectedCurrency,
             splits = state.splits,
             categories = state.categories,
+            isIncome = state.isIncome,
             onAddSplit = { onEvent(TransactionEntryEvent.AddSplit) },
             onRemoveSplit = { index -> onEvent(TransactionEntryEvent.RemoveSplit(index)) },
             onUpdateSplit = { index, amount, note, categoryId ->

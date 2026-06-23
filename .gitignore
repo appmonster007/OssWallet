@@ -21,6 +21,7 @@ build/
 # Local configuration file (sdk path, etc)
 local.properties
 /tmp
+*.diff
 
 # Log/OS Files
 *.log

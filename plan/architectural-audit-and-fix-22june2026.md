@@ -740,61 +740,82 @@ User-observed symptom: records-list flings smoothly; dashboard cards stutter. Ea
 
 Sequenced to minimize risk and maximize value per sprint. Each sprint should land in its own PR(s).
 
-## Sprint A — Stop the bleeding (P0 currency + isolation + scroll-jank quick wins)
-Goal: eliminate silent-wrong-value and cross-profile leak paths; land the highest-value scroll-jank fixes since they're tiny.
+### Status legend
+- ✅ **done** — landed on branch, build + tests green.
+- 🚧 **in progress** — branch dirty / partially done.
+- ⏸️ **deferred** — real issue, intentionally not in this cycle. Rationale required.
+- ⏭️ **postponed** — user-decided pushout to a future cycle.
+- ❌ **withdrawn** — re-evaluated and not the right fix.
+- ⬜ **pending** — scheduled, not yet started.
 
-| # | Issue | Effort |
-|---|---|---|
-| 1 | ARC-08 + ARC-09 + ARC-10 — `currency_rates` PK + scoped delete + index (one migration) | medium |
-| 2 | ARC-01 — `ratesFlow` carries anchor | medium |
-| 3 | ARC-02 + ARC-04 — fail-closed rebasing + surfaced error flow | easy |
-| 4 | ARC-13 + ARC-14 + ARC-15 + ARC-16 + ARC-17 — profileId everywhere on DAO | easy each, bulk |
-| 5 | ARC-19 — clear `QueryCache` on profile change | medium |
-| 6 | ARC-39 — replace `channelFlow + AtomicInteger` with safe Flow primitives | hard |
-| 7 | ARC-64 — verify ProGuard Room rules | trivial |
-| 8 | **ARC-74 + ARC-77 — dashboard scroll jank pair** (drop double animateContentSize, remember effectiveCard). ARC-76 withdrawn — finance data emissions must not be debounced. | trivial / easy |
-| 9 | **ARC-75 — move pie/treemap mapping into the computer** | easy |
+## Sprint A — Stop the bleeding (P0 currency + isolation + scroll-jank quick wins) — **COMPLETE**
+Goal: eliminate silent-wrong-value and cross-profile leak paths; land the highest-value scroll-jank fixes.
 
-## Sprint B — Architectural hygiene (services + cards) — landed except ARC-32 / ARC-30
+| # | Issue | Effort | Status | Commit / Notes |
+|---|---|---|---|---|
+| 1 | ARC-08 + ARC-09 + ARC-10 — `currency_rates` composite PK + scoped delete + index (DB v19→v20) | medium | ✅ done | `6006b528` |
+| 2 | ARC-01 — `ratesFlow` carries anchor (`observeRatesSnapshot(base)`) | medium | ✅ done | `6006b528` |
+| 3 | ARC-02 + ARC-04 — fail-closed rebasing + `rateRefreshErrors` flow | easy | ✅ done | `6006b528`. UI consumption (snackbar host) still pending — small follow-up. |
+| 4 | ARC-13 + ARC-14 — profileId on `getAccountById` / `getTransactionById` and the full repo→usecase→VM chain | easy, bulk | ✅ done | `fca1d876` |
+| 4b | ARC-17 — `TemplateDao.getStarredTemplates()` no-arg | trivial | ✅ done (kept, annotated) | `fca1d876`. User retained the unsafe overload for future cross-profile features; annotated at DAO + repo interface. |
+| 4c | ARC-15 — bulk-sync DAO overloads (Account/Budget/Loan/PlannedPayment/LoanPayment) scoped | easy, bulk | ✅ done | `5bed828c`. Annotated as "backup-only" at the DAO; CsvImportServiceImpl rewritten to use profile-scoped reads. |
+| 4d | ARC-16 — `LoanPaymentDao.getAllPayments()` | trivial | ✅ done (annotated, no UI callers) | `5bed828c` |
+| 5 | ARC-19 — clear `QueryCache` + invalidate `CardRenderCache` on profile change | medium | ✅ done | `5bed828c`. `OssWalletApp` observes `currentProfileId`. |
+| 6 | ARC-39 — close the `channelFlow + AtomicInteger` race | hard | ✅ done (pragmatic) | `33974854`, `5c93964a`. `send(...)` → `trySend(...)` in both launched coroutines, so late completers after channel closure are a benign no-op. Full Flow.merge restructure not done — `trySend` was sufficient. |
+| 7 | ARC-64 — Room ProGuard keep rules | trivial | ✅ done | `33974854` |
+| 8 | ARC-74 + ARC-77 — drop double `animateContentSize`, `remember`-d `effectiveCard` | trivial | ✅ done | `e01ddd23` |
+| 9 | ARC-75 (Option B) — `remember`-d pie/treemap recursive sort | easy | ✅ done | `e01ddd23`. Option B chosen over A — no `CardRenderData` shape change. |
+| — | ARC-76 — `.sample(80)` debounce on card emissions | easy | ❌ withdrawn | `5c93964a`. Finance app: financial values must not be debounced for any cosmetic reason. Per-card `derivedStateOf` slicing in `AeonCardList` already makes per-card emissions cheap. |
+
+## Sprint B — Architectural hygiene (services + cards) — **COMPLETE** (with two deferrals)
 Goal: undo the singleton lock-in; collapse the card plugin duplication.
 
-| # | Issue | Effort | Status |
-|---|---|---|---|
-| 8 | ARC-05 — atomic `CurrencyService.FormatConfig` setter (rest of ARC-43 dropped per curator note) | easy | done |
-| 9 | ARC-32 — collapse CardCallbacks duplication | medium | **deferred** (focused-session refactor; see entry note) |
-| 10 | ARC-33 — generic `updateCardConfig<C>` | easy | done |
-| 11 | ARC-30 — split CardInput into typed subsets | hard | **deferred** per curator note |
-| 12 | ARC-41 — surface compute errors instead of `null` | easy | done |
+| # | Issue | Effort | Status | Notes |
+|---|---|---|---|---|
+| 10 | ARC-05 — atomic `CurrencyService.FormatConfig` setter | easy | ✅ done | `20e0b079`. (precision, system) now an `AtomicReference<FormatConfig>`; `setFormatConfig` is the only writer. MainActivity + WidgetDataLoader migrated. Reader-side API unchanged. |
+| 11 | ARC-41 — surface compute errors as `CardRenderData.Error` instead of `null` | easy | ✅ done | `20e0b079`. `CancellationException` still propagates per structured concurrency. |
+| 12 | ARC-33 — generic `updateCardConfig<C>` | easy | ✅ done | `20e0b079`. Inline reified extension for ergonomic call sites. Complements (not replaces) the 34 existing helpers. |
+| 13 | ARC-32 — collapse `CardCallbacks` / `CardWithCallbacks` triple | medium | ⏸️ deferred | Multi-hour focused refactor: signature changes on every card composable + CardUiBridge rewrite + UnifiedCardRenderer re-validation. ROI is DX-only (no user-visible behavior change). Better as its own PR with the Konsist parity test (ARC-31-alt) as a prerequisite — otherwise a missed branch is a runtime crash on card reorder. |
+| 14 | ARC-30 — split `CardInput` into typed subsets | hard | ⏸️ deferred | Per curator note: after the recent `distinctUntilChanged` + recompute-key tightening, the marginal win is allocation pressure only. Hard refactor for small ROI. Revisit if memory profiling shows allocation as the bottleneck. |
+| — | rest of ARC-43 (full DI for pure-function services) | hard | ❌ dropped | Per curator note: only ARC-05 had a real safety bug; pure-function services like `TimelineService`, `BudgetService` gain nothing from DI. |
 
-## Sprint C — Data integrity & developer experience
-| # | Issue | Effort |
-|---|---|---|
-| 13 | ARC-28 — `@Transaction` on backup import + transfer + planned-payment confirm | easy |
-| 14 | ARC-26 — atomic tag sync + drop legacy column | medium |
-| 15 | ARC-21 + ARC-22 — FilterEntity primitives only | medium |
-| 16 | ARC-29 + ARC-60 — backup schema version + CSV escape | medium |
-| 17 | ARC-56 + ARC-57 — web error envelope + BigDecimal-as-string | easy |
-| 18 | ARC-18 — categories profile scoping (design + migration) | hard |
+## Sprint C — Data integrity & developer experience — pending
 
-## Sprint D — UI stability + service refactor continuation
-| # | Issue | Effort |
-|---|---|---|
-| 19 | ARC-38 — split `TransactionViewModel` | hard |
-| 20 | ARC-50 + ARC-51 — `@Stable`/`@Immutable` pass | easy |
-| 21 | ARC-52 + ARC-53 — `CardUiBridge` lambda hygiene | medium |
-| 22 | ARC-45 — typed `MetricKey` (independent of ARC-44; fixes silent-zero bug) | medium |
-| 23 | ARC-43 cont — finish singleton → DI for remaining services | hard |
+| # | Issue | Effort | Status | Notes |
+|---|---|---|---|---|
+| 15 | ARC-28 — `@Transaction` on backup import + transfer + planned-payment confirm | easy | ⬜ pending | Identified hot paths; not started. |
+| 16 | ARC-26 — atomic tag sync + drop legacy `tags` column | medium | ⬜ pending | |
+| 17 | ARC-21 + ARC-22 — FilterEntity primitives only | medium | ⏸️ likely skip | Curator note suggests this is dogmatic. Verify the `TimelineRange` TypeConverter exists; if so, leave as-is. |
+| 18 | ARC-29 + ARC-60 — backup schema_version + CSV escape via commons-csv | medium → hard | ⬜ pending | User opted for full backward-compat with up-migration on import — effort bumped from medium to hard. |
+| 19 | ARC-56 + ARC-57 — web error envelope + BigDecimal-as-string DTOs | easy | ⬜ pending | |
+| — | ARC-18 — categories per-profile vs shared | hard | ❌ resolved (no work) | User decision: profiles = different contexts for one user → shared is correct. Action narrows to documenting in code + `.gemini/database.md`. |
 
-## Sprint E — Polish & guardrails
-| # | Issue | Effort |
-|---|---|---|
-| 24 | ARC-58 + ARC-59 — widget timeouts + config validation | medium |
-| 25 | ARC-65 + ARC-66 + ARC-67 + ARC-69 — test infrastructure | medium |
-| 26 | ARC-3, ARC-6, ARC-7, ARC-11, ARC-12 — close the deprecated currency surface | easy |
-| 27 | ARC-78 — gate `AeonExpressiveCard` graphicsLayer math when rotation == 0 | medium |
-| 28 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies |
+## Sprint D — UI stability + service refactor continuation — pending
 
-> **Postponed (not scheduled):** ARC-31 (card plugin pattern), ARC-44 (aggregation framework simplification). See Curator's reassessment for the deferral rationale.
+| # | Issue | Effort | Status | Notes |
+|---|---|---|---|---|
+| 20 | ARC-38 — split `TransactionViewModel` (~759 lines) into filter / list / search VMs | hard | ⬜ pending | |
+| 21 | ARC-50 + ARC-51 — `@Stable` / `@Immutable` pass on CardCallbacks subtypes + domain models | easy | ⬜ pending | |
+| 22 | ARC-52 + ARC-53 — `CardUiBridge` lambda hygiene (nested `remember`, tightened `LaunchedEffect` keys) | medium | ⬜ pending | |
+| 23 | ARC-45 — typed `MetricKey` (kills the magic-alias silent-zero bug) | medium | ⬜ pending | Decoupled from ARC-44; lands independently. |
+| — | ARC-43 cont — finish DI for remaining services | hard | ❌ dropped | See Sprint B note. |
+
+## Sprint E — Polish & guardrails — pending
+
+| # | Issue | Effort | Status | Notes |
+|---|---|---|---|---|
+| 24 | ARC-58 + ARC-59 — widget timeouts + config validation | medium | ⬜ pending | |
+| 25 | ARC-65 + ARC-66 + ARC-67 + ARC-69 — test infra (runTest, fake DatabaseQueryService, card-parity test, migration tests v4→v20) | medium | ⬜ pending | ARC-67 (Konsist parity test) is the prerequisite for unblocking ARC-32. |
+| 26 | ARC-3, ARC-6, ARC-7, ARC-11, ARC-12 — close the deprecated currency surface | easy | ⬜ pending | After Sprint A landed `observeRatesSnapshot`, the deprecated `Map<String, BigDecimal>` paths can be deleted once their last callers migrate. |
+| 27 | ARC-78 — gate `AeonExpressiveCard.graphicsLayer` math when `rotation == 0f` (Option B) | medium | ⬜ pending | |
+| 28 | ARC-23, ARC-24, ARC-25, ARC-27, ARC-34, ARC-35, ARC-36, ARC-37, ARC-40, ARC-42, ARC-46, ARC-47, ARC-48, ARC-49, ARC-54, ARC-55, ARC-61, ARC-62, ARC-63, ARC-70, ARC-71, ARC-72, ARC-73 — backlog mop-up | varies | ⬜ pending | Several already marked P3 or "drop" in curator notes; review each before scheduling. |
+
+### Postponed (user-decided, 2026-06-23)
+
+| Issue | Reason |
+|---|---|
+| ARC-31 — true plugin pattern for cards | User wants it eventually; deferred to a future cycle. |
+| ARC-44 — simplify aggregation framework | User confirms it's "overkill" with "frequent bulky DB calls", but tackling later. ARC-45 (typed MetricKey) stays in scope and can land independently in Sprint D. |
 
 ---
 

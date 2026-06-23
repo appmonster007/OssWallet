@@ -4,16 +4,22 @@ import com.osscabinet.ossWallet.di.ApplicationScope
 import com.osscabinet.ossWallet.domain.model.analytics.ComputationContext
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
+import com.osscabinet.ossWallet.domain.repository.RateRefreshError
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,43 +32,42 @@ class ComputationRepositoryImpl @Inject constructor(
 
     override val selectedCurrency: Flow<String> = settingsRepository.currency
 
-    // Room-backed: emits immediately from DB on any launch after the first.
-    // Re-bases rates to the selected currency when currency changes.
-    override val exchangeRates: Flow<Map<String, BigDecimal>> =
-        combine(currencyRepository.ratesFlow, selectedCurrency) { rateMap, targetBase ->
-            if (rateMap.isEmpty()) return@combine emptyMap()
-            val pivotRate = rateMap[targetBase] ?: return@combine rateMap
-            if (pivotRate.signum() == 0) return@combine rateMap
-            rateMap.mapValues { (_, rate) ->
-                rate.divide(pivotRate, 10, RoundingMode.HALF_UP)
-            }
-        }
-
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val exchangeRatesSnapshot: Flow<ExchangeRateSnapshot> =
-        combine(exchangeRates, selectedCurrency) { rates, currency ->
-            ExchangeRateSnapshot(anchor = currency, rates = rates)
+        selectedCurrency
+            .distinctUntilChanged()
+            .flatMapLatest { base ->
+                // ARC-01/02: rates are stored per-base (composite PK) and the flow is
+                // anchored to that base. No client-side rebasing, no anchor mismatch.
+                currencyRepository.observeRatesSnapshot(base)
+            }
+
+    override val exchangeRates: Flow<Map<String, BigDecimal>> =
+        exchangeRatesSnapshot.map { it.rates }
+
+    override val hasLoadedExchangeRates: Flow<Boolean> =
+        exchangeRatesSnapshot.map { it.rates.isNotEmpty() }
+
+    override val computationContext: Flow<ComputationContext?> =
+        exchangeRatesSnapshot.map { snapshot ->
+            if (snapshot.rates.isEmpty()) null
+            else ComputationContext(snapshot.anchor, snapshot.rates)
         }
 
-    // True as soon as Room has any cached rates — immediately true after first launch.
-    override val hasLoadedExchangeRates: Flow<Boolean> =
-        currencyRepository.ratesFlow.map { it.isNotEmpty() }
-
-    override val computationContext: Flow<ComputationContext?> = combine(
-        selectedCurrency,
-        exchangeRates
-    ) { currency, rates ->
-        if (rates.isEmpty()) null
-        else ComputationContext(currency, rates)
-    }
+    private val _rateRefreshErrors = MutableSharedFlow<RateRefreshError>(
+        replay = 0,
+        extraBufferCapacity = 4
+    )
+    override val rateRefreshErrors: Flow<RateRefreshError> = _rateRefreshErrors.asSharedFlow()
 
     init {
-        // On currency change: trigger getExchangeRates which handles cache-validity check.
-        // If cached rates are fresh (<24h), returns immediately (no network call).
-        // If stale or missing, fetches from network and saves to DB → ratesFlow updates automatically.
+        // ARC-04: on currency change, fetch rates and surface the failure if it happens.
+        // distinctUntilChanged prevents re-fetching the same base on unrelated emissions.
         settingsRepository.currency
+            .distinctUntilChanged()
             .onEach { currency ->
                 runCatching { currencyRepository.getExchangeRates(currency) }
-                // Failures are silent — stale cached rates remain in the flow
+                    .onFailure { _rateRefreshErrors.tryEmit(RateRefreshError(currency, it)) }
             }
             .launchIn(applicationScope)
     }

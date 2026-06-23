@@ -618,7 +618,7 @@ class BackupRepositoryImpl @Inject constructor(
                 // 5. Clear infrastructure
                 tagDao.clearAll()
                 categoryDao.clearAll()
-                currencyDao.deleteAllRates()
+                currencyDao.clearAll()
 
                 // 6. Clear profiles last
                 profileDao.clearAll()
@@ -1065,7 +1065,10 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     private suspend fun restoreCurrencyRates(file: File) = file.takeIf { it.exists() }?.let {
-        currencyDao.replaceRates(CsvProcessor.parseCsv(it).map { p ->
+        // Backup-restore path: wipe and re-insert. clearAll() is safe here because the
+        // backup contains all cached bases; ARC-09's scoped delete is for runtime fetches.
+        currencyDao.clearAll()
+        currencyDao.insertRates(CsvProcessor.parseCsv(it).map { p ->
             CurrencyRateEntity(
                 currencyCode = p["currencyCode"] ?: "",
                 baseCurrency = p["baseCurrency"] ?: "USD",

@@ -12,4 +12,12 @@ interface ComputationRepository {
     val exchangeRatesSnapshot: Flow<ExchangeRateSnapshot>
     val selectedCurrency: Flow<String>
     val hasLoadedExchangeRates: Flow<Boolean>
+    /** ARC-04: emits when a rate refresh fails so UI can surface a snackbar/banner. */
+    val rateRefreshErrors: Flow<RateRefreshError>
 }
+
+data class RateRefreshError(
+    val baseCurrency: String,
+    val cause: Throwable,
+    val timestamp: Long = System.currentTimeMillis()
+)

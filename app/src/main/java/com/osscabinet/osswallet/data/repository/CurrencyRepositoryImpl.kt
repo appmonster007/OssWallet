@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.domain.model.currency.CurrencyRates
 import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -22,10 +23,19 @@ class CurrencyRepositoryImpl @Inject constructor(
     private val settingsRepository: SettingsRepository
 ) : CurrencyRepository {
 
-    override val ratesFlow: Flow<Map<String, BigDecimal>> =
-        dao.observeAllRates().map { entities ->
-            entities.associate { it.currencyCode to it.rate.toBigDecimal() }
+    override fun observeRatesSnapshot(baseCurrency: String): Flow<ExchangeRateSnapshot> =
+        dao.observeRatesForBase(baseCurrency).map { rows ->
+            ExchangeRateSnapshot(
+                anchor = baseCurrency,
+                rates = rows.associate { it.currencyCode to it.rate.toBigDecimalOrNull().orZero() }
+            )
         }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override val ratesFlow: Flow<Map<String, BigDecimal>> =
+        dao.observeRatesForBase("").map { it.associate { row -> row.currencyCode to row.rate.toBigDecimalOrNull().orZero() } }
+
+    private fun BigDecimal?.orZero(): BigDecimal = this ?: BigDecimal.ZERO
 
     override suspend fun fetchFreshRates(baseCurrency: String): CurrencyRates {
         return withContext(Dispatchers.IO) {
@@ -53,7 +63,8 @@ class CurrencyRepositoryImpl @Inject constructor(
                 nextUpdate = nextUpdateMillis
             )
         }
-        dao.replaceRates(entities)
+        // ARC-09: scoped delete-then-insert via the transactional helper.
+        dao.replaceRatesForBase(baseCurrency, entities)
     }
 
     override suspend fun getExchangeRates(
@@ -61,20 +72,10 @@ class CurrencyRepositoryImpl @Inject constructor(
         forceRefresh: Boolean
     ): Map<String, Double> {
         return withContext(Dispatchers.IO) {
-            val localRates = dao.getAllRates()
+            val localRates = dao.getRatesForBase(baseCurrency)
 
-            // If cache is valid and matches our base currency, use it
             if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first())) {
-                val rates = localRates.associate { it.currencyCode to it.rate.toDouble() }
-
-                if (localRates.first().baseCurrency == baseCurrency) {
-                    return@withContext rates
-                }
-
-                val newBaseRate = rates[baseCurrency]
-                if (newBaseRate != null && newBaseRate != 0.0) {
-                    return@withContext rates.mapValues { it.value / newBaseRate }
-                }
+                return@withContext localRates.associate { it.currencyCode to it.rate.toDouble() }
             }
 
             val providerId = settingsRepository.currencyProvider.first()
@@ -89,13 +90,16 @@ class CurrencyRepositoryImpl @Inject constructor(
                         baseCurrency = baseCurrency,
                         rate = it.value.toBigDecimal().toPlainString(),
                         timestamp = System.currentTimeMillis(),
-                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000L // 24h fallback
+                        nextUpdate = System.currentTimeMillis() + 24 * 60 * 60 * 1000L
                     )
                 }
-                dao.replaceRates(entities)
+                dao.replaceRatesForBase(baseCurrency, entities)
                 return@withContext rates
             }
 
+            // Network failed — return whatever's cached so the UI degrades gracefully.
+            // The caller (ComputationRepositoryImpl) is responsible for surfacing the
+            // failure via its error flow (ARC-04).
             localRates.associate { it.currencyCode to it.rate.toDouble() }
         }
     }
@@ -106,7 +110,6 @@ class CurrencyRepositoryImpl @Inject constructor(
 
         val result = provider.convertCurrencyAmount(amount, fromCurrency, toCurrency)
         return result.getOrElse {
-            // Fallback to local conversion if provider fails
             val rates = getExchangeRates(fromCurrency)
             val toRate = rates[toCurrency] ?: 1.0
             amount * toRate

@@ -60,7 +60,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -83,6 +83,28 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ARC-08/09/10: composite PK (currencyCode, baseCurrency) so different
+                // base-currency rate sets can coexist. Cache is regeneratable from network,
+                // so a destructive recreate is acceptable here.
+                db.execSQL("DROP TABLE IF EXISTS currency_rates")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `currency_rates` (
+                        `currencyCode` TEXT NOT NULL,
+                        `baseCurrency` TEXT NOT NULL,
+                        `rate` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `nextUpdate` INTEGER NOT NULL,
+                        PRIMARY KEY(`currencyCode`, `baseCurrency`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_currency_rates_baseCurrency` ON `currency_rates`(`baseCurrency`)")
+            }
         }
 
         val MIGRATION_18_19 = object : Migration(18, 19) {
@@ -529,7 +551,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_15_16,
                         MIGRATION_16_17,
                         MIGRATION_17_18,
-                        MIGRATION_18_19
+                        MIGRATION_18_19,
+                        MIGRATION_19_20
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

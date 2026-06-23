@@ -25,6 +25,10 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE profileId = :profileId AND isArchived = 0 ORDER BY name ASC")
     suspend fun getActiveBudgetsSync(profileId: Int): List<BudgetWithFilter>
 
+    /**
+     * Cross-profile bulk read. ONLY for backup/export flows. Profile-scoped UI must
+     * use [getActiveBudgetsSync] or [getAllBudgets] with a profileId.
+     */
     @Transaction
     @Query("SELECT * FROM budgets")
     suspend fun getAllBudgetsSync(): List<BudgetWithFilter>

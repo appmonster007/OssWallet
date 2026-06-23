@@ -24,6 +24,10 @@ interface LoanDao {
     @Query("SELECT * FROM loans WHERE profileId = :profileId AND status = 'ACTIVE' ORDER BY startDate DESC")
     suspend fun getActiveLoansSync(profileId: Int): List<LoanWithFilter>
 
+    /**
+     * Cross-profile bulk read. ONLY for backup/export flows. Profile-scoped UI must
+     * use [getActiveLoansSync] or [getAllLoans] with a profileId.
+     */
     @Transaction
     @Query("SELECT * FROM loans")
     suspend fun getAllLoansSync(): List<LoanWithFilter>

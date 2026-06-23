@@ -11,6 +11,10 @@ interface LoanRepository {
     suspend fun getLoanById(id: Long): Loan?
     fun getPaymentsForLoan(loanId: Long): Flow<List<LoanPayment>>
     suspend fun getPaymentsForLoanSync(loanId: Long): List<LoanPayment>
+    /**
+     * Cross-profile bulk read. Reserved for backup/export. Profile-scoped UI must
+     * use [getAllPayments] with a profileId.
+     */
     fun getAllPayments(): Flow<List<LoanPayment>>
     fun getAllPayments(profileId: Int): Flow<List<LoanPayment>>
     suspend fun insertLoan(loan: Loan): Long

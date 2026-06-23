@@ -331,8 +331,10 @@ class CsvImportServiceImpl @Inject constructor(
             return ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList(), 0)
         }
 
-        val existingTxs = transactionDao.getAllTransactionsSync()
-        val existingAccountsList = accountDao.getAllAccountsSync()
+        // ARC-15: preview must use the active profile's existing data, not every profile's.
+        val profileId = settingsDataStore.currentProfileId.first()
+        val existingTxs = transactionDao.getAllTransactionsSync(profileId)
+        val existingAccountsList = accountDao.getAllAccountsSync(profileId)
         val existingAccountsByName = existingAccountsList.associateBy { it.name.lowercase() }
         val existingCategories = categoryDao.getAllCategoriesSync()
 
@@ -436,8 +438,10 @@ class CsvImportServiceImpl @Inject constructor(
         inputStream: InputStream
     ): ImportPreview {
         val lines = inputStream.bufferedReader().readLines().drop(1)
-        val existingTxs = transactionDao.getAllTransactionsSync()
-        val existingAccounts = accountDao.getAllAccountsSync().map { it.name.lowercase() }.toSet()
+        // ARC-15: scope existence checks to the active profile.
+        val profileId = settingsDataStore.currentProfileId.first()
+        val existingTxs = transactionDao.getAllTransactionsSync(profileId)
+        val existingAccounts = accountDao.getAllAccountsSync(profileId).map { it.name.lowercase() }.toSet()
         val existingCategories = categoryDao.getAllCategoriesSync().map { it.name.lowercase() }.toSet()
 
         val newAccounts = mutableSetOf<String>()
@@ -535,9 +539,10 @@ class CsvImportServiceImpl @Inject constructor(
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
         val (_, rows) = parseBudgetBakersRows(inputStream)
 
-        val existingAccountEntities = accountDao.getAllAccountsSync().associateBy { it.name.lowercase() }
+        // ARC-15: profile-scoped reads so the import doesn't dedupe against another profile's data.
+        val existingAccountEntities = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
         val existingCategoryEntities = categoryDao.getAllCategoriesSync()
-        val existingTxs = transactionDao.getAllTransactionsSync()
+        val existingTxs = transactionDao.getAllTransactionsSync(profileId)
         val existingKeys = existingTxs.map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
@@ -1016,10 +1021,12 @@ class CsvImportServiceImpl @Inject constructor(
         val rows = parseCashewRows(inputStream)
         if (rows.isEmpty()) return ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList())
 
-        val existingAccountsList = accountDao.getAllAccountsSync()
+        // ARC-15: scope existence checks to the active profile.
+        val profileId = settingsDataStore.currentProfileId.first()
+        val existingAccountsList = accountDao.getAllAccountsSync(profileId)
         val existingAccountsByName = existingAccountsList.associateBy { it.name.lowercase() }
         val existingCategories = categoryDao.getAllCategoriesSync()
-        val existingKeys = transactionDao.getAllTransactionsSync().map { tx ->
+        val existingKeys = transactionDao.getAllTransactionsSync(profileId).map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
 
@@ -1096,9 +1103,10 @@ class CsvImportServiceImpl @Inject constructor(
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
         val rows = parseCashewRows(inputStream)
 
-        val existingAccountEntities = accountDao.getAllAccountsSync().associateBy { it.name.lowercase() }
+        // ARC-15: scope reads to the active profile (profileId resolved above).
+        val existingAccountEntities = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
         val existingCategoryEntities = categoryDao.getAllCategoriesSync()
-        val existingKeys = transactionDao.getAllTransactionsSync().map { tx ->
+        val existingKeys = transactionDao.getAllTransactionsSync(profileId).map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
 
@@ -1417,9 +1425,10 @@ class CsvImportServiceImpl @Inject constructor(
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
         val lines = inputStream.bufferedReader().readLines().drop(1)
-        val existingAccounts = accountDao.getAllAccountsSync().associateBy { it.name.lowercase() }
+        // ARC-15: scope reads to the active profile (profileId resolved above).
+        val existingAccounts = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
         val existingCategories = categoryDao.getAllCategoriesSync().associateBy { it.name.lowercase() }
-        val existingTxs = transactionDao.getAllTransactionsSync()
+        val existingTxs = transactionDao.getAllTransactionsSync(profileId)
         val existingKeys = existingTxs.map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()

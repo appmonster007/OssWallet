@@ -16,6 +16,10 @@ interface LoanPaymentDao {
     @Query("SELECT * FROM loan_payments WHERE loanId = :loanId ORDER BY date DESC")
     suspend fun getPaymentsForLoanSync(loanId: Long): List<LoanPaymentEntity>
 
+    /**
+     * Cross-profile bulk read. ONLY for backup/export flows. Profile-scoped UI must
+     * use [getAllPaymentsByProfile] with a profileId.
+     */
     @Query("SELECT * FROM loan_payments ORDER BY date DESC")
     fun getAllPayments(): Flow<List<LoanPaymentEntity>>
 
@@ -30,6 +34,9 @@ interface LoanPaymentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(payment: LoanPaymentEntity): Long
 
+    /**
+     * Cross-profile bulk read. ONLY for backup/export flows.
+     */
     @Query("SELECT * FROM loan_payments")
     suspend fun getAllPaymentsSync(): List<LoanPaymentEntity>
 

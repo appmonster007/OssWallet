@@ -29,8 +29,10 @@ object WidgetDataLoader {
         val baseCurrency = settings.currency.first()
         val precision = settings.decimalPrecision.first()
 
-        // Sync global precision for widget process
-        CurrencyService.precision = precision
+        // ARC-05: atomic paired update for the widget process. Preserves the existing
+        // numbering system; widgets don't currently know the user's system preference,
+        // so we keep whatever the AtomicReference already holds.
+        CurrencyService.setFormatConfig(precision = precision, system = CurrencyService.activeSystem)
         TimelineService.precision = precision
 
         val exchangeRates = ep.db().currencyDao().getAllRates()

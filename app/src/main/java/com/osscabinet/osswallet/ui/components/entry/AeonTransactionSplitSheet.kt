@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -321,11 +322,12 @@ private fun SplitHeaderCard(
     ) {
         Column(modifier = Modifier.padding(dims.cardPadding)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
                 horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.Bottom,
             ) {
-                Column (
+                Column(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxHeight()
                 ) {
@@ -334,7 +336,6 @@ private fun SplitHeaderCard(
                         style = AppTextStyles.overlineLabel,
                         color = AppColors.contentSecondary,
                     )
-//                    Spacer(Modifier.height(4.dp))
                     Text(
                         text = CurrencyReprUi.formatCurrencyAnnotated(
                             amount = totalAmount,
@@ -342,27 +343,22 @@ private fun SplitHeaderCard(
                             spec = CurrencyDisplaySpec(useSemanticColor = false),
                         ),
                         style = AppTextStyles.transactionAmount.copy(
-                            fontSize = 24.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = AppColors.contentPrimary,
                         ),
                         maxLines = 1,
                     )
                 }
-                Column (
+                Column(
                     verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxHeight()
+                    modifier = Modifier.fillMaxHeight(),
+                    horizontalAlignment = Alignment.End
                 ) {
-//                    Text(
-//                        text = remainingLabel,
-//                        style = AppTextStyles.overlineLabel,
-//                        color = AppColors.contentSecondary,
-//                    )
                     SplitStatusPill(
                         status = status,
                         currency = currency
                     )
-//                    Spacer(Modifier.height(4.dp))
                     Text(
                         text = CurrencyReprUi.formatCurrencyAnnotated(
                             amount = remainingAmount,
@@ -599,11 +595,14 @@ private fun SplitRow(
         Spacer(modifier = Modifier.width(dims.spacingSm))
 
         Row(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).height(IntrinsicSize.Max),
             horizontalArrangement = Arrangement.spacedBy(dims.spacingXs),
         ) {
             // Middle column — title (12sp Bold) + note (11sp)
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Text(
                     text = category?.name ?: "Select category",
                     style = AppTextStyles.transactionTitle.copy(
@@ -643,7 +642,11 @@ private fun SplitRow(
             }
 
             // Amount column — sign + symbol + amount cohesive unit
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable(onClick = { /* Trigger calculator if needed */ })
@@ -678,6 +681,8 @@ private fun SplitRow(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.width(dims.spacingXs))
 
         IconButton(
             onClick = onRemove,

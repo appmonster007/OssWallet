@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -316,12 +317,25 @@ class DashboardViewModel @Inject constructor(
                         val cardDataFlow = MutableStateFlow(seedMap)
                         val completedCount = AtomicInteger(0)
 
-                        // Single collector emits consolidated state — coalesces rapid concurrent card completions.
+                        // ARC-76: sample card emissions to coalesce rapid completions during
+                        // cold-load. Without sampling, 10–15 cards finishing within ~50 ms produce
+                        // 10–15 full-screen state emissions, each forcing a LazyColumn recomposition
+                        // that fights the user's fling on the dashboard.
+                        //
+                        // sample() drops trailing emissions, so we explicitly send the final state
+                        // when all cards have completed — guaranteed by the AtomicInteger gate below.
+                        //
+                        // ARC-39: trySend() instead of send() — if the parent channelFlow is
+                        // cancelled (currency/profile switch) before this collector wakes from
+                        // sample's debounce, send() would throw ClosedSendChannelException.
+                        // trySend returns a failed ChannelResult that we ignore.
                         launch {
-                            cardDataFlow.collect { cardData ->
-                                val isComputing = completedCount.get() < configs.size
-                                send(buildSuccess(cardData, isComputing))
-                            }
+                            cardDataFlow
+                                .sample(80)
+                                .collect { cardData ->
+                                    val isComputing = completedCount.get() < configs.size
+                                    trySend(buildSuccess(cardData, isComputing))
+                                }
                         }
 
                         configs.forEach { config ->
@@ -337,6 +351,11 @@ class DashboardViewModel @Inject constructor(
                                 if (completedCount.incrementAndGet() == configs.size) {
                                     cardRenderCache[profileId, baseCurrency] = cardDataFlow.value
                                         .filterValues { it !is CardRenderData.Error }
+                                    // ARC-76: guaranteed terminal emission — the sample()-d collector
+                                    // above may have dropped the last completer's update.
+                                    // ARC-39: trySend so a late completer arriving after channel
+                                    // closure (parent cancellation) is a no-op, not an exception.
+                                    trySend(buildSuccess(cardDataFlow.value, isCardsComputing = false))
                                 }
                             }
                         }

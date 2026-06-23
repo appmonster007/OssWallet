@@ -56,7 +56,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -317,25 +316,22 @@ class DashboardViewModel @Inject constructor(
                         val cardDataFlow = MutableStateFlow(seedMap)
                         val completedCount = AtomicInteger(0)
 
-                        // ARC-76: sample card emissions to coalesce rapid completions during
-                        // cold-load. Without sampling, 10–15 cards finishing within ~50 ms produce
-                        // 10–15 full-screen state emissions, each forcing a LazyColumn recomposition
-                        // that fights the user's fling on the dashboard.
+                        // Show every cardDataFlow update the instant it lands. Per-card slicing
+                        // in AeonCardList (derivedStateOf { cardDataMapState.value[cardId] })
+                        // ensures Compose recomposes only the card whose slice changed, so the
+                        // 10–15 emissions during cold-load don't cascade across all card composables.
                         //
-                        // sample() drops trailing emissions, so we explicitly send the final state
-                        // when all cards have completed — guaranteed by the AtomicInteger gate below.
+                        // ARC-39: trySend (not send) so a late completer arriving after the parent
+                        // channelFlow is cancelled (currency/profile switch) is a benign no-op
+                        // instead of ClosedSendChannelException.
                         //
-                        // ARC-39: trySend() instead of send() — if the parent channelFlow is
-                        // cancelled (currency/profile switch) before this collector wakes from
-                        // sample's debounce, send() would throw ClosedSendChannelException.
-                        // trySend returns a failed ChannelResult that we ignore.
+                        // No sample()/debounce here — this is a finance dashboard; the moment a
+                        // computed value exists the user should be able to see and act on it.
                         launch {
-                            cardDataFlow
-                                .sample(80)
-                                .collect { cardData ->
-                                    val isComputing = completedCount.get() < configs.size
-                                    trySend(buildSuccess(cardData, isComputing))
-                                }
+                            cardDataFlow.collect { cardData ->
+                                val isComputing = completedCount.get() < configs.size
+                                trySend(buildSuccess(cardData, isComputing))
+                            }
                         }
 
                         configs.forEach { config ->
@@ -351,11 +347,8 @@ class DashboardViewModel @Inject constructor(
                                 if (completedCount.incrementAndGet() == configs.size) {
                                     cardRenderCache[profileId, baseCurrency] = cardDataFlow.value
                                         .filterValues { it !is CardRenderData.Error }
-                                    // ARC-76: guaranteed terminal emission — the sample()-d collector
-                                    // above may have dropped the last completer's update.
-                                    // ARC-39: trySend so a late completer arriving after channel
-                                    // closure (parent cancellation) is a no-op, not an exception.
-                                    trySend(buildSuccess(cardDataFlow.value, isCardsComputing = false))
+                                    // No terminal trySend needed — the collector above sees every
+                                    // cardDataFlow update including the last completer's.
                                 }
                             }
                         }

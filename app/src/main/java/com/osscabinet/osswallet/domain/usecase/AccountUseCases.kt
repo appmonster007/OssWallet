@@ -14,8 +14,8 @@ class AccountUseCases(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository
 ) {
-    suspend fun deleteAccount(accountId: String) {
-        accountRepository.deleteAccount(accountId)
+    suspend fun deleteAccount(accountId: String, profileId: Int) {
+        accountRepository.deleteAccount(accountId, profileId)
     }
 
     suspend fun createAccountWithInitialBalances(
@@ -72,7 +72,7 @@ class AccountUseCases(
         val existing = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
         when {
             amount.compareTo(BigDecimal.ZERO) == 0 && existing != null ->
-                transactionRepository.deleteTransaction(existing.id)
+                transactionRepository.deleteTransaction(existing.id, profileId)
             amount.compareTo(BigDecimal.ZERO) != 0 && existing != null -> {
                 val isInflow = amount.signum() >= 0
                 transactionRepository.updateTransaction(

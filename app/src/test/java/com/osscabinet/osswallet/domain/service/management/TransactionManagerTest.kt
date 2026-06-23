@@ -148,7 +148,7 @@ class TransactionManagerTest {
         )
 
         coEvery { transactionUseCases.getLinkedTransactionIds(10L) } returns flowOf(listOf(11L))
-        coEvery { transactionUseCases.getTransactionById(11L) } returns Transaction(
+        coEvery { transactionUseCases.getTransactionById(11L, any()) } returns Transaction(
             id = 11L,
             name = "Old Target",
             amount = BigDecimal("50.00"),

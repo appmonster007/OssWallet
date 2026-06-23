@@ -9,6 +9,6 @@ interface AccountRepository {
     suspend fun getAllAccountsSync(profileId: Int): List<Account>
     suspend fun insertAccount(account: Account, profileId: Int)
     suspend fun updateAccount(account: Account, profileId: Int)
-    suspend fun deleteAccount(accountId: String)
+    suspend fun deleteAccount(accountId: String, profileId: Int)
     suspend fun updateAccounts(accounts: List<Account>, profileId: Int)
 }

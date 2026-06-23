@@ -362,10 +362,12 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
             is TemplateEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
-                    val transactions = event.ids.mapNotNull { id ->
-                        transactionUseCases.getTransactionById(id)
+                    withProfile { profileId ->
+                        val transactions = event.ids.mapNotNull { id ->
+                            transactionUseCases.getTransactionById(id, profileId)
+                        }
+                        _state.update { it.copy(displayLinkedTxs = transactions) }
                     }
-                    _state.update { it.copy(displayLinkedTxs = transactions) }
                 }
             }
 

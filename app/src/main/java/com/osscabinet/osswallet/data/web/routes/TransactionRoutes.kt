@@ -254,7 +254,7 @@ fun Route.transactionRoutes(
                     )
                 }
 
-                val created = transactionUseCases.getTransactionById(newId)
+                val created = transactionUseCases.getTransactionById(newId, profileId)
                 val categoryMap = allCategories.associateBy { it.id }
                 val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
@@ -277,7 +277,7 @@ fun Route.transactionRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val tx = transactionRepository.getTransactionById(id)
+                val tx = transactionRepository.getTransactionById(id, profileId)
                     ?: return@get call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Transaction not found")
@@ -307,7 +307,7 @@ fun Route.transactionRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val old = transactionUseCases.getTransactionById(id)
+                val old = transactionUseCases.getTransactionById(id, profileId)
                     ?: return@put call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Transaction not found")
@@ -389,7 +389,8 @@ fun Route.transactionRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                transactionRepository.deleteTransaction(id)
+                val profileId = settingsRepository.currentProfileId.first()
+                transactionRepository.deleteTransaction(id, profileId)
                 call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
             } catch (e: Exception) {
                 call.respond(
@@ -411,7 +412,7 @@ fun Route.transactionRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val original = transactionRepository.getTransactionById(id)
+                val original = transactionRepository.getTransactionById(id, profileId)
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Transaction not found")

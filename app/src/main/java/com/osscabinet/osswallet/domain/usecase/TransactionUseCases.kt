@@ -30,12 +30,12 @@ class TransactionUseCases(
         return repository.insertTransaction(transaction, profileId)
     }
 
-    suspend fun deleteTransaction(id: Long) {
-        repository.deleteTransaction(id)
+    suspend fun deleteTransaction(id: Long, profileId: Int) {
+        repository.deleteTransaction(id, profileId)
     }
 
-    suspend fun getTransactionById(id: Long): Transaction? {
-        return repository.getTransactionById(id)
+    suspend fun getTransactionById(id: Long, profileId: Int): Transaction? {
+        return repository.getTransactionById(id, profileId)
     }
 
     suspend fun updateTransaction(

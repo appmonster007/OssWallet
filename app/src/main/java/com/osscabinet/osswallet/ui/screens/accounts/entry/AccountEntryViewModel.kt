@@ -411,7 +411,9 @@ class AccountEntryViewModel @Inject constructor(
     fun deleteAccount(onSuccess: () -> Unit) {
         val id = _state.value.accountId ?: return
         viewModelScope.launch {
-            accountUseCases.deleteAccount(id)
+            withProfile { profileId ->
+                accountUseCases.deleteAccount(id, profileId)
+            }
             onSuccess()
         }
     }

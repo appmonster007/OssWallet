@@ -232,7 +232,8 @@ fun Route.accountRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                accountRepository.deleteAccount(id)
+                val profileId = settingsRepository.currentProfileId.first()
+                accountRepository.deleteAccount(id, profileId)
                 call.respond(ApiResponse(success = true, data = mapOf("deleted" to id)))
             } catch (e: Exception) {
                 call.respond(

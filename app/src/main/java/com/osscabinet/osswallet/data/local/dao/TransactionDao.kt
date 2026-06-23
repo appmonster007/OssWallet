@@ -52,8 +52,8 @@ abstract class TransactionDao {
         return _insertTransaction(transaction)
     }
 
-    @Query("SELECT * FROM transactions WHERE id = :id")
-    abstract suspend fun getTransactionById(id: Long): TransactionEntity?
+    @Query("SELECT * FROM transactions WHERE id = :id AND profileId = :profileId")
+    abstract suspend fun getTransactionById(id: Long, profileId: Int): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE accountId = :accountId AND currency = :currency AND categoryId IN (:categoryIds) AND profileId = :profileId LIMIT 1")
     abstract suspend fun getInitialBalanceTransaction(

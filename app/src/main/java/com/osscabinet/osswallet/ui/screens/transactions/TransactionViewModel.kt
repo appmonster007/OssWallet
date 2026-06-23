@@ -457,7 +457,9 @@ class TransactionViewModel @Inject constructor(
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
-            transactionUseCases.deleteTransaction(id)
+            withProfile { profileId ->
+                transactionUseCases.deleteTransaction(id, profileId)
+            }
         }
     }
 
@@ -553,7 +555,8 @@ class TransactionViewModel @Inject constructor(
      */
     fun setCloneTransactionId(transactionId: Long) {
         viewModelScope.launch {
-            val transaction = transactionUseCases.getTransactionById(transactionId)
+            val profileId = settingsRepository.currentProfileId.first()
+            val transaction = transactionUseCases.getTransactionById(transactionId, profileId)
             if (transaction != null) {
                 var prefill = TransactionPrefillDTO.fromTransaction(
                     transaction,
@@ -643,7 +646,8 @@ class TransactionViewModel @Inject constructor(
      */
     fun setSplitTransactionId(transactionId: Long) {
         viewModelScope.launch {
-            val transaction = transactionUseCases.getTransactionById(transactionId)
+            val profileId = settingsRepository.currentProfileId.first()
+            val transaction = transactionUseCases.getTransactionById(transactionId, profileId)
             if (transaction != null) {
                 _prefillDto.value = TransactionPrefillDTO.fromTransaction(
                     transaction,

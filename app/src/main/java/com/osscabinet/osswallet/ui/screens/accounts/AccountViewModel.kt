@@ -52,7 +52,9 @@ class AccountViewModel @Inject constructor(
 
     fun deleteAccount(accountId: String) {
         viewModelScope.launch {
-            accountRepository.deleteAccount(accountId)
+            withProfile { profileId ->
+                accountRepository.deleteAccount(accountId, profileId)
+            }
         }
     }
 

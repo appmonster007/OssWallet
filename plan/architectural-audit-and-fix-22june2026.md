@@ -380,6 +380,7 @@ Many individual issues are symptoms of a small number of root architectural deci
 - **Verify by:** delete one card's entry from the registry; compile error (currently: runtime crash).
 
 ## ARC-32 · `CardCallbacks` / `CardWithCallbacks` / `UnifiedCardRenderer` triple duplication [P2 · medium]
+> **Curator note (2026-06-23): DEFERRED to a focused session.** Real refactor — needs signature changes on every card composable (NetWorthCard, CashFlowCard, etc.), inline lambda fields into 15 CardWithCallbacks subtypes, rewrite CardUiBridge's construction site, and re-validate UnifiedCardRenderer's dispatch. ~3-4 hours of focused work. ROI is purely DX (one fewer file to edit per new card); no user-visible behavior change. Better as its own PR than mixed into broader Sprint B work where it could mask regressions. Pre-requisite: a Konsist parity test (ARC-31-alt) to catch missing branches before/after.
 - **File:** `ui/components/cards/CardCallbacks.kt`, `CardWithCallbacks.kt`, `UnifiedCardRenderer.kt`
 - **RCA:** Three sealed hierarchies enumerating the same 15 card variants. Changing one signature requires three edits.
 - **Fix:** Collapse: `CardWithCallbacks` already pairs config + render data + callbacks. Make it the only sealed hierarchy. `UnifiedCardRenderer` dispatches on `cardWithCallbacks`. Drop `CardCallbacks` as a separate type — its variants are accessible through their containing `CardWithCallbacks`.
@@ -754,16 +755,16 @@ Goal: eliminate silent-wrong-value and cross-profile leak paths; land the highes
 | 8 | **ARC-74 + ARC-77 — dashboard scroll jank pair** (drop double animateContentSize, remember effectiveCard). ARC-76 withdrawn — finance data emissions must not be debounced. | trivial / easy |
 | 9 | **ARC-75 — move pie/treemap mapping into the computer** | easy |
 
-## Sprint B — Architectural hygiene (services + cards)
+## Sprint B — Architectural hygiene (services + cards) — landed except ARC-32 / ARC-30
 Goal: undo the singleton lock-in; collapse the card plugin duplication.
 
-| # | Issue | Effort |
-|---|---|---|
-| 8 | ARC-05 + ARC-43 — convert `CurrencyService` and one other service to injected classes (pilot) | hard |
-| 9 | ARC-32 — collapse CardCallbacks duplication | medium |
-| 10 | ARC-33 — generic `updateCardConfig<C>` | medium |
-| 11 | ARC-30 — split CardInput into typed subsets | hard |
-| 12 | ARC-41 — surface compute errors instead of `null` | easy |
+| # | Issue | Effort | Status |
+|---|---|---|---|
+| 8 | ARC-05 — atomic `CurrencyService.FormatConfig` setter (rest of ARC-43 dropped per curator note) | easy | done |
+| 9 | ARC-32 — collapse CardCallbacks duplication | medium | **deferred** (focused-session refactor; see entry note) |
+| 10 | ARC-33 — generic `updateCardConfig<C>` | easy | done |
+| 11 | ARC-30 — split CardInput into typed subsets | hard | **deferred** per curator note |
+| 12 | ARC-41 — surface compute errors instead of `null` | easy | done |
 
 ## Sprint C — Data integrity & developer experience
 | # | Issue | Effort |

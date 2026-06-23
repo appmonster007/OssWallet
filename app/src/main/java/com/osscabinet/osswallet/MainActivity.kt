@@ -68,9 +68,12 @@ class MainActivity : FragmentActivity() {
             val uiDensity = com.osscabinet.ossWallet.domain.model.settings.UiDensity.fromName(uiDensityName)
 
             LaunchedEffect(precision, numberingSystem) {
-                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision = precision
-                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.activeSystem =
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.FormattingSystem.fromString(numberingSystem)
+                // ARC-05: atomic paired update — readers can never observe a half-applied
+                // (new precision, old system) combination.
+                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.setFormatConfig(
+                    precision = precision,
+                    system = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.FormattingSystem.fromString(numberingSystem)
+                )
                 com.osscabinet.ossWallet.domain.service.timeline.TimelineService.precision = precision
             }
 

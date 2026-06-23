@@ -19,6 +19,36 @@ interface CardUpdateHandler {
     val cardScreenContext: ScreenContext
 
     /**
+     * ARC-33: generic, type-safe update for a single card type's config. Use this
+     * when the change applies to ONE specific card type (e.g., a setting that only
+     * NetWorthCardConfig has). For shared fields that exist on many card types
+     * (perspective, excludeInternalTransfers, etc.), prefer the dedicated helper
+     * methods below — they apply the change to every card type that supports it
+     * in a single call.
+     *
+     * Example:
+     * ```kotlin
+     * updateCardConfig<NetWorthCardConfig>(cardId) { it.copy(showComparison = true) }
+     * ```
+     *
+     * The cast is checked at runtime; a mismatched [C] vs the persisted config type
+     * for [cardId] leaves the config unchanged (the transform is skipped) instead of
+     * crashing the UI.
+     */
+    fun <C : CardConfig> updateCardConfig(
+        cardId: String,
+        configClass: Class<C>,
+        transform: (C) -> C
+    ) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                @Suppress("UNCHECKED_CAST")
+                if (configClass.isInstance(config)) transform(config as C) else config
+            }
+        }
+    }
+
+    /**
      * Updates the accounting perspective for any card that supports it.
      */
     fun updateCardPerspective(cardId: String, perspective: AccountingPerspective) {
@@ -324,3 +354,19 @@ interface CardUpdateHandler {
         }
     }
 }
+
+/**
+ * ARC-33: reified-type ergonomic wrapper for [CardUpdateHandler.updateCardConfig].
+ *
+ * ```kotlin
+ * updateCardConfig<NetWorthCardConfig>(cardId) { it.copy(showComparison = true) }
+ * ```
+ *
+ * Inline + reified means `C::class.java` is resolved at the call site, so no Class<T>
+ * parameter is required. Defined as a top-level extension to keep the interface
+ * non-inline (interfaces can't have inline members).
+ */
+inline fun <reified C : CardConfig> CardUpdateHandler.updateCardConfig(
+    cardId: String,
+    noinline transform: (C) -> C
+) = updateCardConfig(cardId, C::class.java, transform)

@@ -6,17 +6,40 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Currency
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Domain11 service for currency conversion and core business logic.
+ * Domain service for currency conversion and core business logic.
+ *
+ * ARC-05: the formatting configuration (precision + numbering system) is process-wide
+ * mutable state. It must be initialized at app entry by [MainActivity] and at widget
+ * entry by `WidgetDataLoader` before any reader executes; the [AtomicReference] holder
+ * makes the (precision, system) pair update atomically and visible across threads, so
+ * concurrent reads can't observe a precision from one config paired with a system from
+ * another mid-write. The reads via the `precision` / `activeSystem` properties continue
+ * to work for all existing callers.
  */
 object CurrencyService {
 
+    data class FormatConfig(val precision: Int, val system: FormattingSystem)
+
+    private val formatConfig: AtomicReference<FormatConfig> =
+        AtomicReference(FormatConfig(precision = 2, system = FormattingSystem.WESTERN))
+
     /**
-     * Global settings used for formatting and calculations.
+     * Atomically update both fields together. Use this instead of writing
+     * [precision] and [activeSystem] separately to avoid torn reads where a caller
+     * sees the new precision paired with the old system (or vice versa).
      */
-    var precision: Int = 2
-    var activeSystem: FormattingSystem = FormattingSystem.WESTERN
+    fun setFormatConfig(precision: Int, system: FormattingSystem) {
+        formatConfig.set(FormatConfig(precision, system))
+    }
+
+    val precision: Int
+        get() = formatConfig.get().precision
+
+    val activeSystem: FormattingSystem
+        get() = formatConfig.get().system
 
     enum class SymbolPosition { LEFT, RIGHT }
 

@@ -45,6 +45,22 @@
 -keep class qrcode.** { *; }
 -dontwarn qrcode.**
 
+# ---- Room (ARC-64) ----
+# Room generates DAO impls and reflectively maps columns to entity fields by name.
+# Without these, R8 obfuscation in release builds renames @ColumnInfo-bound fields,
+# causing runtime "no such column" SQLiteException on the first DB op.
+-keep @androidx.room.Entity class * { *; }
+-keepclassmembers @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao class * { *; }
+-keep class androidx.room.** { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+# Embedded / TypeConverter classes referenced from entities
+-keepclasseswithmembers class * { @androidx.room.TypeConverter <methods>; }
+-keep @androidx.room.DatabaseView class * { *; }
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    public abstract <methods>;
+}
+
 # ---- Stack trace line numbers ----
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
+import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
@@ -19,7 +20,11 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,6 +48,9 @@ class OssWalletApp : Application() {
 
     @Inject
     lateinit var backupScheduler: BackupScheduler
+
+    @Inject
+    lateinit var cardRenderCache: CardRenderCache
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -70,6 +78,21 @@ class OssWalletApp : Application() {
             val config = settingsRepository.autoBackupConfig.first()
             backupScheduler.schedule(config)
         }
+
+        // ARC-19: clear process-wide caches on profile change so the newly-active profile
+        // doesn't see stale aggregations or card data computed for the previous profile.
+        // drop(1) skips the initial emission so we don't no-op-clear on app start.
+        settingsRepository.currentProfileId
+            .distinctUntilChanged()
+            .drop(1)
+            .onEach { newProfileId ->
+                queryCache.clear()
+                // Belt-and-suspenders: CardRenderCache keys already include (profileId, currency),
+                // so a profile switch naturally misses the cache. We still clear the previous
+                // profile's slots to keep the cache from growing unboundedly across many switches.
+                cardRenderCache.invalidateProfile(newProfileId)
+            }
+            .launchIn(applicationScope)
 
         // We don't auto-start the WebServerService here anymore to prevent the app 
         // from staying alive in the background unnecessarily. 

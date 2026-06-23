@@ -27,6 +27,11 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE profileId = :profileId ORDER BY displayOrder ASC")
     suspend fun getAllAccountsSync(profileId: Int): List<AccountEntity>
 
+    /**
+     * Cross-profile bulk read. ONLY for backup/export flows that intentionally need
+     * every profile's data. Profile-scoped UI must use the [getAllAccountsSync] overload
+     * with a profileId.
+     */
     @Query("SELECT * FROM accounts")
     suspend fun getAllAccountsSync(): List<AccountEntity>
 

@@ -27,7 +27,8 @@ data class AccountToMap(
     val name: String,
     val suggestedExistingId: String?,
     val suggestedExistingName: String?,
-    val rowCount: Int = 0
+    val rowCount: Int = 0,
+    val hasDetectedCurrency: Boolean = false
 )
 
 data class ImportPreview(
@@ -49,7 +50,8 @@ data class EntityMapping(
     val entityType: EntityType,
     val parentCategoryId: Long? = null,    // existing DB parent ID
     val parentCategoryName: String? = null, // new-root parent (resolved at import time via categoryMap)
-    val isExcluded: Boolean = false
+    val isExcluded: Boolean = false,
+    val currencyCode: String? = null      // for new account creation
 ) {
     enum class EntityType { ACCOUNT, CATEGORY }
 }

@@ -342,8 +342,10 @@ class CsvImportServiceImpl @Inject constructor(
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
 
-        // Collect all unique account names and their row counts
+        // Collect all unique account names and their row counts/detected currencies
         val accountRowCounts = mutableMapOf<String, Int>()
+        val accountDetectedCurrencies = mutableMapOf<String, MutableSet<String>>()
+
         // key = category name (after mapping), to deduplicate
         val newCategoryMap = mutableMapOf<String, CategoryToMap>()
         val duplicates = mutableListOf<DuplicateGroup>()
@@ -358,12 +360,16 @@ class CsvImportServiceImpl @Inject constructor(
                 val accountName = row["account"] ?: ""
                 val dateStr = row["date"] ?: ""
                 val note = row["note"] ?: ""
+                val currency = row["currency"] ?: ""
                 val baseAmount = resolveBaseAmount(row)
                 val timestamp = parseDate(dateStr)
                 val isTransfer = isTransferRow(row)
 
                 if (accountName.isNotBlank()) {
                     accountRowCounts[accountName] = (accountRowCounts[accountName] ?: 0) + 1
+                    if (currency.isNotBlank()) {
+                        accountDetectedCurrencies.getOrPut(accountName) { mutableSetOf() }.add(currency.uppercase())
+                    }
                 }
 
                 // Unresolved category tracking
@@ -418,7 +424,8 @@ class CsvImportServiceImpl @Inject constructor(
                 name = name,
                 suggestedExistingId = match?.id,
                 suggestedExistingName = match?.name,
-                rowCount = count
+                rowCount = count,
+                hasDetectedCurrency = accountDetectedCurrencies[name]?.isNotEmpty() == true
             )
         }.sortedBy { it.name }
 
@@ -495,7 +502,14 @@ class CsvImportServiceImpl @Inject constructor(
             totalRows = lines.size,
             validRows = validRows,
             duplicates = duplicates,
-            allCsvAccounts = newAccounts.map { name -> AccountToMap(name = name, suggestedExistingId = null, suggestedExistingName = null) },
+            allCsvAccounts = newAccounts.map { name ->
+                AccountToMap(
+                    name = name,
+                    suggestedExistingId = null,
+                    suggestedExistingName = null,
+                    hasDetectedCurrency = session.headers.any { it.contains("currency", ignoreCase = true) }
+                )
+            },
             newCategories = newCategories.map { CategoryToMap(name = it) },
             parseErrors = parseErrors,
             unpairedTransferRows = 0
@@ -585,15 +599,16 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId == null) {
                             val conflictExists = existingAccountEntities.containsKey(em.unknownName.lowercase())
                             val finalName = if (conflictExists) "${em.unknownName}-${randomAlphanumSuffix()}" else em.unknownName
+                            val currency = em.currencyCode ?: profileBaseCurrency
                             accountDao.upsertAccount(
                                 AccountEntity(
                                     id = id,
                                     name = finalName,
-                                    currencyCode = profileBaseCurrency,
+                                    currencyCode = currency,
                                     structureType = "regular",
                                     colorHex = BRAND_ACCOUNT_COLORS.random(),
                                     icon = "wallet",
-                                    allowedCurrencies = profileBaseCurrency,
+                                    allowedCurrencies = currency,
                                     profileId = profileId,
                                     isArchived = false,
                                     displayOrder = 999
@@ -1114,6 +1129,14 @@ class CsvImportServiceImpl @Inject constructor(
         val categoryMap = existingCategoryEntities.associate { it.name.lowercase() to it.id }.toMutableMap()
         val existingTagsList = tagDao.getAllTagsSync().toMutableList()
 
+        // Build account currency map to ensure transactions use the correct currency
+        val accountCurrencyMap = existingAccountEntities.mapValues { it.value.currencyCode }.toMutableMap()
+        entityMappings.filter { it.entityType == EntityMapping.EntityType.ACCOUNT }.forEach { em ->
+            if (em.currencyCode != null) {
+                accountCurrencyMap[em.unknownName.lowercase()] = em.currencyCode
+            }
+        }
+
         var imported = 0
         var skipped = 0
         var transfersRerouted = 0
@@ -1142,11 +1165,12 @@ class CsvImportServiceImpl @Inject constructor(
                         if (em.existingId == null) {
                             val conflictExists = existingAccountEntities.containsKey(em.unknownName.lowercase())
                             val finalName = if (conflictExists) "${em.unknownName}-${randomAlphanumSuffix()}" else em.unknownName
+                            val currency = em.currencyCode ?: profileBaseCurrency
                             accountDao.upsertAccount(AccountEntity(
                                 id = id, name = finalName,
-                                currencyCode = profileBaseCurrency, structureType = "regular",
+                                currencyCode = currency, structureType = "regular",
                                 colorHex = BRAND_ACCOUNT_COLORS.random(), icon = "wallet",
-                                allowedCurrencies = profileBaseCurrency,
+                                allowedCurrencies = currency,
                                 profileId = profileId, isArchived = false, displayOrder = 999
                             ))
                         }
@@ -1209,7 +1233,7 @@ class CsvImportServiceImpl @Inject constructor(
                         timestamp = parseDate(row["date"] ?: ""),
                         note = cashewCombinedNote(row),
                         baseAmount = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
-                        currency = row["currency"] ?: profileBaseCurrency
+                        currency = row["currency"] ?: accountCurrencyMap[row["account"]?.lowercase()] ?: profileBaseCurrency
                     )
                 } catch (e: Exception) {
                     errors.add(ParseError(idx, e.message ?: "Transfer parse error"))
@@ -1383,7 +1407,7 @@ class CsvImportServiceImpl @Inject constructor(
                         name = txName,
                         amount = finalAmount,
                         timestamp = timestamp,
-                        currency = row["currency"] ?: profileBaseCurrency,
+                        currency = row["currency"] ?: accountCurrencyMap[accountName.lowercase()] ?: profileBaseCurrency,
                         transactionType = txType,
                         accountId = accountId,
                         categoryId = categoryId,
@@ -1436,6 +1460,14 @@ class CsvImportServiceImpl @Inject constructor(
         val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
         val categoryMap = existingCategories.mapValues { it.value.id }.toMutableMap()
 
+        // Build account currency map to ensure transactions use the correct currency
+        val accountCurrencyMap = existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
+        entityMappings.filter { it.entityType == EntityMapping.EntityType.ACCOUNT }.forEach { em ->
+            if (em.currencyCode != null) {
+                accountCurrencyMap[em.unknownName.lowercase()] = em.currencyCode
+            }
+        }
+
         var imported = 0
         var skipped = 0
         val errors = mutableListOf<ParseError>()
@@ -1455,12 +1487,13 @@ class CsvImportServiceImpl @Inject constructor(
                     EntityMapping.EntityType.ACCOUNT -> {
                         val id = em.existingId ?: UUID.randomUUID().toString()
                         if (em.existingId == null) {
+                            val currency = em.currencyCode ?: profileBaseCurrency
                             accountDao.upsertAccount(
                                 AccountEntity(
                                     id = id, name = em.unknownName,
-                                    currencyCode = profileBaseCurrency, structureType = "regular",
+                                    currencyCode = currency, structureType = "regular",
                                     colorHex = BRAND_ACCOUNT_COLORS.random(), icon = "wallet",
-                                    allowedCurrencies = profileBaseCurrency,
+                                    allowedCurrencies = currency,
                                     profileId = profileId, isArchived = false, displayOrder = 999
                                 )
                             )
@@ -1563,7 +1596,7 @@ class CsvImportServiceImpl @Inject constructor(
                             name = categoryName.ifBlank { note.take(30) },
                             amount = finalAmount,
                             timestamp = timestamp,
-                            currency = profileBaseCurrency,
+                            currency = accountCurrencyMap[accountName.lowercase()] ?: profileBaseCurrency,
                             transactionType = txType,
                             accountId = accountId,
                             categoryId = categoryId,

@@ -91,6 +91,7 @@ fun AeonTransactionSplitSheet(
     onRemoveSplit: (Int) -> Unit,
     onUpdateSplit: (Int, String?, String?, Long?) -> Unit,
     onShowCategorySheet: (Int) -> Unit,
+    onShowCalculator: (Int) -> Unit,
     onToggleSplitMode: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     isIncome: Boolean = false,
@@ -111,6 +112,7 @@ fun AeonTransactionSplitSheet(
             onRemoveSplit = onRemoveSplit,
             onUpdateSplit = onUpdateSplit,
             onShowCategorySheet = onShowCategorySheet,
+            onShowCalculator = onShowCalculator,
             onToggleSplitMode = onToggleSplitMode,
             onDismiss = onDismiss,
         )
@@ -127,6 +129,7 @@ fun AeonTransactionSplitContent(
     onRemoveSplit: (Int) -> Unit,
     onUpdateSplit: (Int, String?, String?, Long?) -> Unit,
     onShowCategorySheet: (Int) -> Unit,
+    onShowCalculator: (Int) -> Unit,
     onToggleSplitMode: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     isIncome: Boolean = false,
@@ -207,6 +210,7 @@ fun AeonTransactionSplitContent(
                             onRemove = { onRemoveSplit(index) },
                             onUpdate = { a, n, c -> onUpdateSplit(index, a, n, c) },
                             onShowCategory = { onShowCategorySheet(index) },
+                            onShowCalculator = { onShowCalculator(index) },
                         )
                     }
                     HorizontalDivider(
@@ -532,6 +536,7 @@ private fun SplitRow(
     onRemove: () -> Unit,
     onUpdate: (String?, String?, Long?) -> Unit,
     onShowCategory: () -> Unit,
+    onShowCalculator: () -> Unit,
 ) {
     val dims = AeonTheme.dimensions
     val uiScale = AeonTheme.uiScale
@@ -634,7 +639,7 @@ private fun SplitRow(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable(onClick = { /* Trigger calculator if needed */ })
+                    modifier = Modifier.clickable(onClick = onShowCalculator)
                 ) {
                     val amountDisplayText = buildString {
                         append(sign)
@@ -707,6 +712,7 @@ fun AeonTransactionSplitSheetPreview() {
                 onRemoveSplit = {},
                 onUpdateSplit = { _, _, _, _ -> },
                 onShowCategorySheet = {},
+                onShowCalculator = {},
                 onToggleSplitMode = {},
                 onDismiss = {},
             )
@@ -728,6 +734,7 @@ fun AeonTransactionSplitSheetEmptyPreview() {
                 onRemoveSplit = {},
                 onUpdateSplit = { _, _, _, _ -> },
                 onShowCategorySheet = {},
+                onShowCalculator = {},
                 onToggleSplitMode = {},
                 onDismiss = {},
             )
@@ -755,6 +762,7 @@ fun AeonTransactionSplitSheetOverAllocatedPreview() {
                 onRemoveSplit = {},
                 onUpdateSplit = { _, _, _, _ -> },
                 onShowCategorySheet = {},
+                onShowCalculator = {},
                 onToggleSplitMode = {},
                 onDismiss = {},
             )

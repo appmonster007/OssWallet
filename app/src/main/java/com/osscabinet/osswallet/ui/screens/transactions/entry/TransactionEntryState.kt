@@ -70,6 +70,7 @@ data class TransactionEntryState(
     val showLocationSheet: Boolean = false,
     val showSplitSheet: Boolean = false,
     val showSplitCategorySheet: Int? = null,
+    val showSplitNumpad: Int? = null,
     val isNumpadVisible: Boolean = false,
     val showCurrencySheet: Boolean = false,
     val showTargetCurrencySheet: Boolean = false,

@@ -693,6 +693,12 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
+            is TransactionEntryEvent.ShowSplitNumpad -> update {
+                it.copy(
+                    showSplitNumpad = event.splitIndex
+                )
+            }
+
             is TransactionEntryEvent.ShowNumpad -> update {
                 it.copy(
                     isNumpadVisible = event.show,

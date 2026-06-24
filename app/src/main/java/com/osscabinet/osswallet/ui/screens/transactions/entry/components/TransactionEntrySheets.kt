@@ -219,6 +219,13 @@ fun TransactionEntrySheets(
                     )
                 )
             },
+            onShowCalculator = { index ->
+                onEvent(
+                    TransactionEntryEvent.ShowSplitNumpad(
+                        index
+                    )
+                )
+            },
             onToggleSplitMode = { onEvent(TransactionEntryEvent.ToggleSplitMode(it)) },
             onDismiss = { onEvent(TransactionEntryEvent.ShowSplitSheet(false)) }
         )
@@ -237,6 +244,17 @@ fun TransactionEntrySheets(
                 }
             },
             onDismiss = { onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null)) }
+        )
+    }
+
+    // Split Amount Calculator
+    state.showSplitNumpad?.let { index ->
+        AeonCalculatorSheet(
+            currentAmount = state.splits.getOrNull(index)?.amount ?: "",
+            onAmountChanged = { amount ->
+                onEvent(TransactionEntryEvent.UpdateSplit(index, amount = amount))
+            },
+            onDismiss = { onEvent(TransactionEntryEvent.ShowSplitNumpad(null)) }
         )
     }
 

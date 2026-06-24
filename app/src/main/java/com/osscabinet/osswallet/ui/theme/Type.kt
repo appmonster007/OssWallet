@@ -79,7 +79,7 @@ enum class AppFont(
     );
 
     companion object {
-        val DEFAULT = EDITORIAL_INSTRUMENT
+        val DEFAULT = MANROPE
         fun fromName(name: String): AppFont = entries.find { it.name == name } ?: DEFAULT
     }
 }

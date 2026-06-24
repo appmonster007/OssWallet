@@ -363,16 +363,7 @@ class TransactionEntryViewModel @Inject constructor(
                 prefillDto = prefill,
                 isSplitMode = prefill.isSplitMode,
                 showSplitSheet = prefill.isSplitMode,
-                splits = if (prefill.isSplitMode) {
-                    listOf(
-                        TransactionSplit(
-                            categoryId = prefill.categoryId,
-                            amount = prefill.amount,
-                            note = prefill.note
-                        ),
-                        TransactionSplit(categoryId = null, amount = "", note = "")
-                    )
-                } else emptyList()
+                splits = emptyList()
             )
         }
 
@@ -612,20 +603,7 @@ class TransactionEntryViewModel @Inject constructor(
 
             // Splitting
             is TransactionEntryEvent.ToggleSplitMode -> update {
-                val newState = it.copy(isSplitMode = event.enabled)
-                if (event.enabled && newState.splits.isEmpty()) {
-                    // Initialize with 2 splits: 1st with current amount/category, 2nd empty
-                    newState.copy(
-                        splits = listOf(
-                            TransactionSplit(
-                                categoryId = it.selectedCategoryId,
-                                amount = it.amount,
-                                note = it.note
-                            ),
-                            TransactionSplit(categoryId = null, amount = "", note = "")
-                        )
-                    )
-                } else newState
+                it.copy(isSplitMode = event.enabled)
             }
 
             is TransactionEntryEvent.AddSplit -> update {

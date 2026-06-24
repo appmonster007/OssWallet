@@ -113,7 +113,7 @@ data class AeonDimensions(
     // Interactive elements (Chips, Input fields)
     val componentCornerRadius: Dp = AeonSize.D16.value,
     // Specific radius for action chips/mini buttons
-    val chipCornerRadius: Dp = AeonSize.D32.value,
+    val chipCornerRadius: Dp = AeonSize.D20.value,
     // Main action buttons (Floating action or Submit)
     val buttonCornerRadius: Dp = AeonSize.D28.value
 )

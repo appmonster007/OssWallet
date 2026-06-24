@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+
+/**
+ * Data class representing a segment in [AeonSegmentedProgressBar].
+ * @param weight The proportional width of this segment (0.0 to 1.0).
+ * @param color The color of this segment.
+ */
+data class ProgressBarSegment(
+    val weight: Float,
+    val color: Color
+)
 
 @Composable
 fun AeonProgressBar(
@@ -74,6 +85,45 @@ fun AeonProgressBarPreview() {
                 AeonProgressBar(progress = 0.3f)
                 AeonProgressBar(progress = 0.7f, color = Color.Red)
                 AeonProgressBar(progress = 1.0f, color = Color.Green)
+                
+                AeonSegmentedProgressBar(
+                    segments = listOf(
+                        ProgressBarSegment(0.3f, Color.Red),
+                        ProgressBarSegment(0.5f, Color.Green),
+                        ProgressBarSegment(0.2f, Color.Blue)
+                    )
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A segmented progress bar that can show multiple portions with different colors.
+ * Reusable implementation for transaction splitting, budget allocations, etc.
+ */
+@Composable
+fun AeonSegmentedProgressBar(
+    segments: List<ProgressBarSegment>,
+    modifier: Modifier = Modifier,
+    height: Dp = 4.dp,
+    trackColor: Color = AppColors.insetSurface.copy(alpha = 0.2f)
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(CircleShape)
+            .background(trackColor)
+    ) {
+        segments.forEach { segment ->
+            if (segment.weight > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(segment.weight)
+                        .background(segment.color)
+                )
             }
         }
     }

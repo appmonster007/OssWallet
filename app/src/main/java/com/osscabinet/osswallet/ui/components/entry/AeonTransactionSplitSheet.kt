@@ -31,7 +31,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -41,7 +40,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +53,8 @@ import com.osscabinet.ossWallet.domain.model.SplitStatus
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.visualization.AeonSegmentedProgressBar
+import com.osscabinet.ossWallet.ui.components.visualization.ProgressBarSegment
 import com.osscabinet.ossWallet.ui.theme.AeonDimensions
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -301,11 +301,6 @@ private fun SplitHeaderCard(
         is SplitStatus.Balanced -> AppColors.positive
         else -> AppColors.primary
     }
-    val remainingLabel = when (status) {
-        is SplitStatus.OverAllocated -> "OVER BY"
-        is SplitStatus.Balanced -> "BALANCED"
-        else -> "REMAINING"
-    }
     val remainingAmount = when (status) {
         is SplitStatus.OverAllocated -> status.excess
         is SplitStatus.Splitting -> status.remaining
@@ -378,44 +373,34 @@ private fun SplitHeaderCard(
             Spacer(modifier = Modifier.height(dims.spacingMd))
 
             // Multi-colored progress bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(AppColors.divider.copy(alpha = 0.20f))
-            ) {
+            val errorColor = AppColors.error
+            val primaryColor = AppColors.primary
+            val segments = remember(splits, status, totalAmount, errorColor, primaryColor) {
                 if (status is SplitStatus.OverAllocated) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(AppColors.error)
-                    )
+                    listOf(ProgressBarSegment(1f, errorColor))
                 } else {
+                    val list = mutableListOf<ProgressBarSegment>()
+                    var totalWeight = 0f
                     splits.forEach { split ->
                         val splitAmount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         if (splitAmount.signum() > 0 && totalAmount.signum() > 0) {
                             val fraction = splitAmount.divide(totalAmount, 8, RoundingMode.HALF_UP).toFloat()
-                            val catColor = categories.find { it.id == split.categoryId }?.colorHex?.let { Color(it) } ?: AppColors.primary
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .weight(fraction)
-                                    .background(catColor)
-                            )
+                            val catColor = categories.find { it.id == split.categoryId }?.colorHex?.let { Color(it) } ?: primaryColor
+                            list.add(ProgressBarSegment(fraction, catColor))
+                            totalWeight += fraction
                         }
                     }
-                    val currentSum = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
-                    val remaining = totalAmount - currentSum
-                    if (remaining.signum() > 0 && totalAmount.signum() > 0) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .weight(remaining.divide(totalAmount, 8, RoundingMode.HALF_UP).toFloat())
-                        )
+                    if (totalWeight < 1f) {
+                        list.add(ProgressBarSegment(1f - totalWeight, Color.Transparent))
                     }
+                    list
                 }
             }
+
+            AeonSegmentedProgressBar(
+                segments = segments,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -440,7 +425,7 @@ private fun SplitHeaderCard(
 
 @Composable
 private fun SectionLabel(
-    dims: com.osscabinet.ossWallet.ui.theme.AeonDimensions,
+    dims: AeonDimensions,
 ) {
     Row(
         modifier = Modifier
@@ -507,7 +492,7 @@ private fun EmptyState(
 @Composable
 private fun AddSplitRow(
     onAddSplit: () -> Unit,
-    dims: com.osscabinet.ossWallet.ui.theme.AeonDimensions,
+    dims: AeonDimensions,
 ) {
     Row(
         modifier = Modifier
@@ -682,18 +667,22 @@ private fun SplitRow(
             }
         }
 
-        Spacer(modifier = Modifier.width(dims.spacingXs))
+        Spacer(modifier = Modifier.width(dims.spacingSm))
 
-        IconButton(
+        Surface(
             onClick = onRemove,
             modifier = Modifier.size(dims.iconSizeMd),
+            shape = CircleShape,
+            color = AppColors.error.copy(alpha = 0.08f),
         ) {
-            Icon(
-                Icons.Rounded.DeleteOutline,
-                contentDescription = "Remove split",
-                tint = AppColors.contentSecondary.copy(alpha = 0.5f),
-                modifier = Modifier.size(dims.iconSizeSm),
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    contentDescription = "Remove split",
+                    tint = AppColors.error.copy(alpha = 0.6f),
+                    modifier = Modifier.size(dims.iconSizeSm),
+                )
+            }
         }
     }
 }

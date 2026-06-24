@@ -21,7 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -38,10 +38,10 @@ class CsvImportViewModel @Inject constructor(
 ) : ViewModel() {
 
     sealed class Step {
-        object SourceSelection : Step()
-        object ColumnMapping : Step()
-        object EntityMapping : Step()
-        object Preview : Step()
+        data object SourceSelection : Step()
+        data object ColumnMapping : Step()
+        data object EntityMapping : Step()
+        data object Preview : Step()
     }
 
     private val _step = MutableStateFlow<Step>(Step.SourceSelection)
@@ -65,6 +65,13 @@ class CsvImportViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // Transient UI Mappings
+    private val _accountMappings = MutableStateFlow<Map<String, EntityMapping>>(emptyMap())
+    private val _categoryMappings = MutableStateFlow<Map<String, EntityMapping>>(emptyMap())
+    private val _parentGroupMappings = MutableStateFlow<Map<String, String?>>(emptyMap())
+    private val _selectedDuplicates = MutableStateFlow<Set<Int>>(emptySet())
+    private val _duplicatePolicy = MutableStateFlow(DuplicatePolicy.SKIP)
+
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -77,9 +84,6 @@ class CsvImportViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("INR", "USD", "EUR"))
 
     private var pendingUri: String? = null
-    private var entityMappings: List<EntityMapping> = emptyList()
-    private var selectedDuplicates: Set<Int> = emptySet()
-    private var duplicatePolicy: DuplicatePolicy = DuplicatePolicy.SKIP
 
     fun loadFile(uriString: String, context: Context) {
         pendingUri = uriString
@@ -104,6 +108,11 @@ class CsvImportViewModel @Inject constructor(
         _session.update { it?.copy(mapping = it.mapping + (field to colIndex)) }
     }
 
+    fun confirmSourceApp(app: ImportSourceApp) {
+        applyPreset(app)
+        _step.value = Step.ColumnMapping
+    }
+
     fun proceedFromColumnMapping(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -112,9 +121,13 @@ class CsvImportViewModel @Inject constructor(
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
-                val preview = csvImportService.generatePreview(session.value!!, stream)
-                _preview.value = preview
-                if (preview.allCsvAccounts.isNotEmpty() || preview.newCategories.isNotEmpty()) {
+                val previewResult = csvImportService.generatePreview(session.value!!, stream)
+                _preview.value = previewResult
+                
+                // Initialize default mappings from preview
+                initializeDefaultMappings(previewResult)
+
+                if (previewResult.allCsvAccounts.isNotEmpty() || previewResult.newCategories.isNotEmpty()) {
                     _step.value = Step.EntityMapping
                 } else {
                     _step.value = Step.Preview
@@ -128,8 +141,33 @@ class CsvImportViewModel @Inject constructor(
         }
     }
 
-    fun setEntityMappings(mappings: List<EntityMapping>) {
-        entityMappings = mappings
+    private fun initializeDefaultMappings(preview: ImportPreview) {
+        val defaultCurrency = "INR" // Could be fetched from settings if needed
+        
+        _accountMappings.value = preview.allCsvAccounts.associate { acc ->
+            acc.name to EntityMapping(
+                unknownName = acc.name,
+                existingId = acc.suggestedExistingId,
+                entityType = EntityMapping.EntityType.ACCOUNT,
+                currencyCode = if (!acc.hasDetectedCurrency) defaultCurrency else null
+            )
+        }
+        
+        _categoryMappings.value = preview.newCategories.associate { cat ->
+            cat.name to EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
+        }
+    }
+
+    fun updateAccountMapping(accountName: String, mapping: EntityMapping) {
+        _accountMappings.update { it + (accountName to mapping) }
+    }
+
+    fun updateCategoryMapping(categoryName: String, mapping: EntityMapping) {
+        _categoryMappings.update { it + (categoryName to mapping) }
+    }
+
+    fun updateParentGroupMapping(parentName: String, existingId: String?) {
+        _parentGroupMappings.update { it + (parentName to existingId) }
     }
 
     fun proceedFromEntityMapping() {
@@ -137,14 +175,12 @@ class CsvImportViewModel @Inject constructor(
     }
 
     fun setDuplicatePolicy(policy: DuplicatePolicy) {
-        duplicatePolicy = policy
+        _duplicatePolicy.value = policy
     }
 
     fun toggleDuplicateRow(rowIndex: Int) {
-        selectedDuplicates = if (rowIndex in selectedDuplicates) {
-            selectedDuplicates - rowIndex
-        } else {
-            selectedDuplicates + rowIndex
+        _selectedDuplicates.update {
+            if (rowIndex in it) it - rowIndex else it + rowIndex
         }
     }
 
@@ -155,8 +191,16 @@ class CsvImportViewModel @Inject constructor(
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
+                
+                // Resolve final mappings
+                val finalMappings = resolveFinalMappings()
+
                 val result = csvImportService.executeImport(
-                    session.value!!, stream, duplicatePolicy, entityMappings, selectedDuplicates
+                    session.value!!, 
+                    stream, 
+                    _duplicatePolicy.value, 
+                    finalMappings, 
+                    _selectedDuplicates.value
                 )
                 if (result.isSuccess) {
                     _result.value = result.getOrNull()
@@ -172,9 +216,30 @@ class CsvImportViewModel @Inject constructor(
         }
     }
 
-    fun confirmSourceApp(app: ImportSourceApp) {
-        applyPreset(app)
-        _step.value = Step.ColumnMapping
+    private fun resolveFinalMappings(): List<EntityMapping> {
+        val preview = _preview.value ?: return emptyList()
+        
+        val resolvedAccounts = _accountMappings.value.values.map { em ->
+            if (em.existingId == "__EXCLUDE__") em.copy(existingId = null, isExcluded = true) else em
+        }
+        
+        val resolvedCategories = preview.newCategories.map { cat ->
+            val em = _categoryMappings.value[cat.name] ?: EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
+            val parentName = cat.suggestedParentName
+            
+            if (em.existingId != null || parentName == null) {
+                em
+            } else {
+                val parentExistingId = _parentGroupMappings.value[parentName]
+                if (parentExistingId != null) {
+                    em.copy(parentCategoryId = parentExistingId.toLongOrNull())
+                } else {
+                    em.copy(parentCategoryName = parentName)
+                }
+            }
+        }
+        
+        return resolvedAccounts + resolvedCategories
     }
 
     fun resetToColumnMapping() {
@@ -189,9 +254,9 @@ class CsvImportViewModel @Inject constructor(
     }
 
     fun applyPreset(sourceApp: ImportSourceApp) {
-        val session = _session.value ?: return
-        _session.value = session.copy(
-            mapping = buildInitialMapping(session.headers, sourceApp),
+        val currentSession = _session.value ?: return
+        _session.value = currentSession.copy(
+            mapping = buildInitialMapping(currentSession.headers, sourceApp),
             sourceApp = sourceApp
         )
     }
@@ -233,4 +298,14 @@ class CsvImportViewModel @Inject constructor(
 
     private fun List<String>.indexOfOrNull(value: String): Int? =
         indexOf(value).takeIf { it >= 0 }
+
+    // Exposed states for the UI
+    val accountMappings = _accountMappings.asStateFlow()
+    val categoryMappings = _categoryMappings.asStateFlow()
+    val parentGroupMappings = _parentGroupMappings.asStateFlow()
+    val selectedDuplicates = _selectedDuplicates.asStateFlow()
+    val duplicatePolicy = _duplicatePolicy.asStateFlow()
 }
+
+// Extension to easily expose MutableStateFlow as StateFlow
+private fun <T> MutableStateFlow<T>.asStateFlow(): StateFlow<T> = this

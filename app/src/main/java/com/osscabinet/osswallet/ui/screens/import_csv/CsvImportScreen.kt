@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BrokenImage
@@ -63,17 +64,21 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap
+import com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap
 import com.osscabinet.ossWallet.domain.model.import_csv.CsvImportSession
-import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
+import com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup
 import com.osscabinet.ossWallet.domain.model.import_csv.DuplicatePolicy
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportSourceApp
+import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
+import com.osscabinet.ossWallet.domain.model.import_csv.ParseError
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
@@ -88,6 +93,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -107,6 +113,7 @@ fun CsvImportScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val shortlistedCurrencies by viewModel.shortlistedCurrencies.collectAsStateWithLifecycle()
 
     val fileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -195,6 +202,7 @@ fun CsvImportScreen(
                                         rootCategories = categories
                                             .filter { it.parentId == null && !Category.isSystemCategory(it.id) }
                                             .map { it.id.toString() to it.name },
+                                        shortlistedCurrencies = shortlistedCurrencies,
                                         onConfirmMappings = { mappings ->
                                             viewModel.setEntityMappings(mappings)
                                             viewModel.proceedFromEntityMapping()
@@ -728,6 +736,7 @@ private fun EntityMappingStep(
     accounts: List<Pair<String, String>>,
     categories: List<Pair<String, String>>,
     rootCategories: List<Pair<String, String>>,
+    shortlistedCurrencies: List<String>,
     onConfirmMappings: (List<EntityMapping>) -> Unit
 ) {
     if (preview == null) return
@@ -766,7 +775,8 @@ private fun EntityMappingStep(
             EntityMapping(
                 unknownName = acc.name,
                 existingId = acc.suggestedExistingId,
-                entityType = EntityMapping.EntityType.ACCOUNT
+                entityType = EntityMapping.EntityType.ACCOUNT,
+                currencyCode = if (!acc.hasDetectedCurrency) "INR" else null // Default if undetected
             )
         }.toTypedArray())
     }
@@ -819,7 +829,10 @@ private fun EntityMappingStep(
                         options = accounts,
                         selectedId = em?.existingId,
                         onSelect = { id -> accountMappings[index] = accountMappings[index].copy(existingId = id) },
-                        showExcludeOption = true
+                        showExcludeOption = true,
+                        currencyCode = em?.currencyCode,
+                        onCurrencySelect = { curr -> accountMappings[index] = accountMappings[index].copy(currencyCode = curr) },
+                        supportedCurrencies = shortlistedCurrencies
                     )
                 }
             }
@@ -1020,10 +1033,15 @@ private fun EntityMappingRow(
     onSelect: (String?) -> Unit,
     isError: Boolean = false,
     showNullOption: Boolean = true,
-    showExcludeOption: Boolean = false
+    showExcludeOption: Boolean = false,
+    currencyCode: String? = null,
+    onCurrencySelect: (String) -> Unit = {},
+    supportedCurrencies: List<String> = emptyList()
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var currencyExpanded by remember { mutableStateOf(false) }
     val isExcluded = selectedId == "__EXCLUDE__"
+    val isCreateNew = selectedId == null
     val selectedName = when {
         isExcluded -> "Excluded"
         selectedId != null -> options.find { it.first == selectedId }?.second ?: "Create New"
@@ -1037,110 +1055,159 @@ private fun EntityMappingRow(
             .fillMaxWidth()
             .padding(vertical = 3.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    label,
-                    style = AppTextStyles.listItemTitle,
-                    color = if (isError) AppColors.error else AppColors.contentPrimary
-                )
-                if (badgeText != null || chipText != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (chipText != null) {
-                            Surface(
-                                color = AppColors.accentContainer,
-                                shape = RoundedCornerShape(50)
-                            ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        label,
+                        style = AppTextStyles.listItemTitle,
+                        color = if (isError) AppColors.error else AppColors.contentPrimary
+                    )
+                    if (badgeText != null || chipText != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (chipText != null) {
+                                Surface(
+                                    color = AppColors.accentContainer,
+                                    shape = RoundedCornerShape(50)
+                                ) {
+                                    Text(
+                                        chipText,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        style = AppTextStyles.chipLabel,
+                                        color = AppColors.onAccentContainer
+                                    )
+                                }
+                            }
+                            if (badgeText != null) {
                                 Text(
-                                    chipText,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    badgeText,
                                     style = AppTextStyles.chipLabel,
-                                    color = AppColors.onAccentContainer
+                                    color = AppColors.contentSecondary
                                 )
                             }
                         }
-                        if (badgeText != null) {
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Box(modifier = Modifier.weight(1.4f)) {
+                    Surface(
+                        onClick = { expanded = true },
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        color = when {
+                            isExcluded -> AppColors.error.copy(alpha = 0.08f)
+                            isError -> AppColors.errorContainer.copy(alpha = 0.1f)
+                            else -> AppColors.surfaceContainerLow
+                        },
+                        border = BorderStroke(1.dp, when {
+                            isExcluded -> AppColors.error.copy(alpha = 0.5f)
+                            isError -> AppColors.error
+                            else -> AppColors.outlineVariant
+                        }),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text(
-                                badgeText,
-                                style = AppTextStyles.chipLabel,
-                                color = AppColors.contentSecondary
+                                text = selectedName,
+                                style = AppTextStyles.caption,
+                                color = when {
+                                    isExcluded -> AppColors.error
+                                    selectedId != null -> AppColors.contentPrimary
+                                    else -> AppColors.contentSecondary
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = AppColors.contentSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        containerColor = AppColors.surfaceContainerHigh,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        modifier = Modifier.widthIn(min = 160.dp)
+                    ) {
+                        if (showNullOption) {
+                            DropdownMenuItem(
+                                text = { Text("Create New", style = AppTextStyles.caption) },
+                                onClick = { onSelect(null); expanded = false }
+                            )
+                        }
+                        if (showExcludeOption) {
+                            DropdownMenuItem(
+                                text = { Text("Exclude account", style = AppTextStyles.caption, color = AppColors.error) },
+                                onClick = { onSelect("__EXCLUDE__"); expanded = false }
+                            )
+                        }
+                        options.forEach { (id, name) ->
+                            DropdownMenuItem(
+                                text = { Text(name, style = AppTextStyles.caption) },
+                                onClick = { onSelect(id); expanded = false }
                             )
                         }
                     }
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            Box(modifier = Modifier.weight(1.4f)) {
-                Surface(
-                    onClick = { expanded = true },
-                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = when {
-                        isExcluded -> AppColors.error.copy(alpha = 0.08f)
-                        isError -> AppColors.errorContainer.copy(alpha = 0.1f)
-                        else -> AppColors.surfaceContainerLow
-                    },
-                    border = BorderStroke(1.dp, when {
-                        isExcluded -> AppColors.error.copy(alpha = 0.5f)
-                        isError -> AppColors.error
-                        else -> AppColors.outlineVariant
-                    }),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = selectedName,
-                            style = AppTextStyles.caption,
-                            color = when {
-                                isExcluded -> AppColors.error
-                                selectedId != null -> AppColors.contentPrimary
-                                else -> AppColors.contentSecondary
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = AppColors.contentSecondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    containerColor = AppColors.surfaceContainerHigh,
-                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    modifier = Modifier.widthIn(min = 160.dp)
+            // Currency selector for "Create New" accounts
+            if (isCreateNew && currencyCode != null) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding), color = AppColors.outlineVariant, thickness = 0.5.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    if (showNullOption) {
-                        DropdownMenuItem(
-                            text = { Text("Create New", style = AppTextStyles.caption) },
-                            onClick = { onSelect(null); expanded = false }
-                        )
-                    }
-                    if (showExcludeOption) {
-                        DropdownMenuItem(
-                            text = { Text("Exclude account", style = AppTextStyles.caption, color = AppColors.error) },
-                            onClick = { onSelect("__EXCLUDE__"); expanded = false }
-                        )
-                    }
-                    options.forEach { (id, name) ->
-                        DropdownMenuItem(
-                            text = { Text(name, style = AppTextStyles.caption) },
-                            onClick = { onSelect(id); expanded = false }
-                        )
+                    Text(
+                        "Currency",
+                        style = AppTextStyles.overlineLabel,
+                        color = AppColors.contentSecondary
+                    )
+                    Box {
+                        Surface(
+                            onClick = { currencyExpanded = true },
+                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                            color = AppColors.surfaceContainerLow,
+                            border = BorderStroke(1.dp, AppColors.outlineVariant)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(currencyCode, style = AppTextStyles.caption)
+                                Icon(Icons.Rounded.ArrowDropDown, null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        DropdownMenu(
+                            expanded = currencyExpanded,
+                            onDismissRequest = { currencyExpanded = false },
+                            containerColor = AppColors.surfaceContainerHigh
+                        ) {
+                            supportedCurrencies.forEach { curr ->
+                                DropdownMenuItem(
+                                    text = { Text(curr, style = AppTextStyles.caption) },
+                                    onClick = { onCurrencySelect(curr); currencyExpanded = false }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1585,3 +1652,124 @@ operator fun <A, B, C, D> Quad<A, B, C, D>.component1() = a
 operator fun <A, B, C, D> Quad<A, B, C, D>.component2() = b
 operator fun <A, B, C, D> Quad<A, B, C, D>.component3() = c
 operator fun <A, B, C, D> Quad<A, B, C, D>.component4() = d
+
+// ─── Previews ────────────────────────────────────────────────────────────────
+
+private val MockSession = CsvImportSession(
+    headers = listOf("date", "account", "category", "amount", "currency", "note"),
+    previewRows = listOf(
+        listOf("2024-05-01", "Savings", "Groceries", "45.50", "USD", "Whole Foods"),
+        listOf("2024-05-02", "Credit Card", "Dining", "12.00", "USD", "Starbucks"),
+        listOf("2024-05-02", "Savings", "Transfer", "100.00", "USD", "To Credit Card")
+    ),
+    mapping = mapOf(
+        OssWalletField.DATE to 0,
+        OssWalletField.ACCOUNT to 1,
+        OssWalletField.CATEGORY to 2,
+        OssWalletField.AMOUNT to 3,
+        OssWalletField.NOTE to 5
+    ),
+    sourceApp = ImportSourceApp.GENERIC
+)
+
+private val MockPreview = ImportPreview(
+    totalRows = 150,
+    validRows = 145,
+    duplicates = listOf(
+        DuplicateGroup("key1", "Lunch", 10, listOf("2024-04-30", "Cash", "Food", "15.00", "USD", "Lunch"))
+    ),
+    allCsvAccounts = listOf(
+        AccountToMap("Savings", "acc_1", "Main Savings", 80, true),
+        AccountToMap("Credit Card", null, null, 65, false),
+        AccountToMap("Amex", null, null, 5, false)
+    ),
+    newCategories = listOf(
+        CategoryToMap("Groceries", null, false, "Living"),
+        CategoryToMap("Dining", null, false, "Living"),
+        CategoryToMap("Living", null, false, null)
+    ),
+    parseErrors = listOf(
+        ParseError(148, "Date format mismatch at row 148"),
+        ParseError(149, "Amount is not a number")
+    ),
+    unpairedTransferRows = 2
+)
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewSourceSelection() {
+    OssWalletTheme {
+        SourceSelectionStep(
+            session = null,
+            onLoadFile = {},
+            onConfirm = {},
+            fileLoadError = null
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewColumnMapping() {
+    OssWalletTheme {
+        ColumnMappingStep(
+            session = MockSession,
+            onUpdateMapping = { _, _ -> },
+            onApplyPreset = {},
+            onNext = {},
+            isLoading = false
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewEntityMapping() {
+    OssWalletTheme {
+        EntityMappingStep(
+            preview = MockPreview,
+            accounts = listOf("hdfc_id" to "HDFC Bank", "cash_id" to "Cash Wallet"),
+            categories = listOf("1" to "Food", "2" to "Transport"),
+            rootCategories = listOf("1" to "Food"),
+            shortlistedCurrencies = listOf("INR", "USD", "EUR"),
+            onConfirmMappings = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewPreviewStep() {
+    OssWalletTheme {
+        PreviewStep(
+            preview = MockPreview,
+            onSetDuplicatePolicy = {},
+            onToggleDuplicate = {},
+            onImport = {},
+            isLoading = false
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewImportResult() {
+    OssWalletTheme {
+        ImportResultScreen(
+            result = ImportSummary(imported = 145, skipped = 3, errors = listOf(ParseError(9, "Error")), transfersRerouted = 2),
+            onViewTransactions = {},
+            onReviewMappings = {},
+            onBack = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewStepProgress() {
+    OssWalletTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            StepProgressIndicator(stepIndex = 1)
+        }
+    }
+}

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -70,6 +71,10 @@ class CsvImportViewModel @Inject constructor(
 
     val categories: StateFlow<List<Category>> = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val shortlistedCurrencies: StateFlow<List<String>> = settingsRepository.shortlistedCurrencies
+        .map { it?.toList() ?: listOf("INR", "USD", "EUR") }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("INR", "USD", "EUR"))
 
     private var pendingUri: String? = null
     private var entityMappings: List<EntityMapping> = emptyList()

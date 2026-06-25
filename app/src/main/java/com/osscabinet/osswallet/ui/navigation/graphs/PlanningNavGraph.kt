@@ -124,7 +124,8 @@ fun NavGraphBuilder.planningGraph(
                     vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
                     navController.navigate(TransactionEntryRoute())
                 },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) }
             ),
             viewModel = plannedPaymentViewModel,
             transactionManager = vms.dashboardViewModel.transactionManager,

@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -9,11 +10,15 @@ import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -32,6 +37,12 @@ class AccountViewModel @Inject constructor(
         .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private data class AccountFinancialSnapshot(
+        val accounts: List<Account>,
+        val transactions: List<Transaction>,
+        val rates: Map<String, BigDecimal>
+    )
+
     val accountBalances: StateFlow<Map<String, BigDecimal>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -39,15 +50,18 @@ class AccountViewModel @Inject constructor(
                 transactionRepository.getAllTransactions(profileId),
                 computationRepository.exchangeRates
             ) { accounts, transactions, rates ->
-                accounts.associate { account ->
-                    account.id to AggregationService.calculateAccountBalance(
-                        accountId = account.id,
-                        allTransactions = transactions,
-                        accountCurrency = account.currencyCode,
-                        exchangeRates = rates
-                    )
-                }
-            }
+                AccountFinancialSnapshot(accounts, transactions, rates)
+            }.distinctUntilChanged()
+                .map { snapshot ->
+                    snapshot.accounts.associate { account ->
+                        account.id to AggregationService.calculateAccountBalance(
+                            accountId = account.id,
+                            allTransactions = snapshot.transactions,
+                            accountCurrency = account.currencyCode,
+                            exchangeRates = snapshot.rates
+                        )
+                    }
+                }.flowOn(Dispatchers.Default)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun deleteAccount(accountId: String) {

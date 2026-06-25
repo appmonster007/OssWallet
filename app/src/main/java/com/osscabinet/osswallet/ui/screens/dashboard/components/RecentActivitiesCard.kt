@@ -1,9 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,16 +12,10 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -35,26 +26,25 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 
 @Composable
 fun RecentActivitiesCard(
-    listState: TransactionListState,
+    listState: TransactionListUiState,
     config: RecentActivitiesCardConfig,
     callbacks: CardCallbacks.RecentActivities,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
     baseCurrency: String = "USD",
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
     filterContext: FilterSelectionContext = FilterSelectionContext(),
     baseFilter: TransactionFilter = TransactionFilter(),
     inheritedFilter: TransactionFilter = TransactionFilter(),
     filterRules: CardFilterRules? = null,
     screenOwnsTimeline: Boolean = false,
     showFilterButton: Boolean = true,
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onScrollComplete: () -> Unit = {}
 ) {
     val displayFilter =
         if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
@@ -103,6 +93,9 @@ fun RecentActivitiesCard(
             showTimestamp = config.showTimestamp,
             showIcon = config.showIcon,
             revealedCardIds = emptyList<String>(),
+            scrollToId = scrollToId,
+            highlightedId = highlightedId,
+            onScrollComplete = onScrollComplete,
             onTransactionEvent = { event ->
                 when (event) {
                     is TransactionItemEvent.Click -> {
@@ -120,68 +113,13 @@ fun RecentActivitiesCard(
                     is TransactionItemEvent.Clone -> callbacks.onClone(event.id)
                     is TransactionItemEvent.Delete -> callbacks.onDeleteTransaction(event.id)
                     is TransactionItemEvent.Split -> callbacks.onSplit(event.id)
+                    is TransactionItemEvent.Jump -> callbacks.onJump(event.id)
                     is TransactionItemEvent.FullSwipeRight -> callbacks.onFullSwipeRight(event.id)
                     is TransactionItemEvent.ConfirmPlanned -> callbacks.onConfirmPlanned(event.paymentId, event.scheduledDate)
                     is TransactionItemEvent.CancelPlanned -> callbacks.onCancelPlanned(event.paymentId, event.scheduledDate)
                 }
             }
         )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-@Composable
-fun RecentActivitiesCardPreview() {
-    val mockTransaction = Transaction(
-        id = 1L,
-        name = "Starbucks",
-        amount = BigDecimal("5.50"),
-        timestamp = System.currentTimeMillis(),
-        currency = "USD",
-        transactionType = TransactionType.EXPENSE,
-        accountId = "acc1",
-        categoryId = Category.SYSTEM_UNKNOWN
-    )
-    val mockUiModel = com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel(
-        item = TransactionWithBalance(mockTransaction, BigDecimal("100.00"), BigDecimal("94.50")),
-        accountName = "Cash",
-        accountCurrency = "USD",
-        categoryName = "Food",
-        categoryIcon = "Restaurant",
-        categoryColor = 0xFF00FF00.toInt()
-    )
-    val mockGroup = com.osscabinet.ossWallet.domain.model.TransactionGroup(
-        key = "Today",
-        headerData = com.osscabinet.ossWallet.domain.service.timeline.TimelineService.GroupHeaderData(
-            title = "Today",
-            subtitle = "July 15",
-            incomeByCurrency = emptyMap(),
-            expenseByCurrency = mapOf("USD" to BigDecimal("5.50")),
-            openingBalancesByCurrency = emptyMap(),
-            closingBalancesByCurrency = emptyMap(),
-            allCurrencies = listOf("USD"),
-            incomeBase = BigDecimal.ZERO,
-            expenseBase = BigDecimal("5.50"),
-            netBase = BigDecimal("-5.50"),
-            totalOpeningBalanceBase = BigDecimal.ZERO,
-            totalClosingBalanceBase = BigDecimal.ZERO
-        ),
-        transactions = listOf(mockUiModel)
-    )
-
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            RecentActivitiesCard(
-                listState = TransactionListState(
-                    groups = listOf(mockGroup),
-                    isEmpty = false
-                ),
-                config = RecentActivitiesCardConfig(cardId = "preview"),
-                callbacks = CardCallbacks.RecentActivities(
-                    onRecordsClick = {},
-                    onTransactionClick = {})
-            )
-        }
     }
 }
 
@@ -298,4 +236,3 @@ private fun RecentActivitiesSettingsSheet(
         }
     }
 }
-

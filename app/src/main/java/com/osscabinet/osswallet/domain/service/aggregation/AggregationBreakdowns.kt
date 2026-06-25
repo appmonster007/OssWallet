@@ -72,7 +72,7 @@ fun List<Transaction>.breakdownByMonth(
     exchangeRates: Map<String, BigDecimal>? = null,
     baseCurrency: String? = null
 ): List<MonthBreakdown> =
-    AggregationService.createMetricsBreakdown(this, { TimelineService.formatMonth(it.timestamp) }, exchangeRates, baseCurrency)
+    AggregationService.createMetricsBreakdown<String>(this, { TimelineService.formatMonth(it.timestamp) }, exchangeRates, baseCurrency)
         .sortedByDescending { it.totalAmount.abs() }
 
 /**

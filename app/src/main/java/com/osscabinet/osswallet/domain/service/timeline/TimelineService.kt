@@ -29,6 +29,7 @@ import java.util.Locale
 
 /**
  * Domain service for timeline, grouping, and filtering business logic.
+ * strictly follows DDD: No UI dependencies, focuses on business calculations.
  */
 object TimelineService {
 
@@ -168,7 +169,6 @@ object TimelineService {
 
     /**
      * Resolves a timeline range into concrete start/end timestamps.
-     * If the range is AllTime, it derives boundaries from the transaction history.
      */
     fun resolveBoundRange(
         timelineRange: TimelineRange,
@@ -180,7 +180,6 @@ object TimelineService {
 
         val now = referenceTime ?: System.currentTimeMillis()
         if (transactions.isEmpty()) {
-            // Default to today's full range if no data
             return getRangeForThis(ThisPeriodType.TODAY, referenceTime = now)
         }
 
@@ -194,18 +193,11 @@ object TimelineService {
         return Pair(resolvedStart, resolvedEnd)
     }
 
-    /**
-     * Gets the previous date range for a given timeline range.
-     * Legacy method used for comparison metrics.
-     */
     fun getPreviousRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
         val prevRange = shiftRange(timelineRange, -1)
         return getDateRange(prevRange, referenceTime = referenceTime)
     }
 
-    /**
-     * Gets the shifted timeline range (previous or next).
-     */
     fun shiftRange(range: TimelineRange, delta: Int): TimelineRange {
         return when (range) {
             is TimelineRange.ThisPeriod -> range.copy(offset = range.offset + delta)
@@ -225,9 +217,6 @@ object TimelineService {
         }
     }
 
-    /**
-     * Filters a list of timestamped items by a timeline range.
-     */
     fun <T : com.osscabinet.ossWallet.domain.model.Timestamped> filterByTimelineRange(
         items: List<T>,
         timelineRange: TimelineRange
@@ -238,19 +227,11 @@ object TimelineService {
 
     // ==================== Grouping Methods ====================
 
-    fun groupTransactions(
-        transactions: List<TransactionWithBalance>,
-        groupingType: TransactionGroupingType
-    ): Map<String, List<TransactionWithBalance>> = when (groupingType) {
-        TransactionGroupingType.BY_DAY -> {
-            transactions.groupBy {
-                val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
-                date.toString()
-            }
-        }
-        TransactionGroupingType.BY_WEEK -> {
-            transactions.groupBy {
-                val date = Instant.ofEpochMilli(it.transaction.timestamp).atZone(systemZoneId).toLocalDate()
+    private fun getGroupKey(timestamp: Long, groupingType: TransactionGroupingType): String {
+        val date = Instant.ofEpochMilli(timestamp).atZone(systemZoneId).toLocalDate()
+        return when (groupingType) {
+            TransactionGroupingType.BY_DAY -> date.toString()
+            TransactionGroupingType.BY_WEEK -> {
                 val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
                 "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
             }
@@ -258,187 +239,49 @@ object TimelineService {
     }
 
     /**
-     * Formats a timestamp as a month string (yyyy-MM).
+     * Enriches a flat list of transactions into domain UI models.
+     * Pure DDD: No formatting strings.
      */
+    fun enrichTransactions(
+        transactions: List<com.osscabinet.ossWallet.domain.model.Transaction>,
+        accounts: List<Account>,
+        categories: List<Category>,
+        allTags: List<com.osscabinet.ossWallet.domain.model.Tag>,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        precision: Int = this.precision
+    ): List<ConfirmedTransactionUiModel> {
+        val accountMap = accounts.associateBy { it.id }
+        val categoryMap = categories.associateBy { it.id }
+        val tagMap = allTags.associateBy { it.name }
+        val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
+
+        return transactions.map { tx ->
+            val amountInBase = if (tx.currency != baseCurrency) {
+                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+            } else tx.amount
+
+            ConfirmedTransactionUiModel(
+                item = TransactionWithBalance(tx, BigDecimal.ZERO, BigDecimal.ZERO),
+                accountName = accountMap[tx.accountId]?.name ?: "Unknown",
+                accountCurrency = accountMap[tx.accountId]?.currencyCode ?: tx.currency,
+                categoryName = categoryMap[tx.categoryId]?.name ?: "Uncategorized",
+                categoryIcon = categoryMap[tx.categoryId]?.iconName,
+                categoryColor = categoryMap[tx.categoryId]?.colorHex ?: 0,
+                tags = tx.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
+                amountInBase = amountInBase,
+                linkedTransactionIds = emptyList()
+            )
+        }
+    }
+
     fun formatMonth(timestamp: Long): String {
         return Instant.ofEpochMilli(timestamp).atZone(systemZoneId).format(monthFormatter)
     }
 
     /**
-     * Converts a timestamp to a date string (yyyy-MM-dd).
-     */
-    fun formatDate(timestamp: Long): String {
-        return Instant.ofEpochMilli(timestamp).atZone(systemZoneId).toLocalDate().toString()
-    }
-
-    /**
-     * Generates a list of time buckets (start/end pairs) for a given range.
-     */
-    fun getTimeBuckets(timelineRange: TimelineRange, numPoints: Int = 30): List<TimeBucket> {
-        val (start, end) = getDateRange(timelineRange)
-        val actualStart = start ?: 0L
-        val actualEnd = end ?: System.currentTimeMillis()
-        val duration = actualEnd - actualStart
-        val step = if (numPoints > 0) duration / numPoints else 0L
-
-        return if (step > 0) {
-            (0 until numPoints).map { i ->
-                TimeBucket(actualStart + (i * step), actualStart + ((i + 1) * step))
-            }
-        } else listOf(TimeBucket(actualStart, actualEnd))
-    }
-
-    /**
-     * Calculates a cumulative sum (running total) across a list of financial metrics.
-     */
-    fun <K> calculateCumulativeSum(
-        items: List<FinancialMetrics<K>>,
-        initialBalance: BigDecimal = BigDecimal.ZERO
-    ): List<TrajectoryPoint<K>> {
-        var currentBalance = initialBalance
-        return items.map { item ->
-            currentBalance += item.totalAmount
-            TrajectoryPoint(
-                key = item.key,
-                income = item.income,
-                expense = item.expense,
-                totalAmount = item.totalAmount,
-                cumulativeBalance = currentBalance,
-                transactionCount = item.transactionCount
-            )
-        }
-    }
-
-    fun getHeaderData(
-        groupKey: String,
-        groupTransactions: List<TransactionWithBalance>,
-        absoluteHistory: List<TransactionWithBalance>,
-        groupingType: TransactionGroupingType,
-        baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
-        precision: Int = this.precision
-    ): GroupHeaderData {
-        data class RangeInfo(val title: String, val subtitle: String, val start: Long, val end: Long)
-        val info = when (groupingType) {
-            TransactionGroupingType.BY_DAY -> {
-                val date = try {
-                    LocalDate.parse(groupKey)
-                } catch (e: Exception) {
-                    val firstTx = groupTransactions.firstOrNull()
-                    if (firstTx != null) {
-                        Instant.ofEpochMilli(firstTx.transaction.timestamp).atZone(systemZoneId)
-                            .toLocalDate()
-                    } else {
-                        LocalDate.now(systemZoneId)
-                    }
-                }
-                val today = LocalDate.now(systemZoneId)
-                val formattedDate = date.format(dateFormatter)
-                val dayLabel = when {
-                    date == today -> "Today"
-                    date == today.minusDays(1) -> "Yesterday"
-                    else -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
-                }
-                val startOfDay = date.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-                val endOfDay = date.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
-                    .toInstant().toEpochMilli()
-                RangeInfo(
-                    dayLabel,
-                    formattedDate,
-                    startOfDay,
-                    endOfDay
-                )
-            }
-
-            TransactionGroupingType.BY_WEEK -> {
-                val (year, week) = groupKey.split("-W").map { it.toInt() }
-                val weekStartDate = LocalDate.now(systemZoneId).withYear(year)
-                    .with(weekFields.weekOfWeekBasedYear(), week.toLong())
-                    .with(weekFields.dayOfWeek(), 1)
-                val weekEndDate = weekStartDate.plusDays(6)
-                val startOfWeek = weekStartDate.atStartOfDay(systemZoneId).toInstant().toEpochMilli()
-                val endOfWeek = weekEndDate.atTime(23, 59, 59, 999_999_999).atZone(systemZoneId)
-                    .toInstant().toEpochMilli()
-                RangeInfo(
-                    "WEEK $week",
-                    "${weekStartDate.format(shortDateFormatter)} - ${weekEndDate.format(dateFormatter)}",
-                    startOfWeek,
-                    endOfWeek
-                )
-            }
-        }
-        val (title, subtitle, startTimestamp, endTimestamp) = info
-
-
-        val summaryByCurrency =
-            AggregationService.calculateSummaryByCurrency(groupTransactions.map { it.transaction })
-        val incomeByCurrency = summaryByCurrency.mapValues { it.value.income }
-        val incomeBase = CurrencyService.calculateTotalInCurrency(
-            incomeByCurrency,
-            baseCurrency,
-            exchangeRates,
-            precision
-        )
-
-        val expenseByCurrency = summaryByCurrency.mapValues { it.value.expense }
-        val expenseBase = CurrencyService.calculateTotalInCurrency(
-            expenseByCurrency,
-            baseCurrency,
-            exchangeRates,
-            precision
-        )
-
-        // Optimized opening balance calculation
-        val openingBalancesByCurrency = absoluteHistory
-            .asSequence()
-            .filter { it.transaction.timestamp < startTimestamp }
-            .groupBy { it.transaction.currency }
-            .mapValues { (_, txs) ->
-                txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
-            }
-
-        val totalOpeningBalanceBase = CurrencyService.calculateTotalInCurrency(
-            openingBalancesByCurrency,
-            baseCurrency,
-            exchangeRates,
-            precision
-        )
-
-        // Optimized closing balance calculation: group by transaction currency and sum amounts
-        // This provides a breakdown of all currencies held/used in the current scope
-        val closingBalancesByCurrency = absoluteHistory
-            .asSequence()
-            .filter { it.transaction.timestamp <= endTimestamp }
-            .groupBy { it.transaction.currency }
-            .mapValues { (_, txs) ->
-                txs.fold(BigDecimal.ZERO) { acc, tx -> acc.add(tx.transaction.amount) }
-            }
-
-        val totalClosingBalanceBase = CurrencyService.calculateTotalInCurrency(
-            closingBalancesByCurrency,
-            baseCurrency,
-            exchangeRates,
-            precision
-        )
-
-        return GroupHeaderData(
-            title = title,
-            subtitle = subtitle,
-            incomeByCurrency = incomeByCurrency,
-            expenseByCurrency = expenseByCurrency,
-            openingBalancesByCurrency = openingBalancesByCurrency,
-            closingBalancesByCurrency = closingBalancesByCurrency,
-            allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys + closingBalancesByCurrency.keys + openingBalancesByCurrency.keys).distinct().sorted(),
-            incomeBase = incomeBase,
-            expenseBase = expenseBase,
-            netBase = incomeBase.add(expenseBase),
-            totalOpeningBalanceBase = totalOpeningBalanceBase,
-            totalClosingBalanceBase = totalClosingBalanceBase,
-        )
-    }
-
-    /**
-     * Pre-computes grouped transactions with their corresponding header data and enriched UI models.
+     * Optimized O(N) grouping and header calculation.
+     * Processes history in a single pass to derive running balances.
      */
     fun getGroupedData(
         transactions: List<TransactionWithBalance>,
@@ -450,6 +293,7 @@ object TimelineService {
         baseCurrency: String,
         exchangeRates: Map<String, BigDecimal>,
         plannedPayments: List<UpcomingPaymentItem> = emptyList(),
+        linkedTransactionIds: Map<Long, List<Long>> = emptyMap(),
         precision: Int = this.precision,
         allTxnBreakdown: Boolean = true,
     ): List<TransactionGroup> {
@@ -458,121 +302,131 @@ object TimelineService {
         val tagMap = allTags.associateBy { it.name }
         val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
 
-        // 1. Enrich Transactions
+        // 1. Enrich Records (O(N))
         val enrichedTransactions = transactions.map { txWithBalance ->
             val tx = txWithBalance.transaction
-            val account = accountMap[tx.accountId]
-            val category = categoryMap[tx.categoryId]
-
             val amountInBase = if (tx.currency != baseCurrency) {
                 CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
             } else tx.amount
 
-            val tagUiModels = tx.tags.map { tagName ->
-                tagUiModelCache.getOrPut(tagName) {
-                    com.osscabinet.ossWallet.domain.model.TagUiModel(
-                        name = tagName,
-                        color = tagMap[tagName]?.colorHex ?: -1
-                    )
-                }
-            }
-
             ConfirmedTransactionUiModel(
                 item = txWithBalance,
-                accountName = account?.name ?: "Unknown",
-                accountCurrency = account?.currencyCode ?: tx.currency,
-                categoryName = category?.name ?: "Uncategorized",
-                categoryIcon = category?.iconName,
-                categoryColor = category?.colorHex ?: 0,
-                tags = tagUiModels,
-                amountInBase = amountInBase
+                accountName = accountMap[tx.accountId]?.name ?: "Unknown",
+                accountCurrency = accountMap[tx.accountId]?.currencyCode ?: tx.currency,
+                categoryName = categoryMap[tx.categoryId]?.name ?: "Uncategorized",
+                categoryIcon = categoryMap[tx.categoryId]?.iconName,
+                categoryColor = categoryMap[tx.categoryId]?.colorHex ?: 0,
+                tags = tx.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
+                amountInBase = amountInBase,
+                linkedTransactionIds = linkedTransactionIds[tx.id] ?: emptyList()
             )
         }
 
-        // 2. Enrich Planned Payments
         val enrichedPlanned = plannedPayments.map { item ->
             val pp = item.plannedPayment
-            val account = accountMap[pp.accountId]
-            val category = categoryMap[pp.categoryId]
-
             val amountInBase = if (pp.currency != baseCurrency) {
                 CurrencyService.convertAmount(pp.amount, pp.currency, baseCurrency, exchangeRates, precision)
             } else pp.amount
 
-            val tagUiModels = pp.tags.map { tagName ->
-                tagUiModelCache.getOrPut(tagName) {
-                    com.osscabinet.ossWallet.domain.model.TagUiModel(
-                        name = tagName,
-                        color = tagMap[tagName]?.colorHex ?: -1
-                    )
-                }
-            }
-
             PlannedPaymentUiModel(
-                paymentId = pp.id,
-                occurrenceId = item.occurrenceId,
-                timestamp = item.scheduledDate,
-                amount = pp.amount,
-                currency = pp.currency,
-                categoryName = category?.name ?: "Uncategorized",
-                categoryIcon = category?.iconName,
-                categoryColor = category?.colorHex ?: 0,
-                accountName = account?.name ?: "Unknown",
-                accountCurrency = account?.currencyCode ?: pp.currency,
-                note = pp.note,
-                tags = tagUiModels,
-                amountInBase = amountInBase,
-                isOverdue = item.isOverdue
+                paymentId = pp.id, occurrenceId = item.occurrenceId, timestamp = item.scheduledDate,
+                amount = pp.amount, currency = pp.currency,
+                categoryName = categoryMap[pp.categoryId]?.name ?: "Uncategorized",
+                categoryIcon = categoryMap[pp.categoryId]?.iconName,
+                categoryColor = categoryMap[pp.categoryId]?.colorHex ?: 0,
+                accountName = accountMap[pp.accountId]?.name ?: "Unknown",
+                accountCurrency = accountMap[pp.accountId]?.currencyCode ?: pp.currency,
+                note = pp.note, tags = pp.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
+                amountInBase = amountInBase, isOverdue = item.isOverdue
             )
         }
 
-        // 3. Combine and Group
         val allItems: List<RecordUiModel> = (enrichedTransactions + enrichedPlanned).sortedByDescending { it.timestamp }
-        val groupsMap = when (groupingType) {
-            TransactionGroupingType.BY_DAY -> {
-                allItems.groupBy {
-                    val date = Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).toLocalDate()
-                    date.toString()
-                }
+        val groupsMap = allItems.groupBy { getGroupKey(it.timestamp, groupingType) }
+
+        // 2. Optimized O(N) Balance Calculation for Headers
+        val sortedHistory = absoluteHistory.sortedBy { it.transaction.timestamp }
+        val groupKeys = groupsMap.keys
+        
+        val openingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
+        val closingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
+        val currentBalances = mutableMapOf<String, BigDecimal>()
+        
+        var lastKey: String? = null
+        sortedHistory.forEach { txWithBalance ->
+            val tx = txWithBalance.transaction
+            val key = getGroupKey(tx.timestamp, groupingType)
+            
+            if (key != lastKey) {
+                if (key in groupKeys) openingBalancesMap[key] = currentBalances.toMap()
+                if (lastKey != null && lastKey!! in groupKeys) closingBalancesMap[lastKey!!] = currentBalances.toMap()
+                lastKey = key
             }
-            TransactionGroupingType.BY_WEEK -> {
-                allItems.groupBy {
-                    val date = Instant.ofEpochMilli(it.timestamp).atZone(systemZoneId).toLocalDate()
-                    val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
-                    "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
-                }
-            }
+            currentBalances[tx.currency] = (currentBalances[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
         }
+        if (lastKey != null && lastKey!! in groupKeys) closingBalancesMap[lastKey!!] = currentBalances.toMap()
 
-        val sortedKeys = groupsMap.keys.sortedDescending()
-
-        val headerSource = if (allTxnBreakdown) absoluteHistory else transactions
-        return sortedKeys.map { key ->
+        // 3. Final Group Construction
+        return groupsMap.keys.sortedDescending().map { key ->
             val groupItems = groupsMap[key] ?: emptyList()
+            val opening = openingBalancesMap[key] ?: emptyMap()
+            val closing = closingBalancesMap[key] ?: emptyMap()
+            
+            val summaryByCurrency = AggregationService.calculateSummaryByCurrency(groupItems.filterIsInstance<ConfirmedTransactionUiModel>().map { it.item.transaction })
+            val incomeByCurrency = summaryByCurrency.mapValues { it.value.income }
+            val expenseByCurrency = summaryByCurrency.mapValues { it.value.expense }
+            
+            val incomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
+            val expenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
+            val totalOpeningBase = CurrencyService.calculateTotalInCurrency(opening, baseCurrency, exchangeRates, precision)
+            val totalClosingBase = CurrencyService.calculateTotalInCurrency(closing, baseCurrency, exchangeRates, precision)
 
             TransactionGroup(
                 key = key,
-                headerData = getHeaderData(
-                    groupKey = key,
-                    groupTransactions = headerSource.filter { txWithBalance ->
-                        val dateString = when (groupingType) {
-                            TransactionGroupingType.BY_DAY -> Instant.ofEpochMilli(txWithBalance.transaction.timestamp).atZone(systemZoneId).toLocalDate().toString()
-                            TransactionGroupingType.BY_WEEK -> {
-                                val date = Instant.ofEpochMilli(txWithBalance.transaction.timestamp).atZone(systemZoneId).toLocalDate()
-                                val weekOfYear = date.get(weekFields.weekOfWeekBasedYear())
-                                "${date.year}-W${weekOfYear.toString().padStart(2, '0')}"
-                            }
-                        }
-                        dateString == key
-                    },
-                    absoluteHistory = absoluteHistory,
-                    groupingType = groupingType,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = exchangeRates,
-                    precision = precision
+                headerData = GroupHeaderData(
+                    title = formatGroupTitle(key, groupingType),
+                    subtitle = formatGroupSubtitle(key, groupingType),
+                    incomeByCurrency = incomeByCurrency,
+                    expenseByCurrency = expenseByCurrency,
+                    openingBalancesByCurrency = opening,
+                    closingBalancesByCurrency = closing,
+                    allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys + opening.keys + closing.keys).distinct().sorted(),
+                    incomeBase = incomeBase,
+                    expenseBase = expenseBase,
+                    netBase = incomeBase.add(expenseBase),
+                    totalOpeningBalanceBase = totalOpeningBase,
+                    totalClosingBalanceBase = totalClosingBase
                 ),
                 transactions = groupItems
             )
+        }
+    }
+
+    private fun formatGroupTitle(key: String, groupingType: TransactionGroupingType): String {
+        return when (groupingType) {
+            TransactionGroupingType.BY_DAY -> {
+                val date = LocalDate.parse(key)
+                val today = LocalDate.now(systemZoneId)
+                when {
+                    date == today -> "Today"
+                    date == today.minusDays(1) -> "Yesterday"
+                    else -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+                }
+            }
+            TransactionGroupingType.BY_WEEK -> "WEEK ${key.split("-W")[1]}"
+        }
+    }
+
+    private fun formatGroupSubtitle(key: String, groupingType: TransactionGroupingType): String {
+        return when (groupingType) {
+            TransactionGroupingType.BY_DAY -> LocalDate.parse(key).format(dateFormatter)
+            TransactionGroupingType.BY_WEEK -> {
+                val parts = key.split("-W")
+                val year = parts[0].toInt()
+                val week = parts[1].toInt()
+                val start = LocalDate.now(systemZoneId).withYear(year).with(weekFields.weekOfWeekBasedYear(), week.toLong()).with(weekFields.dayOfWeek(), 1)
+                "${start.format(shortDateFormatter)} - ${start.plusDays(6).format(dateFormatter)}"
+            }
         }
     }
 

@@ -139,6 +139,10 @@ class TransactionUseCases(
         repository.clearTransactionLinks(transactionId)
     }
 
+    fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> {
+        return repository.getAllTransactionLinks()
+    }
+
     fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
         return repository.getLinkedTransactionIds(transactionId)
     }

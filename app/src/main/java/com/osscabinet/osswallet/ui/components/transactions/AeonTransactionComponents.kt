@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -8,9 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,18 +24,17 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.nativeWithConvertedStrings
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AeonTransactionList(
-    listState: TransactionListState,
+    listState: TransactionListUiState,
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
+    lazyListState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     useNoteAsHeader: Boolean = false,
     showHeaderOpeningBalance: Boolean = false,
@@ -47,10 +52,37 @@ fun AeonTransactionList(
     showIcon: Boolean = true,
     baseCurrency: String,
     revealedCardIds: List<String> = emptyList(),
+    highlightedId: String? = null,
+    scrollToId: String? = null,
+    onScrollComplete: () -> Unit = {},
     hasStickyHeader: Boolean = true
 ) {
+    val scrollIndex = remember(listState, scrollToId) {
+        if (scrollToId == null) return@remember -1
+        var currentIndex = 0
+        for (group in listState.groups) {
+            // Header item
+            currentIndex++
+            for (record in group.items) {
+                if (record.record.id == scrollToId) {
+                    return@remember currentIndex
+                }
+                currentIndex++
+            }
+        }
+        -1
+    }
+
+    LaunchedEffect(scrollIndex) {
+        if (scrollIndex != -1) {
+            lazyListState.animateScrollToItem(scrollIndex)
+            onScrollComplete()
+        }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        state = lazyListState,
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
@@ -84,41 +116,39 @@ fun AeonTransactionList(
             }
 
             itemsIndexed(
-                group.transactions,
-                key = { _, record -> record.id }) { index, record ->
+                group.items,
+                key = { _, item -> item.record.id }) { index, item ->
+                val record = item.record
                 val icon = getIconByName(record.categoryIcon)
                 val iconBg = Color(record.categoryColor)
 
                 Box(modifier = Modifier.fillMaxWidth()) {
+                    val isHighlighted = record.id == highlightedId
+                    val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+
+                    LaunchedEffect(isHighlighted) {
+                        if (isHighlighted) {
+                            blinkAlpha.animateTo(0.3f, tween(300))
+                        } else {
+                            blinkAlpha.animateTo(0f, tween(700))
+                        }
+                    }
+
                     SwipeableTransactionItem(
                         record = record,
                         isRevealed = revealedCardIds.contains(record.id),
-                        onEvent = onTransactionEvent
+                        onEvent = onTransactionEvent,
+                        modifier = Modifier.background(AppColors.primary.copy(alpha = blinkAlpha.value))
                     ) {
-                        val (amountText, convertedText) = nativeWithConvertedStrings(
-                            amount = record.amount,
-                            nativeCurrency = record.currency,
-                            targetCurrency = baseCurrency,
-                            convertedAmount = record.amountInBase,
-                        )
                         AeonTransactionItem(
                             category = record.categoryName,
                             account = record.accountName,
-                            amount = amountText,
-                            convertedAmount = convertedText,
-                            balanceBefore = if (record is ConfirmedTransactionUiModel) formatCurrency(
-                                record.item.balanceBefore,
-                                record.accountCurrency
-                            ) else "",
-                            balanceAfter = if (record is ConfirmedTransactionUiModel) formatCurrency(
-                                record.item.balanceAfter,
-                                record.accountCurrency
-                            ) else "",
+                            amount = item.formattedAmount,
+                            convertedAmount = item.formattedConvertedAmount,
+                            balanceBefore = item.formattedBalanceBefore,
+                            balanceAfter = item.formattedBalanceAfter,
                             type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                            timestamp = if (record is ConfirmedTransactionUiModel) com.osscabinet.ossWallet.ui.util.TimeUtils.formatDateTime(
-                                record.timestamp
-                            )
-                            else com.osscabinet.ossWallet.ui.util.TimeUtils.formatDate(record.timestamp),
+                            timestamp = item.formattedDate,
                             note = record.note,
                             tags = record.tags,
                             icon = icon,
@@ -134,11 +164,11 @@ fun AeonTransactionList(
                             showTags = showTags,
                             showTimestamp = showTimestamp,
                             showIcon = showIcon,
-                            showDividers = index < group.transactions.size - 1,
+                            showDividers = index < group.items.size - 1,
                             isPlanned = record is PlannedPaymentUiModel
                         ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
                     }
-                } // hazeSource Box
+                } // Box
             }
         }
         item {

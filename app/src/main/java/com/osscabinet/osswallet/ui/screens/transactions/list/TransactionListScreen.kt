@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,6 +54,19 @@ fun TransactionListScreen(
     val recordsSettings by viewModel.recordsSettings.collectAsStateWithLifecycle()
     val savedFilters by viewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by viewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+    val scrollToId by viewModel.scrollToId.collectAsStateWithLifecycle()
+    val highlightedId by viewModel.highlightedId.collectAsStateWithLifecycle()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
+    val linkedPopupTxs by viewModel.linkedTransactionsPopup.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearSnackbar()
+        }
+    }
 
     var navTriggered by remember { mutableStateOf(false) }
 
@@ -77,7 +92,7 @@ fun TransactionListScreen(
             } catch (e: Exception) { null }
         } else null
         
-        viewModel.setRecordsMode(topLevel = config.isTopLevel, filter = filter)
+        viewModel.setRecordsMode(transient = !config.isTopLevel, filter = filter)
     }
 
     // Only clear filters when explicitly navigating back (not when navigating within records context)
@@ -95,6 +110,13 @@ fun TransactionListScreen(
         filter = filter,
         recordsSettings = recordsSettings,
         savedFilters = savedFilters,
+        scrollToId = scrollToId,
+        highlightedId = highlightedId,
+        onScrollComplete = { viewModel.clearScrollTo() },
+        snackbarHostState = snackbarHostState,
+        linkedPopupTxs = linkedPopupTxs,
+        onCloseLinkedPopup = { viewModel.closeLinkedPopup() },
+        onJumpToLinked = { viewModel.performJump(it) },
         onTransactionEvent = { event ->
             when (event) {
                 is TransactionItemEvent.Click -> navigate { 
@@ -114,6 +136,7 @@ fun TransactionListScreen(
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> viewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
+                is TransactionItemEvent.Jump -> viewModel.handleJumpRequest(event.id)
                 is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(
                     event.id
                 )

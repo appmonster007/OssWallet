@@ -1,24 +1,34 @@
 package com.osscabinet.ossWallet.ui.screens.transactions
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.FilterManager
+import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
+import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
+import com.osscabinet.ossWallet.domain.model.RecurrenceType
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TagUiModel
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.RecordUiModel
+import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.model.forAccount
-import com.osscabinet.ossWallet.domain.model.forCategory
+import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -36,9 +46,13 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
+import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,110 +66,114 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val transactionUseCases: TransactionUseCases,
     settingsRepository: SettingsRepository,
-    categoryRepository: CategoryRepository,
+    private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val filterRepository: FilterRepository,
     private val computationRepository: ComputationRepository,
     private val transactionManager: TransactionManager,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
-    private val tagRepository: TagRepository,
+    private val tagRepository: TagRepository
 ) : BaseViewModel(settingsRepository) {
 
     enum class RecordNavigationMode {
-        PERSISTENT, // "Home Base" - remembers everything
-        TRANSIENT   // "Link View" - isolated, one-off filter
+        PERSISTENT,
+        TRANSIENT
     }
 
-    // Two independent filter managers for dual-mode persistence
     private val persistentFilterManager = FilterManager()
     private val transientFilterManager = FilterManager()
-    
-    private val _navigationMode = MutableStateFlow(RecordNavigationMode.PERSISTENT)
-    val navigationMode = _navigationMode.asStateFlow()
 
-    // Expose merged filter based on active mode
+    private val _navigationMode = MutableStateFlow<RecordNavigationMode>(RecordNavigationMode.PERSISTENT)
+    val navigationMode: StateFlow<RecordNavigationMode> = _navigationMode.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val recordsFilter: StateFlow<TransactionFilter> = _navigationMode
         .flatMapLatest { mode ->
-            if (mode == RecordNavigationMode.TRANSIENT) transientFilterManager.mergedFilter
-            else persistentFilterManager.mergedFilter
+            if (mode == RecordNavigationMode.PERSISTENT) persistentFilterManager.mergedFilter
+            else transientFilterManager.mergedFilter
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionFilter())
 
-    // Track the initial filter from navigation (for resetting)
-    private val _initialFilter = MutableStateFlow(TransactionFilter())
-    val initialFilter = _initialFilter.asStateFlow()
+    private val _initialFilter = MutableStateFlow<TransactionFilter>(TransactionFilter())
+    val initialFilter: StateFlow<TransactionFilter> = _initialFilter.asStateFlow()
 
-    // Track revealed card IDs for swipe actions
     private val _revealedCardIdsList = MutableStateFlow<List<String>>(emptyList())
     val revealedCardIdsList: StateFlow<List<String>> = _revealedCardIdsList.asStateFlow()
 
-    // Prefill DTO for clone functionality
+    private val _highlightedId = MutableStateFlow<String?>(null)
+    val highlightedId: StateFlow<String?> = _highlightedId.asStateFlow()
+
+    private val _scrollToId = MutableStateFlow<String?>(null)
+    val scrollToId: StateFlow<String?> = _scrollToId.asStateFlow()
+
+    private val _snackbarMessage = MutableStateFlow<String?>(null)
+    val snackbarMessage: StateFlow<String?> = _snackbarMessage.asStateFlow()
+
+    private val _linkedTransactionsPopup = MutableStateFlow<List<TransactionListItem>?>(null)
+    val linkedTransactionsPopup: StateFlow<List<TransactionListItem>?> = _linkedTransactionsPopup.asStateFlow()
+
     private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
     val prefillDto: StateFlow<TransactionPrefillDTO?> = _prefillDto.asStateFlow()
 
     private val _templatePrefill = MutableStateFlow<TemplatePrefillDTO?>(null)
-    val templatePrefill = _templatePrefill.asStateFlow()
+    val templatePrefill: StateFlow<TemplatePrefillDTO?> = _templatePrefill.asStateFlow()
 
     private val _plannedPaymentPrefill = MutableStateFlow<PlannedPaymentPrefillDTO?>(null)
-    val plannedPaymentPrefill = _plannedPaymentPrefill.asStateFlow()
+    val plannedPaymentPrefill: StateFlow<PlannedPaymentPrefillDTO?> = _plannedPaymentPrefill.asStateFlow()
 
-    val savedFilters = filterRepository.getAllFilters()
+    val savedFilters: StateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>> = settingsRepository.currentProfileId
+        .flatMapLatest { filterRepository.getAllFilters() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allTags = tagRepository.getAllTags()
+    val allTags: StateFlow<List<Tag>> = tagRepository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories = categoryRepository.categories
+    val categories: StateFlow<List<Category>> = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
-    val recordsSettings: StateFlow<com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings> =
-        settingsRepository.recordsSettings
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
-                com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings()
-            )
+    val recordsSettings: StateFlow<TransactionSectionSettings> = settingsRepository.recordsSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
     init {
-        // Sync initial state to the persistent records filter
-        viewModelScope.launch {
-            val baseFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
-            _initialFilter.value = baseFilter
-            persistentFilterManager.setFilter("initial", baseFilter)
-        }
+        val baseFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+        persistentFilterManager.setFilter("base", baseFilter)
+        _initialFilter.value = baseFilter
     }
 
-    val accounts: StateFlow<List<com.osscabinet.ossWallet.domain.model.Account>> =
-        settingsRepository.currentProfileId
-            .flatMapLatest { accountRepository.getAllAccounts(it) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
+        .flatMapLatest { accountRepository.getAllAccounts(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val baseCurrency: StateFlow<String> = computationRepository.selectedCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
-    // Expose unique payees and notes for suggestions
+    val allTransactionLinks: StateFlow<Map<Long, List<Long>>> = transactionManager.getAllTransactionLinks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uniquePayees: StateFlow<List<String>> = settingsRepository.currentProfileId
-        .map { profileId -> transactionUseCases.getUniquePayees(profileId) }
+        .flatMapLatest { profileId -> flow { emit(transactionUseCases.getUniquePayees(profileId)) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uniqueNotes: StateFlow<List<String>> = settingsRepository.currentProfileId
-        .map { profileId -> transactionUseCases.getUniqueNotes(profileId) }
+        .flatMapLatest { profileId -> flow { emit(transactionUseCases.getUniqueNotes(profileId)) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val absoluteTransactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         settingsRepository.currentProfileId
             .flatMapLatest { profileId ->
@@ -167,8 +185,6 @@ class TransactionViewModel @Inject constructor(
                 ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
                     if (!hasLoadedExchangeRates) return@combine emptyList()
 
-                    // includeArchived = true so the base list covers all accounts;
-                    // filtering to active-only happens downstream in transactionsWithBalance.
                     transactionUseCases.getRecentTransactions(
                         allTransactions = allTransactions,
                         accounts = accounts,
@@ -204,7 +220,6 @@ class TransactionViewModel @Inject constructor(
     val scopedHistoryWithBalance: StateFlow<List<TransactionWithBalance>> =
         combine(
             absoluteTransactionsWithBalance,
-            // Only recompute when timeline or account scope changes, not on text query/amount changes.
             recordsFilter.map { it.timelineRange to it.accountIds }.distinctUntilChanged(),
             accounts
         ) { absoluteTxs, filterKey, allAccounts ->
@@ -222,6 +237,7 @@ class TransactionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val upcomingPayments: StateFlow<List<UpcomingPaymentItem>> =
         combine(
             settingsRepository.currentProfileId.flatMapLatest { plannedPaymentRepository.getActivePlannedPayments(it) },
@@ -256,446 +272,454 @@ class TransactionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    val listState: StateFlow<TransactionListState> =
+    private data class StructuralSnapshot(
+        val filteredTransactions: List<TransactionWithBalance>,
+        val absoluteHistory: List<TransactionWithBalance>,
+        val accounts: List<Account>,
+        val categories: List<Category>,
+        val links: Map<Long, List<Long>>
+    )
+
+    private data class MetadataSnapshot(
+        val tags: List<Tag>,
+        val upcomingPayments: List<UpcomingPaymentItem>
+    )
+
+    private data class ConfigSnapshot(
+        val baseCurrency: String,
+        val exchangeRates: Map<String, BigDecimal>,
+        val settings: TransactionSectionSettings
+    )
+
+    val listState: StateFlow<TransactionListUiState> =
         combine(
-            transactionsWithBalance,
-            scopedHistoryWithBalance,
-            accounts,
-            categories,
-            allTags,
-            baseCurrency,
-            exchangeRates,
-            recordsSettings,
-            upcomingPayments
-        ) { args: Array<*> ->
-            @Suppress("UNCHECKED_CAST")
-            val filtered = args[0] as List<TransactionWithBalance>
+            combine(
+                transactionsWithBalance,
+                scopedHistoryWithBalance,
+                accounts,
+                categories,
+                allTransactionLinks
+            ) { filtered, absolute, accounts, categories, links ->
+                StructuralSnapshot(filtered, absolute, accounts, categories, links)
+            },
+            combine(allTags, upcomingPayments) { tags, upcoming ->
+                MetadataSnapshot(tags, upcoming)
+            },
+            combine(baseCurrency, exchangeRates, recordsSettings) { base, rates, settings ->
+                ConfigSnapshot(base, rates, settings)
+            }
+        ) { structural, metadata, config ->
+            if (structural.filteredTransactions.isEmpty() && metadata.upcomingPayments.isEmpty()) {
+                return@combine TransactionListUiState()
+            }
 
-            @Suppress("UNCHECKED_CAST")
-            val absolute = args[1] as List<TransactionWithBalance>
-
-            @Suppress("UNCHECKED_CAST")
-            val accounts = args[2] as List<com.osscabinet.ossWallet.domain.model.Account>
-
-            @Suppress("UNCHECKED_CAST")
-            val categories = args[3] as List<Category>
-
-            @Suppress("UNCHECKED_CAST")
-            val tags = args[4] as List<com.osscabinet.ossWallet.domain.model.Tag>
-            val base = args[5] as String
-
-            @Suppress("UNCHECKED_CAST")
-            val rates = args[6] as Map<String, BigDecimal>
-            val settings =
-                args[7] as com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-
-            @Suppress("UNCHECKED_CAST")
-            val planned = args[8] as List<UpcomingPaymentItem>
-
-            if (filtered.isEmpty() && planned.isEmpty()) return@combine TransactionListState()
-
-            val groups = TimelineService.getGroupedData(
-                transactions = filtered,
-                absoluteHistory = absolute,
-                groupingType = settings.groupBy,
-                accounts = accounts,
-                categories = categories,
-                allTags = tags,
-                baseCurrency = base,
-                exchangeRates = rates,
-                plannedPayments = planned,
-                allTxnBreakdown = settings.allTxnBreakdown,
+            val domainGroups = TimelineService.getGroupedData(
+                transactions = structural.filteredTransactions,
+                absoluteHistory = structural.absoluteHistory,
+                groupingType = config.settings.groupBy,
+                accounts = structural.accounts,
+                categories = structural.categories,
+                allTags = metadata.tags,
+                baseCurrency = config.baseCurrency,
+                exchangeRates = config.exchangeRates,
+                plannedPayments = metadata.upcomingPayments,
+                linkedTransactionIds = structural.links,
+                allTxnBreakdown = config.settings.allTxnBreakdown,
             )
-            TransactionListState(groups = groups, isEmpty = false)
+            
+            TransactionUiMapper.mapToUiState(
+                domainState = TransactionListState(groups = domainGroups, isEmpty = false),
+                baseCurrency = config.baseCurrency
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TransactionListState(),
+            initialValue = TransactionListUiState(),
         )
 
-    val transactions: StateFlow<List<Transaction>> = transactionsWithBalance
-        .map { list -> list.map { it.transaction } }
+    val transactions: StateFlow<List<Transaction>> = absoluteTransactionsWithBalance
+        .map { list -> list.map { tx -> tx.transaction } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /**
-     * Smart discovery of recurring patterns based on all historical transactions.
-     * Runs completely offline using heuristic analysis.
-     * Filters out patterns that already exist as both Template and Planned Payment.
-     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     val discoveredPatterns: StateFlow<List<DiscoveredPattern>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                transactionUseCases.getFilteredTransactions(
-                    profileId,
-                    TransactionFilter(timelineRange = TimelineRange.AllTime())
-                ),
-                templateRepository.getAllTemplates(profileId),
-                plannedPaymentRepository.getAllPlannedPayments(profileId)
-            ) { transactions, templates, plannedPayments ->
-                val rawPatterns = PatternDiscoveryService.discoverPatterns(transactions)
-
-                rawPatterns.map { pattern ->
-                    val existsAsTemplate = templates.any {
-                        (it.name.equals(pattern.name, ignoreCase = true) ||
-                                it.payee?.equals(pattern.payee, ignoreCase = true) == true)
-                    }
-                    val existsAsPlannedPayment = plannedPayments.any {
-                        it.name.equals(pattern.name, ignoreCase = true) ||
-                                it.payee?.equals(pattern.payee, ignoreCase = true) == true
-                    }
-
-                    pattern.copy(
-                        existsAsTemplate = existsAsTemplate,
-                        existsAsPlannedPayment = existsAsPlannedPayment
-                    )
-                }.filter { !it.existsAsTemplate || !it.existsAsPlannedPayment }
+                transactionUseCases.getTransactions(profileId),
+                plannedPaymentRepository.getActivePlannedPayments(profileId),
+                templateRepository.getAllTemplates(profileId)
+            ) { txs, _, _ ->
+                PatternDiscoveryService.discoverPatterns(txs)
             }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private fun getActiveManager() = if (_navigationMode.value == RecordNavigationMode.TRANSIENT) {
-        transientFilterManager
-    } else {
-        persistentFilterManager
+    private fun getActiveManager(): FilterManager {
+        return if (_navigationMode.value == RecordNavigationMode.PERSISTENT) persistentFilterManager
+        else transientFilterManager
     }
 
-    fun updateRecordsFilter(newFilter: TransactionFilter) {
-        getActiveManager().setFilter("manual", newFilter)
+    fun updateRecordsFilter(filter: TransactionFilter) {
+        getActiveManager().setFilter("manual", filter)
     }
 
     fun setRecordsAccountFilter(accountId: String?) {
-        val manager = getActiveManager()
-        if (accountId != null) {
-            manager.setFilter("account", TransactionFilter().forAccount(accountId))
-        } else {
-            manager.removeFilter("account")
-        }
+        val current = getActiveManager().mergedFilter.value
+        val newIds = if (accountId == null) emptySet() else setOf(accountId)
+        if (current.accountIds == newIds) return
+        updateRecordsFilter(current.copy(accountIds = newIds))
     }
 
     fun setRecordsCategoryFilter(categoryId: Long?) {
-        val manager = getActiveManager()
-        if (categoryId != null) {
-            manager.setFilter("category", TransactionFilter().forCategory(categoryId))
-        } else {
-            manager.removeFilter("category")
-        }
+        val current = getActiveManager().mergedFilter.value
+        val newIds = if (categoryId == null) emptySet() else setOf(categoryId)
+        if (current.categoryIds == newIds) return
+        updateRecordsFilter(current.copy(categoryIds = newIds))
     }
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
-        getActiveManager().setFilter(
-            "date",
-            TransactionFilter(timelineRange = TimelineRange.CustomRange(start, end))
-        )
+        val current = getActiveManager().mergedFilter.value
+        updateRecordsFilter(current.copy(
+            timelineRange = TimelineRange.CustomRange(start ?: 0L, end ?: Long.MAX_VALUE)
+        ))
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
-        getActiveManager().setFilter("date", TransactionFilter(timelineRange = range))
+        updateRecordsFilter(getActiveManager().mergedFilter.value.copy(timelineRange = range))
     }
 
     fun setIncomeTypeFilter(type: TransactionType?) {
-        val manager = getActiveManager()
-        if (type != null) {
-            manager.setFilter(
-                "type",
-                TransactionFilter(transactionTypes = setOf(type))
-            )
-        } else {
-            manager.removeFilter("type")
+        val current = getActiveManager().mergedFilter.value
+        val newTypes = when (type) {
+            TransactionType.INCOME -> setOf(TransactionType.INCOME)
+            TransactionType.EXPENSE -> setOf(TransactionType.EXPENSE)
+            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> TransactionType.TRANSFER_TYPES
+            else -> emptySet()
         }
+        updateRecordsFilter(current.copy(transactionTypes = newTypes))
     }
 
     fun clearRecordsFilters() {
         getActiveManager().clear()
+        updateRecordsFilter(initialFilter.value)
     }
 
-    /**
-     * Set the navigation mode and initialize filters accordingly.
-     * Requirement: Persistent mode remembers state, Transient mode is isolated.
-     */
-    fun setRecordsMode(topLevel: Boolean, filter: TransactionFilter? = null) {
-        if (topLevel) {
-            _navigationMode.value = RecordNavigationMode.PERSISTENT
-            // persistentFilterManager already has its state preserved
-        } else {
+    fun setRecordsMode(transient: Boolean, filter: TransactionFilter? = null) {
+        if (transient) {
             _navigationMode.value = RecordNavigationMode.TRANSIENT
-            transientFilterManager.clear()
             if (filter != null) {
-                transientFilterManager.setFilter("transient_base", filter)
+                transientFilterManager.setFilter("transient", filter)
             }
+        } else {
+            _navigationMode.value = RecordNavigationMode.PERSISTENT
         }
     }
 
-    /**
-     * Reset the filter to the initial state for the CURRENT mode
-     */
     fun resetToInitialFilter() {
-        if (_navigationMode.value == RecordNavigationMode.TRANSIENT) {
-            // Re-apply the transient base if it exists
-            val base = transientFilterManager.getFilter("transient_base")
-            transientFilterManager.clear()
-            if (base != null) transientFilterManager.setFilter("transient_base", base)
-        } else {
-            persistentFilterManager.clear()
-            persistentFilterManager.setFilter("initial", _initialFilter.value)
-        }
+        _navigationMode.value = RecordNavigationMode.PERSISTENT
+        updateRecordsFilter(_initialFilter.value)
+        
+        // Also clear transient if it exists
+        transientFilterManager.clear()
     }
 
     fun addTag(name: String, color: Int) {
         viewModelScope.launch {
-            tagRepository.insertTag(
-                com.osscabinet.ossWallet.domain.model.Tag(
-                    name = name,
-                    colorHex = color
-                )
-            )
+            tagRepository.insertTag(Tag(name = name, colorHex = color))
         }
     }
-
 
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             withProfile { profileId ->
-                transactionUseCases.deleteTransaction(id, profileId)
+                transactionManager.deleteTransaction(id, profileId)
             }
         }
     }
 
-    fun updateRecordsSettings(update: (com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) -> com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings) {
+    fun updateRecordsSettings(transform: (TransactionSectionSettings) -> TransactionSectionSettings) {
         viewModelScope.launch {
-            settingsRepository.updateRecordsSettings(update)
+            settingsRepository.updateRecordsSettings(transform)
         }
     }
 
-    // Swipe action methods
-    fun onItemExpanded(cardId: String) {
-        if (_revealedCardIdsList.value.contains(cardId)) return
-        _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
-            list.add(cardId)
+    fun onItemExpanded(id: String) {
+        _revealedCardIdsList.update { current ->
+            if (id in current) current else current + id
         }
     }
 
-    fun onItemCollapsed(cardId: String) {
-        if (!_revealedCardIdsList.value.contains(cardId)) return
-        _revealedCardIdsList.value = _revealedCardIdsList.value.toMutableList().also { list ->
-            list.remove(cardId)
+    fun onItemCollapsed(id: String) {
+        _revealedCardIdsList.update { current ->
+            current.filterNot { it == id }
         }
     }
 
     fun confirmPlannedPayment(paymentId: Long, scheduledDate: Long) {
         viewModelScope.launch {
-            val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
             val profileId = settingsRepository.currentProfileId.first()
-            val now = System.currentTimeMillis();
+            val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
+            
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
                 entryMode = payment.entryMode,
-                accountId = payment.accountId,
-                categoryId = payment.categoryId,
+                accountId = payment.accountId ?: "",
                 currency = payment.currency,
-                timestamp = now,
+                categoryId = payment.categoryId,
                 tags = payment.tags,
+                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                timestamp = System.currentTimeMillis(),
                 payee = payment.payee ?: "",
                 note = payment.note ?: "",
-                status = payment.transactionStatus,
-                sourcePlannedPaymentId = paymentId,
                 targetAccountId = payment.targetAccountId,
                 targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate
+                transferRate = payment.transferRate,
+                sourcePlannedPaymentId = payment.id,
+                warrantyExpiration = payment.warrantyExpiration,
+                gpsLocation = payment.gpsLocation
             )
 
             transactionManager.handleSaveTransaction(
                 existingTransaction = null,
                 request = request,
                 profileId = profileId,
-                sourcePlannedPaymentId = paymentId,
+                sourcePlannedPaymentId = payment.id,
                 scheduledDate = scheduledDate
             )
-            onItemCollapsed("planned_${paymentId}_$scheduledDate")
+            _snackbarMessage.value = "Payment confirmed"
         }
     }
 
     fun cancelPlannedPayment(paymentId: Long, scheduledDate: Long) {
         viewModelScope.launch {
             transactionManager.skipPlannedPayment(paymentId, scheduledDate)
-            onItemCollapsed("planned_${paymentId}_$scheduledDate")
+            _snackbarMessage.value = "Payment skipped"
         }
     }
 
-    fun quickUpdateStatus(
-        transactionId: Long,
-        newStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus
-    ) {
+    fun quickUpdateStatus(id: Long, status: TransactionStatus) {
         viewModelScope.launch {
             withProfile { profileId ->
-                if (transactionManager.updateStatus(transactionId, newStatus, profileId)) {
-                    onItemCollapsed("tx_$transactionId")
-                }
+                transactionManager.updateStatus(id, status, profileId)
             }
         }
     }
 
-    fun quickCloneTransaction(transactionId: Long) {
+    fun quickCloneTransaction(id: Long) {
         viewModelScope.launch {
             withProfile { profileId ->
-                if (transactionManager.cloneTransaction(transactionId, profileId) != null) {
-                    onItemCollapsed("tx_$transactionId")
-                }
+                transactionManager.cloneTransaction(id, profileId)
+                _snackbarMessage.value = "Transaction cloned"
             }
         }
     }
 
-    /**
-     * Set the clone transaction ID and fetch the prefill DTO.
-     * This allows the UI to navigate to the entry screen with prefilled data.
-     * Uses the use case to fetch the transaction directly, bypassing any filters.
-     */
-    fun setCloneTransactionId(transactionId: Long) {
+    fun setCloneTransactionId(id: Long) {
         viewModelScope.launch {
-            val profileId = settingsRepository.currentProfileId.first()
-            val transaction = transactionUseCases.getTransactionById(transactionId, profileId)
-            if (transaction != null) {
-                var prefill = TransactionPrefillDTO.fromTransaction(
-                    transaction,
-                    clonedFromId = transactionId
+            withProfile { profileId ->
+                val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
+                val dto = TransactionPrefillDTO(
+                    name = tx.name,
+                    amount = tx.amount.abs().toPlainString(),
+                    categoryId = tx.categoryId,
+                    entryMode = tx.transactionType.toEntryMode(),
+                    accountId = tx.accountId ?: "",
+                    currency = tx.currency,
+                    tags = tx.tags,
+                    paymentMethod = tx.paymentMethod,
+                    payee = tx.payee,
+                    note = tx.note,
+                    transactionType = tx.transactionType,
+                    gpsLocation = tx.gpsLocation,
+                    warrantyExpiration = tx.warrantyExpiration
                 )
-
-                // If it's a transfer, try to find the linked transaction to get the target account and rate
-                if (Category.isTransfer(transaction.categoryId)) {
-                    val linkedTxs = transactionUseCases.getLinkedTransactions(transactionId).first()
-                    val targetTx = linkedTxs.find {
-                        Category.isTransfer(it.categoryId) &&
-                                it.accountId != transaction.accountId &&
-                                it.transactionType == TransactionType.TRANSFER_INFLOW
-                    }
-                    if (targetTx != null) {
-                        val rate = if (transaction.amount.signum() != 0) {
-                            targetTx.amount.abs()
-                                .divide(transaction.amount.abs(), 6, RoundingMode.HALF_UP)
-                        } else BigDecimal.ONE
-
-                        prefill = prefill.copy(
-                            accountId = transaction.accountId,
-                            targetAccountId = targetTx.accountId,
-                            targetCurrency = targetTx.currency,
-                            exchangeRate = rate.toPlainString()
+                
+                // Handle transfer specifics
+                if (tx.transactionType.isTransfer) {
+                    val links = transactionUseCases.getLinkedTransactions(tx.id).first()
+                    val other = links.find { it.id != tx.id }
+                    if (other != null) {
+                        _prefillDto.value = dto.copy(
+                            targetAccountId = other.accountId,
+                            targetCurrency = other.currency,
+                            exchangeRate = tx.transferRate.toPlainString()
                         )
+                        return@withProfile
                     }
                 }
-
-                _prefillDto.value = prefill
-            } else {
-                _prefillDto.value = null
+                
+                _prefillDto.value = dto
             }
         }
     }
 
-    /**
-     * Set the prefill DTO from a planned payment.
-     * This is used when manually confirming a planned payment.
-     */
-    fun setPlannedPaymentPrefill(plannedPaymentId: Long, scheduledDate: Long? = null) {
+    fun setPlannedPaymentPrefill(id: Long, scheduledDate: Long?) {
         viewModelScope.launch {
-            val payment = plannedPaymentRepository.getById(plannedPaymentId)
-            if (payment != null) {
-                _prefillDto.value = TransactionPrefillDTO.fromPlannedPayment(payment, scheduledDate)
-            } else {
-                _prefillDto.value = null
-            }
+            val pp = plannedPaymentRepository.getById(id) ?: return@launch
+            _prefillDto.value = TransactionPrefillDTO.fromPlannedPayment(pp, scheduledDate)
         }
     }
 
-    /**
-     * Set the prefill DTO from a template.
-     * This is used when creating a transaction from a template.
-     */
-    fun setTemplatePrefill(templateId: Long) {
+    fun setTemplatePrefill(id: Long) {
         viewModelScope.launch {
-            val profileId = settingsRepository.currentProfileId.first()
-            val templates = templateRepository.getAllTemplatesSync(profileId)
-            val template = templates.find { it.id == templateId }
-            if (template != null) {
-                _prefillDto.value = TransactionPrefillDTO.fromTemplate(template)
-            } else {
-                _prefillDto.value = null
-            }
+            val template = templateRepository.getTemplateById(id) ?: return@launch
+            _templatePrefill.value = TemplatePrefillDTO(
+                name = template.name,
+                categoryId = template.categoryId,
+                amount = template.amount,
+                entryMode = template.entryMode,
+                accountId = template.accountId,
+                note = template.note,
+                payee = template.payee,
+                location = template.location,
+                gpsLocation = template.gpsLocation,
+                warrantyExpiration = template.warrantyExpiration,
+                currency = template.currency,
+                tags = template.tags
+            )
         }
     }
 
-    /**
-     * Clear the prefill DTO.
-     * Call this when opening the entry screen without clone data.
-     */
     fun clearPrefillDto() {
         _prefillDto.value = null
+        _templatePrefill.value = null
+        _plannedPaymentPrefill.value = null
     }
 
-    fun quickDeleteTransaction(transactionId: Long) {
+    fun quickDeleteTransaction(id: Long) {
         viewModelScope.launch {
-            deleteTransaction(transactionId)
-            onItemCollapsed("tx_$transactionId")
+            deleteTransaction(id)
+            _snackbarMessage.value = "Transaction deleted"
         }
     }
 
-    /**
-     * Set the split transaction ID and fetch the prefill DTO.
-     * This allows the UI to navigate to the entry screen with split mode prefilled.
-     */
-    fun setSplitTransactionId(transactionId: Long) {
+    fun setSplitTransactionId(id: Long) {
         viewModelScope.launch {
-            val profileId = settingsRepository.currentProfileId.first()
-            val transaction = transactionUseCases.getTransactionById(transactionId, profileId)
-            if (transaction != null) {
-                _prefillDto.value = TransactionPrefillDTO.fromTransaction(
-                    transaction,
-                    clonedFromId = transactionId,
+            withProfile { profileId ->
+                val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
+                _prefillDto.value = TransactionPrefillDTO(
+                    name = tx.name,
+                    amount = tx.amount.abs().toPlainString(),
+                    categoryId = tx.categoryId,
+                    entryMode = tx.transactionType.toEntryMode(),
+                    accountId = tx.accountId ?: "",
+                    currency = tx.currency,
+                    tags = tx.tags,
+                    paymentMethod = tx.paymentMethod,
+                    payee = tx.payee,
+                    note = tx.note,
+                    transactionType = tx.transactionType,
+                    clonedFromTransactionId = tx.id,
                     isSplitMode = true
                 )
-            } else {
-                _prefillDto.value = null
             }
         }
     }
 
-    fun toggleStatusClearedUncleared(transactionId: Long) {
+    fun toggleStatusClearedUncleared(id: Long) {
         viewModelScope.launch {
             withProfile { profileId ->
-                if (transactionManager.toggleStatus(transactionId, profileId) != null) {
-                    onItemCollapsed("tx_$transactionId")
+                val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
+                val newStatus = if (tx.status == TransactionStatus.CLEARED) TransactionStatus.UNCLEARED else TransactionStatus.CLEARED
+                quickUpdateStatus(id, newStatus)
+            }
+        }
+    }
+
+    fun handleJumpRequest(id: Long) {
+        viewModelScope.launch {
+            withProfile { profileId ->
+                val links = transactionUseCases.getLinkedTransactionIds(id).first()
+                if (links.isEmpty()) {
+                    _snackbarMessage.value = "No linked transactions found"
+                    return@withProfile
+                }
+                
+                if (links.size == 1) {
+                    performJump(links[0])
+                } else {
+                    // Show selection popup
+                    val enriched = transactionUseCases.getLinkedTransactions(id).first()
+                        .let { TimelineService.enrichTransactions(
+                            it, 
+                            accounts.value, 
+                            categories.value, 
+                            allTags.value, 
+                            baseCurrency.value, 
+                            exchangeRates.value
+                        )}
+                    
+                    _linkedTransactionsPopup.value = enriched.map { 
+                        TransactionUiMapper.mapRecord(it, baseCurrency.value)
+                    }
                 }
             }
         }
     }
 
-    // Link management methods
-    fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+    fun performJump(id: Long) {
         viewModelScope.launch {
-            transactionUseCases.addTransactionLink(transactionId, linkedTransactionId)
+            withProfile { profileId ->
+                val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
+                
+                // 1. Update filter to include this transaction's date and account
+                val current = recordsFilter.value
+                val (_, endTime) = TimelineService.getDateRange(current.timelineRange)
+                
+                var newRange = current.timelineRange
+                if (tx.timestamp > (endTime ?: Long.MAX_VALUE) || tx.timestamp < (TimelineService.getDateRange(current.timelineRange).first ?: 0L)) {
+                    newRange = TimelineRange.AllTime(excludeFuture = false)
+                }
+                
+                updateRecordsFilter(current.copy(
+                    timelineRange = newRange,
+                    accountIds = if (current.accountIds.isNotEmpty() && tx.accountId !in current.accountIds) emptySet() else current.accountIds
+                ))
+                
+                // 2. Trigger scroll and highlight
+                _scrollToId.value = "tx_$id"
+                _highlightedId.value = "tx_$id"
+                _snackbarMessage.value = "Jumped to transaction"
+                
+                // 3. Clear popup if open
+                _linkedTransactionsPopup.value = null
+            }
+
+            // 4. Clear highlight after 2 seconds
+            delay(2000)
+            if (_highlightedId.value == "tx_$id") {
+                _highlightedId.value = null
+            }
         }
     }
 
-    fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
+    fun clearScrollTo() { _scrollToId.value = null }
+
+    fun clearSnackbar() { _snackbarMessage.value = null }
+
+    fun closeLinkedPopup() { _linkedTransactionsPopup.value = null }
+
+    fun addTransactionLink(id1: Long, id2: Long) {
         viewModelScope.launch {
-            transactionUseCases.removeTransactionLink(transactionId, linkedTransactionId)
+            transactionUseCases.addTransactionLink(id1, id2)
         }
     }
 
-    fun clearTransactionLinks(transactionId: Long) {
+    fun removeTransactionLink(id1: Long, id2: Long) {
         viewModelScope.launch {
-            transactionUseCases.clearTransactionLinks(transactionId)
+            transactionUseCases.removeTransactionLink(id1, id2)
         }
     }
 
-    fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {
-        return transactionUseCases.getLinkedTransactionIds(transactionId)
+    fun clearTransactionLinks(id: Long) {
+        viewModelScope.launch {
+            transactionUseCases.clearTransactionLinks(id)
+        }
     }
 
-    fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>> {
-        return transactionUseCases.getLinkedTransactions(transactionId)
-    }
+    fun getLinkedTransactionIds(id: Long): Flow<List<Long>> = transactionUseCases.getLinkedTransactionIds(id)
+
+    fun getLinkedTransactions(id: Long): Flow<List<Transaction>> = transactionUseCases.getLinkedTransactions(id)
 
     /**
      * Search transactions for linking.
@@ -712,52 +736,66 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
-        val template = PatternDiscoveryService.toTemplate(pattern)
-        _templatePrefill.value = TemplatePrefillDTO(
-            name = template.name,
-            categoryId = template.categoryId,
-            amount = template.amount,
-            entryMode = template.entryMode,
-            accountId = template.accountId,
-            note = template.note,
-            payee = template.payee,
-            location = template.location,
-            paymentMethod = template.paymentMethod,
-            currency = template.currency,
-            tags = template.tags
-        )
+        viewModelScope.launch {
+            withProfile { profileId ->
+                val template = com.osscabinet.ossWallet.domain.model.Template(
+                    id = 0,
+                    name = pattern.name,
+                    categoryId = pattern.categoryId,
+                    amount = pattern.averageAmount,
+                    entryMode = pattern.entryMode,
+                    accountId = pattern.accountId,
+                    currency = pattern.currency,
+                    note = pattern.note,
+                    payee = pattern.payee,
+                    profileId = profileId,
+                    tags = pattern.tags,
+                    paymentMethod = pattern.paymentMethod,
+                    location = pattern.gpsLocation
+                )
+                templateRepository.insertTemplate(template)
+                _snackbarMessage.value = "Template saved"
+            }
+        }
     }
 
-    fun clearTemplatePrefill() {
-        _templatePrefill.value = null
-    }
+    fun clearTemplatePrefill() { _templatePrefill.value = null }
 
     fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
-        val payment = PatternDiscoveryService.toPlannedPayment(pattern)
-        if (payment != null) {
-            _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
-                template = PatternDiscoveryService.toTemplate(pattern),
-                schedule = payment.schedule
-            )
-            onItemCollapsed("tx_${pattern.representativeTransactionId}")
+        viewModelScope.launch {
+            withProfile { profileId ->
+                val pp = PlannedPayment(
+                    name = pattern.name,
+                    amount = pattern.averageAmount,
+                    currency = pattern.currency,
+                    categoryId = pattern.categoryId,
+                    accountId = pattern.accountId,
+                    entryMode = pattern.entryMode,
+                    note = pattern.note,
+                    payee = pattern.payee,
+                    schedule = PaymentSchedule(
+                        recurrenceRule = pattern.recurrenceRule ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
+                        startDate = System.currentTimeMillis(),
+                        nextDueDate = pattern.lastDate
+                    ),
+                    profileId = profileId
+                )
+                plannedPaymentRepository.insert(pp)
+                _snackbarMessage.value = "Planned payment created"
+            }
         }
     }
 
     fun setPlannedPaymentPrefillFromTemplate(template: com.osscabinet.ossWallet.domain.model.Template) {
-        val now = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
-        val startEpoch = now.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-
         _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
             template = template,
-            schedule = com.osscabinet.ossWallet.domain.model.PaymentSchedule(
-                recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(type = com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY),
-                startDate = startEpoch,
-                nextDueDate = startEpoch
+            schedule = PaymentSchedule(
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY, 1),
+                startDate = System.currentTimeMillis(),
+                nextDueDate = System.currentTimeMillis()
             )
         )
     }
 
-    fun clearPlannedPaymentPrefill() {
-        _plannedPaymentPrefill.value = null
-    }
+    fun clearPlannedPaymentPrefill() { _plannedPaymentPrefill.value = null }
 }

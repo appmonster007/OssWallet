@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
@@ -27,6 +28,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -96,90 +98,97 @@ class AccountDetailViewModel @Inject constructor(
         }
     }
 
+    private data class DomainSnapshot(
+        val accounts: List<Account>,
+        val allTransactions: List<Transaction>,
+        val categories: List<Category>,
+        val tags: List<Tag>,
+        val links: Map<Long, List<Long>>
+    )
+
+    private data class ConfigSnapshot(
+        val rates: Map<String, BigDecimal>,
+        val baseCurrency: String,
+        val hasLoadedRates: Boolean,
+        val settings: TransactionSectionSettings,
+        val filter: TransactionFilter
+    )
+
     // cardsConfig is observed separately by the screen — removing it from this combine prevents
     // a full account data rebuild on every card filter change.
     val uiState: StateFlow<AccountDetailUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                accountRepository.getAllAccounts(profileId),
-                transactionUseCases.getTransactions(profileId),
-                categoryRepository.categories,
-                tagRepository.getAllTags(),
-                computationRepository.exchangeRates,
-                computationRepository.selectedCurrency,
-                computationRepository.hasLoadedExchangeRates,
-                settingsRepository.recordsSettings,
-                filter
-            ) { args: Array<*> ->
-                @Suppress("UNCHECKED_CAST")
-                val accounts = args[0] as List<Account>
-
-                @Suppress("UNCHECKED_CAST")
-                val allTransactions = args[1] as List<Transaction>
-
-                @Suppress("UNCHECKED_CAST")
-                val categories = args[2] as List<Category>
-
-                @Suppress("UNCHECKED_CAST")
-                val tags = args[3] as List<com.osscabinet.ossWallet.domain.model.Tag>
-
-                @Suppress("UNCHECKED_CAST")
-                val rates = args[4] as Map<String, BigDecimal>
-                val baseCurrency = args[5] as String
-                val hasLoadedExchangeRates = args[6] as Boolean
-                val settings = args[7] as TransactionSectionSettings
-                val currentFilter = args[8] as TransactionFilter
-
-                if (!hasLoadedExchangeRates) {
+                combine(
+                    accountRepository.getAllAccounts(profileId),
+                    transactionUseCases.getTransactions(profileId),
+                    categoryRepository.categories,
+                    tagRepository.getAllTags(),
+                    transactionUseCases.getAllTransactionLinks()
+                ) { acc, tx, cat, tags, links ->
+                    DomainSnapshot(acc, tx, cat, tags, links)
+                }.distinctUntilChanged(),
+                combine(
+                    computationRepository.exchangeRates,
+                    computationRepository.selectedCurrency,
+                    computationRepository.hasLoadedExchangeRates,
+                    settingsRepository.recordsSettings,
+                    filter
+                ) { rates, base, loaded, settings, currentFilter ->
+                    ConfigSnapshot(rates, base, loaded, settings, currentFilter)
+                }.distinctUntilChanged()
+            ) { domain, config ->
+                if (!config.hasLoadedRates) {
                     return@combine AccountDetailUiState.Loading
                 }
 
-                val account = accounts.find { it.id == accountId }
+                val account = domain.accounts.find { it.id == accountId }
                     ?: return@combine AccountDetailUiState.Error("Account not found")
 
                 // All transactions for this account (Card Input)
-                val accountTransactions = allTransactions.filter { it.accountId == accountId }
+                val accountTransactions = domain.allTransactions.filter { it.accountId == accountId }
 
                 // Absolute balances for this account
                 val absoluteTransactionsWithBalance = transactionUseCases.getRecentTransactions(
                     allTransactions = accountTransactions,
                     accounts = listOf(account),
-                    exchangeRates = rates,
+                    exchangeRates = config.rates,
                     limit = Int.MAX_VALUE,
-                    excludeFuture = currentFilter.timelineRange.excludeFuture
+                    excludeFuture = config.filter.timelineRange.excludeFuture
                 )
 
                 // Filtered transactions for the list tab
                 val filteredTransactionsWithBalance =
                     TransactionFilterService.filterTransactionsWithBalance(
                         absoluteTransactionsWithBalance,
-                        currentFilter
+                        config.filter
                     )
 
                 val listState = TimelineService.getGroupedData(
                     transactions = filteredTransactionsWithBalance,
                     absoluteHistory = absoluteTransactionsWithBalance,
-                    groupingType = settings.groupBy,
-                    accounts = accounts,
-                    categories = categories,
-                    allTags = tags,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates
+                    groupingType = config.settings.groupBy,
+                    accounts = domain.accounts,
+                    categories = domain.categories,
+                    allTags = domain.tags,
+                    baseCurrency = config.baseCurrency,
+                    exchangeRates = config.rates,
+                    linkedTransactionIds = domain.links
                 ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
 
                 AccountDetailUiState.Success(
                     profileId = profileId,
                     account = account,
                     allAccountTransactions = accountTransactions,
-                    allProfileTransactions = allTransactions,
+                    allProfileTransactions = domain.allTransactions,
                     listState = listState,
-                    allCategories = categories,
-                    allTags = tags,
-                    baseCurrency = baseCurrency,
-                    exchangeRates = rates,
-                    showPlannedPayments = settings.showPlannedPayments,
-                    useNoteAsHeader = settings.useNoteAsHeader,
-                    currentFilter = currentFilter
+                    allCategories = domain.categories,
+                    allTags = domain.tags,
+                    baseCurrency = config.baseCurrency,
+                    exchangeRates = config.rates,
+                    showPlannedPayments = config.settings.showPlannedPayments,
+                    useNoteAsHeader = config.settings.useNoteAsHeader,
+                    currentFilter = config.filter
                 )
             }
         }

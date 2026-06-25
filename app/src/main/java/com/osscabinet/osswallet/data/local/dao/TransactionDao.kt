@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.SkipQueryVerification
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
@@ -83,7 +84,6 @@ abstract class TransactionDao {
         newTransaction: TransactionEntity,
         accountDao: AccountDao
     ): Long {
-        // Perform the database update and return the ID
         return _insertTransaction(newTransaction)
     }
 
@@ -115,6 +115,13 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE tags LIKE '%' || :tagName || '%' AND profileId = :profileId")
     abstract suspend fun getTransactionsWithTag(tagName: String, profileId: Int): List<TransactionEntity>
 
+    /**
+     * Search transactions using Full-Text Search.
+     * SkipQueryVerification is required because the table is created as FTS5 in migrations,
+     * while the entity is annotated as @Fts4 for Room compatibility. Room's compiler
+     * cannot verify FTS5-specific syntax or rowid-based joins against its internal model.
+     */
+    @SkipQueryVerification
     @Query(
         """
         SELECT transactions.* FROM transactions 
@@ -138,6 +145,7 @@ abstract class TransactionDao {
         query: String
     ): Flow<List<TransactionEntity>>
 
+    @SkipQueryVerification
     @Query(
         """
         SELECT transactions.* FROM transactions

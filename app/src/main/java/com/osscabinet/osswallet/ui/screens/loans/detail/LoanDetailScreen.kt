@@ -153,6 +153,7 @@ fun LoanDetailScreen(
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
+                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id)
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -273,7 +274,10 @@ fun LoanDetailContent(
                                             baseCurrency = baseCurrency,
                                             exchangeRates = emptyMap()
                                         )
-                                        TransactionListState(groups = groups, isEmpty = groups.isEmpty())
+                                        com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
+                                            domainState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
+                                            baseCurrency = baseCurrency
+                                        )
                                     }
 
                                     RecentActivitiesScreen(

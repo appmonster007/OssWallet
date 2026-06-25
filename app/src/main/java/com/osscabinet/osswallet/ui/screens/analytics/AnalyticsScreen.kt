@@ -229,6 +229,9 @@ fun AnalyticsScreen(
                                             )
                                         },
                                         onSplit = { actions.onSplitTransactionClick(it) },
+                                        onJump = { id, availableIds -> 
+                                            transactionViewModel.handleJumpRequest(id, availableIds) 
+                                        },
                                         onFullSwipeRight = {
                                             transactionViewModel.toggleStatusClearedUncleared(
                                                 it

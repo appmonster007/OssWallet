@@ -141,7 +141,7 @@ fun LoanDetailScreen(
         onEditClick = actions.onEditClick,
         onBackClick = actions.onBackClick,
         onSettleClick = { viewModel.settleLoan(loan); actions.onBackClick() },
-        onTransactionEvent = { event ->
+        onTransactionEvent = { event, availableIds ->
             when (event) {
                 is TransactionItemEvent.Click -> actions.onTransactionClick(event.id.substringAfter("_").toLongOrNull() ?: -1L)
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
@@ -153,7 +153,7 @@ fun LoanDetailScreen(
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id)
+                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, availableIds)
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -182,7 +182,7 @@ fun LoanDetailContent(
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,
     onSettleClick: () -> Unit,
-    onTransactionEvent: (TransactionItemEvent) -> Unit,
+    onTransactionEvent: (TransactionItemEvent, Set<Long>?) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -289,7 +289,9 @@ fun LoanDetailContent(
                                         contentPadding = PaddingValues(top = pillHeight + AeonTheme.dimensions.spacingMd),
                                         revealedCardIds = revealedCardIds,
                                         showCurrencyBreakdown = recentActivitiesBreakdown,
-                                        onTransactionEvent = onTransactionEvent,
+                                        onTransactionEvent = { event ->
+                                            onTransactionEvent(event, loanListState.getAllTransactionIds())
+                                        },
                                         hasStickyHeader = false,
                                         showHeader = false
                                     )
@@ -399,7 +401,7 @@ fun LoanDetailPreview() {
             onEditClick = {},
             onBackClick = {},
             onSettleClick = {},
-            onTransactionEvent = {},
+            onTransactionEvent = { _, _ -> },
             onRecordsClick = {}
         )
     }

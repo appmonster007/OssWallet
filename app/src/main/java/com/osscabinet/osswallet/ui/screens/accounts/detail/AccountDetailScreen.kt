@@ -375,11 +375,12 @@ fun AccountDetailScreen(
                                                         }
                                                     }
                                                 } else {
+                                                    val uiListState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
+                                                        domainState = state.listState,
+                                                        baseCurrency = state.baseCurrency
+                                                    )
                                                     RecentActivitiesScreen(
-                                                        listState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
-                                                            domainState = state.listState,
-                                                            baseCurrency = state.baseCurrency
-                                                        ),
+                                                        listState = uiListState,
                                                         onRecordsClick = { drillDown -> actions.onRecordsClick(state.currentFilter.merge(drillDown)) },
                                                         baseCurrency = state.baseCurrency,
                                                         contentPadding = PaddingValues(
@@ -402,7 +403,7 @@ fun AccountDetailScreen(
                                                                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                                                                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                                                                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                                                                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id)
+                                                                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, uiListState.getAllTransactionIds())
                                                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                                                 is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
                                                                 is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
@@ -582,6 +583,9 @@ fun DynamicAccountDetailCards(
                 onClone = { onCloneTransactionClick(it) },
                 onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                 onSplit = { onSplitTransactionClick(it) },
+                onJump = { id, availableIds -> 
+                    transactionViewModel.handleJumpRequest(id, availableIds) 
+                },
                 onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
             ),
             paymentActions = PaymentActions(

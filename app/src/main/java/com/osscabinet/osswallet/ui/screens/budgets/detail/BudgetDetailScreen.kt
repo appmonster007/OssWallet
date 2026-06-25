@@ -142,7 +142,7 @@ fun BudgetDetailScreen(
         recentActivitiesBreakdown = recentActivitiesBreakdown,
         onEditClick = { actions.onEditClick(budget.id) },
         onBackClick = actions.onBackClick,
-        onTransactionEvent = { event ->
+        onTransactionEvent = { event, availableIds ->
             when (event) {
                 is TransactionItemEvent.Click -> {
                     if (event.id.startsWith("tx_")) {
@@ -158,7 +158,7 @@ fun BudgetDetailScreen(
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id)
+                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, availableIds)
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
@@ -186,7 +186,7 @@ fun BudgetDetailContent(
     recentActivitiesBreakdown: Boolean,
     onEditClick: () -> Unit,
     onBackClick: () -> Unit,
-    onTransactionEvent: (TransactionItemEvent) -> Unit,
+    onTransactionEvent: (TransactionItemEvent, Set<Long>?) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -354,7 +354,9 @@ fun BudgetDetailContent(
                                         contentPadding = PaddingValues(top = pillHeight + AeonTheme.dimensions.spacingMd),
                                         revealedCardIds = revealedCardIds,
                                         showCurrencyBreakdown = recentActivitiesBreakdown,
-                                        onTransactionEvent = onTransactionEvent,
+                                        onTransactionEvent = { event ->
+                                            onTransactionEvent(event, budgetListState.getAllTransactionIds())
+                                        },
                                         hasStickyHeader = false,
                                         showHeader = false
                                     )
@@ -449,7 +451,7 @@ fun BudgetDetailPreview() {
             recentActivitiesBreakdown = false,
             onEditClick = {},
             onBackClick = {},
-            onTransactionEvent = {},
+            onTransactionEvent = { _, _ -> },
             onRecordsClick = {}
         )
     }

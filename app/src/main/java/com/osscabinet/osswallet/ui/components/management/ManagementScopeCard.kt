@@ -333,7 +333,10 @@ fun ManagementScopeCard(
         icon = Icons.Rounded.FilterAlt,
         modifier = modifier.fillMaxWidth()
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
+            modifier = modifier.fillMaxWidth()
+        ) {
             sections.forEach { group ->
                 ScopeSection(
                     label = group.label,

@@ -298,6 +298,27 @@ fun PlannedPaymentDetailContent(
     val category = remember(payment.categoryId, categories) { categories.find { it.id == payment.categoryId } }
     val targetAccount = remember(payment.targetAccountId, accounts) { accounts.find { it.id == payment.targetAccountId } }
 
+    val occurrencesMap = remember(occurrences) {
+        occurrences.associateBy { it.scheduledDate }
+    }
+
+    val defaultColor = AppColors.primary
+    val accountColor = remember(account?.colorHex, defaultColor) {
+        account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: defaultColor
+    }
+
+    val targetAccountColor = remember(targetAccount?.colorHex, defaultColor) {
+        targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: defaultColor
+    }
+
+    val categoryColor = remember(category?.colorHex, defaultColor) {
+        category?.colorHex?.let { Color(it) } ?: defaultColor
+    }
+
+    val statusColor = remember(payment.status.colorHex) {
+        Color(android.graphics.Color.parseColor(payment.status.colorHex))
+    }
+
     val pillHeight = AeonSize.D64.value
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
@@ -344,7 +365,7 @@ fun PlannedPaymentDetailContent(
                                                 label = "ACCOUNT",
                                                 value = account?.name ?: "Unknown",
                                                 modifier = Modifier.weight(1f),
-                                                iconTint = account?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                                iconTint = accountColor
                                             )
 
                                             if (payment.entryMode == EntryMode.TRANSFER) {
@@ -353,7 +374,7 @@ fun PlannedPaymentDetailContent(
                                                     label = "TARGET ACCOUNT",
                                                     value = targetAccount?.name ?: "Unknown",
                                                     modifier = Modifier.weight(1f),
-                                                    iconTint = targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: AppColors.primary
+                                                    iconTint = targetAccountColor
                                                 )
                                             } else {
                                                 CompactDetailCell(
@@ -361,7 +382,7 @@ fun PlannedPaymentDetailContent(
                                                     label = "CATEGORY",
                                                     value = category?.name ?: "Unknown",
                                                     modifier = Modifier.weight(1f),
-                                                    iconTint = category?.colorHex?.let { Color(it) } ?: AppColors.primary
+                                                    iconTint = categoryColor
                                                 )
                                             }
                                         }
@@ -422,7 +443,6 @@ fun PlannedPaymentDetailContent(
                                                 )
 
                                                 // 4. Payment Status Row (Planned Payment Status)
-                                                val statusColor = Color(android.graphics.Color.parseColor(payment.status.colorHex))
                                                 DetailMetaRow(
                                                     icon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.CheckCircle,
                                                     label = "Payment Status",
@@ -483,8 +503,7 @@ fun PlannedPaymentDetailContent(
                                         items(
                                             upcomingItems,
                                             key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                                            val matchedOccurrence =
-                                                occurrences.find { it.scheduledDate == item.scheduledDate }
+                                            val matchedOccurrence = occurrencesMap[item.scheduledDate]
                                             val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
                                             OccurrenceItem(
                                                 item = item,
@@ -755,24 +774,31 @@ private fun OccurrenceItem(
     onConfirm: () -> Unit,
     onSkip: () -> Unit
 ) {
-    val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
-    val formattedAmount =
+    val dateLabel = remember(item.scheduledDate, dateFormatter) {
+        dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
+    }
+    val formattedAmount = remember(item.plannedPayment.amount, item.plannedPayment.currency) {
         item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    }
     
-    val zone = ZoneId.systemDefault()
-    val today = java.time.LocalDate.now(zone)
-    val scheduledDay = Instant.ofEpochMilli(item.scheduledDate).atZone(zone).toLocalDate()
-    val daysUntil = ChronoUnit.DAYS.between(today, scheduledDay).toInt()
+    val zone = remember { ZoneId.systemDefault() }
+    val daysUntil = remember(item.scheduledDate, zone) {
+        val today = java.time.LocalDate.now(zone)
+        val scheduledDay = Instant.ofEpochMilli(item.scheduledDate).atZone(zone).toLocalDate()
+        ChronoUnit.DAYS.between(today, scheduledDay).toInt()
+    }
 
-    val hintLabel = if (status == OccurrenceStatus.PENDING) {
-        when {
-            item.isOverdue -> "Overdue"
-            daysUntil == 0 -> "Due today"
-            daysUntil == 1 -> "Due tomorrow"
-            daysUntil > 1 -> "Due in $daysUntil days"
-            else -> null
-        }
-    } else null
+    val hintLabel = remember(status, item.isOverdue, daysUntil) {
+        if (status == OccurrenceStatus.PENDING) {
+            when {
+                item.isOverdue -> "Overdue"
+                daysUntil == 0 -> "Due today"
+                daysUntil == 1 -> "Due tomorrow"
+                daysUntil > 1 -> "Due in $daysUntil days"
+                else -> null
+            }
+        } else null
+    }
 
     AeonListItem(
         title = dateLabel,
@@ -843,8 +869,12 @@ private fun PastOccurrenceItem(
     payment: PlannedPayment,
     onTransactionClick: (Long) -> Unit
 ) {
-    val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
-    val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val dateLabel = remember(occ.scheduledDate, dateFormatter) {
+        dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
+    }
+    val formattedAmount = remember(payment.amount, payment.currency) {
+        payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    }
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
         OccurrenceStatus.CONFIRMED -> Triple(
             "Confirmed",
@@ -878,59 +908,68 @@ private fun PastOccurrenceItem(
     )
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun PlannedPaymentDetailPreview() {
-    val samplePayment = PlannedPayment(
-        id = 1L,
-        name = "Netflix Subscription",
-        amount = BigDecimal("15.99"),
-        currency = "USD",
-        entryMode = EntryMode.EXPENSE,
-        categoryId = 1L,
-        accountId = "acc_1",
-        payee = "Netflix",
-        note = "Monthly entertainment plan",
-        schedule = PaymentSchedule(
-            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
-            startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
-            nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
-        ),
-        paymentMethod = PaymentMethod.CREDIT_CARD,
-        profileId = 1,
-        transactionStatus = TransactionStatus.CLEARED
-    )
-
-    val sampleOccurrences = listOf(
-        PlannedPaymentOccurrence(
-            id = 101,
-            plannedPaymentId = 1L,
-            scheduledDate = System.currentTimeMillis() - 28 * 24 * 60 * 60 * 1000L,
-            status = OccurrenceStatus.CONFIRMED
-        )
-    )
-
-    val sampleAccounts = listOf(
-        Account(
-            id = "acc_1",
-            name = "Chase Bank",
-            currencyCode = "USD",
-            structureType = AccountStructureType.SAVINGS,
-            colorHex = "#004D5F",
-            icon = "AccountBalance"
-        )
-    )
-
-    val sampleCategories = listOf(
-        Category(
+    val samplePayment = remember {
+        PlannedPayment(
             id = 1L,
-            name = "Entertainment",
-            iconName = "Movie",
-            colorHex = android.graphics.Color.BLUE,
-            isDefault = true,
-            parentId = null
+            name = "Netflix Subscription",
+            amount = BigDecimal("15.99"),
+            currency = "USD",
+            entryMode = EntryMode.EXPENSE,
+            categoryId = 1L,
+            accountId = "acc_1",
+            payee = "Netflix",
+            note = "Monthly entertainment plan",
+            schedule = PaymentSchedule(
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
+                startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
+                nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
+            ),
+            paymentMethod = PaymentMethod.CREDIT_CARD,
+            profileId = 1,
+            transactionStatus = TransactionStatus.CLEARED
         )
-    )
+    }
+
+    val sampleOccurrences = remember {
+        listOf(
+            PlannedPaymentOccurrence(
+                id = 101,
+                plannedPaymentId = 1L,
+                scheduledDate = System.currentTimeMillis() - 28 * 24 * 60 * 60 * 1000L,
+                status = OccurrenceStatus.CONFIRMED
+            )
+        )
+    }
+
+    val sampleAccounts = remember {
+        listOf(
+            Account(
+                id = "acc_1",
+                name = "Chase Bank",
+                currencyCode = "USD",
+                structureType = AccountStructureType.SAVINGS,
+                colorHex = "#004D5F",
+                icon = "AccountBalance"
+            )
+        )
+    }
+
+    val sampleCategories = remember {
+        listOf(
+            Category(
+                id = 1L,
+                name = "Entertainment",
+                iconName = "Movie",
+                colorHex = android.graphics.Color.BLUE,
+                isDefault = true,
+                parentId = null
+            )
+        )
+    }
 
     OssWalletTheme {
         PlannedPaymentDetailContent(
@@ -951,31 +990,39 @@ fun PlannedPaymentDetailPreview() {
 @Preview(showBackground = true)
 @Composable
 fun OccurrenceItemPreview() {
-    val samplePayment = PlannedPayment(
-        id = 1L,
-        name = "Netflix Subscription",
-        amount = BigDecimal("15.99"),
-        currency = "USD",
-        entryMode = EntryMode.EXPENSE,
-        categoryId = 1L,
-        accountId = "acc_1",
-        payee = "Netflix",
-        note = "Monthly entertainment plan",
-        schedule = PaymentSchedule(
-            recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
-            startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
-            nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
-        ),
-        paymentMethod = PaymentMethod.CREDIT_CARD,
-        profileId = 1,
-        transactionStatus = TransactionStatus.CLEARED
-    )
+    val samplePayment = remember {
+        PlannedPayment(
+            id = 1L,
+            name = "Netflix Subscription",
+            amount = BigDecimal("15.99"),
+            currency = "USD",
+            entryMode = EntryMode.EXPENSE,
+            categoryId = 1L,
+            accountId = "acc_1",
+            payee = "Netflix",
+            note = "Monthly entertainment plan",
+            schedule = PaymentSchedule(
+                recurrenceRule = RecurrenceRule(RecurrenceType.MONTHLY),
+                startDate = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L,
+                nextDueDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L
+            ),
+            paymentMethod = PaymentMethod.CREDIT_CARD,
+            profileId = 1,
+            transactionStatus = TransactionStatus.CLEARED
+        )
+    }
 
-    val sampleItem = UpcomingPaymentItem(
-        plannedPayment = samplePayment,
-        scheduledDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L,
-        isOverdue = false
-    )
+    val sampleItem = remember(samplePayment) {
+        UpcomingPaymentItem(
+            plannedPayment = samplePayment,
+            scheduledDate = System.currentTimeMillis() + 2 * 24 * 60 * 60 * 1000L,
+            isOverdue = false
+        )
+    }
+
+    val dateFormatter = remember { 
+        DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()) 
+    }
 
     OssWalletTheme {
         Column(
@@ -986,7 +1033,7 @@ fun OccurrenceItemPreview() {
             OccurrenceItem(
                 item = sampleItem,
                 status = OccurrenceStatus.PENDING,
-                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                dateFormatter = dateFormatter,
                 onConfirm = {},
                 onSkip = {}
             )
@@ -998,7 +1045,7 @@ fun OccurrenceItemPreview() {
                     scheduledDate = System.currentTimeMillis() - 1 * 24 * 60 * 60 * 1000L
                 ),
                 status = OccurrenceStatus.PENDING,
-                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                dateFormatter = dateFormatter,
                 onConfirm = {},
                 onSkip = {}
             )
@@ -1007,10 +1054,11 @@ fun OccurrenceItemPreview() {
             OccurrenceItem(
                 item = sampleItem,
                 status = OccurrenceStatus.CONFIRMED,
-                dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()),
+                dateFormatter = dateFormatter,
                 onConfirm = {},
                 onSkip = {}
             )
         }
     }
 }
+

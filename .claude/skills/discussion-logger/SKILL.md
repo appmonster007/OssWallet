@@ -5,7 +5,7 @@ description: Capture the outcomes and full reasoning of a discussion into a stru
 
 # Discussion Logger
 
-Persist the *outcome and the complete reasoning* of a discussion into a highly structured Markdown file under `discussions/` in the project root. One file = one ongoing topic, refined over many sessions. Superseded decisions are never deleted — they are marked deprecated and kept as an audit trail, with the new direction flagged as the active strategic choice.
+Persist the *outcome and the complete reasoning* of a discussion into a highly structured Markdown file under `docs/discussions/` in the project root. One file = one ongoing topic, refined over many sessions. Superseded decisions are never deleted — they are marked deprecated and kept as an audit trail, with the new direction flagged as the active strategic choice.
 
 ## When to use
 
@@ -24,20 +24,20 @@ Persist the *outcome and the complete reasoning* of a discussion into a highly s
 
 ### Step 1 — Determine new file vs. continuation
 
-- If the user passed an existing discussion `.md` file (or one exists in `discussions/` matching the topic): **read it fully first** with the `view` tool before writing anything. Treat its contents as authoritative context.
+- If the user passed an existing discussion `.md` file (or one exists in `docs/discussions/` matching the topic): **read it fully first** with the `view` tool before writing anything. Treat its contents as authoritative context.
 - Otherwise, this is a new discussion file.
 
-Run `ls discussions/ 2>/dev/null` from the project root to check for an existing directory and related files. If the user named a topic that closely matches an existing file, ask the user whether to continue that file rather than creating a duplicate.
+Run `ls docs/discussions/ 2>/dev/null` from the project root to check for an existing directory and related files. If the user named a topic that closely matches an existing file, ask the user whether to continue that file rather than creating a duplicate.
 
 ### Step 2 — Set up location
 
-Ensure a `discussions/` directory exists in the **project root**:
+Ensure a `docs/discussions/` directory exists in the **project root**:
 
 ```bash
 mkdir -p discussions
 ```
 
-Filename: `discussions/<kebab-case-topic>.md` (e.g. `discussions/auth-token-strategy.md`). If continuing, reuse the existing filename exactly.
+Filename: `docs/discussions/<kebab-case-topic>.md` (e.g. `docs/discussions/auth-token-strategy.md`). If continuing, reuse the existing filename exactly.
 
 ### Step 3 — Extract the reasoning from the conversation
 

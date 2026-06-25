@@ -1,6 +1,6 @@
 # Plan: Filter Sheet — Defaults & Activation Rework
 
-> **Companion to** [`filter-sheet-filter-defaults-and-activation.md`](./filter-sheet-filter-defaults-and-activation.md).
+> **Companion to** [`filter-sheet-filter-defaults-and-activation.md`](filter-sheet-filter-defaults-and-activation.md).
 > Self-contained execution plan. Read this file + the decisions file and you have full context to implement without re-deriving anything from the conversation.
 
 ## 0. Goal (one line)

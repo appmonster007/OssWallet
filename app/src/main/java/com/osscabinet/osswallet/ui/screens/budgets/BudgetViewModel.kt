@@ -11,13 +11,17 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -55,6 +59,13 @@ class BudgetViewModel @Inject constructor(
         .map { txList -> txList.flatMap { it.tags }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private data class BudgetSnapshot(
+        val budgets: List<Budget>,
+        val transactions: List<Transaction>,
+        val rates: ExchangeRateSnapshot,
+        val categories: List<Category>
+    )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val budgetProgress: StateFlow<Map<Long, BudgetProgress>> = combine(
         budgets,
@@ -62,28 +73,32 @@ class BudgetViewModel @Inject constructor(
         computationRepository.exchangeRatesSnapshot,
         categories
     ) { budgetsList, transactionsList, snapshot, categoriesList ->
-        val baseCurrency = snapshot.anchor
-        val now = System.currentTimeMillis()
-        budgetsList.associate { budget ->
-            val rollover = BudgetService.calculateRollover(
-                budget,
-                transactionsList,
-                snapshot,
-                baseCurrency,
-                now,
-                categoriesList
-            )
-            val spent = BudgetService.calculateSpent(
-                budget,
-                transactionsList,
-                snapshot,
-                baseCurrency,
-                now,
-                categoriesList
-            )
-            budget.id to BudgetService.buildProgress(budget, spent, rollover)
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        BudgetSnapshot(budgetsList, transactionsList, snapshot, categoriesList)
+    }.distinctUntilChanged()
+        .map { snapshot ->
+            val baseCurrency = snapshot.rates.anchor
+            val now = System.currentTimeMillis()
+            snapshot.budgets.associate { budget ->
+                val rollover = BudgetService.calculateRollover(
+                    budget,
+                    snapshot.transactions,
+                    snapshot.rates,
+                    baseCurrency,
+                    now,
+                    snapshot.categories
+                )
+                val spent = BudgetService.calculateSpent(
+                    budget,
+                    snapshot.transactions,
+                    snapshot.rates,
+                    baseCurrency,
+                    now,
+                    snapshot.categories
+                )
+                budget.id to BudgetService.buildProgress(budget, spent, rollover)
+            }
+        }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun delete(budgetId: Long) {
         viewModelScope.launch {

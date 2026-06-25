@@ -22,6 +22,10 @@ class TransactionManager(
     private val widgetRefreshTrigger: WidgetRefreshTrigger
 ) {
 
+    fun getAllTransactionLinks(): kotlinx.coroutines.flow.Flow<Map<Long, List<Long>>> {
+        return transactionUseCases.getAllTransactionLinks()
+    }
+
     suspend fun handleSaveTransaction(
         existingTransaction: Transaction?,
         request: TransactionRequest,

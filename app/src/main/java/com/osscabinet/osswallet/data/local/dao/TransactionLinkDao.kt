@@ -44,5 +44,8 @@ abstract class TransactionLinkDao {
     abstract suspend fun clearAll()
 
     @Query("SELECT * FROM transaction_links")
+    abstract fun getAllLinks(): Flow<List<TransactionLinkEntity>>
+
+    @Query("SELECT * FROM transaction_links")
     abstract suspend fun getAllLinksSync(): List<TransactionLinkEntity>
 }

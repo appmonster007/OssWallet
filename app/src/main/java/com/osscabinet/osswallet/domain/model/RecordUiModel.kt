@@ -5,10 +5,11 @@ import java.math.BigDecimal
 
 /**
  * Unified interface for items that can appear in the transaction list.
+ * This is a domain-level representation of a timeline record.
  */
 @Immutable
 sealed interface RecordUiModel {
-    val id: String // Unique ID for LazyColumn key: "tx_{id}" or "planned_{ppId}_{date}"
+    val id: String
     val timestamp: Long
     val amount: BigDecimal
     val currency: String
@@ -31,7 +32,8 @@ data class ConfirmedTransactionUiModel(
     override val categoryIcon: String?,
     override val categoryColor: Int,
     override val tags: List<TagUiModel> = emptyList(),
-    override val amountInBase: BigDecimal? = null
+    override val amountInBase: BigDecimal? = null,
+    val linkedTransactionIds: List<Long> = emptyList()
 ) : RecordUiModel {
     override val id: String get() = "tx_${item.transaction.id}"
     override val timestamp: Long get() = item.transaction.timestamp
@@ -45,7 +47,7 @@ data class ConfirmedTransactionUiModel(
 data class PlannedPaymentUiModel(
     val paymentId: Long,
     val occurrenceId: Long?,
-    override val timestamp: Long, // The scheduled date
+    override val timestamp: Long,
     override val amount: BigDecimal,
     override val currency: String,
     override val categoryName: String,

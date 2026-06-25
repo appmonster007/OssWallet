@@ -42,6 +42,9 @@ fun UnifiedCardRenderer(
     inheritedFilter: TransactionFilter = TransactionFilter(),
     screenOwnsTimeline: Boolean = false,
     animate: Boolean = false,
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onScrollComplete: () -> Unit = {}
 ) {
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
@@ -83,7 +86,7 @@ fun UnifiedCardRenderer(
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
+                headerModifier = headerModifier
             )
         }
 
@@ -103,7 +106,7 @@ fun UnifiedCardRenderer(
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
+                headerModifier = headerModifier
             )
         }
 
@@ -277,7 +280,7 @@ fun UnifiedCardRenderer(
                 screenOwnsTimeline = screenOwnsTimeline,
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
-                headerModifier = headerModifier,
+                headerModifier = headerModifier
             )
         }
 
@@ -369,11 +372,13 @@ fun UnifiedCardRenderer(
             val cb = cardWithCallbacks.callbacks
 
             RecentActivitiesCard(
-                listState = renderData.listState,
+                listState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
+                    domainState = renderData.listState,
+                    baseCurrency = renderData.currency
+                ),
                 config = renderData.config,
                 callbacks = cb,
                 baseCurrency = renderData.currency,
-                exchangeRates = renderData.exchangeRates,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -382,6 +387,9 @@ fun UnifiedCardRenderer(
                 showFilterButton = cardWithCallbacks.filterSheetEnabled,
                 modifier = modifier.fillMaxWidth(),
                 headerModifier = headerModifier,
+                scrollToId = scrollToId,
+                highlightedId = highlightedId,
+                onScrollComplete = onScrollComplete
             )
         }
 

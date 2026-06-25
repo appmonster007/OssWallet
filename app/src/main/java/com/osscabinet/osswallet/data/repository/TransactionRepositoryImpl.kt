@@ -323,20 +323,43 @@ class TransactionRepositoryImpl @Inject constructor(
 
     // Link management implementations
     override suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        transactionLinkDao.insertLink(
-            com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
-                transactionId = transactionId,
-                linkedTransactionId = linkedTransactionId
+        database.withTransaction {
+            transactionLinkDao.insertLink(
+                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                    transactionId = transactionId,
+                    linkedTransactionId = linkedTransactionId
+                )
             )
-        )
+            transactionLinkDao.insertLink(
+                com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity(
+                    transactionId = linkedTransactionId,
+                    linkedTransactionId = transactionId
+                )
+            )
+        }
     }
 
     override suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long) {
-        transactionLinkDao.deleteLink(transactionId, linkedTransactionId)
+        database.withTransaction {
+            transactionLinkDao.deleteLink(transactionId, linkedTransactionId)
+            transactionLinkDao.deleteLink(linkedTransactionId, transactionId)
+        }
     }
 
     override suspend fun clearTransactionLinks(transactionId: Long) {
         transactionLinkDao.deleteAnyLink(transactionId)
+    }
+
+    override fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> {
+        return transactionLinkDao.getAllLinks().map { links ->
+            val result = mutableMapOf<Long, MutableList<Long>>()
+            links.forEach { link ->
+                result.getOrPut(link.transactionId) { mutableListOf() }.add(link.linkedTransactionId)
+                result.getOrPut(link.linkedTransactionId) { mutableListOf() }.add(link.transactionId)
+            }
+            // Remove duplicates if any (e.g. if already stored bidirectionally)
+            result.mapValues { it.value.distinct() }
+        }
     }
 
     override fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>> {

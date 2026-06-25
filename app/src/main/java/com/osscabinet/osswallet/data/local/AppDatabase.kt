@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.data.local
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
@@ -60,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 20,
+    version = 26,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -85,29 +84,34 @@ abstract class AppDatabase : RoomDatabase() {
             System.loadLibrary("sqlcipher")
         }
 
-        val MIGRATION_19_20 = object : Migration(19, 20) {
+        val MIGRATION_25_26 = object : Migration(25, 26) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // ARC-08/09/10: composite PK (currencyCode, baseCurrency) so different
-                // base-currency rate sets can coexist. Cache is regeneratable from network,
-                // so a destructive recreate is acceptable here.
-                db.execSQL("DROP TABLE IF EXISTS currency_rates")
-                db.execSQL(
-                    """
-                    CREATE TABLE IF NOT EXISTS `currency_rates` (
-                        `currencyCode` TEXT NOT NULL,
-                        `baseCurrency` TEXT NOT NULL,
-                        `rate` TEXT NOT NULL,
-                        `timestamp` INTEGER NOT NULL,
-                        `nextUpdate` INTEGER NOT NULL,
-                        PRIMARY KEY(`currencyCode`, `baseCurrency`)
-                    )
-                    """.trimIndent()
-                )
-                db.execSQL("CREATE INDEX IF NOT EXISTS `index_currency_rates_baseCurrency` ON `currency_rates`(`baseCurrency`)")
+                // Fix for identity hash mismatch and ensuring FTS5 is stable
+                upgradeToFts5(db)
             }
         }
 
-        val MIGRATION_18_19 = object : Migration(18, 19) {
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Ensure FTS5 is correctly set up and Room triggers are gone
+                upgradeToFts5(db)
+            }
+        }
+
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Ensure FTS5 is correctly set up after removing @Fts4 annotation
+                upgradeToFts5(db)
+            }
+        }
+
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                upgradeToFts5(db)
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Upgrade from FTS4 to FTS5 for better search performance and ranking.
                 // FTS5 uses a different delete mechanism: special 'delete' command insert.
@@ -144,6 +148,107 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 // Rebuild the FTS5 index from existing transactions.
                 db.execSQL("INSERT INTO transactions_fts(rowid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+            }
+        }
+
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ARC-69: Revert FTS5 to FTS4 to match Room's @Fts4 annotation and avoid
+                // 'docid' column missing errors during synchronization triggers.
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+                db.execSQL("DROP TABLE IF EXISTS transactions_fts")
+
+                db.execSQL(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
+                    "USING fts4(note, payee, name, content=`transactions`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE docid = old.id;
+                      INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE docid = old.id;
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+            }
+        }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // ARC-08/09/10: composite PK (currencyCode, baseCurrency) so different
+                // base-currency rate sets can coexist. Cache is regeneratable from network,
+                // so a destructive recreate is acceptable here.
+                db.execSQL("DROP TABLE IF EXISTS currency_rates")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `currency_rates` (
+                        `currencyCode` TEXT NOT NULL,
+                        `baseCurrency` TEXT NOT NULL,
+                        `rate` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `nextUpdate` INTEGER NOT NULL,
+                        PRIMARY KEY(`currencyCode`, `baseCurrency`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_currency_rates_baseCurrency` ON `currency_rates`(`baseCurrency`)")
+            }
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Re-creating FTS table to ensure consistency with current TransactionEntity columns.
+                // Note: We use FTS4 to match Room's @Fts4 annotation and avoid 'docid' missing errors.
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+                db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+                db.execSQL("DROP TABLE IF EXISTS transactions_fts")
+
+                db.execSQL(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
+                    "USING fts4(note, payee, name, content=`transactions`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                      INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE docid = old.id;
+                      INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                    END
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS transactions_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                      DELETE FROM transactions_fts WHERE docid = old.id;
+                    END
+                    """.trimIndent()
+                )
+                // Rebuild the FTS index from existing transactions.
+                db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
             }
         }
 
@@ -524,6 +629,54 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private fun upgradeToFts5(db: SupportSQLiteDatabase) {
+            // Drop ALL possible FTS triggers (Room-generated, manual, old, new)
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_DELETE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_INSERT")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_ins")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_upd")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_del")
+
+            // Recreate table as FTS5 (dropping whatever was there - could be FTS4 or a dummy Room table)
+            db.execSQL("DROP TABLE IF EXISTS transactions_fts")
+            db.execSQL(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
+                "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
+            )
+
+            // Create FTS5 triggers using rowid. We use 'manual_' prefix to avoid Room's magic.
+            db.execSQL(
+                """
+                CREATE TRIGGER manual_fts_content_sync_ins AFTER INSERT ON `transactions` BEGIN
+                  INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                END
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TRIGGER manual_fts_content_sync_upd AFTER UPDATE ON `transactions` BEGIN
+                  INSERT INTO transactions_fts(transactions_fts, rowid, note, payee, name) VALUES ('delete', old.id, old.note, old.payee, old.name);
+                  INSERT INTO transactions_fts(rowid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                END
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TRIGGER manual_fts_content_sync_del AFTER DELETE ON `transactions` BEGIN
+                  INSERT INTO transactions_fts(transactions_fts, rowid, note, payee, name) VALUES ('delete', old.id, old.note, old.payee, old.name);
+                END
+                """.trimIndent()
+            )
+
+            // Initial index build
+            db.execSQL("INSERT INTO transactions_fts(rowid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -536,27 +689,34 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                    .addMigrations(
-                        MIGRATION_4_5,
-                        MIGRATION_5_6,
-                        MIGRATION_6_7,
-                        MIGRATION_7_8,
-                        MIGRATION_8_9,
-                        MIGRATION_9_10,
-                        MIGRATION_10_11,
-                        MIGRATION_11_12,
-                        MIGRATION_12_13,
-                        MIGRATION_13_14,
-                        MIGRATION_14_15,
-                        MIGRATION_15_16,
-                        MIGRATION_16_17,
-                        MIGRATION_17_18,
-                        MIGRATION_18_19,
-                        MIGRATION_19_20
-                    )
+                        .addMigrations(
+                            MIGRATION_4_5,
+                            MIGRATION_5_6,
+                            MIGRATION_6_7,
+                            MIGRATION_7_8,
+                            MIGRATION_8_9,
+                            MIGRATION_9_10,
+                            MIGRATION_10_11,
+                            MIGRATION_11_12,
+                            MIGRATION_12_13,
+                            MIGRATION_13_14,
+                            MIGRATION_14_15,
+                            MIGRATION_15_16,
+                            MIGRATION_16_17,
+                            MIGRATION_17_18,
+                            MIGRATION_18_19,
+                            MIGRATION_19_20,
+                            MIGRATION_20_21,
+                            MIGRATION_21_22,
+                            MIGRATION_22_23,
+                            MIGRATION_23_24,
+                            MIGRATION_24_25,
+                            MIGRATION_25_26
+                        )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
+                            upgradeToFts5(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
                             context.applicationContext.assets.open("default_data.sql")
@@ -570,6 +730,12 @@ abstract class AppDatabase : RoomDatabase() {
 
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
+                            // Clean up any lingering Room triggers that might use 'docid'
+                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_UPDATE")
+                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_DELETE")
+                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_UPDATE")
+                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_INSERT")
+
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
                         }

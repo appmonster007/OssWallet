@@ -376,7 +376,10 @@ fun AccountDetailScreen(
                                                     }
                                                 } else {
                                                     RecentActivitiesScreen(
-                                                        listState = state.listState,
+                                                        listState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
+                                                            domainState = state.listState,
+                                                            baseCurrency = state.baseCurrency
+                                                        ),
                                                         onRecordsClick = { drillDown -> actions.onRecordsClick(state.currentFilter.merge(drillDown)) },
                                                         baseCurrency = state.baseCurrency,
                                                         contentPadding = PaddingValues(
@@ -399,6 +402,7 @@ fun AccountDetailScreen(
                                                                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                                                                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                                                                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
+                                                                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id)
                                                                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
                                                                 is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
                                                                 is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)

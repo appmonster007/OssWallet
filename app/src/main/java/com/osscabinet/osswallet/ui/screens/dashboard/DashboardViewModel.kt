@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -17,7 +16,6 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
@@ -39,8 +37,12 @@ import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.cache.CardRenderCache
+import com.osscabinet.ossWallet.domain.model.LoanPayment
+import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
+import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -55,13 +57,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 
 enum class DashboardSection {
@@ -121,240 +124,179 @@ class DashboardViewModel @Inject constructor(
         _viewFocus.value = ViewFocus()
     }
 
-    private data class DashboardCoreData(
+    /**
+     * Snapshot of the accounting data used to drive the transaction feed.
+     */
+    private data class AccountingSnapshot(
         val accounts: List<Account>,
-        val recentTransactions: List<Transaction>,
+        val transactions: List<Transaction>,
         val categories: List<Category>,
-        val categoryHierarchy: CategoryHierarchyCache,
+        val links: Map<Long, List<Long>>,
+        val currency: CurrencySnapshot
+    )
+
+    private data class CurrencySnapshot(
+        val baseCode: String,
         val rates: Map<String, BigDecimal>,
-        val baseCurrency: String
+        val hasLoaded: Boolean
     )
 
-    private data class DashboardRatesData(
-        val core: DashboardCoreData,
-        val hasLoadedRates: Boolean,
-        val cardsConfig: DashboardCardsConfig
-    )
-
-    private data class DashboardProfileData(
+    /**
+     * Snapshot of metadata and settings used to enrichment and cards.
+     */
+    private data class MetadataSnapshot(
         val plannedPayments: List<PlannedPayment>,
         val budgets: List<Budget>,
         val loans: List<Loan>,
-        val tags: List<com.osscabinet.ossWallet.domain.model.Tag>,
-        val loanPayments: List<com.osscabinet.ossWallet.domain.model.LoanPayment>
+        val loanPayments: Map<Long, List<LoanPayment>>,
+        val tags: List<Tag>
+    )
+
+    /**
+     * Pre-computed structural feed state (balances + grouping).
+     */
+    private data class StructuralState(
+        val snapshot: AccountingSnapshot,
+        val hierarchy: CategoryHierarchyCache,
+        val visibleGroups: List<com.osscabinet.ossWallet.domain.model.TransactionGroup>
     )
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
-            val plannedPaymentsFlow: Flow<List<PlannedPayment>> =
-                plannedPaymentRepository.getActivePlannedPayments(profileId)
-            val budgetsFlow: Flow<List<Budget>> =
-                budgetRepository.getAllBudgets(profileId)
-            val loansFlow: Flow<List<Loan>> =
-                loanRepository.getAllLoans(profileId)
-            val loanPaymentsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.LoanPayment>> =
-                loanRepository.getAllPayments(profileId)
-            val tagsFlow: Flow<List<com.osscabinet.ossWallet.domain.model.Tag>> =
-                tagRepository.getAllTags()
-
-            val coreFlow = combine(
+            // 1. Accounting Pipeline: Driven by financial changes.
+            // Computes balances and groups only when accounting data actually changes.
+            val structuralStateFlow = combine(
                 accountRepository.getAllAccounts(profileId),
                 databaseQueryService.observeFilteredTransactions(profileId, TransactionFilter(), limit = DASHBOARD_TRANSACTION_FEED_LIMIT),
                 categoryRepository.categories,
-                computationRepository.exchangeRates,
-                computationRepository.selectedCurrency
-            ) { accounts, transactions, categories, rates, currency ->
-                DashboardCoreData(accounts, transactions, categories, CategoryHierarchyCache.build(categories), rates, currency)
+                transactionManager.getAllTransactionLinks(),
+                combine(
+                    computationRepository.selectedCurrency,
+                    computationRepository.exchangeRates,
+                    computationRepository.hasLoadedExchangeRates
+                ) { code, rates, loaded -> CurrencySnapshot(code, rates, loaded) }
+            ) { acc, tx, cat, links, curr ->
+                AccountingSnapshot(acc, tx, cat, links, curr)
+            }.distinctUntilChanged().flatMapLatest { snapshot ->
+                flow {
+                    val activeAccountIds = snapshot.accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                    val activeTransactions = snapshot.transactions.filter { it.accountId in activeAccountIds }
+                    val exchangeRateSnapshot = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(snapshot.currency.baseCode, snapshot.currency.rates)
+
+                    // Fetch starting balances for the window for accurate running totals.
+                    val startingBalances = if (activeTransactions.isNotEmpty()) {
+                        val windowStart = activeTransactions.minOf { it.timestamp }
+                        TransactionAggregationService.getSummaryByAccountAndCurrency(
+                            databaseQueryService, profileId,
+                            TransactionFilter(timelineRange = TimelineRange.CustomRange(end = windowStart - 1))
+                        ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
+                            val accountCurrency = snapshot.accounts.find { it.id == accountId }?.currencyCode ?: snapshot.currency.baseCode
+                            CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, exchangeRateSnapshot).totalAmount
+                        }
+                    } else emptyMap()
+
+                    val transactionsWithBalance = CardAggregationService.computeRecentBalances(activeTransactions, snapshot.accounts, snapshot.currency.baseCode, exchangeRateSnapshot, startingBalances)
+
+                    val visibleGroups = TimelineService.getGroupedData(
+                        transactions = transactionsWithBalance.filter { it.transaction.timestamp <= System.currentTimeMillis() }.take(20),
+                        absoluteHistory = transactionsWithBalance,
+                        groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
+                        accounts = snapshot.accounts,
+                        categories = snapshot.categories,
+                        allTags = emptyList(), // Enrichment handles tags from metadata
+                        baseCurrency = snapshot.currency.baseCode,
+                        exchangeRates = snapshot.currency.rates,
+                        linkedTransactionIds = snapshot.links
+                    )
+                    emit(StructuralState(snapshot, CategoryHierarchyCache.build(snapshot.categories), visibleGroups))
+                }.flowOn(Dispatchers.Default)
             }
 
-            val ratesFlow = combine(
-                coreFlow,
-                computationRepository.hasLoadedExchangeRates,
-                cardsConfig
-            ) { core, hasLoaded, config ->
-                DashboardRatesData(core, hasLoaded, config)
-            }
+            // 2. Metadata Pipeline: Enrichment data for cards and list items.
+            val metadataFlow = combine(
+                plannedPaymentRepository.getActivePlannedPayments(profileId),
+                budgetRepository.getAllBudgets(profileId),
+                loanRepository.getAllLoans(profileId),
+                loanRepository.getAllPayments(profileId),
+                tagRepository.getAllTags()
+            ) { pp, b, l, lp, t ->
+                MetadataSnapshot(pp, b, l, lp.groupBy { it.loanId }, t)
+            }.distinctUntilChanged()
 
-            val profileFlow = combine(
-                plannedPaymentsFlow,
-                budgetsFlow,
-                loansFlow,
-                tagsFlow,
-                loanPaymentsFlow
-            ) { payments, budgets, loans, tags, loanPayments ->
-                DashboardProfileData(payments, budgets, loans, tags, loanPayments)
-            }
-
-            combine(ratesFlow, profileFlow) { r, p -> r to p }
-                // Suppress recomputation when Room re-emits due to unrelated table writes
-                // but the queried data is structurally identical to the previous emission.
-                .distinctUntilChanged()
-                .flatMapLatest { (ratesData, profile) ->
-                    val accounts = ratesData.core.accounts
-                    val recentTransactions = ratesData.core.recentTransactions
-                    val categories = ratesData.core.categories
-                    val categoryHierarchy = ratesData.core.categoryHierarchy
-                    val rates = ratesData.core.rates
-                    val baseCurrency = ratesData.core.baseCurrency
-                    val hasLoadedExchangeRates = ratesData.hasLoadedRates
-                    val cardsCfg = ratesData.cardsConfig
-                    val plannedPayments = profile.plannedPayments
-                    val budgets = profile.budgets
-                    val loans = profile.loans
-                    val tags = profile.tags
-                    val loanPayments = profile.loanPayments
-
-                    val activeAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                    val groupedLoanPayments = loanPayments.groupBy { it.loanId }
+            // 3. UI State Pipeline: Final integration.
+            combine(structuralStateFlow, metadataFlow, cardsConfig) { structuralState, metadata, config ->
+                Triple(structuralState, metadata, config)
+            }.flatMapLatest { (structuralState, metadata, config) ->
+                channelFlow<DashboardUiState> {
+                    val snapshot = structuralState.snapshot
+                    val hierarchy = structuralState.hierarchy
+                    val visibleGroups = structuralState.visibleGroups
 
                     val baseInput = CardInput(
                         profileId = profileId,
-                        transactions = recentTransactions,
-                        allProfileTransactions = recentTransactions,
-                        accounts = accounts,
-                        categories = categories,
-                        tags = tags,
-                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-                            anchor = baseCurrency,
-                            rates = rates
-                        ),
-                        targetCurrency = baseCurrency,
-                        plannedPayments = plannedPayments,
-                        budgets = budgets,
-                        loans = loans,
-                        loanPayments = groupedLoanPayments,
+                        transactions = snapshot.transactions,
+                        allProfileTransactions = snapshot.transactions,
+                        accounts = snapshot.accounts,
+                        categories = snapshot.categories,
+                        tags = metadata.tags,
+                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(snapshot.currency.baseCode, snapshot.currency.rates),
+                        targetCurrency = snapshot.currency.baseCode,
+                        plannedPayments = metadata.plannedPayments,
+                        budgets = metadata.budgets,
+                        loans = metadata.loans,
+                        loanPayments = metadata.loanPayments,
                         filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true)),
                         screenContext = ScreenContext.DASHBOARD,
-                        commonFilterEnabled = false
+                        commonFilterEnabled = false,
+                        categoryHierarchy = hierarchy
                     )
 
-                    channelFlow<DashboardUiState> {
-                        // --- Phase 1: Structural data — renders before any card computes ---
-                        val activeTransactions = recentTransactions.filter { it.accountId in activeAccountIds }
-                        val exchangeRateSnapshot = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(baseCurrency, rates)
+                    fun buildSuccess(cardMap: Map<String, CardRenderData>, computing: Boolean) = DashboardUiState.Success(
+                        profileId = profileId,
+                        accounts = snapshot.accounts.filter { !it.isArchived },
+                        allAccounts = snapshot.accounts,
+                        cardDataMap = cardMap,
+                        isCardsComputing = computing,
+                        allTransactions = snapshot.transactions,
+                        recentActivitiesState = TransactionUiMapper.mapToUiState(
+                            domainState = TransactionListState(visibleGroups, visibleGroups.isEmpty()),
+                            baseCurrency = snapshot.currency.baseCode
+                        ),
+                        allCategories = snapshot.categories,
+                        allTags = metadata.tags,
+                        baseCurrency = snapshot.currency.baseCode,
+                        exchangeRates = snapshot.currency.rates,
+                        plannedPayments = metadata.plannedPayments,
+                        budgets = metadata.budgets,
+                        loans = metadata.loans,
+                        loanPayments = metadata.loanPayments
+                    )
 
-                        // Fetch real account balances before the transaction window for accurate running totals.
-                        val startingBalances: Map<String, BigDecimal> = if (activeTransactions.isNotEmpty()) {
-                            val windowStart = activeTransactions.minOf { it.timestamp }
-                            TransactionAggregationService.getSummaryByAccountAndCurrency(
-                                databaseQueryService, profileId,
-                                TransactionFilter(timelineRange = TimelineRange.CustomRange(end = windowStart - 1))
-                            ).getOrDefault(emptyMap()).mapValues { (accountId, byCurrency) ->
-                                val accountCurrency = accounts.find { it.id == accountId }?.currencyCode ?: baseCurrency
-                                CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, exchangeRateSnapshot).totalAmount
-                            }
-                        } else emptyMap()
+                    val cachedCards = cardRenderCache[profileId, snapshot.currency.baseCode]
+                    send(buildSuccess(cachedCards ?: emptyMap(), computing = true))
 
-                        val transactionsWithBalance = withContext(Dispatchers.Default) {
-                            CardAggregationService.computeRecentBalances(activeTransactions, accounts, baseCurrency, exchangeRateSnapshot, startingBalances)
-                        }
-                        val now = System.currentTimeMillis()
-                        val visibleTransactions = transactionsWithBalance
-                            .filter { it.transaction.timestamp <= now }
-                            .take(20)
-                        val groups = TimelineService.getGroupedData(
-                            transactions = visibleTransactions,
-                            absoluteHistory = transactionsWithBalance,
-                            groupingType = com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType.BY_DAY,
-                            accounts = accounts,
-                            categories = categories,
-                            allTags = tags,
-                            baseCurrency = baseCurrency,
-                            exchangeRates = rates
-                        )
+                    if (!snapshot.currency.hasLoaded) return@channelFlow
 
-                        fun buildSuccess(
-                            cardDataMap: Map<String, CardRenderData>,
-                            isCardsComputing: Boolean
-                        ) = DashboardUiState.Success(
-                            profileId = profileId,
-                            accounts = accounts.filter { !it.isArchived },
-                            allAccounts = accounts,
-                            cardDataMap = cardDataMap,
-                            isCardsComputing = isCardsComputing,
-                            allTransactions = recentTransactions,
-                            recentActivitiesState = TransactionListState(
-                                groups = groups,
-                                isEmpty = groups.isEmpty()
-                            ),
-                            allCategories = categories,
-                            allTags = tags,
-                            baseCurrency = baseCurrency,
-                            exchangeRates = rates,
-                            plannedPayments = plannedPayments,
-                            budgets = budgets,
-                            loans = loans,
-                            loanPayments = groupedLoanPayments
-                        )
+                    // Card Computations
+                    val cardDataFlow = MutableStateFlow(cachedCards ?: emptyMap())
+                    val completedCount = AtomicInteger(0)
+                    val configs = config.cards
 
-                        val configs = cardsCfg.cards
-                        if (configs.isEmpty()) {
-                            send(buildSuccess(emptyMap(), isCardsComputing = false))
-                            return@channelFlow
-                        }
+                    launch {
+                        cardDataFlow.collect { send(buildSuccess(it, completedCount.get() < configs.size)) }
+                    }
 
-                        val cachedCards = cardRenderCache[profileId, baseCurrency]
-
-                        if (cachedCards != null) {
-                            // Cache hit: show last-known cards immediately — no shimmers, no blanks.
-                            send(buildSuccess(cachedCards, isCardsComputing = true))
-                        } else {
-                            // First launch for this profile/currency: no cache yet, show card shimmers.
-                            send(buildSuccess(emptyMap(), isCardsComputing = true))
-                        }
-
-                        // First launch only: rates not in DB yet. Phase 1 is shown with shimmers.
-                        // Combine re-fires when rates arrive → new channelFlow starts → Phase 2 runs.
-                        if (!hasLoadedExchangeRates) return@channelFlow
-
-                        // Phase 2: Recompute all cards in parallel.
-                        // Cache hit → seed cardDataFlow with stale data so cards update silently (no shimmer flash).
-                        // No cache → cardDataFlow starts empty, cards pop in as they finish.
-                        val enrichedInput = baseInput.copy(categoryHierarchy = categoryHierarchy)
-                        val seedMap = cachedCards?.toMap() ?: emptyMap()
-                        val cardDataFlow = MutableStateFlow(seedMap)
-                        val completedCount = AtomicInteger(0)
-
-                        // Show every cardDataFlow update the instant it lands. Per-card slicing
-                        // in AeonCardList (derivedStateOf { cardDataMapState.value[cardId] })
-                        // ensures Compose recomposes only the card whose slice changed, so the
-                        // 10–15 emissions during cold-load don't cascade across all card composables.
-                        //
-                        // ARC-39: trySend (not send) so a late completer arriving after the parent
-                        // channelFlow is cancelled (currency/profile switch) is a benign no-op
-                        // instead of ClosedSendChannelException.
-                        //
-                        // No sample()/debounce here — this is a finance dashboard; the moment a
-                        // computed value exists the user should be able to see and act on it.
-                        launch {
-                            cardDataFlow.collect { cardData ->
-                                val isComputing = completedCount.get() < configs.size
-                                trySend(buildSuccess(cardData, isComputing))
-                            }
-                        }
-
-                        configs.forEach { config ->
-                            launch(Dispatchers.Default) {
-                                val result = runCatching {
-                                    cardComputerRegistry.compute(config.cardType, enrichedInput, config)
-                                }
-                                cardDataFlow.update { current ->
-                                    val newData = result.getOrElse { e -> CardRenderData.Error(e.message) }
-                                    if (current[config.cardId] == newData) current
-                                    else current + (config.cardId to newData)
-                                }
-                                if (completedCount.incrementAndGet() == configs.size) {
-                                    cardRenderCache[profileId, baseCurrency] = cardDataFlow.value
-                                        .filterValues { it !is CardRenderData.Error }
-                                    // No terminal trySend needed — the collector above sees every
-                                    // cardDataFlow update including the last completer's.
-                                }
-                            }
+                    configs.forEach { cardConfig ->
+                        launch(Dispatchers.Default) {
+                            val result = runCatching { cardComputerRegistry.compute(cardConfig.cardType, baseInput, cardConfig) }
+                            cardDataFlow.update { it + (cardConfig.cardId to result.getOrElse { e -> CardRenderData.Error(e.message) }) }
+                            completedCount.incrementAndGet()
                         }
                     }
                 }
             }
+        }
         .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
         .stateIn(
             scope = viewModelScope,
@@ -445,20 +387,20 @@ sealed class DashboardUiState {
     object Loading : DashboardUiState()
     data class Success(
         val profileId: Int,
-        val accounts: List<Account>,          // active (non-archived) — for dashboard account cards
-        val allAccounts: List<Account> = emptyList(), // all accounts including archived — for filter pickers
+        val accounts: List<Account>,
+        val allAccounts: List<Account> = emptyList(),
         val cardDataMap: Map<String, CardRenderData>,
         val isCardsComputing: Boolean = false,
         val allTransactions: List<Transaction>,
-        val recentActivitiesState: TransactionListState,
+        val recentActivitiesState: TransactionListUiState,
         val allCategories: List<Category>,
-        val allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
+        val allTags: List<Tag> = emptyList(),
         val baseCurrency: String,
         val exchangeRates: Map<String, BigDecimal>,
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),
         val loans: List<Loan> = emptyList(),
-        val loanPayments: Map<Long, List<com.osscabinet.ossWallet.domain.model.LoanPayment>> = emptyMap()
+        val loanPayments: Map<Long, List<LoanPayment>> = emptyMap()
     ) : DashboardUiState()
 
     data class Error(val message: String) : DashboardUiState()

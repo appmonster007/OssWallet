@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.CallSplit
+import androidx.compose.material.icons.automirrored.rounded.Launch
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -68,7 +69,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 const val ANIMATION_DURATION = 400
-const val ACTION_ITEM_SIZE = 64
+const val ACTION_ITEM_SIZE = 56
 
 enum class SwipeDirection {
     NONE,
@@ -82,6 +83,7 @@ fun SwipeableTransactionItem(
     isRevealed: Boolean,
     onEvent: (TransactionItemEvent) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val isPlanned = record is PlannedPaymentUiModel
@@ -93,7 +95,7 @@ fun SwipeableTransactionItem(
 
     // Expressive motion configuration
     val leftSwipeThresholdPx =
-        with(density) { (ACTION_ITEM_SIZE.dp * (if (isPlanned) 2 else 3)).toPx() } // Revealing right actions
+        with(density) { (ACTION_ITEM_SIZE.dp * (if (isPlanned) 2 else if (record is ConfirmedTransactionUiModel && record.linkedTransactionIds.isNotEmpty()) 4 else 3)).toPx() } // Revealing right actions
     val rightSwipeThresholdPx =
         with(density) { (ACTION_ITEM_SIZE.dp * 2).toPx() } // Revealing left actions
     val fullSwipeThresholdPx = with(density) { 220.dp.toPx() }
@@ -161,6 +163,8 @@ fun SwipeableTransactionItem(
                         onSplit = { onEvent(TransactionItemEvent.Split(record.item.transaction.id)) },
                         onClone = { onEvent(TransactionItemEvent.Clone(record.item.transaction.id)) },
                         onDelete = { onEvent(TransactionItemEvent.Delete(record.item.transaction.id)) },
+                        onJump = { onEvent(TransactionItemEvent.Jump(record.item.transaction.id)) },
+                        hasLinks = record.linkedTransactionIds.isNotEmpty(),
                         progress = progress,
                         onCollapse = { onEvent(TransactionItemEvent.Collapse(record.id)) },
                         modifier = Modifier.align(Alignment.CenterEnd)
@@ -182,7 +186,8 @@ fun SwipeableTransactionItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(animatedOffset.roundToInt(), 0) }
-                .pointerInput(Unit) {
+                .pointerInput(enabled) {
+                    if (!enabled) return@pointerInput
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, dragAmount ->
                             val newOffset = offsetX + dragAmount
@@ -307,6 +312,8 @@ fun TransactionActionsRow(
     onSplit: () -> Unit,
     onClone: () -> Unit,
     onDelete: () -> Unit,
+    onJump: () -> Unit,
+    hasLinks: Boolean,
     progress: Float,
     onCollapse: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -316,11 +323,15 @@ fun TransactionActionsRow(
         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val actions = listOf(
+        val actions = mutableListOf(
             Triple(Icons.AutoMirrored.Rounded.CallSplit, "Split", AppColors.primary),
             Triple(Icons.Rounded.ContentCopy, "Clone", AppColors.tertiary),
             Triple(Icons.Rounded.DeleteForever, "Delete", AppColors.error)
         )
+
+        if (hasLinks) {
+            actions.add(0, Triple(Icons.AutoMirrored.Rounded.Launch, "Jump", AppColors.secondary))
+        }
 
         actions.forEachIndexed { index, (icon, label, color) ->
             val itemProgress = (progress * 1.5f - (index * 0.15f)).coerceIn(0f, 1f)
@@ -335,6 +346,7 @@ fun TransactionActionsRow(
                     when (label) {
                         "Split" -> onSplit()
                         "Clone" -> onClone()
+                        "Jump" -> onJump()
                         else -> onDelete()
                     }
                     onCollapse()

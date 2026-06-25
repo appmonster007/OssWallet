@@ -136,6 +136,7 @@ import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -175,6 +176,7 @@ data class DashboardActions(
     val onSaveFilterClick: (TransactionFilter) -> Unit = {},
     val onCloneTransactionClick: (Long) -> Unit = {},
     val onSplitTransactionClick: (Long) -> Unit = {},
+    val onJumpTransactionClick: (Long) -> Unit = {}
 )
 
 @OptIn(
@@ -231,6 +233,9 @@ fun DashboardScreen(
 
     val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
     val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
+    val transactionSnackbarMessage by transactionViewModel.snackbarMessage.collectAsStateWithLifecycle()
+    val scrollToId by transactionViewModel.scrollToId.collectAsStateWithLifecycle()
+    val highlightedId by transactionViewModel.highlightedId.collectAsStateWithLifecycle()
 
     val isTopLevel = remember(initialViewContext, config.isTopLevel) {
         config.isTopLevel || initialViewContext == DashboardViewContext.None
@@ -249,11 +254,16 @@ fun DashboardScreen(
         lastUndoAction = lastUndoAction,
         savedFilters = savedFilters,
         revealedCardIds = revealedCardIds,
+        transactionSnackbarMessage = transactionSnackbarMessage,
+        scrollToId = scrollToId,
+        highlightedId = highlightedId,
         recentActivitiesBreakdown = displayPrefs.recentActivitiesBreakdown,
         actions = actions,
         onResetView = dashboardViewModel::resetToInitialView,
         onUndoAction = dashboardViewModel::undoLastPlannedPaymentAction,
         onClearUndo = dashboardViewModel::clearUndoAction,
+        onClearTransactionSnackbar = transactionViewModel::clearSnackbar,
+        onClearScrollTo = transactionViewModel::clearScrollTo,
         onAddCard = dashboardViewModel::addCard,
         onReorderCards = dashboardViewModel::reorderCards,
         onRemoveCard = dashboardViewModel::removeCard,
@@ -265,6 +275,7 @@ fun DashboardScreen(
         onStatusChange = transactionViewModel::quickUpdateStatus,
         onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
         onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
+        onJumpTransaction = transactionViewModel::handleJumpRequest,
         onAddTag = transactionViewModel::addTag,
         onConfirmPlanned = transactionViewModel::confirmPlannedPayment,
         onCancelPlanned = transactionViewModel::cancelPlannedPayment,
@@ -292,11 +303,16 @@ fun DashboardScreenLayout(
     lastUndoAction: UndoAction?,
     savedFilters: List<Filter>,
     revealedCardIds: List<String>,
+    transactionSnackbarMessage: String?,
+    scrollToId: String?,
+    highlightedId: String?,
     recentActivitiesBreakdown: Boolean,
     actions: DashboardActions,
     onResetView: () -> Unit,
     onUndoAction: () -> Unit,
     onClearUndo: () -> Unit,
+    onClearTransactionSnackbar: () -> Unit,
+    onClearScrollTo: () -> Unit,
     onAddCard: (CardType) -> Unit,
     onReorderCards: (List<CardConfig>) -> Unit,
     onRemoveCard: (String) -> Unit,
@@ -308,6 +324,7 @@ fun DashboardScreenLayout(
     onStatusChange: (Long, TransactionStatus) -> Unit,
     onDeleteTransaction: (Long) -> Unit,
     onFullSwipeRight: (Long) -> Unit,
+    onJumpTransaction: (Long) -> Unit,
     onAddTag: (String, Int) -> Unit,
     onConfirmPlanned: (Long, Long) -> Unit,
     onCancelPlanned: (Long, Long) -> Unit,
@@ -356,6 +373,13 @@ fun DashboardScreenLayout(
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(transactionSnackbarMessage) {
+        transactionSnackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            onClearTransactionSnackbar()
+        }
+    }
 
     LaunchedEffect(lastUndoAction) {
         val action = lastUndoAction ?: return@LaunchedEffect
@@ -442,6 +466,10 @@ fun DashboardScreenLayout(
                                     onEditTransactionClick = { id -> navigate { actions.onEditTransactionClick(id) } },
                                     onCloneTransactionClick = { id -> navigate { actions.onCloneTransactionClick(id) } },
                                     onSplitTransactionClick = { id -> navigate { actions.onSplitTransactionClick(id) } },
+                                    onJumpTransaction = onJumpTransaction,
+                                    scrollToId = scrollToId,
+                                    highlightedId = highlightedId,
+                                    onClearScrollTo = onClearScrollTo,
                                     savedFilters = savedFilters,
                                     revealedCardIds = revealedCardIds,
                                     recentActivitiesBreakdown = recentActivitiesBreakdown,
@@ -623,6 +651,10 @@ fun DashboardContent(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
+    onJumpTransaction: (Long) -> Unit,
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onClearScrollTo: () -> Unit = {},
     savedFilters: List<Filter>,
     revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
@@ -682,6 +714,10 @@ fun DashboardContent(
                         onEditTransactionClick = onEditTransactionClick,
                         onCloneTransactionClick = onCloneTransactionClick,
                         onSplitTransactionClick = onSplitTransactionClick,
+                        onJumpTransaction = onJumpTransaction,
+                        scrollToId = scrollToId,
+                        highlightedId = highlightedId,
+                        onClearScrollTo = onClearScrollTo,
                         onSearchTransactions = onSearchTransactions,
                         onItemExpanded = onItemExpanded,
                         onItemCollapsed = onItemCollapsed,
@@ -704,6 +740,9 @@ fun DashboardContent(
                         revealedCardIds = revealedCardIds,
                         recentActivitiesBreakdown = recentActivitiesBreakdown,
                         baseCurrency = state.baseCurrency,
+                        scrollToId = scrollToId,
+                        highlightedId = highlightedId,
+                        onScrollComplete = onClearScrollTo,
                         onRecordsClick = onRecordsClick,
                         onTransactionEvent = { event ->
                             when (event) {
@@ -732,6 +771,7 @@ fun DashboardContent(
                                 )
 
                                 is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
+                                is TransactionItemEvent.Jump -> onJumpTransaction(event.id)
                                 is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(
                                     event.id
                                 )
@@ -792,6 +832,10 @@ fun DashboardGlanceTab(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit,
     onSplitTransactionClick: (Long) -> Unit,
+    onJumpTransaction: (Long) -> Unit,
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onClearScrollTo: () -> Unit = {},
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
     onItemExpanded: (String) -> Unit,
     onItemCollapsed: (String) -> Unit,
@@ -820,6 +864,7 @@ fun DashboardGlanceTab(
     val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
     val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
     val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
+    val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
     val onItemExpandedRef by rememberUpdatedState(onItemExpanded)
     val onItemCollapsedRef by rememberUpdatedState(onItemCollapsed)
     val onStatusChangeRef by rememberUpdatedState(onStatusChange)
@@ -857,6 +902,7 @@ fun DashboardGlanceTab(
                 onClone = { id -> onCloneTxRef(id) },
                 onDelete = { id -> onDeleteTxRef(id) },
                 onSplit = { id -> onSplitTxRef(id) },
+                onJump = { id -> onJumpTxRef(id) },
                 onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
             ),
             paymentActions = PaymentActions(
@@ -918,6 +964,9 @@ fun DashboardGlanceTab(
         onDelete = onRemoveCard,
         onRecordsClick = onRecordsClick,
         modifier = Modifier.weight(1f),
+        scrollToId = scrollToId,
+        highlightedId = highlightedId,
+        onScrollComplete = onClearScrollTo,
         contentPadding = PaddingValues(
             start = AeonTheme.dimensions.screenPadding,
             end = AeonTheme.dimensions.screenPadding,
@@ -939,10 +988,13 @@ fun DashboardGlanceTab(
 
 @Composable
 fun DashboardRecentActivitiesTab(
-    recentActivitiesState: TransactionListState,
+    recentActivitiesState: TransactionListUiState,
     revealedCardIds: List<String>,
     recentActivitiesBreakdown: Boolean,
     baseCurrency: String,
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onScrollComplete: () -> Unit = {},
     onRecordsClick: (TransactionFilter) -> Unit,
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     topPadding: androidx.compose.ui.unit.Dp = 0.dp,
@@ -962,7 +1014,10 @@ fun DashboardRecentActivitiesTab(
         showCurrencyBreakdown = recentActivitiesBreakdown,
         onTransactionEvent = onTransactionEvent,
         hasStickyHeader = hasStickyHeader,
-        showHeader = false
+        showHeader = false,
+        scrollToId = scrollToId,
+        highlightedId = highlightedId,
+        onScrollComplete = onScrollComplete
     )
 }
 
@@ -1068,7 +1123,7 @@ fun DashboardScreenPreview() {
             )
         ),
         allTransactions = emptyList(),
-        recentActivitiesState = TransactionListState(groups = emptyList(), isEmpty = true),
+        recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
         allCategories = emptyList(),
         allTags = emptyList(),
         baseCurrency = "USD",
@@ -1095,6 +1150,9 @@ fun DashboardScreenPreview() {
             lastUndoAction = null,
             savedFilters = emptyList(),
             revealedCardIds = emptyList(),
+            transactionSnackbarMessage = null,
+            scrollToId = null,
+            highlightedId = null,
             recentActivitiesBreakdown = true,
             actions = DashboardActions(
                 onMenuClick = {},
@@ -1107,6 +1165,8 @@ fun DashboardScreenPreview() {
             onResetView = {},
             onUndoAction = {},
             onClearUndo = {},
+            onClearTransactionSnackbar = {},
+            onClearScrollTo = {},
             onAddCard = {},
             onReorderCards = {},
             onRemoveCard = {},
@@ -1118,6 +1178,7 @@ fun DashboardScreenPreview() {
             onStatusChange = { _, _ -> },
             onDeleteTransaction = {},
             onFullSwipeRight = {},
+            onJumpTransaction = {},
             onAddTag = { _, _ -> },
             onConfirmPlanned = { _, _ -> },
             onCancelPlanned = { _, _ -> },
@@ -1158,7 +1219,7 @@ fun DashboardGlanceTabPreview() {
         ),
         cardDataMap = emptyMap(),
         allTransactions = emptyList(),
-        recentActivitiesState = TransactionListState(groups = emptyList(), isEmpty = true),
+        recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
         allCategories = emptyList(),
         allTags = emptyList(),
         baseCurrency = "USD",
@@ -1193,6 +1254,10 @@ fun DashboardGlanceTabPreview() {
             onEditTransactionClick = {},
             onCloneTransactionClick = {},
             onSplitTransactionClick = {},
+            onJumpTransaction = {},
+            scrollToId = null,
+            highlightedId = null,
+            onClearScrollTo = {},
             onSearchTransactions = { flowOf(emptyList()) },
             onItemExpanded = {},
             onItemCollapsed = {},
@@ -1213,7 +1278,7 @@ fun DashboardGlanceTabPreview() {
 fun DashboardRecentActivitiesTabPreview() {
     OssWalletTheme {
         DashboardRecentActivitiesTab(
-            recentActivitiesState = TransactionListState(groups = emptyList(), isEmpty = true),
+            recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
             revealedCardIds = emptyList(),
             recentActivitiesBreakdown = true,
             baseCurrency = "USD",

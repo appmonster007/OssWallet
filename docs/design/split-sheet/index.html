@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Split Transaction Sheet — Redesign Previews</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  /* ===== H palette (dark) ===== */
+  :root {
+    --bg: #0B0B0A;
+    --panel: #131312;
+    --panel-low: #111110;
+    --panel-high: #1A1A18;
+    --panel-highest: #201F1D;
+    --ink: #ECE8DD;          /* ivory */
+    --ink-mute: #9A958A;
+    --ink-faint: #6E695E;
+    --rule: #2A2823;
+    --rule-soft: #211F1B;
+    --accent: #D6C189;       /* champagne */
+    --accent-soft: #3A3320;
+    --pos: #8FB97A;
+    --neg: #C97D6A;
+    --over: #D87B5A;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: #1c1c1b; color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif; margin: 0; }
+  body { padding: 48px 32px 96px; }
+  .page-head { max-width: 1240px; margin: 0 auto 40px; }
+  .page-head h1 { font-family: "Cormorant Garamond", "Source Serif Pro", Georgia, serif; font-weight: 500; font-size: 38px; letter-spacing: -0.5px; margin: 0 0 6px; color: var(--ink); }
+  .page-head p { color: var(--ink-mute); margin: 0; font-size: 14px; max-width: 760px; line-height: 1.55; }
+  .legend { display: flex; gap: 18px; margin-top: 18px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); }
+  .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+  .legend span.pos::before { background: var(--pos); }
+  .legend span.over::before { background: var(--over); }
+
+  .grid { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+  .col-head { margin: 0 0 14px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; font-weight: 500; color: var(--accent); letter-spacing: 0.2px; }
+  .col-sub { color: var(--ink-mute); font-size: 12px; margin: -8px 0 18px; line-height: 1.5; }
+  .state-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); margin: 22px 0 10px; padding-left: 6px; border-left: 1px solid var(--rule); }
+
+  /* ===== Phone frame ===== */
+  .phone {
+    background: var(--bg);
+    border: 1px solid #000;
+    border-radius: 28px;
+    box-shadow: 0 24px 40px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset;
+    overflow: hidden;
+  }
+  .sheet-bg { background: linear-gradient(180deg, var(--bg) 0%, #0e0e0c 60%, var(--bg) 100%); padding: 10px 0 0; }
+  .drag { width: 36px; height: 4px; background: #2c2a26; border-radius: 2px; margin: 0 auto 14px; }
+  .sheet-pad { padding: 0 20px 20px; }
+
+  /* shared inner elements */
+  .over-label { font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink-mute); }
+  .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .serif { font-family: "Cormorant Garamond", Georgia, serif; }
+  .hr-hair { height: 1px; background: var(--rule-soft); }
+  .hr-dash { height: 1px; background-image: linear-gradient(90deg, var(--rule) 50%, transparent 0); background-size: 6px 1px; background-repeat: repeat-x; }
+  .hr-dot { background-image: linear-gradient(90deg, var(--ink-faint) 30%, transparent 0); background-size: 3px 1px; background-repeat: repeat-x; height: 1px; }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid var(--rule); border-radius: 999px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-mute); }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .chip.pos .dot { background: var(--pos); }
+  .chip.over .dot { background: var(--over); }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center;
+    padding: 13px 16px; border-radius: 4px; font-size: 11px;
+    letter-spacing: 2.4px; text-transform: uppercase; cursor: pointer; user-select: none;
+  }
+  .btn-primary { background: var(--accent); color: #2A2410; font-weight: 600; }
+  .btn-primary[aria-disabled="true"] { background: var(--rule); color: var(--ink-faint); }
+  .btn-ghost { background: transparent; color: var(--ink-mute); border: 1px solid var(--rule); }
+
+  /* category swatch */
+  .swatch { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .sw-food { background: #2a1f17; color: #E8A87C; }
+  .sw-tx   { background: #16222a; color: #8FB3D6; }
+  .sw-shop { background: #2a1822; color: #D689B7; }
+  .sw-bills { background: #1f2a18; color: #A8C97A; }
+  .sw-empty { background: transparent; color: var(--ink-faint); border: 1px dashed var(--rule); }
+
+  /* ---------- Style A: Hairline Minimal ---------- */
+  .A .head { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px 12px; }
+  .A .head .eyebrow { font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink-mute); }
+  .A .head .title { font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; color: var(--ink); margin-top: 2px; }
+  .A .head .add { width: 32px; height: 32px; border: 1px solid var(--rule); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px; line-height: 1; }
+  .A .ledger { display: flex; justify-content: space-between; padding: 14px 0 16px; border-top: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft); }
+  .A .ledger .cell { display: flex; flex-direction: column; gap: 6px; }
+  .A .ledger .cell.right { align-items: flex-end; }
+  .A .ledger .lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-mute); }
+  .A .ledger .val { font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; color: var(--ink); }
+  .A .ledger .val .ccy { font-size: 11px; color: var(--ink-mute); margin-right: 4px; letter-spacing: 1.4px; }
+  .A .ledger .val.pos { color: var(--pos); }
+  .A .ledger .val.over { color: var(--over); }
+  .A .gauge { height: 1px; background: var(--rule-soft); margin: 0 0 12px; position: relative; }
+  .A .gauge i { position: absolute; left: 0; top: -1px; height: 3px; background: var(--accent); }
+  .A .gauge i.pos { background: var(--pos); }
+  .A .gauge i.over { background: var(--over); }
+
+  .A .row { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--rule-soft); }
+  .A .row .name { display: flex; flex-direction: column; gap: 3px; }
+  .A .row .name b { font-weight: 500; font-size: 14px; color: var(--ink); letter-spacing: 0.1px; }
+  .A .row .name span { font-size: 11px; color: var(--ink-mute); }
+  .A .row .amt { font-family: "Cormorant Garamond", Georgia, serif; font-size: 20px; color: var(--ink); }
+  .A .row .amt .ccy { font-size: 10px; letter-spacing: 1.4px; color: var(--ink-mute); margin-right: 4px; }
+  .A .row .x { color: var(--ink-faint); margin-left: 10px; font-size: 14px; }
+  .A .add-row { display: flex; align-items: center; gap: 12px; padding: 16px 0; color: var(--accent); font-size: 12px; letter-spacing: 1.8px; text-transform: uppercase; }
+  .A .add-row .plus { width: 24px; height: 24px; border-radius: 50%; border: 1px dashed var(--accent); display: flex; align-items: center; justify-content: center; }
+  .A .footnote { text-align: center; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-mute); padding: 14px 0 4px; }
+  .A .footnote.over { color: var(--over); }
+  .A .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; }
+
+  /* ---------- Style B: Editorial Header ---------- */
+  .B .header-card { padding: 18px 18px 16px; background: var(--panel); border-radius: 12px; border: 1px solid var(--rule-soft); }
+  .B .header-card .eyebrow { font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink-mute); }
+  .B .header-card .stack { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 8px; }
+  .B .header-card .total { font-family: "Cormorant Garamond", Georgia, serif; font-size: 40px; line-height: 1; letter-spacing: -0.5px; color: var(--ink); }
+  .B .header-card .total .ccy { font-size: 13px; color: var(--ink-mute); margin-right: 6px; letter-spacing: 1.6px; vertical-align: 12px; }
+  .B .header-card .remain { text-align: right; }
+  .B .header-card .remain .lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-mute); }
+  .B .header-card .remain .val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 15px; color: var(--accent); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .B .header-card .remain .val.pos { color: var(--pos); }
+  .B .header-card .remain .val.over { color: var(--over); }
+  .B .arc { margin-top: 18px; }
+  .B .arc-track { height: 4px; background: #1d1d1a; border-radius: 2px; overflow: hidden; position: relative; }
+  .B .arc-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #C9AE6A); transition: width .3s; }
+  .B .arc-fill.pos { background: linear-gradient(90deg, var(--pos), #7AAE6A); }
+  .B .arc-fill.over { background: linear-gradient(90deg, var(--over), #B85636); }
+  .B .arc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: var(--ink-mute); letter-spacing: 1.6px; text-transform: uppercase; }
+
+  .B .section-head { display: flex; justify-content: space-between; align-items: center; margin: 20px 2px 12px; }
+  .B .section-head h4 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 17px; color: var(--ink); }
+  .B .section-head .count { font-size: 10px; letter-spacing: 1.6px; color: var(--ink-mute); text-transform: uppercase; }
+
+  .B .row { background: var(--panel); border: 1px solid var(--rule-soft); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: grid; grid-template-columns: 36px 1fr auto 22px; gap: 12px; align-items: center; }
+  .B .row .cat { display: flex; flex-direction: column; gap: 2px; }
+  .B .row .cat b { font-weight: 500; font-size: 13px; color: var(--ink); }
+  .B .row .cat span { font-size: 11px; color: var(--ink-mute); }
+  .B .row .amt { font-family: "Cormorant Garamond", Georgia, serif; font-size: 19px; color: var(--ink); }
+  .B .row .amt .ccy { font-size: 10px; letter-spacing: 1.4px; color: var(--ink-mute); margin-right: 4px; }
+  .B .row .del { color: var(--ink-faint); justify-self: end; }
+  .B .row.focused { border-color: var(--accent); }
+  .B .row.focused .amt { color: var(--accent); }
+
+  .B .add { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border: 1px dashed var(--rule); border-radius: 10px; color: var(--accent); font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; margin-top: 4px; }
+  .B .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 18px; }
+
+  /* ---------- Style C: Entry-Form Rhythm ---------- */
+  .C .crumb { display: flex; align-items: center; gap: 8px; padding: 4px 2px 14px; }
+  .C .crumb .back { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); }
+  .C .crumb .eyebrow { font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink-mute); }
+  .C .crumb .title { margin-left: auto; font-family: "Cormorant Garamond", Georgia, serif; font-size: 18px; color: var(--ink); }
+
+  .C .summary { padding: 4px 4px 14px; }
+  .C .summary .row1 { display: flex; justify-content: space-between; align-items: baseline; }
+  .C .summary .total { font-family: "Cormorant Garamond", Georgia, serif; font-size: 30px; color: var(--ink); }
+  .C .summary .total .ccy { font-size: 12px; color: var(--ink-mute); margin-right: 4px; letter-spacing: 1.6px; }
+  .C .summary .chip { background: var(--panel-low); }
+  .C .summary .meta { display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--ink-mute); }
+  .C .summary .meta .accent { color: var(--accent); }
+  .C .summary .meta .pos { color: var(--pos); }
+  .C .summary .meta .over { color: var(--over); }
+  .C .gauge { margin-top: 8px; height: 2px; background: var(--rule-soft); position: relative; }
+  .C .gauge i { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); }
+  .C .gauge i.pos { background: var(--pos); }
+  .C .gauge i.over { background: var(--over); }
+
+  .C .section-label { font-size: 10px; letter-spacing: 2.2px; text-transform: uppercase; color: var(--ink-mute); padding: 18px 4px 8px; display: flex; justify-content: space-between; }
+  .C .section-label .add { color: var(--accent); }
+
+  .C .field-group { background: var(--panel); border-radius: 14px; border: 1px solid var(--rule-soft); overflow: hidden; }
+  .C .field { display: grid; grid-template-columns: 36px 1fr auto 18px; gap: 12px; align-items: center; padding: 14px 14px; }
+  .C .field + .field { border-top: 1px solid var(--rule-soft); }
+  .C .field .label { display: flex; flex-direction: column; gap: 2px; }
+  .C .field .label b { font-weight: 500; font-size: 13px; color: var(--ink); }
+  .C .field .label span { font-size: 11px; color: var(--ink-mute); }
+  .C .field .input { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 16px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .C .field .input .ccy { color: var(--ink-mute); font-size: 11px; margin-right: 4px; }
+  .C .field .x { color: var(--ink-faint); justify-self: end; font-size: 13px; }
+  .C .field .input .empty { color: var(--ink-faint); }
+  .C .field.focused .input { color: var(--accent); }
+
+  .C .add-cta { margin-top: 10px; padding: 14px; text-align: center; border: 1px dashed var(--rule); border-radius: 14px; color: var(--accent); font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; }
+  .C .helper { padding: 12px 4px 0; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-mute); text-align: center; }
+  .C .helper.over { color: var(--over); }
+  .C .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 18px; }
+
+  /* notes panel */
+  /* ---------- Style H: HYBRID (recommended) ---------- */
+  .H-wrap { max-width: 1240px; margin: 0 auto 56px; }
+  .H-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .H-head h2 { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 26px; color: var(--accent); margin: 0; }
+  .H-head .pill { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #2A2410; background: var(--accent); padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .H-head .sub { color: var(--ink-mute); font-size: 12px; }
+  .H-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; margin-top: 18px; }
+  @media (max-width: 1100px) { .H-row { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 680px) { .H-row { grid-template-columns: 1fr; } }
+
+  .H .crumb { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 14px; }
+  .H .crumb .eyebrow { font-size: 10px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink-mute); }
+  .H .crumb .chip { background: transparent; }
+  .H .header {
+    padding: 16px 16px 14px; background: var(--panel); border-radius: 12px;
+    border: 1px solid var(--rule-soft);
+    background-image: linear-gradient(180deg, rgba(214,193,137,0.04), transparent 60%);
+  }
+  .H .header .stack { display: flex; justify-content: space-between; align-items: flex-end; }
+  .H .header .total { font-family: "Cormorant Garamond", Georgia, serif; font-size: 34px; line-height: 1; letter-spacing: -0.4px; color: var(--ink); }
+  .H .header .total .ccy { font-size: 11px; color: var(--ink-mute); margin-right: 5px; letter-spacing: 1.4px; vertical-align: 11px; }
+  .H .header .lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
+  .H .header .remain { text-align: right; }
+  .H .header .remain .val { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 14px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .H .header .remain .val.pos { color: var(--pos); }
+  .H .header .remain .val.over { color: var(--over); }
+
+  .H .arc { margin-top: 14px; }
+  .H .arc-track { height: 3px; background: #1d1d1a; border-radius: 2px; overflow: hidden; }
+  .H .arc-fill { height: 100%; background: var(--accent); }
+  .H .arc-fill.pos { background: var(--pos); }
+  .H .arc-fill.over { background: var(--over); }
+  .H .arc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-mute); }
+  .H .arc-meta .pos { color: var(--pos); }
+  .H .arc-meta .over { color: var(--over); }
+  .H .arc-meta .accent { color: var(--accent); }
+
+  .H .section { display: flex; justify-content: space-between; align-items: center; margin: 18px 2px 8px; }
+  .H .section h4 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 16px; color: var(--ink); }
+  .H .section .add-btn { display: flex; align-items: center; gap: 5px; color: var(--accent); font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; }
+  .H .section .add-btn .ic { width: 18px; height: 18px; border: 1px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; }
+
+  /* Split row — mirrors AeonTransactionItem anatomy
+     Tokens: iconSizeLg=32dp container, iconSizeSm=18dp glyph,
+     transactionAmount = display-family serif SemiBold @ 15sp Medium in row,
+     transactionAmountMeta = labelSmall @ 8sp,
+     amount color = AppColors.negative (expense parent) or .positive (income). */
+  .H .group { background: var(--panel); border-radius: 14px; border: 1px solid var(--rule-soft); overflow: hidden; }
+  .H .item { display: grid; grid-template-columns: 32px 1fr auto 16px; gap: 10px; align-items: center; padding: 12px 14px; }
+  .H .item + .item, .H .item + .add-row { border-top: 0.5px solid rgba(154,149,138,0.18); }
+
+  .H .item .tx-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; line-height: 1; position: relative;
+  }
+  .H .item .tx-icon.cat-food   { background: rgba(232,168,124,0.20); color: #E8A87C; }
+  .H .item .tx-icon.cat-tx     { background: rgba(143,179,214,0.20); color: #8FB3D6; }
+  .H .item .tx-icon.cat-shop   { background: rgba(214,137,183,0.20); color: #D689B7; }
+  .H .item .tx-icon.cat-bills  { background: rgba(168,201,122,0.20); color: #A8C97A; }
+  .H .item .tx-icon.cat-empty  { background: transparent; color: var(--ink-faint); border: 1px dashed var(--rule); font-size: 14px; }
+  .H .item .tx-icon .status {
+    position: absolute; bottom: -3px; left: -4px;
+    width: 14px; height: 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #0e0e0c;
+    border: 1.5px solid var(--panel);
+  }
+  .H .item .tx-icon .status.pos  { background: var(--pos); }
+  .H .item .tx-icon .status.warn { background: var(--accent); }
+  .H .item .tx-icon .status.over { background: var(--over); }
+
+  .H .item .meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .H .item .meta .title {
+    /* AppTextStyles.transactionTitle override on row: Bold, fontSize 12sp */
+    font-family: "Source Serif Pro", Georgia, serif;
+    font-weight: 700; font-size: 12px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .H .item .meta .sub {
+    /* account row: transactionSwipeAction @ 10sp Medium, contentSecondary */
+    font-size: 10px; color: var(--ink-mute); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .H .item .meta .note {
+    /* caption @ 11sp, contentSecondary, padding-top 2dp */
+    font-size: 11px; color: var(--ink-mute); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .H .item .amt-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .H .item .amt {
+    /* transactionAmount: display family serif, fontSize 15sp Medium, colored */
+    font-family: "Cormorant Garamond", "Source Serif Pro", Georgia, serif;
+    font-weight: 600; font-size: 17px; line-height: 1.05;
+    color: var(--neg); /* expense parent — matches AppColors.negative */
+    font-variant-numeric: tabular-nums;
+  }
+  .H .item .amt.income { color: var(--pos); }
+  .H .item .amt .empty { opacity: 0.4; }
+  .H .item .share {
+    /* transactionAmountMeta: labelSmall @ 8sp, color = amountColor @ 0.8 alpha */
+    font-size: 8.5px; letter-spacing: 0.4px; font-variant-numeric: tabular-nums;
+    color: rgba(201,125,106,0.80); /* negative @ 0.8 */
+    text-transform: none; font-weight: 600;
+  }
+  .H .item .amt.income + .share { color: rgba(143,185,122,0.80); }
+  .H .item .x { color: var(--ink-faint); justify-self: end; font-size: 13px; }
+
+  .H .item.focused { background: linear-gradient(90deg, rgba(214,193,137,0.06), transparent 70%); }
+  .H .item.focused .meta .title { color: var(--accent); }
+  .H .item.over .amt   { color: var(--over); }
+  .H .item.over .share { color: rgba(216,123,90,0.85); }
+  .H .item.over .meta .title { color: var(--over); }
+
+  .H .add-row { padding: 12px 14px; text-align: center; border-top: 1px dashed var(--rule); color: var(--accent); font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; }
+  .H .empty { padding: 28px 16px; text-align: center; color: var(--ink-mute); font-size: 12px; line-height: 1.6; }
+  .H .empty .big { font-family: "Cormorant Garamond", Georgia, serif; font-size: 17px; color: var(--ink); margin-bottom: 4px; }
+  .H .helper { padding: 12px 4px 0; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-mute); text-align: center; }
+  .H .helper.over { color: var(--over); }
+  .H .helper.pos { color: var(--pos); }
+  .H .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 16px; }
+
+  .notes { max-width: 1240px; margin: 56px auto 0; padding: 22px 24px; background: #131312; border: 1px solid var(--rule-soft); border-radius: 12px; }
+  .notes h3 { margin: 0 0 10px; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 20px; color: var(--accent); }
+  .notes ul { margin: 0; padding-left: 18px; color: var(--ink); font-size: 13px; line-height: 1.65; }
+  .notes ul li b { color: var(--accent); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Split Transaction Sheet — H-style Redesign</h1>
+  <p>Three direction studies for the redesigned <span class="mono">AeonTransactionSplitSheet</span>. All three discard the dotted-underline / dashed-rule / tiny-uppercase clutter of the current implementation and re-derive from the H palette and Editorial-Instrument vocabulary already used by <span class="mono">AeonImpactHeaderCard</span>, <span class="mono">AeonScheduleBuilder</span>, and <span class="mono">AeonEntryFormContent</span>.</p>
+  <div class="legend">
+    <span>Accent / In-progress</span>
+    <span class="pos">Fully allocated</span>
+    <span class="over">Over budget</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- ===================== HYBRID · RECOMMENDED ======================== -->
+<!-- =================================================================== -->
+<div class="H-wrap">
+  <div class="H-head">
+    <h2>Hybrid · Recommended</h2>
+    <span class="pill">Best of A · B · C</span>
+  </div>
+  <p class="sub" style="color:var(--ink-mute);max-width:780px;font-size:13px;line-height:1.6;margin:6px 0 0;">
+    B's serif-total + status chip header · A's twin-column hairline ledger reading · B's single-arc allocation gauge with %/parts meta · C's grouped single-surface split list with hairline-divided rows · 1 : 1.4 ghost/accent action ratio. Decorations used once, never stacked.
+  </p>
+
+  <div class="H-row">
+
+    <!-- H: Empty -->
+    <div>
+      <div class="state-label">Empty</div>
+      <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad H">
+        <div class="crumb">
+          <div class="eyebrow">Split transaction</div>
+          <div class="chip"><span class="dot"></span>Drafting</div>
+        </div>
+        <div class="header">
+          <div class="lbl">Total</div>
+          <div class="stack">
+            <div class="total"><span class="ccy">USD</span>100.00</div>
+            <div class="remain"><div class="lbl">Remaining</div><div class="val">100.00</div></div>
+          </div>
+          <div class="arc">
+            <div class="arc-track"><div class="arc-fill" style="width:0%"></div></div>
+            <div class="arc-meta"><span>0% allocated</span><span>0 parts</span></div>
+          </div>
+        </div>
+        <div class="section"><h4>Splits</h4><div class="add-btn"><span class="ic">+</span>Add</div></div>
+        <div class="group">
+          <div class="empty">
+            <div class="big">No splits yet</div>
+            Tap <span style="color:var(--accent);">＋ Add</span> above to allocate this transaction across categories.
+          </div>
+        </div>
+        <div class="actions">
+          <div class="btn btn-ghost">Revert</div>
+          <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+        </div>
+      </div></div></div>
+    </div>
+
+    <!-- H: Partial -->
+    <div>
+      <div class="state-label">Partially allocated</div>
+      <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad H">
+        <div class="crumb">
+          <div class="eyebrow">Split transaction</div>
+          <div class="chip"><span class="dot"></span>Splitting</div>
+        </div>
+        <div class="header">
+          <div class="lbl">Total</div>
+          <div class="stack">
+            <div class="total"><span class="ccy">USD</span>100.00</div>
+            <div class="remain"><div class="lbl">Remaining</div><div class="val">40.00</div></div>
+          </div>
+          <div class="arc">
+            <div class="arc-track"><div class="arc-fill" style="width:60%"></div></div>
+            <div class="arc-meta"><span class="accent">60% allocated</span><span>1 of 2 parts</span></div>
+          </div>
+        </div>
+        <div class="section"><h4>Splits</h4><div class="add-btn"><span class="ic">+</span>Add</div></div>
+        <div class="group">
+          <div class="item">
+            <div class="tx-icon cat-food">🍽<div class="status pos">✓</div></div>
+            <div class="meta">
+              <div class="title">Food &amp; Dining</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note">Dinner with the team</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt">−$60.00</div>
+              <div class="share">60% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="item focused">
+            <div class="tx-icon cat-empty">＋</div>
+            <div class="meta">
+              <div class="title">Select category</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note" style="color:var(--ink-faint);">Tap to add note</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt"><span class="empty">−$40.00</span></div>
+              <div class="share">40% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="add-row">＋ Add split</div>
+        </div>
+        <div class="helper">Allocation must match total</div>
+        <div class="actions">
+          <div class="btn btn-ghost">Revert</div>
+          <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+        </div>
+      </div></div></div>
+    </div>
+
+    <!-- H: Fully allocated -->
+    <div>
+      <div class="state-label">Fully allocated</div>
+      <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad H">
+        <div class="crumb">
+          <div class="eyebrow">Split transaction</div>
+          <div class="chip pos"><span class="dot"></span>Balanced</div>
+        </div>
+        <div class="header">
+          <div class="lbl">Total</div>
+          <div class="stack">
+            <div class="total"><span class="ccy">USD</span>100.00</div>
+            <div class="remain"><div class="lbl">Balanced</div><div class="val pos">0.00</div></div>
+          </div>
+          <div class="arc">
+            <div class="arc-track"><div class="arc-fill pos" style="width:100%"></div></div>
+            <div class="arc-meta"><span class="pos">100% allocated</span><span>2 of 2 parts</span></div>
+          </div>
+        </div>
+        <div class="section"><h4>Splits</h4><div class="add-btn"><span class="ic">+</span>Add</div></div>
+        <div class="group">
+          <div class="item">
+            <div class="tx-icon cat-food">🍽<div class="status pos">✓</div></div>
+            <div class="meta">
+              <div class="title">Food &amp; Dining</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note">Dinner with the team</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt">−$60.00</div>
+              <div class="share">60% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="item">
+            <div class="tx-icon cat-tx">🚌<div class="status pos">✓</div></div>
+            <div class="meta">
+              <div class="title">Transport</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note">Cabs split between us</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt">−$40.00</div>
+              <div class="share">40% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="add-row">＋ Add split</div>
+        </div>
+        <div class="helper pos">Ready to confirm</div>
+        <div class="actions">
+          <div class="btn btn-ghost">Revert</div>
+          <div class="btn btn-primary">Confirm split</div>
+        </div>
+      </div></div></div>
+    </div>
+
+    <!-- H: Over -->
+    <div>
+      <div class="state-label">Over allocated</div>
+      <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad H">
+        <div class="crumb">
+          <div class="eyebrow">Split transaction</div>
+          <div class="chip over"><span class="dot"></span>Over</div>
+        </div>
+        <div class="header">
+          <div class="lbl">Total</div>
+          <div class="stack">
+            <div class="total"><span class="ccy">USD</span>100.00</div>
+            <div class="remain"><div class="lbl">Over by</div><div class="val over">20.00</div></div>
+          </div>
+          <div class="arc">
+            <div class="arc-track"><div class="arc-fill over" style="width:100%"></div></div>
+            <div class="arc-meta"><span class="over">120% allocated</span><span>2 of 2 parts</span></div>
+          </div>
+        </div>
+        <div class="section"><h4>Splits</h4><div class="add-btn"><span class="ic">+</span>Add</div></div>
+        <div class="group">
+          <div class="item">
+            <div class="tx-icon cat-food">🍽<div class="status pos">✓</div></div>
+            <div class="meta">
+              <div class="title">Food &amp; Dining</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note">Dinner</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt">−$80.00</div>
+              <div class="share">80% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="item over">
+            <div class="tx-icon cat-tx">🚌<div class="status over">!</div></div>
+            <div class="meta">
+              <div class="title">Transport</div>
+              <div class="sub">Main Wallet · Expense</div>
+              <div class="note" style="color:var(--over);opacity:.85">Reduce $20.00 to balance</div>
+            </div>
+            <div class="amt-stack">
+              <div class="amt">−$40.00</div>
+              <div class="share">40% of $100.00</div>
+            </div>
+            <div class="x">×</div>
+          </div>
+          <div class="add-row">＋ Add split</div>
+        </div>
+        <div class="helper over">Allocation exceeds total by $20.00</div>
+        <div class="actions">
+          <div class="btn btn-ghost">Revert</div>
+          <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+        </div>
+      </div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div style="max-width:1240px;margin:0 auto 22px;border-top:1px solid var(--rule-soft);padding-top:24px;">
+  <p style="color:var(--ink-mute);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin:0;">For reference · Original three direction studies below</p>
+</div>
+
+<div class="grid">
+
+  <!-- ============= STYLE A: HAIRLINE MINIMAL ============= -->
+  <div>
+    <h2 class="col-head">A · Hairline Minimal</h2>
+    <p class="col-sub">Closest to <span class="mono">AeonSelectionSheet</span> + <span class="mono">aeonHairlineBorder</span>. No backgrounded cards inside the sheet — splits are ledger rows divided by hairlines. Serif amounts, mono currency. Most editorial; most restrained.</p>
+
+    <!-- A: Empty -->
+    <div class="state-label">State · Empty (just opened)</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad A">
+      <div class="head">
+        <div>
+          <div class="eyebrow">Split</div>
+          <div class="title">Allocate $100.00</div>
+        </div>
+        <div class="add">+</div>
+      </div>
+      <div class="ledger">
+        <div class="cell"><div class="lbl">Total</div><div class="val"><span class="ccy">USD</span>100.00</div></div>
+        <div class="cell right"><div class="lbl">Remaining</div><div class="val"><span class="ccy">USD</span>100.00</div></div>
+      </div>
+      <div style="padding:28px 0 12px;text-align:center;color:var(--ink-mute);font-size:12px;letter-spacing:0.4px;">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:var(--ink);margin-bottom:4px;">No splits yet</div>
+        Tap <span style="color:var(--accent);">＋</span> above to allocate this transaction across categories.
+      </div>
+      <div class="add-row" style="justify-content:center;border-top:1px solid var(--rule-soft);margin-top:10px;">
+        <div class="plus">+</div>Add first split
+      </div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- A: Partial -->
+    <div class="state-label">State · Partially allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad A">
+      <div class="head">
+        <div>
+          <div class="eyebrow">Split</div>
+          <div class="title">Allocate $100.00</div>
+        </div>
+        <div class="add">+</div>
+      </div>
+      <div class="ledger">
+        <div class="cell"><div class="lbl">Allocated</div><div class="val"><span class="ccy">USD</span>60.00</div></div>
+        <div class="cell right"><div class="lbl">Remaining</div><div class="val"><span class="ccy">USD</span>40.00</div></div>
+      </div>
+      <div class="gauge"><i style="width:60%"></i></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="name"><b>Food &amp; Dining</b><span>Dinner with the team</span></div>
+        <div class="amt"><span class="ccy">USD</span>60.00<span class="x">×</span></div>
+      </div>
+      <div class="row" style="opacity:0.92">
+        <div class="swatch sw-empty">＋</div>
+        <div class="name"><b style="color:var(--ink-mute);">Select category</b><span style="color:var(--ink-faint);">Note · optional</span></div>
+        <div class="amt" style="color:var(--ink-faint);"><span class="ccy">USD</span>0.00<span class="x">×</span></div>
+      </div>
+      <div class="add-row"><div class="plus">+</div>Add split</div>
+      <div class="footnote">Allocation must match total budget</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- A: Fully allocated -->
+    <div class="state-label">State · Fully allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad A">
+      <div class="head">
+        <div>
+          <div class="eyebrow">Split</div>
+          <div class="title">Allocate $100.00</div>
+        </div>
+        <div class="add">+</div>
+      </div>
+      <div class="ledger">
+        <div class="cell"><div class="lbl">Allocated</div><div class="val pos"><span class="ccy">USD</span>100.00</div></div>
+        <div class="cell right"><div class="lbl">Balanced</div><div class="val pos"><span class="ccy">USD</span>0.00</div></div>
+      </div>
+      <div class="gauge"><i class="pos" style="width:100%"></i></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="name"><b>Food &amp; Dining</b><span>Dinner with the team</span></div>
+        <div class="amt"><span class="ccy">USD</span>60.00<span class="x">×</span></div>
+      </div>
+      <div class="row">
+        <div class="swatch sw-tx">🚌</div>
+        <div class="name"><b>Transport</b><span>Cabs split between us</span></div>
+        <div class="amt"><span class="ccy">USD</span>40.00<span class="x">×</span></div>
+      </div>
+      <div class="add-row"><div class="plus">+</div>Add split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary">Confirm split</div>
+      </div>
+    </div></div></div>
+
+    <!-- A: Over -->
+    <div class="state-label">State · Over allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad A">
+      <div class="head">
+        <div>
+          <div class="eyebrow">Split</div>
+          <div class="title">Allocate $100.00</div>
+        </div>
+        <div class="add">+</div>
+      </div>
+      <div class="ledger">
+        <div class="cell"><div class="lbl">Allocated</div><div class="val over"><span class="ccy">USD</span>120.00</div></div>
+        <div class="cell right"><div class="lbl">Over by</div><div class="val over"><span class="ccy">USD</span>20.00</div></div>
+      </div>
+      <div class="gauge"><i class="over" style="width:100%"></i></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="name"><b>Food &amp; Dining</b><span>Dinner</span></div>
+        <div class="amt"><span class="ccy">USD</span>80.00<span class="x">×</span></div>
+      </div>
+      <div class="row">
+        <div class="swatch sw-tx">🚌</div>
+        <div class="name"><b>Transport</b><span>Cabs</span></div>
+        <div class="amt" style="color:var(--over);"><span class="ccy" style="color:var(--over);opacity:.7">USD</span>40.00<span class="x">×</span></div>
+      </div>
+      <div class="footnote over">Allocation exceeds total by $20.00</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <!-- ============= STYLE B: EDITORIAL HEADER ============= -->
+  <div>
+    <h2 class="col-head">B · Editorial Header Card</h2>
+    <p class="col-sub">Anchored by an <span class="mono">AeonImpactHeaderCard</span>-like header (serif total, mono remainder, single accent arc). Splits live as separate rounded ledger cards. The most readable when the split count is high.</p>
+
+    <!-- B: Empty -->
+    <div class="state-label">State · Empty</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad B">
+      <div class="header-card">
+        <div class="eyebrow">Splitting transaction</div>
+        <div class="stack">
+          <div class="total"><span class="ccy">USD</span>100.00</div>
+          <div class="remain"><div class="lbl">Remaining</div><div class="val">100.00</div></div>
+        </div>
+        <div class="arc"><div class="arc-track"><div class="arc-fill" style="width:0%"></div></div>
+          <div class="arc-meta"><span>0% allocated</span><span>0 of n parts</span></div>
+        </div>
+      </div>
+      <div class="section-head"><h4>Splits</h4><span class="count">None yet</span></div>
+      <div style="text-align:center;padding:22px 12px;color:var(--ink-mute);font-size:12px;line-height:1.6;">
+        Group categories on this transaction.<br>Tap below to add your first split.
+      </div>
+      <div class="add">＋&nbsp;&nbsp;Add split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- B: Partial -->
+    <div class="state-label">State · Partially allocated (row 2 focused)</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad B">
+      <div class="header-card">
+        <div class="eyebrow">Splitting transaction</div>
+        <div class="stack">
+          <div class="total"><span class="ccy">USD</span>100.00</div>
+          <div class="remain"><div class="lbl">Remaining</div><div class="val">40.00</div></div>
+        </div>
+        <div class="arc"><div class="arc-track"><div class="arc-fill" style="width:60%"></div></div>
+          <div class="arc-meta"><span>60% allocated</span><span>1 of 2 parts</span></div>
+        </div>
+      </div>
+      <div class="section-head"><h4>Splits</h4><span class="count">2 parts</span></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="cat"><b>Food &amp; Dining</b><span>Dinner with the team</span></div>
+        <div class="amt"><span class="ccy">USD</span>60.00</div>
+        <div class="del">×</div>
+      </div>
+      <div class="row focused">
+        <div class="swatch sw-empty">＋</div>
+        <div class="cat"><b>Select category</b><span>Optional note</span></div>
+        <div class="amt"><span class="ccy">USD</span><span style="color:var(--ink-faint)">0.00</span></div>
+        <div class="del">×</div>
+      </div>
+      <div class="add">＋&nbsp;&nbsp;Add split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- B: Fully allocated -->
+    <div class="state-label">State · Fully allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad B">
+      <div class="header-card">
+        <div class="eyebrow">Splitting transaction</div>
+        <div class="stack">
+          <div class="total"><span class="ccy">USD</span>100.00</div>
+          <div class="remain"><div class="lbl">Balanced</div><div class="val pos">0.00</div></div>
+        </div>
+        <div class="arc"><div class="arc-track"><div class="arc-fill pos" style="width:100%"></div></div>
+          <div class="arc-meta"><span style="color:var(--pos);">100% allocated</span><span>2 of 2 parts</span></div>
+        </div>
+      </div>
+      <div class="section-head"><h4>Splits</h4><span class="count">2 parts</span></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="cat"><b>Food &amp; Dining</b><span>Dinner with the team</span></div>
+        <div class="amt"><span class="ccy">USD</span>60.00</div><div class="del">×</div>
+      </div>
+      <div class="row">
+        <div class="swatch sw-tx">🚌</div>
+        <div class="cat"><b>Transport</b><span>Cabs split between us</span></div>
+        <div class="amt"><span class="ccy">USD</span>40.00</div><div class="del">×</div>
+      </div>
+      <div class="add">＋&nbsp;&nbsp;Add split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary">Confirm split</div>
+      </div>
+    </div></div></div>
+
+    <!-- B: Over -->
+    <div class="state-label">State · Over allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad B">
+      <div class="header-card">
+        <div class="eyebrow">Splitting transaction</div>
+        <div class="stack">
+          <div class="total"><span class="ccy">USD</span>100.00</div>
+          <div class="remain"><div class="lbl">Over by</div><div class="val over">20.00</div></div>
+        </div>
+        <div class="arc"><div class="arc-track"><div class="arc-fill over" style="width:100%"></div></div>
+          <div class="arc-meta"><span style="color:var(--over);">120% allocated</span><span>2 of 2 parts</span></div>
+        </div>
+      </div>
+      <div class="section-head"><h4>Splits</h4><span class="count">2 parts</span></div>
+      <div class="row">
+        <div class="swatch sw-food">🍽</div>
+        <div class="cat"><b>Food &amp; Dining</b><span>Dinner</span></div>
+        <div class="amt"><span class="ccy">USD</span>80.00</div><div class="del">×</div>
+      </div>
+      <div class="row" style="border-color:var(--over);">
+        <div class="swatch sw-tx">🚌</div>
+        <div class="cat"><b style="color:var(--over);">Transport</b><span style="color:var(--over);opacity:.8">Reduce by $20.00 to balance</span></div>
+        <div class="amt" style="color:var(--over);"><span class="ccy" style="color:var(--over);opacity:.7">USD</span>40.00</div><div class="del">×</div>
+      </div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+  </div>
+
+  <!-- ============= STYLE C: ENTRY-FORM RHYTHM ============= -->
+  <div>
+    <h2 class="col-head">C · Entry-Form Rhythm</h2>
+    <p class="col-sub">Splits as <span class="mono">AeonEntryFormContent</span>-style grouped fields inside one rounded surface. Lightest visual weight per row — best when a split has many sub-fields (amount + category + note).</p>
+
+    <!-- C: Empty -->
+    <div class="state-label">State · Empty</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad C">
+      <div class="crumb"><div class="back">‹</div><div class="eyebrow">Split transaction</div><div class="title">$100.00</div></div>
+      <div class="summary">
+        <div class="row1"><div class="total"><span class="ccy">USD</span>100.00</div><div class="chip"><span class="dot"></span>Splitting</div></div>
+        <div class="meta"><span>Total</span><span class="accent">Remaining 100.00</span></div>
+        <div class="gauge"><i style="width:0%"></i></div>
+      </div>
+      <div class="section-label">Splits<span class="add">＋ Add</span></div>
+      <div class="field-group">
+        <div class="field"><div class="swatch sw-empty">＋</div><div class="label"><b style="color:var(--ink-mute);">Select category</b><span>Tap to choose</span></div><div class="input"><span class="ccy">USD</span><span class="empty">0.00</span></div><div class="x">×</div></div>
+      </div>
+      <div class="add-cta">＋ Add another split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- C: Partial -->
+    <div class="state-label">State · Partially allocated (row 2 focused)</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad C">
+      <div class="crumb"><div class="back">‹</div><div class="eyebrow">Split transaction</div><div class="title">$100.00</div></div>
+      <div class="summary">
+        <div class="row1"><div class="total"><span class="ccy">USD</span>100.00</div><div class="chip"><span class="dot"></span>Splitting</div></div>
+        <div class="meta"><span>60% allocated</span><span class="accent">Remaining 40.00</span></div>
+        <div class="gauge"><i style="width:60%"></i></div>
+      </div>
+      <div class="section-label">Splits<span class="add">＋ Add</span></div>
+      <div class="field-group">
+        <div class="field">
+          <div class="swatch sw-food">🍽</div>
+          <div class="label"><b>Food &amp; Dining</b><span>Dinner with the team</span></div>
+          <div class="input"><span class="ccy">USD</span>60.00</div>
+          <div class="x">×</div>
+        </div>
+        <div class="field focused">
+          <div class="swatch sw-empty">＋</div>
+          <div class="label"><b>Select category</b><span>Note · optional</span></div>
+          <div class="input"><span class="ccy">USD</span><span class="empty">40.00</span></div>
+          <div class="x">×</div>
+        </div>
+      </div>
+      <div class="add-cta">＋ Add another split</div>
+      <div class="helper">Allocation must equal total</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+
+    <!-- C: Fully allocated -->
+    <div class="state-label">State · Fully allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad C">
+      <div class="crumb"><div class="back">‹</div><div class="eyebrow">Split transaction</div><div class="title">$100.00</div></div>
+      <div class="summary">
+        <div class="row1"><div class="total"><span class="ccy">USD</span>100.00</div><div class="chip pos"><span class="dot"></span>Balanced</div></div>
+        <div class="meta"><span>100% allocated</span><span class="pos">Remaining 0.00</span></div>
+        <div class="gauge"><i class="pos" style="width:100%"></i></div>
+      </div>
+      <div class="section-label">Splits<span class="add">＋ Add</span></div>
+      <div class="field-group">
+        <div class="field"><div class="swatch sw-food">🍽</div><div class="label"><b>Food &amp; Dining</b><span>Dinner with the team</span></div><div class="input"><span class="ccy">USD</span>60.00</div><div class="x">×</div></div>
+        <div class="field"><div class="swatch sw-tx">🚌</div><div class="label"><b>Transport</b><span>Cabs split between us</span></div><div class="input"><span class="ccy">USD</span>40.00</div><div class="x">×</div></div>
+      </div>
+      <div class="add-cta">＋ Add another split</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary">Confirm split</div>
+      </div>
+    </div></div></div>
+
+    <!-- C: Over -->
+    <div class="state-label">State · Over allocated</div>
+    <div class="phone"><div class="sheet-bg"><div class="drag"></div><div class="sheet-pad C">
+      <div class="crumb"><div class="back">‹</div><div class="eyebrow">Split transaction</div><div class="title">$100.00</div></div>
+      <div class="summary">
+        <div class="row1"><div class="total"><span class="ccy">USD</span>100.00</div><div class="chip over"><span class="dot"></span>Over</div></div>
+        <div class="meta"><span>120% allocated</span><span class="over">Over by 20.00</span></div>
+        <div class="gauge"><i class="over" style="width:100%"></i></div>
+      </div>
+      <div class="section-label">Splits<span class="add">＋ Add</span></div>
+      <div class="field-group">
+        <div class="field"><div class="swatch sw-food">🍽</div><div class="label"><b>Food &amp; Dining</b><span>Dinner</span></div><div class="input"><span class="ccy">USD</span>80.00</div><div class="x">×</div></div>
+        <div class="field"><div class="swatch sw-tx">🚌</div><div class="label"><b style="color:var(--over)">Transport</b><span style="color:var(--over);opacity:.8">Reduce $20.00 to balance</span></div><div class="input" style="color:var(--over)"><span class="ccy" style="color:var(--over);opacity:.7">USD</span>40.00</div><div class="x">×</div></div>
+      </div>
+      <div class="helper over">Allocation exceeds total by $20.00</div>
+      <div class="actions">
+        <div class="btn btn-ghost">Revert</div>
+        <div class="btn btn-primary" aria-disabled="true">Confirm</div>
+      </div>
+    </div></div></div>
+  </div>
+
+</div>
+
+<div class="notes">
+  <h3>What this redesign throws out from the current sheet</h3>
+  <ul>
+    <li><b>Dotted underlines + dashed top rules on every split row.</b> Already an editorial idiom (<span class="mono">aeonDottedUnderline</span>, <span class="mono">aeonDashedTopRule</span>) — but used everywhere at once, they fight each other and add noise. Each direction here uses <i>one</i> divider grammar consistently.</li>
+    <li><b>The 8sp uppercase micro-labels.</b> "TOTAL BUDGET" / "ALLOCATED" / "OVER LIMIT" at 8sp with 1sp letter-spacing become unreadable. Replaced with H-standard 10sp 2.4-letter-spacing eyebrows used once per region.</li>
+    <li><b>The 2dp gauge.</b> Visually accidental. Style A uses a 1–3px hairline that lights up only when filled; Styles B/C use a 4px / 2dp track but only one per sheet, not per row.</li>
+    <li><b>Inline raw <span class="mono">TextField</span> for the amount.</b> Replaced visually by a mono-tabular readout that matches <span class="mono">EntryAmountDisplay</span>, so the amount keeps the same typographic weight whether typed or displayed.</li>
+    <li><b>"CONFIRM SPLIT" button height tied to <span class="mono">buttonCornerRadius * 2</span>.</b> That's a coupling bug — button height should come from <span class="mono">dims.buttonHeight</span>, not the corner radius token.</li>
+    <li><b>Twin equal-weight primary actions.</b> Revert (destructive-ish) and Confirm (primary) are weighted equally. Here, Revert is ghost; Confirm carries the accent — and the 1 : 1.4 column ratio makes the hierarchy unambiguous.</li>
+  </ul>
+  <h3 style="margin-top:18px;">Recommendation</h3>
+  <ul>
+    <li><b>Style A</b> for parity with <span class="mono">AeonSelectionSheet</span> + maximum editorial restraint.</li>
+    <li><b>Style B</b> if the team wants the split sheet to read as a peer of <span class="mono">AeonImpactHeaderCard</span> (best for visual hierarchy when many splits).</li>
+    <li><b>Style C</b> if you anticipate growing per-split metadata (planned date, tag, recurrence) — the grouped-field surface scales best.</li>
+  </ul>
+</div>
+
+</body>
+</html>

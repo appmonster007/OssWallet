@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -86,61 +87,60 @@ class AnalyticsViewModel @Inject constructor(
         cardRepository.getCardsConfig(cardScreenContext)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
+    private data class DomainSnapshot(
+        val transactions: List<Transaction>,
+        val accounts: List<Account>,
+        val categories: List<Category>,
+        val tags: List<Tag>
+    )
+
+    private data class PlanningSnapshot(
+        val plannedPayments: List<PlannedPayment>,
+        val budgets: List<Budget>,
+        val loans: List<Loan>
+    )
+
+    private data class ConfigSnapshot(
+        val rates: Map<String, BigDecimal>,
+        val baseCurrency: String,
+        val hasLoadedRates: Boolean
+    )
+
     val uiState: StateFlow<AnalyticsUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                transactionUseCases.getTransactions(profileId),
-                accountRepository.getAllAccounts(profileId),
-                categoryRepository.categories,
-                computationRepository.exchangeRates,
-                computationRepository.selectedCurrency,
-                computationRepository.hasLoadedExchangeRates,
-                plannedPaymentRepository.getActivePlannedPayments(profileId),
-                budgetRepository.getActiveBudgets(profileId),
-                loanRepository.getActiveLoans(profileId),
-                tagRepository.getAllTags()
-            ) { args: Array<Any> ->
-                @Suppress("UNCHECKED_CAST")
-                val transactions = args[0] as List<Transaction>
-
-                @Suppress("UNCHECKED_CAST")
-                val accounts = args[1] as List<Account>
-
-                @Suppress("UNCHECKED_CAST")
-                val categories = args[2] as List<Category>
-
-                @Suppress("UNCHECKED_CAST")
-                val rates = args[3] as Map<String, BigDecimal>
-                val baseCurrency = args[4] as String
-                val hasLoadedRates = args[5] as Boolean
-
-                if (!hasLoadedRates) {
+                combine(
+                    transactionUseCases.getTransactions(profileId),
+                    accountRepository.getAllAccounts(profileId),
+                    categoryRepository.categories,
+                    tagRepository.getAllTags()
+                ) { tx, acc, cat, tags -> DomainSnapshot(tx, acc, cat, tags) }.distinctUntilChanged(),
+                combine(
+                    plannedPaymentRepository.getActivePlannedPayments(profileId),
+                    budgetRepository.getActiveBudgets(profileId),
+                    loanRepository.getActiveLoans(profileId)
+                ) { pp, b, l -> PlanningSnapshot(pp, b, l) }.distinctUntilChanged(),
+                combine(
+                    computationRepository.exchangeRates,
+                    computationRepository.selectedCurrency,
+                    computationRepository.hasLoadedExchangeRates
+                ) { rates, base, loaded -> ConfigSnapshot(rates, base, loaded) }.distinctUntilChanged()
+            ) { domain, planning, config ->
+                if (!config.hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading
                 }
 
-                @Suppress("UNCHECKED_CAST")
-                val plannedPayments = args[6] as List<PlannedPayment>
-
-                @Suppress("UNCHECKED_CAST")
-                val budgets = args[7] as List<Budget>
-
-                @Suppress("UNCHECKED_CAST")
-                val loans = args[8] as List<Loan>
-
-                @Suppress("UNCHECKED_CAST")
-                val tags = args[9] as List<Tag>
-
                 AnalyticsUiState.Success(
                     profileId = profileId,
-                    allTransactions = transactions,
-                    accounts = accounts,
-                    allCategories = categories,
-                    allTags = tags,
-                    exchangeRates = rates,
-                    selectedCurrency = baseCurrency,
-                    plannedPayments = plannedPayments,
-                    budgets = budgets,
-                    loans = loans
+                    allTransactions = domain.transactions,
+                    accounts = domain.accounts,
+                    allCategories = domain.categories,
+                    allTags = domain.tags,
+                    exchangeRates = config.rates,
+                    selectedCurrency = config.baseCurrency,
+                    plannedPayments = planning.plannedPayments,
+                    budgets = planning.budgets,
+                    loans = planning.loans
                 )
             }
         }

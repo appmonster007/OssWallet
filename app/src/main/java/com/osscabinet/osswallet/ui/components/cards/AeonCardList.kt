@@ -75,7 +75,10 @@ fun AeonCardList(
     header: @Composable (LazyItemScope.() -> Unit)? = null,
     cardDataMap: Map<String, CardRenderData> = emptyMap(),
     isCardsLoading: Boolean = false,
-    state: LazyListState = rememberLazyListState()
+    state: LazyListState = rememberLazyListState(),
+    scrollToId: String? = null,
+    highlightedId: String? = null,
+    onScrollComplete: () -> Unit = {}
 ) {
     val sortedCards = remember(cards) { cards.sortedBy { it.order } }
     val sortedCardsRef by rememberUpdatedState(sortedCards)
@@ -173,6 +176,9 @@ fun AeonCardList(
                             inheritedFilter = cardInput.filter,
                             screenOwnsTimeline = cardInput.screenOwnsTimeline,
                             animate = animateCards,
+                            scrollToId = scrollToId,
+                            highlightedId = highlightedId,
+                            onScrollComplete = onScrollComplete
                         )
                     }
                 }

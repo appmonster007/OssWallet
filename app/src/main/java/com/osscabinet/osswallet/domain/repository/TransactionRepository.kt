@@ -22,6 +22,7 @@ interface TransactionRepository {
     suspend fun addTransactionLink(transactionId: Long, linkedTransactionId: Long)
     suspend fun removeTransactionLink(transactionId: Long, linkedTransactionId: Long)
     suspend fun clearTransactionLinks(transactionId: Long)
+    fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>>
     fun getLinkedTransactionIds(transactionId: Long): Flow<List<Long>>
     fun getLinkedTransactions(transactionId: Long): Flow<List<Transaction>>
 

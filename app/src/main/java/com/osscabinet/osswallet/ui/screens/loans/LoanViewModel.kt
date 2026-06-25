@@ -11,13 +11,17 @@ import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.management.LoanService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,6 +57,13 @@ class LoanViewModel @Inject constructor(
         .map { txList -> txList.asSequence().flatMap { it.tags }.distinct().sorted().toList() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private data class LoanSnapshot(
+        val loans: List<Loan>,
+        val transactions: List<Transaction>,
+        val rates: ExchangeRateSnapshot,
+        val categories: List<Category>
+    )
+
     /** Precomputed summaries for every loan — mirrors BudgetViewModel.budgetProgress. */
     val loanSummaries: StateFlow<Map<Long, LoanSummary>> = combine(
         loans,
@@ -60,13 +71,21 @@ class LoanViewModel @Inject constructor(
         computationRepository.exchangeRatesSnapshot,
         categories
     ) { loansList, transactionsList, snapshot, categoriesList ->
-        val now = System.currentTimeMillis()
-        loansList.associate { loan ->
-            loan.id to LoanService.buildSummaryFromTransactions(
-                loan, transactionsList, snapshot, now, allCategories = categoriesList
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        LoanSnapshot(loansList, transactionsList, snapshot, categoriesList)
+    }.distinctUntilChanged()
+        .map { snapshot ->
+            val now = System.currentTimeMillis()
+            snapshot.loans.associate { loan ->
+                loan.id to LoanService.buildSummaryFromTransactions(
+                    loan,
+                    snapshot.transactions,
+                    snapshot.rates,
+                    now,
+                    allCategories = snapshot.categories
+                )
+            }
+        }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun deleteLoan(loanId: Long) {
         viewModelScope.launch { loanRepository.deleteLoan(loanId) }

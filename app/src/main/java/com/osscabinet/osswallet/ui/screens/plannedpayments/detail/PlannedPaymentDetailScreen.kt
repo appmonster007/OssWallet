@@ -102,6 +102,8 @@ import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
+import com.osscabinet.ossWallet.ui.components.management.AeonListItem
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -137,7 +139,8 @@ data class PlannedPaymentDetailConfig(
 data class PlannedPaymentDetailActions(
     val onEditClick: (Long) -> Unit,
     val onConfirmClick: (Long, Long?) -> Unit,
-    val onBackClick: () -> Unit
+    val onBackClick: () -> Unit,
+    val onTransactionClick: (Long) -> Unit
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -226,6 +229,7 @@ fun PlannedPaymentDetailScreen(
         },
         onConfirmOccurrence = { date -> actions.onConfirmClick(payment.id, date) },
         onSkipOccurrence = { viewModel.quickSkip(payment) },
+        onTransactionClick = actions.onTransactionClick,
         snackbarHostState = snackbarHostState
     )
 }
@@ -242,6 +246,7 @@ fun PlannedPaymentDetailContent(
     onSaveAsTemplateClick: () -> Unit,
     onConfirmOccurrence: (Long?) -> Unit,
     onSkipOccurrence: () -> Unit,
+    onTransactionClick: (Long) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     val scope = rememberCoroutineScope()
@@ -530,7 +535,8 @@ fun PlannedPaymentDetailContent(
                                             PastOccurrenceItem(
                                                 occ = occ,
                                                 dateFormatter = dateFormatter,
-                                                payment = payment
+                                                payment = payment,
+                                                onTransactionClick = onTransactionClick
                                             )
                                         }
                                     }
@@ -749,179 +755,93 @@ private fun OccurrenceItem(
     onConfirm: () -> Unit,
     onSkip: () -> Unit
 ) {
+    val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
+    val formattedAmount =
+        item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    
     val zone = ZoneId.systemDefault()
     val today = java.time.LocalDate.now(zone)
     val scheduledDay = Instant.ofEpochMilli(item.scheduledDate).atZone(zone).toLocalDate()
     val daysUntil = ChronoUnit.DAYS.between(today, scheduledDay).toInt()
 
-    val iconColor = if (item.isOverdue) AppColors.error else AppColors.secondary
-    val dateLabel = dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
-    val formattedAmount =
-        item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val hintLabel = if (status == OccurrenceStatus.PENDING) {
+        when {
+            item.isOverdue -> "Overdue"
+            daysUntil == 0 -> "Due today"
+            daysUntil == 1 -> "Due tomorrow"
+            daysUntil > 1 -> "Due in $daysUntil days"
+            else -> null
+        }
+    } else null
 
-    Surface(
-        color = if (item.isOverdue)
-            AppColors.errorContainer.copy(alpha = 0.12f)
-        else
-            AppColors.cardSurface,
-        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        border = BorderStroke(
-            0.5.dp,
-            if (item.isOverdue) AppColors.error.copy(alpha = 0.2f)
-            else AppColors.divider.copy(alpha = 0.15f)
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AeonTheme.dimensions.spacingMd),
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = iconColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconColor
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    dateLabel,
-                    style = AppTextStyles.transactionAmount,
-                    color = if (item.isOverdue) AppColors.error else AppColors.contentPrimary
-                )
-                Text(
-                    "$formattedAmount ${item.plannedPayment.currency}",
-                    style = AppTextStyles.transactionSwipeAction,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                )
-                
-                val hintLabel = if (status == OccurrenceStatus.PENDING) {
-                    when {
-                        item.isOverdue -> "Overdue"
-                        daysUntil == 0 -> "Due today"
-                        daysUntil == 1 -> "Due tomorrow"
-                        daysUntil > 1 -> "Due in $daysUntil days"
-                        else -> null
-                    }
-                } else null
-                
-                if (hintLabel != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(top = 2.dp)
+    AeonListItem(
+        title = dateLabel,
+        subtitle = "$formattedAmount ${item.plannedPayment.currency}${if (hintLabel != null) " · $hintLabel" else ""}",
+        icon = Icons.Rounded.CalendarToday,
+        iconTint = if (item.isOverdue) AppColors.error else AppColors.secondary,
+        isWarning = item.isOverdue,
+        trailingContent = {
+            if (status == OccurrenceStatus.PENDING) {
+                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
+                    Surface(
+                        onClick = onSkip,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        color = AppColors.contentSecondary.copy(alpha = 0.08f),
+                        border = BorderStroke(
+                            0.5.dp,
+                            AppColors.divider.copy(alpha = 0.2f)
+                        ),
+                        modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
                     ) {
-                        Icon(
-                            if (item.isOverdue) Icons.Rounded.Info else Icons.Rounded.Schedule,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = if (item.isOverdue) AppColors.error.copy(alpha = 0.6f) else AppColors.contentSecondary.copy(alpha = 0.4f)
-                        )
-                        Text(
-                            hintLabel,
-                            style = AppTextStyles.caption.copy(fontSize = 10.sp),
-                            color = if (item.isOverdue) AppColors.error.copy(alpha = 0.7f) else AppColors.contentSecondary.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-            when (status) {
-                OccurrenceStatus.PENDING -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
-                        Surface(
-                            onClick = onSkip,
-                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                            color = AppColors.contentSecondary.copy(alpha = 0.08f),
-                            border = BorderStroke(
-                                0.5.dp,
-                                AppColors.divider.copy(alpha = 0.2f)
-                            ),
-                            modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.SkipNext,
-                                    contentDescription = "Skip",
-                                    modifier = Modifier.size(14.dp),
-                                    tint = AppColors.contentSecondary.copy(alpha = 0.6f)
-                                )
-                            }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.SkipNext,
+                                contentDescription = "Skip",
+                                modifier = Modifier.size(14.dp),
+                                tint = AppColors.contentSecondary.copy(alpha = 0.6f)
+                            )
                         }
-                        Surface(
-                            onClick = onConfirm,
-                            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                            color = AppColors.primary,
-                            modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Rounded.CheckCircle,
-                                    contentDescription = "Confirm",
-                                    modifier = Modifier.size(14.dp),
-                                    tint = ColorOnDark
-                                )
-                            }
+                    }
+                    Surface(
+                        onClick = onConfirm,
+                        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+                        color = AppColors.primary,
+                        modifier = Modifier.size(AeonTheme.dimensions.spacing2xl)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.CheckCircle,
+                                contentDescription = "Confirm",
+                                modifier = Modifier.size(14.dp),
+                                tint = ColorOnDark
+                            )
                         }
                     }
                 }
-
-                OccurrenceStatus.CONFIRMED -> {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                    ) {
-                        Icon(
-                            Icons.Rounded.CheckCircle,
-                            contentDescription = null,
-                            tint = AppColors.primary,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                        )
-                        Text(
-                            "Confirmed",
-                            style = AppTextStyles.chipLabel,
-                            color = AppColors.primary
-                        )
-                    }
+            } else {
+                val (statusLabel, statusColor, statusIcon) = when (status) {
+                    OccurrenceStatus.CONFIRMED -> Triple("Confirmed", AppColors.primary, Icons.Rounded.CheckCircle)
+                    OccurrenceStatus.SKIPPED -> Triple("Skipped", AppColors.contentSecondary.copy(alpha = 0.4f), Icons.Rounded.Cancel)
+                    else -> Triple("Pending", AppColors.secondary, Icons.Rounded.Schedule)
                 }
-
-                OccurrenceStatus.SKIPPED -> {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-                    ) {
-                        Icon(
-                            Icons.Rounded.Cancel,
-                            contentDescription = null,
-                            tint = AppColors.contentSecondary.copy(alpha = 0.4f),
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
-                        )
-                        Text(
-                            "Skipped",
-                            style = AppTextStyles.transactionSwipeAction,
-                            color = AppColors.contentSecondary.copy(alpha = 0.4f)
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
+                ) {
+                    Icon(statusIcon, null, tint = statusColor, modifier = Modifier.size(14.dp))
+                    Text(statusLabel, style = AppTextStyles.chipLabel, color = statusColor)
                 }
             }
         }
-    }
+    )
 }
 
 @Composable
 private fun PastOccurrenceItem(
     occ: PlannedPaymentOccurrence,
     dateFormatter: DateTimeFormatter,
-    payment: PlannedPayment
+    payment: PlannedPayment,
+    onTransactionClick: (Long) -> Unit
 ) {
     val dateLabel = dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
     val formattedAmount = payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
@@ -931,7 +851,6 @@ private fun PastOccurrenceItem(
             AppColors.primary,
             Icons.Rounded.CheckCircle
         )
-
         OccurrenceStatus.SKIPPED -> Triple("Skipped", AppColors.contentSecondary.copy(alpha = 0.5f), Icons.Rounded.Cancel)
         OccurrenceStatus.PENDING -> Triple(
             "Pending",
@@ -940,62 +859,23 @@ private fun PastOccurrenceItem(
         )
     }
 
-    Surface(
-        color = AppColors.cardSurface,
-        shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-        border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(AeonTheme.dimensions.spacingMd),
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = statusColor.copy(alpha = 0.1f),
-                modifier = Modifier.size(AeonTheme.dimensions.iconSizeXl)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        statusIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = statusColor
-                    )
-                }
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    dateLabel,
-                    style = AppTextStyles.transactionAmount
-                )
-                Text(
-                    "$formattedAmount ${payment.currency}",
-                    style = AppTextStyles.caption,
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-            ) {
+    AeonListItem(
+        title = dateLabel,
+        subtitle = "$formattedAmount ${payment.currency} · $statusLabel",
+        icon = statusIcon,
+        iconTint = statusColor,
+        onClick = occ.generatedTransactionId?.let { { onTransactionClick(it) } },
+        trailingContent = {
+            if (occ.generatedTransactionId != null) {
                 Icon(
-                    statusIcon,
-                    contentDescription = null,
-                    tint = statusColor.copy(alpha = 0.7f),
-                    modifier = Modifier.size(14.dp)
-                )
-                Text(
-                    statusLabel,
-                    style = AppTextStyles.chipLabel,
-                    color = statusColor
+                    Icons.AutoMirrored.Rounded.OpenInNew,
+                    contentDescription = "View Transaction",
+                    tint = AppColors.primary.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
-    }
+    )
 }
 
 @Preview(showBackground = true)
@@ -1062,7 +942,8 @@ fun PlannedPaymentDetailPreview() {
             onEditClick = {},
             onSaveAsTemplateClick = {},
             onConfirmOccurrence = {},
-            onSkipOccurrence = {}
+            onSkipOccurrence = {},
+            onTransactionClick = {}
         )
     }
 }

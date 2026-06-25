@@ -52,6 +52,7 @@ import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.LinkedTransactionJumpSheet
 import com.osscabinet.ossWallet.ui.components.transactions.SwipeableTransactionItem
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
@@ -187,56 +188,11 @@ fun TransactionListContent(
 
             // Linked Transactions Selection Sheet
             linkedPopupTxs?.let { txs ->
-                ModalBottomSheet(
-                    onDismissRequest = onCloseLinkedPopup,
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = AppColors.cardSurfaceProminent,
-                    dragHandle = { BottomSheetDefaults.DragHandle() }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = AeonSize.D32.value)
-                    ) {
-                        Text(
-                            text = "SELECT LINKED TRANSACTION",
-                            style = AppTextStyles.sectionOverline,
-                            color = AppColors.contentSecondary,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            txs.forEachIndexed { index, item ->
-                                val record = item.record
-                                AeonTransactionItem(
-                                    category = record.categoryName,
-                                    account = record.accountName,
-                                    amount = item.formattedAmount,
-                                    convertedAmount = item.formattedConvertedAmount,
-                                    balanceBefore = "",
-                                    balanceAfter = "",
-                                    type = if (record.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
-                                    timestamp = item.formattedDate,
-                                    note = record.note,
-                                    tags = record.tags,
-                                    icon = com.osscabinet.ossWallet.ui.components.getIconByName(
-                                        record.categoryIcon
-                                    ),
-                                    iconBg = Color(record.categoryColor),
-                                    showDividers = index < txs.size - 1,
-                                    onClick = {
-                                        if (record is ConfirmedTransactionUiModel) {
-                                            onJumpToLinked(record.item.transaction.id)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+                LinkedTransactionJumpSheet(
+                    transactions = txs,
+                    onJump = onJumpToLinked,
+                    onDismiss = onCloseLinkedPopup
+                )
             }
 // ...
 

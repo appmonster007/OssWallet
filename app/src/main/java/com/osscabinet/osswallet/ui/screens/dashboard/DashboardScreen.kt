@@ -127,6 +127,7 @@ import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddSheet
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.LinkedTransactionJumpSheet
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
@@ -136,6 +137,7 @@ import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -236,6 +238,7 @@ fun DashboardScreen(
     val transactionSnackbarMessage by transactionViewModel.snackbarMessage.collectAsStateWithLifecycle()
     val scrollToId by transactionViewModel.scrollToId.collectAsStateWithLifecycle()
     val highlightedId by transactionViewModel.highlightedId.collectAsStateWithLifecycle()
+    val linkedPopupTxs by transactionViewModel.linkedTransactionsPopup.collectAsStateWithLifecycle()
 
     val isTopLevel = remember(initialViewContext, config.isTopLevel) {
         config.isTopLevel || initialViewContext == DashboardViewContext.None
@@ -275,7 +278,13 @@ fun DashboardScreen(
         onStatusChange = transactionViewModel::quickUpdateStatus,
         onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
         onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
-        onJumpTransaction = transactionViewModel::handleJumpRequest,
+        onJumpTransaction = { id ->
+            val availableIds = (dashboardUiState as? DashboardUiState.Success)
+                ?.recentActivitiesState?.getAllTransactionIds()
+            transactionViewModel.handleJumpRequest(id, availableIds)
+        },
+        onCloseLinkedPopup = transactionViewModel::closeLinkedPopup,
+        linkedPopupTxs = linkedPopupTxs,
         onAddTag = transactionViewModel::addTag,
         onConfirmPlanned = transactionViewModel::confirmPlannedPayment,
         onCancelPlanned = transactionViewModel::cancelPlannedPayment,
@@ -325,6 +334,8 @@ fun DashboardScreenLayout(
     onDeleteTransaction: (Long) -> Unit,
     onFullSwipeRight: (Long) -> Unit,
     onJumpTransaction: (Long) -> Unit,
+    onCloseLinkedPopup: () -> Unit,
+    linkedPopupTxs: List<TransactionListItem>?,
     onAddTag: (String, Int) -> Unit,
     onConfirmPlanned: (Long, Long) -> Unit,
     onCancelPlanned: (Long, Long) -> Unit,
@@ -623,6 +634,17 @@ fun DashboardScreenLayout(
                         modifier = Modifier.fillMaxSize(),
                         filterRules = pillRequest.filterRules,
                         baseFilter = pillRequest.baseFilter,
+                    )
+                }
+
+                // 7. Linked Transactions Jump Sheet
+                linkedPopupTxs?.let { txs ->
+                    val availableIds = (uiState as? DashboardUiState.Success)
+                        ?.recentActivitiesState?.getAllTransactionIds()
+                    LinkedTransactionJumpSheet(
+                        transactions = txs,
+                        onJump = { id -> onJumpTransaction(id) },
+                        onDismiss = onCloseLinkedPopup
                     )
                 }
             } // outer Box
@@ -1179,6 +1201,8 @@ fun DashboardScreenPreview() {
             onDeleteTransaction = {},
             onFullSwipeRight = {},
             onJumpTransaction = {},
+            onCloseLinkedPopup = {},
+            linkedPopupTxs = null,
             onAddTag = { _, _ -> },
             onConfirmPlanned = { _, _ -> },
             onCancelPlanned = { _, _ -> },

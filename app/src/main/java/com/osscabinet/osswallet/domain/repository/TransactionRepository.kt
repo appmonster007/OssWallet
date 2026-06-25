@@ -28,6 +28,18 @@ interface TransactionRepository {
 
     fun searchTransactions(profileId: Int, query: String): Flow<List<Transaction>>
 
+    /**
+     * Observes filtered transactions and calculates anchored running balances.
+     * Use this for history feeds that require financial accuracy.
+     */
+    fun observeFilteredTransactionsWithBalance(
+        profileId: Int,
+        filter: TransactionFilter,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        limit: Int? = null
+    ): Flow<Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>>>
+
     suspend fun getUniquePayees(profileId: Int): List<String>
     suspend fun getUniqueNotes(profileId: Int): List<String>
 

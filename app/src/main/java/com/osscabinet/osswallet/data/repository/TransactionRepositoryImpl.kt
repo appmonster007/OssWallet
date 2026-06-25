@@ -11,12 +11,16 @@ import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
+import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,7 +30,8 @@ class TransactionRepositoryImpl @Inject constructor(
     private val accountDao: AccountDao,
     private val tagDao: com.osscabinet.ossWallet.data.local.dao.TagDao,
     private val transactionLinkDao: TransactionLinkDao,
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val databaseQueryService: com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 ) : TransactionRepository {
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> {
@@ -352,13 +357,8 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override fun getAllTransactionLinks(): Flow<Map<Long, List<Long>>> {
         return transactionLinkDao.getAllLinks().map { links ->
-            val result = mutableMapOf<Long, MutableList<Long>>()
-            links.forEach { link ->
-                result.getOrPut(link.transactionId) { mutableListOf() }.add(link.linkedTransactionId)
-                result.getOrPut(link.linkedTransactionId) { mutableListOf() }.add(link.transactionId)
-            }
-            // Remove duplicates if any (e.g. if already stored bidirectionally)
-            result.mapValues { it.value.distinct() }
+            links.groupBy { it.transactionId }
+                .mapValues { (_, entities) -> entities.map { it.linkedTransactionId } }
         }
     }
 
@@ -384,6 +384,75 @@ class TransactionRepositoryImpl @Inject constructor(
         } else {
             transactionDao.searchTransactionsUnified(profileId, sanitizedQuery, trimmed)
                 .mapToDomain { it.toDomain() }
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override fun observeFilteredTransactionsWithBalance(
+        profileId: Int,
+        filter: TransactionFilter,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        limit: Int?
+    ): Flow<Result<List<TransactionWithBalance>>> {
+        return getFilteredTransactions(profileId, filter).flatMapLatest { transactions ->
+            kotlinx.coroutines.flow.flow {
+                val accounts = accountDao.getAllAccountsSync(profileId).map { it.toDomain() }
+                val exchangeRateSnapshot = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(baseCurrency, exchangeRates)
+
+                // 1. Fetch starting balances (Anchor)
+                val startingBalancesResult = if (transactions.isNotEmpty()) {
+                    val windowStart = transactions.minOf { it.timestamp }
+                    com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService.getSummaryByAccountAndCurrency(
+                        databaseQueryService, profileId,
+                        TransactionFilter(
+                            accountIds = filter.accountIds,
+                            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(end = windowStart - 1)
+                        )
+                    ).map { summaryMap ->
+                        summaryMap.mapValues { (accountId, byCurrency) ->
+                            val accountCurrency = accounts.find { it.id == accountId }?.currencyCode ?: baseCurrency
+                            com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, exchangeRateSnapshot).totalAmount
+                        }
+                    }
+                } else Result.success(emptyMap<String, BigDecimal>())
+
+                startingBalancesResult.onSuccess { startingBalances ->
+                    // 2. Compute Delta balances
+                    val accountMap = accounts.associateBy { it.id }
+                    val result = transactions.sortedBy { it.timestamp }
+                        .groupBy { it.accountId }
+                        .flatMap { (accId, accountTransactions) ->
+                            val accountCurrency = accountMap[accId]?.currencyCode ?: baseCurrency
+                            var runningBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
+                            
+                            accountTransactions.map { transaction ->
+                                val txAmountInAccountCurrency = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                                    amount = transaction.amount,
+                                    fromCurrency = transaction.currency,
+                                    toCurrency = accountCurrency,
+                                    exchangeRates = exchangeRates,
+                                    precision = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision + 4
+                                )
+
+                                val balanceBefore = runningBalance
+                                runningBalance = runningBalance.add(txAmountInAccountCurrency)
+                                
+                                TransactionWithBalance(
+                                    transaction = transaction,
+                                    balanceBefore = balanceBefore.setScale(com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision, RoundingMode.HALF_UP),
+                                    balanceAfter = runningBalance.setScale(com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision, RoundingMode.HALF_UP)
+                                )
+                            }
+                        }
+                        .sortedByDescending { it.transaction.timestamp }
+                        .let { if (limit != null) it.take(limit) else it }
+
+                    emit(Result.success(result))
+                }.onFailure { exception ->
+                    emit(Result.failure(exception))
+                }
+            }
         }
     }
 

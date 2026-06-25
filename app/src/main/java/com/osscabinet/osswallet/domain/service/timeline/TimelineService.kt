@@ -294,6 +294,7 @@ object TimelineService {
         exchangeRates: Map<String, BigDecimal>,
         plannedPayments: List<UpcomingPaymentItem> = emptyList(),
         linkedTransactionIds: Map<Long, List<Long>> = emptyMap(),
+        initialBalances: Map<String, BigDecimal> = emptyMap(),
         precision: Int = this.precision,
         allTxnBreakdown: Boolean = true,
     ): List<TransactionGroup> {
@@ -344,27 +345,41 @@ object TimelineService {
         val allItems: List<RecordUiModel> = (enrichedTransactions + enrichedPlanned).sortedByDescending { it.timestamp }
         val groupsMap = allItems.groupBy { getGroupKey(it.timestamp, groupingType) }
 
-        // 2. Optimized O(N) Balance Calculation for Headers
+        // 2. Optimized O(N) Balance Calculation for Headers using Anchor & Delta
         val sortedHistory = absoluteHistory.sortedBy { it.transaction.timestamp }
-        val groupKeys = groupsMap.keys
+        val sortedGroupKeys = groupsMap.keys.sorted()
         
         val openingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
         val closingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
-        val currentBalances = mutableMapOf<String, BigDecimal>()
-        
-        var lastKey: String? = null
-        sortedHistory.forEach { txWithBalance ->
-            val tx = txWithBalance.transaction
-            val key = getGroupKey(tx.timestamp, groupingType)
-            
-            if (key != lastKey) {
-                if (key in groupKeys) openingBalancesMap[key] = currentBalances.toMap()
-                if (lastKey != null && lastKey!! in groupKeys) closingBalancesMap[lastKey!!] = currentBalances.toMap()
-                lastKey = key
+        val currentAccountBalances = accounts.associate { it.id to (initialBalances[it.id] ?: BigDecimal.ZERO) }.toMutableMap()
+
+        fun captureBalances(): Map<String, BigDecimal> {
+            val balancesByCurrency = mutableMapOf<String, BigDecimal>()
+            currentAccountBalances.forEach { (accId, balance) ->
+                val account = accountMap[accId]
+                val currency = account?.currencyCode ?: baseCurrency
+                balancesByCurrency[currency] = (balancesByCurrency[currency] ?: BigDecimal.ZERO).add(balance)
             }
-            currentBalances[tx.currency] = (currentBalances[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
+            return balancesByCurrency
         }
-        if (lastKey != null && lastKey!! in groupKeys) closingBalancesMap[lastKey!!] = currentBalances.toMap()
+
+        var historyIdx = 0
+        sortedGroupKeys.forEach { key ->
+            openingBalancesMap[key] = captureBalances()
+            
+            while (historyIdx < sortedHistory.size) {
+                val txWithBalance = sortedHistory[historyIdx]
+                val txKey = getGroupKey(txWithBalance.transaction.timestamp, groupingType)
+                if (txKey > key) break
+                
+                txWithBalance.transaction.accountId?.let { accId ->
+                    currentAccountBalances[accId] = txWithBalance.balanceAfter
+                }
+                historyIdx++
+            }
+            
+            closingBalancesMap[key] = captureBalances()
+        }
 
         // 3. Final Group Construction
         return groupsMap.keys.sortedDescending().map { key ->

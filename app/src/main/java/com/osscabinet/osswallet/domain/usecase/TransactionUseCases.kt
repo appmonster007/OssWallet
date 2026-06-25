@@ -66,7 +66,8 @@ class TransactionUseCases(
         limit: Int = 20,
         days: Int = 7,
         excludeFuture: Boolean = true,
-        includeArchived: Boolean = false
+        includeArchived: Boolean = false,
+        startingBalances: Map<String, BigDecimal>
     ): List<TransactionWithBalance> {
         val accountMap = accounts.associateBy { it.id }
         val nonArchivedAccountIds = accounts.filter { !it.isArchived }.map { it.id }.toSet()
@@ -85,7 +86,7 @@ class TransactionUseCases(
                 val account = accountMap[accId]
                 val accountCurrency = account?.currencyCode ?: "USD"
 
-                var runningBalance = BigDecimal.ZERO
+                var runningBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
                 accountTransactions.map { transaction ->
                     val txAmountInAccountCurrency = CurrencyService.convertAmount(
                         amount = transaction.amount,
@@ -161,6 +162,22 @@ class TransactionUseCases(
 
     suspend fun getUniqueNotes(profileId: Int): List<String> {
         return repository.getUniqueNotes(profileId)
+    }
+
+    /**
+     * Observes filtered transactions and calculates anchored running balances.
+     * Use this for history feeds that require financial accuracy.
+     */
+    fun observeHistoryWithBalances(
+        profileId: Int,
+        filter: TransactionFilter,
+        baseCurrency: String,
+        exchangeRates: Map<String, BigDecimal>,
+        limit: Int? = null
+    ): Flow<Result<List<TransactionWithBalance>>> {
+        return repository.observeFilteredTransactionsWithBalance(
+            profileId, filter, baseCurrency, exchangeRates, limit
+        )
     }
 
     suspend fun <T> runAtomically(block: suspend () -> T): T =

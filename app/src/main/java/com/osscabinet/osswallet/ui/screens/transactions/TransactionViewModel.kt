@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -176,24 +177,28 @@ class TransactionViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val absoluteTransactionsWithBalance: StateFlow<List<TransactionWithBalance>> =
         settingsRepository.currentProfileId
-            .flatMapLatest { profileId ->
+            .flatMapLatest { profileId: Int ->
                 combine(
-                    transactionUseCases.getTransactions(profileId),
-                    accounts,
+                    baseCurrency,
                     exchangeRates,
                     computationRepository.hasLoadedExchangeRates
-                ) { allTransactions, accounts, rates, hasLoadedExchangeRates ->
-                    if (!hasLoadedExchangeRates) return@combine emptyList()
-
-                    transactionUseCases.getRecentTransactions(
-                        allTransactions = allTransactions,
-                        accounts = accounts,
-                        exchangeRates = rates,
-                        limit = Int.MAX_VALUE,
-                        excludeFuture = false,
-                        includeArchived = true
-                    )
+                ) { base, rates, loaded -> Triple(base, rates, loaded) }
+                .distinctUntilChanged()
+                .flatMapLatest { (base: String, rates: Map<String, BigDecimal>, loaded: Boolean) ->
+                    if (!loaded) {
+                        kotlinx.coroutines.flow.flowOf(emptyList<TransactionWithBalance>())
+                    } else {
+                        transactionUseCases.observeHistoryWithBalances(
+                            profileId = profileId,
+                            filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = false)),
+                            baseCurrency = base,
+                            exchangeRates = rates
+                        ).map { result: Result<List<TransactionWithBalance>> -> 
+                            result.getOrNull() ?: emptyList<TransactionWithBalance>() 
+                        }
+                    }
                 }
+                .flowOn(kotlinx.coroutines.Dispatchers.Default)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -313,6 +318,11 @@ class TransactionViewModel @Inject constructor(
                 return@combine TransactionListUiState()
             }
 
+            val initialBalances = structural.accounts.associate { acc ->
+                val earliestTx = structural.absoluteHistory.findLast { it.transaction.accountId == acc.id }
+                acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
+            }
+
             val domainGroups = TimelineService.getGroupedData(
                 transactions = structural.filteredTransactions,
                 absoluteHistory = structural.absoluteHistory,
@@ -324,6 +334,7 @@ class TransactionViewModel @Inject constructor(
                 exchangeRates = config.exchangeRates,
                 plannedPayments = metadata.upcomingPayments,
                 linkedTransactionIds = structural.links,
+                initialBalances = initialBalances,
                 allTxnBreakdown = config.settings.allTxnBreakdown,
             )
             

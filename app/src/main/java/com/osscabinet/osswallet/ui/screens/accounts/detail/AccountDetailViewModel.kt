@@ -10,6 +10,7 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
@@ -30,6 +31,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -45,7 +48,7 @@ class AccountDetailViewModel @Inject constructor(
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
-    private val tagRepository: TagRepository,
+    private val tagRepository: TagRepository
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     private val accountId: String = checkNotNull(savedStateHandle["accountId"])
@@ -138,58 +141,65 @@ class AccountDetailViewModel @Inject constructor(
                     ConfigSnapshot(rates, base, loaded, settings, currentFilter)
                 }.distinctUntilChanged()
             ) { domain, config ->
+                domain to config
+            }.flatMapLatest { (domain, config) ->
                 if (!config.hasLoadedRates) {
-                    return@combine AccountDetailUiState.Loading
+                    kotlinx.coroutines.flow.flowOf(AccountDetailUiState.Loading)
+                } else {
+                    val account = domain.accounts.find { it.id == accountId }
+                    if (account == null) {
+                        kotlinx.coroutines.flow.flowOf(AccountDetailUiState.Error("Account not found"))
+                    } else {
+                        transactionUseCases.observeHistoryWithBalances(
+                            profileId = profileId,
+                            filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime(excludeFuture = false)),
+                            baseCurrency = config.baseCurrency,
+                            exchangeRates = config.rates
+                        ).map { result ->
+                            val absoluteTransactionsWithBalance = result.getOrNull() ?: emptyList<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>()
+
+                            // Filtered transactions for the list tab
+                            val filteredTransactionsWithBalance =
+                                com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService.filterTransactionsWithBalance(
+                                    absoluteTransactionsWithBalance,
+                                    config.filter
+                                )
+
+                            val initialBalancesPerGroup = domain.accounts.associate { acc ->
+                                val earliestTx = absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
+                                acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
+                            }
+
+                            val listState = TimelineService.getGroupedData(
+                                transactions = filteredTransactionsWithBalance,
+                                absoluteHistory = absoluteTransactionsWithBalance,
+                                groupingType = config.settings.groupBy,
+                                accounts = domain.accounts,
+                                categories = domain.categories,
+                                allTags = domain.tags,
+                                baseCurrency = config.baseCurrency,
+                                exchangeRates = config.rates,
+                                linkedTransactionIds = domain.links,
+                                initialBalances = initialBalancesPerGroup
+                            ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
+
+                            AccountDetailUiState.Success(
+                                profileId = profileId,
+                                account = account,
+                                allAccountTransactions = domain.allTransactions.filter { it.accountId == accountId },
+                                allProfileTransactions = domain.allTransactions,
+                                listState = listState,
+                                allCategories = domain.categories,
+                                allTags = domain.tags,
+                                baseCurrency = config.baseCurrency,
+                                exchangeRates = config.rates,
+                                showPlannedPayments = config.settings.showPlannedPayments,
+                                useNoteAsHeader = config.settings.useNoteAsHeader,
+                                currentFilter = config.filter
+                            )
+                        }.flowOn(kotlinx.coroutines.Dispatchers.Default)
+                    }
                 }
-
-                val account = domain.accounts.find { it.id == accountId }
-                    ?: return@combine AccountDetailUiState.Error("Account not found")
-
-                // All transactions for this account (Card Input)
-                val accountTransactions = domain.allTransactions.filter { it.accountId == accountId }
-
-                // Absolute balances for this account
-                val absoluteTransactionsWithBalance = transactionUseCases.getRecentTransactions(
-                    allTransactions = accountTransactions,
-                    accounts = listOf(account),
-                    exchangeRates = config.rates,
-                    limit = Int.MAX_VALUE,
-                    excludeFuture = config.filter.timelineRange.excludeFuture
-                )
-
-                // Filtered transactions for the list tab
-                val filteredTransactionsWithBalance =
-                    TransactionFilterService.filterTransactionsWithBalance(
-                        absoluteTransactionsWithBalance,
-                        config.filter
-                    )
-
-                val listState = TimelineService.getGroupedData(
-                    transactions = filteredTransactionsWithBalance,
-                    absoluteHistory = absoluteTransactionsWithBalance,
-                    groupingType = config.settings.groupBy,
-                    accounts = domain.accounts,
-                    categories = domain.categories,
-                    allTags = domain.tags,
-                    baseCurrency = config.baseCurrency,
-                    exchangeRates = config.rates,
-                    linkedTransactionIds = domain.links
-                ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
-
-                AccountDetailUiState.Success(
-                    profileId = profileId,
-                    account = account,
-                    allAccountTransactions = accountTransactions,
-                    allProfileTransactions = domain.allTransactions,
-                    listState = listState,
-                    allCategories = domain.categories,
-                    allTags = domain.tags,
-                    baseCurrency = config.baseCurrency,
-                    exchangeRates = config.rates,
-                    showPlannedPayments = config.settings.showPlannedPayments,
-                    useNoteAsHeader = config.settings.useNoteAsHeader,
-                    currentFilter = config.filter
-                )
             }
         }
         .stateIn(

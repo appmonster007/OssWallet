@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
 data class TransactionFtsEntity(
     @PrimaryKey
     @ColumnInfo(name = "rowid")
-    val rowId: Long = 0,
+    val docId: Long = 0,
     val note: String,
     val payee: String,
     val name: String

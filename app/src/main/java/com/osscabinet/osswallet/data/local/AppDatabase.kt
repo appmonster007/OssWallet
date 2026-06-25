@@ -59,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 26,
+    version = 27,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -82,6 +82,12 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                upgradeToFts4(db)
+            }
         }
 
         val MIGRATION_25_26 = object : Migration(25, 26) {
@@ -629,6 +635,54 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private fun upgradeToFts4(db: SupportSQLiteDatabase) {
+            // Drop ALL possible FTS triggers (Room-generated, manual, old, new)
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_DELETE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_INSERT")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_ins")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_upd")
+            db.execSQL("DROP TRIGGER IF EXISTS transactions_fts_content_sync_del")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_ins")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_upd")
+            db.execSQL("DROP TRIGGER IF EXISTS manual_fts_content_sync_del")
+
+            // Recreate table as FTS4 (Room natively supports FTS4)
+            db.execSQL("DROP TABLE IF EXISTS transactions_fts")
+            db.execSQL(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
+                "USING fts4(note, payee, name, content=`transactions`)"
+            )
+
+            // Create FTS4 triggers using docid (Room's standard for FTS4)
+            db.execSQL(
+                """
+                CREATE TRIGGER room_fts_content_sync_transactions_fts_AFTER_INSERT AFTER INSERT ON `transactions` BEGIN
+                  INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                END
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TRIGGER room_fts_content_sync_transactions_fts_AFTER_UPDATE AFTER UPDATE ON `transactions` BEGIN
+                  DELETE FROM transactions_fts WHERE docid = old.id;
+                  INSERT INTO transactions_fts(docid, note, payee, name) VALUES (new.id, new.note, new.payee, new.name);
+                END
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                CREATE TRIGGER room_fts_content_sync_transactions_fts_AFTER_DELETE AFTER DELETE ON `transactions` BEGIN
+                  DELETE FROM transactions_fts WHERE docid = old.id;
+                END
+                """.trimIndent()
+            )
+
+            // Initial index build
+            db.execSQL("INSERT INTO transactions_fts(docid, note, payee, name) SELECT id, note, payee, name FROM `transactions`")
+        }
+
         private fun upgradeToFts5(db: SupportSQLiteDatabase) {
             // Drop ALL possible FTS triggers (Room-generated, manual, old, new)
             db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_UPDATE")
@@ -711,12 +765,13 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_22_23,
                             MIGRATION_23_24,
                             MIGRATION_24_25,
-                            MIGRATION_25_26
+                            MIGRATION_25_26,
+                            MIGRATION_26_27
                         )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            upgradeToFts5(db)
+                            upgradeToFts4(db)
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
                             context.applicationContext.assets.open("default_data.sql")
@@ -730,12 +785,6 @@ abstract class AppDatabase : RoomDatabase() {
 
                         override fun onOpen(db: SupportSQLiteDatabase) {
                             super.onOpen(db)
-                            // Clean up any lingering Room triggers that might use 'docid'
-                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_UPDATE")
-                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_BEFORE_DELETE")
-                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_UPDATE")
-                            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_transactions_fts_AFTER_INSERT")
-
                             ensureSystemCategories(db)
                             ensureSystemTags(db)
                         }

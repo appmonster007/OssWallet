@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RawQuery
-import androidx.room.SkipQueryVerification
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
@@ -117,15 +116,11 @@ abstract class TransactionDao {
 
     /**
      * Search transactions using Full-Text Search.
-     * SkipQueryVerification is required because the table is created as FTS5 in migrations,
-     * while the entity is annotated as @Fts4 for Room compatibility. Room's compiler
-     * cannot verify FTS5-specific syntax or rowid-based joins against its internal model.
      */
-    @SkipQueryVerification
     @Query(
         """
         SELECT transactions.* FROM transactions 
-        JOIN transactions_fts ON transactions.id = transactions_fts.rowid 
+        JOIN transactions_fts ON transactions.id = transactions_fts.docid 
         WHERE transactions_fts MATCH :query AND profileId = :profileId
         ORDER BY timestamp DESC
     """
@@ -145,11 +140,10 @@ abstract class TransactionDao {
         query: String
     ): Flow<List<TransactionEntity>>
 
-    @SkipQueryVerification
     @Query(
         """
         SELECT transactions.* FROM transactions
-        JOIN transactions_fts ON transactions.id = transactions_fts.rowid
+        JOIN transactions_fts ON transactions.id = transactions_fts.docid
         WHERE transactions_fts MATCH :ftsQuery AND profileId = :profileId
         UNION
         SELECT transactions.* FROM transactions

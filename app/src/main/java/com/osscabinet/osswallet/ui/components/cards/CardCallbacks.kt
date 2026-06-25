@@ -190,7 +190,7 @@ sealed class CardCallbacks {
         val onClone: (Long) -> Unit = {},
         val onDeleteTransaction: (Long) -> Unit = {},
         val onSplit: (Long) -> Unit = {},
-        val onJump: (Long) -> Unit = {},
+        val onJump: (Long, Set<Long>?) -> Unit = { _, _ -> },
         val onFullSwipeRight: (Long) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {},
         val onConfirmPlanned: (Long, Long) -> Unit = { _, _ -> },

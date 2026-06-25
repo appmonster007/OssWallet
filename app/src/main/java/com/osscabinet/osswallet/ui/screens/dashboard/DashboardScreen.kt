@@ -177,8 +177,7 @@ data class DashboardActions(
     val onEditTransactionClick: (Long) -> Unit,
     val onSaveFilterClick: (TransactionFilter) -> Unit = {},
     val onCloneTransactionClick: (Long) -> Unit = {},
-    val onSplitTransactionClick: (Long) -> Unit = {},
-    val onJumpTransactionClick: (Long) -> Unit = {}
+    val onSplitTransactionClick: (Long) -> Unit = {}
 )
 
 @OptIn(
@@ -278,10 +277,15 @@ fun DashboardScreen(
         onStatusChange = transactionViewModel::quickUpdateStatus,
         onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
         onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
-        onJumpTransaction = { id ->
-            val availableIds = (dashboardUiState as? DashboardUiState.Success)
+        onJumpTransaction = { id, availableIds ->
+            val finalAvailableIds = availableIds ?: (dashboardUiState as? DashboardUiState.Success)
                 ?.recentActivitiesState?.getAllTransactionIds()
-            transactionViewModel.handleJumpRequest(id, availableIds)
+            transactionViewModel.handleJumpRequest(id, finalAvailableIds)
+        },
+        onPerformJump = { id, availableIds ->
+            val finalAvailableIds = availableIds ?: (dashboardUiState as? DashboardUiState.Success)
+                ?.recentActivitiesState?.getAllTransactionIds()
+            transactionViewModel.performJump(id, finalAvailableIds)
         },
         onCloseLinkedPopup = transactionViewModel::closeLinkedPopup,
         linkedPopupTxs = linkedPopupTxs,
@@ -333,7 +337,8 @@ fun DashboardScreenLayout(
     onStatusChange: (Long, TransactionStatus) -> Unit,
     onDeleteTransaction: (Long) -> Unit,
     onFullSwipeRight: (Long) -> Unit,
-    onJumpTransaction: (Long) -> Unit,
+    onJumpTransaction: (Long, Set<Long>?) -> Unit,
+    onPerformJump: (Long, Set<Long>?) -> Unit,
     onCloseLinkedPopup: () -> Unit,
     linkedPopupTxs: List<TransactionListItem>?,
     onAddTag: (String, Int) -> Unit,
@@ -478,6 +483,7 @@ fun DashboardScreenLayout(
                                     onCloneTransactionClick = { id -> navigate { actions.onCloneTransactionClick(id) } },
                                     onSplitTransactionClick = { id -> navigate { actions.onSplitTransactionClick(id) } },
                                     onJumpTransaction = onJumpTransaction,
+                                    onPerformJump = onPerformJump,
                                     scrollToId = scrollToId,
                                     highlightedId = highlightedId,
                                     onClearScrollTo = onClearScrollTo,
@@ -643,7 +649,7 @@ fun DashboardScreenLayout(
                         ?.recentActivitiesState?.getAllTransactionIds()
                     LinkedTransactionJumpSheet(
                         transactions = txs,
-                        onJump = { id -> onJumpTransaction(id) },
+                        onJump = { id -> onPerformJump(id, availableIds) },
                         onDismiss = onCloseLinkedPopup
                     )
                 }
@@ -673,7 +679,8 @@ fun DashboardContent(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit = {},
     onSplitTransactionClick: (Long) -> Unit = {},
-    onJumpTransaction: (Long) -> Unit,
+    onJumpTransaction: (Long, Set<Long>?) -> Unit,
+    onPerformJump: (Long, Set<Long>?) -> Unit,
     scrollToId: String? = null,
     highlightedId: String? = null,
     onClearScrollTo: () -> Unit = {},
@@ -737,6 +744,7 @@ fun DashboardContent(
                         onCloneTransactionClick = onCloneTransactionClick,
                         onSplitTransactionClick = onSplitTransactionClick,
                         onJumpTransaction = onJumpTransaction,
+                        onPerformJump = onPerformJump,
                         scrollToId = scrollToId,
                         highlightedId = highlightedId,
                         onClearScrollTo = onClearScrollTo,
@@ -793,7 +801,10 @@ fun DashboardContent(
                                 )
 
                                 is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
-                                is TransactionItemEvent.Jump -> onJumpTransaction(event.id)
+                                is TransactionItemEvent.Jump -> onJumpTransaction(
+                                    event.id,
+                                    state.recentActivitiesState.getAllTransactionIds()
+                                )
                                 is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(
                                     event.id
                                 )
@@ -854,7 +865,8 @@ fun DashboardGlanceTab(
     onEditTransactionClick: (Long) -> Unit,
     onCloneTransactionClick: (Long) -> Unit,
     onSplitTransactionClick: (Long) -> Unit,
-    onJumpTransaction: (Long) -> Unit,
+    onJumpTransaction: (Long, Set<Long>?) -> Unit,
+    onPerformJump: (Long, Set<Long>?) -> Unit,
     scrollToId: String? = null,
     highlightedId: String? = null,
     onClearScrollTo: () -> Unit = {},
@@ -924,7 +936,7 @@ fun DashboardGlanceTab(
                 onClone = { id -> onCloneTxRef(id) },
                 onDelete = { id -> onDeleteTxRef(id) },
                 onSplit = { id -> onSplitTxRef(id) },
-                onJump = { id -> onJumpTxRef(id) },
+                onJump = { id, availableIds -> onJumpTxRef(id, availableIds) },
                 onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
             ),
             paymentActions = PaymentActions(
@@ -1200,7 +1212,8 @@ fun DashboardScreenPreview() {
             onStatusChange = { _, _ -> },
             onDeleteTransaction = {},
             onFullSwipeRight = {},
-            onJumpTransaction = {},
+            onJumpTransaction = { _, _ -> },
+            onPerformJump = { _, _ -> },
             onCloseLinkedPopup = {},
             linkedPopupTxs = null,
             onAddTag = { _, _ -> },
@@ -1278,7 +1291,7 @@ fun DashboardGlanceTabPreview() {
             onEditTransactionClick = {},
             onCloneTransactionClick = {},
             onSplitTransactionClick = {},
-            onJumpTransaction = {},
+            onJumpTransaction = { _, _ -> },
             scrollToId = null,
             highlightedId = null,
             onClearScrollTo = {},
@@ -1292,7 +1305,8 @@ fun DashboardGlanceTabPreview() {
             onQuickSkip = { _, _ -> },
             onAddTag = { _, _ -> },
             onReorderCards = {},
-            onRemoveCard = {}
+            onRemoveCard = {},
+            onPerformJump = { _, _ -> },
         )
     }
 }

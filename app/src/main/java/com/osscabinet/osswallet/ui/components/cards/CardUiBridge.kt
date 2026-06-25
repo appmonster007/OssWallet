@@ -604,8 +604,11 @@ fun rememberCardWithCallbacks(
                         onClone = callbacks.transactionActions.onClone,
                         onDeleteTransaction = callbacks.transactionActions.onDelete,
                         onSplit = callbacks.transactionActions.onSplit,
+                        onJump = callbacks.transactionActions.onJump,
                         onFullSwipeRight = callbacks.transactionActions.onFullSwipeRight,
-                        onSaveFilterClick = callbacks.filterActions.onSaveClick
+                        onSaveFilterClick = callbacks.filterActions.onSaveClick,
+                        onConfirmPlanned = callbacks.paymentActions.onConfirm,
+                        onCancelPlanned = callbacks.paymentActions.onSkip
                     ),
                     filterRules = config.filterRules,
                     baseFilter = input.filter,

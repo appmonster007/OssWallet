@@ -38,8 +38,7 @@ google-services.json
 tmp
 .gemini
 .design
-.agent
-.agents
+.agent**
 .claude
 .github
 _bmad**

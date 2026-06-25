@@ -649,7 +649,7 @@ class TransactionViewModel @Inject constructor(
                 if (links.size == 1) {
                     performJump(links[0])
                 } else {
-                    // Show selection popup
+                    // Show selection sheet
                     val enriched = transactionUseCases.getLinkedTransactions(id).first()
                         .let { TimelineService.enrichTransactions(
                             it, 
@@ -670,34 +670,24 @@ class TransactionViewModel @Inject constructor(
 
     fun performJump(id: Long) {
         viewModelScope.launch {
-            withProfile { profileId ->
-                val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
-                
-                // 1. Update filter to include this transaction's date and account
-                val current = recordsFilter.value
-                val (_, endTime) = TimelineService.getDateRange(current.timelineRange)
-                
-                var newRange = current.timelineRange
-                if (tx.timestamp > (endTime ?: Long.MAX_VALUE) || tx.timestamp < (TimelineService.getDateRange(current.timelineRange).first ?: 0L)) {
-                    newRange = TimelineRange.AllTime(excludeFuture = false)
-                }
-                
-                updateRecordsFilter(current.copy(
-                    timelineRange = newRange,
-                    accountIds = if (current.accountIds.isNotEmpty() && tx.accountId !in current.accountIds) emptySet() else current.accountIds
-                ))
-                
-                // 2. Trigger scroll and highlight
-                _scrollToId.value = "tx_$id"
-                _highlightedId.value = "tx_$id"
-                _snackbarMessage.value = "Jumped to transaction"
-                
-                // 3. Clear popup if open
+            // Check if the transaction exists in the current list
+            val itemExists = transactionsWithBalance.value.any { it.transaction.id == id }
+            
+            if (!itemExists) {
+                _snackbarMessage.value = "Linked transaction not in the current list"
                 _linkedTransactionsPopup.value = null
+                return@launch
             }
 
-            // 4. Clear highlight after 2 seconds
-            delay(2000)
+            // Trigger scroll and highlight
+            _scrollToId.value = "tx_$id"
+            _highlightedId.value = "tx_$id"
+            
+            // Clear popup if open
+            _linkedTransactionsPopup.value = null
+
+            // Clear highlight after 1 second (quick blink)
+            delay(1000)
             if (_highlightedId.value == "tx_$id") {
                 _highlightedId.value = null
             }

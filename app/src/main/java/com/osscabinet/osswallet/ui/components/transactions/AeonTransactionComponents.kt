@@ -128,9 +128,11 @@ fun AeonTransactionList(
 
                     LaunchedEffect(isHighlighted) {
                         if (isHighlighted) {
-                            blinkAlpha.animateTo(0.3f, tween(300))
+                            blinkAlpha.animateTo(0.4f, tween(200))
+                            kotlinx.coroutines.delay(600)
+                            blinkAlpha.animateTo(0f, tween(200))
                         } else {
-                            blinkAlpha.animateTo(0f, tween(700))
+                            blinkAlpha.snapTo(0f)
                         }
                     }
 

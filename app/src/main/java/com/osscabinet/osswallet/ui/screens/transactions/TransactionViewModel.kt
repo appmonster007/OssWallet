@@ -637,7 +637,7 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun handleJumpRequest(id: Long) {
+    fun handleJumpRequest(id: Long, availableIds: Set<Long>? = null) {
         viewModelScope.launch {
             withProfile { profileId ->
                 val links = transactionUseCases.getLinkedTransactionIds(id).first()
@@ -647,7 +647,7 @@ class TransactionViewModel @Inject constructor(
                 }
                 
                 if (links.size == 1) {
-                    performJump(links[0])
+                    performJump(links[0], availableIds)
                 } else {
                     // Show selection sheet
                     val enriched = transactionUseCases.getLinkedTransactions(id).first()
@@ -668,10 +668,14 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun performJump(id: Long) {
+    fun performJump(id: Long, availableIds: Set<Long>? = null) {
         viewModelScope.launch {
             // Check if the transaction exists in the current list
-            val itemExists = transactionsWithBalance.value.any { it.transaction.id == id }
+            val itemExists = if (availableIds != null) {
+                id in availableIds
+            } else {
+                transactionsWithBalance.value.any { it.transaction.id == id }
+            }
             
             if (!itemExists) {
                 _snackbarMessage.value = "Linked transaction not in the current list"

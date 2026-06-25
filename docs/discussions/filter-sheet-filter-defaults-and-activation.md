@@ -11,7 +11,7 @@
 | Created | 2026-06-14 |
 | Last updated | 2026-06-15 |
 | Participants / context | User-driven rework of the Transactions filter sheet to give explicit control over filter membership and to define a precise "active filter" rule. |
-| Implementation plan | [`filter-sheet-filter-defaults-and-activation.plan.md`](./filter-sheet-filter-defaults-and-activation.plan.md) — self-contained execution plan derived from D-001..D-007. |
+| Implementation plan | [`filter-sheet-filter-defaults-and-activation.plan.md`](filter-sheet-filter-defaults-and-activation.plan.md) — self-contained execution plan derived from D-001..D-007. |
 
 ## Summary
 
@@ -285,5 +285,5 @@ Treating them uniformly under `Selection.All = no predicate` caused archived tra
 |------|--------|
 | 2026-06-14 | Created file; added D-001 through D-006 capturing the empty-selection rework, OR-logic defaults, tags AND/OR semantics, live-apply behavior, empty-result hint, and out-of-scope deferrals. |
 | 2026-06-14 | Resolved D-003 open questions: tags default mode = OR; mode-only toggle on empty set is not active. Added D-007 for incremental-pilot-then-cohesive-rollout strategy. |
-| 2026-06-14 | Added [`filter-sheet-filter-defaults-and-activation.plan.md`](./filter-sheet-filter-defaults-and-activation.plan.md) — concrete execution plan with verified file:line references, `Selection<T>` sealed-wrapper architecture, accounts-only pilot steps, validation checklist, cohesive rollout steps, risk register, and resume protocol. |
+| 2026-06-14 | Added [`filter-sheet-filter-defaults-and-activation.plan.md`](filter-sheet-filter-defaults-and-activation.plan.md) — concrete execution plan with verified file:line references, `Selection<T>` sealed-wrapper architecture, accounts-only pilot steps, validation checklist, cohesive rollout steps, risk register, and resume protocol. |
 | 2026-06-15 | Deprecated D-002 and superseded by D-008 after worked-example review surfaced that "default = all options" leaks archived account transactions. D-008 introduces a dimension-specific `DefaultSetProvider`, content-equality activation, and a simplified `data class Selection<T>(values: Set<T>)` (no `All` variant). Plan §2 and §3 rewritten to match. |

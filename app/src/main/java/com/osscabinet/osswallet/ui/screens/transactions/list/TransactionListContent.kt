@@ -22,6 +22,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -182,71 +185,54 @@ fun TransactionListContent(
                     .padding(bottom = 80.dp)
             )
 
-            // Linked Transactions Popup
-            linkedPopupTxs?.let {
-                Dialog(onDismissRequest = onCloseLinkedPopup) {
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = AppColors.panelSurface,
-                        tonalElevation = 8.dp,
-                        modifier = Modifier.padding(16.dp)
+            // Linked Transactions Selection Sheet
+            linkedPopupTxs?.let { txs ->
+                ModalBottomSheet(
+                    onDismissRequest = onCloseLinkedPopup,
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                    containerColor = AppColors.cardSurfaceProminent,
+                    dragHandle = { BottomSheetDefaults.DragHandle() }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = AeonSize.D32.value)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Linked Transactions",
-                                    style = AppTextStyles.screenTitle,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                TextButton(onClick = onCloseLinkedPopup) {
-                                    Text("Close", color = AppColors.primary)
-                                }
-                            }
+                        Text(
+                            text = "SELECT LINKED TRANSACTION",
+                            style = AppTextStyles.sectionOverline,
+                            color = AppColors.contentSecondary,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                        )
 
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            ) {
-                                it.forEach { item ->
-                                    val record = item.record
-                                    SwipeableTransactionItem(
-                                        record = record,
-                                        isRevealed = false,
-                                        onEvent = {},
-                                        enabled = false // Disable swipe in popup
-                                    ) {
-                                        AeonTransactionItem(
-                                            category = record.categoryName,
-                                            account = record.accountName,
-                                            amount = item.formattedAmount,
-                                            convertedAmount = item.formattedConvertedAmount,
-                                            balanceBefore = "",
-                                            balanceAfter = "",
-                                            type = if (record.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
-                                            timestamp = item.formattedDate,
-                                            note = record.note,
-                                            tags = record.tags,
-                                            icon = com.osscabinet.ossWallet.ui.components.getIconByName(
-                                                record.categoryIcon
-                                            ),
-                                            iconBg = Color(record.categoryColor),
-                                            showDividers = false,
-                                            onClick = {
-                                                if (record is ConfirmedTransactionUiModel) {
-                                                    onJumpToLinked(record.item.transaction.id)
-                                                }
-                                                onCloseLinkedPopup()
-                                            }
-                                        )
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            txs.forEachIndexed { index, item ->
+                                val record = item.record
+                                AeonTransactionItem(
+                                    category = record.categoryName,
+                                    account = record.accountName,
+                                    amount = item.formattedAmount,
+                                    convertedAmount = item.formattedConvertedAmount,
+                                    balanceBefore = "",
+                                    balanceAfter = "",
+                                    type = if (record.amount.signum() >= 0) com.osscabinet.ossWallet.domain.model.CashFlowType.INCOME else com.osscabinet.ossWallet.domain.model.CashFlowType.EXPENSE,
+                                    timestamp = item.formattedDate,
+                                    note = record.note,
+                                    tags = record.tags,
+                                    icon = com.osscabinet.ossWallet.ui.components.getIconByName(
+                                        record.categoryIcon
+                                    ),
+                                    iconBg = Color(record.categoryColor),
+                                    showDividers = index < txs.size - 1,
+                                    onClick = {
+                                        if (record is ConfirmedTransactionUiModel) {
+                                            onJumpToLinked(record.item.transaction.id)
+                                        }
                                     }
-                                }
+                                )
                             }
                         }
                     }

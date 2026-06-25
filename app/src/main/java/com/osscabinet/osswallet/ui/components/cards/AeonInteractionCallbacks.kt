@@ -25,7 +25,7 @@ data class TransactionActions(
     val onClone: (Long) -> Unit = {},
     val onDelete: (Long) -> Unit = {},
     val onSplit: (Long) -> Unit = {},
-    val onJump: (Long) -> Unit = {},
+    val onJump: (Long, Set<Long>?) -> Unit = { _, _ -> },
     val onFullSwipeRight: (Long) -> Unit = {}
 )
 

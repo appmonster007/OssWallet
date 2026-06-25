@@ -113,7 +113,10 @@ fun RecentActivitiesCard(
                     is TransactionItemEvent.Clone -> callbacks.onClone(event.id)
                     is TransactionItemEvent.Delete -> callbacks.onDeleteTransaction(event.id)
                     is TransactionItemEvent.Split -> callbacks.onSplit(event.id)
-                    is TransactionItemEvent.Jump -> callbacks.onJump(event.id)
+                    is TransactionItemEvent.Jump -> callbacks.onJump(
+                        event.id,
+                        listState.getAllTransactionIds()
+                    )
                     is TransactionItemEvent.FullSwipeRight -> callbacks.onFullSwipeRight(event.id)
                     is TransactionItemEvent.ConfirmPlanned -> callbacks.onConfirmPlanned(event.paymentId, event.scheduledDate)
                     is TransactionItemEvent.CancelPlanned -> callbacks.onCancelPlanned(event.paymentId, event.scheduledDate)

@@ -23,6 +23,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.serialization.json.Json
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -77,11 +78,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExchangeRateProviderRegistry(): ExchangeRateProviderRegistry {
+    fun provideExchangeRateProviderRegistry(json: Json): ExchangeRateProviderRegistry {
         return ExchangeRateProviderRegistry(
             listOf(
-                ExchangeRateApiProvider(RetrofitClient.exchangeRateApi),
-                FrankfurterProvider(RetrofitClient.frankfurterApi)
+                ExchangeRateApiProvider(RetrofitClient.exchangeRateApi(json)),
+                FrankfurterProvider(RetrofitClient.frankfurterApi(json))
             )
         )
     }

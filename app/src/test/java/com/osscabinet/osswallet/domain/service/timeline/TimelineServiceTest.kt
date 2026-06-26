@@ -59,22 +59,47 @@ class TimelineServiceTest {
     }
 
     @Test
-    fun `getHeaderData handles empty groupTransactions safely`() {
+    fun `group with no confirmed transactions reports a Today header with zero income and expense`() {
         val now = System.currentTimeMillis()
-        val groupKey = TimelineService.formatDate(now) // e.g. "2024-05-20"
-        
-        val headerData = TimelineService.getHeaderData(
-            groupKey = groupKey,
-            groupTransactions = emptyList(),
-            absoluteHistory = emptyList(),
-            groupingType = TransactionGroupingType.BY_DAY,
-            baseCurrency = "USD",
-            exchangeRates = emptyMap()
+        // A group containing only a planned payment (no confirmed transactions) must
+        // still produce a valid header with zero income/expense, not crash.
+        val planned = listOf(
+            UpcomingPaymentItem(
+                plannedPayment = PlannedPayment(
+                    id = 1L,
+                    name = "Test Planned",
+                    categoryId = 1L,
+                    amount = BigDecimal("10.00"),
+                    entryMode = EntryMode.EXPENSE,
+                    currency = "USD",
+                    schedule = PaymentSchedule(
+                        recurrenceRule = RecurrenceRule(RecurrenceType.DAILY),
+                        startDate = now,
+                        nextDueDate = now
+                    ),
+                    status = PlannedPaymentStatus.ACTIVE,
+                    transactionStatus = TransactionStatus.CLEARED
+                ),
+                scheduledDate = now,
+                isOverdue = false
+            )
         )
 
-        assertNotNull(headerData)
+        val result = TimelineService.getGroupedData(
+            transactions = emptyList(),
+            absoluteHistory = emptyList(),
+            groupingType = TransactionGroupingType.BY_DAY,
+            accounts = emptyList(),
+            categories = emptyList(),
+            baseCurrency = "USD",
+            exchangeRates = emptyMap(),
+            plannedPayments = planned
+        )
+
+        assertEquals(1, result.size)
+        val headerData = result[0].headerData
         assertEquals("Today", headerData.title)
-        assertEquals(BigDecimal.ZERO.setScale(2), headerData.incomeBase)
-        assertEquals(BigDecimal.ZERO.setScale(2), headerData.expenseBase)
+        assertEquals(0, headerData.incomeBase.compareTo(BigDecimal.ZERO))
+        assertEquals(0, headerData.expenseBase.compareTo(BigDecimal.ZERO))
     }
 }

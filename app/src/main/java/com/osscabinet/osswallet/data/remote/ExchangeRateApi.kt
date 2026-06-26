@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.data.remote
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Path
 
@@ -15,17 +15,17 @@ interface ExchangeRateApi {
     suspend fun getSupportedCodes(): ExchangeRateCodesResponse
 }
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class ExchangeRateCodesResponse(
-    @Json(name = "result") val result: String,
-    @Json(name = "supported_codes") val supportedCodes: List<List<String>>
+    @SerialName("result") val result: String,
+    @SerialName("supported_codes") val supportedCodes: List<List<String>>
 )
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class ExchangeRateApiResponse(
-    @Json(name = "result") val result: String,
-    @Json(name = "base_code") val baseCode: String,
-    @Json(name = "time_last_update_unix") val timeLastUpdateUnix: Long? = null,
-    @Json(name = "time_next_update_unix") val timeNextUpdateUnix: Long? = null,
-    @Json(name = "rates") val rates: Map<String, Double>
+    @SerialName("result") val result: String,
+    @SerialName("base_code") val baseCode: String,
+    @SerialName("time_last_update_unix") val timeLastUpdateUnix: Long? = null,
+    @SerialName("time_next_update_unix") val timeNextUpdateUnix: Long? = null,
+    @SerialName("rates") val rates: Map<String, Double>
 )

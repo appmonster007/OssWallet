@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.data.repository
 import android.content.Context
 import androidx.core.net.toUri
 import androidx.room.withTransaction
+import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
@@ -55,7 +56,6 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.first
@@ -87,11 +87,13 @@ class BackupRepositoryImpl @Inject constructor(
     private val currencyDao: CurrencyDao,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
+    private val dispatcherProvider: DispatcherProvider,
+    private val json: Json,
     @ApplicationContext private val context: Context
 ) : BackupRepository {
 
     override suspend fun exportData(uriString: String, type: BackupType, scope: BackupScope): Result<Unit> =
-        withContext(Dispatchers.IO) {
+        withContext(dispatcherProvider.io) {
             try {
                 val uri = uriString.toUri()
                 val currentProfileId = settingsDataStore.currentProfileId.first()
@@ -516,26 +518,26 @@ class BackupRepositoryImpl @Inject constructor(
                 listOf(
                     it.id,
                     it.name,
-                    Json.encodeToString(it.timelineRange),
+                    json.encodeToString(it.timelineRange),
                     it.queryNote,
                     it.isNoteRegex,
                     it.queryPayee,
                     it.isPayeeRegex,
-                    Json.encodeToString(it.categoryIds),
-                    Json.encodeToString(it.accountIds),
+                    json.encodeToString(it.categoryIds),
+                    json.encodeToString(it.accountIds),
                     it.startDate,
                     it.endDate,
-                    Json.encodeToString(it.paymentMethods),
+                    json.encodeToString(it.paymentMethods),
                     it.hasWarranty,
                     it.warrantyExpirationStart,
                     it.warrantyExpirationEnd,
                     it.minAmount,
                     it.maxAmount,
-                    Json.encodeToString(it.transactionTypes),
-                    Json.encodeToString(it.currencies),
-                    Json.encodeToString(it.statuses),
-                    Json.encodeToString(it.linkedTransactionIds),
-                    Json.encodeToString(it.tags)
+                    json.encodeToString(it.transactionTypes),
+                    json.encodeToString(it.currencies),
+                    json.encodeToString(it.statuses),
+                    json.encodeToString(it.linkedTransactionIds),
+                    json.encodeToString(it.tags)
                 )
             })
 
@@ -576,7 +578,7 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     override suspend fun importData(uriString: String, type: BackupType): Result<Unit> =
-        withContext(Dispatchers.IO) {
+        withContext(dispatcherProvider.io) {
             try {
                 val uri = uriString.toUri()
                 context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -593,7 +595,7 @@ class BackupRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun deleteAllData(): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun deleteAllData(): Result<Unit> = withContext(dispatcherProvider.io) {
         try {
             database.withTransaction {
                 // 1. Clear linked/junction tables first (no dependencies)
@@ -988,7 +990,7 @@ class BackupRepositoryImpl @Inject constructor(
                     name = p["name"] ?: "",
                     timelineRange = p["timelineRange"]?.let {
                         try {
-                            Json.decodeFromString<TimelineRange>(it)
+                            json.decodeFromString<TimelineRange>(it)
                         } catch (_: Exception) {
                             TimelineRange.AllTime()
                         }
@@ -999,14 +1001,14 @@ class BackupRepositoryImpl @Inject constructor(
                     isPayeeRegex = p["isPayeeRegex"]?.toBoolean() ?: false,
                     categoryIds = p["categoryIds"]?.let {
                         try {
-                            Json.decodeFromString<Set<Long>>(it)
+                            json.decodeFromString<Set<Long>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     accountIds = p["accountIds"]?.let {
                         try {
-                            Json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
@@ -1015,7 +1017,7 @@ class BackupRepositoryImpl @Inject constructor(
                     endDate = p["endDate"]?.toLongOrNull(),
                     paymentMethods = p["paymentMethods"]?.let {
                         try {
-                            Json.decodeFromString<Set<PaymentMethod>>(it)
+                            json.decodeFromString<Set<PaymentMethod>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
@@ -1027,35 +1029,35 @@ class BackupRepositoryImpl @Inject constructor(
                     maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
                     transactionTypes = p["transactionTypes"]?.let {
                         try {
-                            Json.decodeFromString<Set<TransactionType>>(it)
+                            json.decodeFromString<Set<TransactionType>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     currencies = p["currencies"]?.let {
                         try {
-                            Json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     statuses = p["statuses"]?.let {
                         try {
-                            Json.decodeFromString<Set<TransactionStatus>>(it)
+                            json.decodeFromString<Set<TransactionStatus>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     linkedTransactionIds = p["linkedTransactionIds"]?.let {
                         try {
-                            Json.decodeFromString<Set<Long>>(it)
+                            json.decodeFromString<Set<Long>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     tags = p["tags"]?.let {
                         try {
-                            Json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(it)
                         } catch (_: Exception) {
                             emptySet()
                         }
@@ -1083,7 +1085,7 @@ class BackupRepositoryImpl @Inject constructor(
         uriString: String,
         type: BackupType,
         entities: Set<RestorableEntity>
-    ): Result<Unit> = withContext(Dispatchers.IO) {
+    ): Result<Unit> = withContext(dispatcherProvider.io) {
         try {
             val uri = uriString.toUri()
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -1146,7 +1148,7 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     override suspend fun exportToPrivateStorage(scope: BackupScope): Result<String> =
-        withContext(Dispatchers.IO) {
+        withContext(dispatcherProvider.io) {
             try {
                 val currentProfileId = settingsDataStore.currentProfileId.first()
                 val dir = File(context.filesDir, "backups").apply { mkdirs() }
@@ -1160,7 +1162,7 @@ class BackupRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun listPrivateBackups(): List<BackupMeta> = withContext(Dispatchers.IO) {
+    override suspend fun listPrivateBackups(): List<BackupMeta> = withContext(dispatcherProvider.io) {
         val dir = File(context.filesDir, "backups")
         if (!dir.exists()) return@withContext emptyList()
         dir.listFiles { f -> f.name.endsWith(".zip") || f.name.endsWith(".sqlite") }
@@ -1176,7 +1178,7 @@ class BackupRepositoryImpl @Inject constructor(
             } ?: emptyList()
     }
 
-    override suspend fun deleteBackup(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun deleteBackup(id: String): Result<Unit> = withContext(dispatcherProvider.io) {
         try {
             val file = File(context.filesDir, "backups/$id")
             if (file.exists()) file.delete()
@@ -1187,7 +1189,7 @@ class BackupRepositoryImpl @Inject constructor(
     }
 
     override suspend fun pruneOldBackups(maxRetained: Int) {
-        withContext(Dispatchers.IO) {
+        withContext(dispatcherProvider.io) {
             val backups = listPrivateBackups()
             if (backups.size > maxRetained) {
                 backups.drop(maxRetained).forEach { deleteBackup(it.id) }

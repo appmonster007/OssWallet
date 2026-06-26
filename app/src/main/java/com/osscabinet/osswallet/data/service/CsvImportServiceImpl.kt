@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.data.service
 
 import androidx.room.withTransaction
+import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
@@ -30,7 +31,6 @@ import com.osscabinet.ossWallet.domain.model.import_csv.ImportSummary
 import com.osscabinet.ossWallet.domain.model.import_csv.OssWalletField
 import com.osscabinet.ossWallet.domain.model.import_csv.ParseError
 import com.osscabinet.ossWallet.domain.service.CsvImportService
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.apache.commons.csv.CSVFormat
@@ -54,7 +54,8 @@ class CsvImportServiceImpl @Inject constructor(
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
     private val assetLoader: BudgetBakersAssetLoader,
-    private val transactionLinkDao: TransactionLinkDao
+    private val transactionLinkDao: TransactionLinkDao,
+    private val dispatcherProvider: DispatcherProvider
 ) : CsvImportService {
 
     private val budgetBakersHeaders = setOf(
@@ -222,7 +223,7 @@ class CsvImportServiceImpl @Inject constructor(
     // ──────────────────────────────────────────────────────────────────────────
 
     override suspend fun parseHeaders(inputStream: InputStream): CsvImportSession =
-        withContext(Dispatchers.IO) {
+        withContext(dispatcherProvider.io) {
             val bufferedReader = inputStream.bufferedReader()
             val firstLine = bufferedReader.readLine()
                 ?: return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null)
@@ -314,7 +315,7 @@ class CsvImportServiceImpl @Inject constructor(
     override suspend fun generatePreview(
         session: CsvImportSession,
         inputStream: InputStream
-    ): ImportPreview = withContext(Dispatchers.IO) {
+    ): ImportPreview = withContext(dispatcherProvider.io) {
         when (session.sourceApp) {
             ImportSourceApp.BUDGET_BAKERS -> generateBudgetBakersPreview(session, inputStream)
             ImportSourceApp.CASHEW -> generateCashewPreview(session, inputStream)
@@ -526,7 +527,7 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>
-    ): Result<ImportSummary> = withContext(Dispatchers.IO) {
+    ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         try {
             when (session.sourceApp) {
                 ImportSourceApp.BUDGET_BAKERS -> executeBudgetBakersImport(session, inputStream, duplicatePolicy, entityMappings, selectedDuplicateRowIndices)

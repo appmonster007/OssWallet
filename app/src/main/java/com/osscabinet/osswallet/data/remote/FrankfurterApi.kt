@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.data.remote
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -15,10 +15,10 @@ interface FrankfurterApi {
     suspend fun getSupportedCurrencies(): Map<String, String>
 }
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class FrankfurterResponse(
-    @Json(name = "amount") val amount: Double,
-    @Json(name = "base") val base: String,
-    @Json(name = "date") val date: String,
-    @Json(name = "rates") val rates: Map<String, Double>
+    @SerialName("amount") val amount: Double,
+    @SerialName("base") val base: String,
+    @SerialName("date") val date: String,
+    @SerialName("rates") val rates: Map<String, Double>
 )

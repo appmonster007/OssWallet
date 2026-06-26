@@ -77,7 +77,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
     implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
+    implementation(libs.converter.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
@@ -142,5 +142,4 @@ dependencies {
     debugImplementation(libs.androidx.glance.appwidget.preview)
     debugImplementation(libs.androidx.glance.preview)
     ksp(libs.androidx.room.compiler)
-    ksp(libs.moshi.kotlin.codegen)
 }

@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.repository.BackupRepositoryImpl
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,6 +51,8 @@ class BackupRepositoryPruneTest {
             currencyDao = db.currencyDao(),
             database = db,
             settingsDataStore = settingsDataStore,
+            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider(),
+            json = Json,
             context = context
         )
 

@@ -73,7 +73,8 @@ class CsvImportServiceInstrumentedTest {
             database = db,
             settingsDataStore = settingsDataStore,
             assetLoader = BudgetBakersAssetLoader(context),
-            transactionLinkDao = db.transactionLinkDao()
+            transactionLinkDao = db.transactionLinkDao(),
+            dispatcherProvider = com.osscabinet.ossWallet.core.util.RealDispatcherProvider()
         )
     }
 

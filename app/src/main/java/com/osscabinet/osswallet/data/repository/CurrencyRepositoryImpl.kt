@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.repository
 
+import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.domain.model.currency.CurrencyRates
@@ -7,7 +8,6 @@ import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -20,7 +20,8 @@ import javax.inject.Singleton
 class CurrencyRepositoryImpl @Inject constructor(
     private val providerRegistry: ExchangeRateProviderRegistry,
     private val dao: CurrencyDao,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val dispatcherProvider: DispatcherProvider
 ) : CurrencyRepository {
 
     override fun observeRatesSnapshot(baseCurrency: String): Flow<ExchangeRateSnapshot> =
@@ -38,7 +39,7 @@ class CurrencyRepositoryImpl @Inject constructor(
     private fun BigDecimal?.orZero(): BigDecimal = this ?: BigDecimal.ZERO
 
     override suspend fun fetchFreshRates(baseCurrency: String): CurrencyRates {
-        return withContext(Dispatchers.IO) {
+        return withContext(dispatcherProvider.io) {
             val providerId = settingsRepository.currencyProvider.first()
             val provider = providerRegistry.getProvider(providerId)
 
@@ -71,7 +72,7 @@ class CurrencyRepositoryImpl @Inject constructor(
         baseCurrency: String,
         forceRefresh: Boolean
     ): Map<String, Double> {
-        return withContext(Dispatchers.IO) {
+        return withContext(dispatcherProvider.io) {
             val localRates = dao.getRatesForBase(baseCurrency)
 
             if (!forceRefresh && localRates.isNotEmpty() && isCacheValid(localRates.first())) {

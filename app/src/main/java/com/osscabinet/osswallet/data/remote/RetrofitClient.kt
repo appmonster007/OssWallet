@@ -1,18 +1,16 @@
 package com.osscabinet.ossWallet.data.remote
 
-import com.squareup.moshi.Moshi
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import java.util.concurrent.TimeUnit
 import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val EXCHANGE_RATE_API_BASE_URL = "https://open.er-api.com/"
     private const val FRANKFURTER_API_BASE_URL = "https://api.frankfurter.app/"
-
-    private val moshi = Moshi.Builder()
-        .build()
 
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -25,21 +23,24 @@ object RetrofitClient {
         .addInterceptor(logging)
         .build()
 
-    val exchangeRateApi: ExchangeRateApi by lazy {
+    private val contentType = "application/json".toMediaType()
+
+    // The [json] is the single app-wide instance provided by SerializationModule,
+    // so the network path shares the same kotlinx config (incl. the contextual
+    // BigDecimalSerializer) as the rest of the app.
+    fun exchangeRateApi(json: Json): ExchangeRateApi =
         Retrofit.Builder()
             .baseUrl(EXCHANGE_RATE_API_BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(json.asConverterFactory(contentType))
             .client(okHttpClient)
             .build()
             .create(ExchangeRateApi::class.java)
-    }
 
-    val frankfurterApi: FrankfurterApi by lazy {
+    fun frankfurterApi(json: Json): FrankfurterApi =
         Retrofit.Builder()
             .baseUrl(FRANKFURTER_API_BASE_URL)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(json.asConverterFactory(contentType))
             .client(okHttpClient)
             .build()
             .create(FrankfurterApi::class.java)
-    }
 }

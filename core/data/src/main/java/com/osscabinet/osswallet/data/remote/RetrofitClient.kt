@@ -13,7 +13,10 @@ object RetrofitClient {
     private const val FRANKFURTER_API_BASE_URL = "https://api.frankfurter.app/"
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (com.osscabinet.ossWallet.core.data.BuildConfig.DEBUG)
+            HttpLoggingInterceptor.Level.BODY
+        else
+            HttpLoggingInterceptor.Level.NONE
     }
 
     private val okHttpClient = OkHttpClient.Builder()

@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt)
-    kotlin("plugin.serialization") version "2.2.10"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val localProps = Properties().also { props ->
@@ -59,7 +59,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:domain"))
+    // Data layer (transitively provides :core:domain via api())
+    implementation(project(":core:data"))
+    implementation(project(":feature:dashboard"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -71,14 +74,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
-    implementation(libs.retrofit)
-    implementation(libs.converter.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.datetime)
@@ -88,18 +87,12 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.core)
-    implementation(libs.logging.interceptor)
-    implementation(libs.okhttp)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.material)
     implementation(libs.androidx.biometric)
-    implementation(libs.sqlcipher)
-    implementation(libs.androidx.sqlite.ktx)
     implementation(libs.play.services.mlkit.text.recognition)
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
     implementation(libs.vico.core)
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.cronutils)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.glance)
@@ -120,6 +113,13 @@ dependencies {
     // QR code generation
     implementation(libs.qrcode.kotlin.android)
     implementation(libs.haze)
+
+    // WorkManager (PlannedPaymentWorker, WidgetRefreshWorker in :app)
+    implementation(libs.androidx.work.runtime.ktx)
+    // Room runtime — needed for RoomDatabase supertype access in WidgetDataLoader and debug seed files
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    // CSV and document file (web routes, backup UI in :app)
     implementation(libs.commons.csv)
     implementation(libs.androidx.documentfile)
 
@@ -142,5 +142,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.glance.appwidget.preview)
     debugImplementation(libs.androidx.glance.preview)
-    ksp(libs.androidx.room.compiler)
 }

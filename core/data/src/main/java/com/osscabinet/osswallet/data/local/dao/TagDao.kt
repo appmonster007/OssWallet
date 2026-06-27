@@ -1,0 +1,36 @@
+package com.osscabinet.ossWallet.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.osscabinet.ossWallet.data.local.entity.TagEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TagDao {
+    @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE ASC")
+    fun getAllTags(): Flow<List<TagEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTag(tag: TagEntity): Long
+
+    @Query("SELECT id FROM tags WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun getTagIdByName(name: String): Long?
+
+    @Delete
+    suspend fun deleteTag(tag: TagEntity)
+
+    @Query("SELECT * FROM tags WHERE name IN (:names)")
+    suspend fun getTagsByNamesSync(names: List<String>): List<TagEntity>
+
+    @Query("SELECT * FROM tags WHERE name IN (:names)")
+    fun getTagsByNames(names: List<String>): Flow<List<TagEntity>>
+
+    @Query("SELECT * FROM tags")
+    suspend fun getAllTagsSync(): List<TagEntity>
+
+    @Query("DELETE FROM tags")
+    suspend fun clearAll()
+}

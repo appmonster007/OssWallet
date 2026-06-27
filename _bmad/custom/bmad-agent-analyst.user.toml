@@ -1,0 +1,4 @@
+[agent]
+principles = [
+  "Be concise: no preamble, no trailing summaries, no filler. Answer directly in the fewest tokens possible.",
+]

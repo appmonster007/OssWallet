@@ -91,6 +91,8 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.flowOf
@@ -192,10 +194,7 @@ fun DashboardScreen(
     vms: SharedNavViewModels
 ) {
     val dashboardViewModel = vms.dashboardViewModel
-    val transactionViewModel = vms.transactionViewModel
-    val settingsViewModel = vms.settingsViewModel
-    val templateViewModel = vms.templateViewModel
-    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
+    val cardComputerRegistry = dashboardViewModel.cardComputerRegistry
 
     // Apply initial view focus when screen opens with context
     LaunchedEffect(config.viewContextJson) {
@@ -204,94 +203,73 @@ fun DashboardScreen(
                 val decodedContext =
                     URLDecoder.decode(contextString, StandardCharsets.UTF_8.toString())
                 val context = Json.decodeFromString<DashboardViewContext>(decodedContext)
-                dashboardViewModel.initializeDashboardView(context)
-            } catch (e: Exception) {
-                // If context is invalid, use default
-                dashboardViewModel.initializeDashboardView(DashboardViewContext.None)
+                dashboardViewModel.onIntent(DashboardIntent.InitializeView(context))
+            } catch (_: Exception) {
+                dashboardViewModel.onIntent(DashboardIntent.InitializeView(DashboardViewContext.None))
             }
         } ?: run {
-            // If no context provided, ensure view focus is cleared
-            dashboardViewModel.clearViewFocus()
+            dashboardViewModel.onIntent(DashboardIntent.ClearViewFocus)
         }
     }
 
     // Clear view focus when leaving the screen
     DisposableEffect(Unit) {
         onDispose {
-            dashboardViewModel.clearViewFocus()
+            dashboardViewModel.onIntent(DashboardIntent.ClearViewFocus)
         }
     }
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
-    val initialViewContext by dashboardViewModel.initialViewContext.collectAsStateWithLifecycle()
-    val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
-    val displayPrefs by settingsViewModel.dashboardDisplayPrefs.collectAsStateWithLifecycle()
+    val successState = dashboardUiState as? DashboardUiState.Success
 
-    val allTemplates by templateViewModel.templates.collectAsStateWithLifecycle()
-    val allCategories by transactionViewModel.categories.collectAsStateWithLifecycle()
-    val lastUndoAction by dashboardViewModel.lastUndoAction.collectAsStateWithLifecycle()
-
-    val savedFilters by transactionViewModel.savedFilters.collectAsStateWithLifecycle()
-    val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
-    val transactionSnackbarMessage by transactionViewModel.snackbarMessage.collectAsStateWithLifecycle()
-    val scrollToId by transactionViewModel.scrollToId.collectAsStateWithLifecycle()
-    val highlightedId by transactionViewModel.highlightedId.collectAsStateWithLifecycle()
-    val linkedPopupTxs by transactionViewModel.linkedTransactionsPopup.collectAsStateWithLifecycle()
-
-    val isTopLevel = remember(initialViewContext, config.isTopLevel) {
-        config.isTopLevel || initialViewContext == DashboardViewContext.None
+    val isTopLevel = remember(successState?.initialViewContext, config.isTopLevel) {
+        val initialViewContext = successState?.initialViewContext ?: DashboardViewContext.None
+        config.isTopLevel || (initialViewContext == DashboardViewContext.None)
     }
 
     DashboardScreenLayout(
         isTopLevel = isTopLevel,
-        initialViewContext = initialViewContext,
+        initialViewContext = successState?.initialViewContext ?: DashboardViewContext.None,
         uiState = dashboardUiState,
-        cardsConfig = cardsConfig,
-        currentProfileName = displayPrefs.currentProfileName,
-        cardAnimationEnabled = displayPrefs.cardAnimationEnabled,
-        expandableFabEnabled = displayPrefs.expandableFabEnabled,
-        allTemplates = allTemplates,
-        allCategories = allCategories,
-        lastUndoAction = lastUndoAction,
-        savedFilters = savedFilters,
-        revealedCardIds = revealedCardIds,
-        transactionSnackbarMessage = transactionSnackbarMessage,
-        scrollToId = scrollToId,
-        highlightedId = highlightedId,
-        recentActivitiesBreakdown = displayPrefs.recentActivitiesBreakdown,
+        cardsConfig = successState?.cardsConfig ?: DashboardCardsConfig(),
+        currentProfileName = successState?.displayPrefs?.currentProfileName,
+        cardAnimationEnabled = successState?.displayPrefs?.cardAnimationEnabled ?: true,
+        expandableFabEnabled = successState?.displayPrefs?.expandableFabEnabled ?: true,
+        allTemplates = successState?.allTemplates ?: emptyList(),
+        allCategories = successState?.allCategories ?: emptyList(),
+        lastUndoAction = successState?.lastUndoAction,
+        savedFilters = successState?.savedFilters ?: emptyList(),
+        revealedCardIds = successState?.revealedCardIds?.toList() ?: emptyList(),
+        transactionSnackbarMessage = successState?.transactionSnackbarMessage,
+        scrollToId = successState?.scrollToId,
+        highlightedId = successState?.highlightedId,
+        recentActivitiesBreakdown = successState?.displayPrefs?.recentActivitiesBreakdown ?: true,
         actions = actions,
-        onResetView = dashboardViewModel::resetToInitialView,
-        onUndoAction = dashboardViewModel::undoLastPlannedPaymentAction,
-        onClearUndo = dashboardViewModel::clearUndoAction,
-        onClearTransactionSnackbar = transactionViewModel::clearSnackbar,
-        onClearScrollTo = transactionViewModel::clearScrollTo,
+        onResetView = { dashboardViewModel.onIntent(DashboardIntent.ResetToInitialView) },
+        onUndoAction = { dashboardViewModel.onIntent(DashboardIntent.UndoLastPlannedPaymentAction) },
+        onClearUndo = { dashboardViewModel.onIntent(DashboardIntent.ClearUndoAction) },
+        onClearTransactionSnackbar = { dashboardViewModel.onIntent(DashboardIntent.ClearSnackbar) },
+        onClearScrollTo = { dashboardViewModel.onIntent(DashboardIntent.ClearScrollTo) },
         onAddCard = dashboardViewModel::addCard,
         onReorderCards = dashboardViewModel::reorderCards,
         onRemoveCard = dashboardViewModel::removeCard,
-        onQuickConfirm = dashboardViewModel::quickConfirmById,
-        onQuickSkip = dashboardViewModel::quickSkipById,
-        onSearchTransactions = transactionViewModel::searchTransactions,
-        onItemExpanded = transactionViewModel::onItemExpanded,
-        onItemCollapsed = transactionViewModel::onItemCollapsed,
-        onStatusChange = transactionViewModel::quickUpdateStatus,
-        onDeleteTransaction = transactionViewModel::quickDeleteTransaction,
-        onFullSwipeRight = transactionViewModel::toggleStatusClearedUncleared,
-        onJumpTransaction = { id, availableIds ->
-            val finalAvailableIds = availableIds ?: (dashboardUiState as? DashboardUiState.Success)
-                ?.recentActivitiesState?.getAllTransactionIds()
-            transactionViewModel.handleJumpRequest(id, finalAvailableIds)
-        },
-        onPerformJump = { id, availableIds ->
-            val finalAvailableIds = availableIds ?: (dashboardUiState as? DashboardUiState.Success)
-                ?.recentActivitiesState?.getAllTransactionIds()
-            transactionViewModel.performJump(id, finalAvailableIds)
-        },
-        onCloseLinkedPopup = transactionViewModel::closeLinkedPopup,
-        linkedPopupTxs = linkedPopupTxs,
-        onAddTag = transactionViewModel::addTag,
-        onConfirmPlanned = transactionViewModel::confirmPlannedPayment,
-        onCancelPlanned = transactionViewModel::cancelPlannedPayment,
+        onQuickConfirm = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
+        onQuickSkip = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
+        onSearchTransactions = { query -> dashboardViewModel.searchTransactions(query) },
+        onItemExpanded = { dashboardViewModel.onIntent(DashboardIntent.OnCardExpanded(it)) },
+        onItemCollapsed = { dashboardViewModel.onIntent(DashboardIntent.OnCardCollapsed(it)) },
+        onStatusChange = { id, status -> dashboardViewModel.onIntent(DashboardIntent.ChangeTransactionStatus(id, status)) },
+        onDeleteTransaction = { id -> dashboardViewModel.onIntent(DashboardIntent.QuickDeleteTransaction(id)) },
+        onCloneTransactionClick = { id -> dashboardViewModel.onIntent(DashboardIntent.QuickCloneTransaction(id)) },
+        onFullSwipeRight = { id -> dashboardViewModel.onIntent(DashboardIntent.ToggleStatusClearedUncleared(id)) },
+        onJumpTransaction = { id, _ -> dashboardViewModel.onIntent(DashboardIntent.HandleJumpRequest(id)) },
+        onPerformJump = { id, _ -> dashboardViewModel.onIntent(DashboardIntent.PerformJump(id)) },
+        onCloseLinkedPopup = { dashboardViewModel.onIntent(DashboardIntent.CloseLinkedPopup) },
+        linkedPopupTxs = successState?.linkedPopupTxs,
+        onAddTag = { name, color -> dashboardViewModel.onIntent(DashboardIntent.AddTag(name, color)) },
+        onConfirmPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
+        onCancelPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
         cardComputerRegistry = cardComputerRegistry,
         cardUpdateHandler = dashboardViewModel
     )
@@ -336,6 +314,7 @@ fun DashboardScreenLayout(
     onItemCollapsed: (String) -> Unit,
     onStatusChange: (Long, TransactionStatus) -> Unit,
     onDeleteTransaction: (Long) -> Unit,
+    onCloneTransactionClick: (Long) -> Unit,
     onFullSwipeRight: (Long) -> Unit,
     onJumpTransaction: (Long, Set<Long>?) -> Unit,
     onPerformJump: (Long, Set<Long>?) -> Unit,
@@ -480,7 +459,7 @@ fun DashboardScreenLayout(
                                     onRecordsClick = { context -> navigate { actions.onRecordsClick(context) } },
                                     onSaveFilterClick = actions.onSaveFilterClick,
                                     onEditTransactionClick = { id -> navigate { actions.onEditTransactionClick(id) } },
-                                    onCloneTransactionClick = { id -> navigate { actions.onCloneTransactionClick(id) } },
+                                    onCloneTransactionClick = onCloneTransactionClick,
                                     onSplitTransactionClick = { id -> navigate { actions.onSplitTransactionClick(id) } },
                                     onJumpTransaction = onJumpTransaction,
                                     onPerformJump = onPerformJump,
@@ -899,6 +878,7 @@ fun DashboardGlanceTab(
     val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
     val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
     val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
+    val onPerformJumpRef by rememberUpdatedState(onPerformJump)
     val onItemExpandedRef by rememberUpdatedState(onItemExpanded)
     val onItemCollapsedRef by rememberUpdatedState(onItemCollapsed)
     val onStatusChangeRef by rememberUpdatedState(onStatusChange)
@@ -937,6 +917,7 @@ fun DashboardGlanceTab(
                 onDelete = { id -> onDeleteTxRef(id) },
                 onSplit = { id -> onSplitTxRef(id) },
                 onJump = { id, availableIds -> onJumpTxRef(id, availableIds) },
+                onPerformJump = { id, availableIds -> onPerformJumpRef(id, availableIds) },
                 onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
             ),
             paymentActions = PaymentActions(
@@ -1124,7 +1105,7 @@ fun DashboardScreenPreview() {
         profileId = 1,
         accounts = listOf(sampleAccount),
         allAccounts = listOf(sampleAccount),
-        cardDataMap = mapOf(
+        cardDataMap = persistentMapOf(
             "net_worth_1" to CardRenderData.NetWorth(
                 config = netWorthConfig,
                 currentPeriodMetrics = NetWorthMetrics(
@@ -1211,6 +1192,7 @@ fun DashboardScreenPreview() {
             onItemCollapsed = {},
             onStatusChange = { _, _ -> },
             onDeleteTransaction = {},
+            onCloneTransactionClick = {},
             onFullSwipeRight = {},
             onJumpTransaction = { _, _ -> },
             onPerformJump = { _, _ -> },
@@ -1254,7 +1236,7 @@ fun DashboardGlanceTabPreview() {
                 icon = "AccountBalance",
             )
         ),
-        cardDataMap = emptyMap(),
+        cardDataMap = persistentMapOf(),
         allTransactions = emptyList(),
         recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
         allCategories = emptyList(),

@@ -111,7 +111,7 @@ fun AeonCardList(
             item(key = "__aeon_card_list_header") { header() }
         }
 
-        items(sortedCards, key = { it.cardId }) { cardConfig ->
+        items(sortedCards, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
             // M3 Tonal feedback: Dim non-dragged peers to focus attention on the "floating" item.
             val draggingActive = reorderState.draggedKey != null
             val isDragging = reorderState.isDragging(cardConfig.cardId)

@@ -5,21 +5,34 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Global cache for rendered dashboard cards.
+ * Keyed by (profileId, currency, cardId) to allow for granular invalidation
+ * and automatic cache-miss on currency changes.
+ */
 @Singleton
 class CardRenderCache @Inject constructor() {
-    // Key = (profileId, currency) so a currency change automatically misses the cache,
-    // preventing stale cards computed with the old exchange rates from being shown.
-    // ConcurrentHashMap: lock-free reads, externally serialized writes via ViewModel Mutex.
-    private val cache = ConcurrentHashMap<Pair<Int, String>, Map<String, CardRenderData>>()
+    // Key = (profileId, currency, cardId)
+    private val cache = ConcurrentHashMap<Triple<Int, String, String>, CardRenderData>()
 
-    operator fun get(profileId: Int, currency: String): Map<String, CardRenderData>? =
-        cache[profileId to currency]
+    operator fun get(profileId: Int, currency: String, cardId: String): CardRenderData? =
+        cache[Triple(profileId, currency, cardId)]
 
-    operator fun set(profileId: Int, currency: String, data: Map<String, CardRenderData>) {
-        cache[profileId to currency] = data
+    operator fun set(profileId: Int, currency: String, cardId: String, data: CardRenderData) {
+        cache[Triple(profileId, currency, cardId)] = data
+    }
+
+    fun getProfileSnapshot(profileId: Int, currency: String): Map<String, CardRenderData> {
+        return cache.entries
+            .filter { (key, _) -> key.first == profileId && key.second == currency }
+            .associate { (key, value) -> key.third to value }
     }
 
     fun invalidateProfile(profileId: Int) {
-        cache.keys.removeAll { (pid, _) -> pid == profileId }
+        cache.keys.removeAll { (pid, _, _) -> pid == profileId }
+    }
+
+    fun invalidateCard(profileId: Int, currency: String, cardId: String) {
+        cache.remove(Triple(profileId, currency, cardId))
     }
 }

@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -144,16 +145,14 @@ fun AeonExpressiveCard(
         label = "cardFlip"
     )
 
+    val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
+
     // Discoverability & Intent Feedback
-    SideEffect {
-        if (rotation == 180f || rotation == 0f) {
-            // No-op for settled state
-        } else if (rotation > 85f && rotation < 95f) {
+    LaunchedEffect(isFrontVisible) {
+        if (rotation > 0f && rotation < 180f) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
-
-    val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
 
     // timelineLabel allocates Calendar/SimpleDateFormat; cache so it doesn't run every recomposition.
     val effectiveSubtitle = remember(subtitle, filter?.timelineRange, timelineMode) {
@@ -199,12 +198,16 @@ fun AeonExpressiveCard(
                 }
                 .background(
                     // Snap the surface prominent color at 90 degrees for clear mode switching
-                    if (rotation <= 90f) containerColor else AppColors.cardSurfaceProminent,
+                    if (isFrontVisible) containerColor else AppColors.cardSurfaceProminent,
                     cardShape
                 )
                 .then(borderModifier)
-                .animateContentSize(
-                    animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                .then(
+                    if (rotation == 0f || rotation == 180f) {
+                        Modifier.animateContentSize(
+                            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                        )
+                    } else Modifier
                 )
                 .then(
                     if (onClick != null && interactionSource != null && !isFlipped) Modifier.clickable(
@@ -214,16 +217,9 @@ fun AeonExpressiveCard(
                     ) else Modifier,
                 ),
         ) {
-            // Dual-layered approach for zero-latency switching
-            // Front Side
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        alpha = if (isFrontVisible) 1f else 0f
-                    }
-                    .then(if (!isFrontVisible) Modifier.height(0.dp) else Modifier)
-            ) {
+            // Single-layer approach for halved layout cost per frame
+            if (isFrontVisible) {
+                // Front Side
                 AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
                     if (backgroundIcon != null) {
                         Icon(
@@ -310,22 +306,20 @@ fun AeonExpressiveCard(
                         content()
                     }
                 }
-            }
-
-            // Back Side
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        rotationY = 180f
-                        alpha = if (!isFrontVisible) 1f else 0f
+            } else {
+                // Back Side
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            rotationY = 180f
+                        }
+                        .background(AppColors.cardSurfaceProminent)
+                ) {
+                    displaySettings?.invoke {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        isFlipped = false
                     }
-                    .then(if (isFrontVisible) Modifier.height(0.dp) else Modifier)
-                    .background(AppColors.cardSurfaceProminent)
-            ) {
-                displaySettings?.invoke {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    isFlipped = false
                 }
             }
         }

@@ -160,9 +160,6 @@ data class CurrencyBalancesCardConfig(
 /**
  * Configuration for Cash Flow card instances
  */
-/**
- * Screen context identifies which screen a card belongs to.
- */
 
 @Serializable
 @SerialName("cash_flow")
@@ -303,7 +300,6 @@ data class PlannedPaymentsCardConfig(
     override val isEnabled: Boolean = true,
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
-    @kotlinx.serialization.Transient val daysAhead: Int = 30,
     val maxItems: Int = 5,
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
@@ -411,7 +407,6 @@ sealed class AccountingPerspective {
                 ChartMetric.EXPENSE to "OUT",
                 ChartMetric.NET to "NET"
             )
-            else -> emptyMap()
         }
 
         val ALL: List<AccountingPerspective> = listOf(Accounting, CashFlow)

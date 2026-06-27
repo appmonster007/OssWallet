@@ -621,7 +621,7 @@ class CsvImportServiceImpl @Inject constructor(
                     EntityMapping.EntityType.CATEGORY -> {
                         val existingId = em.existingId
                         if (existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->
@@ -1179,7 +1179,7 @@ class CsvImportServiceImpl @Inject constructor(
                     EntityMapping.EntityType.CATEGORY -> {
                         val existingId = em.existingId
                         if (existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->
@@ -1502,7 +1502,7 @@ class CsvImportServiceImpl @Inject constructor(
                     EntityMapping.EntityType.CATEGORY -> {
                         val existingId = em.existingId
                         if (existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: Category.SYSTEM_OTHERS
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->

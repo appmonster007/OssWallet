@@ -5,7 +5,7 @@ baseline_commit: '81c0b0ff8a81811012d1a8ddad35fc3209a99d38'
 # Story 1.3: Data Layer Isolation & Feature Stubs (:core:data & :feature:dashboard)
 
 ## Status
-**Status:** ready-for-dev
+**Status:** done
 **Epic:** Epic 1: Architectural Foundation & Domain Purity
 **ID:** 1.3
 
@@ -27,66 +27,66 @@ so that I can enforce strict boundary rules and prevent "spaghetti" dependencies
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Prerequisites: Add missing plugin aliases to `gradle/libs.versions.toml`
-  - [ ] 1.1 Verify Story 1.2 is `done` (`:core:domain` module must exist at `core/domain/`) before beginning
-  - [ ] 1.2 Add `android-library` plugin alias: `android-library = { id = "com.android.library", version.ref = "agp" }`
-  - [ ] 1.3 Add `kotlin-android` plugin alias: `kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }`
-  - [ ] 1.4 Add `kotlin-serialization` plugin alias: `kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }` — consolidates the inline `kotlin("plugin.serialization") version "2.2.10"` in `:app`
+- [x] Task 1 — Prerequisites: Add missing plugin aliases to `gradle/libs.versions.toml`
+  - [x] 1.1 Verify Story 1.2 is `done` (`:core:domain` module must exist at `core/domain/`) before beginning
+  - [x] 1.2 Add `android-library` plugin alias: `android-library = { id = "com.android.library", version.ref = "agp" }`
+  - [x] 1.3 Add `kotlin-android` plugin alias: `kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }`
+  - [x] 1.4 Add `kotlin-serialization` plugin alias: `kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }` — consolidates the inline `kotlin("plugin.serialization") version "2.2.10"` in `:app`
 
-- [ ] Task 2 — Create `:core:data` Gradle module (Android library, Hilt-enabled)
-  - [ ] 2.1 Create directory `core/data/src/main/java/` at the project root
-  - [ ] 2.2 Create `core/data/build.gradle.kts` using the exact template in Dev Notes
-  - [ ] 2.3 Add `include(":core:data")` to `settings.gradle.kts`
-  - [ ] 2.4 Verify the empty module compiles (`./gradlew :core:data:compileDebugKotlin`)
+- [x] Task 2 — Create `:core:data` Gradle module (Android library, Hilt-enabled)
+  - [x] 2.1 Create directory `core/data/src/main/java/` at the project root
+  - [x] 2.2 Create `core/data/build.gradle.kts` using the exact template in Dev Notes
+  - [x] 2.3 Add `include(":core:data")` to `settings.gradle.kts`
+  - [x] 2.4 Verify the empty module compiles (`./gradlew :core:data:compileDebugKotlin`)
 
-- [ ] Task 3 — Relocate `@ApplicationScope` qualifier to `:core:data`
-  - [ ] 3.1 Create `core/data/src/main/java/com/osscabinet/ossWallet/data/di/qualifiers/ApplicationScope.kt` — copy the `@ApplicationScope` qualifier annotation class from `:app`'s `di/` directory
-  - [ ] 3.2 Update the `@Provides CoroutineScope` function in `:app/di/AppModule.kt` to import `@ApplicationScope` from the new `:core:data` location (package: `com.osscabinet.ossWallet.data.di.qualifiers`)
-  - [ ] 3.3 Confirm `ComputationRepositoryImpl` (which injects `@ApplicationScope CoroutineScope`) also references the qualifier from `:core:data` location after the move in Task 6
+- [x] Task 3 — Relocate `@ApplicationScope` qualifier to `:core:data`
+  - [x] 3.1 Create `core/data/src/main/java/com/osscabinet/ossWallet/data/di/qualifiers/ApplicationScope.kt` — copy the `@ApplicationScope` qualifier annotation class from `:app`'s `di/` directory
+  - [x] 3.2 Update the `@Provides CoroutineScope` function in `:app/di/AppModule.kt` to import `@ApplicationScope` from the new `:core:data` location (package: `com.osscabinet.ossWallet.data.di.qualifiers`)
+  - [x] 3.3 Confirm `ComputationRepositoryImpl` (which injects `@ApplicationScope CoroutineScope`) also references the qualifier from `:core:data` location after the move in Task 6
 
-- [ ] Task 4 — Move `data/local/` package tree to `:core:data`
-  - [ ] 4.1 Move ALL 5 root files: `AppDatabase.kt`, `Converters.kt`, `SecurePassphraseManager.kt`, `SettingsDataStore.kt`, `WidgetInvalidationObserver.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/`
-  - [ ] 4.2 Move all 14 DAO files from `data/local/dao/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/dao/`
-  - [ ] 4.3 Move all 17 entity files from `data/local/entity/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/entity/`
-  - [ ] 4.4 Move `data/local/query/` (3 files: `DatabaseQueryServiceImpl.kt`, `QueryCache.kt`, `TransactionQueryBuilder.kt`) to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/query/`
-  - [ ] 4.5 Move `data/local/util/Serializers.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/util/`
-  - [ ] 4.6 Verify `:core:data` compiles (`./gradlew :core:data:compileDebugKotlin`)
+- [x] Task 4 — Move `data/local/` package tree to `:core:data`
+  - [x] 4.1 Move ALL 5 root files: `AppDatabase.kt`, `Converters.kt`, `SecurePassphraseManager.kt`, `SettingsDataStore.kt`, `WidgetInvalidationObserver.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/`
+  - [x] 4.2 Move all 14 DAO files from `data/local/dao/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/dao/`
+  - [x] 4.3 Move all 17 entity files from `data/local/entity/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/entity/`
+  - [x] 4.4 Move `data/local/query/` (3 files: `DatabaseQueryServiceImpl.kt`, `QueryCache.kt`, `TransactionQueryBuilder.kt`) to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/query/`
+  - [x] 4.5 Move `data/local/util/Serializers.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/local/util/`
+  - [x] 4.6 Verify `:core:data` compiles (`./gradlew :core:data:compileDebugKotlin`)
 
-- [ ] Task 5 — Move `data/mapper/` and `data/remote/` to `:core:data`
-  - [ ] 5.1 Move all 9 mapper files from `data/mapper/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/mapper/`
-  - [ ] 5.2 Move all 5 remote files from `data/remote/` (including `provider/` subdirectory) to `core/data/src/main/java/com/osscabinet/ossWallet/data/remote/`
-  - [ ] 5.3 Verify `:core:data` compiles
+- [x] Task 5 — Move `data/mapper/` and `data/remote/` to `:core:data`
+  - [x] 5.1 Move all 9 mapper files from `data/mapper/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/mapper/`
+  - [x] 5.2 Move all 5 remote files from `data/remote/` (including `provider/` subdirectory) to `core/data/src/main/java/com/osscabinet/ossWallet/data/remote/`
+  - [x] 5.3 Verify `:core:data` compiles
 
-- [ ] Task 6 — Move `data/repository/`, `data/service/` to `:core:data`
-  - [ ] 6.1 Move all 17 repository impls + `RepositoryExtensions.kt` + `util/CsvProcessor.kt` from `data/repository/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/repository/`
-  - [ ] 6.2 Move 3 service impls (`BackupSchedulerImpl.kt`, `BudgetBakersAssetLoader.kt`, `CsvImportServiceImpl.kt`) from `data/service/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/service/`
-  - [ ] 6.3 Verify `:core:data` compiles
+- [x] Task 6 — Move `data/repository/`, `data/service/` to `:core:data`
+  - [x] 6.1 Move all 17 repository impls + `RepositoryExtensions.kt` + `util/CsvProcessor.kt` from `data/repository/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/repository/`
+  - [x] 6.2 Move 3 service impls (`BackupSchedulerImpl.kt`, `BudgetBakersAssetLoader.kt`, `CsvImportServiceImpl.kt`) from `data/service/` to `core/data/src/main/java/com/osscabinet/ossWallet/data/service/`
+  - [x] 6.3 Verify `:core:data` compiles
 
-- [ ] Task 7 — Move and split DI modules
-  - [ ] 7.1 Move `di/DatabaseModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DatabaseModule.kt`
-  - [ ] 7.2 Move `di/RepositoryModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/RepositoryModule.kt`
-  - [ ] 7.3 Move `di/DispatchersModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DispatchersModule.kt`
-  - [ ] 7.4 Move `di/SerializationModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/SerializationModule.kt`
-  - [ ] 7.5 **Split `di/AppModule.kt`**: Extract data-layer provisions (`SettingsDataStore`, `QueryCache`, `DatabaseQueryService`, `ExchangeRateProviderRegistry`) into a new `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DataModule.kt`. The remaining provisions (`CoroutineScope` @ApplicationScope, `WidgetRefreshTrigger`) stay in `:app/di/AppModule.kt`.
-  - [ ] 7.6 Verify `:core:data` compiles standalone
+- [x] Task 7 — Move and split DI modules
+  - [x] 7.1 Move `di/DatabaseModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DatabaseModule.kt`
+  - [x] 7.2 Move `di/RepositoryModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/RepositoryModule.kt`
+  - [x] 7.3 Move `di/DispatchersModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DispatchersModule.kt`
+  - [x] 7.4 Move `di/SerializationModule.kt` to `core/data/src/main/java/com/osscabinet/ossWallet/data/di/SerializationModule.kt`
+  - [x] 7.5 **Split `di/AppModule.kt`**: Extract data-layer provisions (`SettingsDataStore`, `QueryCache`, `DatabaseQueryService`, `ExchangeRateProviderRegistry`) into a new `core/data/src/main/java/com/osscabinet/ossWallet/data/di/DataModule.kt`. The remaining provisions (`CoroutineScope` @ApplicationScope, `WidgetRefreshTrigger`) stay in `:app/di/AppModule.kt`.
+  - [x] 7.6 Verify `:core:data` compiles standalone
 
-- [ ] Task 8 — Wire `:app` to depend on `:core:data` and verify full compile
-  - [ ] 8.1 Add `implementation(project(":core:data"))` to `app/build.gradle.kts` dependencies block
-  - [ ] 8.2 Remove from `:app/build.gradle.kts` the duplicate deps that are now in `:core:data` (Room, SQLCipher, DataStore, Retrofit, Serialization converter) — leave only what `:app`-specific code still needs directly. See Dev Notes for exact list.
-  - [ ] 8.3 Run `./gradlew compileDebugKotlin` — fix any unresolved-symbol errors
-  - [ ] 8.4 Run `./gradlew testDebugUnitTest` — all existing unit tests must pass
-  - [ ] 8.5 Run `./gradlew compileDebugAndroidTestKotlin` — instrumented test source set must compile
+- [x] Task 8 — Wire `:app` to depend on `:core:data` and verify full compile
+  - [x] 8.1 Add `implementation(project(":core:data"))` to `app/build.gradle.kts` dependencies block
+  - [x] 8.2 Remove from `:app/build.gradle.kts` the duplicate deps that are now in `:core:data` (Room, SQLCipher, DataStore, Retrofit, Serialization converter) — leave only what `:app`-specific code still needs directly. See Dev Notes for exact list.
+  - [x] 8.3 Run `./gradlew compileDebugKotlin` — fix any unresolved-symbol errors
+  - [x] 8.4 Run `./gradlew testDebugUnitTest` — all existing unit tests must pass
+  - [x] 8.5 Run `./gradlew compileDebugAndroidTestKotlin` — instrumented test source set must compile
 
-- [ ] Task 9 — Create `:feature:dashboard` stub module
-  - [ ] 9.1 Create directory `feature/dashboard/src/main/java/com/osscabinet/ossWallet/feature/dashboard/`
-  - [ ] 9.2 Create `feature/dashboard/build.gradle.kts` using the exact template in Dev Notes
-  - [ ] 9.3 Add `include(":feature:dashboard")` to `settings.gradle.kts`
-  - [ ] 9.4 Create a placeholder Kotlin file `feature/dashboard/src/main/java/com/osscabinet/ossWallet/feature/dashboard/DashboardPlaceholder.kt` with an `internal object DashboardPlaceholder` — keeps the module non-empty so Gradle doesn't warn
-  - [ ] 9.5 Add `implementation(project(":feature:dashboard"))` to `app/build.gradle.kts` (so the module is included in the build graph)
-  - [ ] 9.6 Verify `./gradlew :feature:dashboard:compileDebugKotlin` → BUILD SUCCESSFUL
+- [x] Task 9 — Create `:feature:dashboard` stub module
+  - [x] 9.1 Create directory `feature/dashboard/src/main/java/com/osscabinet/ossWallet/feature/dashboard/`
+  - [x] 9.2 Create `feature/dashboard/build.gradle.kts` using the exact template in Dev Notes
+  - [x] 9.3 Add `include(":feature:dashboard")` to `settings.gradle.kts`
+  - [x] 9.4 Create a placeholder Kotlin file `feature/dashboard/src/main/java/com/osscabinet/ossWallet/feature/dashboard/DashboardPlaceholder.kt` with an `internal object DashboardPlaceholder` — keeps the module non-empty so Gradle doesn't warn
+  - [x] 9.5 Add `implementation(project(":feature:dashboard"))` to `app/build.gradle.kts` (so the module is included in the build graph)
+  - [x] 9.6 Verify `./gradlew :feature:dashboard:compileDebugKotlin` → BUILD SUCCESSFUL
 
-- [ ] Task 10 — Update sprint-status.yaml and story file (housekeeping)
-  - [ ] 10.1 Mark story 1.3 `done` in sprint-status.yaml
+- [x] Task 10 — Update sprint-status.yaml and story file (housekeeping)
+  - [x] 10.1 Mark story 1.3 `done` in sprint-status.yaml
 
 ## Dev Notes
 

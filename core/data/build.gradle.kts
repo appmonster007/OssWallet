@@ -19,6 +19,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     kotlin {
         jvmToolchain(11)
     }

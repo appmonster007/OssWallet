@@ -49,7 +49,8 @@ class TransactionQueryBuilder {
                 val alias = "d${index + 1}"
                 val expression =
                     if (dim == AggregationDimension.TIME && plan.timeGranularity != null) {
-                        "strftime('${plan.timeGranularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
+                        val granularity = plan.timeGranularity!!
+                        "strftime('${granularity.strftime}', datetime(timestamp / 1000, 'unixepoch'))"
                     } else {
                         dim.column
                     }

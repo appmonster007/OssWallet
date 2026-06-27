@@ -148,7 +148,11 @@ fun AeonExpressiveCard(
     val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
 
     // Discoverability & Intent Feedback
+    // Guard skips the first composition to avoid a spurious haptic if the card enters
+    // with a non-zero, non-180 rotation (e.g., restored from saved state).
+    var initialComposition by remember { mutableStateOf(true) }
     LaunchedEffect(isFrontVisible) {
+        if (initialComposition) { initialComposition = false; return@LaunchedEffect }
         if (rotation > 0f && rotation < 180f) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
@@ -203,7 +207,7 @@ fun AeonExpressiveCard(
                 )
                 .then(borderModifier)
                 .then(
-                    if (rotation == 0f || rotation == 180f) {
+                    if (rotation < 0.01f || rotation > 179.99f) {
                         Modifier.animateContentSize(
                             animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
                         )

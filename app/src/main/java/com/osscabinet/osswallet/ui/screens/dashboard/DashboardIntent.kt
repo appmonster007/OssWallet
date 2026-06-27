@@ -21,7 +21,7 @@ sealed class DashboardIntent {
     data object ClearSnackbar : DashboardIntent()
     data object ClearScrollTo : DashboardIntent()
     data object CloseLinkedPopup : DashboardIntent()
-    data class HandleJumpRequest(val transactionId: Long) : DashboardIntent()
+    data class HandleJumpRequest(val transactionId: Long, val availableIds: Set<Long>? = null) : DashboardIntent()
     data class PerformJump(val transactionId: Long) : DashboardIntent()
     data class ToggleStatusClearedUncleared(val transactionId: Long) : DashboardIntent()
 

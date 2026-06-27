@@ -195,10 +195,37 @@ This data closes NFR3 ("Dashboard initial load must complete in under 500ms") fr
 ---
 
 ### Review Findings
-- [ ] [Review][Patch] Implement idempotency for QuickConfirmPlannedPayment [DashboardViewModel.kt]
-- [ ] [Review][Patch] Use ImmutableMap for cardDataMap (Story 2.2 alignment) [DashboardViewModel.kt]
-- [ ] [Review][Patch] Add snackbar feedback for status toggle (swipe action) [DashboardViewModel.kt]
+- [x] [Review][Patch] Implement idempotency for QuickConfirmPlannedPayment [DashboardViewModel.kt] — done
+- [x] [Review][Patch] Use ImmutableMap for cardDataMap (Story 2.2 alignment) [DashboardViewModel.kt] — done
+- [x] [Review][Patch] Add snackbar feedback for status toggle (swipe action) [DashboardViewModel.kt] — done
 - [x] [Review][Defer] AeonExpressiveCard layout shift tuning [AeonExpressiveCard.kt] — deferred, pre-existing
+
+#### Code Review (2026-06-27) — Adversarial + Edge Case + Acceptance Audit
+
+**Decision Needed:**
+- [x] [Review][Decision] D1: `onCloneTransactionClick` restored to `actions.onCloneTransactionClick(id)` — edit step restored before saving clone [DashboardScreen.kt:264]
+
+**Patches — Critical (lazy loading / performance regression):**
+- [x] [Review][Patch] `computeCardIfNeeded` dead code fixed — writes to ViewModel-scoped `_cardDataMap` MutableStateFlow; UI updates immediately [DashboardViewModel.kt]
+- [x] [Review][Patch] `appStateFlow` regression fixed — ephemeral state (`_snackbarMessage`, `_revealedCardIds`, `_scrollToId`, etc.) decoupled from `flatMapLatest`; merged via outer `combine` on `_ephemeralState` [DashboardViewModel.kt]
+- [x] [Review][Patch] `LaunchedEffect(glanceListState.firstVisibleItemIndex)` added to `DashboardScreenLayout` — emits `CardBecameVisible` for cards in viewport [DashboardScreen.kt]
+- [x] [Review][Patch] `isCardsComputing` threshold fixed — uses `configs.size` not `minOf(configs.size, 4)` [DashboardViewModel.kt]
+- [x] [Review][Patch] `isCardsComputing = true` on cache hit fixed — only set true when `!allCached` [DashboardViewModel.kt]
+
+**Patches — Correctness:**
+- [x] [Review][Patch] `cardInput!!` fixed — `?: return@launch` safe unwrap [DashboardViewModel.kt]
+- [x] [Review][Patch] `configs.isEmpty()` fixed — sets `_cardDataMap` to `persistentMapOf()` and `_isCardsComputing` to false [DashboardViewModel.kt]
+- [x] [Review][Patch] `handleJumpRequest` TOCTOU fixed — single `getLinkedTransactions(id).first()` call; derives count and data from same snapshot [DashboardViewModel.kt]
+- [x] [Review][Patch] `performJump` race fixed — `highlightClearJob?.cancel()` before new highlight; no stale clear [DashboardViewModel.kt]
+- [x] [Review][Patch] `onJumpTransaction` now passes `availableIds` to `HandleJumpRequest` intent [DashboardScreen.kt]
+- [x] [Review][Patch] `animateContentSize` float equality fixed — `rotation < 0.01f || rotation > 179.99f` [AeonExpressiveCard.kt]
+- [x] [Review][Patch] `LaunchedEffect(isFrontVisible)` initial composition guard added [AeonExpressiveCard.kt]
+- [x] [Review][Patch] `CardRenderCache.getProfileSnapshot()` O(n) fixed — secondary `profileIndex` ConcurrentHashMap provides O(1) profile snapshot [CardRenderCache.kt]
+
+**Deferred:**
+- [x] [Review][Defer] `quickCloneTransaction`/`quickDeleteTransaction` proceed without existence check [DashboardViewModel.kt:185-200] — deferred, pre-existing pattern across the codebase
+- [x] [Review][Defer] `addTag` inserts without duplicate name check [DashboardViewModel.kt:179] — deferred, pre-existing domain concern
+- [x] [Review][Defer] Idempotency check in `quickConfirmById` scans only `DASHBOARD_TRANSACTION_FEED_LIMIT=100` transactions [DashboardViewModel.kt:516] — deferred, pre-existing scope limitation
 
 ### Agent Model Used
 

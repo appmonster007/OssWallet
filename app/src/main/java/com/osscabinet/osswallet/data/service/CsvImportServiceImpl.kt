@@ -619,8 +619,9 @@ class CsvImportServiceImpl @Inject constructor(
                         accountMap[em.unknownName.lowercase()] = id
                     }
                     EntityMapping.EntityType.CATEGORY -> {
-                        if (em.existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        val existingId = em.existingId
+                        if (existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->
@@ -1133,9 +1134,7 @@ class CsvImportServiceImpl @Inject constructor(
         // Build account currency map to ensure transactions use the correct currency
         val accountCurrencyMap = existingAccountEntities.mapValues { it.value.currencyCode }.toMutableMap()
         entityMappings.filter { it.entityType == EntityMapping.EntityType.ACCOUNT }.forEach { em ->
-            if (em.currencyCode != null) {
-                accountCurrencyMap[em.unknownName.lowercase()] = em.currencyCode
-            }
+            em.currencyCode?.let { accountCurrencyMap[em.unknownName.lowercase()] = it }
         }
 
         var imported = 0
@@ -1178,8 +1177,9 @@ class CsvImportServiceImpl @Inject constructor(
                         accountMap[em.unknownName.lowercase()] = id
                     }
                     EntityMapping.EntityType.CATEGORY -> {
-                        if (em.existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        val existingId = em.existingId
+                        if (existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->
@@ -1464,9 +1464,7 @@ class CsvImportServiceImpl @Inject constructor(
         // Build account currency map to ensure transactions use the correct currency
         val accountCurrencyMap = existingAccounts.mapValues { it.value.currencyCode }.toMutableMap()
         entityMappings.filter { it.entityType == EntityMapping.EntityType.ACCOUNT }.forEach { em ->
-            if (em.currencyCode != null) {
-                accountCurrencyMap[em.unknownName.lowercase()] = em.currencyCode
-            }
+            em.currencyCode?.let { accountCurrencyMap[em.unknownName.lowercase()] = it }
         }
 
         var imported = 0
@@ -1502,8 +1500,9 @@ class CsvImportServiceImpl @Inject constructor(
                         accountMap[em.unknownName.lowercase()] = id
                     }
                     EntityMapping.EntityType.CATEGORY -> {
-                        if (em.existingId != null) {
-                            categoryMap[em.unknownName.lowercase()] = em.existingId.toLongOrNull() ?: 1000L
+                        val existingId = em.existingId
+                        if (existingId != null) {
+                            categoryMap[em.unknownName.lowercase()] = existingId.toLongOrNull() ?: 1000L
                         } else {
                             val resolvedParentId = em.parentCategoryId
                                 ?: em.parentCategoryName?.let { name ->

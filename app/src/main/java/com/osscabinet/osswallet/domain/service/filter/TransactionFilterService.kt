@@ -86,17 +86,19 @@ object TransactionFilterService {
         }
 
         // Payee match
-        val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
-            try { filter.queryPayee.toSmartRegex().containsMatchIn(tx.payee) } catch (e: Exception) { false }
-        } else if (!filter.queryPayee.isNullOrBlank()) {
-            tx.payee.contains(filter.queryPayee, ignoreCase = true)
+        val queryPayee = filter.queryPayee
+        val matchesPayee = if (filter.isPayeeRegex && !queryPayee.isNullOrBlank()) {
+            try { queryPayee.toSmartRegex().containsMatchIn(tx.payee) } catch (e: Exception) { false }
+        } else if (!queryPayee.isNullOrBlank()) {
+            tx.payee.contains(queryPayee, ignoreCase = true)
         } else true
 
         // Note match
-        val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
-            try { filter.queryNote.toSmartRegex().containsMatchIn(tx.note) } catch (e: Exception) { false }
-        } else if (!filter.queryNote.isNullOrBlank()) {
-            tx.note.contains(filter.queryNote, ignoreCase = true)
+        val queryNote = filter.queryNote
+        val matchesNote = if (filter.isNoteRegex && !queryNote.isNullOrBlank()) {
+            try { queryNote.toSmartRegex().containsMatchIn(tx.note) } catch (e: Exception) { false }
+        } else if (!queryNote.isNullOrBlank()) {
+            tx.note.contains(queryNote, ignoreCase = true)
         } else true
 
         // Warranty check
@@ -106,8 +108,10 @@ object TransactionFilterService {
             null -> true
         }
 
-        val inWarrantyRange = (filter.warrantyExpirationStart == null || (tx.warrantyExpiration ?: 0) >= filter.warrantyExpirationStart) &&
-                (filter.warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= filter.warrantyExpirationEnd)
+        val warrantyExpirationStart = filter.warrantyExpirationStart
+        val warrantyExpirationEnd = filter.warrantyExpirationEnd
+        val inWarrantyRange = (warrantyExpirationStart == null || (tx.warrantyExpiration ?: 0) >= warrantyExpirationStart) &&
+                (warrantyExpirationEnd == null || (tx.warrantyExpiration ?: Long.MAX_VALUE) <= warrantyExpirationEnd)
 
         val matchesPaymentMethod = filter.paymentMethods.isEmpty() || tx.paymentMethod in filter.paymentMethods
         val matchesLinkedTransactions = filter.linkedTransactionIds.isEmpty() || tx.id in filter.linkedTransactionIds

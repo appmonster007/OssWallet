@@ -1,13 +1,12 @@
 package com.osscabinet.ossWallet.domain.model
 
-import androidx.compose.runtime.Immutable
+import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
 import java.math.BigDecimal
 
 interface Timestamped {
     val timestamp: Long
 }
 
-@Immutable
 data class Transaction(
     val id: Long = 0,
     val name: String,
@@ -31,7 +30,6 @@ data class Transaction(
     val transferRate: BigDecimal = BigDecimal.ONE
 ) : Timestamped
 
-@Immutable
 data class TransactionWithBalance(
     val transaction: Transaction,
     val balanceBefore: BigDecimal,
@@ -41,7 +39,6 @@ data class TransactionWithBalance(
 /**
  * UI representation of a tag with its associated color.
  */
-@Immutable
 data class TagUiModel(
     val name: String,
     val color: Int
@@ -67,17 +64,15 @@ fun Set<String>.toUiModels(
 /**
  * Pre-computed group of transactions with its period-specific header data.
  */
-@Immutable
 data class TransactionGroup(
     val key: String,
-    val headerData: com.osscabinet.ossWallet.domain.service.timeline.TimelineService.GroupHeaderData,
+    val headerData: GroupHeaderData,
     val transactions: List<RecordUiModel>
 )
 
 /**
  * Unified state for transaction lists across the app.
  */
-@Immutable
 data class TransactionListState(
     val groups: List<TransactionGroup> = emptyList(),
     val isEmpty: Boolean = true

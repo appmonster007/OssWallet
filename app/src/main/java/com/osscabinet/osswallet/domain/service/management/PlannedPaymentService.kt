@@ -30,8 +30,9 @@ object PlannedPaymentService {
         val fromInstant = Instant.ofEpochMilli(fromDate)
         val fromZoned = fromInstant.atZone(ZoneOffset.UTC)
 
-        val nextMillis = if (rule.type == RecurrenceType.CRON && rule.cronExpression != null) {
-            calculateNextFromCron(rule.cronExpression, fromDate)
+        val cronExpression = rule.cronExpression
+        val nextMillis = if (rule.type == RecurrenceType.CRON && cronExpression != null) {
+            calculateNextFromCron(cronExpression, fromDate)
         } else {
             val from = fromZoned.toLocalDate()
             val next = when (rule.type) {
@@ -51,7 +52,8 @@ object PlannedPaymentService {
             next?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
         }
 
-        return if (nextMillis != null && payment.schedule.endDate != null && nextMillis > payment.schedule.endDate) null else nextMillis
+        val endDate = payment.schedule.endDate
+        return if (nextMillis != null && endDate != null && nextMillis > endDate) null else nextMillis
     }
 
     private fun calculateNextFromCron(cronExpression: String, fromDate: Long): Long? {
@@ -83,9 +85,10 @@ object PlannedPaymentService {
         val result = mutableListOf<Long>()
         var due: Long? = payment.schedule.nextDueDate
 
+        val scheduleEndDate = payment.schedule.endDate
         while (due != null) {
             if (limitDate != null && due > limitDate) break
-            if (payment.schedule.endDate != null && due > payment.schedule.endDate) break
+            if (scheduleEndDate != null && due > scheduleEndDate) break
 
             if (minDate == null || due >= minDate) {
                 result.add(due)

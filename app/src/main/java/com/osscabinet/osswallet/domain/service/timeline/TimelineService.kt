@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.timeline
 
+import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -445,21 +446,6 @@ object TimelineService {
         }
     }
 
-    @androidx.compose.runtime.Immutable
-    data class GroupHeaderData(
-        val title: String,
-        val subtitle: String,
-        val incomeByCurrency: Map<String, BigDecimal>,
-        val expenseByCurrency: Map<String, BigDecimal>,
-        val openingBalancesByCurrency: Map<String, BigDecimal>,
-        val closingBalancesByCurrency: Map<String, BigDecimal>,
-        val allCurrencies: List<String>,
-        val incomeBase: BigDecimal,
-        val expenseBase: BigDecimal,
-        val netBase: BigDecimal,
-        val totalOpeningBalanceBase: BigDecimal,
-        val totalClosingBalanceBase: BigDecimal,
-    )
 }
 
 data class TimeBucket(val start: Long, val end: Long)

@@ -256,7 +256,8 @@ fun ManagementScopeCard(
             }
 
             // Warranty
-            if (filter.hasWarranty != null) {
+            val hasWarranty = filter.hasWarranty
+            if (hasWarranty != null) {
                 add(
                     ScopeGroup(
                         label = "WARRANTY",
@@ -265,8 +266,8 @@ fun ManagementScopeCard(
                         isEmpty = false,
                         items = listOf(
                             ScopeItem(
-                                text = if (filter.hasWarranty) "Has Warranty" else "No Warranty",
-                                color = if (filter.hasWarranty) positiveColor else contentSecondaryColor
+                                text = if (hasWarranty) "Has Warranty" else "No Warranty",
+                                color = if (hasWarranty) positiveColor else contentSecondaryColor
                             )
                         )
                     )

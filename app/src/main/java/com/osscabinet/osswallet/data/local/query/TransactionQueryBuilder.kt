@@ -157,13 +157,15 @@ class TransactionQueryBuilder {
         }
 
         // Amount Filters
-        if (filter.minAmount != null) {
+        val minAmount = filter.minAmount
+        if (minAmount != null) {
             where.append(" AND amount >= ?")
-            args.add(filter.minAmount)
+            args.add(minAmount)
         }
-        if (filter.maxAmount != null) {
+        val maxAmount = filter.maxAmount
+        if (maxAmount != null) {
             where.append(" AND amount <= ?")
-            args.add(filter.maxAmount)
+            args.add(maxAmount)
         }
 
         if (filter.paymentMethods.isNotEmpty()) {
@@ -178,13 +180,15 @@ class TransactionQueryBuilder {
         } else if (filter.hasWarranty == false) {
             where.append(" AND warrantyExpiration IS NULL")
         }
-        if (filter.warrantyExpirationStart != null) {
+        val warrantyExpirationStart = filter.warrantyExpirationStart
+        if (warrantyExpirationStart != null) {
             where.append(" AND warrantyExpiration >= ?")
-            args.add(filter.warrantyExpirationStart)
+            args.add(warrantyExpirationStart)
         }
-        if (filter.warrantyExpirationEnd != null) {
+        val warrantyExpirationEnd = filter.warrantyExpirationEnd
+        if (warrantyExpirationEnd != null) {
             where.append(" AND warrantyExpiration <= ?")
-            args.add(filter.warrantyExpirationEnd)
+            args.add(warrantyExpirationEnd)
         }
 
         if (filter.tags.isNotEmpty()) {

@@ -45,7 +45,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -255,7 +255,7 @@ fun TransactionListScreenPopulatedPreview() {
         categoryColor = 0xFF4CAF50.toInt()
     )
 
-    val headerData = TimelineService.GroupHeaderData(
+    val headerData = GroupHeaderData(
         title = "Today",
         subtitle = "March 15, 2024",
         incomeByCurrency = emptyMap(),

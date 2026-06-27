@@ -72,7 +72,7 @@ class TransactionRepositoryImpl @Inject constructor(
         profileId: Int,
         filter: TransactionFilter
     ): Pair<String, List<Any>> {
-        val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ?")
+        val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ? AND status != 'DELETED'")
         val args = mutableListOf<Any>(profileId)
 
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)

@@ -46,8 +46,10 @@ sealed class TimelineRange {
         is LastPeriod -> "Last ${period.label}"
         is CustomRange -> {
             if (start != null && end != null) {
-                val formatter = java.text.SimpleDateFormat("MMM dd", java.util.Locale.getDefault())
-                "${formatter.format(java.util.Date(start))} - ${formatter.format(java.util.Date(end))}"
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd", java.util.Locale.getDefault())
+                val zone = java.time.ZoneId.systemDefault()
+                val fmt = { ms: Long -> formatter.format(java.time.Instant.ofEpochMilli(ms).atZone(zone)) }
+                "${fmt(start)} - ${fmt(end)}"
             } else "Custom"
         }
     }

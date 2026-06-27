@@ -91,7 +91,9 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
@@ -254,6 +256,7 @@ fun DashboardScreen(
         onAddCard = dashboardViewModel::addCard,
         onReorderCards = dashboardViewModel::reorderCards,
         onRemoveCard = dashboardViewModel::removeCard,
+        onCardBecameVisible = { cardType -> dashboardViewModel.onIntent(DashboardIntent.CardBecameVisible(cardType)) },
         onQuickConfirm = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
         onQuickSkip = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
         onSearchTransactions = { query -> dashboardViewModel.searchTransactions(query) },
@@ -261,9 +264,9 @@ fun DashboardScreen(
         onItemCollapsed = { dashboardViewModel.onIntent(DashboardIntent.OnCardCollapsed(it)) },
         onStatusChange = { id, status -> dashboardViewModel.onIntent(DashboardIntent.ChangeTransactionStatus(id, status)) },
         onDeleteTransaction = { id -> dashboardViewModel.onIntent(DashboardIntent.QuickDeleteTransaction(id)) },
-        onCloneTransactionClick = { id -> dashboardViewModel.onIntent(DashboardIntent.QuickCloneTransaction(id)) },
+        onCloneTransactionClick = { id -> actions.onCloneTransactionClick(id) },
         onFullSwipeRight = { id -> dashboardViewModel.onIntent(DashboardIntent.ToggleStatusClearedUncleared(id)) },
-        onJumpTransaction = { id, _ -> dashboardViewModel.onIntent(DashboardIntent.HandleJumpRequest(id)) },
+        onJumpTransaction = { id, availableIds -> dashboardViewModel.onIntent(DashboardIntent.HandleJumpRequest(id, availableIds)) },
         onPerformJump = { id, _ -> dashboardViewModel.onIntent(DashboardIntent.PerformJump(id)) },
         onCloseLinkedPopup = { dashboardViewModel.onIntent(DashboardIntent.CloseLinkedPopup) },
         linkedPopupTxs = successState?.linkedPopupTxs,
@@ -307,6 +310,7 @@ fun DashboardScreenLayout(
     onAddCard: (CardType) -> Unit,
     onReorderCards: (List<CardConfig>) -> Unit,
     onRemoveCard: (String) -> Unit,
+    onCardBecameVisible: (CardType) -> Unit = {},
     onQuickConfirm: (Long, Long) -> Unit,
     onQuickSkip: (Long, Long) -> Unit,
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
@@ -367,6 +371,18 @@ fun DashboardScreenLayout(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
+
+    // Emit CardBecameVisible for lazy card computation (Story 2.3 Task 7.4)
+    LaunchedEffect(glanceListState.firstVisibleItemIndex) {
+        if (pagerState.currentPage == 0) {
+            val firstVisible = glanceListState.firstVisibleItemIndex
+            cardsConfig.cards.sortedBy { it.order }
+                .drop(firstVisible)
+                .take(3)
+                .forEach { card -> onCardBecameVisible(card.cardType) }
+        }
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(transactionSnackbarMessage) {
@@ -1103,8 +1119,8 @@ fun DashboardScreenPreview() {
 
     val mockState = DashboardUiState.Success(
         profileId = 1,
-        accounts = listOf(sampleAccount),
-        allAccounts = listOf(sampleAccount),
+        accounts = persistentListOf(sampleAccount),
+        allAccounts = persistentListOf(sampleAccount),
         cardDataMap = persistentMapOf(
             "net_worth_1" to CardRenderData.NetWorth(
                 config = netWorthConfig,
@@ -1137,15 +1153,15 @@ fun DashboardScreenPreview() {
                 currentTheme = "Glass"
             )
         ),
-        allTransactions = emptyList(),
+        allTransactions = persistentListOf(),
         recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
-        allCategories = emptyList(),
-        allTags = emptyList(),
+        allCategories = persistentListOf(),
+        allTags = persistentListOf(),
         baseCurrency = "USD",
-        exchangeRates = emptyMap(),
-        plannedPayments = emptyList(),
-        budgets = emptyList(),
-        loans = emptyList(),
+        exchangeRates = persistentMapOf(),
+        plannedPayments = persistentListOf(),
+        budgets = persistentListOf(),
+        loans = persistentListOf(),
         loanPayments = emptyMap()
     )
 
@@ -1216,7 +1232,7 @@ fun DashboardScreenPreview() {
 fun DashboardGlanceTabPreview() {
     val mockState = DashboardUiState.Success(
         profileId = 1,
-        accounts = listOf(
+        accounts = persistentListOf(
             Account(
                 id = "1",
                 name = "Main Account",
@@ -1226,7 +1242,7 @@ fun DashboardGlanceTabPreview() {
                 icon = "AccountBalance",
             )
         ),
-        allAccounts = listOf(
+        allAccounts = persistentListOf(
             Account(
                 id = "1",
                 name = "Main Account",
@@ -1237,15 +1253,15 @@ fun DashboardGlanceTabPreview() {
             )
         ),
         cardDataMap = persistentMapOf(),
-        allTransactions = emptyList(),
+        allTransactions = persistentListOf(),
         recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
-        allCategories = emptyList(),
-        allTags = emptyList(),
+        allCategories = persistentListOf(),
+        allTags = persistentListOf(),
         baseCurrency = "USD",
-        exchangeRates = emptyMap(),
-        plannedPayments = emptyList(),
-        budgets = emptyList(),
-        loans = emptyList(),
+        exchangeRates = persistentMapOf(),
+        plannedPayments = persistentListOf(),
+        budgets = persistentListOf(),
+        loans = persistentListOf(),
         loanPayments = emptyMap()
     )
 

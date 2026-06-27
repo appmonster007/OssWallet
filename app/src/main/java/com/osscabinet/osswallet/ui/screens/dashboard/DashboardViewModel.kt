@@ -55,10 +55,18 @@ import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel.DashboardDisplayPrefs
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.flowOf
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +112,7 @@ class DashboardViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val budgetRepository: BudgetRepository,
     private val loanRepository: LoanRepository,
-    internal val tagRepository: TagRepository,
+    private val tagRepository: TagRepository,
     private val templateRepository: TemplateRepository,
     private val filterRepository: FilterRepository,
     private val profileRepository: ProfileRepository,
@@ -139,6 +147,40 @@ class DashboardViewModel @Inject constructor(
     private val _highlightedId = MutableStateFlow<String?>(null)
     private val _linkedPopupTxs = MutableStateFlow<List<TransactionListItem>?>(null)
 
+    // ViewModel-scoped card render state so computeCardIfNeeded writes are visible to the UI
+    private val _cardDataMap = MutableStateFlow<ImmutableMap<String, CardRenderData>>(persistentMapOf())
+    private val _isCardsComputing = MutableStateFlow(false)
+
+    // Job for clearing highlight after performJump — cancelled on rapid repeat calls
+    private var highlightClearJob: Job? = null
+
+    // Ephemeral state (snackbar, scroll, highlight, popup, undo) merged OUTSIDE flatMapLatest
+    // to prevent any ephemeral change from restarting card computation.
+    private data class EphemeralUiState(
+        val revealedCardIds: Set<String> = emptySet(),
+        val transactionSnackbarMessage: String? = null,
+        val scrollToId: String? = null,
+        val highlightedId: String? = null,
+        val linkedPopupTxs: List<TransactionListItem>? = null,
+        val lastUndoAction: UndoAction? = null
+    )
+
+    private val _ephemeralState = combine(
+        _revealedCardIds,
+        _snackbarMessage,
+        _scrollToId,
+        combine(_highlightedId, _linkedPopupTxs, _lastUndoAction) { h, p, u -> Triple(h, p, u) }
+    ) { revealed, snackbar, scroll, rest ->
+        EphemeralUiState(
+            revealedCardIds = revealed,
+            transactionSnackbarMessage = snackbar,
+            scrollToId = scroll,
+            highlightedId = rest.first,
+            linkedPopupTxs = rest.second,
+            lastUndoAction = rest.third
+        )
+    }
+
     fun onIntent(intent: DashboardIntent) {
         when (intent) {
             is DashboardIntent.InitializeView -> initializeDashboardView(intent.viewContext)
@@ -149,17 +191,17 @@ class DashboardViewModel @Inject constructor(
             DashboardIntent.UndoLastPlannedPaymentAction -> undoLastPlannedPaymentAction()
             DashboardIntent.ClearUndoAction -> clearUndoAction()
             is DashboardIntent.CardBecameVisible -> computeCardIfNeeded(intent.cardType)
-            
+
             // New UI Intents
             is DashboardIntent.OnCardExpanded -> _revealedCardIds.update { it + intent.cardId }
             is DashboardIntent.OnCardCollapsed -> _revealedCardIds.update { it - intent.cardId }
             DashboardIntent.ClearSnackbar -> _snackbarMessage.value = null
             DashboardIntent.ClearScrollTo -> _scrollToId.value = null
             DashboardIntent.CloseLinkedPopup -> _linkedPopupTxs.value = null
-            is DashboardIntent.HandleJumpRequest -> handleJumpRequest(intent.transactionId)
+            is DashboardIntent.HandleJumpRequest -> handleJumpRequest(intent.transactionId, intent.availableIds)
             is DashboardIntent.PerformJump -> performJump(intent.transactionId)
             is DashboardIntent.ToggleStatusClearedUncleared -> toggleStatusClearedUncleared(intent.transactionId)
-            
+
             // Story 2.2 Patch: Consolidated UI Intents
             is DashboardIntent.QuickDeleteTransaction -> quickDeleteTransaction(intent.transactionId)
             is DashboardIntent.QuickCloneTransaction -> quickCloneTransaction(intent.transactionId)
@@ -202,9 +244,9 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@launch
-            val newStatus = if (tx.status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) 
-                com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED 
-            else 
+            val newStatus = if (tx.status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED)
+                com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED
+            else
                 com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
             transactionManager.updateStatus(id, newStatus, profileId)
             _snackbarMessage.value = if (newStatus == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) "Marked as cleared" else "Marked as uncleared"
@@ -225,7 +267,7 @@ class DashboardViewModel @Inject constructor(
     }
 
     private fun resetToInitialView() {
-        initializeDashboardView(_initialViewContext.value)
+        _initialViewContext.value = DashboardViewContext.None
     }
 
     private fun clearViewFocus() {
@@ -250,7 +292,16 @@ class DashboardViewModel @Inject constructor(
     )
 
     /**
-     * Snapshot of metadata and settings used to enrichment and cards.
+     * Pre-computed structural feed state (balances + grouping).
+     */
+    private data class StructuralState(
+        val snapshot: AccountingSnapshot,
+        val hierarchy: CategoryHierarchyCache,
+        val visibleGroups: List<com.osscabinet.ossWallet.domain.model.TransactionGroup>
+    )
+
+    /**
+     * Snapshot of metadata and settings used for enrichment and cards.
      */
     private data class MetadataSnapshot(
         val plannedPayments: List<PlannedPayment>,
@@ -261,16 +312,19 @@ class DashboardViewModel @Inject constructor(
     )
 
     /**
-     * Pre-computed structural feed state (balances + grouping).
+     * Stable app-level settings that drive card computation restarts when they change.
+     * Does NOT include ephemeral UI state (snackbar, scroll, highlight, popup, undo).
      */
-    private data class StructuralState(
-        val snapshot: AccountingSnapshot,
-        val hierarchy: CategoryHierarchyCache,
-        val visibleGroups: List<com.osscabinet.ossWallet.domain.model.TransactionGroup>
+    private data class StableAppState(
+        val initialViewContext: DashboardViewContext,
+        val cardsConfig: DashboardCardsConfig,
+        val displayPrefs: DashboardDisplayPrefs,
+        val allTemplates: List<Template>,
+        val savedFilters: List<Filter>
     )
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<DashboardUiState> = settingsRepository.currentProfileId
+    private val coreUiState: Flow<DashboardUiState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId: Int ->
             // 1. Accounting Pipeline
             val structuralStateFlow = combine(
@@ -297,7 +351,7 @@ class DashboardViewModel @Inject constructor(
                         limit = DASHBOARD_TRANSACTION_FEED_LIMIT
                     ).map { result: Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>> ->
                         val transactionsWithBalance = result.getOrNull() ?: emptyList()
-                        
+
                         val visibleGroups = TimelineService.getGroupedData(
                             transactions = transactionsWithBalance.take(20),
                             absoluteHistory = transactionsWithBalance,
@@ -326,8 +380,8 @@ class DashboardViewModel @Inject constructor(
                 MetadataSnapshot(pp, b, l, lp.groupBy { it.loanId }, t)
             }.distinctUntilChanged()
 
-            // 3. App State Pipeline (Consolidation)
-            val appStateFlow = combine(
+            // 3. Stable App State — excludes ephemeral UI state to prevent card computation restarts
+            val stableAppStateFlow = combine(
                 combine(
                     _initialViewContext,
                     cardsConfig,
@@ -349,45 +403,25 @@ class DashboardViewModel @Inject constructor(
                 },
                 combine(
                     templateRepository.getAllTemplates(profileId),
-                    filterRepository.getAllFilters(),
-                    _lastUndoAction
-                ) { templates, filters, undo ->
-                    Triple(templates, filters, undo)
-                },
-                combine(
-                    _revealedCardIds,
-                    _snackbarMessage,
-                    _scrollToId,
-                    _highlightedId,
-                    _linkedPopupTxs
-                ) { revealed, snackbar, scroll, highlighted, popup ->
-                    Pair(revealed, Pair(snackbar, Triple(scroll, highlighted, popup)))
-                }
-            ) { part1, part2, part3 ->
-                @Suppress("UNCHECKED_CAST")
-                DashboardAppState(
+                    filterRepository.getAllFilters()
+                ) { templates, filters -> Pair(templates, filters) }
+            ) { part1, part2 ->
+                StableAppState(
                     initialViewContext = part1.first,
                     cardsConfig = part1.second,
                     displayPrefs = part1.third,
                     allTemplates = part2.first,
-                    savedFilters = part2.second,
-                    lastUndoAction = part2.third,
-                    revealedCardIds = part3.first,
-                    transactionSnackbarMessage = part3.second.first,
-                    scrollToId = part3.second.second.first,
-                    highlightedId = part3.second.second.second,
-                    linkedPopupTxs = part3.second.second.third
+                    savedFilters = part2.second
                 )
             }
 
-            // 4. UI State Pipeline
-            combine(structuralStateFlow, metadataFlow, appStateFlow) { s, m, a ->
+            // 4. Build Success state and launch card computation
+            combine(structuralStateFlow, metadataFlow, stableAppStateFlow) { s, m, a ->
                 if (s == null) return@combine DashboardUiState.Loading
 
                 val snapshot = s.snapshot
                 val hierarchy = s.hierarchy
-                
-                // Moved CardInput construction into ViewModel (Story 2.3)
+
                 val cardInput = CardInput(
                     profileId = profileId,
                     transactions = snapshot.transactions,
@@ -407,77 +441,75 @@ class DashboardViewModel @Inject constructor(
                     categoryHierarchy = hierarchy
                 )
 
-                val successState = DashboardUiState.Success(
+                DashboardUiState.Success(
                     profileId = profileId,
-                    accounts = snapshot.accounts.filter { !it.isArchived },
-                    allAccounts = snapshot.accounts,
+                    accounts = snapshot.accounts.filter { !it.isArchived }.toImmutableList(),
+                    allAccounts = snapshot.accounts.toImmutableList(),
                     cardDataMap = emptyMap<String, CardRenderData>().toImmutableMap(),
-                    isCardsComputing = true,
-                    allTransactions = snapshot.transactions,
+                    isCardsComputing = false,
+                    allTransactions = snapshot.transactions.toImmutableList(),
                     recentActivitiesState = TransactionUiMapper.mapToUiState(
                         domainState = TransactionListState(s.visibleGroups, s.visibleGroups.isEmpty()),
                         baseCurrency = snapshot.currency.baseCode
                     ),
-                    allCategories = snapshot.categories,
-                    allTags = m.tags,
+                    allCategories = snapshot.categories.toImmutableList(),
+                    allTags = m.tags.toImmutableList(),
                     baseCurrency = snapshot.currency.baseCode,
-                    exchangeRates = snapshot.currency.rates,
-                    plannedPayments = m.plannedPayments,
-                    budgets = m.budgets,
-                    loans = m.loans,
+                    exchangeRates = snapshot.currency.rates.toImmutableMap(),
+                    plannedPayments = m.plannedPayments.toImmutableList(),
+                    budgets = m.budgets.toImmutableList(),
+                    loans = m.loans.toImmutableList(),
                     loanPayments = m.loanPayments,
-                    
-                    // Consolidated fields
                     initialViewContext = a.initialViewContext,
                     cardsConfig = a.cardsConfig,
                     displayPrefs = a.displayPrefs,
-                    allTemplates = a.allTemplates,
-                    savedFilters = a.savedFilters,
-                    lastUndoAction = a.lastUndoAction,
-                    revealedCardIds = a.revealedCardIds,
-                    transactionSnackbarMessage = a.transactionSnackbarMessage,
-                    scrollToId = a.scrollToId,
-                    highlightedId = a.highlightedId,
-                    linkedPopupTxs = a.linkedPopupTxs,
+                    allTemplates = a.allTemplates.toImmutableList(),
+                    savedFilters = a.savedFilters.toImmutableList(),
                     cardInput = cardInput
                 )
-                successState
             }.flatMapLatest { state ->
                 if (state is DashboardUiState.Loading) return@flatMapLatest flowOf(state)
                 val successState = state as DashboardUiState.Success
-                
+
                 channelFlow<DashboardUiState> {
                     val configs = successState.cardsConfig.cards
-                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(profileId, successState.baseCurrency)
-                    val cardDataFlow = MutableStateFlow(cachedSnapshot.toImmutableMap())
-                    val completedCount = AtomicInteger(0)
+                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(successState.profileId, successState.baseCurrency)
+                    val allCached = configs.isNotEmpty() && configs.all {
+                        cardRenderCache[successState.profileId, successState.baseCurrency, it.cardId] != null
+                    }
 
+                    // Initialize ViewModel-scoped card state for this computation round
+                    _cardDataMap.value = cachedSnapshot.toImmutableMap()
+                    _isCardsComputing.value = configs.isNotEmpty() && !allCached
+
+                    val completedCount = AtomicInteger(cachedSnapshot.size)
+
+                    // Collect card state and forward to UI
                     launch {
-                        cardDataFlow.collect { currentCards ->
-                            send(
-                                successState.copy(
-                                    cardDataMap = currentCards,
-                                    isCardsComputing = completedCount.get() < minOf(configs.size, 4) // Lazy loading threshold
-                                )
-                            )
-                        }
+                        combine(_cardDataMap, _isCardsComputing) { cards, computing ->
+                            successState.copy(cardDataMap = cards, isCardsComputing = computing)
+                        }.collect { send(it) }
                     }
 
                     if (configs.isEmpty()) {
-                        completedCount.set(0)
-                        cardDataFlow.update { it } 
+                        _cardDataMap.value = persistentMapOf()
+                        _isCardsComputing.value = false
                     } else {
-                        // Task 7.3: Compute only the first 4 cards immediately (Story 2.3)
-                        val initialCards = configs.take(4)
-                        initialCards.forEach { cardConfig ->
+                        val cardsToCompute = configs.filter {
+                            cardRenderCache[successState.profileId, successState.baseCurrency, it.cardId] == null
+                        }
+                        cardsToCompute.take(4).forEach { cardConfig ->
                             launch(dispatchers.default) {
-                                val result = runCatching { cardComputerRegistry.compute(cardConfig.cardType, successState.cardInput!!, cardConfig) }
+                                val cardInput = successState.cardInput ?: return@launch
+                                val result = runCatching {
+                                    cardComputerRegistry.compute(cardConfig.cardType, cardInput, cardConfig)
+                                }
                                 val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
-                                
-                                cardRenderCache[profileId, successState.baseCurrency, cardConfig.cardId] = data
-                                cardDataFlow.update { (it + (cardConfig.cardId to data)).toImmutableMap() }
-                                
-                                completedCount.incrementAndGet()
+                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = data
+                                _cardDataMap.update { (it + (cardConfig.cardId to data)).toImmutableMap() }
+                                if (completedCount.incrementAndGet() >= configs.size) {
+                                    _isCardsComputing.value = false
+                                }
                             }
                         }
                     }
@@ -485,12 +517,30 @@ class DashboardViewModel @Inject constructor(
             }
         }
         .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = DashboardUiState.Loading
-        )
 
+    // Merge ephemeral state (snackbar, scroll, revealed cards, popup, undo) OUTSIDE flatMapLatest
+    // so none of these changes restart card computation.
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<DashboardUiState> = combine(coreUiState, _ephemeralState) { core, eph ->
+        if (core !is DashboardUiState.Success) return@combine core
+        core.copy(
+            revealedCardIds = eph.revealedCardIds.toImmutableSet(),
+            transactionSnackbarMessage = eph.transactionSnackbarMessage,
+            scrollToId = eph.scrollToId,
+            highlightedId = eph.highlightedId,
+            linkedPopupTxs = eph.linkedPopupTxs?.toImmutableList(),
+            lastUndoAction = eph.lastUndoAction
+        )
+    }
+    .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DashboardUiState.Loading
+    )
+
+    // On-demand computation for cards that scroll into view (lazy loading).
+    // Writes directly to ViewModel-scoped _cardDataMap so the UI sees the update immediately.
     private fun computeCardIfNeeded(cardType: com.osscabinet.ossWallet.domain.card.CardType) {
         val state = uiState.value as? DashboardUiState.Success ?: return
         val config = state.cardsConfig.cards.find { it.cardType == cardType } ?: return
@@ -504,14 +554,14 @@ class DashboardViewModel @Inject constructor(
             val result = runCatching { cardComputerRegistry.compute(cardType, cardInput, config) }
             val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
             cardRenderCache[profileId, currency, config.cardId] = data
-            // uiState will automatically emit updated cache snapshot in its next pass or via current active flows
+            _cardDataMap.update { (it + (config.cardId to data)).toImmutableMap() }
         }
     }
 
     private fun quickConfirmById(id: Long, scheduledDate: Long) {
         val state = (uiState.value as? DashboardUiState.Success) ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
-        
+
         // Idempotency: Check if already confirmed for this occurrence (Story 2.3 Patch)
         if (state.allTransactions.any { it.sourcePlannedPaymentId == id && it.timestamp >= scheduledDate && it.timestamp < scheduledDate + 24*60*60*1000 }) {
             _snackbarMessage.value = "Already confirmed for this date"
@@ -589,51 +639,45 @@ class DashboardViewModel @Inject constructor(
 
     private fun clearUndoAction() { _lastUndoAction.value = null }
 
-    private fun handleJumpRequest(id: Long) {
+    private fun handleJumpRequest(id: Long, availableIds: Set<Long>? = null) {
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val links = transactionUseCases.getLinkedTransactionIds(id).first()
-            if (links.isEmpty()) {
+            // Single call to avoid TOCTOU between size check and data fetch
+            val linked = transactionUseCases.getLinkedTransactions(id).first()
+            if (linked.isEmpty()) {
                 _snackbarMessage.value = "No linked transactions found"
                 return@launch
             }
-            
-            if (links.size == 1) {
-                performJump(links[0])
+
+            if (linked.size == 1) {
+                performJump(linked.first().id)
             } else {
                 val baseCurr = computationRepository.selectedCurrency.first()
                 val rates = computationRepository.exchangeRates.first()
-                val enriched = transactionUseCases.getLinkedTransactions(id).first()
-                    .let { TimelineService.enrichTransactions(it, accountRepository.getAllAccounts(profileId).first(), categoryRepository.categories.first(), tagRepository.getAllTags().first(), baseCurr, rates) }
-                
+                val enriched = TimelineService.enrichTransactions(
+                    linked,
+                    accountRepository.getAllAccounts(profileId).first(),
+                    categoryRepository.categories.first(),
+                    tagRepository.getAllTags().first(),
+                    baseCurr,
+                    rates
+                )
                 _linkedPopupTxs.value = enriched.map { TransactionUiMapper.mapRecord(it, baseCurr) }
             }
         }
     }
 
     private fun performJump(id: Long) {
-        viewModelScope.launch {
-            _scrollToId.value = "tx_$id"
-            _highlightedId.value = "tx_$id"
-            _linkedPopupTxs.value = null
+        // Cancel any previous highlight-clear job to handle rapid repeat calls correctly
+        highlightClearJob?.cancel()
+        _scrollToId.value = "tx_$id"
+        _highlightedId.value = "tx_$id"
+        _linkedPopupTxs.value = null
+        highlightClearJob = viewModelScope.launch {
             delay(1000)
-            if (_highlightedId.value == "tx_$id") _highlightedId.value = null
+            _highlightedId.value = null
         }
     }
-
-    private data class DashboardAppState(
-        val initialViewContext: DashboardViewContext,
-        val cardsConfig: DashboardCardsConfig,
-        val displayPrefs: DashboardDisplayPrefs,
-        val allTemplates: List<Template>,
-        val savedFilters: List<Filter>,
-        val lastUndoAction: UndoAction?,
-        val revealedCardIds: Set<String>,
-        val transactionSnackbarMessage: String?,
-        val scrollToId: String?,
-        val highlightedId: String?,
-        val linkedPopupTxs: List<TransactionListItem>?
-    )
 
     private companion object {
         const val DASHBOARD_TRANSACTION_FEED_LIMIT = 100
@@ -646,33 +690,33 @@ sealed class DashboardUiState {
     @Immutable
     data class Success(
         val profileId: Int,
-        val accounts: List<Account>,
-        val allAccounts: List<Account> = emptyList(),
+        val accounts: ImmutableList<Account>,
+        val allAccounts: ImmutableList<Account> = persistentListOf(),
         val cardDataMap: ImmutableMap<String, CardRenderData>,
         val isCardsComputing: Boolean = false,
-        val allTransactions: List<Transaction>,
+        val allTransactions: ImmutableList<Transaction>,
         val recentActivitiesState: TransactionListUiState,
-        val allCategories: List<Category>,
-        val allTags: List<Tag> = emptyList(),
+        val allCategories: ImmutableList<Category>,
+        val allTags: ImmutableList<Tag> = persistentListOf(),
         val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>,
-        val plannedPayments: List<PlannedPayment> = emptyList(),
-        val budgets: List<Budget> = emptyList(),
-        val loans: List<Loan> = emptyList(),
+        val exchangeRates: ImmutableMap<String, BigDecimal>,
+        val plannedPayments: ImmutableList<PlannedPayment> = persistentListOf(),
+        val budgets: ImmutableList<Budget> = persistentListOf(),
+        val loans: ImmutableList<Loan> = persistentListOf(),
         val loanPayments: Map<Long, List<LoanPayment>> = emptyMap(),
-        
+
         // Consolidated Dashboard state
         val initialViewContext: DashboardViewContext = DashboardViewContext.None,
         val cardsConfig: DashboardCardsConfig = DashboardCardsConfig(),
         val displayPrefs: DashboardDisplayPrefs? = null,
-        val allTemplates: List<Template> = emptyList(),
-        val savedFilters: List<Filter> = emptyList(),
+        val allTemplates: ImmutableList<Template> = persistentListOf(),
+        val savedFilters: ImmutableList<Filter> = persistentListOf(),
         val lastUndoAction: UndoAction? = null,
-        val revealedCardIds: Set<String> = emptySet(),
+        val revealedCardIds: ImmutableSet<String> = persistentSetOf(),
         val transactionSnackbarMessage: String? = null,
         val scrollToId: String? = null,
         val highlightedId: String? = null,
-        val linkedPopupTxs: List<TransactionListItem>? = null,
+        val linkedPopupTxs: ImmutableList<TransactionListItem>? = null,
         val cardInput: CardInput? = null
     ) : DashboardUiState()
 

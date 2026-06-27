@@ -127,9 +127,11 @@ data class TransactionEntryState(
                 if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
                 if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
                 // Self-transfer guard: source and destination must not be the same wallet account
-                if (source.account is AccountRef.Wallet &&
-                    destination.account is AccountRef.Wallet &&
-                    source.account.id == (destination.account as AccountRef.Wallet).id) {
+                val srcAccount = source.account
+                val dstAccount = destination.account
+                if (srcAccount is AccountRef.Wallet &&
+                    dstAccount is AccountRef.Wallet &&
+                    srcAccount.id == dstAccount.id) {
                     add(EntryField.ACCOUNT)
                     add(EntryField.TARGET_ACCOUNT)
                 }

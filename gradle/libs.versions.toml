@@ -136,6 +136,7 @@ androidx-documentfile           = { group = "androidx.documentfile", name = "doc
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "googleDevtoolsKsp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 

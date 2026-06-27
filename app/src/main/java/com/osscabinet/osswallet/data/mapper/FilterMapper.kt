@@ -41,8 +41,9 @@ fun FilterEntity.toDomain(): Filter {
 }
 
 fun Filter.toEntity(): FilterEntity {
-    val (entityStart, entityEnd) = if (filter.timelineRange is TimelineRange.CustomRange) {
-        Pair(filter.timelineRange.start, filter.timelineRange.end)
+    val timelineRange = filter.timelineRange
+    val (entityStart, entityEnd) = if (timelineRange is TimelineRange.CustomRange) {
+        Pair(timelineRange.start, timelineRange.end)
     } else {
         Pair(null, null)
     }

@@ -1,3 +1,4 @@
+// TODO(story-1.3): Replace android.graphics.Bitmap return type with a platform-neutral type and move to :core:domain
 package com.osscabinet.ossWallet.domain.repository
 
 import android.graphics.Bitmap

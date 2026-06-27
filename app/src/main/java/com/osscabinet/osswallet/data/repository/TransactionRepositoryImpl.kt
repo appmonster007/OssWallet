@@ -100,13 +100,15 @@ class TransactionRepositoryImpl @Inject constructor(
             queryBuilder.append(" AND transactionType IN ($placeholders)")
             args.addAll(filter.transactionTypes.map { it.value })
         }
-        if (filter.minAmount != null) {
+        val minAmount = filter.minAmount
+        if (minAmount != null) {
             queryBuilder.append(" AND amount >= ?")
-            args.add(filter.minAmount)
+            args.add(minAmount)
         }
-        if (filter.maxAmount != null) {
+        val maxAmount = filter.maxAmount
+        if (maxAmount != null) {
             queryBuilder.append(" AND amount <= ?")
-            args.add(filter.maxAmount)
+            args.add(maxAmount)
         }
         if (filter.paymentMethods.isNotEmpty()) {
             val placeholders = filter.paymentMethods.toList().joinByComma { "?" }
@@ -118,28 +120,32 @@ class TransactionRepositoryImpl @Inject constructor(
         } else if (filter.hasWarranty == false) {
             queryBuilder.append(" AND warrantyExpiration IS NULL")
         }
-        if (filter.warrantyExpirationStart != null) {
+        val warrantyExpirationStart = filter.warrantyExpirationStart
+        if (warrantyExpirationStart != null) {
             queryBuilder.append(" AND warrantyExpiration >= ?")
-            args.add(filter.warrantyExpirationStart)
+            args.add(warrantyExpirationStart)
         }
-        if (filter.warrantyExpirationEnd != null) {
+        val warrantyExpirationEnd = filter.warrantyExpirationEnd
+        if (warrantyExpirationEnd != null) {
             queryBuilder.append(" AND warrantyExpiration <= ?")
-            args.add(filter.warrantyExpirationEnd)
+            args.add(warrantyExpirationEnd)
         }
         if (filter.currencies.isNotEmpty()) {
             val placeholders = filter.currencies.toList().joinByComma { "?" }
             queryBuilder.append(" AND currency IN ($placeholders)")
             args.addAll(filter.currencies)
         }
-        if (!filter.queryNote.isNullOrBlank() && !filter.isNoteRegex) {
+        val queryNote = filter.queryNote
+        if (!queryNote.isNullOrBlank() && !filter.isNoteRegex) {
             // Use COLLATE NOCASE for case-insensitive matching (SQLite default)
             queryBuilder.append(" AND note LIKE ? COLLATE NOCASE")
-            args.add("%${filter.queryNote}%")
+            args.add("%${queryNote}%")
         }
-        if (!filter.queryPayee.isNullOrBlank() && !filter.isPayeeRegex) {
+        val queryPayee = filter.queryPayee
+        if (!queryPayee.isNullOrBlank() && !filter.isPayeeRegex) {
             // Use COLLATE NOCASE for case-insensitive matching (SQLite default)
             queryBuilder.append(" AND payee LIKE ? COLLATE NOCASE")
-            args.add("%${filter.queryPayee}%")
+            args.add("%${queryPayee}%")
         }
         if (filter.statuses.isNotEmpty()) {
             val placeholders = filter.statuses.toList().joinByComma { "?" }
@@ -156,17 +162,19 @@ class TransactionRepositoryImpl @Inject constructor(
     ): List<Transaction> {
         return if (filter.isNoteRegex || filter.isPayeeRegex) {
             domainTransactions.filter { transaction ->
-                val matchesNote = if (filter.isNoteRegex && !filter.queryNote.isNullOrBlank()) {
+                val queryNote = filter.queryNote
+                val matchesNote = if (filter.isNoteRegex && !queryNote.isNullOrBlank()) {
                     try {
-                        filter.queryNote.toSmartRegex().containsMatchIn(transaction.note)
+                        queryNote.toSmartRegex().containsMatchIn(transaction.note)
                     } catch (e: Exception) {
                         false
                     }
                 } else true
 
-                val matchesPayee = if (filter.isPayeeRegex && !filter.queryPayee.isNullOrBlank()) {
+                val queryPayee = filter.queryPayee
+                val matchesPayee = if (filter.isPayeeRegex && !queryPayee.isNullOrBlank()) {
                     try {
-                        filter.queryPayee.toSmartRegex().containsMatchIn(transaction.payee)
+                        queryPayee.toSmartRegex().containsMatchIn(transaction.payee)
                     } catch (e: Exception) {
                         false
                     }

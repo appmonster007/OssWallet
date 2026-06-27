@@ -140,8 +140,9 @@ private fun SourceAppSelectionContent(
         color = AppColors.contentSecondary
     )
 
-    if (session.sourceApp != null && session.sourceApp != ImportSourceApp.GENERIC) {
-        AutoDetectedBadge(session.sourceApp.displayName)
+    val sourceApp = session.sourceApp
+    if (sourceApp != null && sourceApp != ImportSourceApp.GENERIC) {
+        AutoDetectedBadge(sourceApp.displayName)
     }
 
     ImportSourceApp.entries.forEach { app ->

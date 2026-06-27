@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "OssWallet"
 include(":app")
- 
+include(":core:domain")

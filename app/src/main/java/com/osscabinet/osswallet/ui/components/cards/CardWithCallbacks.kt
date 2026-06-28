@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 import androidx.compose.runtime.Stable
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 
 /**
@@ -190,7 +191,7 @@ sealed class CardWithCallbacks {
 
     data class Loading(
         val cardId: String,
-        val cardType: com.osscabinet.ossWallet.domain.card.CardType,
+        val cardType: CardType,
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = false
@@ -200,7 +201,7 @@ sealed class CardWithCallbacks {
 
     data class ComputeError(
         val cardId: String,
-        val cardType: com.osscabinet.ossWallet.domain.card.CardType,
+        val cardType: CardType,
         val message: String?,
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),

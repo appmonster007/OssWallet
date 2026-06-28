@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.service.financial.StatusBreakdown
 import com.osscabinet.ossWallet.domain.service.financial.TagBreakdown
 import com.osscabinet.ossWallet.domain.service.financial.TransactionTypeBreakdown
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import java.math.BigDecimal
 import java.time.Instant
@@ -37,7 +38,7 @@ fun List<Transaction>.breakdownByCurrency(): List<CurrencyBreakdown> =
  * Breaks down transactions by account.
  */
 fun List<Transaction>.breakdownByAccount(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<AccountBreakdown> =
     AggregationService.createMetricsBreakdown(filter { it.accountId != null }, { it.accountId!! }, exchangeRates, baseCurrency)
@@ -47,7 +48,7 @@ fun List<Transaction>.breakdownByAccount(
  * Breaks down transactions by category.
  */
 fun List<Transaction>.breakdownByCategory(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<CategoryBreakdown> =
     AggregationService.createMetricsBreakdown(this, { it.categoryId.toString() }, exchangeRates, baseCurrency)
@@ -57,7 +58,7 @@ fun List<Transaction>.breakdownByCategory(
  * Breaks down transactions by date.
  */
 fun List<Transaction>.breakdownByDate(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<DateBreakdown> =
     AggregationService.createMetricsBreakdown(this, {
@@ -69,7 +70,7 @@ fun List<Transaction>.breakdownByDate(
  * Breaks down transactions by month.
  */
 fun List<Transaction>.breakdownByMonth(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<MonthBreakdown> =
     AggregationService.createMetricsBreakdown<String>(this, { TimelineService.formatMonth(it.timestamp) }, exchangeRates, baseCurrency)
@@ -79,7 +80,7 @@ fun List<Transaction>.breakdownByMonth(
  * Breaks down transactions by transaction type.
  */
 fun List<Transaction>.breakdownByTransactionType(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<TransactionTypeBreakdown> =
     AggregationService.createMetricsBreakdown(this, { it.transactionType }, exchangeRates, baseCurrency)
@@ -89,7 +90,7 @@ fun List<Transaction>.breakdownByTransactionType(
  * Breaks down transactions by payment method.
  */
 fun List<Transaction>.breakdownByPaymentMethod(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<PaymentMethodBreakdown> =
     AggregationService.createMetricsBreakdown(this, { it.paymentMethod }, exchangeRates, baseCurrency)
@@ -99,7 +100,7 @@ fun List<Transaction>.breakdownByPaymentMethod(
  * Breaks down transactions by status.
  */
 fun List<Transaction>.breakdownByStatus(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<StatusBreakdown> =
     AggregationService.createMetricsBreakdown(this, { it.status.name }, exchangeRates, baseCurrency)
@@ -109,7 +110,7 @@ fun List<Transaction>.breakdownByStatus(
  * Breaks down transactions by tags.
  */
 fun List<Transaction>.breakdownByTags(
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<TagBreakdown> {
     // Tags are multi-value, so we need a custom flatMap before grouping
@@ -143,7 +144,7 @@ fun List<Transaction>.breakdownByCurrencyForAccount(accountId: String): List<Cur
 
 fun List<Transaction>.breakdownByCategoryForAccount(
     accountId: String,
-    exchangeRates: Map<String, BigDecimal>? = null,
+    exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<CategoryBreakdown> =
     filter { it.accountId == accountId }.breakdownByCategory(exchangeRates, baseCurrency)

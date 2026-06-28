@@ -154,11 +154,11 @@ fun eval(str: String): Double {
         var ch = 0
 
         fun nextChar() {
-            ch = if (++pos < str.length) str[pos].toInt() else -1
+            ch = if (++pos < str.length) str[pos].code else -1
         }
 
         fun eat(charToEat: Int): Boolean {
-            while (ch == ' '.toInt()) nextChar()
+            while (ch == ' '.code) nextChar()
             if (ch == charToEat) {
                 nextChar()
                 return true
@@ -176,8 +176,8 @@ fun eval(str: String): Double {
         fun parseExpression(): Double {
             var x = parseTerm()
             while (true) {
-                if (eat('+'.toInt())) x += parseTerm()
-                else if (eat('-'.toInt())) x -= parseTerm()
+                if (eat('+'.code)) x += parseTerm()
+                else if (eat('-'.code)) x -= parseTerm()
                 else return x
             }
         }
@@ -185,22 +185,22 @@ fun eval(str: String): Double {
         fun parseTerm(): Double {
             var x = parseFactor()
             while (true) {
-                if (eat('*'.toInt())) x *= parseFactor()
-                else if (eat('/'.toInt())) x /= parseFactor()
+                if (eat('*'.code)) x *= parseFactor()
+                else if (eat('/'.code)) x /= parseFactor()
                 else return x
             }
         }
 
         fun parseFactor(): Double {
-            if (eat('+'.toInt())) return parseFactor()
-            if (eat('-'.toInt())) return -parseFactor()
+            if (eat('+'.code)) return parseFactor()
+            if (eat('-'.code)) return -parseFactor()
             var x: Double
             val startPos = pos
-            if (eat('('.toInt())) {
+            if (eat('('.code)) {
                 x = parseExpression()
-                eat(')'.toInt())
-            } else if (ch >= '0'.toInt() && ch <= '9'.toInt() || ch == '.'.toInt()) {
-                while (ch >= '0'.toInt() && ch <= '9'.toInt() || ch == '.'.toInt()) nextChar()
+                eat(')'.code)
+            } else if (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) {
+                while (ch >= '0'.code && ch <= '9'.code || ch == '.'.code) nextChar()
                 x = str.substring(startPos, pos).toDouble()
             } else {
                 throw RuntimeException("Unexpected: " + ch.toChar())

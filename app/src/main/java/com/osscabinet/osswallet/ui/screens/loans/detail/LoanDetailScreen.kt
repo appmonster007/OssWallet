@@ -1,7 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.loans.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -9,11 +18,28 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Label
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,19 +47,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.toColorInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AmortizationEntry
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanStatus
+import com.osscabinet.ossWallet.domain.model.LoanSummary
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
@@ -143,22 +178,40 @@ fun LoanDetailScreen(
         onSettleClick = { viewModel.settleLoan(loan); actions.onBackClick() },
         onTransactionEvent = { event, availableIds ->
             when (event) {
-                is TransactionItemEvent.Click -> actions.onTransactionClick(event.id.substringAfter("_").toLongOrNull() ?: -1L)
+                is TransactionItemEvent.Click -> actions.onTransactionClick(
+                    event.id.substringAfter(
+                        "_"
+                    ).toLongOrNull() ?: -1L
+                )
+
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
                     event.id,
                     event.status
                 )
+
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, availableIds)
+                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(
+                    event.id,
+                    availableIds
+                )
+
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
-                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
-                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
+
+                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
+
+                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
             }
         },
         onRecordsClick = actions.onRecordsClick
@@ -272,10 +325,13 @@ fun LoanDetailContent(
                                             categories = categoriesList,
                                             allTags = allTags,
                                             baseCurrency = baseCurrency,
-                                            exchangeRates = emptyMap()
+                                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY
                                         )
                                         com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
-                                            domainState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
+                                            domainState = TransactionListState(
+                                                groups = groups,
+                                                isEmpty = groups.isEmpty()
+                                            ),
                                             baseCurrency = baseCurrency
                                         )
                                     }
@@ -290,7 +346,10 @@ fun LoanDetailContent(
                                         revealedCardIds = revealedCardIds,
                                         showCurrencyBreakdown = recentActivitiesBreakdown,
                                         onTransactionEvent = { event ->
-                                            onTransactionEvent(event, loanListState.getAllTransactionIds())
+                                            onTransactionEvent(
+                                                event,
+                                                loanListState.getAllTransactionIds()
+                                            )
                                         },
                                         hasStickyHeader = false,
                                         showHeader = false
@@ -344,6 +403,7 @@ fun LoanDetailContent(
                                         onClick = onEditClick
                                     )
                                 }
+
                                 1 -> {
                                     AppBarIconButton(
                                         icon = Icons.Rounded.History,
@@ -542,7 +602,9 @@ private fun AmortizationRow(entry: AmortizationEntry, currency: String) {
                 }
 
                 Text(
-                    text = "Balance: ${entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString()} $currency",
+                    text = "Balance: ${
+                        entry.balance.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                    } $currency",
                     style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
                     color = AppColors.primary
                 )

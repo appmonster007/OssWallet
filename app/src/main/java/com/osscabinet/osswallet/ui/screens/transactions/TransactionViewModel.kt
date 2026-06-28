@@ -3,16 +3,13 @@ package com.osscabinet.ossWallet.ui.screens.transactions
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.FilterManager
-import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.TagUiModel
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
@@ -20,16 +17,14 @@ import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
-import com.osscabinet.ossWallet.domain.model.isTransfer
-import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
-import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -38,6 +33,7 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
@@ -45,7 +41,6 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
@@ -72,6 +67,7 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TransactionViewModel @Inject constructor(
     private val transactionUseCases: TransactionUseCases,
@@ -94,7 +90,8 @@ class TransactionViewModel @Inject constructor(
     private val persistentFilterManager = FilterManager()
     private val transientFilterManager = FilterManager()
 
-    private val _navigationMode = MutableStateFlow<RecordNavigationMode>(RecordNavigationMode.PERSISTENT)
+    private val _navigationMode =
+        MutableStateFlow<RecordNavigationMode>(RecordNavigationMode.PERSISTENT)
     val navigationMode: StateFlow<RecordNavigationMode> = _navigationMode.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -121,7 +118,8 @@ class TransactionViewModel @Inject constructor(
     val snackbarMessage: StateFlow<String?> = _snackbarMessage.asStateFlow()
 
     private val _linkedTransactionsPopup = MutableStateFlow<List<TransactionListItem>?>(null)
-    val linkedTransactionsPopup: StateFlow<List<TransactionListItem>?> = _linkedTransactionsPopup.asStateFlow()
+    val linkedTransactionsPopup: StateFlow<List<TransactionListItem>?> =
+        _linkedTransactionsPopup.asStateFlow()
 
     private val _prefillDto = MutableStateFlow<TransactionPrefillDTO?>(null)
     val prefillDto: StateFlow<TransactionPrefillDTO?> = _prefillDto.asStateFlow()
@@ -130,11 +128,14 @@ class TransactionViewModel @Inject constructor(
     val templatePrefill: StateFlow<TemplatePrefillDTO?> = _templatePrefill.asStateFlow()
 
     private val _plannedPaymentPrefill = MutableStateFlow<PlannedPaymentPrefillDTO?>(null)
-    val plannedPaymentPrefill: StateFlow<PlannedPaymentPrefillDTO?> = _plannedPaymentPrefill.asStateFlow()
+    val plannedPaymentPrefill: StateFlow<PlannedPaymentPrefillDTO?> =
+        _plannedPaymentPrefill.asStateFlow()
 
-    val savedFilters: StateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>> = settingsRepository.currentProfileId
-        .flatMapLatest { filterRepository.getAllFilters() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val savedFilters: StateFlow<List<com.osscabinet.ossWallet.domain.model.Filter>> =
+        settingsRepository.currentProfileId
+            .flatMapLatest { filterRepository.getAllFilters() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allTags: StateFlow<List<Tag>> = tagRepository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -142,18 +143,20 @@ class TransactionViewModel @Inject constructor(
     val categories: StateFlow<List<Category>> = categoryRepository.categories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val exchangeRates: StateFlow<Map<String, BigDecimal>> = computationRepository.exchangeRates
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    val exchangeRates: StateFlow<ExchangeRateSnapshot> = computationRepository.exchangeRatesSnapshot
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExchangeRateSnapshot.EMPTY)
 
     val recordsSettings: StateFlow<TransactionSectionSettings> = settingsRepository.recordsSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TransactionSectionSettings())
 
     init {
-        val baseFilter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+        val baseFilter =
+            TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
         persistentFilterManager.setFilter("base", baseFilter)
         _initialFilter.value = baseFilter
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
         .flatMapLatest { accountRepository.getAllAccounts(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -161,8 +164,9 @@ class TransactionViewModel @Inject constructor(
     val baseCurrency: StateFlow<String> = computationRepository.selectedCurrency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "USD")
 
-    val allTransactionLinks: StateFlow<Map<Long, List<Long>>> = transactionManager.getAllTransactionLinks()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    val allTransactionLinks: StateFlow<Map<Long, List<Long>>> =
+        transactionManager.getAllTransactionLinks()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uniquePayees: StateFlow<List<String>> = settingsRepository.currentProfileId
@@ -183,22 +187,26 @@ class TransactionViewModel @Inject constructor(
                     exchangeRates,
                     computationRepository.hasLoadedExchangeRates
                 ) { base, rates, loaded -> Triple(base, rates, loaded) }
-                .distinctUntilChanged()
-                .flatMapLatest { (base: String, rates: Map<String, BigDecimal>, loaded: Boolean) ->
-                    if (!loaded) {
-                        kotlinx.coroutines.flow.flowOf(emptyList<TransactionWithBalance>())
-                    } else {
-                        transactionUseCases.observeHistoryWithBalances(
-                            profileId = profileId,
-                            filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = false)),
-                            baseCurrency = base,
-                            exchangeRates = rates
-                        ).map { result: Result<List<TransactionWithBalance>> -> 
-                            result.getOrNull() ?: emptyList<TransactionWithBalance>() 
+                    .distinctUntilChanged()
+                    .flatMapLatest { (base: String, rates: ExchangeRateSnapshot, loaded: Boolean) ->
+                        if (!loaded) {
+                            kotlinx.coroutines.flow.flowOf(emptyList<TransactionWithBalance>())
+                        } else {
+                            transactionUseCases.observeHistoryWithBalances(
+                                profileId = profileId,
+                                filter = TransactionFilter(
+                                    timelineRange = TimelineRange.AllTime(
+                                        excludeFuture = false
+                                    )
+                                ),
+                                baseCurrency = base,
+                                exchangeRates = rates
+                            ).map { result: Result<List<TransactionWithBalance>> ->
+                                result.getOrNull() ?: emptyList<TransactionWithBalance>()
+                            }
                         }
                     }
-                }
-                .flowOn(kotlinx.coroutines.Dispatchers.Default)
+                    .flowOn(kotlinx.coroutines.Dispatchers.Default)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -245,7 +253,11 @@ class TransactionViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val upcomingPayments: StateFlow<List<UpcomingPaymentItem>> =
         combine(
-            settingsRepository.currentProfileId.flatMapLatest { plannedPaymentRepository.getActivePlannedPayments(it) },
+            settingsRepository.currentProfileId.flatMapLatest {
+                plannedPaymentRepository.getActivePlannedPayments(
+                    it
+                )
+            },
             recordsFilter,
             recordsSettings
         ) { payments, filter, settings ->
@@ -253,7 +265,7 @@ class TransactionViewModel @Inject constructor(
 
             val now = System.currentTimeMillis()
             val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
-            
+
             val limitDate = now + 365L * 24 * 60 * 60 * 1000
             val effectiveEndTime = when {
                 endTime != null -> minOf(endTime, limitDate)
@@ -262,8 +274,11 @@ class TransactionViewModel @Inject constructor(
 
             val occurrences = PlannedPaymentService.generateUpcoming(
                 payments = payments,
-                fromDate = startTime ?: minOf(now, payments.minOfOrNull { it.schedule.nextDueDate } ?: now),
-                daysAhead = ((effectiveEndTime - (startTime ?: now)) / (24 * 60 * 60 * 1000)).toInt().coerceAtLeast(0)
+                fromDate = startTime ?: minOf(
+                    now,
+                    payments.minOfOrNull { it.schedule.nextDueDate } ?: now),
+                daysAhead = ((effectiveEndTime - (startTime
+                    ?: now)) / (24 * 60 * 60 * 1000)).toInt().coerceAtLeast(0)
             )
 
             if (filter.timelineRange.excludeFuture) {
@@ -292,7 +307,7 @@ class TransactionViewModel @Inject constructor(
 
     private data class ConfigSnapshot(
         val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>,
+        val exchangeRates: ExchangeRateSnapshot,
         val settings: TransactionSectionSettings
     )
 
@@ -319,7 +334,8 @@ class TransactionViewModel @Inject constructor(
             }
 
             val initialBalances = structural.accounts.associate { acc ->
-                val earliestTx = structural.absoluteHistory.findLast { it.transaction.accountId == acc.id }
+                val earliestTx =
+                    structural.absoluteHistory.findLast { it.transaction.accountId == acc.id }
                 acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
             }
 
@@ -337,7 +353,7 @@ class TransactionViewModel @Inject constructor(
                 initialBalances = initialBalances,
                 allTxnBreakdown = config.settings.allTxnBreakdown,
             )
-            
+
             TransactionUiMapper.mapToUiState(
                 domainState = TransactionListState(groups = domainGroups, isEmpty = false),
                 baseCurrency = config.baseCurrency
@@ -389,9 +405,11 @@ class TransactionViewModel @Inject constructor(
 
     fun setRecordsDateRangeFilter(start: Long?, end: Long?) {
         val current = getActiveManager().mergedFilter.value
-        updateRecordsFilter(current.copy(
-            timelineRange = TimelineRange.CustomRange(start ?: 0L, end ?: Long.MAX_VALUE)
-        ))
+        updateRecordsFilter(
+            current.copy(
+                timelineRange = TimelineRange.CustomRange(start ?: 0L, end ?: Long.MAX_VALUE)
+            )
+        )
     }
 
     fun updateRecordsTimelineRange(range: TimelineRange) {
@@ -428,7 +446,7 @@ class TransactionViewModel @Inject constructor(
     fun resetToInitialFilter() {
         _navigationMode.value = RecordNavigationMode.PERSISTENT
         updateRecordsFilter(_initialFilter.value)
-        
+
         // Also clear transient if it exists
         transientFilterManager.clear()
     }
@@ -469,7 +487,7 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
-            
+
             val request = TransactionRequest(
                 name = payment.name,
                 amount = payment.amount,
@@ -544,7 +562,7 @@ class TransactionViewModel @Inject constructor(
                     gpsLocation = tx.gpsLocation,
                     warrantyExpiration = tx.warrantyExpiration
                 )
-                
+
                 // Handle transfer specifics
                 if (tx.transactionType.isTransfer) {
                     val links = transactionUseCases.getLinkedTransactions(tx.id).first()
@@ -558,7 +576,7 @@ class TransactionViewModel @Inject constructor(
                         return@withProfile
                     }
                 }
-                
+
                 _prefillDto.value = dto
             }
         }
@@ -631,7 +649,8 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             withProfile { profileId ->
                 val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@withProfile
-                val newStatus = if (tx.status == TransactionStatus.CLEARED) TransactionStatus.UNCLEARED else TransactionStatus.CLEARED
+                val newStatus =
+                    if (tx.status == TransactionStatus.CLEARED) TransactionStatus.UNCLEARED else TransactionStatus.CLEARED
                 quickUpdateStatus(id, newStatus)
             }
         }
@@ -645,22 +664,24 @@ class TransactionViewModel @Inject constructor(
                     _snackbarMessage.value = "No linked transactions found"
                     return@withProfile
                 }
-                
+
                 if (links.size == 1) {
                     performJump(links[0], availableIds)
                 } else {
                     // Show selection sheet
                     val enriched = transactionUseCases.getLinkedTransactions(id).first()
-                        .let { TimelineService.enrichTransactions(
-                            it, 
-                            accounts.value, 
-                            categories.value, 
-                            allTags.value, 
-                            baseCurrency.value, 
-                            exchangeRates.value
-                        )}
-                    
-                    _linkedTransactionsPopup.value = enriched.map { 
+                        .let {
+                            TimelineService.enrichTransactions(
+                                it,
+                                accounts.value,
+                                categories.value,
+                                allTags.value,
+                                baseCurrency.value,
+                                exchangeRates.value
+                            )
+                        }
+
+                    _linkedTransactionsPopup.value = enriched.map {
                         TransactionUiMapper.mapRecord(it, baseCurrency.value)
                     }
                 }
@@ -676,7 +697,7 @@ class TransactionViewModel @Inject constructor(
             } else {
                 transactionsWithBalance.value.any { it.transaction.id == id }
             }
-            
+
             if (!itemExists) {
                 _snackbarMessage.value = "Linked transaction not in the current list"
                 _linkedTransactionsPopup.value = null
@@ -686,7 +707,7 @@ class TransactionViewModel @Inject constructor(
             // Trigger scroll and highlight
             _scrollToId.value = "tx_$id"
             _highlightedId.value = "tx_$id"
-            
+
             // Clear popup if open
             _linkedTransactionsPopup.value = null
 
@@ -698,11 +719,17 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun clearScrollTo() { _scrollToId.value = null }
+    fun clearScrollTo() {
+        _scrollToId.value = null
+    }
 
-    fun clearSnackbar() { _snackbarMessage.value = null }
+    fun clearSnackbar() {
+        _snackbarMessage.value = null
+    }
 
-    fun closeLinkedPopup() { _linkedTransactionsPopup.value = null }
+    fun closeLinkedPopup() {
+        _linkedTransactionsPopup.value = null
+    }
 
     fun addTransactionLink(id1: Long, id2: Long) {
         viewModelScope.launch {
@@ -722,9 +749,11 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun getLinkedTransactionIds(id: Long): Flow<List<Long>> = transactionUseCases.getLinkedTransactionIds(id)
+    fun getLinkedTransactionIds(id: Long): Flow<List<Long>> =
+        transactionUseCases.getLinkedTransactionIds(id)
 
-    fun getLinkedTransactions(id: Long): Flow<List<Transaction>> = transactionUseCases.getLinkedTransactions(id)
+    fun getLinkedTransactions(id: Long): Flow<List<Transaction>> =
+        transactionUseCases.getLinkedTransactions(id)
 
     /**
      * Search transactions for linking.
@@ -764,7 +793,9 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun clearTemplatePrefill() { _templatePrefill.value = null }
+    fun clearTemplatePrefill() {
+        _templatePrefill.value = null
+    }
 
     fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
         viewModelScope.launch {
@@ -779,7 +810,8 @@ class TransactionViewModel @Inject constructor(
                     note = pattern.note,
                     payee = pattern.payee,
                     schedule = PaymentSchedule(
-                        recurrenceRule = pattern.recurrenceRule ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
+                        recurrenceRule = pattern.recurrenceRule
+                            ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
                         startDate = System.currentTimeMillis(),
                         nextDueDate = pattern.lastDate
                     ),
@@ -802,5 +834,7 @@ class TransactionViewModel @Inject constructor(
         )
     }
 
-    fun clearPlannedPaymentPrefill() { _plannedPaymentPrefill.value = null }
+    fun clearPlannedPaymentPrefill() {
+        _plannedPaymentPrefill.value = null
+    }
 }

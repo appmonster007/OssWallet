@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -249,7 +250,7 @@ object TimelineService {
         categories: List<Category>,
         allTags: List<com.osscabinet.ossWallet.domain.model.Tag>,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = this.precision
     ): List<ConfirmedTransactionUiModel> {
         val accountMap = accounts.associateBy { it.id }
@@ -292,7 +293,7 @@ object TimelineService {
         categories: List<Category>,
         allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         plannedPayments: List<UpcomingPaymentItem> = emptyList(),
         linkedTransactionIds: Map<Long, List<Long>> = emptyMap(),
         initialBalances: Map<String, BigDecimal> = emptyMap(),

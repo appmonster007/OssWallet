@@ -1,10 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.templates
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -23,10 +22,12 @@ class TemplateViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val starredTemplates: StateFlow<List<Template>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> templateRepository.getStarredTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

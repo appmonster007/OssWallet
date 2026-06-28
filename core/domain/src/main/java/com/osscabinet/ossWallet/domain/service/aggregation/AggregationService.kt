@@ -13,6 +13,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.service.financial.IncomeExpenseBreakdown
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -31,7 +32,7 @@ object AggregationService {
         accountId: String,
         allTransactions: List<Transaction>,
         accountCurrency: String,
-        exchangeRates: Map<String, BigDecimal>
+        exchangeRates: ExchangeRateSnapshot
     ): BigDecimal {
         val accountTransactions = allTransactions.filter { it.accountId == accountId }
         val totalsByCurrency = calculateTotalByCurrency(accountTransactions)
@@ -48,7 +49,7 @@ object AggregationService {
     fun calculateCashFlowResult(
         transactions: List<Transaction>,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = CurrencyService.precision
     ): CashFlowResult {
         if (transactions.isEmpty()) return CashFlowResult.empty()
@@ -133,7 +134,7 @@ object AggregationService {
     fun calculateCurrencyBalances(
         transactions: List<Transaction>,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = CurrencyService.precision
     ): List<CurrencyAggregationItem> {
         val summaries = calculateSummaryByCurrency(transactions)
@@ -192,7 +193,7 @@ object AggregationService {
      */
     fun calculateSummaryByCurrency(transactions: List<Transaction>): Map<String, FinancialSummary> {
         return transactions.groupBy { it.currency }
-            .mapValues { (currency, txs) ->
+            .mapValues { (_, txs) ->
                 val total = txs.sumOf { it.amount }
                 val income = txs.filter { it.transactionType == TransactionType.INCOME }.sumOf { it.amount }
                 val expense = txs.filter { it.transactionType == TransactionType.EXPENSE }.sumOf { it.amount }
@@ -234,7 +235,7 @@ object AggregationService {
      */
     fun calculateIncomeExpenseBreakdown(
         transactions: List<Transaction>,
-        exchangeRates: Map<String, BigDecimal>? = null,
+        exchangeRates: ExchangeRateSnapshot? = null,
         baseCurrency: String? = null
     ): IncomeExpenseBreakdown {
         if (transactions.isEmpty()) return IncomeExpenseBreakdown.empty()
@@ -276,7 +277,7 @@ object AggregationService {
         transactions: List<Transaction>,
         selector: (Transaction) -> K,
         mapper: (K, Map<String, FinancialSummary>) -> R,
-        exchangeRates: Map<String, BigDecimal>? = null,
+        exchangeRates: ExchangeRateSnapshot? = null,
         baseCurrency: String? = null
     ): List<R> where K : Any {
         return transactions.groupBy(selector)
@@ -300,7 +301,7 @@ object AggregationService {
     fun <K> createMetricsBreakdown(
         transactions: List<Transaction>,
         selector: (Transaction) -> K,
-        exchangeRates: Map<String, BigDecimal>? = null,
+        exchangeRates: ExchangeRateSnapshot? = null,
         baseCurrency: String? = null
     ): List<FinancialMetrics<K>> where K : Any {
         return createBreakdown(
@@ -324,13 +325,13 @@ object AggregationService {
     fun buildCategoryTree(
         transactions: List<Transaction>,
         allCategories: List<Category>,
-        exchangeRates: Map<String, BigDecimal>? = null,
+        exchangeRates: ExchangeRateSnapshot? = null,
         baseCurrency: String? = null,
         precision: Int = CurrencyService.precision,
         previousTransactions: List<Transaction>? = null,
         perspective: AccountingPerspective = AccountingPerspective.Accounting
     ): List<CategoryTreeMetrics> {
-        val categoryMap = allCategories.associateBy { it.id }
+        allCategories.associateBy { it.id }
 
         val categoryBreakdowns = createBreakdown(
             transactions = transactions,

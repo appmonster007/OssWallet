@@ -15,10 +15,10 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -95,7 +95,7 @@ class AccountDetailViewModel @Inject constructor(
     fun addTag(name: String, color: Int) {
         viewModelScope.launch {
             tagRepository.insertTag(
-                com.osscabinet.ossWallet.domain.model.Tag(
+                Tag(
                     name = name,
                     colorHex = color
                 )
@@ -128,7 +128,7 @@ class AccountDetailViewModel @Inject constructor(
     )
 
     private data class ConfigSnapshot(
-        val rates: Map<String, BigDecimal>,
+        val rates: ExchangeRateSnapshot,
         val baseCurrency: String,
         val hasLoadedRates: Boolean,
         val settings: TransactionSectionSettings,
@@ -150,7 +150,7 @@ class AccountDetailViewModel @Inject constructor(
                     DomainSnapshot(acc, tx, cat, tags, links)
                 }.distinctUntilChanged(),
                 combine(
-                    computationRepository.exchangeRates,
+                    computationRepository.exchangeRatesSnapshot,
                     computationRepository.selectedCurrency,
                     computationRepository.hasLoadedExchangeRates,
                     settingsRepository.recordsSettings,
@@ -170,21 +170,26 @@ class AccountDetailViewModel @Inject constructor(
                     } else {
                         transactionUseCases.observeHistoryWithBalances(
                             profileId = profileId,
-                            filter = TransactionFilter(accountIds = setOf(accountId), timelineRange = TimelineRange.AllTime(excludeFuture = false)),
+                            filter = TransactionFilter(
+                                accountIds = setOf(accountId),
+                                timelineRange = TimelineRange.AllTime(excludeFuture = false)
+                            ),
                             baseCurrency = config.baseCurrency,
                             exchangeRates = config.rates
                         ).map { result ->
-                            val absoluteTransactionsWithBalance = result.getOrNull() ?: emptyList<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>()
+                            val absoluteTransactionsWithBalance = result.getOrNull()
+                                ?: emptyList<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>()
 
                             // Filtered transactions for the list tab
                             val filteredTransactionsWithBalance =
-                                com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService.filterTransactionsWithBalance(
+                                TransactionFilterService.filterTransactionsWithBalance(
                                     absoluteTransactionsWithBalance,
                                     config.filter
                                 )
 
                             val initialBalancesPerGroup = domain.accounts.associate { acc ->
-                                val earliestTx = absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
+                                val earliestTx =
+                                    absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
                                 acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
                             }
 
@@ -226,7 +231,8 @@ class AccountDetailViewModel @Inject constructor(
             initialValue = AccountDetailUiState.Loading
         )
 
-    private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
+    private val _cardDataMap =
+        MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> = _cardDataMap.asStateFlow()
 
     // Generation counter: guards against stale writes from CPU-bound children that run to
@@ -245,9 +251,10 @@ class AccountDetailViewModel @Inject constructor(
                     val myGen = _computeGeneration.incrementAndGet()
 
                     // Emit Loading immediately so shimmers appear before hierarchy build starts.
-                    _cardDataMap.value = persistentMapOf<String, CardComputeState>().builder().apply {
-                        cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
-                    }.build()
+                    _cardDataMap.value =
+                        persistentMapOf<String, CardComputeState>().builder().apply {
+                            cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                        }.build()
 
                     // AC8: Build inputs on Default — build hierarchy once per round
                     val input = kotlinx.coroutines.withContext(dispatchers.default) {
@@ -258,10 +265,7 @@ class AccountDetailViewModel @Inject constructor(
                             accounts = listOf(state.account),
                             categories = state.allCategories,
                             tags = state.allTags,
-                            exchangeRates = ExchangeRateSnapshot(
-                                anchor = state.baseCurrency,
-                                rates = state.exchangeRates
-                            ),
+                            exchangeRates = state.exchangeRates,
                             targetCurrency = state.account.currencyCode,
                             filter = state.currentFilter,
                             screenContext = ScreenContext.ACCOUNT_DETAIL,
@@ -275,16 +279,26 @@ class AccountDetailViewModel @Inject constructor(
                         cards.cards.forEach { cardConfig ->
                             launch(dispatchers.default) {
                                 val result = runCatching {
-                                    cardComputerRegistry.compute(cardConfig.cardType, input, cardConfig)
+                                    cardComputerRegistry.compute(
+                                        cardConfig.cardType,
+                                        input,
+                                        cardConfig
+                                    )
                                 }.fold(
                                     onSuccess = { data ->
-                                        if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                        if (data is CardRenderData.Error) CardComputeState.Error(
+                                            data.message ?: "Compute error"
+                                        )
                                         else CardComputeState.Success(data)
                                     },
-                                    onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                                    onFailure = {
+                                        CardComputeState.Error(
+                                            it.message ?: "Compute error"
+                                        )
+                                    }
                                 )
                                 if (_computeGeneration.get() == myGen) {
-                                    _cardDataMap.update { it.put(cardConfig.cardId, result) }
+                                    _cardDataMap.update { it.putting(cardConfig.cardId, result) }
                                 }
                             }
                         }
@@ -303,9 +317,9 @@ sealed class AccountDetailUiState {
         val allProfileTransactions: List<Transaction> = emptyList(),
         val listState: TransactionListState,
         val allCategories: List<Category> = emptyList(),
-        val allTags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
+        val allTags: List<Tag> = emptyList(),
         val baseCurrency: String,
-        val exchangeRates: Map<String, BigDecimal>,
+        val exchangeRates: ExchangeRateSnapshot,
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false,
         val currentFilter: TransactionFilter = TransactionFilter()

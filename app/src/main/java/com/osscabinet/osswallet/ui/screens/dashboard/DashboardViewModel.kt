@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.dashboard
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
+import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -11,54 +12,47 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Loan
+import com.osscabinet.ossWallet.domain.model.LoanPayment
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.BudgetRepository
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
+import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
-import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.management.TransactionManager
-import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.domain.cache.CardRenderCache
-import com.osscabinet.ossWallet.domain.model.LoanPayment
-import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
+import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
-import com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper
+import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel.DashboardDisplayPrefs
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
-import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-import com.osscabinet.ossWallet.domain.repository.FilterRepository
-import com.osscabinet.ossWallet.domain.repository.ProfileRepository
-import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel.DashboardDisplayPrefs
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.emitAll
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
@@ -69,9 +63,8 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toImmutableSet
-import kotlinx.coroutines.flow.flowOf
-import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -80,17 +73,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.math.BigDecimal
 import javax.inject.Inject
 
 enum class DashboardSection {
@@ -183,8 +176,16 @@ class DashboardViewModel @Inject constructor(
             is DashboardIntent.InitializeView -> initializeDashboardView(intent.viewContext)
             DashboardIntent.ResetToInitialView -> resetToInitialView()
             DashboardIntent.ClearViewFocus -> clearViewFocus()
-            is DashboardIntent.QuickConfirmPlannedPayment -> quickConfirmById(intent.plannedPaymentId, intent.scheduledDate)
-            is DashboardIntent.QuickSkipPlannedPayment -> quickSkipById(intent.plannedPaymentId, intent.scheduledDate)
+            is DashboardIntent.QuickConfirmPlannedPayment -> quickConfirmById(
+                intent.plannedPaymentId,
+                intent.scheduledDate
+            )
+
+            is DashboardIntent.QuickSkipPlannedPayment -> quickSkipById(
+                intent.plannedPaymentId,
+                intent.scheduledDate
+            )
+
             DashboardIntent.UndoLastPlannedPaymentAction -> undoLastPlannedPaymentAction()
             DashboardIntent.ClearUndoAction -> clearUndoAction()
 
@@ -194,7 +195,11 @@ class DashboardViewModel @Inject constructor(
             DashboardIntent.ClearSnackbar -> _snackbarMessage.value = null
             DashboardIntent.ClearScrollTo -> _scrollToId.value = null
             DashboardIntent.CloseLinkedPopup -> _linkedPopupTxs.value = null
-            is DashboardIntent.HandleJumpRequest -> handleJumpRequest(intent.transactionId, intent.availableIds)
+            is DashboardIntent.HandleJumpRequest -> handleJumpRequest(
+                intent.transactionId,
+                intent.availableIds
+            )
+
             is DashboardIntent.PerformJump -> performJump(intent.transactionId)
             is DashboardIntent.ToggleStatusClearedUncleared -> toggleStatusClearedUncleared(intent.transactionId)
 
@@ -202,21 +207,28 @@ class DashboardViewModel @Inject constructor(
             is DashboardIntent.QuickDeleteTransaction -> quickDeleteTransaction(intent.transactionId)
             is DashboardIntent.QuickCloneTransaction -> quickCloneTransaction(intent.transactionId)
             is DashboardIntent.AddTag -> addTag(intent.name, intent.color)
-            is DashboardIntent.ChangeTransactionStatus -> changeTransactionStatus(intent.transactionId, intent.status)
+            is DashboardIntent.ChangeTransactionStatus -> changeTransactionStatus(
+                intent.transactionId,
+                intent.status
+            )
         }
     }
 
-    private fun changeTransactionStatus(id: Long, status: com.osscabinet.ossWallet.domain.model.TransactionStatus) {
+    private fun changeTransactionStatus(
+        id: Long,
+        status: com.osscabinet.ossWallet.domain.model.TransactionStatus
+    ) {
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             transactionManager.updateStatus(id, status, profileId)
-            _snackbarMessage.value = if (status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) "Marked as cleared" else "Marked as uncleared"
+            _snackbarMessage.value =
+                if (status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) "Marked as cleared" else "Marked as uncleared"
         }
     }
 
     private fun addTag(name: String, color: Int) {
         viewModelScope.launch {
-            tagRepository.insertTag(com.osscabinet.ossWallet.domain.model.Tag(name = name, colorHex = color))
+            tagRepository.insertTag(Tag(name = name, colorHex = color))
         }
     }
 
@@ -240,12 +252,14 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             val tx = transactionUseCases.getTransactionById(id, profileId) ?: return@launch
-            val newStatus = if (tx.status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED)
-                com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED
-            else
-                com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
+            val newStatus =
+                if (tx.status == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED)
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED
+                else
+                    com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED
             transactionManager.updateStatus(id, newStatus, profileId)
-            _snackbarMessage.value = if (newStatus == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) "Marked as cleared" else "Marked as uncleared"
+            _snackbarMessage.value =
+                if (newStatus == com.osscabinet.ossWallet.domain.model.TransactionStatus.CLEARED) "Marked as cleared" else "Marked as uncleared"
         }
     }
 
@@ -283,7 +297,7 @@ class DashboardViewModel @Inject constructor(
 
     private data class CurrencySnapshot(
         val baseCode: String,
-        val rates: Map<String, BigDecimal>,
+        val rates: ExchangeRateSnapshot,
         val hasLoaded: Boolean
     )
 
@@ -330,7 +344,7 @@ class DashboardViewModel @Inject constructor(
                 transactionManager.getAllTransactionLinks(),
                 combine(
                     computationRepository.selectedCurrency,
-                    computationRepository.exchangeRates,
+                    computationRepository.exchangeRatesSnapshot,
                     computationRepository.hasLoadedExchangeRates
                 ) { code, rates, loaded -> CurrencySnapshot(code, rates, loaded) }
             ) { acc, tx, cat, links, curr ->
@@ -345,23 +359,28 @@ class DashboardViewModel @Inject constructor(
                         baseCurrency = snapshot.currency.baseCode,
                         exchangeRates = snapshot.currency.rates,
                         limit = DASHBOARD_TRANSACTION_FEED_LIMIT
-                    ).map { result: Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>> ->
-                        val transactionsWithBalance = result.getOrNull() ?: emptyList()
+                    )
+                        .map { result: Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>> ->
+                            val transactionsWithBalance = result.getOrNull() ?: emptyList()
 
-                        val visibleGroups = TimelineService.getGroupedData(
-                            transactions = transactionsWithBalance.take(20),
-                            absoluteHistory = transactionsWithBalance,
-                            groupingType = TransactionGroupingType.BY_DAY,
-                            accounts = snapshot.accounts,
-                            categories = snapshot.categories,
-                            allTags = emptyList(),
-                            baseCurrency = snapshot.currency.baseCode,
-                            exchangeRates = snapshot.currency.rates,
-                            linkedTransactionIds = snapshot.links,
-                            initialBalances = emptyMap()
-                        )
-                        StructuralState(snapshot, CategoryHierarchyCache.build(snapshot.categories), visibleGroups)
-                    }.flowOn(dispatchers.default)
+                            val visibleGroups = TimelineService.getGroupedData(
+                                transactions = transactionsWithBalance.take(20),
+                                absoluteHistory = transactionsWithBalance,
+                                groupingType = TransactionGroupingType.BY_DAY,
+                                accounts = snapshot.accounts,
+                                categories = snapshot.categories,
+                                allTags = emptyList(),
+                                baseCurrency = snapshot.currency.baseCode,
+                                exchangeRates = snapshot.currency.rates,
+                                linkedTransactionIds = snapshot.links,
+                                initialBalances = emptyMap()
+                            )
+                            StructuralState(
+                                snapshot,
+                                CategoryHierarchyCache.build(snapshot.categories),
+                                visibleGroups
+                            )
+                        }.flowOn(dispatchers.default)
                 }
             }
 
@@ -425,7 +444,7 @@ class DashboardViewModel @Inject constructor(
                     accounts = snapshot.accounts,
                     categories = snapshot.categories,
                     tags = m.tags,
-                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(snapshot.currency.baseCode, snapshot.currency.rates),
+                    exchangeRates = snapshot.currency.rates,
                     targetCurrency = snapshot.currency.baseCode,
                     plannedPayments = m.plannedPayments,
                     budgets = m.budgets,
@@ -444,17 +463,21 @@ class DashboardViewModel @Inject constructor(
                     cardDataMap = persistentMapOf(),
                     allTransactions = snapshot.transactions.toImmutableList(),
                     recentActivitiesState = TransactionUiMapper.mapToUiState(
-                        domainState = TransactionListState(s.visibleGroups, s.visibleGroups.isEmpty()),
+                        domainState = TransactionListState(
+                            s.visibleGroups,
+                            s.visibleGroups.isEmpty()
+                        ),
                         baseCurrency = snapshot.currency.baseCode
                     ),
                     allCategories = snapshot.categories.toImmutableList(),
                     allTags = m.tags.toImmutableList(),
                     baseCurrency = snapshot.currency.baseCode,
-                    exchangeRates = snapshot.currency.rates.toImmutableMap(),
+                    exchangeRates = snapshot.currency.rates,
                     plannedPayments = m.plannedPayments.toImmutableList(),
                     budgets = m.budgets.toImmutableList(),
                     loans = m.loans.toImmutableList(),
-                    loanPayments = m.loanPayments.mapValues { it.value.toImmutableList() }.toImmutableMap(),
+                    loanPayments = m.loanPayments.mapValues { it.value.toImmutableList() }
+                        .toImmutableMap(),
                     initialViewContext = a.initialViewContext,
                     cardsConfig = a.cardsConfig,
                     displayPrefs = a.displayPrefs,
@@ -486,22 +509,38 @@ class DashboardViewModel @Inject constructor(
                     configs.forEach { cardConfig ->
                         launch(dispatchers.default) {
                             val cardInput = successState.cardInput ?: run {
-                                localCardState.update { it.put(cardConfig.cardId, CardComputeState.Error("Card input unavailable")) }
+                                localCardState.update {
+                                    it.putting(
+                                        cardConfig.cardId,
+                                        CardComputeState.Error("Card input unavailable")
+                                    )
+                                }
                                 return@launch
                             }
                             val state = runCatching {
-                                cardComputerRegistry.compute(cardConfig.cardType, cardInput, cardConfig)
+                                cardComputerRegistry.compute(
+                                    cardConfig.cardType,
+                                    cardInput,
+                                    cardConfig
+                                )
                             }.fold(
                                 onSuccess = { data ->
-                                    if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                    if (data is CardRenderData.Error) CardComputeState.Error(
+                                        data.message ?: "Compute error"
+                                    )
                                     else CardComputeState.Success(data)
                                 },
-                                onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                                onFailure = {
+                                    CardComputeState.Error(
+                                        it.message ?: "Compute error"
+                                    )
+                                }
                             )
                             if (state is CardComputeState.Success) {
-                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = state.data
+                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] =
+                                    state.data
                             }
-                            localCardState.update { it.put(cardConfig.cardId, state) }
+                            localCardState.update { it.putting(cardConfig.cardId, state) }
                         }
                     }
                 }
@@ -523,19 +562,19 @@ class DashboardViewModel @Inject constructor(
             lastUndoAction = eph.lastUndoAction
         )
     }
-    .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
-    .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DashboardUiState.Loading
-    )
+        .catch { e -> emit(DashboardUiState.Error(e.message ?: "Dashboard data error")) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DashboardUiState.Loading
+        )
 
     private fun quickConfirmById(id: Long, scheduledDate: Long) {
         val state = (uiState.value as? DashboardUiState.Success) ?: return
         val payment = state.plannedPayments.find { it.id == id } ?: return
 
         // Idempotency: Check if already confirmed for this occurrence (Story 2.3 Patch)
-        if (state.allTransactions.any { it.sourcePlannedPaymentId == id && it.timestamp >= scheduledDate && it.timestamp < scheduledDate + 24*60*60*1000 }) {
+        if (state.allTransactions.any { it.sourcePlannedPaymentId == id && it.timestamp >= scheduledDate && it.timestamp < scheduledDate + 24 * 60 * 60 * 1000 }) {
             _snackbarMessage.value = "Already confirmed for this date"
             return
         }
@@ -590,17 +629,30 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             when (action) {
                 is UndoAction.SkipUndo -> {
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.payment.id,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
                     plannedPaymentRepository.update(
                         action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
                     )
                 }
+
                 is UndoAction.ConfirmUndo -> {
                     val profileId = settingsRepository.currentProfileId.first()
                     transactionManager.deleteTransaction(action.transactionId, profileId)
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.payment.id, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.payment.id,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
                     plannedPaymentRepository.update(
                         action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
                     )
@@ -609,14 +661,17 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun clearUndoAction() { _lastUndoAction.value = null }
+    private fun clearUndoAction() {
+        _lastUndoAction.value = null
+    }
 
     private fun handleJumpRequest(id: Long, availableIds: Set<Long>? = null) {
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             // Single call to avoid TOCTOU between size check and data fetch
             val linked = transactionUseCases.getLinkedTransactions(id).first()
-            val scopedLinked = if (availableIds != null) linked.filter { it.id in availableIds } else linked
+            val scopedLinked =
+                if (availableIds != null) linked.filter { it.id in availableIds } else linked
             if (scopedLinked.isEmpty()) {
                 _snackbarMessage.value = "No linked transactions found"
                 return@launch
@@ -626,7 +681,7 @@ class DashboardViewModel @Inject constructor(
                 performJump(scopedLinked.first().id)
             } else {
                 val baseCurr = computationRepository.selectedCurrency.first()
-                val rates = computationRepository.exchangeRates.first()
+                val rates = computationRepository.exchangeRatesSnapshot.first()
                 val enriched = TimelineService.enrichTransactions(
                     scopedLinked,
                     accountRepository.getAllAccounts(profileId).first(),
@@ -671,7 +726,7 @@ sealed class DashboardUiState {
         val allCategories: ImmutableList<Category>,
         val allTags: ImmutableList<Tag> = persistentListOf(),
         val baseCurrency: String,
-        val exchangeRates: ImmutableMap<String, BigDecimal>,
+        val exchangeRates: ExchangeRateSnapshot,
         val plannedPayments: ImmutableList<PlannedPayment> = persistentListOf(),
         val budgets: ImmutableList<Budget> = persistentListOf(),
         val loans: ImmutableList<Loan> = persistentListOf(),

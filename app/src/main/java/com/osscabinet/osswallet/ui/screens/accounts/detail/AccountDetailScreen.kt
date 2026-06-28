@@ -27,7 +27,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Edit
@@ -38,14 +37,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -69,23 +66,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.model.CashFlowType
-import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionGroup
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.EntryMode
-
-import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.merge
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
-import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
@@ -93,6 +80,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -112,12 +100,8 @@ import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
-import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
-import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -125,7 +109,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import java.math.BigDecimal
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -158,7 +141,10 @@ data class AccountDetailActions(
     val onSaveFilterClick: (TransactionFilter) -> Unit = {}
 )
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
 @Composable
 fun AccountDetailScreen(
     config: AccountDetailConfig,
@@ -176,7 +162,8 @@ fun AccountDetailScreen(
     LaunchedEffect(config.filterJson) {
         if (config.filterJson != null) {
             try {
-                val decoded = URLDecoder.decode(config.filterJson, StandardCharsets.UTF_8.toString())
+                val decoded =
+                    URLDecoder.decode(config.filterJson, StandardCharsets.UTF_8.toString())
                 val filter = Json.decodeFromString<TransactionFilter>(decoded)
                 accountDetailViewModel.updateFilter(filter)
             } catch (e: Exception) {
@@ -187,8 +174,12 @@ fun AccountDetailScreen(
         }
     }
 
-    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(initialValue = true)
-    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val cardAnimationEnabled by settingsViewModel.cardAnimationEnabled.collectAsStateWithLifecycle(
+        initialValue = true
+    )
+    val expandableFabEnabled by settingsViewModel.expandableFabEnabled.collectAsStateWithLifecycle(
+        initialValue = true
+    )
     val uiState by accountDetailViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState) {
@@ -275,7 +266,9 @@ fun AccountDetailScreen(
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
                     Column(
-                        modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                     ) {
                         EntrySwitchRow(
@@ -293,9 +286,20 @@ fun AccountDetailScreen(
                             isFlush = true
                         )
                     }
-                    Box(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.CenterEnd) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
                         TextButton(onClick = { showSettingsDialog = false }) {
-                            Text(stringResource(R.string.action_close), style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold, color = AppColors.primary))
+                            Text(
+                                stringResource(R.string.action_close),
+                                style = AppTextStyles.listItemTitle.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.primary
+                                )
+                            )
                         }
                     }
                 }
@@ -320,13 +324,22 @@ fun AccountDetailScreen(
                     ) {
                         when (val state = uiState) {
                             is AccountDetailUiState.Loading -> {
-                                AeonShimmer(innerPadding = screenPadding, showCashflow = false, showAccounts = false)
+                                AeonShimmer(
+                                    innerPadding = screenPadding,
+                                    showCashflow = false,
+                                    showAccounts = false
+                                )
                             }
+
                             is AccountDetailUiState.Error -> {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(state.message)
                                 }
                             }
+
                             is AccountDetailUiState.Success -> {
                                 Box(modifier = Modifier.fillMaxSize()) {
                                     HorizontalPager(
@@ -355,32 +368,60 @@ fun AccountDetailScreen(
                                                     onNavigateToBudgetDetail = actions.onNavigateToBudgetDetail,
                                                     onNavigateToLoanDetail = actions.onNavigateToLoanDetail,
                                                     navigate = navigate,
-                                                    modifier = Modifier.fillMaxSize().padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(horizontal = AeonTheme.dimensions.screenPadding),
                                                     showAddCardDialog = showAddCardDialog,
-                                                    onShowAddCardDialogChange = { showAddCardDialog = it },
+                                                    onShowAddCardDialogChange = {
+                                                        showAddCardDialog = it
+                                                    },
                                                     cardAnimationEnabled = cardAnimationEnabled,
                                                     topPadding = pillHeight
                                                 )
                                             }
+
                                             1 -> {
                                                 val revealedCardIds by transactionViewModel.revealedCardIdsList.collectAsStateWithLifecycle()
                                                 val recentActivitiesBreakdown by accountDetailViewModel.recentActivitiesBreakdown.collectAsStateWithLifecycle()
                                                 if (state.listState.isEmpty) {
-                                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
                                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                            Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl), tint = AppColors.contentSecondary.copy(alpha = 0.2f))
-                                                            Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
-                                                            Text(stringResource(R.string.no_transactions_yet), style = AppTextStyles.listItemTitle, color = AppColors.border)
+                                                            Icon(
+                                                                Icons.Rounded.History,
+                                                                contentDescription = null,
+                                                                modifier = Modifier.size(AeonTheme.dimensions.iconSize3xl),
+                                                                tint = AppColors.contentSecondary.copy(
+                                                                    alpha = 0.2f
+                                                                )
+                                                            )
+                                                            Spacer(
+                                                                modifier = Modifier.height(
+                                                                    AeonTheme.dimensions.spacingLg
+                                                                )
+                                                            )
+                                                            Text(
+                                                                stringResource(R.string.no_transactions_yet),
+                                                                style = AppTextStyles.listItemTitle,
+                                                                color = AppColors.border
+                                                            )
                                                         }
                                                     }
                                                 } else {
-                                                    val uiListState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
-                                                        domainState = state.listState,
-                                                        baseCurrency = state.baseCurrency
-                                                    )
+                                                    val uiListState =
+                                                        com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
+                                                            domainState = state.listState,
+                                                            baseCurrency = state.baseCurrency
+                                                        )
                                                     RecentActivitiesScreen(
                                                         listState = uiListState,
-                                                        onRecordsClick = { drillDown -> actions.onRecordsClick(state.currentFilter.merge(drillDown)) },
+                                                        onRecordsClick = { drillDown ->
+                                                            actions.onRecordsClick(
+                                                                state.currentFilter.merge(drillDown)
+                                                            )
+                                                        },
                                                         baseCurrency = state.baseCurrency,
                                                         contentPadding = PaddingValues(
                                                             top = pillHeight + AeonTheme.dimensions.spacingMd,
@@ -393,19 +434,56 @@ fun AccountDetailScreen(
                                                             when (event) {
                                                                 is TransactionItemEvent.Click -> navigate {
                                                                     if (event.id.startsWith("tx_")) {
-                                                                        actions.onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                                                                        actions.onEditTransactionClick(
+                                                                            event.id.removePrefix("tx_")
+                                                                                .toLong()
+                                                                        )
                                                                     }
                                                                 }
-                                                                is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
-                                                                is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
-                                                                is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(event.id, event.status)
-                                                                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
-                                                                is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
-                                                                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                                                                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, uiListState.getAllTransactionIds())
-                                                                is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(event.id)
-                                                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
-                                                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
+
+                                                                is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
+                                                                    event.id,
+                                                                    event.status
+                                                                )
+
+                                                                is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.Split -> actions.onSplitTransactionClick(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(
+                                                                    event.id,
+                                                                    uiListState.getAllTransactionIds()
+                                                                )
+
+                                                                is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
+                                                                    event.id
+                                                                )
+
+                                                                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(
+                                                                    event.paymentId,
+                                                                    event.scheduledDate
+                                                                )
+
+                                                                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(
+                                                                    event.paymentId,
+                                                                    event.scheduledDate
+                                                                )
                                                             }
                                                         },
                                                         filter = state.currentFilter,
@@ -432,7 +510,13 @@ fun AccountDetailScreen(
                     onFabToggle = { if (expandableFabEnabled) isFabExpanded = it },
                     onFabClick = {
                         if (!expandableFabEnabled) {
-                            navigate { actions.onAddTransactionClick(config.accountId, EntryMode.EXPENSE, null) }
+                            navigate {
+                                actions.onAddTransactionClick(
+                                    config.accountId,
+                                    EntryMode.EXPENSE,
+                                    null
+                                )
+                            }
                         }
                     },
                     fabMenu = if (expandableFabEnabled) {
@@ -443,7 +527,13 @@ fun AccountDetailScreen(
                                 categories = categories,
                                 onAddClick = { type, templateId ->
                                     isFabExpanded = false
-                                    navigate { actions.onAddTransactionClick(config.accountId, type, templateId) }
+                                    navigate {
+                                        actions.onAddTransactionClick(
+                                            config.accountId,
+                                            type,
+                                            templateId
+                                        )
+                                    }
                                 }
                             )
                         }
@@ -470,14 +560,27 @@ fun AccountDetailScreen(
                             AeonTopBarActionPill {
                                 when (pagerState.currentPage) {
                                     0 -> {
-                                        AppBarIconButton(icon = Icons.Rounded.Edit, onClick = { navigate { actions.onEditAccountClick(config.accountId) } })
-                                        AppBarIconButton(icon = Icons.Rounded.Settings, onClick = { showSettingsDialog = true })
-                                        AppBarIconButton(icon = Icons.Rounded.Add, onClick = { showAddCardDialog = true })
+                                        AppBarIconButton(
+                                            icon = Icons.Rounded.Edit,
+                                            onClick = { navigate { actions.onEditAccountClick(config.accountId) } })
+                                        AppBarIconButton(
+                                            icon = Icons.Rounded.Settings,
+                                            onClick = { showSettingsDialog = true })
+                                        AppBarIconButton(
+                                            icon = Icons.Rounded.Add,
+                                            onClick = { showAddCardDialog = true })
                                     }
+
                                     1 -> {
                                         AppBarIconButton(
                                             icon = Icons.Rounded.History,
-                                            onClick = { actions.onRecordsClick(TransactionFilter(accountIds = setOf(config.accountId))) }
+                                            onClick = {
+                                                actions.onRecordsClick(
+                                                    TransactionFilter(
+                                                        accountIds = setOf(config.accountId)
+                                                    )
+                                                )
+                                            }
                                         )
                                     }
                                 }
@@ -582,8 +685,8 @@ fun DynamicAccountDetailCards(
                 onClone = { onCloneTransactionClick(it) },
                 onDelete = { transactionViewModel.quickDeleteTransaction(it) },
                 onSplit = { onSplitTransactionClick(it) },
-                onJump = { id, availableIds -> 
-                    transactionViewModel.handleJumpRequest(id, availableIds) 
+                onJump = { id, availableIds ->
+                    transactionViewModel.handleJumpRequest(id, availableIds)
                 },
                 onFullSwipeRight = { transactionViewModel.toggleStatusClearedUncleared(it) }
             ),
@@ -608,10 +711,7 @@ fun DynamicAccountDetailCards(
             accounts = listOf(state.account),
             categories = state.allCategories,
             tags = state.allTags,
-            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-                anchor = state.baseCurrency,
-                rates = state.exchangeRates
-            ),
+            exchangeRates = state.exchangeRates,
             targetCurrency = state.account.currencyCode,
             filter = state.currentFilter,
             screenContext = ScreenContext.ACCOUNT_DETAIL

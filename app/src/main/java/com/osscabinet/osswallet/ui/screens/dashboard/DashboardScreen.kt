@@ -1,5 +1,4 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
-import com.osscabinet.ossWallet.domain.model.EntryMode
 
 
 import androidx.activity.compose.BackHandler
@@ -19,30 +18,25 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -57,101 +51,86 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Filter
-import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.TransactionListState
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
-import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
+import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.CardRepository
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.flowOf
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
-import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
-import com.osscabinet.ossWallet.ui.components.ContourBackground
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
-import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
-import com.osscabinet.ossWallet.ui.components.cards.UnifiedCardRenderer
-import com.osscabinet.ossWallet.ui.components.cards.rememberCardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterActions
+import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
-import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.TransactionFabMenu
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
-import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddSheet
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.LinkedTransactionJumpSheet
+import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
-import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
-import com.osscabinet.ossWallet.ui.screens.analytics.AnalyticsViewModel
-import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
-import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
-import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
+import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddSheet
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.UndoAction
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.math.BigDecimal
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
@@ -257,22 +236,83 @@ fun DashboardScreen(
         onAddCard = dashboardViewModel::addCard,
         onReorderCards = dashboardViewModel::reorderCards,
         onRemoveCard = dashboardViewModel::removeCard,
-        onQuickConfirm = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
-        onQuickSkip = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
+        onQuickConfirm = { id, date ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.QuickConfirmPlannedPayment(
+                    id,
+                    date
+                )
+            )
+        },
+        onQuickSkip = { id, date ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.QuickSkipPlannedPayment(
+                    id,
+                    date
+                )
+            )
+        },
         onSearchTransactions = { query -> dashboardViewModel.searchTransactions(query) },
         onItemExpanded = { dashboardViewModel.onIntent(DashboardIntent.OnCardExpanded(it)) },
         onItemCollapsed = { dashboardViewModel.onIntent(DashboardIntent.OnCardCollapsed(it)) },
-        onStatusChange = { id, status -> dashboardViewModel.onIntent(DashboardIntent.ChangeTransactionStatus(id, status)) },
-        onDeleteTransaction = { id -> dashboardViewModel.onIntent(DashboardIntent.QuickDeleteTransaction(id)) },
+        onStatusChange = { id, status ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.ChangeTransactionStatus(
+                    id,
+                    status
+                )
+            )
+        },
+        onDeleteTransaction = { id ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.QuickDeleteTransaction(
+                    id
+                )
+            )
+        },
         onCloneTransactionClick = { id -> actions.onCloneTransactionClick(id) },
-        onFullSwipeRight = { id -> dashboardViewModel.onIntent(DashboardIntent.ToggleStatusClearedUncleared(id)) },
-        onJumpTransaction = { id, availableIds -> dashboardViewModel.onIntent(DashboardIntent.HandleJumpRequest(id, availableIds)) },
+        onFullSwipeRight = { id ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.ToggleStatusClearedUncleared(
+                    id
+                )
+            )
+        },
+        onJumpTransaction = { id, availableIds ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.HandleJumpRequest(
+                    id,
+                    availableIds
+                )
+            )
+        },
         onPerformJump = { id, _ -> dashboardViewModel.onIntent(DashboardIntent.PerformJump(id)) },
         onCloseLinkedPopup = { dashboardViewModel.onIntent(DashboardIntent.CloseLinkedPopup) },
         linkedPopupTxs = successState?.linkedPopupTxs,
-        onAddTag = { name, color -> dashboardViewModel.onIntent(DashboardIntent.AddTag(name, color)) },
-        onConfirmPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
-        onCancelPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
+        onAddTag = { name, color ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.AddTag(
+                    name,
+                    color
+                )
+            )
+        },
+        onConfirmPlanned = { id, date ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.QuickConfirmPlannedPayment(
+                    id,
+                    date
+                )
+            )
+        },
+        onCancelPlanned = { id, date ->
+            dashboardViewModel.onIntent(
+                DashboardIntent.QuickSkipPlannedPayment(
+                    id,
+                    date
+                )
+            )
+        },
         cardUpdateHandler = dashboardViewModel
     )
 }
@@ -380,7 +420,8 @@ fun DashboardScreenLayout(
 
     LaunchedEffect(lastUndoAction) {
         val action = lastUndoAction ?: return@LaunchedEffect
-        val message = if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
+        val message =
+            if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
         val result = snackbarHostState.showSnackbar(
             message = message,
             actionLabel = "Undo",
@@ -456,13 +497,43 @@ fun DashboardScreenLayout(
                                             )
                                         }
                                     },
-                                    onNavigateToBudgetDetail = { id -> navigate { actions.onNavigateToBudgetDetail(id) } },
-                                    onNavigateToLoanDetail = { id -> navigate { actions.onNavigateToLoanDetail(id) } },
-                                    onRecordsClick = { context -> navigate { actions.onRecordsClick(context) } },
+                                    onNavigateToBudgetDetail = { id ->
+                                        navigate {
+                                            actions.onNavigateToBudgetDetail(
+                                                id
+                                            )
+                                        }
+                                    },
+                                    onNavigateToLoanDetail = { id ->
+                                        navigate {
+                                            actions.onNavigateToLoanDetail(
+                                                id
+                                            )
+                                        }
+                                    },
+                                    onRecordsClick = { context ->
+                                        navigate {
+                                            actions.onRecordsClick(
+                                                context
+                                            )
+                                        }
+                                    },
                                     onSaveFilterClick = actions.onSaveFilterClick,
-                                    onEditTransactionClick = { id -> navigate { actions.onEditTransactionClick(id) } },
+                                    onEditTransactionClick = { id ->
+                                        navigate {
+                                            actions.onEditTransactionClick(
+                                                id
+                                            )
+                                        }
+                                    },
                                     onCloneTransactionClick = onCloneTransactionClick,
-                                    onSplitTransactionClick = { id -> navigate { actions.onSplitTransactionClick(id) } },
+                                    onSplitTransactionClick = { id ->
+                                        navigate {
+                                            actions.onSplitTransactionClick(
+                                                id
+                                            )
+                                        }
+                                    },
                                     onJumpTransaction = onJumpTransaction,
                                     onPerformJump = onPerformJump,
                                     scrollToId = scrollToId,
@@ -495,7 +566,10 @@ fun DashboardScreenLayout(
                             }
 
                             is DashboardUiState.Error -> {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(state.message)
                                 }
                             }
@@ -543,6 +617,7 @@ fun DashboardScreenLayout(
                                         icon = Icons.Default.Add,
                                         onClick = { showAddCardDialog = true }
                                     )
+
                                     1 -> AppBarIconButton(
                                         icon = Icons.Rounded.History,
                                         onClick = { actions.onRecordsClick(TransactionFilter()) }
@@ -756,7 +831,9 @@ fun DashboardContent(
                             when (event) {
                                 is TransactionItemEvent.Click -> {
                                     if (event.id.startsWith("tx_")) {
-                                        onEditTransactionClick(event.id.removePrefix("tx_").toLong())
+                                        onEditTransactionClick(
+                                            event.id.removePrefix("tx_").toLong()
+                                        )
                                     }
                                 }
 
@@ -783,6 +860,7 @@ fun DashboardContent(
                                     event.id,
                                     state.recentActivitiesState.getAllTransactionIds()
                                 )
+
                                 is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(
                                     event.id
                                 )
@@ -865,135 +943,132 @@ fun DashboardGlanceTab(
         modifier = Modifier
             .fillMaxSize()
     ) {
-    // Capture each callback in rememberUpdatedState so the AeonInteractionCallbacks object is
-    // created once. Each lambda dereferences the State at invocation time, so callers always
-    // get the latest value without forcing a rebuild of the entire callbacks tree.
-    val onManageAccountsRef by rememberUpdatedState(onManageAccountsClick)
-    val onAccountClickRef by rememberUpdatedState(onAccountClick)
-    val onBudgetDetailRef by rememberUpdatedState(onNavigateToBudgetDetail)
-    val onBudgetListRef by rememberUpdatedState(onNavigateToBudgetList)
-    val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
-    val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
-    val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
-    val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
-    val onPerformJumpRef by rememberUpdatedState(onPerformJump)
-    val onItemExpandedRef by rememberUpdatedState(onItemExpanded)
-    val onItemCollapsedRef by rememberUpdatedState(onItemCollapsed)
-    val onStatusChangeRef by rememberUpdatedState(onStatusChange)
-    val onCloneTxRef by rememberUpdatedState(onCloneTransactionClick)
-    val onDeleteTxRef by rememberUpdatedState(onDeleteTransaction)
-    val onSplitTxRef by rememberUpdatedState(onSplitTransactionClick)
-    val onFullSwipeRightRef by rememberUpdatedState(onFullSwipeRight)
-    val onPaymentDetailRef by rememberUpdatedState(onNavigateToPlannedPaymentDetail)
-    val onQuickConfirmRef by rememberUpdatedState(onQuickConfirm)
-    val onQuickSkipRef by rememberUpdatedState(onQuickSkip)
-    val onPaymentListRef by rememberUpdatedState(onNavigateToPlannedPaymentList)
-    val onSaveFilterRef by rememberUpdatedState(onSaveFilterClick)
-    val onAddTagRef by rememberUpdatedState(onAddTag)
+        // Capture each callback in rememberUpdatedState so the AeonInteractionCallbacks object is
+        // created once. Each lambda dereferences the State at invocation time, so callers always
+        // get the latest value without forcing a rebuild of the entire callbacks tree.
+        val onManageAccountsRef by rememberUpdatedState(onManageAccountsClick)
+        val onAccountClickRef by rememberUpdatedState(onAccountClick)
+        val onBudgetDetailRef by rememberUpdatedState(onNavigateToBudgetDetail)
+        val onBudgetListRef by rememberUpdatedState(onNavigateToBudgetList)
+        val onLoanDetailRef by rememberUpdatedState(onNavigateToLoanDetail)
+        val onLoanListRef by rememberUpdatedState(onNavigateToLoanList)
+        val onEditTxRef by rememberUpdatedState(onEditTransactionClick)
+        val onJumpTxRef by rememberUpdatedState(onJumpTransaction)
+        val onPerformJumpRef by rememberUpdatedState(onPerformJump)
+        val onItemExpandedRef by rememberUpdatedState(onItemExpanded)
+        val onItemCollapsedRef by rememberUpdatedState(onItemCollapsed)
+        val onStatusChangeRef by rememberUpdatedState(onStatusChange)
+        val onCloneTxRef by rememberUpdatedState(onCloneTransactionClick)
+        val onDeleteTxRef by rememberUpdatedState(onDeleteTransaction)
+        val onSplitTxRef by rememberUpdatedState(onSplitTransactionClick)
+        val onFullSwipeRightRef by rememberUpdatedState(onFullSwipeRight)
+        val onPaymentDetailRef by rememberUpdatedState(onNavigateToPlannedPaymentDetail)
+        val onQuickConfirmRef by rememberUpdatedState(onQuickConfirm)
+        val onQuickSkipRef by rememberUpdatedState(onQuickSkip)
+        val onPaymentListRef by rememberUpdatedState(onNavigateToPlannedPaymentList)
+        val onSaveFilterRef by rememberUpdatedState(onSaveFilterClick)
+        val onAddTagRef by rememberUpdatedState(onAddTag)
 
-    val sharedCallbacks = remember {
-        AeonInteractionCallbacks(
-            accountActions = AccountActions(
-                onManageClick = { onManageAccountsRef() },
-                onClick = { id -> onAccountClickRef(id) },
-                onSeeAll = { onManageAccountsRef() }
-            ),
-            budgetActions = BudgetActions(
-                onClick = { id -> onBudgetDetailRef(id) },
-                onSeeAll = { onBudgetListRef() }
-            ),
-            loanActions = LoanActions(
-                onClick = { id -> onLoanDetailRef(id) },
-                onSeeAll = { onLoanListRef() }
-            ),
-            transactionActions = TransactionActions(
-                onClick = { id -> onEditTxRef(id) },
-                onItemExpanded = { id -> onItemExpandedRef(id) },
-                onItemCollapsed = { id -> onItemCollapsedRef(id) },
-                onStatusChange = { id, status -> onStatusChangeRef(id, status) },
-                onClone = { id -> onCloneTxRef(id) },
-                onDelete = { id -> onDeleteTxRef(id) },
-                onSplit = { id -> onSplitTxRef(id) },
-                onJump = { id, availableIds -> onJumpTxRef(id, availableIds) },
-                onPerformJump = { id, availableIds -> onPerformJumpRef(id, availableIds) },
-                onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
-            ),
-            paymentActions = PaymentActions(
-                onClick = { id -> onPaymentDetailRef(id) },
-                onConfirm = { id, date -> onQuickConfirmRef(id, date) },
-                onSkip = { id, date -> onQuickSkipRef(id, date) },
-                onSeeAll = { onPaymentListRef() }
-            ),
-            filterActions = FilterActions(
-                onSaveClick = { filter -> onSaveFilterRef(filter) }
-            ),
-            tagActions = TagActions(
-                onAdd = { name, profile -> onAddTagRef(name, profile) }
+        val sharedCallbacks = remember {
+            AeonInteractionCallbacks(
+                accountActions = AccountActions(
+                    onManageClick = { onManageAccountsRef() },
+                    onClick = { id -> onAccountClickRef(id) },
+                    onSeeAll = { onManageAccountsRef() }
+                ),
+                budgetActions = BudgetActions(
+                    onClick = { id -> onBudgetDetailRef(id) },
+                    onSeeAll = { onBudgetListRef() }
+                ),
+                loanActions = LoanActions(
+                    onClick = { id -> onLoanDetailRef(id) },
+                    onSeeAll = { onLoanListRef() }
+                ),
+                transactionActions = TransactionActions(
+                    onClick = { id -> onEditTxRef(id) },
+                    onItemExpanded = { id -> onItemExpandedRef(id) },
+                    onItemCollapsed = { id -> onItemCollapsedRef(id) },
+                    onStatusChange = { id, status -> onStatusChangeRef(id, status) },
+                    onClone = { id -> onCloneTxRef(id) },
+                    onDelete = { id -> onDeleteTxRef(id) },
+                    onSplit = { id -> onSplitTxRef(id) },
+                    onJump = { id, availableIds -> onJumpTxRef(id, availableIds) },
+                    onPerformJump = { id, availableIds -> onPerformJumpRef(id, availableIds) },
+                    onFullSwipeRight = { id -> onFullSwipeRightRef(id) }
+                ),
+                paymentActions = PaymentActions(
+                    onClick = { id -> onPaymentDetailRef(id) },
+                    onConfirm = { id, date -> onQuickConfirmRef(id, date) },
+                    onSkip = { id, date -> onQuickSkipRef(id, date) },
+                    onSeeAll = { onPaymentListRef() }
+                ),
+                filterActions = FilterActions(
+                    onSaveClick = { filter -> onSaveFilterRef(filter) }
+                ),
+                tagActions = TagActions(
+                    onAdd = { name, profile -> onAddTagRef(name, profile) }
+                )
             )
-        )
-    }
+        }
 
-    val sharedCardInput = remember(
-        state.profileId,
-        state.allTransactions,
-        state.allAccounts,
-        state.allCategories,
-        state.allTags,
-        state.exchangeRates,
-        state.baseCurrency,
-        state.plannedPayments,
-        state.budgets,
-        state.loans,
-        state.loanPayments
-    ) {
-        CardInput(
-            profileId = state.profileId,
-            transactions = state.allTransactions,
-            accounts = state.allAccounts.ifEmpty { state.accounts },
-            categories = state.allCategories,
-            tags = state.allTags,
-            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-                anchor = state.baseCurrency,
-                rates = state.exchangeRates
+        val sharedCardInput = remember(
+            state.profileId,
+            state.allTransactions,
+            state.allAccounts,
+            state.allCategories,
+            state.allTags,
+            state.exchangeRates,
+            state.baseCurrency,
+            state.plannedPayments,
+            state.budgets,
+            state.loans,
+            state.loanPayments
+        ) {
+            CardInput(
+                profileId = state.profileId,
+                transactions = state.allTransactions,
+                accounts = state.allAccounts.ifEmpty { state.accounts },
+                categories = state.allCategories,
+                tags = state.allTags,
+                exchangeRates = state.exchangeRates,
+                targetCurrency = state.baseCurrency,
+                plannedPayments = state.plannedPayments,
+                budgets = state.budgets,
+                loans = state.loans,
+                loanPayments = state.loanPayments,
+                filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+            )
+        }
+
+        AeonCardList(
+            cards = cardsConfig.cards,
+            state = listState,
+            cardDataMap = state.cardDataMap,
+            cardInput = sharedCardInput,
+            cardUpdateHandler = cardUpdateHandler,
+            onReorder = onReorderCards,
+            onDelete = onRemoveCard,
+            onRecordsClick = onRecordsClick,
+            modifier = Modifier.weight(1f),
+            scrollToId = scrollToId,
+            highlightedId = highlightedId,
+            onScrollComplete = onClearScrollTo,
+            contentPadding = PaddingValues(
+                start = AeonTheme.dimensions.screenPadding,
+                end = AeonTheme.dimensions.screenPadding,
+                top = topPadding + AeonTheme.dimensions.spacingMd,
+                bottom = scrollBottomPadding() + bottomPadding
             ),
-            targetCurrency = state.baseCurrency,
-            plannedPayments = state.plannedPayments,
-            budgets = state.budgets,
-            loans = state.loans,
-            loanPayments = state.loanPayments,
-            filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
+            animateCards = cardAnimationEnabled,
+            filterContext = FilterSelectionContext(
+                accounts = state.allAccounts.ifEmpty { state.accounts },
+                allCategories = state.allCategories,
+                allTags = state.allTags,
+                savedFilters = savedFilters,
+                onSearchTransactions = onSearchTransactions
+            ),
+            callbacks = sharedCallbacks
         )
-    }
-
-    AeonCardList(
-        cards = cardsConfig.cards,
-        state = listState,
-        cardDataMap = state.cardDataMap,
-        cardInput = sharedCardInput,
-        cardUpdateHandler = cardUpdateHandler,
-        onReorder = onReorderCards,
-        onDelete = onRemoveCard,
-        onRecordsClick = onRecordsClick,
-        modifier = Modifier.weight(1f),
-        scrollToId = scrollToId,
-        highlightedId = highlightedId,
-        onScrollComplete = onClearScrollTo,
-        contentPadding = PaddingValues(
-            start = AeonTheme.dimensions.screenPadding,
-            end = AeonTheme.dimensions.screenPadding,
-            top = topPadding + AeonTheme.dimensions.spacingMd,
-            bottom = scrollBottomPadding() + bottomPadding
-        ),
-        animateCards = cardAnimationEnabled,
-        filterContext = FilterSelectionContext(
-            accounts = state.allAccounts.ifEmpty { state.accounts },
-            allCategories = state.allCategories,
-            allTags = state.allTags,
-            savedFilters = savedFilters,
-            onSearchTransactions = onSearchTransactions
-        ),
-        callbacks = sharedCallbacks
-    )
     }
 }
 
@@ -1102,43 +1177,47 @@ fun DashboardScreenPreview() {
         accounts = persistentListOf(sampleAccount),
         allAccounts = persistentListOf(sampleAccount),
         cardDataMap = persistentMapOf(
-            "net_worth_1" to CardComputeState.Success(CardRenderData.NetWorth(
-                config = netWorthConfig,
-                currentPeriodMetrics = NetWorthMetrics(
-                    netWorth = BigDecimal("12500.00"),
-                    cashFlow = CashFlowResult.empty().copy(
-                        totalIncomeInBase = BigDecimal("5000.00"),
-                        totalExpensesInBase = BigDecimal("3000.00"),
-                        netInBase = BigDecimal("2000.00")
-                    )
-                ),
-                currency = "USD"
-            )),
-            "accounts_1" to CardComputeState.Success(CardRenderData.Accounts(
-                config = accountsConfig,
-                updatedAccounts = listOf(sampleAccount),
-                accountSummaries = mapOf(
-                    "1" to AccountSummaryItem(
-                        account = sampleAccount,
-                        currencyBalances = mapOf("USD" to BigDecimal("12500.00")),
-                        balance = BigDecimal("12500.00"),
-                        balanceInBase = BigDecimal("12500.00"),
-                        currentPeriodFlow = AccountFlowMetrics(
-                            income = BigDecimal("5000.00"),
-                            expense = BigDecimal("3000.00")
+            "net_worth_1" to CardComputeState.Success(
+                CardRenderData.NetWorth(
+                    config = netWorthConfig,
+                    currentPeriodMetrics = NetWorthMetrics(
+                        netWorth = BigDecimal("12500.00"),
+                        cashFlow = CashFlowResult.empty().copy(
+                            totalIncomeInBase = BigDecimal("5000.00"),
+                            totalExpensesInBase = BigDecimal("3000.00"),
+                            netInBase = BigDecimal("2000.00")
                         )
-                    )
-                ),
-                currency = "USD",
-                currentTheme = "Glass"
-            ))
+                    ),
+                    currency = "USD"
+                )
+            ),
+            "accounts_1" to CardComputeState.Success(
+                CardRenderData.Accounts(
+                    config = accountsConfig,
+                    updatedAccounts = listOf(sampleAccount),
+                    accountSummaries = mapOf(
+                        "1" to AccountSummaryItem(
+                            account = sampleAccount,
+                            currencyBalances = mapOf("USD" to BigDecimal("12500.00")),
+                            balance = BigDecimal("12500.00"),
+                            balanceInBase = BigDecimal("12500.00"),
+                            currentPeriodFlow = AccountFlowMetrics(
+                                income = BigDecimal("5000.00"),
+                                expense = BigDecimal("3000.00")
+                            )
+                        )
+                    ),
+                    currency = "USD",
+                    currentTheme = "Glass"
+                )
+            )
         ),
         allTransactions = persistentListOf(),
-        recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
+        recentActivitiesState = TransactionListUiState(groups = emptyList(), isEmpty = true),
         allCategories = persistentListOf(),
         allTags = persistentListOf(),
         baseCurrency = "USD",
-        exchangeRates = persistentMapOf(),
+        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY,
         plannedPayments = persistentListOf(),
         budgets = persistentListOf(),
         loans = persistentListOf(),
@@ -1233,11 +1312,11 @@ fun DashboardGlanceTabPreview() {
         ),
         cardDataMap = persistentMapOf(),
         allTransactions = persistentListOf(),
-        recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
+        recentActivitiesState = TransactionListUiState(groups = emptyList(), isEmpty = true),
         allCategories = persistentListOf(),
         allTags = persistentListOf(),
         baseCurrency = "USD",
-        exchangeRates = persistentMapOf(),
+        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY,
         plannedPayments = persistentListOf(),
         budgets = persistentListOf(),
         loans = persistentListOf(),
@@ -1292,7 +1371,7 @@ fun DashboardGlanceTabPreview() {
 fun DashboardRecentActivitiesTabPreview() {
     OssWalletTheme {
         DashboardRecentActivitiesTab(
-            recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
+            recentActivitiesState = TransactionListUiState(groups = emptyList(), isEmpty = true),
             revealedCardIds = persistentListOf(),
             recentActivitiesBreakdown = true,
             baseCurrency = "USD",

@@ -88,7 +88,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.ClipEntry
+import android.content.ClipData
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -232,7 +234,7 @@ fun AeonLocationSelection(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val haptics = LocalHapticFeedback.current
     val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
@@ -396,7 +398,9 @@ fun AeonLocationSelection(
             },
             onCopyCoords = {
                 selectedLocation?.let { loc ->
-                    clipboard.setText(AnnotatedString("${loc.lat}, ${loc.lon}"))
+                    coroutineScope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Location", "${loc.lat}, ${loc.lon}")))
+                    }
                     haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 }
             }
@@ -437,7 +441,7 @@ private fun AeonLocationSelectionContent(
 ) {
     var visibleResultCount by remember { mutableIntStateOf(0) }
     val glassEnabled = LocalGlassmorphismEnabled.current
-    val isDark = isSystemInDarkTheme()
+    isSystemInDarkTheme()
 
     // ── Staggered search result entrance ─────────────────────────────────────
     LaunchedEffect(searchResults) {

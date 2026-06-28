@@ -13,7 +13,7 @@ data class MappedCategory(
 
 @Singleton
 class BudgetBakersAssetLoader @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     val envelopeMap: Map<Int, MappedCategory> by lazy { loadEnvelopeMap() }
     val paymentTypeMap: Map<String, String> by lazy { loadPaymentTypeMap() }

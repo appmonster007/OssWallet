@@ -38,7 +38,7 @@ fun rememberCardWithCallbacks(
     onDelete: (String) -> Unit,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
-    filterSheetEnabled: Boolean = true
+    filterSheetEnabled: Boolean = true,
 ): CardWithCallbacks = remember(
     config,
     state,

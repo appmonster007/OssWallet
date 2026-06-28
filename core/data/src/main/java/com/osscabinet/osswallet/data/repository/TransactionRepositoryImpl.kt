@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.joinByComma
@@ -400,13 +401,13 @@ class TransactionRepositoryImpl @Inject constructor(
         profileId: Int,
         filter: TransactionFilter,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         limit: Int?
     ): Flow<Result<List<TransactionWithBalance>>> {
         return getFilteredTransactions(profileId, filter).flatMapLatest { transactions ->
             kotlinx.coroutines.flow.flow {
                 val accounts = accountDao.getAllAccountsSync(profileId).map { it.toDomain() }
-                val exchangeRateSnapshot = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(baseCurrency, exchangeRates)
+                val exchangeRateSnapshot = exchangeRates
 
                 // 1. Fetch starting balances (Anchor)
                 val startingBalancesResult = if (transactions.isNotEmpty()) {

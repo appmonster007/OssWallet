@@ -64,6 +64,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -97,13 +98,10 @@ fun TransactionListTopAppBar(
         right = AeonTopBarSection(
             content = {
                 AeonTopBarActionPill {
-                    IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = AppColors.primary
-                        )
-                    }
+                    AppBarIconButton(
+                        icon = Icons.Default.Settings,
+                        onClick =  { showSettingsDialog = true }
+                    )
                 }
             }
         )

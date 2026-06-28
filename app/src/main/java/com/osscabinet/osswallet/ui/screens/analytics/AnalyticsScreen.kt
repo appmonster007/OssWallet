@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
@@ -112,7 +111,6 @@ fun AnalyticsScreen(
     val accountViewModel = vms.accountViewModel
     val transactionViewModel = vms.transactionViewModel
     val settingsViewModel = vms.settingsViewModel
-    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val cardsConfig by viewModel.cardsConfig.collectAsStateWithLifecycle()
@@ -187,7 +185,6 @@ fun AnalyticsScreen(
                                     screenContext = ScreenContext.ANALYTICS,
                                     commonFilterEnabled = commonFilterEnabled
                                 ),
-                                cardComputerRegistry = cardComputerRegistry,
                                 cardUpdateHandler = viewModel,
                                 onReorder = { viewModel.reorderCards(it) },
                                 onDelete = { viewModel.removeCard(it) },

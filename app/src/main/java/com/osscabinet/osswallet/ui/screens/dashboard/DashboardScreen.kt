@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.card.CardComputeState
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.CardType
@@ -199,7 +198,6 @@ fun DashboardScreen(
     vms: SharedNavViewModels
 ) {
     val dashboardViewModel = vms.dashboardViewModel
-    val cardComputerRegistry = dashboardViewModel.cardComputerRegistry
 
     // Apply initial view focus when screen opens with context
     LaunchedEffect(config.viewContextJson) {
@@ -275,7 +273,6 @@ fun DashboardScreen(
         onAddTag = { name, color -> dashboardViewModel.onIntent(DashboardIntent.AddTag(name, color)) },
         onConfirmPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
         onCancelPlanned = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
-        cardComputerRegistry = cardComputerRegistry,
         cardUpdateHandler = dashboardViewModel
     )
 }
@@ -328,7 +325,6 @@ fun DashboardScreenLayout(
     onAddTag: (String, Int) -> Unit,
     onConfirmPlanned: (Long, Long) -> Unit,
     onCancelPlanned: (Long, Long) -> Unit,
-    cardComputerRegistry: CardComputerRegistry,
     cardUpdateHandler: CardUpdateHandler,
 ) {
     var navTriggered by remember { mutableStateOf(false) }
@@ -489,7 +485,6 @@ fun DashboardScreenLayout(
                                     onConfirmPlanned = onConfirmPlanned,
                                     onCancelPlanned = onCancelPlanned,
                                     onAddCard = onAddCard,
-                                    cardComputerRegistry = cardComputerRegistry,
                                     cardUpdateHandler = cardUpdateHandler,
                                     cardsConfig = cardsConfig,
                                     glanceListState = glanceListState,
@@ -686,7 +681,6 @@ fun DashboardContent(
     onConfirmPlanned: (Long, Long) -> Unit,
     onCancelPlanned: (Long, Long) -> Unit,
     onAddCard: (CardType) -> Unit,
-    cardComputerRegistry: CardComputerRegistry,
     cardUpdateHandler: CardUpdateHandler,
     cardsConfig: DashboardCardsConfig,
     glanceListState: LazyListState,
@@ -710,7 +704,6 @@ fun DashboardContent(
                         state = state,
                         cardsConfig = cardsConfig,
                         listState = glanceListState,
-                        cardComputerRegistry = cardComputerRegistry,
                         cardUpdateHandler = cardUpdateHandler,
                         savedFilters = savedFilters,
                         cardAnimationEnabled = cardAnimationEnabled,
@@ -832,7 +825,6 @@ fun DashboardGlanceTab(
     state: DashboardUiState.Success,
     cardsConfig: DashboardCardsConfig,
     listState: LazyListState = rememberLazyListState(),
-    cardComputerRegistry: CardComputerRegistry,
     cardUpdateHandler: CardUpdateHandler,
     savedFilters: List<Filter>,
     cardAnimationEnabled: Boolean,
@@ -978,7 +970,6 @@ fun DashboardGlanceTab(
         state = listState,
         cardDataMap = state.cardDataMap,
         cardInput = sharedCardInput,
-        cardComputerRegistry = cardComputerRegistry,
         cardUpdateHandler = cardUpdateHandler,
         onReorder = onReorderCards,
         onDelete = onRemoveCard,
@@ -1206,7 +1197,6 @@ fun DashboardScreenPreview() {
             onAddTag = { _, _ -> },
             onConfirmPlanned = { _, _ -> },
             onCancelPlanned = { _, _ -> },
-            cardComputerRegistry = CardComputerRegistry(emptyList()),
             cardUpdateHandler = object : CardUpdateHandler {
                 override val cardUpdateScope: CoroutineScope get() = MainScope()
                 override val cardRepository: CardRepository get() = error("Mock")
@@ -1262,7 +1252,6 @@ fun DashboardGlanceTabPreview() {
         DashboardGlanceTab(
             state = mockState,
             cardsConfig = DashboardCardsConfig(cards = sampleCards),
-            cardComputerRegistry = CardComputerRegistry(emptyList()),
             cardUpdateHandler = object : CardUpdateHandler {
                 override val cardUpdateScope: CoroutineScope get() = MainScope()
                 override val cardRepository: CardRepository get() = error("Mock")

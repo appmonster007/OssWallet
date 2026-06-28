@@ -366,7 +366,7 @@ fun CalculatorKeys(
     keyHeight: Dp = 54.dp,
     canEvaluate: Boolean = false
 ) {
-    val keyGridSpacing = 8.dp
+    val keyGridSpacing = 4.dp
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(keyGridSpacing)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -412,8 +412,8 @@ fun CalculatorKeys(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
-            CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f), keyHeight = keyHeight)
+            CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
             CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = canEvaluate, keyHeight = keyHeight)
         }
@@ -477,9 +477,9 @@ fun CalculatorKey(
     isAccent: Boolean = false,
     keyHeight: Dp = 54.dp
 ) {
-    val cornerRadius = 18.dp
-    val iconSize = 14.dp
-    val labelFontSize = if (label.length > 1) 12.sp else 18.sp
+    val cornerRadius = 8.dp
+    val iconSize = 20.dp
+    val labelFontSize = 24.sp
 
     val backgroundColor = when {
         isAccent -> AppColors.primary

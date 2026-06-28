@@ -48,6 +48,9 @@ import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -267,6 +270,7 @@ fun CategoryTreemapCard(
                 AeonTreemap(
                     nodes = rootNodes,
                     modifier = Modifier.fillMaxSize(),
+                    currency = currency,
                     showLabels = config.showLabels,
                     rounded = config.rounded,
                     animate = animate,
@@ -327,27 +331,17 @@ fun CategoryTreemapCard(
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
                     
-                    val amountText = formatCurrency(total)
-                    val symbolText = CurrencyService.getCurrencySymbol(currency)
-                    val isSymbolLeft = CurrencyService.activeSystem.symbolPosition == CurrencyService.SymbolPosition.LEFT
                     val contentColor = AppColors.contentPrimary
-                    
                     Text(
-                        text = buildAnnotatedString {
-                            if (isSymbolLeft) {
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                    append(symbolText)
-                                }
-                                append(" ")
-                                append(amountText)
-                            } else {
-                                append(amountText)
-                                append(" ")
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                    append(symbolText)
-                                }
-                            }
-                        },
+                        text = CurrencyReprUi.formatCurrencyAnnotated(
+                            amount = total,
+                            currencyCode = currency,
+                            spec = CurrencyDisplaySpec(useSemanticColor = false),
+                            partStyles = CurrencyPartStyles(
+                                symbol = SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp),
+                                neutral = contentColor
+                            )
+                        ),
                         style = AppTextStyles.heroAmount.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
@@ -413,6 +407,7 @@ fun CategoryTreemapCard(
                 Spacer(modifier = Modifier.height(16.dp))
                 TreemapLegend(
                     data = groupedData,
+                    currency = currency,
                     isDarkTheme = isDarkTheme,
                     isAmoled = isAmoled,
                     showFullBreakdown = config.showFullBreakdown,
@@ -492,6 +487,7 @@ private fun CategoryTreemapSettingsSheet(
 @Composable
 fun TreemapLegend(
     data: List<CategoryChartData>,
+    currency: String,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
@@ -533,7 +529,7 @@ fun TreemapLegend(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = formatCurrency(item.amount),
+                        text = formatCurrency(item.amount, currency),
                         style = AppTextStyles.drawerItemLabel.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp

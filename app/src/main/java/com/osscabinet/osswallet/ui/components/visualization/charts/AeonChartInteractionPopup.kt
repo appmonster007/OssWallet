@@ -141,7 +141,7 @@ fun AeonChartInteractionPopup(
     chartWidthPx: Float,
     chartHeightPx: Float,
     density: Float,
-    currency: String = "USD",
+    currency: String,
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     onDismissRequest: () -> Unit = {},
     onDrillInClick: () -> Unit = {},
@@ -304,6 +304,7 @@ fun AeonChartInteractionPopupPreview() {
                 chartWidthPx = 1000f,
                 chartHeightPx = 1000f,
                 density = 2.5f,
+                currency = "USD",
                 onDismissRequest = {}
             )
         }

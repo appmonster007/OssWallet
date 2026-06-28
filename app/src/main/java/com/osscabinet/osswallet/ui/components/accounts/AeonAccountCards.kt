@@ -400,7 +400,7 @@ fun AeonAccountCardLarge(
                                 color = AppColors.contentSecondary.copy(alpha = 0.7f)
                             )
                             Text(
-                                formatCurrency(bal),
+                                formatCurrency(bal, curr),
                                 style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Medium),
                                 color = AppColors.contentPrimary
                             )

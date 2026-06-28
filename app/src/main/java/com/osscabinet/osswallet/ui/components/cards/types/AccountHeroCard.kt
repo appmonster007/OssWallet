@@ -377,7 +377,7 @@ fun AccountHeroCard(
                                     Text(
                                         text = CurrencyReprUi.formatCurrencyAnnotated(
                                             amount = bal,
-                                            currencyCode = null,
+                                            currencyCode = curr,
                                             spec = CurrencyDisplaySpec(useSemanticColor = false)
                                         ),
                                         style = AppTextStyles.transactionTitle.copy(

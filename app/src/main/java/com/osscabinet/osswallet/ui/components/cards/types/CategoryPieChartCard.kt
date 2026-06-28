@@ -321,6 +321,7 @@ fun CategoryPieChartCard(
             Spacer(modifier = Modifier.height(16.dp))
             CategoryLegend(
                 data = groupedData,
+                currency = currency,
                 navigationStack = navigationStack,
                 isDarkTheme = isDarkTheme,
                 isAmoled = isAmoled,
@@ -404,6 +405,7 @@ private fun CategoryPieChartSettingsSheet(
 @Composable
 fun CategoryLegend(
     data: List<CategoryChartData>,
+    currency: String,
     navigationStack: List<List<CategoryChartData>>,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
@@ -460,7 +462,7 @@ fun CategoryLegend(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = formatCurrency(item.amount),
+                        text = formatCurrency(item.amount, currency),
                         style = AppTextStyles.listItemSubtitle.copy(
                             fontWeight = FontWeight.Black
                         ),

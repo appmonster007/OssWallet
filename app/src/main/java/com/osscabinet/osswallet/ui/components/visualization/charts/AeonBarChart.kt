@@ -74,7 +74,7 @@ import android.graphics.Paint as AndroidPaint
 fun AeonBarChart(
     groups: List<AeonBarChartGroup>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = CurrencyService.precision,
     animate: Boolean = false,
     showGrid: Boolean = true,
@@ -217,7 +217,7 @@ fun AeonBarChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
+                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -386,7 +386,7 @@ fun AeonBarChart(
 fun AeonBarChart(
     data: List<Pair<String, BigDecimal>>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = CurrencyService.precision,
     barColor: Color = ChartColorBlue,
     animate: Boolean = false,
@@ -421,6 +421,7 @@ fun AeonBarChartLightPreview() {
                         "Thu" to BigDecimal("280.00"),
                         "Fri" to BigDecimal("600.00")
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -442,6 +443,7 @@ fun AeonBarChartDarkPreview() {
                         "Thu" to BigDecimal("280.00"),
                         "Fri" to BigDecimal("600.00")
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -463,6 +465,7 @@ fun AeonBarChartAmoledPreview() {
                         "Thu" to BigDecimal("280.00"),
                         "Fri" to BigDecimal("600.00")
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -503,7 +506,8 @@ fun AeonBarChartMixedPreview() {
                             AeonBarChartBar(BigDecimal("-400"), "Debt", ChartColorOrange)
                         )
                     )
-                )
+                ),
+                currency = "USD"
             )
         }
     }

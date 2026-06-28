@@ -74,7 +74,7 @@ import android.graphics.Paint as AndroidPaint
 fun AeonLineChart(
     series: List<AeonLineChartSeries>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = CurrencyService.precision,
     showGrid: Boolean = true,
     showPeriodBars: Boolean = true,
@@ -255,7 +255,7 @@ fun AeonLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            currencyFormatter.format(amount = tick, currencyCode = null, spec = chartSpec),
+                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -638,6 +638,7 @@ fun AeonLineChartLightPreview() {
                             )
                         )
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -668,6 +669,7 @@ fun AeonLineChartDarkPreview() {
                             )
                         )
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -698,6 +700,7 @@ fun AeonLineChartAmoledPreview() {
                             )
                         )
                     ),
+                    currency = "USD",
                     animate = false
                 )
             }

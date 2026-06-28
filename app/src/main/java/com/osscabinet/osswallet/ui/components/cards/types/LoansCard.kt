@@ -224,7 +224,7 @@ private fun LoanSummaryRow(
         ) {
             val principalAmount = CurrencyReprUi.formatCurrencyAnnotated(
                 amount = summary.loan.principalAmount,
-                currencyCode = null,
+                currencyCode = summary.loan.currency,
                 spec = CurrencyDisplaySpec(useSemanticColor = false)
             )
             Text(

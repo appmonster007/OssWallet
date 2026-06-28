@@ -62,7 +62,7 @@ import java.math.BigDecimal
 fun AeonTreemap(
     nodes: List<AeonTreemapNode>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     showLabels: Boolean = true,
     rounded: Boolean = true,
@@ -537,7 +537,8 @@ fun AeonTreemapPreview() {
                         0f,
                         null
                     )
-                )
+                ),
+                currency = "USD"
             )
         }
     }

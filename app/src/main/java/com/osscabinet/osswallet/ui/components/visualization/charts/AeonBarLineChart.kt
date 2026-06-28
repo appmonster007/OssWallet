@@ -92,7 +92,7 @@ fun AeonBarLineChart(
     barData: List<BigDecimal> = emptyList(),
     lineData: List<BigDecimal>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     barColorPositive: Color = ChartColorGreen,
     barColorNegative: Color = ChartColorRed,
@@ -260,7 +260,7 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter().format(amount = tick, currencyCode = null, spec = chartSpec),
+                            com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter().format(amount = tick, currencyCode = currency, spec = chartSpec),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -617,6 +617,7 @@ fun AeonBarLineChartLightPreview() {
                 AeonBarLineChart(
                     barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
                     lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -638,6 +639,7 @@ fun AeonBarLineChartDarkPreview() {
                 AeonBarLineChart(
                     barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
                     lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -659,6 +661,7 @@ fun AeonBarLineChartAmoledPreview() {
                 AeonBarLineChart(
                     barData = listOf(BigDecimal("500"), BigDecimal("-200"), BigDecimal("800")),
                     lineData = listOf(BigDecimal("500"), BigDecimal("300"), BigDecimal("1100")),
+                    currency = "USD",
                     animate = false
                 )
             }
@@ -700,7 +703,8 @@ fun AeonBarLineChartDualPreview() {
                 ),
                 xLabels = listOf(null, "Jan", "Feb", "Mar", "Apr"),
                 showXAxisLabels = true,
-                lineThicknessDp = 1.5f
+                lineThicknessDp = 1.5f,
+                currency = "USD"
             )
         }
     }

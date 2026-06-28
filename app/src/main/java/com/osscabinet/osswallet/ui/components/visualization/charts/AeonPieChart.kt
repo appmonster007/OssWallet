@@ -68,7 +68,7 @@ import kotlin.math.sin
 fun AeonPieChart(
     slices: List<AeonPieChartSlice>,
     modifier: Modifier = Modifier,
-    currency: String = "USD",
+    currency: String,
     precision: Int = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
     isDonut: Boolean = true,
     animate: Boolean = false,
@@ -446,6 +446,7 @@ fun AeonPieChartPreview() {
                     AeonPieChartSlice(BigDecimal("40.00"), "Insurance", TagPresetColors[4]),
                     AeonPieChartSlice(BigDecimal("20.00"), "Misc", TagPresetColors[7])
                 ),
+                currency = "USD",
                 animate = false
             )
         }

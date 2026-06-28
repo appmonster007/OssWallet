@@ -1,9 +1,8 @@
-package com.osscabinet.ossWallet.ui.screens.analytics.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,22 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
+import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -62,21 +52,27 @@ import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
-import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
-fun CategoryTreemapCard(
-    config: CategoryTreemapCardConfig,
+fun CategoryPieChartCard(
+    config: CategoryPieChartCardConfig,
     data: List<CategoryChartData>,
     currency: String,
     modifier: Modifier = Modifier,
@@ -101,63 +97,25 @@ fun CategoryTreemapCard(
 
     // Drill-down state
     var navigationStack by remember { mutableStateOf(listOf<List<CategoryChartData>>(data)) }
-    val currentData = navigationStack.last()
 
-    // Grouping logic for "More Categories" grouping based on 2% threshold
-    val groupedData = remember(currentData, config.showOnlyActiveCategories, navigationStack.size) {
-        val filtered = if (config.showOnlyActiveCategories) {
-            currentData.filter { it.amount.signum() != 0 }
+    val filteredData = remember(data, config.showOnlyActiveCategories) {
+        if (config.showOnlyActiveCategories) {
+            data.filter { it.amount.signum() != 0 }
         } else {
-            currentData
-        }
-        val sorted = filtered.sortedByDescending { it.amount.abs() }
-
-        // Detect if we are in a synthesized "More Categories" view
-        val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
-            val prevLevelRawData = navigationStack[navigationStack.size - 2]
-            // If the current list isn't a subcategory of anything in the previous level, 
-            // it's our synthesized "More Categories" list.
-            prevLevelRawData.none { it.subcategoryData === currentData }
-        } else false
-
-        if (!isMoreCategoriesDrillDown) {
-            val mainItems = sorted.filter { it.percentage >= 0.02f }
-            val others = sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
-
-            if (others.size > 1) {
-                val otherSum = others.sumOf { it.amount }
-                val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                val otherPrevSum = if (others.any { it.previousAmount != null }) {
-                    others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
-                } else null
-
-                mainItems + CategoryChartData(
-                    category = "More Categories",
-                    categoryId = -1L,
-                    amount = otherSum,
-                    colorHex = 0xFF9E9E9E.toInt(), // Grey
-                    percentage = otherPercentage,
-                    hasSubcategories = true,
-                    subcategoryCount = others.size,
-                    subcategoryData = others,
-                    previousAmount = otherPrevSum
-                )
-            } else {
-                sorted
-            }
-        } else {
-            sorted
+            data
         }
     }
 
+    val currentData = navigationStack.last()
+
     // Sync with external data changes
-    LaunchedEffect(data) {
-        navigationStack = listOf(data)
+    LaunchedEffect(filteredData) {
+        navigationStack = listOf(filteredData)
     }
 
     AeonExpressiveCard(
         title = config.title,
-        icon = Icons.Rounded.Dashboard,
+        icon = Icons.Rounded.PieChart,
         modifier = modifier,
         headerModifier = headerModifier,
         filterEnabled = showFilterButton,
@@ -168,7 +126,7 @@ fun CategoryTreemapCard(
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         displaySettings = { onDismiss ->
-            CategoryTreemapSettingsSheet(
+            CategoryPieChartSettingsSheet(
                 config = config,
                 onUpdate = { callbacks.onUpdate(it) },
                 onDelete = callbacks.onDelete,
@@ -234,13 +192,55 @@ fun CategoryTreemapCard(
             }
         }
 
+        val groupedData = remember(currentData, navigationStack.size) {
+            val sorted = currentData.sortedByDescending { it.amount.abs() }
+            
+            // Detect if we are in a synthesized "More Categories" view
+            val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
+                val prevLevelRawData = navigationStack[navigationStack.size - 2]
+                // If the current list isn't a subcategory of anything in the previous level, 
+                // it's our synthesized "More Categories" list.
+                prevLevelRawData.none { it.subcategoryData === currentData }
+            } else false
+
+            if (!isMoreCategoriesDrillDown) {
+                val mainItems = sorted.filter { it.percentage >= 0.02f }
+                val others = sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
+
+                if (others.size > 1) {
+                    val otherSum = others.sumOf { it.amount }
+                    val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                    val otherPrevSum = if (others.any { it.previousAmount != null }) {
+                        others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+                    } else null
+
+                    mainItems + CategoryChartData(
+                        category = "More Categories",
+                        categoryId = -1L, // Special ID for "More Categories"
+                        amount = otherSum,
+                        colorHex = 0xFF9E9E9E.toInt(), // Grey
+                        percentage = otherPercentage,
+                        hasSubcategories = true,
+                        subcategoryCount = others.size,
+                        subcategoryData = others,
+                        previousAmount = otherPrevSum
+                    )
+                } else {
+                    sorted
+                }
+            } else {
+                sorted
+            }
+        }
+
+        // Refined Visualization
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(280.dp)
         ) {
             if (groupedData.isNotEmpty()) {
-                val rootNodes = groupedData.mapIndexed { index, item ->
+                val slices = groupedData.mapIndexed { index, item ->
                     val baseColor = if (navigationStack.size > 1) {
                         val prevStack = navigationStack[navigationStack.size - 2]
                         val parentItem = prevStack.find { it.subcategoryData === currentData }
@@ -255,36 +255,53 @@ fun CategoryTreemapCard(
                         baseColor.toChartColor(isDarkTheme, isAmoled)
                     }
 
-                    AeonTreemapNode(
-                        name = item.category,
-                        value = item.amount,
+                    val sliceValue = item.amount
+                    val globalMagnitude = data.sumOf { it.amount.abs() }
+
+                    AeonPieChartSlice(
+                        value = sliceValue,
+                        label = item.category,
                         color = displayColor,
-                        percentageOfTotal = item.percentage,
-                        id = item.categoryId,
                         hasSubcategories = item.hasSubcategories,
-                        subcategoryCount = item.subcategoryCount
+                        subcategoryCount = item.subcategoryCount,
+                        percentageOfTotal = if (globalMagnitude.signum() != 0)
+                            sliceValue.abs().divide(globalMagnitude, 4, RoundingMode.HALF_UP).toFloat()
+                        else 0f,
+                        id = item.categoryId
                     )
                 }
 
-                AeonTreemap(
-                    nodes = rootNodes,
+                val currentDataLocal = navigationStack.last()
+
+                val previousTotalValue = remember(currentDataLocal) {
+                    if (currentDataLocal.any { it.previousAmount != null }) {
+                        currentDataLocal.sumOf { it.previousAmount?.abs() ?: BigDecimal.ZERO }
+                    } else null
+                }
+
+                AeonPieChart(
+                    slices = slices,
                     modifier = Modifier.fillMaxSize(),
-                    showLabels = config.showLabels,
                     rounded = config.rounded,
+                    currency = currency,
                     animate = animate,
-                    onNodeClick = { _ ->
+                    previousTotal = previousTotalValue,
+                    showComparison = config.showComparison,
+                    isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
+                    positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
+                    onSliceClick = { slice ->
                         // Interaction feedback
                     },
-                    onDrillInClick = { node ->
-                        val clickedItem = groupedData.find { it.category == node.name }
+                    onDrillInClick = { slice ->
+                        val clickedItem = groupedData.find { it.category == slice.label }
                         if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
                             navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
                         }
                     },
-                    onNavigateToRecords = { node ->
-                        val clickedItem = groupedData.find { it.category == node.name }
+                    onNavigateToRecords = { slice ->
+                        val clickedItem = groupedData.find { it.category == slice.label }
                         val categoryIds =
-                            clickedItem?.allCategoryIds() ?: listOfNotNull(node.id?.toString())
+                            clickedItem?.allCategoryIds() ?: listOfNotNull(slice.id?.toString())
 
                         callbacks.onRecordsClick(
                             config.filter.copy(
@@ -304,167 +321,58 @@ fun CategoryTreemapCard(
             }
         }
 
-        // Consistent Legend for Treemap
-        if (groupedData.isNotEmpty()) {
+        // Optimized Legend
+        if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Summary Section with Total and Comparison
-            val total = remember(currentData) { currentData.sumOf { it.amount } }
-            val previousTotalValue = remember(currentData) {
-                if (currentData.any { it.previousAmount != null }) {
-                    currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
-                } else null
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column {
-                    Text(
-                        text = "TOTAL",
-                        style = AppTextStyles.overlineLabel.copy(
-                            letterSpacing = 1.25.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-                    
-                    val amountText = formatCurrency(total)
-                    val symbolText = CurrencyService.getCurrencySymbol(currency)
-                    val isSymbolLeft = CurrencyService.activeSystem.symbolPosition == CurrencyService.SymbolPosition.LEFT
-                    val contentColor = AppColors.contentPrimary
-                    
-                    Text(
-                        text = buildAnnotatedString {
-                            if (isSymbolLeft) {
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                    append(symbolText)
-                                }
-                                append(" ")
-                                append(amountText)
-                            } else {
-                                append(amountText)
-                                append(" ")
-                                withStyle(SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp)) {
-                                    append(symbolText)
-                                }
-                            }
-                        },
-                        style = AppTextStyles.heroAmount.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = contentColor
-                    )
-                }
-
-                if (config.showComparison && config.filter.timelineRange !is TimelineRange.AllTime && previousTotalValue != null && previousTotalValue.signum() != 0) {
-                    val delta = total.abs().subtract(previousTotalValue.abs())
-                        .divide(previousTotalValue.abs(), 8, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal("100"))
-
-                    val isIncrease = delta.signum() > 0
-                    val isDecrease = delta.signum() < 0
-
-                    val positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
-
-                    val color = when {
-                        isIncrease -> if (positiveDeltaIsGood) AppColors.positive else AppColors.negative
-                        isDecrease -> if (positiveDeltaIsGood) AppColors.negative else AppColors.positive
-                        else -> AppColors.contentSecondary
-                    }
-
-                    val icon = when {
-                        isIncrease -> Icons.Default.ArrowUpward
-                        isDecrease -> Icons.Default.ArrowDownward
-                        else -> null
-                    }
-
-                    Surface(
-                        color = color.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            if (icon != null) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = color
-                                )
-                            }
-                            Text(
-                                text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
-                                style = AppTextStyles.transactionBadge.copy(
-                                    fontSize = 11.sp
-                                ),
-                                color = color
+            CategoryLegend(
+                data = groupedData,
+                navigationStack = navigationStack,
+                isDarkTheme = isDarkTheme,
+                isAmoled = isAmoled,
+                showFullBreakdown = config.showFullBreakdown,
+                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
+                onItemClick = { item ->
+                    if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
+                        navigationStack = navigationStack + listOf(item.subcategoryData)
+                    } else {
+                        val categoryIds = item.allCategoryIds()
+                        callbacks.onRecordsClick(
+                            config.filter.copy(
+                                categoryIds = categoryIds.map { it.toLong() }.toSet()
                             )
-                        }
+                        )
                     }
                 }
-            }
-
-            if (config.showLegend) {
-                Spacer(modifier = Modifier.height(16.dp))
-                TreemapLegend(
-                    data = groupedData,
-                    isDarkTheme = isDarkTheme,
-                    isAmoled = isAmoled,
-                    showFullBreakdown = config.showFullBreakdown,
-                    onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
-                    onItemClick = { item ->
-                        if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
-                            navigationStack = navigationStack + listOf(item.subcategoryData)
-                        } else {
-                            val categoryIds = item.allCategoryIds()
-                            callbacks.onRecordsClick(
-                                config.filter.copy(
-                                    categoryIds = categoryIds.map { it.toLong() }.toSet()
-                                )
-                            )
-                        }
-                    }
-                )
-            }
+            )
         }
     }
-
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryTreemapSettingsSheet(
-    config: CategoryTreemapCardConfig,
-    onUpdate: (CategoryTreemapCardConfig) -> Unit,
+private fun CategoryPieChartSettingsSheet(
+    config: CategoryPieChartCardConfig,
+    onUpdate: (CategoryPieChartCardConfig) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
+    CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
         CardSettingsSection("Visuals") {
             AeonSettingsToggle(
                 "Show Labels",
                 config.showLabels,
-                description = "Display category names on segments",
                 onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
             )
             AeonSettingsToggle(
                 "Show Legend",
                 config.showLegend,
-                description = "Display list of categories beneath the map",
                 onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
             )
             AeonSettingsToggle(
                 "Rounded Visuals",
                 config.rounded,
-                description = "Apply rounded corners and spacing to segments",
+                description = "Apply spacing and modern segment styles",
                 onCheckedChange = { onUpdate(config.copy(rounded = it)) }
             )
         }
@@ -481,6 +389,12 @@ private fun CategoryTreemapSettingsSheet(
                 description = "Only show categories with non-zero values",
                 onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
             )
+            AeonSettingsToggle(
+                "Show Comparison",
+                config.showComparison,
+                description = "Compare to previous period in chart center",
+                onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
+            )
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
@@ -493,8 +407,9 @@ private fun CategoryTreemapSettingsSheet(
 
 
 @Composable
-fun TreemapLegend(
+fun CategoryLegend(
     data: List<CategoryChartData>,
+    navigationStack: List<List<CategoryChartData>>,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
@@ -507,7 +422,22 @@ fun TreemapLegend(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        displayData.forEach { item ->
+        displayData.forEachIndexed { index, item ->
+            val baseColor = if (navigationStack.size > 1) {
+                val currentData = navigationStack.last()
+                val prevStack = navigationStack[navigationStack.size - 2]
+                val parentItem = prevStack.find { it.subcategoryData === currentData }
+                parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
+            } else {
+                Color(item.colorHex)
+            }
+
+            val displayColor = if (navigationStack.size > 1) {
+                baseColor.generateShade(index, data.size, isDarkTheme, isAmoled)
+            } else {
+                baseColor.toChartColor(isDarkTheme, isAmoled)
+            }
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -516,17 +446,16 @@ fun TreemapLegend(
                     .clickable { onItemClick(item) }
             ) {
                 Surface(
-                    modifier = Modifier.size(10.dp),
-                    shape = RoundedCornerShape(2.dp),
-                    color = Color(item.colorHex).toChartColor(isDarkTheme, isAmoled),
-                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
+                    modifier = Modifier.size(12.dp),
+                    shape = RoundedCornerShape(3.dp),
+                    color = displayColor,
+                    border = BorderStroke(1.dp, AppColors.contentPrimary.copy(alpha = 0.1f))
                 ) {}
 
                 Text(
                     text = item.category,
-                    style = AppTextStyles.drawerItemLabel.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
+                    style = AppTextStyles.listItemSubtitle.copy(
+                        fontWeight = FontWeight.Medium
                     ),
                     modifier = Modifier.weight(1f)
                 )
@@ -537,9 +466,8 @@ fun TreemapLegend(
                 ) {
                     Text(
                         text = formatCurrency(item.amount),
-                        style = AppTextStyles.drawerItemLabel.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
+                        style = AppTextStyles.listItemSubtitle.copy(
+                            fontWeight = FontWeight.Black
                         ),
                         color = AppColors.contentPrimary
                     )
@@ -583,10 +511,56 @@ fun TreemapLegend(
     }
 }
 
+/**
+ * Maps [CategoryPieChartCardConfig] + [CardRenderData.CategoryPieChart] to [CardWithCallbacks.CategoryPieChart].
+ */
+fun mapCategoryPieChart(
+    config: CategoryPieChartCardConfig,
+    renderData: CardRenderData.CategoryPieChart,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.CategoryPieChart(
+    renderData = renderData,
+    callbacks = CardCallbacks.Analytics(
+        onUpdate = { newConfig ->
+            if (newConfig is CategoryPieChartCardConfig) {
+                updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
+            }
+        },
+        onDelete = { onDelete(config.cardId) },
+        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
+
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
-fun CategoryTreemapCardPreview() {
-    val sampleData = listOf(
+fun CategoryPieChartCardPreview() {
+    val subData = listOf(
+        CategoryChartData(
+            category = "Coffee",
+            categoryId = null,
+            amount = BigDecimal("50.00"),
+            colorHex = 0xFF795548.toInt(),
+            percentage = 0.1f
+        ),
+        CategoryChartData(
+            category = "Dinner",
+            categoryId = null,
+            amount = BigDecimal("150.00"),
+            colorHex = 0xFFFF9800.toInt(),
+            percentage = 0.3f
+        )
+    )
+
+    val richData = listOf(
         CategoryChartData(
             category = "Housing",
             categoryId = null,
@@ -595,18 +569,20 @@ fun CategoryTreemapCardPreview() {
             percentage = 0.6f
         ),
         CategoryChartData(
-            category = "Food",
+            category = "Food & Dining",
             categoryId = null,
             amount = BigDecimal("450.00"),
             colorHex = 0xFFFF5722.toInt(),
-            percentage = 0.2f
+            percentage = 0.225f,
+            hasSubcategories = true,
+            subcategoryData = subData
         ),
         CategoryChartData(
             category = "Transport",
             categoryId = null,
             amount = BigDecimal("150.00"),
             colorHex = 0xFF4CAF50.toInt(),
-            percentage = 0.1f
+            percentage = 0.075f
         ),
         CategoryChartData(
             category = "Entertainment",
@@ -688,19 +664,22 @@ fun CategoryTreemapCardPreview() {
     )
 
     OssWalletTheme {
-        CategoryTreemapCard(
-            config = CategoryTreemapCardConfig(
-                cardId = "preview",
-                title = "Category Treemap",
-                showLabels = true,
-                showLegend = true,
-                showComparison = true,
-                filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
-            ),
-            data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
-            currency = "USD"
-        )
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            CategoryPieChartCard(
+                config = CategoryPieChartCardConfig(
+                    cardId = "rich",
+                    title = "Category Pie Chart",
+                    showComparison = true,
+                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
+                ),
+                data = richData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.8"))) },
+                currency = "USD"
+            )
+        }
     }
 }
-
-

@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.analytics.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable

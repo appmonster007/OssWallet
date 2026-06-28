@@ -7,24 +7,10 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryChartData
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.AccountsCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowComparisonCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CategorySpendingTrendCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.CurrencyBalancesCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.IncomeExpenseBarCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.LoansCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.NetWorthCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.PlannedPaymentsCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivitiesCard
-import com.osscabinet.ossWallet.ui.screens.dashboard.components.TagUpSetPlotCard
+import com.osscabinet.ossWallet.ui.components.toIcon
+import com.osscabinet.ossWallet.ui.components.cards.types.*
 
 @Composable
 fun UnifiedCardRenderer(
@@ -337,9 +323,25 @@ fun UnifiedCardRenderer(
             )
         }
 
+        is CardWithCallbacks.Loading -> {
+            AeonExpressiveCard(
+                title = cardWithCallbacks.cardType.displayName,
+                icon = cardWithCallbacks.cardType.toIcon(),
+                headerModifier = headerModifier,
+            ) {
+                CardContentShimmer()
+            }
+        }
+
         is CardWithCallbacks.ComputeError -> {
-            // ComputeError is rendered by AeonCardList before reaching UnifiedCardRenderer.
-            // This branch is a compile-required safety net.
+            AeonExpressiveCard(
+                title = cardWithCallbacks.cardType.displayName,
+                icon = cardWithCallbacks.cardType.toIcon(),
+                headerModifier = headerModifier,
+                isWarning = true,
+            ) {
+                CardErrorContent(cardWithCallbacks.message)
+            }
         }
     }
 }

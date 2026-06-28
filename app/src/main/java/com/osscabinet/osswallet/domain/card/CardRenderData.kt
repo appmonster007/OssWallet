@@ -49,26 +49,33 @@ data class NetWorthMetrics(
  * Every card computation returns a subtype of this class.
  */
 sealed class CardRenderData {
+    abstract val cardType: CardType?
 
     data class NetWorth(
         val config: NetWorthCardConfig,
         val currentPeriodMetrics: NetWorthMetrics,
         val currency: String,
         val previousPeriodMetrics: NetWorthMetrics? = null
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.NET_WORTH
+    }
 
     data class CurrencyBalances(
         val config: CurrencyBalancesCardConfig,
         val items: List<CurrencyAggregationItem>,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CURRENCY_BALANCES
+    }
 
     data class CashFlow(
         val config: CashFlowCardConfig,
         val result: CashFlowResult,
         val currency: String
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CASH_FLOW
+    }
 
     data class Accounts(
         val config: AccountsCardConfig,
@@ -77,7 +84,9 @@ sealed class CardRenderData {
         val currency: String,
         val currentTheme: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.ACCOUNTS
+    }
 
     data class CategoryPieChart(
         val config: CategoryPieChartCardConfig,
@@ -90,7 +99,9 @@ sealed class CardRenderData {
         val previousIncomeTotal: BigDecimal? = null,
         val previousExpenseTotal: BigDecimal? = null,
         val previousTransferTotal: BigDecimal? = null
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CATEGORY_PIE_CHART
+    }
 
     data class CategoryTreemap(
         val config: CategoryTreemapCardConfig,
@@ -103,7 +114,9 @@ sealed class CardRenderData {
         val previousIncomeTotal: BigDecimal? = null,
         val previousExpenseTotal: BigDecimal? = null,
         val previousTransferTotal: BigDecimal? = null
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CATEGORY_TREEMAP
+    }
 
     data class PlannedPayments(
         val config: PlannedPaymentsCardConfig,
@@ -111,34 +124,44 @@ sealed class CardRenderData {
         val overdue: List<PlannedPayment>,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
+    }
 
     data class Budgets(
         val config: BudgetsCardConfig,
         val items: List<BudgetProgress>,
         val currency: String
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.BUDGETS
+    }
 
     data class Loans(
         val config: LoansCardConfig,
         val items: List<LoanSummary>,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.LOANS
+    }
 
     data class AccountHero(
         val config: AccountHeroCardConfig,
         val summary: AccountSummaryItem,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.ACCOUNT_HERO
+    }
 
     data class RecentActivities(
         val config: RecentActivitiesCardConfig,
         val listState: TransactionListState,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.RECENT_ACTIVITIES
+    }
 
     data class CashFlowComparison(
         val config: CashFlowComparisonCardConfig,
@@ -155,7 +178,9 @@ sealed class CardRenderData {
         val currentTotalBuckets: Int = 0,
         val previousTotalBuckets: Int = 0,
         val lastYearTotalBuckets: Int = 0
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CASHFLOW_COMPARISON
+    }
 
     data class IncomeExpenseBar(
         val config: IncomeExpenseBarCardConfig,
@@ -165,7 +190,9 @@ sealed class CardRenderData {
         // Index of the last bucket whose start time is ≤ today.
         // -1 means all buckets are in the future. Used to terminate the net line at today.
         val todayBucketIndex: Int = -1
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.INCOME_EXPENSE_BAR
+    }
 
     data class CategorySpendingTrend(
         val config: CategorySpendingTrendCardConfig,
@@ -173,16 +200,22 @@ sealed class CardRenderData {
         val granularity: CashFlowComparisonGranularity,
         val activeCategories: List<CategorySummary>,
         val currency: String
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.CATEGORY_SPENDING_TREND
+    }
 
     data class TagUpSetPlot(
         val config: TagUpSetPlotCardConfig,
         val sets: List<TagUpSetSet>,
         val intersections: List<TagUpSetIntersection>,
         val currency: String
-    ) : CardRenderData()
+    ) : CardRenderData() {
+        override val cardType: CardType get() = CardType.TAG_UPSET_PLOT
+    }
 
-    data class Error(val message: String?) : CardRenderData()
+    data class Error(val message: String?) : CardRenderData() {
+        override val cardType: CardType? get() = null
+    }
 }
 
 data class TagUpSetSet(

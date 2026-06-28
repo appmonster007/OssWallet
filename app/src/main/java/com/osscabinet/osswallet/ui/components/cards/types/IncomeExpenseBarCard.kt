@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -36,11 +38,14 @@ import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -48,6 +53,28 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
 import java.math.BigDecimal
+
+fun mapIncomeExpenseBar(
+    config: IncomeExpenseBarCardConfig,
+    renderData: CardRenderData.IncomeExpenseBar,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.IncomeExpenseBar(
+    renderData = renderData,
+    callbacks = CardCallbacks.IncomeExpenseBar(
+        onUpdate = { newConfig -> updateHandler.updateIncomeExpenseBarConfig(config.cardId, newConfig) },
+        onDelete = { onDelete(config.cardId) },
+        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @Composable
 fun IncomeExpenseBarCard(

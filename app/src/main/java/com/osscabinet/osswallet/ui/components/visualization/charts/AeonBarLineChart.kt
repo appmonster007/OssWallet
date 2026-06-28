@@ -199,6 +199,7 @@ fun AeonBarLineChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
         val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
+        val currencyFormatter = remember { com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter() }
 
         val isDark = LocalThemeMode.current.isDarkTheme
         val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
@@ -260,7 +261,7 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter().format(amount = tick, currencyCode = currency, spec = chartSpec),
+                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint

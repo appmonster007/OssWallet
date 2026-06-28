@@ -5,7 +5,7 @@ baseline_commit: 'ca1a5a3685fcad8fad3bd21a4f377ece995cf56d'
 # Story 2.3: Dashboard Rendering Optimization (Lazy Loading & Caching)
 
 ## Status
-**Status:** review
+**Status:** done
 **Epic:** Epic 2: Universal UI State & Performance (MVI & Dashboard RCA)
 **ID:** 2.3
 
@@ -226,6 +226,22 @@ This data closes NFR3 ("Dashboard initial load must complete in under 500ms") fr
 - [x] [Review][Defer] `quickCloneTransaction`/`quickDeleteTransaction` proceed without existence check [DashboardViewModel.kt:185-200] — deferred, pre-existing pattern across the codebase
 - [x] [Review][Defer] `addTag` inserts without duplicate name check [DashboardViewModel.kt:179] — deferred, pre-existing domain concern
 - [x] [Review][Defer] Idempotency check in `quickConfirmById` scans only `DASHBOARD_TRANSACTION_FEED_LIMIT=100` transactions [DashboardViewModel.kt:516] — deferred, pre-existing scope limitation
+
+#### Code Review (2026-06-28) — Adversarial + Edge Case + Acceptance Audit
+
+**Patches — Cache Correctness:**
+- [x] [Review][Patch] `CardRenderCache.set` non-atomic — fixed: `profileIndex.compute()` replaces `getOrPut(...)[cardId] = data` for atomic inner-map update [CardRenderCache.kt:23-25]
+- [x] [Review][Patch] `CardRenderCache.invalidateProfile` TOCTOU — fixed: `cache.keys.removeIf { }` and `profileIndex.keys.removeIf { }` replace filter+forEach remove [CardRenderCache.kt:31-34]
+
+**Patches — Lazy Loading Correctness:**
+- [x] [Review][Patch] `_isCardsComputing` never cleared when uncached cards > 4 — fixed: threshold changed from `configs.size` to `cachedSnapshot.size + eagerBatch.size`; shimmer clears after eager 4 complete [DashboardViewModel.kt:501-511]
+- [x] [Review][Patch] Duplicate compute coroutines on rapid `CardBecameVisible` — fixed: `_inFlightCardIds` ConcurrentHashMap.KeySetView guards `computeCardIfNeeded`; `add` returns false if in-flight [DashboardViewModel.kt:544-558]
+
+**Deferred:**
+- [x] [Review][Defer] Orphaned compute coroutines can write `_cardDataMap` after `flatMapLatest` cancels old scope — cooperative cancellation window; stale flash brief and self-correcting [DashboardViewModel.kt] — deferred, architectural constraint
+- [x] [Review][Defer] No undo path for `quickDeleteTransaction` / `quickCloneTransaction` — pre-existing pattern across codebase [DashboardViewModel.kt] — deferred, pre-existing
+- [x] [Review][Defer] Search query whitespace not trimmed before repository call [DashboardViewModel.kt:729] — deferred, pre-existing
+- [x] [Review][Defer] Uncaught exceptions in `changeTransactionStatus`, `quickDeleteTransaction`, `quickCloneTransaction`, `addTag` propagate silently [DashboardViewModel.kt] — deferred, pre-existing pattern
 
 ### Agent Model Used
 

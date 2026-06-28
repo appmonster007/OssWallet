@@ -59,7 +59,7 @@ development_status:
   2-2-mandatory-mvi-pattern-for-dashboard: done
   2-3-dashboard-rendering-optimization-lazy-loading-caching: done
   2-4-per-card-parallel-computation-and-independent-loading-states: done
-  2-5-universal-currency-integrity-and-consistent-formatting: ready-for-dev
+  2-5-universal-currency-integrity-and-consistent-formatting: review
   epic-2-retrospective: optional
   epic-3: in-progress
   3-1-design-token-audit-theme-refactor: ready-for-dev

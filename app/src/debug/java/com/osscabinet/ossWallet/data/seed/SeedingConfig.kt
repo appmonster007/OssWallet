@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
 
 object SeedingConfig {
 
-    private val seedingEnabled = BuildConfig.ENABLE_SEEDING
+    val isEnabled = BuildConfig.ENABLE_SEEDING
+    private val seedingEnabled = isEnabled
 
     fun launchSeedingIfEnabled(
         database: AppDatabase,

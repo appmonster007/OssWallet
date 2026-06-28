@@ -6,6 +6,8 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 
 object SeedingConfig {
 
+    val isEnabled = false
+
     fun launchSeedingIfEnabled(
         database: AppDatabase,
         settingsDataStore: SettingsDataStore,

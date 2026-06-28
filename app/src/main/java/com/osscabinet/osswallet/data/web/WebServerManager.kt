@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.data.web
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -158,9 +157,7 @@ class WebServerManager @Inject constructor(
                     header("X-Frame-Options", "DENY")
                     header("Referrer-Policy", "no-referrer")
                 }
-                if (BuildConfig.DEBUG) {
-                    install(io.ktor.server.plugins.calllogging.CallLogging)
-                }
+                installDebugPlugins()
                 with(routes) { installRoutes() }
             }.start(wait = false)
 

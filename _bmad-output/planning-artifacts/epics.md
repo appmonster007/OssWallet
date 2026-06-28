@@ -193,6 +193,33 @@ So that the UI remains fluid even with complex financial aggregations.
 **And** scrolling must maintain a consistent 60+ FPS on mid-range devices
 **And** 3D card flips must occur without visible frame drops during the state transition.
 
+### Story 2.4: Per-Card Parallel Computation & Independent Loading States
+
+As a developer,
+I want each dashboard card to compute its data in parallel and maintain its own loading/error state,
+So that the dashboard remains interactive even if one card is slow or fails.
+
+**Acceptance Criteria:**
+
+**Given** a dashboard that currently computes all cards sequentially or blocks the UI
+**When** I refactor the computation engine to launch per-card coroutines
+**Then** each card transitions from 'loading' to 'success' or 'error' independently
+**And** a failure in one card's aggregation logic does not prevent other cards from rendering.
+
+### Story 2.5: Universal Currency Integrity & Consistent Formatting
+
+As a user,
+I want all charts and cards to display amounts with the correct currency symbol and formatting,
+so that I have full confidence in the multi-currency accounting data I see on my dashboard and analytics.
+
+**Acceptance Criteria:**
+
+**Given** a multi-currency profile
+**When** I view dashboard cards or analytics charts (Treemap, Pie, Bar, Line)
+**Then** all amounts are displayed with their correct native or converted currency symbols (₹, $, €, etc.)
+**And** chart Y-axis ticks and hover-tooltips correctly reflect the active currency
+**And** multi-currency distribution badges in Account Hero cards show symbols for each currency breakdown.
+
 ## Epic 3: Design System Consolidation ("H" Identity)
 
 Audit and refactor all existing screens to strictly adhere to the H-Editorial Instrument standards, focusing on simplification and Settings screen cleanup.

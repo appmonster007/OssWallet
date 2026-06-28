@@ -424,9 +424,9 @@ object TimelineService {
             TransactionGroupingType.BY_DAY -> {
                 val date = LocalDate.parse(key)
                 val today = LocalDate.now(systemZoneId)
-                when {
-                    date == today -> "Today"
-                    date == today.minusDays(1) -> "Yesterday"
+                when (date) {
+                    today -> "Today"
+                    today.minusDays(1) -> "Yesterday"
                     else -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
                 }
             }

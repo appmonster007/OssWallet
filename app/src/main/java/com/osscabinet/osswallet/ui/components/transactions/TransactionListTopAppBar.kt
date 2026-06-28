@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Portrait
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.VerticalAlignBottom
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -413,6 +415,34 @@ fun TransactionListTopAppBar(
                                         )
                                     )
                                 },
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.3f)
+                            )
+                            AeonSettingsItem(
+                                title = "Fast Scroll Side",
+                                subtitle = when (recordsSettings.fastScrollSide) {
+                                    FastScrollSide.LEFT -> "Left side"
+                                    FastScrollSide.RIGHT -> "Right side"
+                                },
+                                icon = Icons.Rounded.SwapVert,
+                                trailingContent = {
+                                    Icon(
+                                        Icons.Rounded.ChevronRight,
+                                        contentDescription = null,
+                                        tint = AppColors.border,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                },
+                                onClick = {
+                                    val next = when (recordsSettings.fastScrollSide) {
+                                        FastScrollSide.RIGHT -> FastScrollSide.LEFT
+                                        FastScrollSide.LEFT -> FastScrollSide.RIGHT
+                                    }
+                                    onUpdateRecordsSettings(recordsSettings.copy(fastScrollSide = next))
+                                }
                             )
                         }
 

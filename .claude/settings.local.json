@@ -105,7 +105,11 @@
       "Bash(rm app/src/main/java/com/osscabinet/ossWallet/ui/navigation/graphs/AccountsNavGraph.kt.bak app/src/main/java/com/osscabinet/ossWallet/ui/navigation/graphs/PrimaryTabsNavGraph.kt.bak)",
       "Bash(ffprobe -v quiet -show_format -show_streams ~/Downloads/Screen_Recording_20260621_153843_OssWallet.mp4)",
       "Bash(ffmpeg -i ~/Downloads/Screen_Recording_20260621_153843_OssWallet.mp4 -vf \"fps=2,scale=400:-1\" -frames:v 12 /tmp/frame_%02d.png)",
-      "Bash(qlmanage -t -s 400 -o /tmp/ ~/Downloads/Screen_Recording_20260621_153843_OssWallet.mp4)"
+      "Bash(qlmanage -t -s 400 -o /tmp/ ~/Downloads/Screen_Recording_20260621_153843_OssWallet.mp4)",
+      "Bash(ffmpeg -i \"/Users/prathitaswar/Downloads/Screen_Recording_20260628_234533_OssWallet~2.mp4\" -vf \"fps=1\" -q:v 2 /tmp/bug_frame_%03d.jpg)",
+      "Bash(brew list *)",
+      "Bash(ffmpeg -i \"/Users/prathitaswar/Downloads/Screen_Recording_20260628_234533_OssWallet~2.mp4\" -vf \"fps=2\" -q:v 2 /tmp/bug_frame_%03d.jpg)",
+      "WebFetch(domain:nameisjayant.medium.com)"
     ]
   }
 }

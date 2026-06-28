@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -404,13 +405,15 @@ class DashboardViewModel @Inject constructor(
                         settingsRepository.cardAnimationEnabled,
                         settingsRepository.expandableFabEnabled,
                         settingsRepository.recentActivitiesBreakdown,
-                        profileRepository.getAllProfiles()
-                    ) { anim, fab, breakdown, profiles ->
+                        profileRepository.getAllProfiles(),
+                        settingsRepository.recordsSettings
+                    ) { anim, fab, breakdown, profiles, records ->
                         DashboardDisplayPrefs(
                             currentProfileName = profiles.find { it.id == profileId }?.name,
                             cardAnimationEnabled = anim,
                             expandableFabEnabled = fab,
-                            recentActivitiesBreakdown = breakdown
+                            recentActivitiesBreakdown = breakdown,
+                            fastScrollSide = records.fastScrollSide
                         )
                     }
                 ) { initialCtx, config, prefs ->

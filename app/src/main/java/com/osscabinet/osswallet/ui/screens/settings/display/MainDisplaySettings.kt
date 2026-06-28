@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SettingsSuggest
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -56,6 +57,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
 import com.osscabinet.ossWallet.ui.components.AeonSettingsSection
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -508,6 +510,28 @@ fun MainDisplaySettings(
                                     viewModel.updateRecordsSettings { it.copy(stickyHeaders = checked) }
                                 },
                                 isFlush = false
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = AeonTheme.dimensions.screenPadding),
+                                thickness = 0.5.dp,
+                                color = AppColors.divider.copy(alpha = 0.5f)
+                            )
+                            AeonSettingsItem(
+                                title = "Fast Scroll Side",
+                                subtitle = when (recordsSettings.fastScrollSide) {
+                                    FastScrollSide.LEFT -> "Left side"
+                                    FastScrollSide.RIGHT -> "Right side"
+                                },
+                                icon = Icons.Rounded.SwapVert,
+                                onClick = {
+                                    viewModel.updateRecordsSettings {
+                                        val next = when (it.fastScrollSide) {
+                                            FastScrollSide.RIGHT -> FastScrollSide.LEFT
+                                            FastScrollSide.LEFT -> FastScrollSide.RIGHT
+                                        }
+                                        it.copy(fastScrollSide = next)
+                                    }
+                                }
                             )
                         }
                     }

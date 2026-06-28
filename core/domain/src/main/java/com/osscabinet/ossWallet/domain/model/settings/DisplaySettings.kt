@@ -8,6 +8,11 @@ enum class TransactionGroupingType {
 }
 
 @Serializable
+enum class FastScrollSide {
+    LEFT, RIGHT
+}
+
+@Serializable
 data class TransactionSectionSettings(
     val stickyHeaders: Boolean = false,
     val showPlannedPayments: Boolean = false,
@@ -25,5 +30,6 @@ data class TransactionSectionSettings(
     val showNote: Boolean = true,
     val showTags: Boolean = true,
     val showTimestamp: Boolean = true,
-    val showIcon: Boolean = true
+    val showIcon: Boolean = true,
+    val fastScrollSide: FastScrollSide = FastScrollSide.RIGHT
 )

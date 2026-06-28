@@ -4,7 +4,7 @@ baseline_commit: f1e1ec9da8094a09c00a8f430b0cc48d7263a575
 
 # Story 2.4: Per-Card Parallel Computation & Independent Loading States
 
-Status: in-progress
+Status: done
 
 ---
 
@@ -234,28 +234,28 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
 
 ### Phase 1 — Foundation (ship as one PR; AeonCardList signature change cascades to all callers)
 
-- [ ] **Task 1 — Create `CardComputeState` (AC: 1)**
-  - [ ] 1.1 Create `domain/card/CardComputeState.kt`
-  - [ ] 1.2 `@Immutable sealed class CardComputeState { data object Loading; data class Success(val data: CardRenderData); data class Error(val message: String) }`
-  - [ ] 1.3 No `android.*` or `androidx.*` imports
+- [x] **Task 1 — Create `CardComputeState` (AC: 1)**
+  - [x] 1.1 Create `domain/card/CardComputeState.kt`
+  - [x] 1.2 `@Immutable sealed class CardComputeState { data object Loading; data class Success(val data: CardRenderData); data class Error(val message: String) }`
+  - [x] 1.3 No `android.*` or `androidx.*` imports
 
-- [ ] **Task 2 — Update `DashboardViewModel` (AC: 2, 3, 4)**
-  - [ ] 2.1 Change `_cardDataMap` declaration:
+- [x] **Task 2 — Update `DashboardViewModel` (AC: 2, 3, 4)**
+  - [x] 2.1 Change `_cardDataMap` declaration:
     ```kotlin
     // Before:
     private val _cardDataMap = MutableStateFlow<ImmutableMap<String, CardRenderData>>(persistentMapOf())
     // After:
     private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     ```
-  - [ ] 2.2 Remove `_isCardsComputing: MutableStateFlow<Boolean>` field
-  - [ ] 2.3 Remove `completedCount: AtomicInteger`
-  - [ ] 2.4 At round start, emit a full-Loading map:
+  - [x] 2.2 Remove `_isCardsComputing: MutableStateFlow<Boolean>` field
+  - [x] 2.3 Remove `completedCount: AtomicInteger`
+  - [x] 2.4 At round start, emit a full-Loading map:
     ```kotlin
     _cardDataMap.value = configs.associate { it.cardId to CardComputeState.Loading }
                                 .toPersistentMap()
     ```
     Remove the old `_cardDataMap.value = persistentMapOf()` and `_isCardsComputing.value = configs.isNotEmpty()` lines.
-  - [ ] 2.5 Each card coroutine — use `.put()` for O(log N) update:
+  - [x] 2.5 Each card coroutine — use `.put()` for O(log N) update:
     ```kotlin
     configs.forEach { cardConfig ->
         launch(dispatchers.default) {
@@ -273,17 +273,17 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
         }
     }
     ```
-  - [ ] 2.6 Remove `if (configs.isEmpty()) { _isCardsComputing.value = false }` branch — empty config means the Loading map is immediately the final state (no cards to compute)
-  - [ ] 2.7 Simplify inner collect: replace `combine(_cardDataMap, _isCardsComputing) { ... }` with `_cardDataMap.collect { send(successState.copy(cardDataMap = it)) }`
-  - [ ] 2.8 Update `DashboardUiState.Success`:
+  - [x] 2.6 Remove `if (configs.isEmpty()) { _isCardsComputing.value = false }` branch — empty config means the Loading map is immediately the final state (no cards to compute)
+  - [x] 2.7 Simplify inner collect: replace `combine(_cardDataMap, _isCardsComputing) { ... }` with `_cardDataMap.collect { send(successState.copy(cardDataMap = it)) }`
+  - [x] 2.8 Update `DashboardUiState.Success`:
     - Change `cardDataMap: ImmutableMap<String, CardRenderData>` → `ImmutableMap<String, CardComputeState>`
     - Remove `isCardsComputing: Boolean`
-  - [ ] 2.9 Update initial `DashboardUiState.Success` construction in the `combine` block (line ~452): set `cardDataMap = persistentMapOf()` (the real Loading map is set inside `channelFlow`; this initial value is immediately overwritten)
+  - [x] 2.9 Update initial `DashboardUiState.Success` construction in the `combine` block (line ~452): set `cardDataMap = persistentMapOf()` (the real Loading map is set inside `channelFlow`; this initial value is immediately overwritten)
 
-- [ ] **Task 3 — Update `AeonCardList` (AC: 5)**
-  - [ ] 3.1 Change signature: `cardDataMap: ImmutableMap<String, CardComputeState>` replaces `cardDataMap: Map<String, CardRenderData>` + `isCardsLoading: Boolean`
-  - [ ] 3.2 Update `cardDataMapState = rememberUpdatedState(cardDataMap)` — type flows through automatically
-  - [ ] 3.3 Update `preComputedData derivedStateOf` and the `when` block:
+- [x] **Task 3 — Update `AeonCardList` (AC: 5)**
+  - [x] 3.1 Change signature: `cardDataMap: ImmutableMap<String, CardComputeState>` replaces `cardDataMap: Map<String, CardRenderData>` + `isCardsLoading: Boolean`
+  - [x] 3.2 Update `cardDataMapState = rememberUpdatedState(cardDataMap)` — type flows through automatically
+  - [x] 3.3 Update `preComputedData derivedStateOf` and the `when` block:
     ```kotlin
     when (val cardState = cardDataMapState.value[cardConfig.cardId]) {
         is CardComputeState.Loading, null -> CardShimmerPlaceholder()
@@ -302,38 +302,38 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
         }
     }
     ```
-  - [ ] 3.4 Remove `isCardsLoading: Boolean` parameter entirely
-  - [ ] 3.5 Remove `Box(modifier = Modifier.size(0.dp))` — replace any remaining `null` return with `CardShimmerPlaceholder()`
+  - [x] 3.4 Remove `isCardsLoading: Boolean` parameter entirely
+  - [x] 3.5 Remove `Box(modifier = Modifier.size(0.dp))` — replace any remaining `null` return with `CardShimmerPlaceholder()`
 
-- [ ] **Task 4 — Update `CardUiBridge.rememberCardWithCallbacks` (AC: 5)**
-  - [ ] 4.1 Remove `serverDriven: Boolean` parameter — the async `LaunchedEffect(config, input)` path now fires whenever `preComputedData == null`, for all screens
-  - [ ] 4.2 The async path still serves screens (Analytics Screen CardInput for filter/callback display) where the ViewModel pushes `CardComputeState.Success` data via `cardDataMap`, so the card will almost immediately switch to the sync path once the ViewModel completes; the async path provides a fallback only
+- [x] **Task 4 — Update `CardUiBridge.rememberCardWithCallbacks` (AC: 5)**
+  - [x] 4.1 Remove `serverDriven: Boolean` parameter — the async `LaunchedEffect(config, input)` path now fires whenever `preComputedData == null`, for all screens
+  - [x] 4.2 The async path still serves screens (Analytics Screen CardInput for filter/callback display) where the ViewModel pushes `CardComputeState.Success` data via `cardDataMap`, so the card will almost immediately switch to the sync path once the ViewModel completes; the async path provides a fallback only
 
-- [ ] **Task 5 — Remove `CardBecameVisible` machinery (AC: 6)**
-  - [ ] 5.1 Remove `DashboardIntent.CardBecameVisible` from the sealed class
-  - [ ] 5.2 Remove `is DashboardIntent.CardBecameVisible -> computeCardIfNeeded(intent.cardType)` from `onIntent`
-  - [ ] 5.3 Remove `computeCardIfNeeded` private function
-  - [ ] 5.4 Remove `_inFlightCardIds` field
-  - [ ] 5.5 Remove `LaunchedEffect(glanceListState.firstVisibleItemIndex)` block from `DashboardScreen`
+- [x] **Task 5 — Remove `CardBecameVisible` machinery (AC: 6)**
+  - [x] 5.1 Remove `DashboardIntent.CardBecameVisible` from the sealed class
+  - [x] 5.2 Remove `is DashboardIntent.CardBecameVisible -> computeCardIfNeeded(intent.cardType)` from `onIntent`
+  - [x] 5.3 Remove `computeCardIfNeeded` private function
+  - [x] 5.4 Remove `_inFlightCardIds` field
+  - [x] 5.5 Remove `LaunchedEffect(glanceListState.firstVisibleItemIndex)` block from `DashboardScreen`
 
-- [ ] **Task 6 — Update all `AeonCardList` callers to new signature (AC: 9)**
-  - [ ] 6.1 `grep -r "AeonCardList\|isCardsLoading\|isCardsComputing" app/src --include="*.kt"` — list all call sites
-  - [ ] 6.2 DashboardScreen: pass `state.cardDataMap` (now `ImmutableMap<String, CardComputeState>`), remove `isCardsLoading = state.isCardsComputing`
-  - [ ] 6.3 AnalyticsScreen: pass `cardDataMap` from `viewModel.cardDataMap` (updated type in Task 7); remove any `isCardsLoading`
-  - [ ] 6.4 AccountDetailScreen: pass `cardDataMap` from `accountDetailViewModel.cardDataMap` (Task 8); remove `CardInput` construction from the Screen for computation
-  - [ ] 6.5 Update preview stubs in `DashboardScreen.kt:1126` and `1257` — wrap `CardRenderData` values in `CardComputeState.Success(...)`
+- [x] **Task 6 — Update all `AeonCardList` callers to new signature (AC: 9)**
+  - [x] 6.1 `grep -r "AeonCardList\|isCardsLoading\|isCardsComputing" app/src --include="*.kt"` — list all call sites
+  - [x] 6.2 DashboardScreen: pass `state.cardDataMap` (now `ImmutableMap<String, CardComputeState>`), remove `isCardsLoading = state.isCardsComputing`
+  - [x] 6.3 AnalyticsScreen: pass `cardDataMap` from `viewModel.cardDataMap` (updated type in Task 7); remove any `isCardsLoading`
+  - [x] 6.4 AccountDetailScreen: pass `cardDataMap` from `accountDetailViewModel.cardDataMap` (Task 8); remove `CardInput` construction from the Screen for computation
+  - [x] 6.5 Update preview stubs in `DashboardScreen.kt:1126` and `1257` — wrap `CardRenderData` values in `CardComputeState.Success(...)`
 
 ### Phase 2 — Analytics (can ship after Phase 1)
 
-- [ ] **Task 7 — Refactor `AnalyticsViewModel` card computation (AC: 7)**
-  - [ ] 7.1 Add `private val dispatchers: DispatcherProvider` to constructor and Hilt injection
-  - [ ] 7.2 Change `cardDataMap` to `MutableStateFlow<PersistentMap<String, CardComputeState>>`:
+- [x] **Task 7 — Refactor `AnalyticsViewModel` card computation (AC: 7)**
+  - [x] 7.1 Add `private val dispatchers: DispatcherProvider` to constructor and Hilt injection
+  - [x] 7.2 Change `cardDataMap` to `MutableStateFlow<PersistentMap<String, CardComputeState>>`:
     ```kotlin
     private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> =
         _cardDataMap.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), persistentMapOf())
     ```
-  - [ ] 7.3 Replace the `combine { computeAll(...) }.stateIn(...)` with a `viewModelScope.launch` that observes the four input flows and re-runs whenever any changes. Pattern:
+  - [x] 7.3 Replace the `combine { computeAll(...) }.stateIn(...)` with a `viewModelScope.launch` that observes the four input flows and re-runs whenever any changes. Pattern:
     ```kotlin
     viewModelScope.launch {
         combine(cardsConfig, uiState, _screenFilter, commonFilterEnabled) {
@@ -383,24 +383,24 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
         }
     }
     ```
-  - [ ] 7.4 Inject `CardComputerRegistry` into `AnalyticsViewModel` (currently not injected — it borrows from `DashboardViewModel` via the Screen). Add to constructor and Hilt module.
-  - [ ] 7.5 `grep -r "computeAll" app/src --include="*.kt"` — if `AnalyticsViewModel` was the only caller, remove `ComputeCardUseCase.computeAll()`. If other callers exist, keep it.
-  - [ ] 7.6 Update `AnalyticsScreen`: the `cardInput` passed to `AeonCardList` is now for UI/callback purposes only (filter display, navigation). Keep it as a Screen-constructed `CardInput` for callbacks — it does not drive computation. Remove `cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry` from the Screen if no longer needed for computation (it will still be needed for the `AeonCardList` callback path — keep it).
+  - [x] 7.4 Inject `CardComputerRegistry` into `AnalyticsViewModel` (currently not injected — it borrows from `DashboardViewModel` via the Screen). Add to constructor and Hilt module.
+  - [x] 7.5 `grep -r "computeAll" app/src --include="*.kt"` — if `AnalyticsViewModel` was the only caller, remove `ComputeCardUseCase.computeAll()`. If other callers exist, keep it.
+  - [x] 7.6 Update `AnalyticsScreen`: the `cardInput` passed to `AeonCardList` is now for UI/callback purposes only (filter display, navigation). Keep it as a Screen-constructed `CardInput` for callbacks — it does not drive computation. Remove `cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry` from the Screen if no longer needed for computation (it will still be needed for the `AeonCardList` callback path — keep it).
 
 ### Phase 3 — Account Detail (can ship after Phase 1)
 
-- [ ] **Task 8 — Refactor `AccountDetailViewModel` card computation (AC: 8)**
-  - [ ] 8.1 Add `private val dispatchers: DispatcherProvider` and `private val cardComputerRegistry: CardComputerRegistry` to constructor and Hilt injection
-  - [ ] 8.2 Add:
+- [x] **Task 8 — Refactor `AccountDetailViewModel` card computation (AC: 8)**
+  - [x] 8.1 Add `private val dispatchers: DispatcherProvider` and `private val cardComputerRegistry: CardComputerRegistry` to constructor and Hilt injection
+  - [x] 8.2 Add:
     ```kotlin
     private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> =
         _cardDataMap.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), persistentMapOf())
     ```
-  - [ ] 8.3 React to `uiState` and `cardsConfig` to launch card computation. Observe both in a `viewModelScope.launch { combine(uiState, cardsConfig) { ... }.collect { ... } }`:
+  - [x] 8.3 React to `uiState` and `cardsConfig` to launch card computation. Observe both in a `viewModelScope.launch { combine(uiState, cardsConfig) { ... }.collect { ... } }`:
     - When `AccountDetailUiState.Success`: emit all-Loading, then build `CardInput` on `dispatchers.default` (including `categoryHierarchy = CategoryHierarchyCache.build(categories)`), then launch each card as `launch(dispatchers.default)`
     - When not Success: `_cardDataMap.value = persistentMapOf()`
-  - [ ] 8.4 The `CardInput` for AccountDetail computation:
+  - [x] 8.4 The `CardInput` for AccountDetail computation:
     ```kotlin
     CardInput(
         profileId = state.profileId,
@@ -416,13 +416,29 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
         categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
     )
     ```
-  - [ ] 8.5 AccountDetail does NOT use `CardRenderCache`
-  - [ ] 8.6 Update `AccountDetailScreen`: remove `CardInput` construction at lines 604-620. Pass `cardDataMap = accountDetailViewModel.cardDataMap` to `AeonCardList`. The Screen still needs a `CardInput` for callback context (filter sheets) — keep a simplified Screen-side `CardInput` for that purpose only, clearly commented.
+  - [x] 8.5 AccountDetail does NOT use `CardRenderCache`
+  - [x] 8.6 Update `AccountDetailScreen`: remove `CardInput` construction at lines 604-620. Pass `cardDataMap = accountDetailViewModel.cardDataMap` to `AeonCardList`. The Screen still needs a `CardInput` for callback context (filter sheets) — keep a simplified Screen-side `CardInput` for that purpose only, clearly commented.
 
-- [ ] **Task 9 — Update tests (AC: 10)**
-  - [ ] 9.1 `grep -r "isCardsComputing\|CardBecameVisible\|isCardsLoading\|CardRenderData" app/src/test --include="*.kt"`
-  - [ ] 9.2 Update `DashboardViewModelTest`: remove `isCardsComputing` assertions; assert `CardComputeState.Loading` at round start, `CardComputeState.Success` after computation
-  - [ ] 9.3 `./gradlew testDebugUnitTest` — all pass
+- [x] **Task 9 — Update tests (AC: 10)**
+  - [x] 9.1 `grep -r "isCardsComputing\|CardBecameVisible\|isCardsLoading\|CardRenderData" app/src/test --include="*.kt"`
+  - [x] 9.2 Update `DashboardViewModelTest`: remove `isCardsComputing` assertions; assert `CardComputeState.Loading` at round start, `CardComputeState.Success` after computation
+  - [x] 9.3 `./gradlew testDebugUnitTest` — all pass
+
+### Review Findings (2026-06-28)
+
+- [x] [Review][Decision] `CardComputeState` missing `@Immutable` — resolved: documented in class KDoc. Kotlin 2.0+ Compose Compiler Plugin infers sealed class stability automatically; `androidx.compose.runtime.Immutable` cannot be imported in `domain/`. A custom annotation has no compiler effect. If recomposition issues arise, use `composeCompiler { stabilityConfigurationFile }`.
+- [x] [Review][Patch] `AccountDetailViewModel.cardDataMap` missing `.asStateFlow()` — fixed: added `asStateFlow()` and `import kotlinx.coroutines.flow.asStateFlow` [AccountDetailViewModel.kt]
+- [x] [Review][Patch] `cardInput == null` leaves Dashboard card in `Loading` forever — fixed: emits `CardComputeState.Error("Card input unavailable")` per affected card [DashboardViewModel.kt]
+- [x] [Review][Patch] Stale card jobs may write to `_cardDataMap` after new-round reset — fixed: replaced `coroutineScope { forEach { launch } }` with `forEach { viewModelScope.launch }` + `AtomicInteger` generation counter in both AnalyticsViewModel and AccountDetailViewModel. Also resolves the `coroutineScope` blocking-cancellation deferred item. [AnalyticsViewModel.kt + AccountDetailViewModel.kt]
+- [x] [Review][Defer] `coroutineScope {}` inside `collectLatest` blocks rapid cancellation — resolved as part of the stale-jobs patch above: replaced with `viewModelScope.launch` per card + generation counter
+- [x] [Review][Defer] `fold(persistentMapOf()) { acc, c -> acc.put(...) }` creates N intermediate PersistentMap snapshots — fixed: replaced with `.builder().apply { forEach { put(...) } }.build()` in all three ViewModels
+
+### Review Findings (2026-06-28 — pass 2, fresh adversarial review)
+
+- [x] [Review][Patch] Dashboard: no generation guard in channelFlow — CPU-bound `compute()` in `launch(dispatchers.default)` children runs to completion after `flatMapLatest` cancels the `channelFlow`; fixed: added `_computeGeneration` field and `roundGen` guard before `_cardDataMap.update` [DashboardViewModel.kt:504]
+- [x] [Review][Patch] Analytics/AccountDetail: Loading map set after `withContext` delay, not immediately — AC7/AC8 spec requires immediate shimmer on input change; fixed: moved Loading map assignment to before `withContext` so shimmers appear immediately on input change [AnalyticsViewModel.kt:207, AccountDetailViewModel.kt:264]
+- [x] [Review][Defer→Fixed] Analytics/AccountDetail old compute jobs waste CPU after `collectLatest` restarts — fixed: added `_currentCardComputeJob` parent `Job`; cancelled at the start of each new round, cascading cancellation to all child card coroutines via structured concurrency [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- [x] [Review][Defer→Dismissed] Cards absent from `cardDataMap` show infinite shimmer — dismissed: parent Job cancellation ensures every card either completes or is re-launched by the next round; `runCatching` catches `Throwable` so no compute error escapes; no actionable scenario remains [AeonCardList.kt:143]
 
 ---
 
@@ -509,4 +525,22 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- `CardComputeState` has no `@Immutable` annotation — domain layer prohibits `androidx.*` imports per CLAUDE.md. Kotlin 2.0+ Compose Compiler Plugin infers sealed class stability automatically (all subtypes are data object / data class with stable fields). Rationale documented in class KDoc. If recomposition issues are observed, use `composeCompiler { stabilityConfigurationFile }`.
+- `PersistentMap.put()` shows a deprecation warning (use `putting()` instead) for the version in use. Changed calls work correctly; migration to `putting()` deferred to avoid noise.
+- AnalyticsViewModel and AccountDetailViewModel: replaced `coroutineScope { forEach { launch(dispatchers.default) } }` with `forEach { viewModelScope.launch(dispatchers.default) }` + `AtomicInteger` generation counter. This allows `collectLatest` to respond to new input without waiting for in-flight computes to finish, and prevents stale writes via the generation check.
+- Loading map construction uses `.builder().apply { }.build()` (single-pass, no intermediate PersistentMap snapshots) instead of `fold { acc.put(...) }` (N intermediate snapshots).
+- AccountDetailViewModel and AnalyticsViewModel: `CategoryHierarchyCache.build()` runs inside `withContext(dispatchers.default)` before launching card coroutines — once per round on the default dispatcher.
+- AccountDetailScreen: `DynamicAccountDetailCards` received `cardDataMap` as a parameter with a default of `persistentMapOf()` to keep the signature backward-compatible with preview composables.
+- All tests pass; no `isCardsComputing`/`CardBecameVisible` assertions existed in test files.
+
 ### File List
+
+- `app/src/main/java/com/osscabinet/ossWallet/domain/card/CardComputeState.kt` (NEW)
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/dashboard/DashboardViewModel.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/dashboard/DashboardIntent.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/dashboard/DashboardScreen.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/AeonCardList.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/CardUiBridge.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/analytics/AnalyticsViewModel.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/accounts/detail/AccountDetailViewModel.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/screens/accounts/detail/AccountDetailScreen.kt`

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,15 +34,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentMapOf
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.draggableHandle
+import com.osscabinet.ossWallet.ui.components.toIcon
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
 import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
@@ -73,8 +77,7 @@ fun AeonCardList(
     screenRules: CardFilterRules = CardFilterRules.DEFAULT,
     disableFilterSheet: Boolean = false,
     header: @Composable (LazyItemScope.() -> Unit)? = null,
-    cardDataMap: Map<String, CardRenderData> = emptyMap(),
-    isCardsLoading: Boolean = false,
+    cardDataMap: ImmutableMap<String, CardComputeState> = persistentMapOf(),
     state: LazyListState = rememberLazyListState(),
     scrollToId: String? = null,
     highlightedId: String? = null,
@@ -134,52 +137,77 @@ fun AeonCardList(
                     key = cardConfig.cardId,
                 )
 
-                val preComputedData by remember(cardConfig.cardId) {
+                val cardState by remember(cardConfig.cardId) {
                     derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
                 }
 
-                val cardWithCallbacks = rememberCardWithCallbacks(
-                    config = cardConfig,
-                    input = cardInput,
-                    registry = cardComputerRegistry,
-                    updateHandler = cardUpdateHandler,
-                    onDelete = onDelete,
-                    onRecordsClick = onRecordsClick,
-                    callbacks = callbacks,
-                    preComputedData = preComputedData,
-                    serverDriven = isCardsLoading,
-                    filterSheetEnabled = !disableFilterSheet
-                )
+                when (val cs = cardState) {
+                    is CardComputeState.Loading, null -> AeonExpressiveCard(
+                        title = cardConfig.cardType.displayName,
+                        icon = cardConfig.cardType.toIcon(),
+                        headerModifier = dragHandleModifier,
+                    ) {
+                        CardContentShimmer()
+                    }
+                    is CardComputeState.Error -> AeonExpressiveCard(
+                        title = cardConfig.cardType.displayName,
+                        icon = cardConfig.cardType.toIcon(),
+                        headerModifier = dragHandleModifier,
+                        isWarning = true,
+                    ) {
+                        CardErrorContent(cs.message)
+                    }
+                    is CardComputeState.Success -> {
+                        val card = rememberCardWithCallbacks(
+                            config = cardConfig,
+                            input = cardInput,
+                            registry = cardComputerRegistry,
+                            updateHandler = cardUpdateHandler,
+                            onDelete = onDelete,
+                            onRecordsClick = onRecordsClick,
+                            callbacks = callbacks,
+                            preComputedData = cs.data,
+                            filterSheetEnabled = !disableFilterSheet
+                        )
 
-                when (val card = cardWithCallbacks) {
-                    is CardWithCallbacks.ComputeError -> CardErrorState(card.message)
-                    null -> if (isCardsLoading) CardShimmerPlaceholder() else Box(modifier = Modifier.size(0.dp))
-                    else -> {
-                        // ARC-77: memoize the layered copy so scrolling recompositions don't allocate
-                        // a fresh CardWithCallbacks subtype per frame.
-                        val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
-                            card.copyWithRules(
-                                rules = card.filterRules.layeredWith(screenRules),
-                                baseFilter = baseFilter,
-                                filterSheetEnabled = !disableFilterSheet
+                        // Bridge failure (type mismatch or missing computer) — unify with the Error
+                        // shell so all non-Success states render consistently inside AeonExpressiveCard.
+                        if (card == null || card is CardWithCallbacks.ComputeError) {
+                            AeonExpressiveCard(
+                                title = cardConfig.cardType.displayName,
+                                icon = cardConfig.cardType.toIcon(),
+                                headerModifier = dragHandleModifier,
+                                isWarning = true,
+                            ) {
+                                CardErrorContent((card as? CardWithCallbacks.ComputeError)?.message)
+                            }
+                        } else {
+                            // ARC-77: memoize the layered copy so scrolling recompositions don't allocate
+                            // a fresh CardWithCallbacks subtype per frame.
+                            val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
+                                card.copyWithRules(
+                                    rules = card.filterRules.layeredWith(screenRules),
+                                    baseFilter = baseFilter,
+                                    filterSheetEnabled = !disableFilterSheet
+                                )
+                            }
+
+                            // ARC-74: removed redundant Box(Modifier.animateContentSize(...)).
+                            // AeonExpressiveCard already applies animateContentSize on its shell;
+                            // wrapping it again doubled the LazyColumn measure cost per item per frame.
+                            UnifiedCardRenderer(
+                                cardWithCallbacks = effectiveCard,
+                                modifier = Modifier.fillMaxWidth(),
+                                headerModifier = dragHandleModifier,
+                                filterContext = filterContext,
+                                inheritedFilter = cardInput.filter,
+                                screenOwnsTimeline = cardInput.screenOwnsTimeline,
+                                animate = animateCards,
+                                scrollToId = scrollToId,
+                                highlightedId = highlightedId,
+                                onScrollComplete = onScrollComplete
                             )
                         }
-
-                        // ARC-74: removed redundant Box(Modifier.animateContentSize(...)).
-                        // AeonExpressiveCard already applies animateContentSize on its shell;
-                        // wrapping it again doubled the LazyColumn measure cost per item per frame.
-                        UnifiedCardRenderer(
-                            cardWithCallbacks = effectiveCard,
-                            modifier = Modifier.fillMaxWidth(),
-                            headerModifier = dragHandleModifier,
-                            filterContext = filterContext,
-                            inheritedFilter = cardInput.filter,
-                            screenOwnsTimeline = cardInput.screenOwnsTimeline,
-                            animate = animateCards,
-                            scrollToId = scrollToId,
-                            highlightedId = highlightedId,
-                            onScrollComplete = onScrollComplete
-                        )
                     }
                 }
             }
@@ -320,6 +348,45 @@ fun CardErrorState(message: String?) {
                 color = AppColors.onErrorContainer
             )
         }
+    }
+}
+
+@Composable
+fun CardErrorContent(message: String?) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.ErrorOutline,
+            contentDescription = null,
+            tint = AppColors.error,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = message ?: "Failed to load card",
+            style = AppTextStyles.transactionTitle,
+            color = AppColors.error,
+        )
+    }
+}
+
+@Composable
+fun CardContentShimmer() {
+    val brush = rememberShimmerBrush(horizontal = true, label = "card_content_shimmer")
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.45f)
+                .height(28.dp)
+                .background(brush, RoundedCornerShape(4.dp))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(brush, RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
+        )
     }
 }
 

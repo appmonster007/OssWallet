@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
-import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 
@@ -12,8 +11,6 @@ sealed class DashboardIntent {
     data class QuickSkipPlannedPayment(val plannedPaymentId: Long, val scheduledDate: Long) : DashboardIntent()
     data object UndoLastPlannedPaymentAction : DashboardIntent()
     data object ClearUndoAction : DashboardIntent()
-    // Story 2.3: triggers on-demand computation for a card that has scrolled into view
-    data class CardBecameVisible(val cardType: CardType) : DashboardIntent()
 
     // Dashboard UI State Consolidation (Story 2.2)
     data class OnCardExpanded(val cardId: String) : DashboardIntent()

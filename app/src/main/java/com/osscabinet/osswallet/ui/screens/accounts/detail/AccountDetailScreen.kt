@@ -247,6 +247,7 @@ fun AccountDetailScreen(
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
 
     val accountDetailCardsConfig by accountDetailViewModel.cardsConfig.collectAsStateWithLifecycle()
+    val accountDetailCardDataMap by accountDetailViewModel.cardDataMap.collectAsStateWithLifecycle()
     val pillHeight = AeonSize.D64.value
 
     if (showSettingsDialog && uiState is AccountDetailUiState.Success) {
@@ -342,6 +343,7 @@ fun AccountDetailScreen(
                                                     cardsConfig = accountDetailCardsConfig,
                                                     accountDetailViewModel = accountDetailViewModel,
                                                     cardComputerRegistry = cardComputerRegistry,
+                                                    cardDataMap = accountDetailCardDataMap,
                                                     onRecordsClick = actions.onRecordsClick,
                                                     savedFilters = savedFilters,
                                                     transactionViewModel = transactionViewModel,
@@ -519,6 +521,7 @@ fun DynamicAccountDetailCards(
     cardsConfig: DashboardCardsConfig,
     accountDetailViewModel: AccountDetailViewModel,
     cardComputerRegistry: CardComputerRegistry,
+    cardDataMap: kotlinx.collections.immutable.ImmutableMap<String, com.osscabinet.ossWallet.domain.card.CardComputeState> = kotlinx.collections.immutable.persistentMapOf(),
     onRecordsClick: (TransactionFilter) -> Unit,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
     transactionViewModel: TransactionViewModel,
@@ -625,6 +628,7 @@ fun DynamicAccountDetailCards(
         AeonCardList(
             cards = cardsConfig.cards,
             cardInput = sharedCardInput,
+            cardDataMap = cardDataMap,
             cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,
             onReorder = { accountDetailViewModel.reorderCards(it) },

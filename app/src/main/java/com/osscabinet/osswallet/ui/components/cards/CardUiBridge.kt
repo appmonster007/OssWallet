@@ -44,7 +44,6 @@ fun rememberCardWithCallbacks(
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     preComputedData: CardRenderData? = null,
-    serverDriven: Boolean = false,
     filterSheetEnabled: Boolean = true
 ): CardWithCallbacks? {
     // ⚠️ STABILITY: We key by cardId rather than the entire config/input object.
@@ -64,12 +63,9 @@ fun rememberCardWithCallbacks(
         LaunchedEffect(preComputedData) {
             renderDataState = preComputedData
         }
-    } else if (!serverDriven) {
-        // Async path: Analytics/Detail screens compute data on the fly.
-        // Skipped when serverDriven=true (Dashboard Phase 1) to avoid computing twice —
-        // the ViewModel is already computing in parallel and will push data via preComputedData.
-        // We keep the old renderDataState (stale-while-recompute) to prevent the card
-        // from unmounting and losing its "pill open" state.
+    } else {
+        // Async path: fires when preComputedData == null (Analytics/AccountDetail before ViewModel
+        // pushes data). Preserves stale renderDataState so the card doesn't unmount mid-recompute.
         LaunchedEffect(config, input) {
             try {
                 val newData = registry.compute(config.cardType, input, config)

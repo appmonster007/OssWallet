@@ -67,7 +67,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.R
-import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.model.CashFlowType
@@ -170,7 +169,6 @@ fun AccountDetailScreen(
     val transactionViewModel = vms.transactionViewModel
     val settingsViewModel = vms.settingsViewModel
     val templateViewModel = vms.templateViewModel
-    val cardComputerRegistry = vms.dashboardViewModel.cardComputerRegistry
 
     val snackbarHostState = remember { SnackbarHostState() }
     val loadFilterErrorMessage = stringResource(R.string.account_detail_load_filter_error)
@@ -342,7 +340,6 @@ fun AccountDetailScreen(
                                                     state = state,
                                                     cardsConfig = accountDetailCardsConfig,
                                                     accountDetailViewModel = accountDetailViewModel,
-                                                    cardComputerRegistry = cardComputerRegistry,
                                                     cardDataMap = accountDetailCardDataMap,
                                                     onRecordsClick = actions.onRecordsClick,
                                                     savedFilters = savedFilters,
@@ -520,7 +517,6 @@ fun DynamicAccountDetailCards(
     state: AccountDetailUiState.Success,
     cardsConfig: DashboardCardsConfig,
     accountDetailViewModel: AccountDetailViewModel,
-    cardComputerRegistry: CardComputerRegistry,
     cardDataMap: kotlinx.collections.immutable.ImmutableMap<String, com.osscabinet.ossWallet.domain.card.CardComputeState> = kotlinx.collections.immutable.persistentMapOf(),
     onRecordsClick: (TransactionFilter) -> Unit,
     savedFilters: List<com.osscabinet.ossWallet.domain.model.Filter>,
@@ -629,7 +625,6 @@ fun DynamicAccountDetailCards(
             cards = cardsConfig.cards,
             cardInput = sharedCardInput,
             cardDataMap = cardDataMap,
-            cardComputerRegistry = cardComputerRegistry,
             cardUpdateHandler = accountDetailViewModel,
             onReorder = { accountDetailViewModel.reorderCards(it) },
             onDelete = { accountDetailViewModel.removeCard(it) },

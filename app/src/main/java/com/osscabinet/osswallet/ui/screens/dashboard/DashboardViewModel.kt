@@ -492,7 +492,10 @@ class DashboardViewModel @Inject constructor(
                             val state = runCatching {
                                 cardComputerRegistry.compute(cardConfig.cardType, cardInput, cardConfig)
                             }.fold(
-                                onSuccess = { CardComputeState.Success(it) },
+                                onSuccess = { data ->
+                                    if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                    else CardComputeState.Success(data)
+                                },
                                 onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
                             )
                             if (state is CardComputeState.Success) {

@@ -71,15 +71,13 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
 fun CategoryTreemapCard(
     config: CategoryTreemapCardConfig,
-    data: List<CategoryTreemapData>,
+    data: List<CategoryChartData>,
     currency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -102,7 +100,7 @@ fun CategoryTreemapCard(
     val isAmoled = mode.isAmoled
 
     // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryTreemapData>>(data)) }
+    var navigationStack by remember { mutableStateOf(listOf<List<CategoryChartData>>(data)) }
     val currentData = navigationStack.last()
 
     // Grouping logic for "More Categories" grouping based on 2% threshold
@@ -133,7 +131,7 @@ fun CategoryTreemapCard(
                     others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
 
-                mainItems + CategoryTreemapData(
+                mainItems + CategoryChartData(
                     category = "More Categories",
                     categoryId = -1L,
                     amount = otherSum,
@@ -496,12 +494,12 @@ private fun CategoryTreemapSettingsSheet(
 
 @Composable
 fun TreemapLegend(
-    data: List<CategoryTreemapData>,
+    data: List<CategoryChartData>,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
     onToggleBreakdown: (Boolean) -> Unit,
-    onItemClick: (CategoryTreemapData) -> Unit
+    onItemClick: (CategoryChartData) -> Unit
 ) {
     val displayData = if (showFullBreakdown) data else data.take(5)
 
@@ -589,98 +587,98 @@ fun TreemapLegend(
 @Composable
 fun CategoryTreemapCardPreview() {
     val sampleData = listOf(
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Housing",
             categoryId = null,
             amount = BigDecimal("1200.00"),
             colorHex = 0xFF2196F3.toInt(),
             percentage = 0.6f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Food",
             categoryId = null,
             amount = BigDecimal("450.00"),
             colorHex = 0xFFFF5722.toInt(),
             percentage = 0.2f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Transport",
             categoryId = null,
             amount = BigDecimal("150.00"),
             colorHex = 0xFF4CAF50.toInt(),
             percentage = 0.1f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Entertainment",
             categoryId = null,
             amount = BigDecimal("200.00"),
             colorHex = 0xFF9C27B0.toInt(),
             percentage = 0.1f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 1",
             categoryId = null,
             amount = BigDecimal("10.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 2",
             categoryId = null,
             amount = BigDecimal("9.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 3",
             categoryId = null,
             amount = BigDecimal("8.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 4",
             categoryId = null,
             amount = BigDecimal("7.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 5",
             categoryId = null,
             amount = BigDecimal("6.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 6",
             categoryId = null,
             amount = BigDecimal("5.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 7",
             categoryId = null,
             amount = BigDecimal("4.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 8",
             categoryId = null,
             amount = BigDecimal("3.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 9",
             categoryId = null,
             amount = BigDecimal("2.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryTreemapData(
+        CategoryChartData(
             category = "Misc 10",
             categoryId = null,
             amount = BigDecimal("1.00"),
@@ -705,25 +703,4 @@ fun CategoryTreemapCardPreview() {
     }
 }
 
-@Serializable
-data class CategoryTreemapData(
-    val category: String,
-    val categoryId: Long?,
-    @Contextual val amount: BigDecimal,
-    val colorHex: Int,
-    val percentage: Float,
-    val hasSubcategories: Boolean = false,
-    val subcategoryCount: Int = 0,
-    val subcategoryData: List<CategoryTreemapData>? = null,
-    @Contextual val previousAmount: BigDecimal? = null
-) {
-    fun allCategoryIds(): List<String> {
-        val ids = mutableListOf<String>()
-        categoryId?.let { ids.add(it.toString()) }
-        subcategoryData?.forEach {
-            ids.addAll(it.allCategoryIds())
-        }
-        return ids
-    }
-}
 

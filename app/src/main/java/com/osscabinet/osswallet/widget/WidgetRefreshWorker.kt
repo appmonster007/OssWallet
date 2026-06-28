@@ -37,9 +37,11 @@ class WidgetRefreshWorker(
 
                 for (widgetClass in WidgetRegistry.getAllRegisteredWidgets()) {
                     val fetcher = WidgetRegistry.getFetcher(widgetClass) ?: continue
+
                     @Suppress("UNCHECKED_CAST")
-                    val glanceIds = widgetManager.getGlanceIds(widgetClass as Class<out GlanceAppWidget>)
-                    
+                    val glanceIds =
+                        widgetManager.getGlanceIds(widgetClass as Class<out GlanceAppWidget>)
+
                     if (glanceIds.isEmpty()) continue
 
                     withContext(Dispatchers.IO) {
@@ -60,7 +62,8 @@ class WidgetRefreshWorker(
                         }
                     }
                     // Trigger recomposition
-                    (widgetClass.newInstance() as GlanceAppWidget).updateAll(context)
+                    (widgetClass.getDeclaredConstructor()
+                        .newInstance() as GlanceAppWidget).updateAll(context)
                 }
             }
             Result.success()

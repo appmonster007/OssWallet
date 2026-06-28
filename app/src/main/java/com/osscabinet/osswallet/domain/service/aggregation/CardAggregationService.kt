@@ -479,7 +479,7 @@ object CardAggregationService {
             categories = input.categories,
             allTags = input.tags,
             baseCurrency = input.targetCurrency,
-            exchangeRates = input.exchangeRates.rates,
+            exchangeRates = input.exchangeRates,
             allTxnBreakdown = config.allTxnBreakdown,
         )
 

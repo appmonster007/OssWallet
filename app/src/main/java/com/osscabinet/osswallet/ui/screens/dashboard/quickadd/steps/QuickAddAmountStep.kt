@@ -31,27 +31,27 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
-import java.math.BigDecimal
-import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
-import com.osscabinet.ossWallet.ui.components.CurrencySelector
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.components.getAccountIconByName
-import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.LocalAppFont
-import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
+import com.osscabinet.ossWallet.ui.components.CurrencySelector
+import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import com.osscabinet.ossWallet.ui.components.getAccountIconByName
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalAppFont
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.copyStyle
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import java.math.BigDecimal
 
 @Composable
 fun QuickAddAmountStep(
@@ -61,7 +61,7 @@ fun QuickAddAmountStep(
     account: Account?,
     accountBalance: BigDecimal,
     entryMode: EntryMode,
-    exchangeRates: Map<String, BigDecimal>,
+    exchangeRates: ExchangeRateSnapshot,
     baseCurrency: String,
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
@@ -71,7 +71,8 @@ fun QuickAddAmountStep(
 ) {
     val currencies = remember(account) {
         account?.let {
-            (listOf(it.currencyCode) + it.allowedCurrencies).distinct().filter { c -> c.isNotBlank() }
+            (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
+                .filter { c -> c.isNotBlank() }
         } ?: emptyList()
     }
 
@@ -141,7 +142,8 @@ private fun EditorialContextStrip(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         glassVariant = GlassVariant.Item,
-        hazeStyle = GlassTokens.itemStyle().copyStyle(bgColor = AppColors.recessedSurface, alpha = 0.4f),
+        hazeStyle = GlassTokens.itemStyle()
+            .copyStyle(bgColor = AppColors.recessedSurface, alpha = 0.4f),
         fallbackColor = AppColors.recessedSurface.copy(alpha = 0.4f)
     ) {
         Row(
@@ -245,7 +247,7 @@ private fun AmountHeroPanel(
     accountCurrency: String,
     entryMode: EntryMode,
     inputAmount: BigDecimal,
-    exchangeRates: Map<String, BigDecimal>,
+    exchangeRates: ExchangeRateSnapshot,
     baseCurrency: String
 ) {
     val (whole, decimal) = remember(amount) {
@@ -257,7 +259,15 @@ private fun AmountHeroPanel(
         }
     }
 
-    val closingBalance = remember(accountBalance, inputAmount, entryMode, currency, accountCurrency, exchangeRates, baseCurrency) {
+    val closingBalance = remember(
+        accountBalance,
+        inputAmount,
+        entryMode,
+        currency,
+        accountCurrency,
+        exchangeRates,
+        baseCurrency
+    ) {
         val convertedInput = if (currency == accountCurrency) {
             inputAmount
         } else {
@@ -265,7 +275,7 @@ private fun AmountHeroPanel(
                 amount = inputAmount,
                 fromCurrency = currency,
                 toCurrency = accountCurrency,
-                exchangeRates = ExchangeRateSnapshot(anchor = baseCurrency, rates = exchangeRates)
+                exchangeRates = exchangeRates
             )
         }
 
@@ -288,7 +298,10 @@ private fun AmountHeroPanel(
                     color = AppColors.accent
                 )
                 Spacer(Modifier.width(10.dp))
-                HorizontalDivider(modifier = Modifier.weight(1f), color = AppColors.divider.copy(alpha = 0.3f))
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = AppColors.divider.copy(alpha = 0.3f)
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -316,7 +329,10 @@ private fun AmountHeroPanel(
                             ),
                             color = AppColors.contentSecondary,
                             modifier = Modifier
-                                .background(AppColors.recessedSurface.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                .background(
+                                    AppColors.recessedSurface.copy(alpha = 0.3f),
+                                    RoundedCornerShape(6.dp)
+                                )
                                 .padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
@@ -412,9 +428,17 @@ private fun AmountHeroPanel(
 @Preview(showBackground = true)
 @Composable
 fun PreviewQuickAddAmountStep() {
-    val mockAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments", allowedCurrencies = listOf("USD", "EUR"))
+    val mockAccount = Account(
+        "1",
+        "Cash",
+        "USD",
+        AccountStructureType.CASH,
+        "#4CAF50",
+        "Payments",
+        allowedCurrencies = listOf("USD", "EUR")
+    )
     val mockCategory = Category(1, "Food", "Restaurant", -16737025, false, null)
-    
+
     OssWalletTheme {
         Box(modifier = Modifier.background(AppColors.background)) {
             QuickAddAmountStep(
@@ -424,7 +448,7 @@ fun PreviewQuickAddAmountStep() {
                 account = mockAccount,
                 accountBalance = BigDecimal("1500.00"),
                 entryMode = EntryMode.EXPENSE,
-                exchangeRates = emptyMap(),
+                exchangeRates = ExchangeRateSnapshot.EMPTY,
                 baseCurrency = "USD",
                 selectedCurrency = "USD",
                 onCurrencySelected = {},

@@ -1,22 +1,22 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
-import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
-import com.osscabinet.ossWallet.domain.repository.ComputationRepository
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,7 +43,7 @@ data class QuickAddState(
     val accounts: List<Account> = emptyList(),
     val structureTypes: List<AccountStructureType> = emptyList(),
     val accountBalances: Map<String, BigDecimal> = emptyMap(),
-    val exchangeRates: Map<String, BigDecimal> = emptyMap(),
+    val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot.EMPTY,
     val baseCurrency: String = "USD",
     val isSaving: Boolean = false
 )
@@ -78,7 +78,7 @@ class QuickAddViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Category>())
 
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
-    
+
     val state: StateFlow<QuickAddState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -86,13 +86,13 @@ class QuickAddViewModel @Inject constructor(
                 accountRepository.getAllAccounts(profileId),
                 transactionRepository.getAllTransactions(profileId),
                 settingsRepository.currency,
-                computationRepository.exchangeRates
+                computationRepository.exchangeRatesSnapshot
             ) { uiState, allAccounts, transactions, baseCurrency, rates ->
                 val activeAccounts = allAccounts.filter { !it.isArchived }
                 val structureTypes = allAccounts.map { it.structureType }
                     .distinct()
                     .sortedBy { it.displayName }
-                
+
                 val balances = activeAccounts.associate { acc ->
                     acc.id to AggregationService.calculateAccountBalance(
                         acc.id,
@@ -101,7 +101,7 @@ class QuickAddViewModel @Inject constructor(
                         rates
                     )
                 }
-                
+
                 uiState.copy(
                     accounts = activeAccounts,
                     structureTypes = structureTypes,
@@ -111,8 +111,8 @@ class QuickAddViewModel @Inject constructor(
                 )
             }
         }.stateIn(
-            viewModelScope, 
-            SharingStarted.WhileSubscribed(5000), 
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
             QuickAddState(entryMode = initialType)
         )
 
@@ -203,7 +203,8 @@ class QuickAddViewModel @Inject constructor(
                             categoryId = categoryId,
                             note = s.selectedTemplate?.note ?: "",
                             payee = s.selectedTemplate?.payee ?: "",
-                            status = s.selectedTemplate?.transactionStatus ?: TransactionStatus.CLEARED,
+                            status = s.selectedTemplate?.transactionStatus
+                                ?: TransactionStatus.CLEARED,
                             tags = s.selectedTemplate?.tags ?: emptySet()
                         ),
                         profileId = profileId

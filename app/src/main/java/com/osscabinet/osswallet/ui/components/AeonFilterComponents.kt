@@ -24,7 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -122,7 +122,7 @@ fun AeonSegmentedControlPreview() {
         AeonTimelineOption("Weekly", Icons.Default.ViewWeek),
         AeonTimelineOption("Monthly", Icons.Default.CalendarViewMonth)
     )
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             AeonSegmentedControl(
                 options = options,
@@ -162,7 +162,7 @@ fun <T> AeonDropdown(
             },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth(),
             shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
             colors = OutlinedTextFieldDefaults.colors(
@@ -208,7 +208,7 @@ fun AeonDropdownPreview() {
     val options = listOf("Monthly", "Weekly", "Daily", "Yearly")
     var selectedOption by remember { mutableStateOf(options[0]) }
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             AeonDropdown(
                 label = "Period",

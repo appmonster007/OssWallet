@@ -34,6 +34,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -139,7 +140,7 @@ fun AeonScheduleBuilder(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    TabRow(selectedTabIndex = selectedTabIndex) {
+                    SecondaryTabRow(selectedTabIndex = selectedTabIndex) {
                         Tab(
                             selected = selectedTabIndex == 0,
                             onClick = {

@@ -21,7 +21,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -72,6 +71,7 @@ class CsvImportViewModel @Inject constructor(
     private val _selectedDuplicates = MutableStateFlow<Set<Int>>(emptySet())
     private val _duplicatePolicy = MutableStateFlow(DuplicatePolicy.SKIP)
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -116,14 +116,15 @@ class CsvImportViewModel @Inject constructor(
     fun proceedFromColumnMapping(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
-            val rowCount = _session.value?.let { "Analysing ${it.previewRows.size}+ rows…" } ?: "Analysing rows…"
+            val rowCount = _session.value?.let { "Analysing ${it.previewRows.size}+ rows…" }
+                ?: "Analysing rows…"
             _loadingMessage.value = rowCount
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
                 val previewResult = csvImportService.generatePreview(session.value!!, stream)
                 _preview.value = previewResult
-                
+
                 // Initialize default mappings from preview
                 initializeDefaultMappings(previewResult)
 
@@ -143,7 +144,7 @@ class CsvImportViewModel @Inject constructor(
 
     private fun initializeDefaultMappings(preview: ImportPreview) {
         val defaultCurrency = "INR" // Could be fetched from settings if needed
-        
+
         _accountMappings.value = preview.allCsvAccounts.associate { acc ->
             acc.name to EntityMapping(
                 unknownName = acc.name,
@@ -152,7 +153,7 @@ class CsvImportViewModel @Inject constructor(
                 currencyCode = if (!acc.hasDetectedCurrency) defaultCurrency else null
             )
         }
-        
+
         _categoryMappings.value = preview.newCategories.associate { cat ->
             cat.name to EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
         }
@@ -191,15 +192,15 @@ class CsvImportViewModel @Inject constructor(
             _error.value = null
             try {
                 val stream = context.contentResolver.openInputStream(pendingUri!!.toUri())!!
-                
+
                 // Resolve final mappings
                 val finalMappings = resolveFinalMappings()
 
                 val result = csvImportService.executeImport(
-                    session.value!!, 
-                    stream, 
-                    _duplicatePolicy.value, 
-                    finalMappings, 
+                    session.value!!,
+                    stream,
+                    _duplicatePolicy.value,
+                    finalMappings,
                     _selectedDuplicates.value
                 )
                 if (result.isSuccess) {
@@ -218,15 +219,22 @@ class CsvImportViewModel @Inject constructor(
 
     private fun resolveFinalMappings(): List<EntityMapping> {
         val preview = _preview.value ?: return emptyList()
-        
+
         val resolvedAccounts = _accountMappings.value.values.map { em ->
-            if (em.existingId == "__EXCLUDE__") em.copy(existingId = null, isExcluded = true) else em
+            if (em.existingId == "__EXCLUDE__") em.copy(
+                existingId = null,
+                isExcluded = true
+            ) else em
         }
-        
+
         val resolvedCategories = preview.newCategories.map { cat ->
-            val em = _categoryMappings.value[cat.name] ?: EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
+            val em = _categoryMappings.value[cat.name] ?: EntityMapping(
+                cat.name,
+                null,
+                EntityMapping.EntityType.CATEGORY
+            )
             val parentName = cat.suggestedParentName
-            
+
             if (em.existingId != null || parentName == null) {
                 em
             } else {
@@ -238,7 +246,7 @@ class CsvImportViewModel @Inject constructor(
                 }
             }
         }
-        
+
         return resolvedAccounts + resolvedCategories
     }
 
@@ -279,19 +287,21 @@ class CsvImportViewModel @Inject constructor(
                 OssWalletField.WARRANTY_MONTHS to headers.indexOfOrNull("warranty_in_month"),
                 OssWalletField.IS_TRANSFER to headers.indexOfOrNull("transfer")
             )
+
             ImportSourceApp.CASHEW -> mapOf(
-                OssWalletField.DATE      to headers.indexOfOrNull("date"),
-                OssWalletField.ACCOUNT   to headers.indexOfOrNull("account"),
-                OssWalletField.CATEGORY  to headers.indexOfOrNull("category name"),
-                OssWalletField.AMOUNT    to headers.indexOfOrNull("amount"),
-                OssWalletField.TYPE      to headers.indexOfOrNull("income"),
-                OssWalletField.NOTE      to headers.indexOfOrNull("note"),
-                OssWalletField.PAYEE     to null,
+                OssWalletField.DATE to headers.indexOfOrNull("date"),
+                OssWalletField.ACCOUNT to headers.indexOfOrNull("account"),
+                OssWalletField.CATEGORY to headers.indexOfOrNull("category name"),
+                OssWalletField.AMOUNT to headers.indexOfOrNull("amount"),
+                OssWalletField.TYPE to headers.indexOfOrNull("income"),
+                OssWalletField.NOTE to headers.indexOfOrNull("note"),
+                OssWalletField.PAYEE to null,
                 OssWalletField.PAYMENT_TYPE to null,
-                OssWalletField.LABELS    to null,
+                OssWalletField.LABELS to null,
                 OssWalletField.WARRANTY_MONTHS to null,
                 OssWalletField.IS_TRANSFER to null
             )
+
             else -> OssWalletField.entries.associateWith { null }
         }
     }

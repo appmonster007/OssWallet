@@ -7,6 +7,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -61,7 +62,7 @@ class TransactionUseCases(
     fun getRecentTransactions(
         allTransactions: List<Transaction>,
         accounts: List<Account>,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         precision: Int = CurrencyService.precision,
         limit: Int = 20,
         days: Int = 7,
@@ -172,7 +173,7 @@ class TransactionUseCases(
         profileId: Int,
         filter: TransactionFilter,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         limit: Int? = null
     ): Flow<Result<List<TransactionWithBalance>>> {
         return repository.observeFilteredTransactionsWithBalance(

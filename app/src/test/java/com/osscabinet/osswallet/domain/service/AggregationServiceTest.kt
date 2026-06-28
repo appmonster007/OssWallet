@@ -6,16 +6,20 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByCategory
 import com.osscabinet.ossWallet.domain.service.aggregation.breakdownByDate
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
 
 class AggregationServiceTest {
 
-    private val exchangeRates = mapOf(
-        "USD" to BigDecimal("1.0"),
-        "EUR" to BigDecimal("0.85"),
-        "GBP" to BigDecimal("0.75")
+    private val exchangeRates = ExchangeRateSnapshot(
+        anchor = "USD",
+        rates = mapOf(
+            "USD" to BigDecimal("1.0"),
+            "EUR" to BigDecimal("0.85"),
+            "GBP" to BigDecimal("0.75")
+        )
     )
 
     private fun createTransaction(

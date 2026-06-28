@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.repository
 import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 
@@ -36,7 +37,7 @@ interface TransactionRepository {
         profileId: Int,
         filter: TransactionFilter,
         baseCurrency: String,
-        exchangeRates: Map<String, BigDecimal>,
+        exchangeRates: ExchangeRateSnapshot,
         limit: Int? = null
     ): Flow<Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>>>
 

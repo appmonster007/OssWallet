@@ -46,6 +46,7 @@ class DashboardViewModelHelperTest {
     @Test
     fun `TimelineRange AllTime should include all transactions`() {
         // Verify TimelineRange.AllTime is available for use in helpers
-        assertTrue(TimelineRange.AllTime != null)
+        val range = TimelineRange.AllTime()
+        assertEquals("All Time", range.toDisplayString())
     }
 }

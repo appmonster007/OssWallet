@@ -124,7 +124,14 @@ class AnalyticsViewModel @Inject constructor(
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.categories,
                     tagRepository.getAllTags()
-                ) { tx, acc, cat, tags -> DomainSnapshot(tx, acc, cat, tags) }.distinctUntilChanged(),
+                ) { tx, acc, cat, tags ->
+                    DomainSnapshot(
+                        tx,
+                        acc,
+                        cat,
+                        tags
+                    )
+                }.distinctUntilChanged(),
                 combine(
                     plannedPaymentRepository.getActivePlannedPayments(profileId),
                     budgetRepository.getActiveBudgets(profileId),
@@ -134,7 +141,13 @@ class AnalyticsViewModel @Inject constructor(
                     computationRepository.exchangeRates,
                     computationRepository.selectedCurrency,
                     computationRepository.hasLoadedExchangeRates
-                ) { rates, base, loaded -> ConfigSnapshot(rates, base, loaded) }.distinctUntilChanged()
+                ) { rates, base, loaded ->
+                    ConfigSnapshot(
+                        rates,
+                        base,
+                        loaded
+                    )
+                }.distinctUntilChanged()
             ) { domain, planning, config ->
                 if (!config.hasLoadedRates) {
                     return@combine AnalyticsUiState.Loading
@@ -160,7 +173,8 @@ class AnalyticsViewModel @Inject constructor(
             initialValue = AnalyticsUiState.Loading
         )
 
-    private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
+    private val _cardDataMap =
+        MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> = _cardDataMap.asStateFlow()
 
     // Generation counter: guards against stale writes from CPU-bound children that run to
@@ -184,14 +198,17 @@ class AnalyticsViewModel @Inject constructor(
                     val myGen = _computeGeneration.incrementAndGet()
 
                     // Emit Loading immediately so shimmers appear before hierarchy build starts.
-                    _cardDataMap.value = persistentMapOf<String, CardComputeState>().builder().apply {
-                        cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
-                    }.build()
+                    _cardDataMap.value =
+                        persistentMapOf<String, CardComputeState>().builder().apply {
+                            cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                        }.build()
 
                     // AC7: Build inputs on Default — build hierarchy once per round
                     val input = kotlinx.coroutines.withContext(dispatchers.default) {
-                        val activeAccountIds = state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                        val activeTransactions = state.allTransactions.filter { it.accountId in activeAccountIds }
+                        val activeAccountIds =
+                            state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                        val activeTransactions =
+                            state.allTransactions.filter { it.accountId in activeAccountIds }
                         CardInput(
                             profileId = state.profileId,
                             transactions = activeTransactions,
@@ -206,7 +223,11 @@ class AnalyticsViewModel @Inject constructor(
                             plannedPayments = state.plannedPayments,
                             budgets = state.budgets,
                             loans = state.loans,
-                            filter = if (commonEnabled) sf else TransactionFilter(timelineRange = sf.timelineRange.withExcludeFuture(sf.timelineRange.excludeFuture)),
+                            filter = if (commonEnabled) sf else TransactionFilter(
+                                timelineRange = sf.timelineRange.withExcludeFuture(
+                                    sf.timelineRange.excludeFuture
+                                )
+                            ),
                             screenContext = ScreenContext.ANALYTICS,
                             commonFilterEnabled = commonEnabled,
                             categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
@@ -219,16 +240,26 @@ class AnalyticsViewModel @Inject constructor(
                         cards.cards.forEach { cardConfig ->
                             launch(dispatchers.default) {
                                 val result = runCatching {
-                                    cardComputerRegistry.compute(cardConfig.cardType, input, cardConfig)
+                                    cardComputerRegistry.compute(
+                                        cardConfig.cardType,
+                                        input,
+                                        cardConfig
+                                    )
                                 }.fold(
                                     onSuccess = { data ->
-                                        if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                        if (data is CardRenderData.Error) CardComputeState.Error(
+                                            data.message ?: "Compute error"
+                                        )
                                         else CardComputeState.Success(data)
                                     },
-                                    onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                                    onFailure = {
+                                        CardComputeState.Error(
+                                            it.message ?: "Compute error"
+                                        )
+                                    }
                                 )
                                 if (_computeGeneration.get() == myGen) {
-                                    _cardDataMap.update { it.put(cardConfig.cardId, result) }
+                                    _cardDataMap.update { it.putting(cardConfig.cardId, result) }
                                 }
                             }
                         }

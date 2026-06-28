@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +41,7 @@ class AccountViewModel @Inject constructor(
     private data class AccountFinancialSnapshot(
         val accounts: List<Account>,
         val transactions: List<Transaction>,
-        val rates: Map<String, BigDecimal>
+        val rates: ExchangeRateSnapshot
     )
 
     val accountBalances: StateFlow<Map<String, BigDecimal>> = settingsRepository.currentProfileId
@@ -48,7 +49,7 @@ class AccountViewModel @Inject constructor(
             combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionRepository.getAllTransactions(profileId),
-                computationRepository.exchangeRates
+                computationRepository.exchangeRatesSnapshot
             ) { accounts, transactions, rates ->
                 AccountFinancialSnapshot(accounts, transactions, rates)
             }.distinctUntilChanged()

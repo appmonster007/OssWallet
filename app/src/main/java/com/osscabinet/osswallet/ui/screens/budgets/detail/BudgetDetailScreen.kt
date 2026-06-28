@@ -1,36 +1,63 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.detail
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Autorenew
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Receipt
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.Budget
+import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
+import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.Tag
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionListState
+import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.management.ManagementScopeCard
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -44,8 +71,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -149,21 +176,35 @@ fun BudgetDetailScreen(
                         actions.onTransactionClick(event.id.removePrefix("tx_").toLong())
                     }
                 }
+
                 is TransactionItemEvent.Expand -> transactionViewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> transactionViewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> transactionViewModel.quickUpdateStatus(
                     event.id,
                     event.status
                 )
+
                 is TransactionItemEvent.Clone -> actions.onCloneTransactionClick(event.id)
                 is TransactionItemEvent.Delete -> transactionViewModel.quickDeleteTransaction(event.id)
                 is TransactionItemEvent.Split -> actions.onSplitTransactionClick(event.id)
-                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(event.id, availableIds)
+                is TransactionItemEvent.Jump -> transactionViewModel.handleJumpRequest(
+                    event.id,
+                    availableIds
+                )
+
                 is TransactionItemEvent.FullSwipeRight -> transactionViewModel.toggleStatusClearedUncleared(
                     event.id
                 )
-                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
-                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
+
+                is TransactionItemEvent.ConfirmPlanned -> transactionViewModel.confirmPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
+
+                is TransactionItemEvent.CancelPlanned -> transactionViewModel.cancelPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
             }
         },
         onRecordsClick = actions.onRecordsClick
@@ -269,7 +310,9 @@ fun BudgetDetailContent(
                                                         .padding(AeonTheme.dimensions.cardPadding)
                                                         .fillMaxWidth(),
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                                    horizontalArrangement = Arrangement.spacedBy(
+                                                        AeonTheme.dimensions.spacingMd
+                                                    )
                                                 ) {
                                                     Icon(
                                                         Icons.Rounded.Autorenew,
@@ -287,7 +330,9 @@ fun BudgetDetailContent(
                                                         Text(
                                                             "Remaining budget from previous period was added to this month.",
                                                             style = AppTextStyles.caption,
-                                                            color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                                                            color = AppColors.contentSecondary.copy(
+                                                                alpha = 0.7f
+                                                            )
                                                         )
                                                     }
                                                 }
@@ -337,10 +382,13 @@ fun BudgetDetailContent(
                                             categories = categoriesList,
                                             allTags = allTags,
                                             baseCurrency = baseCurrency,
-                                            exchangeRates = emptyMap()
+                                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot.EMPTY
                                         )
                                         com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
-                                            domainState = TransactionListState(groups = groups, isEmpty = groups.isEmpty()),
+                                            domainState = TransactionListState(
+                                                groups = groups,
+                                                isEmpty = groups.isEmpty()
+                                            ),
                                             baseCurrency = baseCurrency
                                         )
                                     }
@@ -355,7 +403,10 @@ fun BudgetDetailContent(
                                         revealedCardIds = revealedCardIds,
                                         showCurrencyBreakdown = recentActivitiesBreakdown,
                                         onTransactionEvent = { event ->
-                                            onTransactionEvent(event, budgetListState.getAllTransactionIds())
+                                            onTransactionEvent(
+                                                event,
+                                                budgetListState.getAllTransactionIds()
+                                            )
                                         },
                                         hasStickyHeader = false,
                                         showHeader = false
@@ -399,6 +450,7 @@ fun BudgetDetailContent(
                                     icon = Icons.Rounded.Edit,
                                     onClick = onEditClick
                                 )
+
                                 1 -> AppBarIconButton(
                                     icon = Icons.Rounded.History,
                                     onClick = { onRecordsClick(budgetFilter) }

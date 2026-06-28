@@ -159,7 +159,7 @@ fun AeonOSMMap(
             MapView(context).apply {
                 setTileSource(TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)   // pinch-to-zoom + double-tap zoom
-                setBuiltInZoomControls(false) // we draw our own
+                zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
             }
         }
     }
@@ -289,7 +289,7 @@ fun AeonOSMMap(
                     }
                 }
                 if (selectedPoint != null) {
-                    val cx = size.width / 2f;
+                    val cx = size.width / 2f
                     val cy = size.height / 2f
                     drawCircle(Color.Black.copy(alpha = 0.18f), 13f, Offset(cx, cy + 24f))
                     drawCircle(accentC, 22f, Offset(cx, cy - 22f))

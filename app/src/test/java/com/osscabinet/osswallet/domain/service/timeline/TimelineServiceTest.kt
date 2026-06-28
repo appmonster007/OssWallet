@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import org.junit.Test
 import org.junit.Assert.*
 import java.math.BigDecimal
@@ -47,7 +48,7 @@ class TimelineServiceTest {
             accounts = emptyList(),
             categories = emptyList(),
             baseCurrency = "USD",
-            exchangeRates = emptyMap(),
+            exchangeRates = ExchangeRateSnapshot.EMPTY,
             plannedPayments = planned
         )
 
@@ -92,7 +93,7 @@ class TimelineServiceTest {
             accounts = emptyList(),
             categories = emptyList(),
             baseCurrency = "USD",
-            exchangeRates = emptyMap(),
+            exchangeRates = ExchangeRateSnapshot.EMPTY,
             plannedPayments = planned
         )
 

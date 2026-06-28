@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
+import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
@@ -12,11 +13,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -40,19 +41,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +64,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,14 +73,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -87,8 +89,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import kotlinx.coroutines.launch
 import java.util.Locale
-
-import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 
 /**
  * A Value Object representing a valid configuration for the Exchange Rates screen.
@@ -227,30 +227,28 @@ fun ExchangeRatesScreen(
                                 .padding(bottom = AeonTheme.dimensions.spacingMd),
                             fallbackColor = AppColors.panelSurface
                         ) {
-                            TabRow(
+                            SecondaryTabRow(
                                 selectedTabIndex = pagerState.currentPage,
                                 containerColor = Color.Transparent,
                                 divider = {},
-                                indicator = { tabPositions ->
-                                    if (pagerState.currentPage < tabPositions.size) {
-                                        TabRowDefaults.SecondaryIndicator(
-                                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                            color = AppColors.primary
-                                        )
-                                    }
-                                }
                             ) {
                                 tabs.forEachIndexed { index, title ->
                                     Tab(
                                         selected = pagerState.currentPage == index,
-                                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                                        text = { 
+                                        onClick = {
+                                            scope.launch {
+                                                pagerState.animateScrollToPage(
+                                                    index
+                                                )
+                                            }
+                                        },
+                                        text = {
                                             Text(
                                                 title,
                                                 style = AppTextStyles.caption.copy(
                                                     fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal
                                                 )
-                                            ) 
+                                            )
                                         }
                                     )
                                 }
@@ -331,10 +329,12 @@ fun RatesTab(uiState: CurrencyUiState) {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Box(modifier = Modifier.padding(
-            horizontal = AeonTheme.dimensions.screenPadding,
-            vertical = if (isSmallScreen) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.spacingMd
-        )) {
+        Box(
+            modifier = Modifier.padding(
+                horizontal = AeonTheme.dimensions.screenPadding,
+                vertical = if (isSmallScreen) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.spacingMd
+            )
+        ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -351,7 +351,11 @@ fun RatesTab(uiState: CurrencyUiState) {
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(if (isSmallScreen) 18.dp else 24.dp))
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Clear",
+                                modifier = Modifier.size(if (isSmallScreen) 18.dp else 24.dp)
+                            )
                         }
                     }
                 },
@@ -372,7 +376,7 @@ fun RatesTab(uiState: CurrencyUiState) {
                 .fillMaxWidth()
                 .background(AppColors.recessedSurface)
                 .padding(
-                    horizontal = AeonTheme.dimensions.screenPadding, 
+                    horizontal = AeonTheme.dimensions.screenPadding,
                     vertical = if (isSmallScreen) 8.dp else 12.dp
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -430,8 +434,11 @@ fun RatesTab(uiState: CurrencyUiState) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = rate.currencyCode.take(2),
-                                        style = if (isSmallScreen) AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black, fontSize = 11.sp)
-                                                else AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
+                                        style = if (isSmallScreen) AppTextStyles.cardDelta.copy(
+                                            fontWeight = FontWeight.Black,
+                                            fontSize = 11.sp
+                                        )
+                                        else AppTextStyles.cardDelta.copy(fontWeight = FontWeight.Black),
                                         color = if (isBase) AppColors.onPrimary else AppColors.contentPrimary
                                     )
                                 }
@@ -451,7 +458,10 @@ fun RatesTab(uiState: CurrencyUiState) {
                                         ) {
                                             Text(
                                                 "BASE",
-                                                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Black, fontSize = 8.sp),
+                                                style = AppTextStyles.metaLabel.copy(
+                                                    fontWeight = FontWeight.Black,
+                                                    fontSize = 8.sp
+                                                ),
                                                 color = AppColors.onPrimary,
                                                 modifier = Modifier.padding(
                                                     horizontal = 4.dp,
@@ -520,9 +530,10 @@ fun ConverterTab(
     var fromCurrency by remember { mutableStateOf(uiState.baseCurrency.ifEmpty { "USD" }) }
     var toCurrency by remember { mutableStateOf("EUR") }
 
+    val scope = rememberCoroutineScope()
     val currencies = uiState.rates.map { it.currencyCode }.sorted()
     var conversionResult by remember { mutableStateOf(0.0) }
-    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isSmallScreen = configuration.screenHeightDp < 700
@@ -576,11 +587,13 @@ fun ConverterTab(
 
                 // Compact Rate Badge + Swap Button
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = if (isSmallScreen) 2.dp else 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = if (isSmallScreen) 2.dp else 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     HorizontalDivider(color = AppColors.divider.copy(alpha = 0.1f))
-                    
+
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
@@ -591,8 +604,17 @@ fun ConverterTab(
                             border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.1f))
                         ) {
                             Text(
-                                text = "1 $fromCurrency = ${String.format(Locale.US, "%.4f", currentRate)} $toCurrency",
-                                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Bold, fontSize = if (isSmallScreen) 8.sp else 9.sp),
+                                text = "1 $fromCurrency = ${
+                                    String.format(
+                                        Locale.US,
+                                        "%.4f",
+                                        currentRate
+                                    )
+                                } $toCurrency",
+                                style = AppTextStyles.metaLabel.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = if (isSmallScreen) 8.sp else 9.sp
+                                ),
                                 color = AppColors.contentSecondary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
@@ -632,9 +654,16 @@ fun ConverterTab(
                     isSmall = isSmallScreen,
                     onCopy = {
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                        clipboardManager.setText(
-                            androidx.compose.ui.text.AnnotatedString(String.format(Locale.US, "%,.2f", conversionResult))
-                        )
+                        scope.launch {
+                            clipboard.setClipEntry(
+                                ClipEntry(
+                                    ClipData.newPlainText(
+                                        "Exchange Rate",
+                                        String.format(Locale.US, "%,.2f", conversionResult)
+                                    )
+                                )
+                            )
+                        }
                     }
                 )
             }
@@ -674,10 +703,12 @@ fun ConverterTab(
                                 onClick = {
                                     haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                                     when (key) {
-                                        "C" -> if (amountText.isNotEmpty()) amountText = amountText.dropLast(1)
+                                        "C" -> if (amountText.isNotEmpty()) amountText =
+                                            amountText.dropLast(1)
+
                                         "." -> if (!amountText.contains(".")) amountText += "."
                                         else -> if (amountText == "0") amountText = key
-                                                else if (amountText.length < 10) amountText += key
+                                        else if (amountText.length < 10) amountText += key
                                     }
                                 },
                                 modifier = Modifier
@@ -729,7 +760,10 @@ private fun ConverterRow(
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
             Text(
                 text = label,
-                style = if (isSmall) AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Black, fontSize = 8.sp) else AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
+                style = if (isSmall) AppTextStyles.metaLabel.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 8.sp
+                ) else AppTextStyles.sectionOverline.copy(fontSize = 10.sp),
                 color = if (isSource) AppColors.contentSecondary else AppColors.primary
             )
             ExposedDropdownMenuBox(
@@ -738,7 +772,10 @@ private fun ConverterRow(
             ) {
                 Surface(
                     onClick = { expanded = true },
-                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+                    modifier = Modifier.menuAnchor(
+                        ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                        true
+                    ),
                     color = AppColors.panelSurface,
                     shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                     border = BorderStroke(1.dp, AppColors.divider.copy(alpha = 0.3f)),
@@ -751,7 +788,9 @@ private fun ConverterRow(
                     ) {
                         Text(
                             text = currencyCode,
-                            style = if (isSmall) AppTextStyles.managementItemTitle.copy(fontSize = 12.sp) else AppTextStyles.cardTitle.copy(fontSize = 16.sp),
+                            style = if (isSmall) AppTextStyles.managementItemTitle.copy(fontSize = 12.sp) else AppTextStyles.cardTitle.copy(
+                                fontSize = 16.sp
+                            ),
                             color = AppColors.contentPrimary
                         )
                         Icon(
@@ -802,7 +841,11 @@ private fun ConverterRow(
                                 targetAmount.length > 7 -> AppTextStyles.heroAmount.copy(fontSize = 20.sp)
                                 else -> AppTextStyles.heroAmount.copy(fontSize = 24.sp)
                             }
-                            targetAmount.length > 10 -> AppTextStyles.heroAmountDisplay.copy(fontSize = 28.sp)
+
+                            targetAmount.length > 10 -> AppTextStyles.heroAmountDisplay.copy(
+                                fontSize = 28.sp
+                            )
+
                             targetAmount.length > 7 -> AppTextStyles.heroAmountMedium.copy(fontSize = 32.sp)
                             else -> AppTextStyles.heroAmountLarge.copy(fontSize = 36.sp)
                         },
@@ -812,7 +855,7 @@ private fun ConverterRow(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                
+
                 if (onCopy != null) {
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(
@@ -839,7 +882,8 @@ fun KeyButton(
     modifier: Modifier = Modifier,
     isSmall: Boolean = false
 ) {
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val interactionSource =
+        remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     Surface(

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.onboarding
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.data.local.AppDatabase
@@ -13,7 +14,6 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import android.content.Context
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -60,7 +60,7 @@ class OnboardingViewModel @Inject constructor(
     private val providerRegistry: ExchangeRateProviderRegistry,
     private val database: AppDatabase,
     private val settingsDataStore: SettingsDataStore,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(

@@ -44,7 +44,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.draggableHandle
-import com.osscabinet.ossWallet.ui.components.toIcon
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
 import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
@@ -172,68 +171,37 @@ private fun CardItem(
     highlightedId: String?,
     onScrollComplete: () -> Unit,
 ) {
-    when (val cs = cardState) {
-        is CardComputeState.Loading, null -> AeonExpressiveCard(
-            title = cardConfig.cardType.displayName,
-            icon = cardConfig.cardType.toIcon(),
-            headerModifier = dragHandleModifier,
-        ) {
-            CardContentShimmer()
-        }
+    val card = rememberCardWithCallbacks(
+        config = cardConfig,
+        state = cardState,
+        input = cardInput,
+        updateHandler = cardUpdateHandler,
+        onDelete = onDelete,
+        onRecordsClick = onRecordsClick,
+        callbacks = callbacks,
+        filterSheetEnabled = !disableFilterSheet,
+    )
 
-        is CardComputeState.Error -> AeonExpressiveCard(
-            title = cardConfig.cardType.displayName,
-            icon = cardConfig.cardType.toIcon(),
-            headerModifier = dragHandleModifier,
-            isWarning = true,
-        ) {
-            CardErrorContent(cs.message)
-        }
-
-        is CardComputeState.Success -> {
-            val card = rememberCardWithCallbacks(
-                config = cardConfig,
-                renderData = cs.data,
-                input = cardInput,
-                updateHandler = cardUpdateHandler,
-                onDelete = onDelete,
-                onRecordsClick = onRecordsClick,
-                callbacks = callbacks,
-                filterSheetEnabled = !disableFilterSheet,
-            )
-            // null only for a config/data type mismatch — programming error
-            if (card == null) {
-                AeonExpressiveCard(
-                    title = cardConfig.cardType.displayName,
-                    icon = cardConfig.cardType.toIcon(),
-                    headerModifier = dragHandleModifier,
-                    isWarning = true,
-                ) {
-                    CardErrorContent(null)
-                }
-            } else {
-                val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
-                    card.copyWithRules(
-                        rules = card.filterRules.layeredWith(screenRules),
-                        baseFilter = baseFilter,
-                        filterSheetEnabled = !disableFilterSheet
-                    )
-                }
-                UnifiedCardRenderer(
-                    cardWithCallbacks = effectiveCard,
-                    modifier = Modifier.fillMaxWidth(),
-                    headerModifier = dragHandleModifier,
-                    filterContext = filterContext,
-                    inheritedFilter = cardInput.filter,
-                    screenOwnsTimeline = cardInput.screenOwnsTimeline,
-                    animate = animateCards,
-                    scrollToId = scrollToId,
-                    highlightedId = highlightedId,
-                    onScrollComplete = onScrollComplete
-                )
-            }
-        }
+    val effectiveCard = remember(card, screenRules, baseFilter, disableFilterSheet) {
+        card.copyWithRules(
+            rules = card.filterRules.layeredWith(screenRules),
+            baseFilter = baseFilter,
+            filterSheetEnabled = !disableFilterSheet
+        )
     }
+
+    UnifiedCardRenderer(
+        cardWithCallbacks = effectiveCard,
+        modifier = Modifier.fillMaxWidth(),
+        headerModifier = dragHandleModifier,
+        filterContext = filterContext,
+        inheritedFilter = cardInput.filter,
+        screenOwnsTimeline = cardInput.screenOwnsTimeline,
+        animate = animateCards,
+        scrollToId = scrollToId,
+        highlightedId = highlightedId,
+        onScrollComplete = onScrollComplete
+    )
 }
 
 

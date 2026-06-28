@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,6 +60,13 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import java.math.BigDecimal
 
 @Composable
@@ -603,3 +610,39 @@ private fun CashFlowCardPreviewContent() {
         )
     }
 }
+
+/**
+ * Maps [CashFlowCardConfig] + [CardRenderData.CashFlow] to [CardWithCallbacks.CashFlow].
+ */
+fun mapCashFlow(
+    config: CashFlowCardConfig,
+    renderData: CardRenderData.CashFlow,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.CashFlow(
+    renderData = renderData,
+    callbacks = CardCallbacks.CashFlow(
+        onShowBaseConversionChange = updateHandler::updateCardCashFlowShowBaseConversion,
+        onFilterChange = updateHandler::updateCardCashFlowFilter,
+        onPerspectiveChange = updateHandler::updateCardPerspective,
+        onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onShowNetColumnChange = updateHandler::updateCardCashFlowShowNetColumn,
+        onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)

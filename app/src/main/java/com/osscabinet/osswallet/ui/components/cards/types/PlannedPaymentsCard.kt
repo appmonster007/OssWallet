@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.animation.core.animateFloatAsState
@@ -64,6 +64,11 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -379,6 +384,34 @@ private fun PlannedPaymentRow(
     }
 }
 
+/**
+ * Maps [PlannedPaymentsCardConfig] + [CardRenderData.PlannedPayments] to [CardWithCallbacks.PlannedPayments].
+ */
+fun mapPlannedPayments(
+    config: PlannedPaymentsCardConfig,
+    renderData: CardRenderData.PlannedPayments,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.PlannedPayments(
+    renderData = renderData,
+    callbacks = CardCallbacks.PlannedPayments(
+        onUpdate = { newConfig -> updateHandler.updateCardPlannedPaymentsConfig(config.cardId, newConfig) },
+        onFilterChange = updateHandler::updateCardPlannedPaymentsFilter,
+        onItemClick = callbacks.paymentActions.onClick,
+        onConfirm = callbacks.paymentActions.onConfirm,
+        onSkip = callbacks.paymentActions.onSkip,
+        onSeeAll = callbacks.paymentActions.onSeeAll,
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
+
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun PlannedPaymentsCardPreview() {
@@ -425,90 +458,9 @@ fun PlannedPaymentsCardPreview() {
                 config = PlannedPaymentsCardConfig(cardId = "preview"),
                 callbacks = CardCallbacks.PlannedPayments(
                     onUpdate = {},
-                    onDelete = {},
+                    onFilterChange = { _, _ -> },
                     onItemClick = {})
             )
         }
     }
 }
-//
-///**
-// * Confirms a planned payment by ID.
-// * This is a standalone helper that can be used from any ViewModel.
-// *
-// * @param paymentId The ID of the planned payment to confirm
-// * @param plannedPayments List of all planned payments to find the target payment
-// * @param plannedPaymentRepository Repository for planned payment operations
-// * @param transactionManager Manager for creating transactions
-// * @param profileId The current profile ID
-// */
-//suspend fun quickConfirmPlannedPayment(
-//    paymentId: Long,
-//    plannedPayments: List<PlannedPayment>,
-//    plannedPaymentRepository: PlannedPaymentRepository,
-//    transactionManager: TransactionManager,
-//    profileId: Int
-//) {
-//    val payment = plannedPayments.find { it.id == paymentId } ?: return
-//    val occurrence = PlannedPaymentOccurrence(
-//        id = 0,
-//        plannedPaymentId = payment.id,
-//        scheduledDate = payment.nextDueDate
-//    )
-//    val request = TransactionRequest(
-//        title = payment.title,
-//        amount = payment.amount,
-//        category = "",
-//        entryMode = payment.entryMode,
-//        accountId = payment.accountId,
-//        currency = payment.currency,
-//        categoryId = payment.categoryId,
-//        tags = payment.tags,
-//        paymentMethod = payment.paymentMethod,
-//        timestamp = occurrence.scheduledDate,
-//        payee = payment.payee,
-//        note = payment.note
-//    )
-//    val transactionId = transactionManager.handleSaveTransaction(null, request, profileId)
-//    plannedPaymentRepository.upsertOccurrence(
-//        occurrence.copy(status = OccurrenceStatus.CONFIRMED, generatedTransactionId = transactionId)
-//    )
-//    val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-//    if (nextDue == null) {
-//        plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-//    } else {
-//        plannedPaymentRepository.update(
-//            payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
-//        )
-//    }
-//}
-//
-///**
-// * Skips a planned payment by ID.
-// * This is a standalone helper that can be used from any ViewModel.
-// *
-// * @param paymentId The ID of the planned payment to skip
-// * @param plannedPayments List of all planned payments to find the target payment
-// * @param plannedPaymentRepository Repository for planned payment operations
-// */
-//suspend fun quickSkipPlannedPayment(
-//    paymentId: Long,
-//    plannedPayments: List<PlannedPayment>,
-//    plannedPaymentRepository: PlannedPaymentRepository
-//) {
-//    val payment = plannedPayments.find { it.id == paymentId } ?: return
-//    val occurrence = PlannedPaymentOccurrence(
-//        id = 0,
-//        plannedPaymentId = payment.id,
-//        scheduledDate = payment.nextDueDate
-//    )
-//    plannedPaymentRepository.upsertOccurrence(occurrence.copy(status = OccurrenceStatus.SKIPPED))
-//    val nextDue = PlannedPaymentService.calculateNextDueDate(payment, occurrence.scheduledDate)
-//    if (nextDue == null) {
-//        plannedPaymentRepository.update(payment.copy(status = PlannedPaymentStatus.COMPLETED))
-//    } else {
-//        plannedPaymentRepository.update(
-//            payment.copy(nextDueDate = nextDue, lastTriggeredDate = occurrence.scheduledDate)
-//        )
-//    }
-//}

@@ -1,9 +1,9 @@
-package com.osscabinet.ossWallet.ui.screens.accounts.detail.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,9 +20,6 @@ import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,37 +30,42 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.LocalUiIdentity
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.applyAccountTint
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 @Composable
@@ -520,6 +520,44 @@ private fun FlowSummaryItem(
         }
     }
 }
+
+/**
+ * Maps [AccountHeroCardConfig] + [CardRenderData.AccountHero] to [CardWithCallbacks.AccountHero].
+ */
+fun mapAccountHero(
+    config: AccountHeroCardConfig,
+    renderData: CardRenderData.AccountHero,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.AccountHero(
+    renderData = renderData,
+    callbacks = CardCallbacks.AccountHero(
+        onShowCurrencyBadgesChange = updateHandler::updateCardHeroShowCurrencyBadges,
+        onPerspectiveChange = updateHandler::updateCardPerspective,
+        onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onFilterChange = updateHandler::updateCardHeroFilter,
+        onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickCurrency = { currency ->
+            val drillDown = TransactionFilter(currencies = setOf(currency))
+            onRecordsClick(resolveDrillDown(input, config, drillDown))
+        },
+        onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
+        onClick = { callbacks.accountActions.onClick(renderData.summary.account.id) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Account Hero - Light")
 @Composable

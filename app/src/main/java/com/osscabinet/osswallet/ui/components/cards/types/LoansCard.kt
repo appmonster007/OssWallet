@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -31,9 +34,11 @@ import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -238,6 +243,32 @@ private fun LoanSummaryRow(
         }
     }
 }
+
+/**
+ * Maps [LoansCardConfig] + [CardRenderData.Loans] to [CardWithCallbacks.Loans].
+ */
+fun mapLoans(
+    config: LoansCardConfig,
+    renderData: CardRenderData.Loans,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.Loans(
+    renderData = renderData,
+    callbacks = CardCallbacks.Loans(
+        onUpdate = { newConfig -> updateHandler.updateCardLoansConfig(config.cardId, newConfig) },
+        onFilterChange = updateHandler::updateCardLoansFilter,
+        onLoanClick = callbacks.loanActions.onClick,
+        onSeeAll = callbacks.loanActions.onSeeAll,
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable

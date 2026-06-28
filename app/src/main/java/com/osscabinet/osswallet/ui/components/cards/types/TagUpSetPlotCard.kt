@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +42,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -55,14 +57,16 @@ import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
-import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionSummaryBreakdown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetData
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetIntersection
@@ -72,6 +76,28 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
+
+fun mapTagUpSetPlot(
+    config: TagUpSetPlotCardConfig,
+    renderData: CardRenderData.TagUpSetPlot,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.TagUpSetPlot(
+    renderData = renderData,
+    callbacks = CardCallbacks.TagUpSetPlot(
+        onUpdate = { newConfig -> updateHandler.updateTagUpSetPlotConfig(config.cardId, newConfig) },
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @Composable
 fun TagUpSetPlotCard(

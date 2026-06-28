@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +44,13 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -279,3 +286,35 @@ fun CurrencyBalancesCardPreview() {
         }
     }
 }
+
+/**
+ * Maps [CurrencyBalancesCardConfig] + [CardRenderData.CurrencyBalances] to [CardWithCallbacks.CurrencyBalances].
+ */
+fun mapCurrencyBalances(
+    config: CurrencyBalancesCardConfig,
+    renderData: CardRenderData.CurrencyBalances,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.CurrencyBalances(
+    renderData = renderData,
+    callbacks = CardCallbacks.CurrencyBalances(
+        onGridColumnsChange = updateHandler::updateCardCurrencyBalancesGridColumns,
+        onLayoutChange = updateHandler::updateCardCurrencyBalancesLayout,
+        onShowBaseConversionChange = updateHandler::updateCardCurrencyBalancesShowBaseConversion,
+        onFilterChange = updateHandler::updateCardCurrencyBalancesFilter,
+        onCurrencyClick = { currency, range ->
+            val drillDown = TransactionFilter(currencies = setOf(currency), timelineRange = range)
+            onRecordsClick(resolveDrillDown(input, config, drillDown))
+        },
+        onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)

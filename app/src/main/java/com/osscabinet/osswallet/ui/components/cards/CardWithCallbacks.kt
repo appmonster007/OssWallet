@@ -188,8 +188,19 @@ sealed class CardWithCallbacks {
             copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
     }
 
+    data class Loading(
+        val cardId: String,
+        val cardType: com.osscabinet.ossWallet.domain.card.CardType,
+        override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+        override val baseFilter: TransactionFilter = TransactionFilter(),
+        override val filterSheetEnabled: Boolean = false
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) = this
+    }
+
     data class ComputeError(
         val cardId: String,
+        val cardType: com.osscabinet.ossWallet.domain.card.CardType,
         val message: String?,
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),

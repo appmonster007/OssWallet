@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,15 +15,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
@@ -239,3 +246,40 @@ private fun RecentActivitiesSettingsSheet(
         }
     }
 }
+
+/**
+ * Maps [RecentActivitiesCardConfig] + [CardRenderData.RecentActivities] to [CardWithCallbacks.RecentActivities].
+ */
+fun mapRecentActivities(
+    config: RecentActivitiesCardConfig,
+    renderData: CardRenderData.RecentActivities,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.RecentActivities(
+    renderData = renderData,
+    callbacks = CardCallbacks.RecentActivities(
+        onUpdate = { newConfig -> updateHandler.updateCardRecentActivitiesConfig(config.cardId, newConfig) },
+        onTransactionClick = callbacks.transactionActions.onClick,
+        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
+        onDelete = { onDelete(config.cardId) },
+        onItemExpanded = callbacks.transactionActions.onItemExpanded,
+        onItemCollapsed = callbacks.transactionActions.onItemCollapsed,
+        onStatusChange = callbacks.transactionActions.onStatusChange,
+        onClone = callbacks.transactionActions.onClone,
+        onDeleteTransaction = callbacks.transactionActions.onDelete,
+        onSplit = callbacks.transactionActions.onSplit,
+        onJump = callbacks.transactionActions.onJump,
+        onFullSwipeRight = callbacks.transactionActions.onFullSwipeRight,
+        onSaveFilterClick = callbacks.filterActions.onSaveClick,
+        onConfirmPlanned = callbacks.paymentActions.onConfirm,
+        onCancelPlanned = callbacks.paymentActions.onSkip
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)

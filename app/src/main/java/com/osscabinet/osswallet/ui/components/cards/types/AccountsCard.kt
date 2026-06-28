@@ -1,4 +1,4 @@
-package com.osscabinet.ossWallet.ui.screens.dashboard.components
+package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +51,13 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -491,3 +498,41 @@ fun AccountsCardPreview() {
         }
     }
 }
+
+/**
+ * Maps [AccountsCardConfig] + [CardRenderData.Accounts] to [CardWithCallbacks.Accounts].
+ */
+fun mapAccounts(
+    config: AccountsCardConfig,
+    renderData: CardRenderData.Accounts,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: (String) -> Unit,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.Accounts(
+    renderData = renderData,
+    callbacks = CardCallbacks.Accounts(
+        onGridColumnsChange = updateHandler::updateCardAccountsGridColumns,
+        onLayoutChange = updateHandler::updateCardAccountsLayout,
+        onFilterChange = updateHandler::updateCardAccountsFilter,
+        onShowAddAccountCardChange = updateHandler::updateCardAccountsShowAddAccountCard,
+        onPerspectiveChange = updateHandler::updateCardPerspective,
+        onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onManageClick = callbacks.accountActions.onManageClick,
+        onAccountClick = callbacks.accountActions.onClick,
+        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
+        onDelete = { onDelete(config.cardId) },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)

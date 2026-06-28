@@ -1,6 +1,10 @@
+---
+baseline_commit: 7f5ca2de2038cd3a18f8c8bb730bc1f20c8fbb35
+---
+
 # Story 2.5: Universal Currency Integrity & Consistent Formatting
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -52,39 +56,39 @@ A recent bug report highlighted that the **Treemap Card** correcty shows amounts
 
 ### Priority A — Core Chart Standardization
 
-- [ ] **Task 1 — Remove hardcoded "USD" defaults from Chart Components**
-  - [ ] Update `AeonTreemap` signature and `AeonChartInteractionPopup`
-  - [ ] Update `AeonBarChart` signature (all overloads)
-  - [ ] Update `AeonPieChart` signature
-  - [ ] Update `AeonLineChart` signature
-  - [ ] Update `AeonBarLineChart` signature
+- [x] **Task 1 — Remove hardcoded "USD" defaults from Chart Components**
+  - [x] Update `AeonTreemap` signature and `AeonChartInteractionPopup`
+  - [x] Update `AeonBarChart` signature (all overloads)
+  - [x] Update `AeonPieChart` signature
+  - [x] Update `AeonLineChart` signature
+  - [x] Update `AeonBarLineChart` signature
 
-- [ ] **Task 2 — Fix Chart Y-Axis and Label Formatting**
-  - [ ] `AeonBarChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
-  - [ ] `AeonLineChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
-  - [ ] `AeonBarLineChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
+- [x] **Task 2 — Fix Chart Y-Axis and Label Formatting**
+  - [x] `AeonBarChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
+  - [x] `AeonLineChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
+  - [x] `AeonBarLineChart.kt`: Replace `currencyCode = null` with `currency` in Y-axis label formatting
 
 ### Priority B — Fix Card Call Sites & Legends
 
-- [ ] **Task 3 — Fix CategoryTreemapCard & Legend**
-  - [ ] Pass `currency` prop to `AeonTreemap` call
-  - [ ] Update `CategoryTreemapCard` to use `formatCurrencyAnnotated` for the TOTAL amount instead of manual building
-  - [ ] Update `TreemapLegend` to take `currency` and pass it to `formatCurrency`
+- [x] **Task 3 — Fix CategoryTreemapCard & Legend**
+  - [x] Pass `currency` prop to `AeonTreemap` call
+  - [x] Update `CategoryTreemapCard` to use `formatCurrencyAnnotated` for the TOTAL amount instead of manual building
+  - [x] Update `TreemapLegend` to take `currency` and pass it to `formatCurrency`
 
-- [ ] **Task 4 — Fix CategoryPieChartCard Legend**
-  - [ ] Update `CategoryLegend` to take `currency` and pass it to `formatCurrency`
+- [x] **Task 4 — Fix CategoryPieChartCard Legend**
+  - [x] Update `CategoryLegend` to take `currency` and pass it to `formatCurrency`
 
-- [ ] **Task 5 — Fix Account Cards & Hero**
-  - [ ] `AeonAccountCards.kt`: Pass `curr` (from the loop) to `formatCurrency` in the multi-currency distribution list
-  - [ ] `AccountHeroCard.kt`: Pass `curr` (from the loop) to `formatCurrencyAnnotated` in the multi-currency distribution list
+- [x] **Task 5 — Fix Account Cards & Hero**
+  - [x] `AeonAccountCards.kt`: Pass `curr` (from the loop) to `formatCurrency` in the multi-currency distribution list
+  - [x] `AccountHeroCard.kt`: Pass `curr` (from the loop) to `formatCurrencyAnnotated` in the multi-currency distribution list
 
-- [ ] **Task 6 — Fix Loans Card**
-  - [ ] `LoansCard.kt`: Pass `summary.loan.currency` instead of `null` to `formatCurrencyAnnotated` for the principal amount
+- [x] **Task 6 — Fix Loans Card**
+  - [x] `LoansCard.kt`: Pass `summary.loan.currency` instead of `null` to `formatCurrencyAnnotated` for the principal amount
 
 ### Priority C — Audit & Cleanup
 
-- [ ] **Task 7 — Audit remaining formatCurrency(amount) calls**
-  - [ ] `grep -r "formatCurrency([a-zA-Z0-9.]*)" app/src` and ensure any call missing the second argument is either intentional or fixed
+- [x] **Task 7 — Audit remaining formatCurrency(amount) calls**
+  - [x] Audited all remaining calls; all either pass a correct currency code or are intentionally unit-less (ManagementScopeCard filter amounts where no currency context exists)
 
 ---
 
@@ -117,3 +121,39 @@ formatCurrency(amount, currencyCode) // DO NOT LEAVE NULL
 
 ### Agent Model Used
 claude-sonnet-4-6
+
+### Implementation Notes
+
+**Task 1:** Removed `= "USD"` default from all 7 chart component signatures (`AeonTreemap`, `AeonBarChart` ×2, `AeonPieChart`, `AeonLineChart`, `AeonBarLineChart`, `AeonChartInteractionPopup`). All `@Preview` call sites updated to pass `currency = "USD"` explicitly so they compile.
+
+**Task 2:** Replaced `currencyCode = null` with `currencyCode = currency` in the Y-axis tick formatter in `AeonBarChart`, `AeonLineChart`, and `AeonBarLineChart`. Y-axis labels now show the chart's active currency symbol.
+
+**Task 3:** (a) Added `currency = currency` to the `AeonTreemap(...)` call in `CategoryTreemapCard` — this was the root cause of the Treemap USD regression. (b) Replaced manual `buildAnnotatedString` + `CurrencyService.getCurrencySymbol` total display with `CurrencyReprUi.formatCurrencyAnnotated` using `CurrencyPartStyles(symbol = dimStyle, neutral = contentColor)`. (c) Added `currency: String` param to `TreemapLegend` and fixed `formatCurrency(item.amount)` → `formatCurrency(item.amount, currency)`.
+
+**Task 4:** Added `currency: String` param to `CategoryLegend` and fixed `formatCurrency(item.amount)` → `formatCurrency(item.amount, currency)`. Updated call site to pass `currency`.
+
+**Task 5:** `AeonAccountCards.kt`: `formatCurrency(bal)` → `formatCurrency(bal, curr)`. `AccountHeroCard.kt`: `currencyCode = null` → `currencyCode = curr` in the multi-currency distribution badge.
+
+**Task 6:** `LoansCard.kt`: `currencyCode = null` → `currencyCode = summary.loan.currency` for the principal amount display.
+
+**Task 7:** Full audit of all `formatCurrency` call sites. All calls either pass a non-null currency code or are intentionally unit-less (`ManagementScopeCard` filter min/max amounts, which have no currency context by design).
+
+### File List
+
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonTreemap.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonBarChart.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonPieChart.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonLineChart.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonBarLineChart.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/visualization/charts/AeonChartInteractionPopup.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/types/CategoryTreemapCard.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/types/CategoryPieChartCard.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/accounts/AeonAccountCards.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/types/AccountHeroCard.kt`
+- `app/src/main/java/com/osscabinet/ossWallet/ui/components/cards/types/LoansCard.kt`
+- `_bmad-output/implementation-artifacts/2-5-universal-currency-integrity-and-consistent-formatting.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+### Change Log
+
+- 2026-06-28: Implemented Story 2.5 — removed `= "USD"` silent defaults from all 5 chart components + interaction popup; fixed Y-axis null currency codes in bar/line/barline charts; passed currency down to AeonTreemap (fixing the Treemap USD regression); replaced manual total formatting with `formatCurrencyAnnotated`; fixed TreemapLegend and CategoryLegend; fixed AccountCards, AccountHero, LoansCard null/missing currency codes; audited all remaining `formatCurrency` calls.

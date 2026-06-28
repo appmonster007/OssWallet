@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -258,7 +259,6 @@ fun DashboardScreen(
         onAddCard = dashboardViewModel::addCard,
         onReorderCards = dashboardViewModel::reorderCards,
         onRemoveCard = dashboardViewModel::removeCard,
-        onCardBecameVisible = { cardType -> dashboardViewModel.onIntent(DashboardIntent.CardBecameVisible(cardType)) },
         onQuickConfirm = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickConfirmPlannedPayment(id, date)) },
         onQuickSkip = { id, date -> dashboardViewModel.onIntent(DashboardIntent.QuickSkipPlannedPayment(id, date)) },
         onSearchTransactions = { query -> dashboardViewModel.searchTransactions(query) },
@@ -312,7 +312,6 @@ fun DashboardScreenLayout(
     onAddCard: (CardType) -> Unit,
     onReorderCards: (List<CardConfig>) -> Unit,
     onRemoveCard: (String) -> Unit,
-    onCardBecameVisible: (CardType) -> Unit = {},
     onQuickConfirm: (Long, Long) -> Unit,
     onQuickSkip: (Long, Long) -> Unit,
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
@@ -373,17 +372,6 @@ fun DashboardScreenLayout(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
-
-    // Emit CardBecameVisible for lazy card computation (Story 2.3 Task 7.4)
-    LaunchedEffect(glanceListState.firstVisibleItemIndex) {
-        if (pagerState.currentPage == 0) {
-            val firstVisible = glanceListState.firstVisibleItemIndex
-            cardsConfig.cards.sortedBy { it.order }
-                .drop(firstVisible)
-                .take(3)
-                .forEach { card -> onCardBecameVisible(card.cardType) }
-        }
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -989,7 +977,6 @@ fun DashboardGlanceTab(
         cards = cardsConfig.cards,
         state = listState,
         cardDataMap = state.cardDataMap,
-        isCardsLoading = state.isCardsComputing,
         cardInput = sharedCardInput,
         cardComputerRegistry = cardComputerRegistry,
         cardUpdateHandler = cardUpdateHandler,
@@ -1124,7 +1111,7 @@ fun DashboardScreenPreview() {
         accounts = persistentListOf(sampleAccount),
         allAccounts = persistentListOf(sampleAccount),
         cardDataMap = persistentMapOf(
-            "net_worth_1" to CardRenderData.NetWorth(
+            "net_worth_1" to CardComputeState.Success(CardRenderData.NetWorth(
                 config = netWorthConfig,
                 currentPeriodMetrics = NetWorthMetrics(
                     netWorth = BigDecimal("12500.00"),
@@ -1135,8 +1122,8 @@ fun DashboardScreenPreview() {
                     )
                 ),
                 currency = "USD"
-            ),
-            "accounts_1" to CardRenderData.Accounts(
+            )),
+            "accounts_1" to CardComputeState.Success(CardRenderData.Accounts(
                 config = accountsConfig,
                 updatedAccounts = listOf(sampleAccount),
                 accountSummaries = mapOf(
@@ -1153,7 +1140,7 @@ fun DashboardScreenPreview() {
                 ),
                 currency = "USD",
                 currentTheme = "Glass"
-            )
+            ))
         ),
         allTransactions = persistentListOf(),
         recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),

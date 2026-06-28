@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.dashboard
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
+import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
@@ -61,6 +62,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
@@ -88,7 +90,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicInteger
 import java.math.BigDecimal
 import javax.inject.Inject
 
@@ -147,14 +148,6 @@ class DashboardViewModel @Inject constructor(
     private val _highlightedId = MutableStateFlow<String?>(null)
     private val _linkedPopupTxs = MutableStateFlow<List<TransactionListItem>?>(null)
 
-    // ViewModel-scoped card render state so computeCardIfNeeded writes are visible to the UI
-    private val _cardDataMap = MutableStateFlow<ImmutableMap<String, CardRenderData>>(persistentMapOf())
-    private val _isCardsComputing = MutableStateFlow(false)
-
-    // Guards computeCardIfNeeded against launching duplicate coroutines for the same card
-    // when CardBecameVisible fires faster than the first computation can write to the cache.
-    private val _inFlightCardIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
-
     // Job for clearing highlight after performJump — cancelled on rapid repeat calls
     private var highlightClearJob: Job? = null
 
@@ -194,7 +187,6 @@ class DashboardViewModel @Inject constructor(
             is DashboardIntent.QuickSkipPlannedPayment -> quickSkipById(intent.plannedPaymentId, intent.scheduledDate)
             DashboardIntent.UndoLastPlannedPaymentAction -> undoLastPlannedPaymentAction()
             DashboardIntent.ClearUndoAction -> clearUndoAction()
-            is DashboardIntent.CardBecameVisible -> computeCardIfNeeded(intent.cardType)
 
             // New UI Intents
             is DashboardIntent.OnCardExpanded -> _revealedCardIds.update { it + intent.cardId }
@@ -449,8 +441,7 @@ class DashboardViewModel @Inject constructor(
                     profileId = profileId,
                     accounts = snapshot.accounts.filter { !it.isArchived }.toImmutableList(),
                     allAccounts = snapshot.accounts.toImmutableList(),
-                    cardDataMap = emptyMap<String, CardRenderData>().toImmutableMap(),
-                    isCardsComputing = false,
+                    cardDataMap = persistentMapOf(),
                     allTransactions = snapshot.transactions.toImmutableList(),
                     recentActivitiesState = TransactionUiMapper.mapToUiState(
                         domainState = TransactionListState(s.visibleGroups, s.visibleGroups.isEmpty()),
@@ -478,40 +469,36 @@ class DashboardViewModel @Inject constructor(
                 channelFlow<DashboardUiState> {
                     val configs = successState.cardsConfig.cards
 
-                    // Bug fix: always start with an empty map so stale cached data is never
-                    // displayed after a transaction write (CardRenderCache is not cleared on
-                    // transaction invalidation — only QueryCache is).
-                    _cardDataMap.value = persistentMapOf()
-                    _isCardsComputing.value = configs.isNotEmpty()
+                    // Local flow scoped to this channelFlow round. Initialized with Loading so
+                    // the first collect emission is the Loading map — no race with compute children.
+                    val localCardState = MutableStateFlow<PersistentMap<String, CardComputeState>>(
+                        persistentMapOf<String, CardComputeState>().builder().apply {
+                            configs.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                        }.build()
+                    )
 
-                    val completedCount = AtomicInteger(0)
-
-                    // Collect card state and forward to UI
                     launch {
-                        combine(_cardDataMap, _isCardsComputing) { cards, computing ->
-                            successState.copy(cardDataMap = cards, isCardsComputing = computing)
-                        }.collect { send(it) }
+                        localCardState.collect { cards ->
+                            send(successState.copy(cardDataMap = cards))
+                        }
                     }
 
-                    if (configs.isEmpty()) {
-                        _isCardsComputing.value = false
-                    } else {
-                        // Bug fix: launch ALL cards in parallel, not just the first 4.
-                        // The take(4) cap caused cards beyond position 4 to become invisible
-                        // zero-size boxes once _isCardsComputing flipped false prematurely.
-                        configs.forEach { cardConfig ->
-                            launch(dispatchers.default) {
-                                val cardInput = successState.cardInput ?: return@launch
-                                val result = runCatching {
-                                    cardComputerRegistry.compute(cardConfig.cardType, cardInput, cardConfig)
-                                }
-                                val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
-                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = data
-                                _cardDataMap.update { (it + (cardConfig.cardId to data)).toImmutableMap() }
-                                if (completedCount.incrementAndGet() >= configs.size) {
-                                    _isCardsComputing.value = false
-                                }
+                    configs.forEach { cardConfig ->
+                        launch(dispatchers.default) {
+                            val cardInput = successState.cardInput ?: run {
+                                localCardState.update { it.put(cardConfig.cardId, CardComputeState.Error("Card input unavailable")) }
+                                return@launch
                             }
+                            val state = runCatching {
+                                cardComputerRegistry.compute(cardConfig.cardType, cardInput, cardConfig)
+                            }.fold(
+                                onSuccess = { CardComputeState.Success(it) },
+                                onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                            )
+                            if (state is CardComputeState.Success) {
+                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = state.data
+                            }
+                            localCardState.update { it.put(cardConfig.cardId, state) }
                         }
                     }
                 }
@@ -539,30 +526,6 @@ class DashboardViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardUiState.Loading
     )
-
-    // On-demand computation for cards that scroll into view (lazy loading).
-    // Writes directly to ViewModel-scoped _cardDataMap so the UI sees the update immediately.
-    private fun computeCardIfNeeded(cardType: com.osscabinet.ossWallet.domain.card.CardType) {
-        val state = uiState.value as? DashboardUiState.Success ?: return
-        val config = state.cardsConfig.cards.find { it.cardType == cardType } ?: return
-        val profileId = state.profileId
-        val currency = state.baseCurrency
-        val cardInput = state.cardInput ?: return
-
-        if (cardRenderCache[profileId, currency, config.cardId] != null) return
-        if (!_inFlightCardIds.add(config.cardId)) return
-
-        viewModelScope.launch(dispatchers.default) {
-            try {
-                val result = runCatching { cardComputerRegistry.compute(cardType, cardInput, config) }
-                val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
-                cardRenderCache[profileId, currency, config.cardId] = data
-                _cardDataMap.update { (it + (config.cardId to data)).toImmutableMap() }
-            } finally {
-                _inFlightCardIds.remove(config.cardId)
-            }
-        }
-    }
 
     private fun quickConfirmById(id: Long, scheduledDate: Long) {
         val state = (uiState.value as? DashboardUiState.Success) ?: return
@@ -699,8 +662,7 @@ sealed class DashboardUiState {
         val profileId: Int,
         val accounts: ImmutableList<Account>,
         val allAccounts: ImmutableList<Account> = persistentListOf(),
-        val cardDataMap: ImmutableMap<String, CardRenderData>,
-        val isCardsComputing: Boolean = false,
+        val cardDataMap: ImmutableMap<String, CardComputeState>,
         val allTransactions: ImmutableList<Transaction>,
         val recentActivitiesState: TransactionListUiState,
         val allCategories: ImmutableList<Category>,

@@ -8,6 +8,14 @@
 - `addTag` no duplicate name check [DashboardViewModel.kt:179] — pre-existing domain concern; silently inserts duplicate tags
 - Idempotency check in `quickConfirmById` only scans `DASHBOARD_TRANSACTION_FEED_LIMIT=100` transactions [DashboardViewModel.kt:516] — existing transactions beyond feed limit not checked; may allow duplicate confirmations
 
+## Deferred from: code review of 2-4 (2026-06-28) — RESOLVED
+- ~~`coroutineScope {}` inside `collectLatest` blocks rapid cancellation~~ — FIXED in pass 2: replaced with parent `Job` pattern; old jobs now cancelled on new round [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- ~~`fold(persistentMapOf()) { acc, c -> acc.put(...) }` creates N intermediate PersistentMap snapshots~~ — FIXED in pass 1: replaced with `.builder().apply { }.build()` [AnalyticsViewModel.kt + AccountDetailViewModel.kt + DashboardViewModel.kt]
+
+## Deferred from: code review of 2-4 (2026-06-28 — pass 2) — RESOLVED
+- ~~Analytics/AccountDetail old compute jobs waste CPU after `collectLatest` restarts~~ — FIXED: added `_currentCardComputeJob` parent Job; cancelled on each new round, cascading to all child card coroutines [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- ~~Cards absent from `cardDataMap` show infinite shimmer~~ — DISMISSED: parent Job fix makes this scenario unreachable; `runCatching` covers all error paths [AeonCardList.kt:143]
+
 ## Deferred from: code review of 2-2 and 2-3 (2026-06-28)
 - `QuickCloneTransaction` intent declared but unreachable from Screen — D1 navigation-action decision artifact; clean up in future sprint
 - `cardInput: CardInput?` in `DashboardUiState.Success` exposes domain object to UI state — pre-existing design concern

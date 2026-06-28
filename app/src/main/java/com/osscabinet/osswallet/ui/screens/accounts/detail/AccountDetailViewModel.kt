@@ -2,6 +2,10 @@ package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.core.util.DispatcherProvider
+import com.osscabinet.ossWallet.domain.card.CardComputeState
+import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
+import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -20,22 +24,33 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
+import com.osscabinet.ossWallet.domain.service.category.CategoryHierarchyCache
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -48,7 +63,9 @@ class AccountDetailViewModel @Inject constructor(
     override val cardRepository: CardRepository,
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
-    private val tagRepository: TagRepository
+    private val tagRepository: TagRepository,
+    private val cardComputerRegistry: CardComputerRegistry,
+    private val dispatchers: DispatcherProvider,
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
 
     private val accountId: String = checkNotNull(savedStateHandle["accountId"])
@@ -207,6 +224,70 @@ class AccountDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AccountDetailUiState.Loading
         )
+
+    private val _cardDataMap = MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
+    val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> = _cardDataMap.asStateFlow()
+
+    // Generation counter: guards against stale writes from CPU-bound children that run to
+    // completion after coroutineScope is cancelled (cooperative cancellation, no suspension points).
+    private val _computeGeneration = AtomicInteger(0)
+
+    init {
+        viewModelScope.launch {
+            combine(cardsConfig, uiState) { cards, state -> cards to state }
+                .collectLatest { (cards, state) ->
+                    if (state !is AccountDetailUiState.Success) {
+                        _cardDataMap.value = persistentMapOf()
+                        return@collectLatest
+                    }
+
+                    val myGen = _computeGeneration.incrementAndGet()
+
+                    // Emit Loading immediately so shimmers appear before hierarchy build starts.
+                    _cardDataMap.value = persistentMapOf<String, CardComputeState>().builder().apply {
+                        cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                    }.build()
+
+                    // AC8: Build inputs on Default — build hierarchy once per round
+                    val input = kotlinx.coroutines.withContext(dispatchers.default) {
+                        CardInput(
+                            profileId = state.profileId,
+                            transactions = state.allAccountTransactions,
+                            allProfileTransactions = state.allProfileTransactions,
+                            accounts = listOf(state.account),
+                            categories = state.allCategories,
+                            tags = state.allTags,
+                            exchangeRates = ExchangeRateSnapshot(
+                                anchor = state.baseCurrency,
+                                rates = state.exchangeRates
+                            ),
+                            targetCurrency = state.account.currencyCode,
+                            filter = state.currentFilter,
+                            screenContext = ScreenContext.ACCOUNT_DETAIL,
+                            categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
+                        )
+                    }
+
+                    // coroutineScope parents all card jobs to the collectLatest lambda's scope —
+                    // cancellation propagates immediately when a new emission arrives.
+                    coroutineScope {
+                        cards.cards.forEach { cardConfig ->
+                            launch(dispatchers.default) {
+                                val result = runCatching {
+                                    cardComputerRegistry.compute(cardConfig.cardType, input, cardConfig)
+                                }.fold(
+                                    onSuccess = { CardComputeState.Success(it) },
+                                    onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                                )
+                                if (_computeGeneration.get() == myGen) {
+                                    _cardDataMap.update { it.put(cardConfig.cardId, result) }
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    }
 }
 
 sealed class AccountDetailUiState {

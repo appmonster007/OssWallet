@@ -65,15 +65,13 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
-import kotlinx.serialization.Contextual
-import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
 fun CategoryPieChartCard(
     config: CategoryPieChartCardConfig,
-    data: List<CategoryPieChartData>,
+    data: List<CategoryChartData>,
     currency: String,
     modifier: Modifier = Modifier,
     headerModifier: Modifier = Modifier,
@@ -96,7 +94,7 @@ fun CategoryPieChartCard(
     val isAmoled = mode.isAmoled
 
     // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryPieChartData>>(data)) }
+    var navigationStack by remember { mutableStateOf(listOf<List<CategoryChartData>>(data)) }
 
     val filteredData = remember(data, config.showOnlyActiveCategories) {
         if (config.showOnlyActiveCategories) {
@@ -216,7 +214,7 @@ fun CategoryPieChartCard(
                         others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                     } else null
 
-                    mainItems + CategoryPieChartData(
+                    mainItems + CategoryChartData(
                         category = "More Categories",
                         categoryId = -1L, // Special ID for "More Categories"
                         amount = otherSum,
@@ -411,13 +409,13 @@ private fun CategoryPieChartSettingsSheet(
 
 @Composable
 fun CategoryLegend(
-    data: List<CategoryPieChartData>,
-    navigationStack: List<List<CategoryPieChartData>>,
+    data: List<CategoryChartData>,
+    navigationStack: List<List<CategoryChartData>>,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
     onToggleBreakdown: (Boolean) -> Unit,
-    onItemClick: (CategoryPieChartData) -> Unit
+    onItemClick: (CategoryChartData) -> Unit
 ) {
     val displayData = if (showFullBreakdown) data else data.take(5)
 
@@ -518,14 +516,14 @@ fun CategoryLegend(
 @Composable
 fun CategoryPieChartCardPreview() {
     val subData = listOf(
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Coffee",
             categoryId = null,
             amount = BigDecimal("50.00"),
             colorHex = 0xFF795548.toInt(),
             percentage = 0.1f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Dinner",
             categoryId = null,
             amount = BigDecimal("150.00"),
@@ -535,14 +533,14 @@ fun CategoryPieChartCardPreview() {
     )
 
     val richData = listOf(
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Housing",
             categoryId = null,
             amount = BigDecimal("1200.00"),
             colorHex = 0xFF2196F3.toInt(),
             percentage = 0.6f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Food & Dining",
             categoryId = null,
             amount = BigDecimal("450.00"),
@@ -551,84 +549,84 @@ fun CategoryPieChartCardPreview() {
             hasSubcategories = true,
             subcategoryData = subData
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Transport",
             categoryId = null,
             amount = BigDecimal("150.00"),
             colorHex = 0xFF4CAF50.toInt(),
             percentage = 0.075f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Entertainment",
             categoryId = null,
             amount = BigDecimal("200.00"),
             colorHex = 0xFF9C27B0.toInt(),
             percentage = 0.1f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 1",
             categoryId = null,
             amount = BigDecimal("10.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 2",
             categoryId = null,
             amount = BigDecimal("9.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 3",
             categoryId = null,
             amount = BigDecimal("8.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 4",
             categoryId = null,
             amount = BigDecimal("7.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 5",
             categoryId = null,
             amount = BigDecimal("6.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 6",
             categoryId = null,
             amount = BigDecimal("5.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 7",
             categoryId = null,
             amount = BigDecimal("4.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 8",
             categoryId = null,
             amount = BigDecimal("3.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 9",
             categoryId = null,
             amount = BigDecimal("2.00"),
             colorHex = 0xFF607D8B.toInt(),
             percentage = 0.01f
         ),
-        CategoryPieChartData(
+        CategoryChartData(
             category = "Misc 10",
             categoryId = null,
             amount = BigDecimal("1.00"),
@@ -655,31 +653,5 @@ fun CategoryPieChartCardPreview() {
                 currency = "USD"
             )
         }
-    }
-}
-
-/**
- * Category data for pie chart card.
- * Represents expense or income distribution for each category.
- */
-@Serializable
-data class CategoryPieChartData(
-    val category: String,
-    val categoryId: Long?,
-    @Contextual val amount: BigDecimal,
-    val colorHex: Int,
-    val percentage: Float,
-    val hasSubcategories: Boolean = false,
-    val subcategoryCount: Int = 0,
-    val subcategoryData: List<CategoryPieChartData>? = null,
-    @Contextual val previousAmount: BigDecimal? = null
-) {
-    fun allCategoryIds(): List<String> {
-        val ids = mutableListOf<String>()
-        categoryId?.let { ids.add(it.toString()) }
-        subcategoryData?.forEach {
-            ids.addAll(it.allCategoryIds())
-        }
-        return ids
     }
 }

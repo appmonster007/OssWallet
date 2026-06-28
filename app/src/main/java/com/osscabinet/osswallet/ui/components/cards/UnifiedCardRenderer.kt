@@ -7,12 +7,12 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryChartData
 import java.math.BigDecimal
+import java.math.RoundingMode
 import com.osscabinet.ossWallet.ui.screens.accounts.detail.components.AccountHeroCard
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartCard
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
 import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapCard
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryTreemapData
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.AccountsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.BudgetsCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.CashFlowCard
@@ -26,13 +26,6 @@ import com.osscabinet.ossWallet.ui.screens.dashboard.components.PlannedPaymentsC
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.screens.dashboard.components.TagUpSetPlotCard
 
-/**
- * Unified card renderer composable that handles all card types across all screens.
- *
- * ⚠️ TYPE SAFETY: This renderer uses the [CardWithCallbacks] sealed class to ensure
- * that the callbacks and render data are always correctly paired. This eliminates
- * the need for runtime casts and makes the renderer more robust.
- */
 @Composable
 fun UnifiedCardRenderer(
     cardWithCallbacks: CardWithCallbacks,
@@ -49,15 +42,13 @@ fun UnifiedCardRenderer(
     when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             NetWorthCard(
                 currentPeriodMetrics = renderData.currentPeriodMetrics,
                 baseCurrency = renderData.currency,
                 displayCurrency = renderData.currency,
                 config = renderData.config,
                 previousPeriodMetrics = renderData.previousPeriodMetrics,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -71,14 +62,12 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.CurrencyBalances -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             CurrencyBalancesCard(
                 currencyTotals = renderData.items,
                 baseCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -92,13 +81,11 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.CashFlow -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             CashFlowCard(
                 cashFlowResult = renderData.result,
                 baseCurrency = renderData.currency,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -112,70 +99,21 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.CategoryPieChart -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-            val selectedMetric = renderData.config.selectedMetric
-
-            val globalTotalAbs = when (selectedMetric) {
-                ChartMetric.INCOME -> renderData.incomeTotal.abs()
-                ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
-                ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
-                ChartMetric.TRANSFER -> renderData.transferTotal.abs()
-            }
-
-            fun mapMetrics(metric: CategoryTreeMetrics): CategoryPieChartData? {
-                val amount = when (selectedMetric) {
-                    ChartMetric.INCOME -> metric.income
-                    ChartMetric.EXPENSE -> metric.expense
-                    ChartMetric.NET -> metric.netBalance
-                    ChartMetric.TRANSFER -> metric.transfer
-                }
-
-                val prevAmount = when (selectedMetric) {
-                    ChartMetric.INCOME -> metric.previousIncome
-                    ChartMetric.EXPENSE -> metric.previousExpense
-                    ChartMetric.NET -> metric.previousNetBalance
-                    ChartMetric.TRANSFER -> metric.previousTransfer
-                }
-
-                val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }
-                    .sortedByDescending { it.amount.abs() }
-
-                // Filter out zero-amount categories unless they have active subcategories
-                if ((amount.signum() == 0) && subData.isEmpty() && (prevAmount == null || prevAmount.signum() == 0)) {
-                    return null
-                }
-
-                val percentage = if (globalTotalAbs.signum() != 0) {
-                    amount.abs().divide(globalTotalAbs, 4, java.math.RoundingMode.HALF_UP).toFloat()
-                } else 0f
-
-                return CategoryPieChartData(
-                    category = metric.category,
-                    categoryId = metric.categoryId,
-                    amount = amount,
-                    colorHex = metric.colorHex,
-                    percentage = percentage,
-                    hasSubcategories = subData.isNotEmpty(),
-                    subcategoryCount = subData.size,
-                    subcategoryData = subData,
-                    previousAmount = prevAmount,
+            val uiData = remember(renderData, renderData.config.selectedMetric) {
+                mapCategoryMetrics(
+                    items = renderData.items,
+                    selectedMetric = renderData.config.selectedMetric,
+                    incomeTotal = renderData.incomeTotal,
+                    expenseTotal = renderData.expenseTotal,
+                    transferTotal = renderData.transferTotal,
                 )
             }
-
-            // ARC-75 (Option B): memoize the recursive mapMetrics + sort so it doesn't
-            // re-run on every recomposition (especially during scroll). Keyed on the
-            // renderData and the selected metric — the only inputs the transform reads.
-            val uiData = remember(renderData, selectedMetric) {
-                renderData.items.mapNotNull { mapMetrics(it) }
-                    .sortedByDescending { it.amount.abs() }
-            }
-
             CategoryPieChartCard(
                 config = renderData.config,
                 data = uiData,
                 currency = renderData.currency,
                 animate = animate,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -189,68 +127,21 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.CategoryTreemap -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-            val selectedMetric = renderData.config.selectedMetric
-
-            val globalTotalAbs = when (selectedMetric) {
-                ChartMetric.INCOME -> renderData.incomeTotal.abs()
-                ChartMetric.EXPENSE -> renderData.expenseTotal.abs()
-                ChartMetric.NET -> renderData.items.sumOf { it.netBalance.abs() }
-                ChartMetric.TRANSFER -> renderData.transferTotal.abs()
-            }
-
-            fun mapMetrics(metric: CategoryTreeMetrics): CategoryTreemapData? {
-                val amount = when (selectedMetric) {
-                    ChartMetric.INCOME -> metric.income
-                    ChartMetric.EXPENSE -> metric.expense
-                    ChartMetric.NET -> metric.netBalance
-                    ChartMetric.TRANSFER -> metric.transfer
-                }
-
-                val prevAmount = when (selectedMetric) {
-                    ChartMetric.INCOME -> metric.previousIncome
-                    ChartMetric.EXPENSE -> metric.previousExpense
-                    ChartMetric.NET -> metric.previousNetBalance
-                    ChartMetric.TRANSFER -> metric.previousTransfer
-                }
-
-                val subData = metric.subcategoryData.mapNotNull { mapMetrics(it) }
-                    .sortedByDescending { it.amount.abs() }
-
-                // Filter out zero-amount categories unless they have active subcategories
-                if ((amount.signum() == 0) && subData.isEmpty() && (prevAmount == null || prevAmount.signum() == 0)) {
-                    return null
-                }
-
-                val percentage = if (globalTotalAbs.signum() != 0) {
-                    amount.abs().divide(globalTotalAbs, 4, java.math.RoundingMode.HALF_UP).toFloat()
-                } else 0f
-
-                return CategoryTreemapData(
-                    category = metric.category,
-                    categoryId = metric.categoryId,
-                    amount = amount,
-                    colorHex = metric.colorHex,
-                    percentage = percentage,
-                    hasSubcategories = subData.isNotEmpty(),
-                    subcategoryCount = subData.size,
-                    subcategoryData = subData,
-                    previousAmount = prevAmount,
+            val uiData = remember(renderData, renderData.config.selectedMetric) {
+                mapCategoryMetrics(
+                    items = renderData.items,
+                    selectedMetric = renderData.config.selectedMetric,
+                    incomeTotal = renderData.incomeTotal,
+                    expenseTotal = renderData.expenseTotal,
+                    transferTotal = renderData.transferTotal,
                 )
             }
-
-            // ARC-75 (Option B): same memoization as the Pie chart above.
-            val uiData = remember(renderData, selectedMetric) {
-                renderData.items.mapNotNull { mapMetrics(it) }
-                    .sortedByDescending { it.amount.abs() }
-            }
-
             CategoryTreemapCard(
                 config = renderData.config,
                 data = uiData,
                 currency = renderData.currency,
                 animate = animate,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -265,7 +156,6 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.AccountHero -> {
             val renderData = cardWithCallbacks.renderData
             val cb = cardWithCallbacks.callbacks
-
             AccountHeroCard(
                 summary = renderData.summary,
                 baseCurrency = renderData.currency,
@@ -286,14 +176,12 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.Accounts -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             AccountsCard(
                 accounts = renderData.updatedAccounts,
                 accountSummaries = renderData.accountSummaries,
                 baseCurrency = renderData.currency,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -307,15 +195,13 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.PlannedPayments -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             PlannedPaymentsCard(
                 upcoming = renderData.upcoming,
                 overdue = renderData.overdue,
                 targetCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -329,12 +215,10 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.Budgets -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             BudgetsCard(
                 items = renderData.items,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -348,14 +232,12 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.Loans -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             LoansCard(
                 items = renderData.items,
                 targetCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 filterRules = cardWithCallbacks.filterRules,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -369,15 +251,13 @@ fun UnifiedCardRenderer(
 
         is CardWithCallbacks.RecentActivities -> {
             val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             RecentActivitiesCard(
                 listState = com.osscabinet.ossWallet.ui.mapper.TransactionUiMapper.mapToUiState(
                     domainState = renderData.listState,
                     baseCurrency = renderData.currency
                 ),
                 config = renderData.config,
-                callbacks = cb,
+                callbacks = cardWithCallbacks.callbacks,
                 baseCurrency = renderData.currency,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
@@ -394,12 +274,9 @@ fun UnifiedCardRenderer(
         }
 
         is CardWithCallbacks.CashFlowComparison -> {
-            val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             CashFlowComparisonCard(
-                renderData = renderData,
-                callbacks = cb,
+                renderData = cardWithCallbacks.renderData,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -413,12 +290,9 @@ fun UnifiedCardRenderer(
         }
 
         is CardWithCallbacks.IncomeExpenseBar -> {
-            val renderData = cardWithCallbacks.renderData
-            val cb = cardWithCallbacks.callbacks
-
             IncomeExpenseBarCard(
-                renderData = renderData,
-                callbacks = cb,
+                renderData = cardWithCallbacks.renderData,
+                callbacks = cardWithCallbacks.callbacks,
                 filterContext = filterContext,
                 baseFilter = cardWithCallbacks.baseFilter,
                 inheritedFilter = inheritedFilter,
@@ -468,4 +342,55 @@ fun UnifiedCardRenderer(
             // This branch is a compile-required safety net.
         }
     }
+}
+
+private fun mapCategoryMetrics(
+    items: List<CategoryTreeMetrics>,
+    selectedMetric: ChartMetric,
+    incomeTotal: BigDecimal,
+    expenseTotal: BigDecimal,
+    transferTotal: BigDecimal,
+): List<CategoryChartData> {
+    val globalTotalAbs = when (selectedMetric) {
+        ChartMetric.INCOME -> incomeTotal.abs()
+        ChartMetric.EXPENSE -> expenseTotal.abs()
+        ChartMetric.NET -> items.sumOf { it.netBalance.abs() }
+        ChartMetric.TRANSFER -> transferTotal.abs()
+    }
+
+    fun mapOne(metric: CategoryTreeMetrics): CategoryChartData? {
+        val amount = when (selectedMetric) {
+            ChartMetric.INCOME -> metric.income
+            ChartMetric.EXPENSE -> metric.expense
+            ChartMetric.NET -> metric.netBalance
+            ChartMetric.TRANSFER -> metric.transfer
+        }
+        val prevAmount = when (selectedMetric) {
+            ChartMetric.INCOME -> metric.previousIncome
+            ChartMetric.EXPENSE -> metric.previousExpense
+            ChartMetric.NET -> metric.previousNetBalance
+            ChartMetric.TRANSFER -> metric.previousTransfer
+        }
+        val subData = metric.subcategoryData.mapNotNull { mapOne(it) }
+            .sortedByDescending { it.amount.abs() }
+        if (amount.signum() == 0 && subData.isEmpty() && (prevAmount == null || prevAmount.signum() == 0)) {
+            return null
+        }
+        val percentage = if (globalTotalAbs.signum() != 0) {
+            amount.abs().divide(globalTotalAbs, 4, RoundingMode.HALF_UP).toFloat()
+        } else 0f
+        return CategoryChartData(
+            category = metric.category,
+            categoryId = metric.categoryId,
+            amount = amount,
+            colorHex = metric.colorHex,
+            percentage = percentage,
+            hasSubcategories = subData.isNotEmpty(),
+            subcategoryCount = subData.size,
+            subcategoryData = subData,
+            previousAmount = prevAmount,
+        )
+    }
+
+    return items.mapNotNull { mapOne(it) }.sortedByDescending { it.amount.abs() }
 }

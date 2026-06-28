@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
@@ -220,7 +221,10 @@ class AnalyticsViewModel @Inject constructor(
                                 val result = runCatching {
                                     cardComputerRegistry.compute(cardConfig.cardType, input, cardConfig)
                                 }.fold(
-                                    onSuccess = { CardComputeState.Success(it) },
+                                    onSuccess = { data ->
+                                        if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                        else CardComputeState.Success(data)
+                                    },
                                     onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
                                 )
                                 if (_computeGeneration.get() == myGen) {

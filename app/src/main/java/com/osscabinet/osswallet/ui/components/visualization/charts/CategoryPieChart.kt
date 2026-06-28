@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryPieChartData
+import com.osscabinet.ossWallet.ui.screens.analytics.components.CategoryChartData
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -39,14 +39,14 @@ import kotlin.math.sqrt
  */
 @Composable
 fun CategoryBreakdownPieChart(
-    data: List<CategoryPieChartData>,
+    data: List<CategoryChartData>,
     modifier: Modifier = Modifier,
     animate: Boolean = false,
-    onSegmentClick: (CategoryPieChartData) -> Unit = {},
-    onSegmentDoubleClick: (CategoryPieChartData) -> Unit = {},
+    onSegmentClick: (CategoryChartData) -> Unit = {},
+    onSegmentDoubleClick: (CategoryChartData) -> Unit = {},
     showLabels: Boolean = true
 ) {
-    var selectedSegment by remember { mutableStateOf<CategoryPieChartData?>(null) }
+    var selectedSegment by remember { mutableStateOf<CategoryChartData?>(null) }
     var showSubcategories by remember { mutableStateOf(false) }
     var currentData by remember { mutableStateOf(data) }
     val backgroundColor = AppColors.screenBackground
@@ -196,9 +196,9 @@ fun CategoryBreakdownPieChart(
 @Composable
 fun CategoryBreakdownPieChartPreview() {
     val mockData = listOf(
-        CategoryPieChartData("Food", 1L, BigDecimal("500"), android.graphics.Color.RED, 0.5f),
-        CategoryPieChartData("Rent", 2L, BigDecimal("300"), android.graphics.Color.BLUE, 0.3f),
-        CategoryPieChartData("Others", 3L, BigDecimal("200"), android.graphics.Color.GREEN, 0.2f)
+        CategoryChartData("Food", 1L, BigDecimal("500"), android.graphics.Color.RED, 0.5f),
+        CategoryChartData("Rent", 2L, BigDecimal("300"), android.graphics.Color.BLUE, 0.3f),
+        CategoryChartData("Others", 3L, BigDecimal("200"), android.graphics.Color.GREEN, 0.2f)
     )
     OssWalletTheme {
         androidx.compose.material3.Surface {

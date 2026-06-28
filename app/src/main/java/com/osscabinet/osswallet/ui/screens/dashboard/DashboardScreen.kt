@@ -91,9 +91,11 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
@@ -242,7 +244,7 @@ fun DashboardScreen(
         allCategories = successState?.allCategories ?: emptyList(),
         lastUndoAction = successState?.lastUndoAction,
         savedFilters = successState?.savedFilters ?: emptyList(),
-        revealedCardIds = successState?.revealedCardIds?.toList() ?: emptyList(),
+        revealedCardIds = successState?.revealedCardIds?.toImmutableList() ?: persistentListOf(),
         transactionSnackbarMessage = successState?.transactionSnackbarMessage,
         scrollToId = successState?.scrollToId,
         highlightedId = successState?.highlightedId,
@@ -296,7 +298,7 @@ fun DashboardScreenLayout(
     allCategories: List<Category>,
     lastUndoAction: UndoAction?,
     savedFilters: List<Filter>,
-    revealedCardIds: List<String>,
+    revealedCardIds: ImmutableList<String>,
     transactionSnackbarMessage: String?,
     scrollToId: String?,
     highlightedId: String?,
@@ -680,7 +682,7 @@ fun DashboardContent(
     highlightedId: String? = null,
     onClearScrollTo: () -> Unit = {},
     savedFilters: List<Filter>,
-    revealedCardIds: List<String>,
+    revealedCardIds: ImmutableList<String>,
     recentActivitiesBreakdown: Boolean,
     onSearchTransactions: (String) -> Flow<List<Transaction>>,
     onItemExpanded: (String) -> Unit,
@@ -1020,7 +1022,7 @@ fun DashboardGlanceTab(
 @Composable
 fun DashboardRecentActivitiesTab(
     recentActivitiesState: TransactionListUiState,
-    revealedCardIds: List<String>,
+    revealedCardIds: ImmutableList<String>,
     recentActivitiesBreakdown: Boolean,
     baseCurrency: String,
     scrollToId: String? = null,
@@ -1162,7 +1164,7 @@ fun DashboardScreenPreview() {
         plannedPayments = persistentListOf(),
         budgets = persistentListOf(),
         loans = persistentListOf(),
-        loanPayments = emptyMap()
+        loanPayments = persistentMapOf()
     )
 
     val sampleCards = listOf(netWorthConfig, accountsConfig)
@@ -1180,7 +1182,7 @@ fun DashboardScreenPreview() {
             allCategories = emptyList(),
             lastUndoAction = null,
             savedFilters = emptyList(),
-            revealedCardIds = emptyList(),
+            revealedCardIds = persistentListOf(),
             transactionSnackbarMessage = null,
             scrollToId = null,
             highlightedId = null,
@@ -1262,7 +1264,7 @@ fun DashboardGlanceTabPreview() {
         plannedPayments = persistentListOf(),
         budgets = persistentListOf(),
         loans = persistentListOf(),
-        loanPayments = emptyMap()
+        loanPayments = persistentMapOf()
     )
 
     val sampleCards = listOf(
@@ -1315,7 +1317,7 @@ fun DashboardRecentActivitiesTabPreview() {
     OssWalletTheme {
         DashboardRecentActivitiesTab(
             recentActivitiesState = com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState(groups = emptyList(), isEmpty = true),
-            revealedCardIds = emptyList(),
+            revealedCardIds = persistentListOf(),
             recentActivitiesBreakdown = true,
             baseCurrency = "USD",
             onRecordsClick = {},

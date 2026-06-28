@@ -151,6 +151,10 @@ class DashboardViewModel @Inject constructor(
     private val _cardDataMap = MutableStateFlow<ImmutableMap<String, CardRenderData>>(persistentMapOf())
     private val _isCardsComputing = MutableStateFlow(false)
 
+    // Guards computeCardIfNeeded against launching duplicate coroutines for the same card
+    // when CardBecameVisible fires faster than the first computation can write to the cache.
+    private val _inFlightCardIds = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     // Job for clearing highlight after performJump — cancelled on rapid repeat calls
     private var highlightClearJob: Job? = null
 
@@ -459,7 +463,7 @@ class DashboardViewModel @Inject constructor(
                     plannedPayments = m.plannedPayments.toImmutableList(),
                     budgets = m.budgets.toImmutableList(),
                     loans = m.loans.toImmutableList(),
-                    loanPayments = m.loanPayments,
+                    loanPayments = m.loanPayments.mapValues { it.value.toImmutableList() }.toImmutableMap(),
                     initialViewContext = a.initialViewContext,
                     cardsConfig = a.cardsConfig,
                     displayPrefs = a.displayPrefs,
@@ -498,7 +502,9 @@ class DashboardViewModel @Inject constructor(
                         val cardsToCompute = configs.filter {
                             cardRenderCache[successState.profileId, successState.baseCurrency, it.cardId] == null
                         }
-                        cardsToCompute.take(4).forEach { cardConfig ->
+                        val eagerBatch = cardsToCompute.take(4)
+                        val eagerThreshold = cachedSnapshot.size + eagerBatch.size
+                        eagerBatch.forEach { cardConfig ->
                             launch(dispatchers.default) {
                                 val cardInput = successState.cardInput ?: return@launch
                                 val result = runCatching {
@@ -507,7 +513,7 @@ class DashboardViewModel @Inject constructor(
                                 val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
                                 cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = data
                                 _cardDataMap.update { (it + (cardConfig.cardId to data)).toImmutableMap() }
-                                if (completedCount.incrementAndGet() >= configs.size) {
+                                if (completedCount.incrementAndGet() >= eagerThreshold) {
                                     _isCardsComputing.value = false
                                 }
                             }
@@ -549,12 +555,17 @@ class DashboardViewModel @Inject constructor(
         val cardInput = state.cardInput ?: return
 
         if (cardRenderCache[profileId, currency, config.cardId] != null) return
+        if (!_inFlightCardIds.add(config.cardId)) return
 
         viewModelScope.launch(dispatchers.default) {
-            val result = runCatching { cardComputerRegistry.compute(cardType, cardInput, config) }
-            val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
-            cardRenderCache[profileId, currency, config.cardId] = data
-            _cardDataMap.update { (it + (config.cardId to data)).toImmutableMap() }
+            try {
+                val result = runCatching { cardComputerRegistry.compute(cardType, cardInput, config) }
+                val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
+                cardRenderCache[profileId, currency, config.cardId] = data
+                _cardDataMap.update { (it + (config.cardId to data)).toImmutableMap() }
+            } finally {
+                _inFlightCardIds.remove(config.cardId)
+            }
         }
     }
 
@@ -644,18 +655,19 @@ class DashboardViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             // Single call to avoid TOCTOU between size check and data fetch
             val linked = transactionUseCases.getLinkedTransactions(id).first()
-            if (linked.isEmpty()) {
+            val scopedLinked = if (availableIds != null) linked.filter { it.id in availableIds } else linked
+            if (scopedLinked.isEmpty()) {
                 _snackbarMessage.value = "No linked transactions found"
                 return@launch
             }
 
-            if (linked.size == 1) {
-                performJump(linked.first().id)
+            if (scopedLinked.size == 1) {
+                performJump(scopedLinked.first().id)
             } else {
                 val baseCurr = computationRepository.selectedCurrency.first()
                 val rates = computationRepository.exchangeRates.first()
                 val enriched = TimelineService.enrichTransactions(
-                    linked,
+                    scopedLinked,
                     accountRepository.getAllAccounts(profileId).first(),
                     categoryRepository.categories.first(),
                     tagRepository.getAllTags().first(),
@@ -703,7 +715,7 @@ sealed class DashboardUiState {
         val plannedPayments: ImmutableList<PlannedPayment> = persistentListOf(),
         val budgets: ImmutableList<Budget> = persistentListOf(),
         val loans: ImmutableList<Loan> = persistentListOf(),
-        val loanPayments: Map<Long, List<LoanPayment>> = emptyMap(),
+        val loanPayments: ImmutableMap<Long, ImmutableList<LoanPayment>> = persistentMapOf(),
 
         // Consolidated Dashboard state
         val initialViewContext: DashboardViewContext = DashboardViewContext.None,

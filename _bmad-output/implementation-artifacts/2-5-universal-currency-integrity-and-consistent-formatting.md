@@ -4,7 +4,7 @@ baseline_commit: 7f5ca2de2038cd3a18f8c8bb730bc1f20c8fbb35
 
 # Story 2.5: Universal Currency Integrity & Consistent Formatting
 
-Status: review
+Status: done
 
 ## Story
 
@@ -89,6 +89,10 @@ A recent bug report highlighted that the **Treemap Card** correcty shows amounts
 
 - [x] **Task 7 — Audit remaining formatCurrency(amount) calls**
   - [x] Audited all remaining calls; all either pass a correct currency code or are intentionally unit-less (ManagementScopeCard filter amounts where no currency context exists)
+
+### Review Findings
+
+- [x] [Review][Patch] `AeonBarLineChart` constructs `CurrencyNumberFormatter()` inline per Y-axis tick — hoist with `remember` [AeonBarLineChart.kt:263]
 
 ---
 

@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-25T23:55:00
-last_updated: 2026-06-28T12:00:00
+last_updated: 2026-06-28T14:30:00
 project: OssWallet
 project_key: NOKEY
 tracking_system: file-system
@@ -59,7 +59,7 @@ development_status:
   2-2-mandatory-mvi-pattern-for-dashboard: done
   2-3-dashboard-rendering-optimization-lazy-loading-caching: done
   2-4-per-card-parallel-computation-and-independent-loading-states: done
-  2-5-universal-currency-integrity-and-consistent-formatting: review
+  2-5-universal-currency-integrity-and-consistent-formatting: done
   epic-2-retrospective: optional
   epic-3: in-progress
   3-1-design-token-audit-theme-refactor: ready-for-dev

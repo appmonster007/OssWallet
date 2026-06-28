@@ -4,9 +4,11 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -99,20 +101,12 @@ fun AeonCardList(
         }
     )
 
-    LazyColumnScrollbar(
-        state = reorderState.lazyListState,
-        settings = ScrollbarSettings.Default.copy(
-            thumbSelectedColor = AppColors.primary,
-            thumbUnselectedColor = AppColors.primary.copy(alpha = 0.5f),
-            thumbThickness = 6.dp,
-            thumbShape = CircleShape,
-            thumbMinLength = 0.1f,
-            thumbMaxLength = 0.1f
-        )
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val trackPad = maxHeight * 0.10f
+
         LazyColumn(
             state = reorderState.lazyListState,
-            modifier = modifier.reorderable(reorderState),
+            modifier = Modifier.fillMaxSize().reorderable(reorderState),
             contentPadding = contentPadding,
             verticalArrangement = verticalArrangement,
         ) {
@@ -163,6 +157,23 @@ fun AeonCardList(
                     )
                 }
             }
+        }
+
+        LazyColumnScrollbar(
+            state = reorderState.lazyListState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = trackPad),
+            settings = ScrollbarSettings.Default.copy(
+                thumbSelectedColor = AppColors.primary,
+                thumbUnselectedColor = AppColors.primary.copy(alpha = 0.5f),
+                thumbThickness = 6.dp,
+                thumbShape = CircleShape,
+                thumbMinLength = 0.1f,
+                thumbMaxLength = 0.1f
+            )
+        ) {
+            Box(modifier = Modifier.fillMaxSize())
         }
     }
 }

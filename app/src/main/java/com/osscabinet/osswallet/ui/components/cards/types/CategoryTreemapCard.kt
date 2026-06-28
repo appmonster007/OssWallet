@@ -29,7 +29,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -100,17 +99,18 @@ fun CategoryTreemapCard(
     val isDarkTheme = mode.isDarkTheme
     val isAmoled = mode.isAmoled
 
-    // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryChartData>>(data)) }
+    val filteredData = remember(data, config.showOnlyActiveCategories) {
+        if (config.showOnlyActiveCategories) data.filter { it.amount.signum() != 0 } else data
+    }
+
+    // D3+D6+N2: remember(filteredData) resets the stack immediately when underlying data or
+    // active-categories filter changes — symmetric with CategoryPieChartCard.
+    var navigationStack by remember(filteredData) { mutableStateOf(listOf<List<CategoryChartData>>(filteredData)) }
     val currentData = navigationStack.last()
 
     // Grouping logic for "More Categories" grouping based on 2% threshold
-    val groupedData = remember(currentData, config.showOnlyActiveCategories, navigationStack.size) {
-        val filtered = if (config.showOnlyActiveCategories) {
-            currentData.filter { it.amount.signum() != 0 }
-        } else {
-            currentData
-        }
+    val groupedData = remember(currentData, navigationStack.size) {
+        val filtered = currentData
         val sorted = filtered.sortedByDescending { it.amount.abs() }
 
         // Detect if we are in a synthesized "More Categories" view
@@ -151,10 +151,7 @@ fun CategoryTreemapCard(
         }
     }
 
-    // Sync with external data changes
-    LaunchedEffect(data) {
-        navigationStack = listOf(data)
-    }
+
 
     AeonExpressiveCard(
         title = config.title,
@@ -601,6 +598,9 @@ fun mapCategoryTreemap(
         onUpdate = { newConfig ->
             if (newConfig is CategoryTreemapCardConfig) {
                 updateHandler.updateCardCategoryTreemapConfig(config.cardId, newConfig)
+            } else {
+                if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
+                    android.util.Log.w("CardBridge", "CategoryTreemap.onUpdate: unexpected ${newConfig::class.simpleName}")
             }
         },
         onDelete = { onDelete(config.cardId) },

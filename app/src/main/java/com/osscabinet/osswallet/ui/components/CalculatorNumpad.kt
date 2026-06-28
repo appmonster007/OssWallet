@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -58,6 +59,7 @@ import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
 import com.osscabinet.ossWallet.ui.calculator.CalculatorState
 import com.osscabinet.ossWallet.ui.calculator.Token
 import com.osscabinet.ossWallet.ui.calculator.calculatorReducer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
@@ -366,7 +368,6 @@ fun CalculatorKeys(
 ) {
     val keyGridSpacing = 8.dp
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(keyGridSpacing)) {
-        // ... (rows omitted for brevity in targetContent match, but I'll include them to be safe)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
@@ -421,7 +422,6 @@ fun CalculatorKeys(
 
 private val DivideIcon: ImageVector by lazy {
     ImageVector.Builder("Divide", 24.dp, 24.dp, 24f, 24f).apply {
-        // top dot
         path(fill = SolidColor(Color.Black)) {
             moveTo(13.75f, 5.5f)
             arcTo(1.75f, 1.75f, 0f, false, true, 12f, 7.25f)
@@ -430,7 +430,6 @@ private val DivideIcon: ImageVector by lazy {
             arcTo(1.75f, 1.75f, 0f, false, true, 13.75f, 5.5f)
             close()
         }
-        // horizontal bar
         path(fill = SolidColor(Color.Black)) {
             moveTo(4f, 11f)
             lineTo(20f, 11f)
@@ -438,7 +437,6 @@ private val DivideIcon: ImageVector by lazy {
             lineTo(4f, 13f)
             close()
         }
-        // bottom dot
         path(fill = SolidColor(Color.Black)) {
             moveTo(13.75f, 18.5f)
             arcTo(1.75f, 1.75f, 0f, false, true, 12f, 20.25f)
@@ -452,7 +450,6 @@ private val DivideIcon: ImageVector by lazy {
 
 private val EqualsIcon: ImageVector by lazy {
     ImageVector.Builder("Equals", 24.dp, 24.dp, 24f, 24f).apply {
-        // top bar
         path(fill = SolidColor(Color.Black)) {
             moveTo(4f, 8.5f)
             lineTo(20f, 8.5f)
@@ -460,7 +457,6 @@ private val EqualsIcon: ImageVector by lazy {
             lineTo(4f, 11f)
             close()
         }
-        // bottom bar
         path(fill = SolidColor(Color.Black)) {
             moveTo(4f, 13f)
             lineTo(20f, 13f)
@@ -624,6 +620,23 @@ private fun CalculatorHistorySheet(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CalculatorNumpadPreview() {
+    OssWalletTheme {
+        Surface(
+            color = AppColors.cardSurface,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            CalculatorNumpad(
+                amount = "123.45",
+                onAmountChange = {},
+                onDone = {}
+            )
         }
     }
 }

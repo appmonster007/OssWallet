@@ -87,13 +87,17 @@ private fun mapSuccessState(
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ): CardWithCallbacks {
-    // Leverage CardType to ensure type safety. If the computed data type doesn't match
-    // the requested config type (e.g. during a transition), we treat it as an error/loading.
-    if ((renderData is CardRenderData.Error) || (config.cardType != renderData.cardType)) {
+    // P4: CardRenderData.Error carries the actual error message — surface it directly.
+    if (renderData is CardRenderData.Error) {
+        return CardWithCallbacks.ComputeError(config.cardId, config.cardType, renderData.message)
+    }
+    // CardType mismatch (e.g. during a card-type transition): treat as transient error.
+    if (config.cardType != renderData.cardType) {
         return typeMismatch(config, renderData)
     }
 
-    // Exhaustive match on renderData. Casts to config subtypes are now guaranteed safe.
+    // P3: Exhaustive match — no else branch; compiler enforces all sealed subtypes are handled.
+    // CardRenderData.Error is listed last as unreachable (always caught by the early guard above).
     return when (renderData) {
         is CardRenderData.NetWorth ->
             mapNetWorth(config as NetWorthCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
@@ -140,7 +144,7 @@ private fun mapSuccessState(
         is CardRenderData.TagUpSetPlot ->
             mapTagUpSetPlot(config as TagUpSetPlotCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
 
-        else -> typeMismatch(config, renderData)
+        is CardRenderData.Error -> typeMismatch(config, renderData)
     }
 }
 

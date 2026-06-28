@@ -34,7 +34,8 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -183,88 +184,87 @@ class AnalyticsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            combine(
-                combine(cardsConfig, uiState, _screenFilter) { a, b, c -> Triple(a, b, c) },
-                commonFilterEnabled
-            ) { triple, common -> triple to common }
-                .collectLatest { (triple, commonEnabled) ->
-                    val (cards, state, sf) = triple
+            // D4: 4-arg combine replaces two nested combine operators, eliminating the intermediate flow.
+            combine(cardsConfig, uiState, _screenFilter, commonFilterEnabled) { cards, state, sf, ce ->
+                cards to Triple(state, sf, ce)
+            }.collectLatest { (cards, stateTriple) ->
+                val (state, sf, commonEnabled) = stateTriple
 
-                    if (state !is AnalyticsUiState.Success) {
-                        _cardDataMap.value = persistentMapOf()
-                        return@collectLatest
-                    }
+                if (state !is AnalyticsUiState.Success) {
+                    _cardDataMap.value = persistentMapOf()
+                    return@collectLatest
+                }
 
-                    val myGen = _computeGeneration.incrementAndGet()
+                val myGen = _computeGeneration.incrementAndGet()
 
-                    // Emit Loading immediately so shimmers appear before hierarchy build starts.
-                    _cardDataMap.value =
-                        persistentMapOf<String, CardComputeState>().builder().apply {
-                            cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
-                        }.build()
+                // D2: Preserve existing Success/Error states to avoid shimmer-on-refresh flicker;
+                // only new cards (not yet in prevMap) start as Loading.
+                val prevMap = _cardDataMap.value
+                _cardDataMap.value =
+                    persistentMapOf<String, CardComputeState>().builder().apply {
+                        cards.cards.forEach { c ->
+                            put(c.cardId, prevMap[c.cardId] ?: CardComputeState.Loading)
+                        }
+                    }.build()
 
-                    // AC7: Build inputs on Default — build hierarchy once per round
-                    val input = kotlinx.coroutines.withContext(dispatchers.default) {
-                        val activeAccountIds =
-                            state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                        val activeTransactions =
-                            state.allTransactions.filter { it.accountId in activeAccountIds }
-                        CardInput(
-                            profileId = state.profileId,
-                            transactions = activeTransactions,
-                            allProfileTransactions = state.allTransactions,
-                            accounts = state.accounts,
-                            categories = state.allCategories,
-                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-                                anchor = state.selectedCurrency,
-                                rates = state.exchangeRates
-                            ),
-                            targetCurrency = state.selectedCurrency,
-                            plannedPayments = state.plannedPayments,
-                            budgets = state.budgets,
-                            loans = state.loans,
-                            filter = if (commonEnabled) sf else TransactionFilter(
-                                timelineRange = sf.timelineRange.withExcludeFuture(
-                                    sf.timelineRange.excludeFuture
+                // AC7: Build inputs on Default — build hierarchy once per round
+                val input = kotlinx.coroutines.withContext(dispatchers.default) {
+                    val activeAccountIds =
+                        state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
+                    val activeTransactions =
+                        state.allTransactions.filter { it.accountId in activeAccountIds }
+                    CardInput(
+                        profileId = state.profileId,
+                        transactions = activeTransactions,
+                        allProfileTransactions = state.allTransactions,
+                        accounts = state.accounts,
+                        categories = state.allCategories,
+                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                            anchor = state.selectedCurrency,
+                            rates = state.exchangeRates
+                        ),
+                        targetCurrency = state.selectedCurrency,
+                        plannedPayments = state.plannedPayments,
+                        budgets = state.budgets,
+                        loans = state.loans,
+                        filter = if (commonEnabled) sf else TransactionFilter(
+                            timelineRange = sf.timelineRange.withExcludeFuture(
+                                sf.timelineRange.excludeFuture
+                            )
+                        ),
+                        screenContext = ScreenContext.ANALYTICS,
+                        commonFilterEnabled = commonEnabled,
+                        categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
+                    )
+                }
+
+                // D1+P2: supervisorScope lets cards fail independently without cancelling siblings.
+                // Children re-throw CancellationException so cooperative cancellation works correctly
+                // when collectLatest cancels this block on a new emission.
+                supervisorScope {
+                    cards.cards.forEach { cardConfig ->
+                        launch(dispatchers.default) {
+                            val result = try {
+                                val data = cardComputerRegistry.compute(
+                                    cardConfig.cardType,
+                                    input,
+                                    cardConfig
                                 )
-                            ),
-                            screenContext = ScreenContext.ANALYTICS,
-                            commonFilterEnabled = commonEnabled,
-                            categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
-                        )
-                    }
-
-                    // coroutineScope parents all card jobs to the collectLatest lambda's scope —
-                    // cancellation propagates immediately when a new emission arrives.
-                    coroutineScope {
-                        cards.cards.forEach { cardConfig ->
-                            launch(dispatchers.default) {
-                                val result = runCatching {
-                                    cardComputerRegistry.compute(
-                                        cardConfig.cardType,
-                                        input,
-                                        cardConfig
-                                    )
-                                }.fold(
-                                    onSuccess = { data ->
-                                        if (data is CardRenderData.Error) CardComputeState.Error(
-                                            data.message ?: "Compute error"
-                                        )
-                                        else CardComputeState.Success(data)
-                                    },
-                                    onFailure = {
-                                        CardComputeState.Error(
-                                            it.message ?: "Compute error"
-                                        )
-                                    }
-                                )
-                                if (_computeGeneration.get() == myGen) {
-                                    _cardDataMap.update { it.putting(cardConfig.cardId, result) }
-                                }
+                                if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                else CardComputeState.Success(data)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                CardComputeState.Error(e.message ?: "Compute error")
+                            }
+                            // P1: check inside update{} to eliminate TOCTOU window.
+                            _cardDataMap.update { map ->
+                                if (_computeGeneration.get() == myGen) map.putting(cardConfig.cardId, result) else map
                             }
                         }
                     }
                 }
+            }
         }
     }
 }

@@ -477,16 +477,14 @@ class DashboardViewModel @Inject constructor(
 
                 channelFlow<DashboardUiState> {
                     val configs = successState.cardsConfig.cards
-                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(successState.profileId, successState.baseCurrency)
-                    val allCached = configs.isNotEmpty() && configs.all {
-                        cardRenderCache[successState.profileId, successState.baseCurrency, it.cardId] != null
-                    }
 
-                    // Initialize ViewModel-scoped card state for this computation round
-                    _cardDataMap.value = cachedSnapshot.toImmutableMap()
-                    _isCardsComputing.value = configs.isNotEmpty() && !allCached
+                    // Bug fix: always start with an empty map so stale cached data is never
+                    // displayed after a transaction write (CardRenderCache is not cleared on
+                    // transaction invalidation — only QueryCache is).
+                    _cardDataMap.value = persistentMapOf()
+                    _isCardsComputing.value = configs.isNotEmpty()
 
-                    val completedCount = AtomicInteger(cachedSnapshot.size)
+                    val completedCount = AtomicInteger(0)
 
                     // Collect card state and forward to UI
                     launch {
@@ -496,15 +494,12 @@ class DashboardViewModel @Inject constructor(
                     }
 
                     if (configs.isEmpty()) {
-                        _cardDataMap.value = persistentMapOf()
                         _isCardsComputing.value = false
                     } else {
-                        val cardsToCompute = configs.filter {
-                            cardRenderCache[successState.profileId, successState.baseCurrency, it.cardId] == null
-                        }
-                        val eagerBatch = cardsToCompute.take(4)
-                        val eagerThreshold = cachedSnapshot.size + eagerBatch.size
-                        eagerBatch.forEach { cardConfig ->
+                        // Bug fix: launch ALL cards in parallel, not just the first 4.
+                        // The take(4) cap caused cards beyond position 4 to become invisible
+                        // zero-size boxes once _isCardsComputing flipped false prematurely.
+                        configs.forEach { cardConfig ->
                             launch(dispatchers.default) {
                                 val cardInput = successState.cardInput ?: return@launch
                                 val result = runCatching {
@@ -513,7 +508,7 @@ class DashboardViewModel @Inject constructor(
                                 val data = result.getOrElse { e -> CardRenderData.Error(e.message) }
                                 cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] = data
                                 _cardDataMap.update { (it + (cardConfig.cardId to data)).toImmutableMap() }
-                                if (completedCount.incrementAndGet() >= eagerThreshold) {
+                                if (completedCount.incrementAndGet() >= configs.size) {
                                     _isCardsComputing.value = false
                                 }
                             }

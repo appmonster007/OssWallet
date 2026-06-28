@@ -440,6 +440,20 @@ then all tests pass — update (not delete) any tests asserting on `isCardsCompu
 - [x] [Review][Defer→Fixed] Analytics/AccountDetail old compute jobs waste CPU after `collectLatest` restarts — fixed: added `_currentCardComputeJob` parent `Job`; cancelled at the start of each new round, cascading cancellation to all child card coroutines via structured concurrency [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
 - [x] [Review][Defer→Dismissed] Cards absent from `cardDataMap` show infinite shimmer — dismissed: parent Job cancellation ensures every card either completes or is re-launched by the next round; `runCatching` catches `Throwable` so no compute error escapes; no actionable scenario remains [AeonCardList.kt:143]
 
+### Review Findings (2026-06-28 — pass 3, post-refactor adversarial review)
+
+- [x] [Review][Patch] TOCTOU: generation check not atomic with `_cardDataMap.update` — fixed: check moved inside `update { map -> if (...) map.putting(...) else map }` [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- [x] [Review][Patch] `runCatching` in compute loops catches `CancellationException` — fixed: replaced with `try/catch(CancellationException) { throw e } catch(Exception)` + changed `coroutineScope` to `supervisorScope` [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- [x] [Review][Patch] `else` branch in `mapSuccessState` kills sealed-class exhaustiveness — fixed: split early guard into two separate `if` returns; `CardRenderData.Error` listed explicitly in `when` as unreachable sentinel; no `else` branch [CardUiBridge.kt]
+- [x] [Review][Patch] `CardRenderData.Error` routed to `typeMismatch()` instead of a proper error — fixed: explicit `if (renderData is CardRenderData.Error)` early return surfaces actual error message [CardUiBridge.kt]
+- [x] [Review][Patch] `@Serializable` + `@Contextual` on `CategoryChartData` are dead code — fixed: removed both annotations and unused imports [CategoryChartData.kt]
+- [x] [Review][Defer→Fixed] `coroutineScope` blocks `collectLatest` re-entry in Analytics/AccountDetail — fixed: changed to `supervisorScope` + re-throw `CancellationException`; cooperative cancellation now works correctly [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- [x] [Review][Defer→Fixed] All cards shimmer-reset on any upstream re-emission — fixed: prevMap preserves existing Success/Error states; only new cards start as Loading [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- [x] [Review][Defer→Fixed] `navigationStack` in category chart cards not reset when compute data changes — fixed: `remember(filteredData)` / `remember(data)` keys reset the stack immediately on data change; `LaunchedEffect` removed [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
+- [x] [Review][Defer→Fixed] Nested `combine` in `AnalyticsViewModel` allocates intermediate `Triple` — fixed: replaced with 4-arg `combine` [AnalyticsViewModel.kt]
+- [x] [Review][Defer→Fixed] `mapCategoryPieChart`/`mapCategoryTreemap` silently discard `onUpdate` on wrong config type — fixed: added `Log.w` warning for unexpected config type [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
+- [x] [Review][Defer→Fixed] `LaunchedEffect(filteredData)` in category chart cards causes one-frame stale data — fixed as part of `remember(filteredData)` key change [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
+
 ---
 
 ## Dev Notes

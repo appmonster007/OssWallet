@@ -24,3 +24,11 @@
 - No undo path for `quickDeleteTransaction` / `quickCloneTransaction` — pre-existing pattern across codebase
 - Search query whitespace not trimmed before repository call [DashboardViewModel.kt:729]
 - Uncaught exceptions in `changeTransactionStatus`, `quickDeleteTransaction`, `quickCloneTransaction`, `addTag` propagate silently — pre-existing pattern
+
+## Deferred from: code review of 2-4 (2026-06-28 — pass 3)
+- `coroutineScope` blocks `collectLatest` re-entry in Analytics/AccountDetail — generation counter prevents stale writes but compute runs to completion; `viewModelScope.launch` per card would fix; documented tradeoff [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- All cards shimmer-reset on any upstream re-emission — `collectLatest` unconditionally resets to all-Loading; delta-check would avoid flicker; intentional correctness-over-perf choice [AnalyticsViewModel.kt, AccountDetailViewModel.kt]
+- `navigationStack` in category chart cards not reset when compute data changes — stale drill-down after recompute; `remember(data)` key would fix [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
+- Nested `combine` in `AnalyticsViewModel` allocates intermediate `Triple` — use 4-arg `combine` instead [AnalyticsViewModel.kt]
+- `mapCategoryPieChart`/`mapCategoryTreemap` silently discard `onUpdate` on wrong config type — pre-existing guard pattern [CardUiBridge.kt]
+- `LaunchedEffect(filteredData)` in category chart cards causes one-frame stale data on recompose — pre-existing [CategoryPieChartCard.kt, CategoryTreemapCard.kt]

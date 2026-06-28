@@ -105,7 +105,9 @@ fun AeonCardList(
             thumbSelectedColor = AppColors.primary,
             thumbUnselectedColor = AppColors.primary.copy(alpha = 0.5f),
             thumbThickness = 6.dp,
-            thumbShape = CircleShape
+            thumbShape = CircleShape,
+            thumbMinLength = 0.1f,
+            thumbMaxLength = 0.1f
         )
     ) {
         LazyColumn(

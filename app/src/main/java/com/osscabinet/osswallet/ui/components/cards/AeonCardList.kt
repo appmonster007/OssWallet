@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ErrorOutline
@@ -35,6 +36,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardComputeState
+import my.nanihadesuka.compose.LazyColumnScrollbar
+import my.nanihadesuka.compose.ScrollbarSettings
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentMapOf
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
@@ -96,57 +99,67 @@ fun AeonCardList(
         }
     )
 
-    LazyColumn(
+    LazyColumnScrollbar(
         state = reorderState.lazyListState,
-        modifier = modifier.reorderable(reorderState),
-        contentPadding = contentPadding,
-        verticalArrangement = verticalArrangement,
+        settings = ScrollbarSettings.Default.copy(
+            thumbSelectedColor = AppColors.primary,
+            thumbUnselectedColor = AppColors.primary.copy(alpha = 0.5f),
+            thumbThickness = 6.dp,
+            thumbShape = CircleShape
+        )
     ) {
-        if (header != null) {
-            item(key = "__aeon_card_list_header") { header() }
-        }
+        LazyColumn(
+            state = reorderState.lazyListState,
+            modifier = modifier.reorderable(reorderState),
+            contentPadding = contentPadding,
+            verticalArrangement = verticalArrangement,
+        ) {
+            if (header != null) {
+                item(key = "__aeon_card_list_header") { header() }
+            }
 
-        items(sortedCards, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
-            val draggingActive = reorderState.draggedKey != null
-            val isDragging = reorderState.isDragging(cardConfig.cardId)
-            val alpha by animateFloatAsState(
-                targetValue = if (draggingActive && !isDragging) 0.75f else 1.0f,
-                label = "card_drag_alpha"
-            )
+            items(sortedCards, key = { it.cardId }, contentType = { it.cardType }) { cardConfig ->
+                val draggingActive = reorderState.draggedKey != null
+                val isDragging = reorderState.isDragging(cardConfig.cardId)
+                val alpha by animateFloatAsState(
+                    targetValue = if (draggingActive && !isDragging) 0.75f else 1.0f,
+                    label = "card_drag_alpha"
+                )
 
-            ReorderableItem(
-                state = reorderState,
-                key = cardConfig.cardId,
-                modifier = Modifier
-                    .reorderableSemantics(state = reorderState, key = cardConfig.cardId)
-                    .graphicsLayer { this.alpha = alpha },
-            ) { _ ->
-                val dragHandleModifier = Modifier.draggableHandle(
+                ReorderableItem(
                     state = reorderState,
                     key = cardConfig.cardId,
-                )
-                val cardState by remember(cardConfig.cardId) {
-                    derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
-                }
+                    modifier = Modifier
+                        .reorderableSemantics(state = reorderState, key = cardConfig.cardId)
+                        .graphicsLayer { this.alpha = alpha },
+                ) { _ ->
+                    val dragHandleModifier = Modifier.draggableHandle(
+                        state = reorderState,
+                        key = cardConfig.cardId,
+                    )
+                    val cardState by remember(cardConfig.cardId) {
+                        derivedStateOf { cardDataMapState.value[cardConfig.cardId] }
+                    }
 
-                CardItem(
-                    cardConfig = cardConfig,
-                    cardState = cardState,
-                    cardInput = cardInput,
-                    cardUpdateHandler = cardUpdateHandler,
-                    onDelete = onDelete,
-                    onRecordsClick = onRecordsClick,
-                    callbacks = callbacks,
-                    baseFilter = baseFilter,
-                    screenRules = screenRules,
-                    filterContext = filterContext,
-                    disableFilterSheet = disableFilterSheet,
-                    dragHandleModifier = dragHandleModifier,
-                    animateCards = animateCards,
-                    scrollToId = scrollToId,
-                    highlightedId = highlightedId,
-                    onScrollComplete = onScrollComplete,
-                )
+                    CardItem(
+                        cardConfig = cardConfig,
+                        cardState = cardState,
+                        cardInput = cardInput,
+                        cardUpdateHandler = cardUpdateHandler,
+                        onDelete = onDelete,
+                        onRecordsClick = onRecordsClick,
+                        callbacks = callbacks,
+                        baseFilter = baseFilter,
+                        screenRules = screenRules,
+                        filterContext = filterContext,
+                        disableFilterSheet = disableFilterSheet,
+                        dragHandleModifier = dragHandleModifier,
+                        animateCards = animateCards,
+                        scrollToId = scrollToId,
+                        highlightedId = highlightedId,
+                        onScrollComplete = onScrollComplete,
+                    )
+                }
             }
         }
     }

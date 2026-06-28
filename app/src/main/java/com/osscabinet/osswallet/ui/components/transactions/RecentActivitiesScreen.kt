@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
@@ -21,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -31,6 +34,7 @@ fun RecentActivitiesScreen(
     listState: TransactionListUiState,
     onRecordsClick: (TransactionFilter) -> Unit,
     modifier: Modifier = Modifier,
+    lazyListState: LazyListState = rememberLazyListState(),
     onTransactionEvent: (TransactionItemEvent) -> Unit = {},
     baseCurrency: String = "USD",
     contentPadding: PaddingValues = PaddingValues(bottom = AeonSize.D24.value),
@@ -55,7 +59,8 @@ fun RecentActivitiesScreen(
     hasStickyHeader: Boolean = true,
     scrollToId: String? = null,
     highlightedId: String? = null,
-    onScrollComplete: () -> Unit = {}
+    onScrollComplete: () -> Unit = {},
+    fastScrollSide: FastScrollSide = FastScrollSide.RIGHT
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -110,6 +115,7 @@ fun RecentActivitiesScreen(
             AeonTransactionList(
                 listState = listState,
                 onTransactionEvent = onTransactionEvent,
+                lazyListState = lazyListState,
                 modifier = Modifier.weight(1f),
                 contentPadding = contentPadding,
                 useNoteAsHeader = useNoteAsHeader,
@@ -130,7 +136,8 @@ fun RecentActivitiesScreen(
                 highlightedId = highlightedId,
                 scrollToId = scrollToId,
                 onScrollComplete = onScrollComplete,
-                hasStickyHeader = hasStickyHeader
+                hasStickyHeader = hasStickyHeader,
+                fastScrollSide = fastScrollSide
             )
         }
     }

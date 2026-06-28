@@ -165,6 +165,7 @@ fun TransactionListContent(
                         scrollToId = scrollToId,
                         onScrollComplete = onScrollComplete,
                         hasStickyHeader = recordsSettings.stickyHeaders,
+                        fastScrollSide = recordsSettings.fastScrollSide,
                     )
                 }
             }

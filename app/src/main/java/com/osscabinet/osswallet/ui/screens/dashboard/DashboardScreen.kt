@@ -70,6 +70,7 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+ import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
@@ -408,6 +409,7 @@ fun DashboardScreenLayout(
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
     val glanceListState = rememberLazyListState()
+    val recentActivitiesListState = rememberLazyListState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -559,6 +561,7 @@ fun DashboardScreenLayout(
                                     cardUpdateHandler = cardUpdateHandler,
                                     cardsConfig = cardsConfig,
                                     glanceListState = glanceListState,
+                                    recentActivitiesListState = recentActivitiesListState,
                                     showAddCardDialog = showAddCardDialog,
                                     onShowAddCardDialogChange = { showAddCardDialog = it },
                                     cardAnimationEnabled = cardAnimationEnabled
@@ -759,6 +762,7 @@ fun DashboardContent(
     cardUpdateHandler: CardUpdateHandler,
     cardsConfig: DashboardCardsConfig,
     glanceListState: LazyListState,
+    recentActivitiesListState: LazyListState,
     showAddCardDialog: Boolean,
     onShowAddCardDialogChange: (Boolean) -> Unit,
     cardAnimationEnabled: Boolean
@@ -836,40 +840,21 @@ fun DashboardContent(
                                         )
                                     }
                                 }
-
-                                is TransactionItemEvent.Expand -> onItemExpanded(
-                                    event.id
-                                )
-
-                                is TransactionItemEvent.Collapse -> onItemCollapsed(
-                                    event.id
-                                )
-
-                                is TransactionItemEvent.StatusChange -> onStatusChange(
-                                    event.id,
-                                    event.status
-                                )
-
+                                is TransactionItemEvent.Expand -> onItemExpanded(event.id)
+                                is TransactionItemEvent.Collapse -> onItemCollapsed(event.id)
+                                is TransactionItemEvent.StatusChange -> onStatusChange(event.id, event.status)
                                 is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
-                                is TransactionItemEvent.Delete -> onDeleteTransaction(
-                                    event.id
-                                )
-
+                                is TransactionItemEvent.Delete -> onDeleteTransaction(event.id)
                                 is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
                                 is TransactionItemEvent.Jump -> onJumpTransaction(
                                     event.id,
                                     state.recentActivitiesState.getAllTransactionIds()
                                 )
-
-                                is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(
-                                    event.id
-                                )
-
+                                is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(event.id)
                                 is TransactionItemEvent.ConfirmPlanned -> onConfirmPlanned(
                                     event.paymentId,
                                     event.scheduledDate
                                 )
-
                                 is TransactionItemEvent.CancelPlanned -> onCancelPlanned(
                                     event.paymentId,
                                     event.scheduledDate
@@ -878,7 +863,9 @@ fun DashboardContent(
                         },
                         topPadding = pillHeight,
                         bottomPadding = innerPadding.calculateBottomPadding(),
-                        hasStickyHeader = false
+                        hasStickyHeader = false,
+                        lazyListState = recentActivitiesListState,
+                        fastScrollSide = state.displayPrefs?.fastScrollSide ?: FastScrollSide.RIGHT
                     )
                 }
             }
@@ -1085,10 +1072,13 @@ fun DashboardRecentActivitiesTab(
     onTransactionEvent: (TransactionItemEvent) -> Unit,
     topPadding: androidx.compose.ui.unit.Dp = 0.dp,
     bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
-    hasStickyHeader: Boolean = true
+    hasStickyHeader: Boolean = true,
+    lazyListState: LazyListState = rememberLazyListState(),
+    fastScrollSide: FastScrollSide = FastScrollSide.RIGHT
 ) {
     RecentActivitiesScreen(
         listState = recentActivitiesState,
+        lazyListState = lazyListState,
         onRecordsClick = onRecordsClick,
         baseCurrency = baseCurrency,
         contentPadding = PaddingValues(
@@ -1103,7 +1093,8 @@ fun DashboardRecentActivitiesTab(
         showHeader = false,
         scrollToId = scrollToId,
         highlightedId = highlightedId,
-        onScrollComplete = onScrollComplete
+        onScrollComplete = onScrollComplete,
+        fastScrollSide = fastScrollSide
     )
 }
 

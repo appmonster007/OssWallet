@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Profile
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
@@ -141,20 +142,23 @@ class SettingsViewModel @Inject constructor(
         val currentProfileName: String?,
         val cardAnimationEnabled: Boolean,
         val expandableFabEnabled: Boolean,
-        val recentActivitiesBreakdown: Boolean
+        val recentActivitiesBreakdown: Boolean,
+        val fastScrollSide: FastScrollSide = FastScrollSide.RIGHT
     )
 
     val dashboardDisplayPrefs: StateFlow<DashboardDisplayPrefs> = combine(
         currentProfile,
         cardAnimationEnabled,
         expandableFabEnabled,
-        recentActivitiesBreakdown
-    ) { profile, anim, fab, breakdown ->
+        recentActivitiesBreakdown,
+        settingsRepository.recordsSettings
+    ) { profile, anim, fab, breakdown, records ->
         DashboardDisplayPrefs(
             currentProfileName = profile?.name,
             cardAnimationEnabled = anim,
             expandableFabEnabled = fab,
-            recentActivitiesBreakdown = breakdown
+            recentActivitiesBreakdown = breakdown,
+            fastScrollSide = records.fastScrollSide
         )
     }.stateIn(
         viewModelScope,
@@ -163,7 +167,8 @@ class SettingsViewModel @Inject constructor(
             currentProfileName = null,
             cardAnimationEnabled = true,
             expandableFabEnabled = true,
-            recentActivitiesBreakdown = true
+            recentActivitiesBreakdown = true,
+            fastScrollSide = FastScrollSide.RIGHT
         )
     )
 

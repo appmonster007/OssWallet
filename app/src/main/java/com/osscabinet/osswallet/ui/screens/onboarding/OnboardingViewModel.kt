@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
@@ -67,7 +66,7 @@ class OnboardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(
         OnboardingState(
             availableProviders = providerRegistry.getAllProviders(),
-            showDebugSeedStep = BuildConfig.ENABLE_SEEDING
+            showDebugSeedStep = SeedingConfig.isEnabled
         )
     )
     val uiState: StateFlow<OnboardingState> = _uiState.asStateFlow()

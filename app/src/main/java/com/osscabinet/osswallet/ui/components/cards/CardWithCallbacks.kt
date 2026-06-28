@@ -16,13 +16,22 @@ sealed class CardWithCallbacks {
     abstract val baseFilter: TransactionFilter
     open val filterSheetEnabled: Boolean = true
 
+    abstract fun copyWithRules(
+        rules: CardFilterRules,
+        baseFilter: TransactionFilter,
+        filterSheetEnabled: Boolean = true,
+    ): CardWithCallbacks
+
     data class NetWorth(
         val renderData: CardRenderData.NetWorth,
         val callbacks: CardCallbacks.NetWorth,
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CurrencyBalances(
         val renderData: CardRenderData.CurrencyBalances,
@@ -30,7 +39,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CashFlow(
         val renderData: CardRenderData.CashFlow,
@@ -38,7 +50,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class Accounts(
         val renderData: CardRenderData.Accounts,
@@ -46,7 +61,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CategoryPieChart(
         val renderData: CardRenderData.CategoryPieChart,
@@ -54,7 +72,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CategoryTreemap(
         val renderData: CardRenderData.CategoryTreemap,
@@ -62,7 +83,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class AccountHero(
         val renderData: CardRenderData.AccountHero,
@@ -70,7 +94,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class PlannedPayments(
         val renderData: CardRenderData.PlannedPayments,
@@ -78,7 +105,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class Budgets(
         val renderData: CardRenderData.Budgets,
@@ -86,7 +116,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class Loans(
         val renderData: CardRenderData.Loans,
@@ -94,7 +127,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class RecentActivities(
         val renderData: CardRenderData.RecentActivities,
@@ -102,7 +138,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CashFlowComparison(
         val renderData: CardRenderData.CashFlowComparison,
@@ -110,7 +149,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class IncomeExpenseBar(
         val renderData: CardRenderData.IncomeExpenseBar,
@@ -118,7 +160,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class CategorySpendingTrend(
         val renderData: CardRenderData.CategorySpendingTrend,
@@ -126,7 +171,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.CATEGORY_SELECTION_LOCKED,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class TagUpSetPlot(
         val renderData: CardRenderData.TagUpSetPlot,
@@ -135,7 +183,10 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) =
+            copy(filterRules = rules, baseFilter = baseFilter, filterSheetEnabled = filterSheetEnabled)
+    }
 
     data class ComputeError(
         val cardId: String,
@@ -143,5 +194,7 @@ sealed class CardWithCallbacks {
         override val filterRules: CardFilterRules = CardFilterRules.DEFAULT,
         override val baseFilter: TransactionFilter = TransactionFilter(),
         override val filterSheetEnabled: Boolean = true
-    ) : CardWithCallbacks()
+    ) : CardWithCallbacks() {
+        override fun copyWithRules(rules: CardFilterRules, baseFilter: TransactionFilter, filterSheetEnabled: Boolean) = this
+    }
 }

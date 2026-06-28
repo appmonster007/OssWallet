@@ -28,7 +28,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,9 +94,6 @@ fun CategoryPieChartCard(
     val isDarkTheme = mode.isDarkTheme
     val isAmoled = mode.isAmoled
 
-    // Drill-down state
-    var navigationStack by remember { mutableStateOf(listOf<List<CategoryChartData>>(data)) }
-
     val filteredData = remember(data, config.showOnlyActiveCategories) {
         if (config.showOnlyActiveCategories) {
             data.filter { it.amount.signum() != 0 }
@@ -106,12 +102,11 @@ fun CategoryPieChartCard(
         }
     }
 
-    val currentData = navigationStack.last()
+    // D3+D6: remember(filteredData) resets the stack immediately when underlying data or filter
+    // changes — no one-frame lag and no stale drill-down after a compute round.
+    var navigationStack by remember(filteredData) { mutableStateOf(listOf<List<CategoryChartData>>(filteredData)) }
 
-    // Sync with external data changes
-    LaunchedEffect(filteredData) {
-        navigationStack = listOf(filteredData)
-    }
+    val currentData = navigationStack.last()
 
     AeonExpressiveCard(
         title = config.title,
@@ -529,6 +524,9 @@ fun mapCategoryPieChart(
         onUpdate = { newConfig ->
             if (newConfig is CategoryPieChartCardConfig) {
                 updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
+            } else {
+                if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
+                    android.util.Log.w("CardBridge", "CategoryPieChart.onUpdate: unexpected ${newConfig::class.simpleName}")
             }
         },
         onDelete = { onDelete(config.cardId) },

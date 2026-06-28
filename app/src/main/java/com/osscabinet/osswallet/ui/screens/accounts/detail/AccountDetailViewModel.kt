@@ -36,7 +36,8 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -250,10 +251,14 @@ class AccountDetailViewModel @Inject constructor(
 
                     val myGen = _computeGeneration.incrementAndGet()
 
-                    // Emit Loading immediately so shimmers appear before hierarchy build starts.
+                    // D2: Preserve existing Success/Error states to avoid shimmer-on-refresh flicker;
+                    // only new cards (not yet in prevMap) start as Loading.
+                    val prevMap = _cardDataMap.value
                     _cardDataMap.value =
                         persistentMapOf<String, CardComputeState>().builder().apply {
-                            cards.cards.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                            cards.cards.forEach { c ->
+                                put(c.cardId, prevMap[c.cardId] ?: CardComputeState.Loading)
+                            }
                         }.build()
 
                     // AC8: Build inputs on Default — build hierarchy once per round
@@ -273,32 +278,28 @@ class AccountDetailViewModel @Inject constructor(
                         )
                     }
 
-                    // coroutineScope parents all card jobs to the collectLatest lambda's scope —
-                    // cancellation propagates immediately when a new emission arrives.
-                    coroutineScope {
+                    // D1+P2: supervisorScope lets cards fail independently without cancelling siblings.
+                    // Children re-throw CancellationException so cooperative cancellation works correctly
+                    // when collectLatest cancels this block on a new emission.
+                    supervisorScope {
                         cards.cards.forEach { cardConfig ->
                             launch(dispatchers.default) {
-                                val result = runCatching {
-                                    cardComputerRegistry.compute(
+                                val result = try {
+                                    val data = cardComputerRegistry.compute(
                                         cardConfig.cardType,
                                         input,
                                         cardConfig
                                     )
-                                }.fold(
-                                    onSuccess = { data ->
-                                        if (data is CardRenderData.Error) CardComputeState.Error(
-                                            data.message ?: "Compute error"
-                                        )
-                                        else CardComputeState.Success(data)
-                                    },
-                                    onFailure = {
-                                        CardComputeState.Error(
-                                            it.message ?: "Compute error"
-                                        )
-                                    }
-                                )
-                                if (_computeGeneration.get() == myGen) {
-                                    _cardDataMap.update { it.putting(cardConfig.cardId, result) }
+                                    if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                    else CardComputeState.Success(data)
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Throwable) {
+                                    CardComputeState.Error(e.message ?: "Compute error")
+                                }
+                                // P1: check inside update{} to eliminate TOCTOU window.
+                                _cardDataMap.update { map ->
+                                    if (_computeGeneration.get() == myGen) map.putting(cardConfig.cardId, result) else map
                                 }
                             }
                         }

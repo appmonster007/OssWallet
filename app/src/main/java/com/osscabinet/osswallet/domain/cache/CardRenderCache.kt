@@ -22,16 +22,17 @@ class CardRenderCache @Inject constructor() {
 
     operator fun set(profileId: Int, currency: String, cardId: String, data: CardRenderData) {
         cache[Triple(profileId, currency, cardId)] = data
-        profileIndex.getOrPut(Pair(profileId, currency)) { ConcurrentHashMap() }[cardId] = data
+        profileIndex.compute(Pair(profileId, currency)) { _, existing ->
+            (existing ?: ConcurrentHashMap()).also { it[cardId] = data }
+        }
     }
 
     fun getProfileSnapshot(profileId: Int, currency: String): Map<String, CardRenderData> =
         profileIndex[Pair(profileId, currency)]?.toMap() ?: emptyMap()
 
     fun invalidateProfile(profileId: Int) {
-        val keysToRemove = cache.keys.filter { it.first == profileId }
-        keysToRemove.forEach { cache.remove(it) }
-        profileIndex.keys.filter { it.first == profileId }.forEach { profileIndex.remove(it) }
+        cache.keys.removeIf { it.first == profileId }
+        profileIndex.keys.removeIf { it.first == profileId }
     }
 
     fun invalidateCard(profileId: Int, currency: String, cardId: String) {

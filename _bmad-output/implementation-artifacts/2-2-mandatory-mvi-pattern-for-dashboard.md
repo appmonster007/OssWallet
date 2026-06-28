@@ -5,7 +5,7 @@ baseline_commit: 'ca1a5a3685fcad8fad3bd21a4f377ece995cf56d'
 # Story 2.2: Mandatory MVI Pattern for Dashboard
 
 ## Status
-**Status:** review
+**Status:** done
 **Epic:** Epic 2: Universal UI State & Performance (MVI & Dashboard RCA)
 **ID:** 2.2
 
@@ -249,6 +249,18 @@ Prefer **Option A** for cleaner intent routing.
 - [x] [Review][Patch] Tests: kept mockk for interfaces (Fake migration deferred — 13+ interfaces require full signature reads); added MainDispatcherRule and real CardRenderCache [DashboardViewModelTest.kt]
 - [x] [Review][Patch] `MainDispatcherRule` added — replaces manual setMain/resetMain [DashboardViewModelTest.kt]
 - [x] [Review][Patch] `ClearUndoAction` test improved with documented invariant; vacuousness noted as limitation of private state encapsulation [DashboardViewModelTest.kt]
+
+#### Code Review (2026-06-28) — Adversarial + Edge Case + Acceptance Audit
+
+**Patches — MVI Completeness / Immutability:**
+- [x] [Review][Patch] `loanPayments` field not `ImmutableMap` — violates D3 `@Immutable` contract; nested `List<LoanPayment>` breaks Compose stability [DashboardViewModel.kt:706]
+- [x] [Review][Patch] `revealedCardIds.toList()` unnecessary — now `.toImmutableList()` with `ImmutableList<String>` parameter type across DashboardScreen composables [DashboardScreen.kt:245]
+- [x] [Review][Patch] `availableIds` in `HandleJumpRequest` accepted but never used — now filters linked txs popup by `availableIds` when non-null [DashboardViewModel.kt:642]
+
+**Deferred:**
+- [x] [Review][Defer] `QuickCloneTransaction` intent declared but unreachable from Screen (D1 navigation-action artifact) [DashboardViewModel.kt] — deferred, D1 decision artifact; cleanup in future sprint
+- [x] [Review][Defer] `cardInput: CardInput?` in `DashboardUiState.Success` exposes domain object to UI layer [DashboardViewModel.kt:720] — deferred, pre-existing
+- [x] [Review][Defer] `searchTransactions()` called directly from Screen without `onIntent` — returns Flow only, no state mutation [DashboardScreen.kt] — deferred, minor AC deviation
 
 ### Agent Model Used
 

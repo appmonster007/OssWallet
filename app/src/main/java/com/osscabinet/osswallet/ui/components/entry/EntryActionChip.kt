@@ -1,13 +1,15 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,9 +33,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.theme.scaledDp
@@ -59,36 +65,57 @@ fun EntryActionChip(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(if (isPressed) 0.96f else 1f, label = "chipScale")
 
+    val glassEnabled = LocalGlassmorphismEnabled.current
+
     val backgroundColor by animateColorAsState(
-        if (isSelected) AppColors.primaryContainer
-        else AppColors.surfaceContainerLow,
+        targetValue = when {
+            isSelected -> AppColors.primaryContainer
+            glassEnabled -> AppColors.surfaceContainerLow.copy(alpha = 0.6f)
+            else -> AppColors.surfaceContainerLow
+        },
         label = "bgColor"
     )
 
     val borderColor by animateColorAsState(
-        if (isSelected) AppColors.primary
-        else AppColors.outlineVariant,
+        targetValue = when {
+            isSelected -> AppColors.primary
+            glassEnabled -> AppColors.outlineVariant.copy(alpha = 0.2f)
+            else -> AppColors.outlineVariant
+        },
         label = "borderColor"
     )
 
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
-        color = backgroundColor,
-        border = BorderStroke(if (isSelected) 1.5.dp else 0.5.dp, borderColor),
+    val config = GlassTokens.configForVariant(GlassVariant.Card)
+    val borderWidth by animateDpAsState(
+        targetValue = if (isSelected) 1.5.dp else config.surface.borderWidth.dp,
+        label = "borderWidth"
+    )
+
+    GlassSurface(
         modifier = modifier
             .height(scaledDp(48f, uiScale))
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = androidx.compose.foundation.LocalIndication.current,
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
+        hazeStyle = GlassTokens.cardStyle(),
+        glassVariant = GlassVariant.Card,
+        fallbackColor = backgroundColor,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = AeonTheme.dimensions.chipPadding),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = AeonTheme.dimensions.chipPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
         ) {

@@ -97,8 +97,8 @@ fun EntryActionCard(
     val backgroundColor by animateColorAsState(
         targetValue = when {
             isFilledSelected -> selectedColor
-            glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
-            else -> AppColors.inputSurface
+            glassEnabled -> AppColors.surfaceContainerLow.copy(alpha = 0.6f)
+            else -> AppColors.surfaceContainerLow
         },
         label = "bgColor"
     )
@@ -106,15 +106,15 @@ fun EntryActionCard(
     val borderColor by animateColorAsState(
         targetValue = when {
             isSelected -> selectedColor
-            glassEnabled -> Color.White.copy(alpha = 0.1f)
-            else -> AppColors.outlineVariant.copy(alpha = 0.5f)
+            glassEnabled -> AppColors.outlineVariant.copy(alpha = 0.2f)
+            else -> AppColors.outlineVariant
         },
         label = "borderColor"
     )
 
     val config = GlassTokens.configForVariant(GlassVariant.Card)
     val borderWidth by animateDpAsState(
-        targetValue = if (isSelected) config.surface.borderWidth.dp else (config.surface.borderWidth * 0.5f).dp,
+        targetValue = if (isSelected) config.surface.borderWidth.dp else config.surface.borderWidth.dp,
         label = "borderWidth"
     )
 
@@ -133,7 +133,7 @@ fun EntryActionCard(
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
-        shape = RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
+        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
         hazeStyle = GlassTokens.cardStyle(),
         glassVariant = GlassVariant.Card,
         fallbackColor = backgroundColor,

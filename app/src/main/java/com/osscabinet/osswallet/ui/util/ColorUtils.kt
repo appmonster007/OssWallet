@@ -36,90 +36,6 @@ fun Color.pastel(): Color {
 }
 
 /**
- * @deprecated Replaced by [applyFlowTint] (income/expense badges) and [applyAccountTint]
- * (account cards). All call sites have been migrated. Remove this function once the
- * deprecated String overload and its two callers below are also cleaned up.
- */
-@Deprecated(
-    message = "Use applyFlowTint for income/expense badges or applyAccountTint for account cards.",
-    replaceWith = ReplaceWith("applyFlowTint(mode) or applyAccountTint(mode)")
-)
-fun Color.applyAeonTint(mode: ThemeMode): Pair<Color, Color> {
-    val isDark = mode.isDarkTheme
-    val isAmoled = mode.isAmoled
-
-    val hsl = FloatArray(3)
-    ColorUtils.colorToHSL(this.toArgb(), hsl)
-
-    val baseSaturation = hsl[1]
-    val baseLuminance = hsl[2]
-
-    val backgroundColor: Color
-    val inkColor: Color
-
-    when {
-        isAmoled -> {
-            // Pattern: Very deep background + bright ink (maximum contrast for OLED)
-            // Used for AMOLED displays where burn-in is a concern
-            val bgHsl = hsl.copyOf()
-            bgHsl[1] = baseSaturation.coerceIn(0.35f, 0.75f) // Maintain saturation
-            bgHsl[2] = 0.10f // Very deep (6-12% range)
-            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-
-            val inkHsl = hsl.copyOf()
-            // Shift ink saturation downward for readability while keeping it vibrant
-            inkHsl[1] = (baseSaturation * 0.5f).coerceIn(0.25f, 0.45f)
-            inkHsl[2] = 0.92f // Very bright for contrast
-            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
-        }
-
-        isDark -> {
-            // Pattern: Dark saturated background + vibrant pastel ink
-            // Dark mode should have more visual depth and better color distinction
-            val bgHsl = hsl.copyOf()
-            // Preserve original saturation for color vibrancy, coerce to keep it saturated
-            bgHsl[1] = baseSaturation.coerceIn(0.30f, 0.65f)
-            // Background lightness: adapt based on original color's brightness
-            // Lighter original colors -> slightly lighter background, darker colors -> darker
-            bgHsl[2] = when {
-                baseLuminance > 0.7f -> 0.22f  // Very light original -> lighter background
-                baseLuminance > 0.5f -> 0.20f  // Medium-light -> medium dark background
-                else -> 0.18f                  // Dark original -> darker background
-            }
-            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-
-            val inkHsl = hsl.copyOf()
-            // Create vibrant but readable ink: reduce saturation for pastel effect
-            inkHsl[1] = (baseSaturation * 0.6f).coerceIn(0.20f, 0.50f)
-            // Ink lightness: adaptive based on background darkness
-            // Ensures minimum contrast between background and ink
-            inkHsl[2] = when {
-                bgHsl[2] < 0.16f -> 0.88f  // Very dark background -> very bright ink
-                bgHsl[2] < 0.20f -> 0.85f  // Dark background -> bright ink
-                else -> 0.82f              // Medium dark -> medium bright ink
-            }
-            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
-        }
-
-        else -> {
-            // Light Theme: Pastel background + saturated dark ink
-            // Creates an airy, clean appearance
-            val bgHsl = hsl.copyOf()
-            bgHsl[1] = baseSaturation.coerceAtMost(0.30f) // Desaturate for pastel
-            bgHsl[2] = 0.92f // Very light (90-94%)
-            backgroundColor = Color(ColorUtils.HSLToColor(bgHsl))
-
-            val inkHsl = hsl.copyOf()
-            inkHsl[1] = baseSaturation.coerceIn(0.50f, 0.90f) // Keep saturation for ink
-            inkHsl[2] = 0.28f // Dark ink for high contrast
-            inkColor = Color(ColorUtils.HSLToColor(inkHsl))
-        }
-    }
-
-    return backgroundColor to inkColor
-}
-
-/**
  * Tint for income/expense flow badges (NetWorth, CashFlow, AeonFlowBadge).
  *
  * Follows M3 tonal container philosophy per theme:
@@ -192,42 +108,6 @@ fun Color.applyAccountTint(mode: ThemeMode): Pair<Color, Color> {
             this to inkColor
         }
     }
-}
-
-/**
- * Convenience overload for theme strings.
- */
-@Deprecated("Use ThemeMode overload", ReplaceWith("applyAeonTint(mode)"))
-fun Color.applyAeonTint(theme: String): Pair<Color, Color> {
-    val isDark = theme == "Dark" || theme == "Amoled"
-    val isAmoled = theme == "Amoled"
-    return applyAeonTint(ThemeMode(isDarkTheme = isDark, isAmoled = isAmoled))
-}
-
-/**
- * Creates a container color from a seed color, following Material You logic.
- */
-@Deprecated("Use applyAeonTint for consistent branding", ReplaceWith("applyAeonTint(theme).first"))
-fun Color.toContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
-    val theme = when {
-        isAmoled -> "Amoled"
-        isDarkTheme -> "Dark"
-        else -> "Light"
-    }
-    return applyAeonTint(theme).first
-}
-
-/**
- * Creates an on-container color that has high contrast with the container color.
- */
-@Deprecated("Use applyAeonTint for consistent branding", ReplaceWith("applyAeonTint(theme).second"))
-fun Color.toOnContainerColor(isDarkTheme: Boolean, isAmoled: Boolean = false): Color {
-    val theme = when {
-        isAmoled -> "Amoled"
-        isDarkTheme -> "Dark"
-        else -> "Light"
-    }
-    return applyAeonTint(theme).second
 }
 
 /**

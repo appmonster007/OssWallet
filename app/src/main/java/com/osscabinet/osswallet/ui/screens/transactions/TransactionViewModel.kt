@@ -769,11 +769,6 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    @Deprecated("No longer saves — use setTemplatePrefillFromPattern", ReplaceWith("setTemplatePrefillFromPattern(pattern)"))
-    fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
-        setTemplatePrefillFromPattern(pattern)
-    }
-
     fun setTemplatePrefillFromPattern(pattern: DiscoveredPattern) {
         _templatePrefill.value = TemplatePrefillDTO(
             name = pattern.name.ifBlank { pattern.payee.ifBlank { "Template" } },
@@ -794,11 +789,6 @@ class TransactionViewModel @Inject constructor(
 
     fun clearTemplatePrefill() {
         _templatePrefill.value = null
-    }
-
-    @Deprecated("No longer saves — use setPlannedPaymentPrefillFromPattern", ReplaceWith("setPlannedPaymentPrefillFromPattern(pattern)"))
-    fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
-        setPlannedPaymentPrefillFromPattern(pattern)
     }
 
     fun setPlannedPaymentPrefillFromPattern(pattern: DiscoveredPattern) {

@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
@@ -20,6 +19,7 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import javax.inject.Inject
 
 data class QuickAddState(
     val currentStep: Int = 0,
@@ -51,7 +50,6 @@ data class QuickAddState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class QuickAddViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
     settingsRepository: SettingsRepository,
     private val accountRepository: AccountRepository,
     private val transactionManager: TransactionManager,
@@ -61,14 +59,7 @@ class QuickAddViewModel @Inject constructor(
     categoryRepository: CategoryRepository,
 ) : BaseViewModel(settingsRepository) {
 
-    companion object {
-        const val EXTRA_TYPE = "type"
-    }
-
-    private val initialType: EntryMode = savedStateHandle
-        .get<String>(EXTRA_TYPE)
-        ?.let { runCatching { EntryMode.valueOf(it) }.getOrNull() }
-        ?: EntryMode.EXPENSE
+    private val initialType: EntryMode = EntryMode.EXPENSE
 
     val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }

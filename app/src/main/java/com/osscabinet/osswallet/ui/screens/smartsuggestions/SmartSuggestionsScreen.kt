@@ -136,11 +136,11 @@ fun SmartSuggestionsScreen(
                                     categories = categories,
                                     accounts = accounts,
                                     onAcceptAsTemplate = {
-                                        viewModel.saveTemplateFromPattern(it)
+                                        viewModel.setTemplatePrefillFromPattern(it)
                                         actions.onAcceptAsTemplate()
                                     },
                                     onAcceptAsPlannedPayment = {
-                                        viewModel.savePlannedPaymentFromPattern(it)
+                                        viewModel.setPlannedPaymentPrefillFromPattern(it)
                                         actions.onAcceptAsPlannedPayment()
                                     },
                                     onDismiss = {

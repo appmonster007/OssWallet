@@ -50,7 +50,7 @@ fun PlannedPaymentEntryScreen(
     actions: PlannedPaymentEntryActions,
     viewModel: PlannedPaymentEntryViewModel
 ) {
-    LaunchedEffect(config.plannedPaymentId, config.prefill) {
+    LaunchedEffect(Unit) {
         viewModel.initialize(config.plannedPaymentId, config.prefill)
     }
 

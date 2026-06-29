@@ -169,7 +169,7 @@ fun AeonTemplateSelection(
                                         else -> "-" to AppColors.error
                                     }
                                     Text(
-                                        "$prefix${template.amount} ${template.currency ?: ""}",
+                                        "$prefix${template.amount.abs()} ${template.currency ?: ""}",
                                         style = AppTextStyles.managementItemTitle,
                                         color = color
                                     )

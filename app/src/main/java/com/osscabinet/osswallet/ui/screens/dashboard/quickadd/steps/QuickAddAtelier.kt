@@ -47,14 +47,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.GlassVariant
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
-import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 /** Shared 4/5-column tile grid used by the QuickAdd Atelier steps. */
 @Composable
@@ -311,18 +306,12 @@ internal fun AtelierPanel(
     spacing: Dp = 12.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    GlassSurface(
-        modifier = modifier.fillMaxWidth(),
-        shape = shape,
-        hazeLayer = HazeLayer.Overlay,
-        hazeStyle = GlassTokens.itemStyle().copyStyle(
-            bgColor = AppColors.background,
-            alpha = 0.55f
-        ),
-        glassVariant = GlassVariant.Item,
-        fallbackColor = AppColors.background,
-        borderColor = AppColors.outlineVariant.copy(alpha = 0.6f),
-        borderWidth = 0.5.dp,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(AppColors.recessedSurface)
+            .aeonHairlineBorder(shape)
     ) {
         Column(
             modifier = Modifier

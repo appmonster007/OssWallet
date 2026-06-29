@@ -65,7 +65,7 @@ development_status:
   3-1-design-token-audit-theme-refactor: ready-for-dev
   3-2-settings-screen-simplification-refactor: ready-for-dev
   3-3-global-h-design-consistency-pass: ready-for-dev
-  3-4-editorial-input-field-solid-mode-rca-fix: ready-for-dev
+  3-4-editorial-input-field-solid-mode-rca-fix: done
   3-5-fix-atelier-panel-background-blend-with-sheet: done
   epic-3-retrospective: optional
   epic-4: backlog

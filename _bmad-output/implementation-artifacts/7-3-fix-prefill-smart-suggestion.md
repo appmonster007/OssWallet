@@ -69,3 +69,8 @@ N/A — compile check passes.
 ### File List
 - `app/src/main/java/com/osscabinet/ossWallet/ui/screens/transactions/TransactionViewModel.kt`
 - `app/src/main/java/com/osscabinet/ossWallet/ui/screens/smartsuggestions/SmartSuggestionsScreen.kt`
+
+### Review Findings
+
+- [x] [Review][Patch] `saveTemplateFromPattern`/`savePlannedPaymentFromPattern` retain "save" in their names but now only set prefill. Added `@Deprecated("No longer saves — use setXxxPrefillFromPattern", ReplaceWith(...))` to both wrappers. [TransactionViewModel.kt:772, 798]
+- [x] [Review][Patch] `setPlannedPaymentPrefillFromPattern` now guards the zero-accounts case: emits snackbar "Add an account before creating a planned payment" and returns early when both `pattern.accountId` and `accounts.value` are empty. [TransactionViewModel.kt:804-808]

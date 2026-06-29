@@ -85,3 +85,7 @@ Static analysis only — app not runnable in this environment.
 
 ### File List
 - `app/src/main/java/com/osscabinet/ossWallet/ui/screens/plannedpayments/entry/PlannedPaymentEntryScreen.kt`
+
+### Review Findings
+
+- [x] [Review][Defer] `PlannedPaymentEntryViewModel.initialize()` idempotency guards (`if (lastInitParams == (id to prefill)) return`) are now unreachable dead code because `LaunchedEffect(Unit)` guarantees exactly one call per composable instance. Harmless but may confuse future developers into thinking multiple-call patterns are supported. [PlannedPaymentEntryViewModel.kt:107-108] — deferred, pre-existing guard, not causing any defect

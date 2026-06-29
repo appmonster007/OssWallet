@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-25T23:55:00
-last_updated: 2026-06-29T12:00:00
+last_updated: 2026-06-29T14:00:00
 project: OssWallet
 project_key: NOKEY
 tracking_system: file-system
@@ -86,7 +86,7 @@ development_status:
   epic-6-retrospective: optional
   epic-7: in-progress
   7-1-suppress-duplicate-numpad-planned-payment: done
-  7-2-fix-smart-suggestion-crash-save: ready-for-dev
-  7-3-fix-prefill-smart-suggestion: ready-for-dev
-  7-4-quick-add-template-first-step: ready-for-dev
+  7-2-fix-smart-suggestion-crash-save: done
+  7-3-fix-prefill-smart-suggestion: done
+  7-4-quick-add-template-first-step: done
   epic-7-retrospective: optional

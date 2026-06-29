@@ -125,7 +125,7 @@ fun EntryEditorialInput(
             isFlush -> AppColors.transparent
             isSelected -> iconColor.copy(alpha = 0.15f)
             glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
-            else -> AppColors.surfaceContainerLow
+            else -> AppColors.inputSurface
         },
         label = "bgColor"
     )

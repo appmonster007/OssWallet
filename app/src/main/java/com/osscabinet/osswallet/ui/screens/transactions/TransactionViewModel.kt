@@ -770,27 +770,25 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
-        viewModelScope.launch {
-            withProfile { profileId ->
-                val template = com.osscabinet.ossWallet.domain.model.Template(
-                    id = 0,
-                    name = pattern.name,
-                    categoryId = pattern.categoryId,
-                    amount = pattern.averageAmount,
-                    entryMode = pattern.entryMode,
-                    accountId = pattern.accountId,
-                    currency = pattern.currency,
-                    note = pattern.note,
-                    payee = pattern.payee,
-                    profileId = profileId,
-                    tags = pattern.tags,
-                    paymentMethod = pattern.paymentMethod,
-                    location = pattern.gpsLocation
-                )
-                templateRepository.insertTemplate(template)
-                _snackbarMessage.value = "Template saved"
-            }
-        }
+        setTemplatePrefillFromPattern(pattern)
+    }
+
+    fun setTemplatePrefillFromPattern(pattern: DiscoveredPattern) {
+        _templatePrefill.value = TemplatePrefillDTO(
+            name = pattern.name.ifBlank { pattern.payee.ifBlank { "Template" } },
+            categoryId = pattern.categoryId.takeIf { it != 0L } ?: Category.SYSTEM_OTHERS,
+            amount = pattern.averageAmount,
+            entryMode = pattern.entryMode,
+            accountId = pattern.accountId,
+            note = pattern.note.ifBlank { null },
+            payee = pattern.payee.ifBlank { null },
+            location = null,
+            gpsLocation = pattern.gpsLocation,
+            warrantyExpiration = pattern.warrantyExpiration,
+            paymentMethod = pattern.paymentMethod,
+            currency = pattern.currency,
+            tags = pattern.tags
+        )
     }
 
     fun clearTemplatePrefill() {
@@ -798,29 +796,34 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
-        viewModelScope.launch {
-            withProfile { profileId ->
-                val pp = PlannedPayment(
-                    name = pattern.name,
-                    amount = pattern.averageAmount,
-                    currency = pattern.currency,
-                    categoryId = pattern.categoryId,
-                    accountId = pattern.accountId,
-                    entryMode = pattern.entryMode,
-                    note = pattern.note,
-                    payee = pattern.payee,
-                    schedule = PaymentSchedule(
-                        recurrenceRule = pattern.recurrenceRule
-                            ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
-                        startDate = System.currentTimeMillis(),
-                        nextDueDate = pattern.lastDate
-                    ),
-                    profileId = profileId
-                )
-                plannedPaymentRepository.insert(pp)
-                _snackbarMessage.value = "Planned payment created"
-            }
-        }
+        setPlannedPaymentPrefillFromPattern(pattern)
+    }
+
+    fun setPlannedPaymentPrefillFromPattern(pattern: DiscoveredPattern) {
+        val template = com.osscabinet.ossWallet.domain.model.Template(
+            id = 0,
+            name = pattern.name.ifBlank { pattern.payee.ifBlank { "Planned Payment" } },
+            categoryId = pattern.categoryId.takeIf { it != 0L } ?: Category.SYSTEM_OTHERS,
+            amount = pattern.averageAmount,
+            entryMode = pattern.entryMode,
+            accountId = pattern.accountId ?: accounts.value.firstOrNull()?.id,
+            currency = pattern.currency,
+            note = pattern.note.ifBlank { null },
+            payee = pattern.payee.ifBlank { null },
+            gpsLocation = pattern.gpsLocation,
+            warrantyExpiration = pattern.warrantyExpiration,
+            paymentMethod = pattern.paymentMethod,
+            tags = pattern.tags,
+            profileId = 0
+        )
+        _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
+            template = template,
+            schedule = PaymentSchedule(
+                recurrenceRule = pattern.recurrenceRule ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
+                startDate = System.currentTimeMillis(),
+                nextDueDate = pattern.lastDate
+            )
+        )
     }
 
     fun setPlannedPaymentPrefillFromTemplate(template: com.osscabinet.ossWallet.domain.model.Template) {

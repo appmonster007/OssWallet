@@ -98,7 +98,7 @@ fun EntryActionCard(
         targetValue = when {
             isFilledSelected -> selectedColor
             glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
-            else -> AppColors.surfaceContainerLow
+            else -> AppColors.inputSurface
         },
         label = "bgColor"
     )

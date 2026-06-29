@@ -72,11 +72,10 @@ fun QuickAddTemplateStep(
 ) {
     var query by remember { mutableStateOf("") }
     val hasTemplates = templates.isNotEmpty()
-    // Default to categories only on the first composition where templates are empty;
-    // do NOT re-key on `hasTemplates`, otherwise a late template arrival or async
-    // refresh would silently overwrite the user's manual mode choice.
-    val initialShowCategories = remember { templates.isEmpty() }
-    var showCategories by rememberSaveable { mutableStateOf(initialShowCategories) }
+    var showCategories by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(hasTemplates) {
+        if (hasTemplates) showCategories = false
+    }
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current

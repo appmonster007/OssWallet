@@ -462,9 +462,16 @@ class CsvImportServiceImpl @Inject constructor(
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
         }.toSet()
 
+        val genericFormat = CSVFormat.DEFAULT.builder()
+            .setDelimiter(session.delimiter)
+            .setQuote('"')
+            .setIgnoreEmptyLines(true)
+            .setTrim(true)
+            .build()
+
         lines.forEachIndexed { idx, line ->
             try {
-                val cols = line.split(session.delimiter).map { it.trim().replace("\"", "") }
+                val cols = CSVParser.parse(line.reader(), genericFormat).records.firstOrNull()?.toList() ?: emptyList()
                 val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
                 val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
                 val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"
@@ -1471,6 +1478,13 @@ class CsvImportServiceImpl @Inject constructor(
         var skipped = 0
         val errors = mutableListOf<ParseError>()
 
+        val genericFormat = CSVFormat.DEFAULT.builder()
+            .setDelimiter(session.delimiter)
+            .setQuote('"')
+            .setIgnoreEmptyLines(true)
+            .setTrim(true)
+            .build()
+
         val newCategoryColorMap = mutableMapOf<Long, Int>()
         val sortedMappings = entityMappings.sortedWith(compareBy { em ->
             when {
@@ -1536,7 +1550,7 @@ class CsvImportServiceImpl @Inject constructor(
 
             lines.forEachIndexed { idx, line ->
                 try {
-                    val cols = line.split(session.delimiter).map { it.trim().replace("\"", "") }
+                    val cols = CSVParser.parse(line.reader(), genericFormat).records.firstOrNull()?.toList() ?: emptyList()
                     val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
                     val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
                     val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"

@@ -80,7 +80,7 @@ development_status:
   5-3-domain-wide-result-wrapper-boundary-protection: backlog
   epic-5-retrospective: optional
   epic-6: in-progress
-  6-1-fix-csv-parser-quoted-fields-commas: ready-for-dev
+  6-1-fix-csv-parser-quoted-fields-commas: done
   6-2-per-account-currency-selector-import: ready-for-dev
   6-3-fix-double-negative-amount-display: done
   epic-6-retrospective: optional

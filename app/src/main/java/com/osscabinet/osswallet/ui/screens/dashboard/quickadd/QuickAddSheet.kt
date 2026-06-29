@@ -301,6 +301,10 @@ private fun QuickAddSheetContent(
         STEP_AMOUNT -> "How much?"
         else -> ""
     }
+    val subtext = when (state.currentStep) {
+        STEP_ACCOUNT -> state.accounts.find { it.id == state.selectedAccountId }?.name
+        else -> null
+    }
     val ctaLabel = when (state.currentStep) {
         STEP_TEMPLATE -> "ACCOUNT"
         STEP_ACCOUNT -> "AMOUNT"
@@ -324,7 +328,7 @@ private fun QuickAddSheetContent(
             }
     ) {
         // ── Editorial header ───────────────────────────────────────────────────
-        EditorialHeader(title = title)
+        EditorialHeader(title = title, subtext = subtext)
 
         // ── Step body (the flexible region) ────────────────────────────────────
         AeonGlassHost(modifier = Modifier.weight(1f, fill = false)) {
@@ -421,7 +425,7 @@ private fun QuickAddSheetContent(
 }
 
 @Composable
-private fun EditorialHeader(title: String) {
+private fun EditorialHeader(title: String, subtext: String? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -442,14 +446,27 @@ private fun EditorialHeader(title: String) {
             )
         }
         Spacer(Modifier.height(4.dp))
-        Text(
-            text = title,
-            style = AppTextStyles.screenTitle.copy(
-                fontWeight = FontWeight.Light,
-                fontSize = 18.sp
-            ),
-            color = AppColors.contentPrimary
-        )
+        Row (
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                style = AppTextStyles.screenTitle.copy(
+                    fontWeight = FontWeight.Light,
+                    fontSize = 18.sp
+                ),
+                color = AppColors.contentPrimary
+            )
+            if (subtext != null) {
+                Text(
+                    text = subtext,
+                    style = AppTextStyles.sectionOverline,
+                    color = AppColors.contentSecondary.copy(alpha = 0.85f)
+                )
+            }
+        }
     }
 }
 

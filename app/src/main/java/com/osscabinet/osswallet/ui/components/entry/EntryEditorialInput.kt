@@ -119,13 +119,13 @@ fun EntryEditorialInput(
         expanded = isFocused && filteredSuggestions.isNotEmpty()
     }
 
-    // 3. COLOR & BORDER LOGIC (MATCHING EntryActionCard)
+    // 3. COLOR & BORDER LOGIC (MATCHING EntryActionCard & EntrySection)
     val backgroundColor by animateColorAsState(
         targetValue = when {
             isFlush -> AppColors.transparent
             isSelected -> iconColor.copy(alpha = 0.15f)
-            glassEnabled -> AppColors.insetSurface.copy(alpha = 0.4f)
-            else -> AppColors.inputSurface
+            glassEnabled -> AppColors.surfaceContainerLow.copy(alpha = 0.6f)
+            else -> AppColors.surfaceContainerLow
         },
         label = "bgColor"
     )
@@ -135,8 +135,8 @@ fun EntryEditorialInput(
             isFlush -> Color.Transparent
             isError -> AppColors.error
             isFocused || isSelected -> iconColor
-            glassEnabled -> Color.White.copy(alpha = 0.1f)
-            else -> AppColors.outlineVariant.copy(alpha = 0.5f)
+            glassEnabled -> AppColors.outlineVariant.copy(alpha = 0.2f)
+            else -> AppColors.outlineVariant
         },
         label = "borderColor"
     )
@@ -146,7 +146,7 @@ fun EntryEditorialInput(
         targetValue = when {
             isFlush -> 0.dp
             isFocused || isError || isSelected -> config.surface.borderWidth.dp
-            else -> (config.surface.borderWidth * 0.5f).dp
+            else -> config.surface.borderWidth.dp
         },
         label = "borderWidth"
     )
@@ -175,7 +175,7 @@ fun EntryEditorialInput(
                         focusRequester.requestFocus()
                     }
                 },
-            shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.chipCornerRadius),
+            shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
             hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp) else GlassTokens.cardStyle(),
             glassVariant = GlassVariant.Card,
             fallbackColor = backgroundColor,

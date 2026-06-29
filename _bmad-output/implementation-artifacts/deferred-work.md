@@ -33,6 +33,15 @@
 - `mapCategoryPieChart`/`mapCategoryTreemap` silently discard `onUpdate` on wrong config type — pre-existing guard pattern [CardUiBridge.kt]
 - `LaunchedEffect(filteredData)` in category chart cards causes one-frame stale data on recompose — pre-existing [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
 
+## Deferred from: code review of EntryEditorialInput / TemplateFormBody / TransactionFormBody (2026-06-30)
+
+- `onRemoveLink` fires with `-1L` parent ID for unsaved records [TransactionFormBody.kt:222, TemplateFormBody.kt:188] — handler ignores the parent ID today; guard with `state.transactionId?.let { ... }` if handler ever writes to DB
+- `bringIntoViewRequester` uses zero-width magic-constant rect `Rect(0,0,0,1000f)` [EntryEditorialInput.kt:287] — intentional workaround; proper fix requires layout-coordinate plumbing
+- `remember(value, suggestions)` key uses list reference — callers passing new list instance per recompose defeat memoization [EntryEditorialInput.kt:119] — callers must stabilize their suggestion lists
+- `statusBarsPadding()` on root Box may double-apply status bar inset if caller passes Scaffold's `innerPadding` [TemplateFormBody.kt, TransactionFormBody.kt] — needs caller-side audit
+- `borderWidth` `animateDpAsState` both branches return the same value — dead animation [EntryEditorialInput.kt] — design intent unclear (highlighted state may have been meant to use wider border)
+- `targetCurrency ?: fallback` may be unreachable if `targetCurrency` is non-nullable `String` [TemplateFormBody.kt:102, TransactionFormBody.kt:105] — verify state types before patching
+
 ## Deferred from: code review of 7-1-suppress-duplicate-numpad-planned-payment (2026-06-29)
 
 - `PlannedPaymentEntryViewModel.initialize()` idempotency guards (`lastInitParams` checks) are now dead code after `LaunchedEffect(Unit)` change — safe but misleading. Consider removing or replacing with an assertion. [PlannedPaymentEntryViewModel.kt:107-108]

@@ -28,6 +28,7 @@ fun AeonDetailSection(
     payee: String = "",
     onPayeeChange: (String) -> Unit = {},
     noteLabel: String = "NOTE",
+    notePlaceholder: String = "Tap to enter...",
     payeeLabel: String = "PAYEE",
     showNote: Boolean = true,
     showPayee: Boolean = true,
@@ -53,7 +54,7 @@ fun AeonDetailSection(
                 label = noteLabel,
                 icon = Icons.AutoMirrored.Rounded.Notes,
                 suggestions = noteSuggestions,
-                placeholder = "Tap to enter...",
+                placeholder = notePlaceholder,
                 isSelected = note.isNotEmpty(),
                 isFlush = false
             )

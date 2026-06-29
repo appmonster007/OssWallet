@@ -1,14 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,8 +21,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.isPicked
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
@@ -61,15 +66,25 @@ fun TransactionFormBody(
 
     val targetCurrencies = remember(state.targetAccount, state.shortlistedCurrencies) {
         state.targetAccount?.allowedCurrencies?.ifEmpty { null }
-            ?: state.shortlistedCurrencies.ifEmpty { emptyList() }
+            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
-    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
+    val focusManager = LocalFocusManager.current
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = AeonTheme.dimensions.screenPadding),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding)
+                .imePadding(),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))
@@ -133,7 +148,7 @@ fun TransactionFormBody(
                     EntryActionCard(
                         icon = Icons.Rounded.CalendarToday,
                         label = "DATE",
-                        value = formatDate(state.selectedDateMillis),
+                        value = remember(state.selectedDateMillis) { formatDate(state.selectedDateMillis) },
                         onClick = { onEvent(TransactionEntryEvent.ShowDatePicker(true)) },
                         modifier = Modifier.weight(1f),
                         iconContainerColor = AppColors.formIconContainerSecondary,
@@ -171,8 +186,9 @@ fun TransactionFormBody(
 
             // DETAIL: Metadata section
             AeonDetailSection(
-                note = if (state.isSplitMode) "Detail notes entered in splits" else state.note,
+                note = if (state.isSplitMode) "" else state.note,
                 onNoteChange = { if (!state.isSplitMode) onEvent(TransactionEntryEvent.SetNote(it)) },
+                notePlaceholder = if (state.isSplitMode) "Detail notes entered in splits" else "Tap to enter...",
                 payee = state.payee,
                 onPayeeChange = { onEvent(TransactionEntryEvent.SetPayee(it)) },
                 selectedNames = state.selectedTags,

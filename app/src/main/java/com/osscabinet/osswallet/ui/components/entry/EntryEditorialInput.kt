@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -40,12 +42,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -71,6 +75,8 @@ import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Editorial-style text input for entry forms.
@@ -102,6 +108,8 @@ fun EntryEditorialInput(
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
     val glassEnabled = LocalGlassmorphismEnabled.current
+    val coroutineScope = rememberCoroutineScope()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -157,7 +165,7 @@ fun EntryEditorialInput(
     // 5. UI STRUCTURE
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { },
+        onExpandedChange = { expanded = it },
         modifier = modifier.fillMaxWidth()
     ) {
         GlassSurface(
@@ -268,8 +276,21 @@ fun EntryEditorialInput(
                             maxLines = maxLines,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .bringIntoViewRequester(bringIntoViewRequester)
                                 .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
-                                .onFocusChanged { isFocused = it.isFocused }
+                                .onFocusChanged {
+                                    if (it.isFocused && !isFocused) {
+                                        coroutineScope.launch {
+                                            delay(250) // Wait for keyboard expansion
+                                            if (isFocused) {
+                                                bringIntoViewRequester.bringIntoView(
+                                                    rect = Rect(0f, 0f, 0f, 1500f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    isFocused = it.isFocused
+                                }
                         )
                     }
 

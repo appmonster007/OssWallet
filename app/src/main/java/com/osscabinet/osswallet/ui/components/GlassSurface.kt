@@ -154,8 +154,18 @@ fun GlassSurface(
     } else {
         AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f)
     }
-    val effectiveBorderColor = borderColor ?: glassRimColor
-    val effectiveBorderWidth = borderWidth ?: config.surface.borderWidth.dp
+    
+    // SOLID MODE RCA FIX: Use opaque outlineVariant when glass is disabled to prevent "transparent artifacts"
+    val effectiveBorderColor = when {
+        borderColor != null -> borderColor
+        !glassEnabled -> AppColors.outlineVariant
+        else -> glassRimColor
+    }
+    
+    val effectiveBorderWidth = when {
+        borderWidth != null -> borderWidth
+        else -> config.surface.borderWidth.dp
+    }
 
     // Theme-aware shadow intensity — reads from config, independent of glass toggle
     val effectiveAmbientAlpha = if (isDark) config.surface.ambientShadowAlpha else config.surface.ambientShadowAlpha * 1.5f

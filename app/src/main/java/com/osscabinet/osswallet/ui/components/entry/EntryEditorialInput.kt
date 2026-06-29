@@ -67,6 +67,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -100,7 +101,6 @@ fun EntryEditorialInput(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
-    val uiScale = AeonTheme.uiScale
     val glassEnabled = LocalGlassmorphismEnabled.current
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -119,13 +119,16 @@ fun EntryEditorialInput(
         expanded = isFocused && filteredSuggestions.isNotEmpty()
     }
 
-    // 3. COLOR & BORDER LOGIC (MATCHING EntryActionCard & EntrySection)
+    // 3. HIGHLIGHT STATE (FOCUS OR SELECTION)
+    val isHighlighted = isFocused || isSelected
+
+    // 4. COLOR & BORDER LOGIC (PARITY WITH EntryActionCard & EntrySection)
+    // Non-glass: solid container colors. Glass: blur + subtle color wash.
     val backgroundColor by animateColorAsState(
         targetValue = when {
             isFlush -> AppColors.transparent
-            isSelected -> iconColor.copy(alpha = 0.15f)
-            glassEnabled -> AppColors.surfaceContainerLow.copy(alpha = 0.6f)
-            else -> AppColors.surfaceContainerLow
+            isHighlighted && !glassEnabled -> AppColors.surfaceContainerHighest // Solid highlight
+            else -> AppColors.surfaceContainerLow // Base matches EntrySection
         },
         label = "bgColor"
     )
@@ -134,7 +137,7 @@ fun EntryEditorialInput(
         targetValue = when {
             isFlush -> Color.Transparent
             isError -> AppColors.error
-            isFocused || isSelected -> iconColor
+            isHighlighted -> iconColor
             glassEnabled -> AppColors.outlineVariant.copy(alpha = 0.2f)
             else -> AppColors.outlineVariant
         },
@@ -145,13 +148,13 @@ fun EntryEditorialInput(
     val borderWidth by animateDpAsState(
         targetValue = when {
             isFlush -> 0.dp
-            isFocused || isError || isSelected -> config.surface.borderWidth.dp
+            isHighlighted || isError || !glassEnabled -> config.surface.borderWidth.dp
             else -> config.surface.borderWidth.dp
         },
         label = "borderWidth"
     )
 
-    // 4. UI STRUCTURE
+    // 5. UI STRUCTURE
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { },
@@ -176,13 +179,18 @@ fun EntryEditorialInput(
                     }
                 },
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp) else GlassTokens.cardStyle(),
+            hazeStyle = GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
             glassVariant = GlassVariant.Card,
             fallbackColor = backgroundColor,
             borderColor = borderColor,
             borderWidth = borderWidth,
             shadowElevation = if (isFlush) 0.dp else null
         ) {
+            // Glass-mode color wash: parity with EntryActionCard
+            if (glassEnabled && isHighlighted && !isFlush) {
+                Box(modifier = Modifier.fillMaxSize().background(iconColor.copy(alpha = 0.1f)))
+            }
+
             AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier

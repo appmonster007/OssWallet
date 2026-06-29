@@ -114,7 +114,7 @@ fun EntryActionCard(
 
     val config = GlassTokens.configForVariant(GlassVariant.Card)
     val borderWidth by animateDpAsState(
-        targetValue = if (isSelected) config.surface.borderWidth.dp else config.surface.borderWidth.dp,
+        targetValue = config.surface.borderWidth.dp,
         label = "borderWidth"
     )
 

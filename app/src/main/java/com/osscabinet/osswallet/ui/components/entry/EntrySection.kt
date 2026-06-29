@@ -32,6 +32,7 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.copyStyle
 
 /**
  * Standard container for metadata/details in entry screens.
@@ -49,9 +50,9 @@ fun EntrySection(
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        hazeStyle = GlassTokens.cardStyle(),
+        hazeStyle = GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Card,
-        fallbackColor = if (glassEnabled) AppColors.surfaceContainerLow.copy(alpha = 0.6f) else AppColors.surfaceContainerLow,
+        fallbackColor = AppColors.surfaceContainerLow,
         borderColor = if (glassEnabled) AppColors.outlineVariant.copy(alpha = 0.2f) else AppColors.outlineVariant,
     ) {
         AeonGlassHost(modifier = Modifier.fillMaxWidth()) {

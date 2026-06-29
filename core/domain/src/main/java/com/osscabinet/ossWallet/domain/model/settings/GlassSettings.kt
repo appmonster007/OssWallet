@@ -16,7 +16,7 @@ data class SurfaceProperties(
     val borderAlpha: Float = 0.15f,
     val ambientShadowAlpha: Float = 0.10f,
     val spotShadowAlpha: Float = 0.20f,
-    val borderWidth: Float = 0.5f,
+    val borderWidth: Float = 1f,
 )
 
 @Serializable

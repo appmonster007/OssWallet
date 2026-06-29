@@ -99,3 +99,7 @@ N/A — pure data-layer fix, no runtime needed.
 
 ### File List
 - `core/data/src/main/java/com/osscabinet/osswallet/data/service/CsvImportServiceImpl.kt`
+
+### Review Findings
+
+- [x] [Review][Patch] `CSVParser.parse(line.reader(), genericFormat)` wrapped with `.use { it.records.firstOrNull()?.toList() ?: emptyList() }` at both sites to close the parser after each row. [CsvImportServiceImpl.kt:474, 1553]

@@ -769,6 +769,7 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    @Deprecated("No longer saves — use setTemplatePrefillFromPattern", ReplaceWith("setTemplatePrefillFromPattern(pattern)"))
     fun saveTemplateFromPattern(pattern: DiscoveredPattern) {
         setTemplatePrefillFromPattern(pattern)
     }
@@ -795,11 +796,16 @@ class TransactionViewModel @Inject constructor(
         _templatePrefill.value = null
     }
 
+    @Deprecated("No longer saves — use setPlannedPaymentPrefillFromPattern", ReplaceWith("setPlannedPaymentPrefillFromPattern(pattern)"))
     fun savePlannedPaymentFromPattern(pattern: DiscoveredPattern) {
         setPlannedPaymentPrefillFromPattern(pattern)
     }
 
     fun setPlannedPaymentPrefillFromPattern(pattern: DiscoveredPattern) {
+        if (pattern.accountId == null && accounts.value.isEmpty()) {
+            _snackbarMessage.value = "Add an account before creating a planned payment"
+            return
+        }
         val template = com.osscabinet.ossWallet.domain.model.Template(
             id = 0,
             name = pattern.name.ifBlank { pattern.payee.ifBlank { "Planned Payment" } },

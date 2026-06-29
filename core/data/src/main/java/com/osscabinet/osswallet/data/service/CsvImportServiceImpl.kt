@@ -471,7 +471,7 @@ class CsvImportServiceImpl @Inject constructor(
 
         lines.forEachIndexed { idx, line ->
             try {
-                val cols = CSVParser.parse(line.reader(), genericFormat).records.firstOrNull()?.toList() ?: emptyList()
+                val cols = CSVParser.parse(line.reader(), genericFormat).use { it.records.firstOrNull()?.toList() ?: emptyList() }
                 val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
                 val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
                 val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"
@@ -1550,7 +1550,7 @@ class CsvImportServiceImpl @Inject constructor(
 
             lines.forEachIndexed { idx, line ->
                 try {
-                    val cols = CSVParser.parse(line.reader(), genericFormat).records.firstOrNull()?.toList() ?: emptyList()
+                    val cols = CSVParser.parse(line.reader(), genericFormat).use { it.records.firstOrNull()?.toList() ?: emptyList() }
                     val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
                     val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
                     val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"

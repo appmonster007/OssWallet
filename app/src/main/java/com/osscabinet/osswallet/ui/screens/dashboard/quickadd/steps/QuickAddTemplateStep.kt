@@ -72,9 +72,13 @@ fun QuickAddTemplateStep(
 ) {
     var query by remember { mutableStateOf("") }
     val hasTemplates = templates.isNotEmpty()
-    var showCategories by rememberSaveable { mutableStateOf(true) }
+    // Default to templates; fall back to categories only when none are available.
+    // NOTE: if hasTemplates oscillates (e.g., brief empty emission on profile switch),
+    // this effect would switch to categories and leave it there — acceptable since such
+    // oscillations are unlikely while the Quick Add sheet is open.
+    var showCategories by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(hasTemplates) {
-        if (hasTemplates) showCategories = false
+        if (!hasTemplates) showCategories = true
     }
     var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }

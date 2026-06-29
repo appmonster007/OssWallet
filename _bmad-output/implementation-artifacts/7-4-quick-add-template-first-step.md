@@ -78,3 +78,7 @@ N/A — pure UI state logic fix.
 
 ### File List
 - `app/src/main/java/com/osscabinet/ossWallet/ui/screens/dashboard/quickadd/steps/QuickAddTemplateStep.kt`
+
+### Review Findings
+
+- [x] [Review][Decision → Patch] LaunchedEffect seed/flash fixed: inverted logic to `mutableStateOf(false)` (templates first) with `LaunchedEffect(hasTemplates) { if (!hasTemplates) showCategories = true }`. Oscillation risk noted in comment; treated as low probability while sheet is open. [QuickAddTemplateStep.kt:74-78]

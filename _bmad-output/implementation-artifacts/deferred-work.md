@@ -32,3 +32,7 @@
 - Nested `combine` in `AnalyticsViewModel` allocates intermediate `Triple` — use 4-arg `combine` instead [AnalyticsViewModel.kt]
 - `mapCategoryPieChart`/`mapCategoryTreemap` silently discard `onUpdate` on wrong config type — pre-existing guard pattern [CardUiBridge.kt]
 - `LaunchedEffect(filteredData)` in category chart cards causes one-frame stale data on recompose — pre-existing [CategoryPieChartCard.kt, CategoryTreemapCard.kt]
+
+## Deferred from: code review of 7-1-suppress-duplicate-numpad-planned-payment (2026-06-29)
+
+- `PlannedPaymentEntryViewModel.initialize()` idempotency guards (`lastInitParams` checks) are now dead code after `LaunchedEffect(Unit)` change — safe but misleading. Consider removing or replacing with an assertion. [PlannedPaymentEntryViewModel.kt:107-108]

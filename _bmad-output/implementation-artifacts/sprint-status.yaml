@@ -85,7 +85,7 @@ development_status:
   6-3-fix-double-negative-amount-display: ready-for-dev
   epic-6-retrospective: optional
   epic-7: in-progress
-  7-1-suppress-duplicate-numpad-planned-payment: ready-for-dev
+  7-1-suppress-duplicate-numpad-planned-payment: done
   7-2-fix-smart-suggestion-crash-save: ready-for-dev
   7-3-fix-prefill-smart-suggestion: ready-for-dev
   7-4-quick-add-template-first-step: ready-for-dev

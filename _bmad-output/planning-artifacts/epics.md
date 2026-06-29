@@ -2,6 +2,9 @@
 stepsCompleted:
   - Step 1: Validate Prerequisites and Extract Requirements
   - Step 2: Design Epic List
+  - Step 2 (Addendum): Bug-fix Epics 6 & 7 + Epic 3 stories 3.4-3.5 added from user-reported bugs
+  - Step 3: Generate Epics and Stories
+  - Step 4: Final Validation
 inputDocuments:
   - _bmad-output/planning-artifacts/PRD.md
   - _bmad-output/planning-artifacts/architecture/architecture-OssWallet-20260625/ARCHITECTURE-SPINE.md
@@ -63,6 +66,16 @@ FR8: Epic 4 - Web dashboard drill-downs
 FR9: Epic 2 - Dashboard performance RCA & fix
 FR10: Epic 2 - Fluid UI transitions (60+ FPS)
 FR11: Epic 3 - "H" Design system consolidation
+BUG-FR1: Epic 6 - Fix RFC 4180-compliant CSV quoting in import parser
+BUG-FR2: Epic 6 - Add per-account currency selector to import account-mapping step
+BUG-FR3: Epic 7 - Suppress duplicate numpad launch on Planned Payment entry screen
+BUG-FR4: Epic 7 - Fix crash when saving Planned Payment from Smart Suggestion screen
+BUG-FR5: Epic 7 - Fix prefill of PP entry and Template entry screens from Smart Suggestion; remove implicit background save
+BUG-FR6: Epic 7 - Quick Add sheet opens template selection first (if templates exist), with toggle to category
+BUG-FR7: Epic 3 - RCA and fix for editorial input fields rendering incorrectly in non-glassmorphism mode
+BUG-FR8: Epic 6 - Fix double-negative amount display; audit all screens for further instances
+BUG-NFR1: Epic 6 - Import errors surface as user-visible messages; no unhandled exceptions
+BUG-NFR2: Epic 7 - No crash escapes from Planned Payment or Smart Suggestion flows
 
 ## Epic List
 
@@ -75,8 +88,8 @@ Standardize state management with MVI and fix the "jank" on the main dashboard t
 **FRs covered:** FR2, FR9, FR10, NFR3, AD-3, UX-DR3.
 
 ### Epic 3: Design System Consolidation ("H" Identity)
-Audit and refactor all existing screens to strictly adhere to the H-Editorial Instrument standards, focusing on simplification and Settings screen cleanup.
-**FRs covered:** FR11, UX-DR1, UX-DR2, UX-DR4, AD-10.
+Audit and refactor all existing screens to strictly adhere to the H-Editorial Instrument standards, focusing on simplification and Settings screen cleanup. Includes fixes for input field rendering in non-glass mode and removal of glassmorphism from the Quick Add sheet.
+**FRs covered:** FR11, UX-DR1, UX-DR2, UX-DR4, AD-10, BUG-FR7.
 
 ### Epic 4: Web UI - Operational Parity
 Bridge the functionality gap for life-management features (Planned Payments, Location) on the Ktor-served Web UI.
@@ -85,6 +98,14 @@ Bridge the functionality gap for life-management features (Planned Payments, Loc
 ### Epic 5: Search & Infrastructure Hardening
 Standardize search on Room-native FTS4 and implement the centralized Cache Coordinator and Result wrappers for a crash-free experience.
 **FRs covered:** AD-4, AD-5, AD-7, NFR1, NFR2.
+
+### Epic 6: Import Reliability, Account Configuration & Display Formatting
+Users can reliably import an OssWallet ZIP backup — quoted CSV fields with commas parse correctly, each account's currency is set explicitly during import, and amount values display with the correct sign throughout the app (no double-negatives).
+**FRs covered:** BUG-FR1, BUG-FR2, BUG-FR8, BUG-NFR1.
+
+### Epic 7: Planned Payment, Smart Suggestion & Quick Add Flow Stability
+Users can open a Planned Payment entry without the numpad firing twice, save from Smart Suggestion without crashing, have all suggestion data correctly pre-filled when navigating to PP or Template entry, and use Quick Add with a template-first selection step when templates exist.
+**FRs covered:** BUG-FR3, BUG-FR4, BUG-FR5, BUG-FR6, BUG-NFR2.
 
 ## Epic 1: Architectural Foundation & Domain Purity
 
@@ -268,6 +289,41 @@ So that the app feels like a single, unified "premium instrument."
 **And** the **Component-Level Glass Policy** (AD-10) is applied (e.g., opaque cards, glass popups)
 **And** the navigation transitions between these screens are fluid and consistent.
 
+### Story 3.4: Editorial Input Field Solid-Mode RCA & Fix
+
+As a user,
+I want input fields to render with a clean, solid container style when glassmorphism is disabled,
+So that the app looks polished regardless of which surface mode is active.
+
+**Acceptance Criteria:**
+
+**Given** glassmorphism is disabled in app settings
+**When** I open any screen containing editorial input fields (e.g., NOTE, PAYEE, Amount)
+**Then** each input field renders as a solid, filled container with correct border radius and background
+**And** no malformed outline, double-border, or transparent artifact is visible
+**And** the root cause (divergent conditional styling between glass and non-glass render paths) is documented and fixed at the component level so all future input fields inherit the correct behaviour.
+
+### Story 3.5: Fix AtelierPanel Background — Blend Accounts & Category/Template Areas with Sheet Surface
+
+As a user,
+I want the accounts area and the category/template area inside the Quick Add sheet to visually blend with the rest of the sheet,
+So that those regions do not appear as a distinct inset panel with a noticeably different background.
+
+**RCA:** `AtelierPanel` (`ui/screens/dashboard/quickadd/steps/QuickAddAtelier.kt`) wraps both areas with a `GlassSurface` that composites `AppColors.background` at 55% alpha on top of the sheet's own glass surface, producing a visually distinct "box". In non-glass mode, `fallbackColor = AppColors.background` conflicts with the sheet's `AppColors.cardSurface`, making the panel stand out as a solid inset block.
+
+**Acceptance Criteria:**
+
+**Given** the Quick Add sheet is open (glass mode enabled)
+**When** I view the accounts step or the template/category step
+**Then** the `AtelierPanel` area has no inner `GlassSurface` of its own — it uses a lightweight container with `AppColors.recessedSurface` as the background (the same tone-on-tone used by chips, tiles, and toggles in the sheet)
+**And** the panel background is visually indistinguishable from the surrounding sheet glass surface — it does not appear as a separate floating panel
+**And** the hairline border and rounded corners of `AtelierPanel` are preserved
+
+**Given** the Quick Add sheet is open (glass mode disabled)
+**When** I view the accounts step or the template/category step
+**Then** the `AtelierPanel` background also uses `AppColors.recessedSurface` and blends with the sheet's `AppColors.cardSurface` — no mismatched solid "box" is visible
+**And** no other visual regressions are introduced (overline, grid, search field, footer remain unchanged).
+
 ## Epic 4: Web UI - Operational Parity
 
 Bridge the functionality gap for life-management features (Planned Payments, Location) on the Ktor-served Web UI.
@@ -376,3 +432,119 @@ So that I can ensure a crash-free UI that handles errors gracefully.
 **Then** every Repository and Use Case method returns either a `Success` or `Failure` object
 **And** ViewModels explicitly map these results to the `UiState`
 **And** the UI displays appropriate "Empty" or "Error" states without crashing.
+
+## Epic 6: Import Reliability, Account Configuration & Display Formatting
+
+Users can reliably import an OssWallet ZIP backup — quoted CSV fields with commas parse correctly, each account's currency is set explicitly during import, and amount values display with the correct sign throughout the app.
+
+### Story 6.1: Fix CSV Parser to Handle Quoted Fields Containing Commas
+
+As a user,
+I want to import an OssWallet ZIP backup that contains fields with commas in them,
+So that the import does not fail with a parse error on my real-world data.
+
+**Acceptance Criteria:**
+
+**Given** an OssWallet ZIP export where one or more CSV fields contain a comma (e.g., a payee name like "Coffee, Tea & More")
+**When** I trigger the import flow
+**Then** the CSV parser treats any field enclosed in double quotes as a single value, regardless of internal commas (RFC 4180 compliance)
+**And** the import completes without throwing a parse exception
+**And** all imported values (payee, note, category, amount) match the original exported data exactly
+**And** if a parse error does occur on a row, a user-visible error message identifies the problematic row rather than crashing silently.
+
+### Story 6.2: Per-Account Currency Selector in Import Account-Mapping Step
+
+As a user,
+I want to set each imported account's currency individually during the import flow,
+So that my accounts are not all silently assigned the app's global base currency.
+
+**Acceptance Criteria:**
+
+**Given** the account-mapping step of the ZIP import flow
+**When** I review the list of accounts to be imported
+**Then** each account row displays a currency selector (dropdown or chip) pre-populated with the currency stored in the export file
+**And** I can override the currency for any individual account before confirming the import
+**And** accounts that are not explicitly changed retain the currency from the export file, not the app's global base currency
+**And** the selected per-account currencies are correctly persisted when the import completes.
+
+### Story 6.3: Fix Double-Negative Amount Display & Global Audit
+
+As a user,
+I want amount values to display with a single correct sign (e.g., `–220.00 INR`, not `--220.00 INR`),
+So that I can read my financial data without confusing formatting artefacts.
+
+**Acceptance Criteria:**
+
+**Given** a negative transaction or template amount anywhere in the app
+**When** it is rendered in a list, detail screen, or entry field
+**Then** the amount shows exactly one negative sign (or the app's configured debit indicator), never two
+**And** the root cause (double sign-prepending in the amount formatter or display layer) is fixed at the shared formatting utility so all call sites benefit
+**And** a search across all screens that display amounts (Link Template, Transaction List, Dashboard cards, Analytics) confirms no remaining double-negative instances
+**And** positive amounts and zero amounts are unaffected.
+
+## Epic 7: Planned Payment, Smart Suggestion & Quick Add Flow Stability
+
+Users can open a Planned Payment entry without the numpad firing twice, save from Smart Suggestion without crashing, have all suggestion data correctly pre-filled when navigating to PP or Template entry, and use Quick Add with a template-first selection step when templates exist.
+
+### Story 7.1: Suppress Duplicate Numpad Launch on Planned Payment Entry Screen
+
+As a user,
+I want the calculator numpad to open exactly once when I enter the Planned Payment entry screen,
+So that I am not forced to dismiss a duplicate keyboard before I can start entering data.
+
+**Acceptance Criteria:**
+
+**Given** I navigate to the Planned Payment entry screen
+**When** the screen opens
+**Then** the calculator numpad appears exactly once
+**And** no duplicate `LaunchedEffect`, `SideEffect`, or focus-request triggers a second numpad open
+**And** dismissing the numpad and re-focusing the amount field opens it exactly once again
+**And** the fix does not regress numpad behaviour on the standard Transaction entry screen.
+
+### Story 7.2: Fix Smart Suggestion Crash When Saving as Planned Payment
+
+As a user,
+I want to save a Smart Suggestion as a Planned Payment without the app crashing,
+So that I can convert AI-detected patterns into recurring payments reliably.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Smart Suggestion screen with a suggestion displayed
+**When** I tap "Save as Planned Payment"
+**Then** the app does not throw an unhandled exception (NPE, IllegalStateException, or similar)
+**And** all required fields on the `PlannedPayment` domain model are populated before the save call is made
+**And** null-safety is enforced for every optional field (amount, category, recurrence) before they are passed to `PlannedPaymentService`
+**And** on success, the user is navigated to a confirmation state or back to the suggestion list.
+
+### Story 7.3: Fix Prefill When Navigating from Smart Suggestion to PP or Template Entry
+
+As a user,
+I want the Planned Payment entry screen and Template entry screen to be pre-filled with suggestion data when I navigate to them from Smart Suggestion,
+So that I do not have to re-enter data I already reviewed on the suggestion screen.
+
+**Acceptance Criteria:**
+
+**Given** I am on the Smart Suggestion screen and tap "Save as Planned Payment" or "Save as Template"
+**When** the destination entry screen opens
+**Then** all available suggestion fields (payee, amount, category, recurrence frequency, note) are pre-filled in the corresponding input fields
+**And** the navigation arguments carrying the suggestion data are correctly serialised and deserialised across the nav graph
+**And** the implicit background save that previously occurred during the crash path (Story 7.2) is removed — no template or planned payment is created without the user completing the entry screen
+**And** the user can edit any pre-filled field before confirming the save.
+
+### Story 7.4: Quick Add Sheet — Template-First Selection Step
+
+As a user,
+I want the Quick Add sheet to show my saved templates first when I have any,
+So that I can log a recurring transaction in one tap instead of re-selecting category and payee every time.
+
+**Acceptance Criteria:**
+
+**Given** I open the Quick Add bottom sheet and I have at least one saved transaction template
+**When** the sheet renders
+**Then** it opens on a "Select Template" step that lists all available templates (name, category, amount)
+**And** I can search or scroll through templates
+**And** selecting a template pre-fills the Quick Add form and proceeds to the confirmation/amount step
+**And** a visible toggle or "Skip" action lets me bypass template selection and go directly to category selection
+**Given** I open the Quick Add sheet and I have no saved templates
+**When** the sheet renders
+**Then** it opens directly on the category selection step (current behaviour), with no template step shown.

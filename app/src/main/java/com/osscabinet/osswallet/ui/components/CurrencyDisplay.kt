@@ -7,6 +7,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,12 +15,79 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyBase
 import java.math.BigDecimal
+
+/**
+ * Overload of [CurrencyText] that automatically determines color and formatting
+ * based on the [EntryMode] (Income, Expense, Transfer).
+ */
+@Composable
+fun CurrencyText(
+    amount: BigDecimal,
+    currencyCode: String,
+    mode: EntryMode,
+    modifier: Modifier = Modifier,
+    style: TextStyle = LocalTextStyle.current,
+) {
+    val color = getEntryAmountColor(mode)
+    val formatted = formatCurrency(amount, currencyCode, mode)
+
+    Text(
+        text = formatted,
+        style = style,
+        color = color,
+        modifier = modifier
+    )
+}
+
+/**
+ * Returns the semantic color for a given [EntryMode].
+ */
+@Composable
+@ReadOnlyComposable
+fun getEntryAmountColor(mode: EntryMode): Color {
+    return when (mode) {
+        EntryMode.INCOME -> PositiveAmountColor
+        EntryMode.TRANSFER -> AccentBlue
+        else -> AppColors.error
+    }
+}
+
+/**
+ * Formats a currency amount based on the [EntryMode].
+ * Handles the prefix (⇄ for transfers) and sign (+/-).
+ */
+fun formatCurrency(
+    amount: BigDecimal,
+    currencyCode: String,
+    mode: EntryMode
+): String {
+    val amountWithSign = when (mode) {
+        EntryMode.INCOME, EntryMode.TRANSFER -> amount.abs()
+        else -> amount.abs().negate()
+    }
+
+    val formatted = formatCurrencyBase(
+        amount = amountWithSign,
+        currencyCode = currencyCode,
+        spec = CurrencyDisplaySpec(
+            forceShowPlus = mode == EntryMode.INCOME,
+            shortenThreshold = -1
+        )
+    )
+
+    return if (mode == EntryMode.TRANSFER) "⇄ $formatted" else formatted
+}
 
 /**
  * Single-call composable for displaying a formatted currency amount.

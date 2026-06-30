@@ -35,18 +35,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
+import com.osscabinet.ossWallet.ui.components.CurrencyText
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import java.math.BigDecimal
 
@@ -163,15 +161,11 @@ fun AeonTemplateSelection(
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    val (prefix, color) = when (template.entryMode) {
-                                        EntryMode.INCOME -> "+" to PositiveAmountColor
-                                        EntryMode.TRANSFER -> "⇄" to AccentBlue
-                                        else -> "-" to AppColors.error
-                                    }
-                                    Text(
-                                        "$prefix${template.amount.abs()} ${template.currency ?: ""}",
-                                        style = AppTextStyles.managementItemTitle,
-                                        color = color
+                                    CurrencyText(
+                                        amount = template.amount,
+                                        currencyCode = template.currency,
+                                        mode = template.entryMode,
+                                        style = AppTextStyles.managementItemTitle
                                     )
                                 }
                             }

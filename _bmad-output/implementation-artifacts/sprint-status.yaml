@@ -67,6 +67,7 @@ development_status:
   3-3-global-h-design-consistency-pass: ready-for-dev
   3-4-editorial-input-field-solid-mode-rca-fix: done
   3-5-fix-atelier-panel-background-blend-with-sheet: done
+  3-6-editorial-input-field-ime-handling-rca-fix: ready-for-dev
   epic-3-retrospective: optional
   epic-4: backlog
   4-1-web-ui-planned-payments-management-page: backlog

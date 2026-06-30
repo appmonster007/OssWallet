@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +41,6 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneOffset
-import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -104,79 +104,102 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     }
 
     fun initialize(plannedPaymentId: Long? = null, prefill: PlannedPaymentPrefillDTO? = null) {
-        if (lastInitParams == (plannedPaymentId to prefill)) return
+        val params = plannedPaymentId to prefill
+        if (lastInitParams == params) return
         if (lastInitParams?.second != null && prefill == null) return
-        lastInitParams = plannedPaymentId to prefill
-
-        if (plannedPaymentId == null) {
-            if (prefill != null) {
-                val template = prefill.template
-                val schedule = prefill.schedule
-                val isTemplateTransfer = template.entryMode == EntryMode.TRANSFER
-                _state.update {
-                    it.copy(
-                        isEditMode = false,
-                        plannedPaymentId = null,
-                        linkedTemplate = null,
-                        name = template.name,
-                        source = TransactionSide(
-                            account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.accountId)
-                                      else AccountRef.fromStored(template.accountId),
-                            amount = if (template.amount.signum() != 0) template.amount.abs().stripTrailingZeros().toPlainString() else "",
-                            currency = template.currency,
-                            categoryId = template.categoryId
-                        ),
-                        destination = TransactionSide(
-                            account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.targetAccountId)
-                                      else AccountRef.fromStored(template.targetAccountId),
-                            amount = if (template.amount.signum() != 0) template.amount.abs().multiply(template.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString() else "",
-                            currency = template.targetCurrency ?: ""
-                        ),
-                        entryMode = template.entryMode,
-                        transferRate = template.transferRate,
-                        recurrenceType = schedule.recurrenceRule.type,
-                        recurrenceInterval = schedule.recurrenceRule.interval,
-                        dayOfWeek = schedule.recurrenceRule.dayOfWeek,
-                        dayOfMonth = schedule.recurrenceRule.dayOfMonth,
-                        autoConfirm = true,
-                        startDateMillis = schedule.startDate,
-                        hasEndDate = false,
-                        endDateMillis = schedule.startDate,
-                        payee = template.payee ?: "",
-                        noteUserPart = template.note ?: "",
-                        location = template.location ?: "",
-                        gpsLocation = template.gpsLocation,
-                        warrantyExpirationMillis = template.warrantyExpiration
-                            ?: (System.currentTimeMillis() + 31536000000L),
-                        isWarrantyEnabled = template.warrantyExpiration != null,
-                        transactionStatus = template.transactionStatus,
-                        paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                        selectedTagNames = template.tags,
-                        status = PlannedPaymentStatus.ACTIVE
-                    )
-                }
-            } else {
-                val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant()
-                    .toEpochMilli()
-                _state.update { current ->
-                    val firstAccount = current.accounts.firstOrNull()
-                    current.copy(
-                        isEditMode = false,
-                        plannedPaymentId = null,
-                        startDateMillis = now,
-                        endDateMillis = now,
-                        source = current.source.copy(
-                            account = firstAccount?.id?.let { AccountRef.Wallet(it) } ?: AccountRef.Unselected,
-                            currency = firstAccount?.currencyCode ?: current.source.currency
-                        )
-                    )
-                }
-            }
-            return
-        }
+        val isFirstInit = lastInitParams == null
+        lastInitParams = params
 
         viewModelScope.launch {
+            if (plannedPaymentId == null) {
+                if (prefill != null) {
+                    val template = prefill.template
+                    val schedule = prefill.schedule
+                    val isTemplateTransfer = template.entryMode == EntryMode.TRANSFER
+                    _state.update { current ->
+                        PlannedPaymentEntryState(
+                            accounts = current.accounts,
+                            categories = current.categories,
+                            templates = current.templates,
+                            availableTags = current.availableTags,
+                            uniquePayees = current.uniquePayees,
+                            uniqueNotes = current.uniqueNotes,
+                            currentProfileId = current.currentProfileId,
+                            shortlistedCurrencies = current.shortlistedCurrencies,
+                            isEditMode = false,
+                            plannedPaymentId = null,
+                            linkedTemplate = null,
+                            name = template.name,
+                            showNumpad = false,
+                            source = TransactionSide(
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.accountId)
+                                else AccountRef.fromStored(template.accountId),
+                                amount = if (template.amount.signum() != 0) template.amount.abs()
+                                    .stripTrailingZeros().toPlainString() else "",
+                                currency = template.currency,
+                                categoryId = template.categoryId
+                            ),
+                            destination = TransactionSide(
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.targetAccountId)
+                                else AccountRef.fromStored(template.targetAccountId),
+                                amount = if (template.amount.signum() != 0) template.amount.abs()
+                                    .multiply(template.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .toPlainString() else "",
+                                currency = template.targetCurrency ?: ""
+                            ),
+                            entryMode = template.entryMode,
+                            transferRate = template.transferRate,
+                            recurrenceType = schedule.recurrenceRule.type,
+                            recurrenceInterval = schedule.recurrenceRule.interval,
+                            dayOfWeek = schedule.recurrenceRule.dayOfWeek,
+                            dayOfMonth = schedule.recurrenceRule.dayOfMonth,
+                            autoConfirm = true,
+                            startDateMillis = schedule.startDate,
+                            hasEndDate = false,
+                            endDateMillis = schedule.startDate,
+                            payee = template.payee ?: "",
+                            noteUserPart = template.note ?: "",
+                            location = template.location ?: "",
+                            gpsLocation = template.gpsLocation,
+                            warrantyExpirationMillis = template.warrantyExpiration
+                                ?: (System.currentTimeMillis() + 31536000000L),
+                            isWarrantyEnabled = template.warrantyExpiration != null,
+                            transactionStatus = template.transactionStatus,
+                            paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
+                            selectedTagNames = template.tags,
+                            status = PlannedPaymentStatus.ACTIVE
+                        )
+                    }
+                } else {
+                    val now = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant()
+                        .toEpochMilli()
+                    _state.update { current ->
+                        val firstAccount = current.accounts.firstOrNull()
+                        PlannedPaymentEntryState(
+                            accounts = current.accounts,
+                            categories = current.categories,
+                            templates = current.templates,
+                            availableTags = current.availableTags,
+                            uniquePayees = current.uniquePayees,
+                            uniqueNotes = current.uniqueNotes,
+                            currentProfileId = current.currentProfileId,
+                            shortlistedCurrencies = current.shortlistedCurrencies,
+                            isEditMode = false,
+                            plannedPaymentId = null,
+                            startDateMillis = now,
+                            endDateMillis = now,
+                            showNumpad = isFirstInit, // Auto-open only on fresh mount of new entry
+                            source = current.source.copy(
+                                account = firstAccount?.id?.let { AccountRef.Wallet(it) } ?: AccountRef.Unselected,
+                                currency = firstAccount?.currencyCode ?: current.source.currency
+                            )
+                        )
+                    }
+                }
+                return@launch
+            }
+
             plannedPaymentRepository.getById(plannedPaymentId)?.let { existing ->
                 val schedule = existing.schedule
                 val usageCount =
@@ -188,13 +211,12 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val sourceCurrency = existing.currency
                 val targetCurr = existing.targetCurrency ?: existing.currency
                 val sourceAmtStr = existing.amount.abs().stripTrailingZeros().toPlainString()
-                var targetAmtStr = existing.amount.abs().multiply(existing.transferRate)
+                val targetAmtStr = existing.amount.abs().multiply(existing.transferRate)
                     .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
                     .toPlainString()
                 var existingCategoryId = existing.categoryId
 
                 if (existing.entryMode == EntryMode.TRANSFER) {
-                    // Semantic Normalization: Unified category for both sides
                     existingCategoryId = if (Category.isInitialBalance(existing.categoryId))
                         Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
                 }
@@ -204,12 +226,20 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val targetRef = if (existing.entryMode == EntryMode.TRANSFER)
                     AccountRef.fromTransferSide(targetAccId) else AccountRef.fromStored(targetAccId)
 
-                _state.update {
-                    it.copy(
+                _state.update { current ->
+                    PlannedPaymentEntryState(
+                        accounts = current.accounts,
+                        categories = current.categories,
+                        templates = current.templates,
+                        availableTags = current.availableTags,
+                        uniquePayees = current.uniquePayees,
+                        uniqueNotes = current.uniqueNotes,
+                        currentProfileId = current.currentProfileId,
+                        shortlistedCurrencies = current.shortlistedCurrencies,
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
                         existingPayment = existing,
-                        linkedTemplate = existing.templateId?.let { id -> it.templates.find { t -> t.id == id } },
+                        linkedTemplate = existing.templateId?.let { id -> current.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
                         name = existing.name,
                         source = TransactionSide(
@@ -244,7 +274,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         transactionStatus = existing.transactionStatus,
                         paymentMethod = existing.paymentMethod ?: PaymentMethod.CASH,
                         selectedTagNames = existing.tags,
-                        status = existing.status
+                        status = existing.status,
+                        showNumpad = false // Never auto-open in edit mode
                     )
                 }
             }
@@ -775,6 +806,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onScreenResume() {
+        _state.update { it.copy(navTriggered = false) }
     }
 
     /**

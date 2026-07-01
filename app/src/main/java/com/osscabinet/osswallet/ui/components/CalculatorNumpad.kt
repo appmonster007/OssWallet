@@ -186,7 +186,7 @@ fun CalculatorScaffold(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = "Financial Calculator" },
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         topSlot?.invoke()
         display()

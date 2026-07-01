@@ -101,7 +101,7 @@ fun QuickAddAccountStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Editorial structure-type filter rail
             StructureChipRail(
@@ -215,7 +215,7 @@ private fun AtelierChip(
 
     Box(
         modifier = Modifier
-            .defaultMinSize(minHeight = 48.dp)
+            .defaultMinSize(minHeight = 28.dp)
             .clip(shape)
             .clickable(onClick = onClick)
             .semantics {

@@ -4,7 +4,7 @@ import java.math.BigDecimal
 
 data class TransactionSplit(
     val categoryId: Long? = null,
-    val amount: String = "",
+    val amount: String = "0",
     val note: String = ""
 )
 

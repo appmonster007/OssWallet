@@ -195,7 +195,7 @@ class TransactionEntryViewModel @Inject constructor(
                         transaction.amount.abs()
                             .multiply(transaction.transferRate)
                             .stripTrailingZeros().toPlainString()
-                    } else ""
+                    } else "0"
             } else {
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =

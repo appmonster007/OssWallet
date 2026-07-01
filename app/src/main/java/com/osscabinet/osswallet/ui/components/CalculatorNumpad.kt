@@ -89,7 +89,7 @@ fun CalculatorNumpad(
             val amountNum = amount.toBigDecimalOrNull()
             val finalAmount = if (allowSigned) amountNum else amountNum?.abs()
 
-            if (finalAmount != null && finalAmount != BigDecimal.ZERO) {
+            if (finalAmount != null) {
                 val isNegative = finalAmount.signum() < 0
                 val absValue = finalAmount.abs().stripTrailingZeros().toPlainString()
                 val initialTokens = if (isNegative) {

@@ -113,8 +113,9 @@ fun EntryAmountDisplay(
                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
             }
 
-            val amountDisplay = if (amount.isEmpty()) "0.00" else amount
-            val fullDisplay = if (amount.isEmpty()) amountDisplay else "$prefix$amountDisplay"
+            val isEffectivelyEmpty = amount.isEmpty() || amount == "0"
+            val amountDisplay = if (isEffectivelyEmpty) "0.00" else amount
+            val fullDisplay = if (isEffectivelyEmpty) amountDisplay else "$prefix$amountDisplay"
             var multiplier by remember(fullDisplay) { mutableStateOf(1f) }
 
             Text(
@@ -131,7 +132,7 @@ fun EntryAmountDisplay(
                         multiplier *= 0.8f
                     }
                 },
-                color = if (amount.isEmpty()) amountColor.copy(alpha = 0.38f) else amountColor,
+                color = if (isEffectivelyEmpty) amountColor.copy(alpha = 0.38f) else amountColor,
                 modifier = Modifier.weight(1f, fill = false)
             )
         }

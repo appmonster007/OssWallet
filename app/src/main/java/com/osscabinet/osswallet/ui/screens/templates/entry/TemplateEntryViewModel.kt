@@ -111,12 +111,12 @@ class TemplateEntryViewModel @Inject constructor(
                         source = TransactionSide(
                             account = if (prefill.entryMode == EntryMode.TRANSFER) AccountRef.fromTransferSide(prefill.accountId)
                                       else AccountRef.fromStored(prefill.accountId),
-                            amount = if (prefill.amount.signum() != 0) prefill.amount.abs().stripTrailingZeros().toPlainString() else "",
+                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
                             currency = prefill.currency ?: "USD",
                             categoryId = prefill.categoryId
                         ),
                         destination = TransactionSide(
-                            amount = if (prefill.amount.signum() != 0) prefill.amount.abs().stripTrailingZeros().toPlainString() else ""
+                            amount = prefill.amount.abs().stripTrailingZeros().toPlainString()
                         ),
                         entryMode = prefill.entryMode,
                         note = prefill.note ?: "",

@@ -851,7 +851,7 @@ class BackupRepositoryImpl @Inject constructor(
                     transactionType = TransactionType.fromValue(p["transactionType"]),
                     accountId = p["accountId"] ?: "",
                     categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
-                    tags = p["tags"]?.split('|')?.filter { it.isNotBlank() }?.toSet() ?: emptySet(),
+                    tags = parseTagNames(p["tags"]),
                     targetAccountId = p["targetAccountId"],
                     targetCurrency = p["targetCurrency"],
                     transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
@@ -918,7 +918,7 @@ class BackupRepositoryImpl @Inject constructor(
                     location = p["location"],
                     paymentMethod = p["paymentMethod"]?.let { m -> PaymentMethod.fromString(m) },
                     currency = p["currency"] ?: "USD",
-                    tags = p["tags"]?.split('|')?.filter { it.isNotBlank() }?.toSet() ?: emptySet(),
+                    tags = parseTagNames(p["tags"]),
                     isStarred = p["isStarred"]?.toBoolean() ?: false,
                     displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0,
                     profileId = p["profileId"]?.toIntOrNull() ?: 1,
@@ -1010,6 +1010,18 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             )
         }
+    }
+
+    private fun parseTagNames(labelsStr: String?): Set<String> {
+        if (labelsStr.isNullOrBlank()) return emptySet()
+        return labelsStr
+            .trim()
+            .removePrefix("[")
+            .removeSuffix("]")
+            .split("|", ";", ",")
+            .map { it.trim().removePrefix("\"").removeSuffix("\"").trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
     }
 
     private suspend fun restoreLoans(file: File) = file.takeIf { it.exists() }?.let { f ->

@@ -1633,9 +1633,7 @@ class CsvImportServiceImpl @Inject constructor(
                         else -> PaymentMethod.MOBILE_PAYMENT
                     }
 
-                    val tags = if (labelsStr.isNotBlank())
-                        labelsStr.split("|").map { it.trim() }.filter { it.isNotBlank() }.toSet()
-                    else emptySet()
+                    val tags = parseTagNames(labelsStr)
 
                     val warrantyMonths = warrantyStr.toIntOrNull() ?: 0
                     val warrantyExpiration = if (warrantyMonths > 0)
@@ -1705,9 +1703,17 @@ class CsvImportServiceImpl @Inject constructor(
     }
 
     private fun parseTagNames(row: Map<String, String>): Set<String> {
-        val labelsStr = row["labels"] ?: ""
-        return labelsStr.split("|", ";")
-            .map { it.trim() }
+        return parseTagNames(row["labels"] ?: "")
+    }
+
+    private fun parseTagNames(labelsStr: String): Set<String> {
+        if (labelsStr.isBlank()) return emptySet()
+        return labelsStr
+            .trim()
+            .removePrefix("[")
+            .removeSuffix("]")
+            .split("|", ";", ",")
+            .map { it.trim().removePrefix("\"").removeSuffix("\"").trim() }
             .filter { it.isNotBlank() }
             .toSet()
     }

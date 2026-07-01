@@ -5,6 +5,8 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -47,8 +49,10 @@ sealed interface QuickAddResult {
         val iconName: String?,
         val colorHex: Int,
         val accountId: String?,
+        val targetAccountId: String? = null,
         val amount: BigDecimal,
         val currency: String,
+        val targetCurrency: String? = null,
         val entryMode: EntryMode,
         val note: String,
         val payee: String,
@@ -71,6 +75,9 @@ data class QuickAddState(
     val selectedToAccountId: String? = null,
     val selectedCurrency: String = "",
     val selectedToCurrency: String = "",
+    val amountOverride: BigDecimal? = null,
+    val isAmountOverridden: Boolean = false,
+    val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val note: String = "",
     val payee: String = "",
@@ -162,19 +169,53 @@ class QuickAddViewModel @Inject constructor(
                         .map { (label, pairs) ->
                             val latest = pairs.maxBy { it.first.timestamp }.first
                             val cat = allCategories.find { it.id == latest.categoryId }
-                            QuickAddResult.SuggestionItem(
-                                label = label,
-                                categoryId = latest.categoryId,
-                                iconName = cat?.iconName,
-                                colorHex = cat?.colorHex ?: -1,
-                                accountId = latest.accountId,
-                                amount = latest.amount.abs(),
-                                currency = latest.currency,
-                                entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
-                                note = latest.note,
-                                payee = latest.payee,
-                                tags = latest.tags
-                            )
+                            
+                            if (latest.transactionType.isTransfer) {
+                                // Try to find counterpart
+                                val counterpart = allTransactions.find { 
+                                    it.id != latest.id && 
+                                    it.transactionType.isTransfer && 
+                                    it.transactionType != latest.transactionType &&
+                                    Math.abs(it.timestamp - latest.timestamp) < 5000 &&
+                                    it.amount.abs() == latest.amount.abs()
+                                }
+                                
+                                // Source should be the one with OUTFLOW or negative amount
+                                val sourceLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
+                                val targetLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
+                                
+                                QuickAddResult.SuggestionItem(
+                                    label = label,
+                                    categoryId = latest.categoryId,
+                                    iconName = cat?.iconName,
+                                    colorHex = cat?.colorHex ?: -1,
+                                    accountId = sourceLeg?.accountId,
+                                    targetAccountId = targetLeg?.accountId,
+                                    amount = sourceLeg?.amount?.abs() ?: latest.amount.abs(),
+                                    currency = sourceLeg?.currency ?: latest.currency,
+                                    targetCurrency = targetLeg?.currency,
+                                    entryMode = EntryMode.TRANSFER,
+                                    note = latest.note,
+                                    payee = latest.payee,
+                                    tags = latest.tags
+                                )
+                            } else {
+                                QuickAddResult.SuggestionItem(
+                                    label = label,
+                                    categoryId = latest.categoryId,
+                                    iconName = cat?.iconName,
+                                    colorHex = cat?.colorHex ?: -1,
+                                    accountId = latest.accountId,
+                                    targetAccountId = null,
+                                    amount = latest.amount.abs(),
+                                    currency = latest.currency,
+                                    targetCurrency = null,
+                                    entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
+                                    note = latest.note,
+                                    payee = latest.payee,
+                                    tags = latest.tags
+                                )
+                            }
                         }
                         .sortedByDescending { it.label } // Or some other relevance
                         .take(5)
@@ -294,20 +335,25 @@ class QuickAddViewModel @Inject constructor(
         label: String,
         categoryId: Long,
         accountId: String?,
+        targetAccountId: String? = null,
         amount: BigDecimal,
         currency: String,
+        targetCurrency: String? = null,
         entryMode: EntryMode,
         note: String,
         payee: String,
         tags: Set<String>
     ) {
         val account = state.value.accounts.find { it.id == accountId }
+        val toAccount = state.value.accounts.find { it.id == targetAccountId }
         _uiState.update {
             it.copy(
                 selectedTemplate = null,
                 selectedCategoryId = categoryId,
                 selectedAccountId = accountId,
+                selectedToAccountId = targetAccountId,
                 selectedCurrency = account?.currencyCode ?: currency,
+                selectedToCurrency = toAccount?.currencyCode ?: targetCurrency ?: "",
                 entryMode = entryMode,
                 amount = amount.abs(),
                 note = note,
@@ -336,6 +382,60 @@ class QuickAddViewModel @Inject constructor(
 
     fun onAmountChanged(amount: BigDecimal) {
         _uiState.update { it.copy(amount = amount) }
+    }
+
+    fun onAmountOverrideChanged(amount: BigDecimal) {
+        _uiState.update { it.copy(amountOverride = amount) }
+    }
+
+    fun setAmountFocus(side: AmountEditingSide) {
+        _uiState.update { s ->
+            val isManual = if (side == AmountEditingSide.TARGET) true else s.isAmountOverridden
+            s.copy(
+                activeAmountSide = side,
+                isAmountOverridden = isManual,
+                amountOverride = if (isManual && s.amountOverride == null) {
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                        amount = s.amount,
+                        fromCurrency = s.selectedCurrency,
+                        toCurrency = s.selectedToCurrency,
+                        exchangeRates = s.exchangeRates
+                    )
+                } else s.amountOverride
+            )
+        }
+    }
+
+    fun toggleAmountOverride() {
+        _uiState.update { s ->
+            val next = !s.isAmountOverridden
+            s.copy(
+                isAmountOverridden = next,
+                activeAmountSide = if (!next) AmountEditingSide.SOURCE else s.activeAmountSide,
+                amountOverride = if (next && s.amountOverride == null) {
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                        amount = s.amount,
+                        fromCurrency = s.selectedCurrency,
+                        toCurrency = s.selectedToCurrency,
+                        exchangeRates = s.exchangeRates
+                    )
+                } else if (!next) null else s.amountOverride
+            )
+        }
+    }
+
+    fun onSwapAccounts() {
+        _uiState.update { s ->
+            if (s.entryMode != EntryMode.TRANSFER) return@update s
+            s.copy(
+                selectedAccountId = s.selectedToAccountId,
+                selectedToAccountId = s.selectedAccountId,
+                selectedCurrency = s.selectedToCurrency,
+                selectedToCurrency = s.selectedCurrency,
+                amount = s.amountOverride ?: s.amount,
+                amountOverride = s.amount
+            )
+        }
     }
 
     fun goToStep(step: Int) {
@@ -374,7 +474,11 @@ class QuickAddViewModel @Inject constructor(
                 EntryMode.INCOME -> EntryMode.TRANSFER
                 EntryMode.TRANSFER -> EntryMode.EXPENSE
             }
-            it.copy(entryMode = next)
+            it.copy(
+                entryMode = next,
+                isAmountOverridden = false,
+                amountOverride = null
+            )
         }
     }
 
@@ -420,14 +524,17 @@ class QuickAddViewModel @Inject constructor(
                                 ?: TransactionStatus.CLEARED,
                             tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
                             transferRate = if (s.entryMode == EntryMode.TRANSFER) {
-                                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                                    amount = BigDecimal.ONE,
+                                val destAmount = s.amountOverride ?: com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                                    amount = s.amount,
                                     fromCurrency = s.selectedCurrency.ifBlank { account.currencyCode },
                                     toCurrency = s.selectedToCurrency.ifBlank { 
                                         s.accounts.find { it.id == s.selectedToAccountId }?.currencyCode ?: "" 
                                     },
                                     exchangeRates = s.exchangeRates
                                 )
+                                if (s.amount.compareTo(BigDecimal.ZERO) != 0) {
+                                    destAmount.divide(s.amount, 8, java.math.RoundingMode.HALF_UP)
+                                } else BigDecimal.ONE
                             } else BigDecimal.ONE
                         ),
                         profileId = profileId
@@ -450,12 +557,12 @@ class QuickAddViewModel @Inject constructor(
     val canSave: Boolean
         get() {
             val s = state.value
-            if (s.selectedAccountId == null || s.amount < BigDecimal.ZERO) return false
+            if (s.amount < BigDecimal.ZERO) return false
+            if (s.selectedAccountId == null) return false
             
-            // Self-transfer guard: Allow wallet-to-wallet self-transfer, but deny outside-to-outside
-            // Note: In Quick Add, we currently only pick from existing 'Account' objects (Wallets).
-            // If the system allows 'Outside' account selection in the future, we'd add the check here.
-            // For now, any selection from the grid is a Wallet, so self-transfer is technically allowed.
+            if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccountId == null) {
+                return false
+            }
             
             return true
         }

@@ -102,7 +102,7 @@ fun QuickAddTemplateStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             val overline = when {
                 query.isNotBlank() -> "Results"

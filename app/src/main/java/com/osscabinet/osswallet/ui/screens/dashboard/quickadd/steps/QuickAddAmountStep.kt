@@ -81,7 +81,7 @@ fun QuickAddAmountStep(
             .fillMaxWidth()
             .padding(top = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         // Editorial Context Strip: [Icon] Template/Category · Account + Balance
         EditorialContextStrip(

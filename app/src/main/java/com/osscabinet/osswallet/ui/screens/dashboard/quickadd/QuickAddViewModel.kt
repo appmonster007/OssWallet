@@ -68,7 +68,9 @@ data class QuickAddState(
     val selectedTemplate: Template? = null,
     val selectedCategoryId: Long? = null,
     val selectedAccountId: String? = null,
+    val selectedToAccountId: String? = null,
     val selectedCurrency: String = "",
+    val selectedToCurrency: String = "",
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val note: String = "",
     val payee: String = "",
@@ -236,6 +238,19 @@ class QuickAddViewModel @Inject constructor(
                     )
                 }
 
+                // Auto-calculate transfer rate if in transfer mode
+                var effectiveRate = BigDecimal.ONE
+                if (uiState.entryMode == EntryMode.TRANSFER && 
+                    uiState.selectedCurrency.isNotBlank() && 
+                    uiState.selectedToCurrency.isNotBlank()) {
+                    effectiveRate = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                        amount = BigDecimal.ONE,
+                        fromCurrency = uiState.selectedCurrency,
+                        toCurrency = uiState.selectedToCurrency,
+                        exchangeRates = rates
+                    )
+                }
+
                 uiState.copy(
                     accounts = sortedAccounts,
                     structureTypes = structureTypes,
@@ -256,12 +271,15 @@ class QuickAddViewModel @Inject constructor(
 
     fun onTemplateSelected(template: Template) {
         val account = state.value.accounts.find { it.id == template.accountId }
+        val toAccount = state.value.accounts.find { it.id == template.targetAccountId }
         _uiState.update {
             it.copy(
                 selectedTemplate = template,
                 selectedCategoryId = template.categoryId,
                 selectedAccountId = template.accountId,
+                selectedToAccountId = template.targetAccountId,
                 selectedCurrency = account?.currencyCode ?: template.currency,
+                selectedToCurrency = toAccount?.currencyCode ?: template.targetCurrency ?: "",
                 entryMode = template.entryMode,
                 amount = template.amount.abs(),
                 note = template.note ?: "",
@@ -324,25 +342,38 @@ class QuickAddViewModel @Inject constructor(
         _uiState.update { it.copy(currentStep = step) }
     }
 
-    fun onAccountTapped(accountId: String) {
+    fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
         val account = state.value.accounts.find { it.id == accountId }
-        _uiState.update {
-            it.copy(
-                selectedAccountId = accountId,
-                selectedCurrency = account?.currencyCode ?: it.selectedCurrency,
-                currentStep = 2
-            )
+        _uiState.update { s ->
+            if (isFrom) {
+                s.copy(
+                    selectedAccountId = accountId,
+                    selectedCurrency = account?.currencyCode ?: s.selectedCurrency,
+                    currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2
+                )
+            } else {
+                s.copy(
+                    selectedToAccountId = accountId,
+                    selectedToCurrency = account?.currencyCode ?: s.selectedToCurrency,
+                )
+            }
         }
     }
 
-    fun onCurrencySelected(currency: String) {
-        _uiState.update { it.copy(selectedCurrency = currency) }
+    fun onCurrencySelected(currency: String, isFrom: Boolean = true) {
+        _uiState.update {
+            if (isFrom) it.copy(selectedCurrency = currency)
+            else it.copy(selectedToCurrency = currency)
+        }
     }
 
     fun toggleTransactionType() {
         _uiState.update {
-            val next = if (it.entryMode == EntryMode.EXPENSE)
-                EntryMode.INCOME else EntryMode.EXPENSE
+            val next = when (it.entryMode) {
+                EntryMode.EXPENSE -> EntryMode.INCOME
+                EntryMode.INCOME -> EntryMode.TRANSFER
+                EntryMode.TRANSFER -> EntryMode.EXPENSE
+            }
             it.copy(entryMode = next)
         }
     }
@@ -352,13 +383,19 @@ class QuickAddViewModel @Inject constructor(
         val accountId = s.selectedAccountId ?: return
         val amount = s.amount
         if (amount < BigDecimal.ZERO) return
-        val signedAmount = if (s.entryMode == EntryMode.INCOME) amount else amount.negate()
+        
+        // Signed amount only for non-transfers
+        val signedAmount = if (s.entryMode == EntryMode.TRANSFER) {
+            amount
+        } else {
+            if (s.entryMode == EntryMode.INCOME) amount else amount.negate()
+        }
 
         val account = s.accounts.find { it.id == accountId } ?: return
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
         val name = s.selectedTemplate?.name
             ?: categories.value.find { it.id == categoryId }?.name
-            ?: "Quick Transaction"
+            ?: if (s.entryMode == EntryMode.TRANSFER) "Transfer" else "Quick Transaction"
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -372,12 +409,26 @@ class QuickAddViewModel @Inject constructor(
                             entryMode = s.entryMode,
                             accountId = accountId,
                             currency = s.selectedCurrency.ifBlank { account.currencyCode },
+                            targetAccountId = s.selectedToAccountId,
+                            targetCurrency = s.selectedToCurrency.ifBlank { 
+                                s.accounts.find { it.id == s.selectedToAccountId }?.currencyCode 
+                            },
                             categoryId = categoryId,
                             note = s.note.ifBlank { s.selectedTemplate?.note ?: "" },
                             payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
                             status = s.selectedTemplate?.transactionStatus
                                 ?: TransactionStatus.CLEARED,
-                            tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() }
+                            tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
+                            transferRate = if (s.entryMode == EntryMode.TRANSFER) {
+                                com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                                    amount = BigDecimal.ONE,
+                                    fromCurrency = s.selectedCurrency.ifBlank { account.currencyCode },
+                                    toCurrency = s.selectedToCurrency.ifBlank { 
+                                        s.accounts.find { it.id == s.selectedToAccountId }?.currencyCode ?: "" 
+                                    },
+                                    exchangeRates = s.exchangeRates
+                                )
+                            } else BigDecimal.ONE
                         ),
                         profileId = profileId
                     )
@@ -399,6 +450,13 @@ class QuickAddViewModel @Inject constructor(
     val canSave: Boolean
         get() {
             val s = state.value
-            return s.selectedAccountId != null && s.amount >= BigDecimal.ZERO
+            if (s.selectedAccountId == null || s.amount < BigDecimal.ZERO) return false
+            
+            // Self-transfer guard: Allow wallet-to-wallet self-transfer, but deny outside-to-outside
+            // Note: In Quick Add, we currently only pick from existing 'Account' objects (Wallets).
+            // If the system allows 'Outside' account selection in the future, we'd add the check here.
+            // For now, any selection from the grid is a Wallet, so self-transfer is technically allowed.
+            
+            return true
         }
 }

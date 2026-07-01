@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -276,18 +277,26 @@ private fun QuickAddSheetContent(
 
     fun goBackStep() {
         if (state.currentStep > STEP_TEMPLATE) {
-            hideKeyboard(); viewModel.goToStep(state.currentStep - 1)
+            viewModel.goToStep(state.currentStep - 1)
         }
     }
 
     fun goNext() {
-        hideKeyboard()
+        if (state.currentStep == STEP_ACCOUNT) {
+            hideKeyboard()
+        }
         viewModel.goToStep(state.currentStep + 1)
     }
 
     val canGoNext = when (state.currentStep) {
         STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
-        STEP_ACCOUNT -> state.selectedAccountId != null
+        STEP_ACCOUNT -> {
+            if (state.entryMode == EntryMode.TRANSFER) {
+                state.selectedAccountId != null && state.selectedToAccountId != null
+            } else {
+                state.selectedAccountId != null
+            }
+        }
         STEP_AMOUNT -> state.amount >= BigDecimal.ZERO
         else -> false
     }
@@ -299,7 +308,15 @@ private fun QuickAddSheetContent(
         else -> ""
     }
     val subtext = when (state.currentStep) {
-        STEP_ACCOUNT -> state.accounts.find { it.id == state.selectedAccountId }?.name
+        STEP_ACCOUNT -> {
+            if (state.entryMode == EntryMode.TRANSFER) {
+                val from = state.accounts.find { it.id == state.selectedAccountId }?.name ?: "?"
+                val to = state.accounts.find { it.id == state.selectedToAccountId }?.name ?: "?"
+                "$from → $to"
+            } else {
+                state.accounts.find { it.id == state.selectedAccountId }?.name
+            }
+        }
         else -> null
     }
     val ctaLabel = when (state.currentStep) {
@@ -366,17 +383,16 @@ private fun QuickAddSheetContent(
                         accounts = state.accounts,
                         structureTypes = state.structureTypes,
                         selectedAccountId = state.selectedAccountId,
+                        selectedToAccountId = state.selectedToAccountId,
                         entryMode = state.entryMode,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
-                        onAccountTapped = {
-                            hideKeyboard()
-                            viewModel.onAccountTapped(it)
-                        },
+                        onAccountTapped = viewModel::onAccountTapped,
                         onToggleType = { viewModel.toggleTransactionType() }
                     )
 
                     STEP_AMOUNT -> {
                         val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
+                        val selectedToAccount = state.accounts.find { it.id == state.selectedToAccountId }
                         val categories = sections.flatMap { it.items }
                             .filterIsInstance<QuickAddResult.CategoryItem>()
                             .map { it.category }
@@ -386,12 +402,15 @@ private fun QuickAddSheetContent(
                             template = state.selectedTemplate,
                             category = selectedCategory,
                             account = selectedAccount,
+                            toAccount = selectedToAccount,
                             accountBalance = state.accountBalances[state.selectedAccountId] ?: BigDecimal.ZERO,
+                            toAccountBalance = state.accountBalances[state.selectedToAccountId] ?: BigDecimal.ZERO,
                             entryMode = state.entryMode,
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
                             selectedCurrency = state.selectedCurrency,
-                            onCurrencySelected = { viewModel.onCurrencySelected(it) },
+                            selectedToCurrency = state.selectedToCurrency,
+                            onCurrencySelected = viewModel::onCurrencySelected,
                             onAmountChange = viewModel::onAmountChanged,
                             onDone = {
                                 if (!state.isSaving) {

@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,18 +61,28 @@ fun QuickAddAmountStep(
     template: Template?,
     category: Category?,
     account: Account?,
+    toAccount: Account? = null,
     accountBalance: BigDecimal,
+    toAccountBalance: BigDecimal = BigDecimal.ZERO,
     entryMode: EntryMode,
     exchangeRates: ExchangeRateSnapshot,
     baseCurrency: String,
     selectedCurrency: String,
-    onCurrencySelected: (String) -> Unit,
+    selectedToCurrency: String = "",
+    onCurrencySelected: (String, Boolean) -> Unit,
     onAmountChange: (BigDecimal) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currencies = remember(account) {
         account?.let {
+            (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
+                .filter { c -> c.isNotBlank() }
+        } ?: emptyList()
+    }
+    
+    val toCurrencies = remember(toAccount) {
+        toAccount?.let {
             (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
                 .filter { c -> c.isNotBlank() }
         } ?: emptyList()
@@ -88,7 +100,10 @@ fun QuickAddAmountStep(
             template = template,
             category = category,
             account = account,
+            toAccount = toAccount,
             accountBalance = accountBalance,
+            toAccountBalance = toAccountBalance,
+            entryMode = entryMode,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
@@ -103,10 +118,15 @@ fun QuickAddAmountStep(
                     amount = state.display,
                     expression = state.displayExpression,
                     currency = selectedCurrency.ifBlank { currencies.firstOrNull() ?: "USD" },
+                    toCurrency = selectedToCurrency.ifBlank { toCurrencies.firstOrNull() ?: "" },
                     currencies = currencies,
-                    onCurrencyChange = onCurrencySelected,
+                    toCurrencies = toCurrencies,
+                    onCurrencyChange = { onCurrencySelected(it, true) },
+                    onToCurrencyChange = { onCurrencySelected(it, false) },
                     accountBalance = accountBalance,
+                    toAccountBalance = toAccountBalance,
                     accountCurrency = account?.currencyCode ?: "USD",
+                    toAccountCurrency = toAccount?.currencyCode ?: "USD",
                     entryMode = entryMode,
                     inputAmount = amount,
                     exchangeRates = exchangeRates,
@@ -122,7 +142,10 @@ private fun EditorialContextStrip(
     template: Template?,
     category: Category?,
     account: Account?,
+    toAccount: Account? = null,
     accountBalance: BigDecimal,
+    toAccountBalance: BigDecimal = BigDecimal.ZERO,
+    entryMode: EntryMode,
     modifier: Modifier = Modifier
 ) {
     val displayCategory = template?.categoryId?.let { _ -> category } ?: category
@@ -136,7 +159,13 @@ private fun EditorialContextStrip(
         account?.colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
             ?: fallbackAccent
     }
+    val toAccountColor = remember(toAccount?.colorHex) {
+        toAccount?.colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+            ?: fallbackAccent
+    }
+    
     val accountCurrency = account?.currencyCode ?: "USD"
+    val toAccountCurrency = toAccount?.currencyCode ?: "USD"
 
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
@@ -149,87 +178,163 @@ private fun EditorialContextStrip(
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Category Icon container
+            if (entryMode == EntryMode.TRANSFER) {
+                // From Account
+                AccountSummary(
+                    name = account?.name ?: "From",
+                    balance = accountBalance,
+                    currency = accountCurrency,
+                    color = accountColor,
+                    icon = getAccountIconByName(account?.icon),
+                    isEnd = false,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                    contentDescription = null,
+                    tint = AppColors.contentSecondary.copy(alpha = 0.4f),
+                    modifier = Modifier.size(14.dp)
+                )
+
+                // To Account
+                AccountSummary(
+                    name = toAccount?.name ?: "To",
+                    balance = toAccountBalance,
+                    currency = toAccountCurrency,
+                    color = toAccountColor,
+                    icon = getAccountIconByName(toAccount?.icon),
+                    isEnd = true,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                // Category Icon container
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(categoryColor.copy(alpha = 0.15f))
+                        .aeonHairlineBorder(CircleShape, accent = categoryColor.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = getIconByName(displayCategory?.iconName),
+                        contentDescription = null,
+                        tint = categoryColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (template != null) "TEMPLATE" else "CATEGORY",
+                        style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp),
+                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = template?.name ?: category?.name ?: "Quick Entry",
+                        style = AppTextStyles.managementItemTitle,
+                        color = AppColors.contentPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(24.dp)
+                        .background(AppColors.divider.copy(alpha = 0.4f))
+                )
+
+                // Account info
+                AccountSummary(
+                    name = account?.name ?: "No Account",
+                    balance = accountBalance,
+                    currency = accountCurrency,
+                    color = accountColor,
+                    icon = getAccountIconByName(account?.icon),
+                    isEnd = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountSummary(
+    name: String,
+    balance: BigDecimal,
+    currency: String,
+    color: Color,
+    icon: ImageVector,
+    isEnd: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp, if (isEnd) Alignment.End else Alignment.Start)
+    ) {
+        if (!isEnd) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
-                    .background(categoryColor.copy(alpha = 0.15f))
-                    .aeonHairlineBorder(CircleShape, accent = categoryColor.copy(alpha = 0.3f)),
+                    .background(color.copy(alpha = 0.15f))
+                    .aeonHairlineBorder(CircleShape, accent = color.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = getIconByName(displayCategory?.iconName),
+                    imageVector = icon,
                     contentDescription = null,
-                    tint = categoryColor,
-                    modifier = Modifier.size(16.dp)
+                    tint = color,
+                    modifier = Modifier.size(14.dp)
                 )
             }
+        }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (template != null) "TEMPLATE" else "CATEGORY",
-                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = template?.name ?: category?.name ?: "Quick Entry",
-                    style = AppTextStyles.managementItemTitle,
-                    color = AppColors.contentPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Vertical Divider
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(24.dp)
-                    .background(AppColors.divider.copy(alpha = 0.4f))
+        Column(
+            horizontalAlignment = if (isEnd) Alignment.End else Alignment.Start,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = name.uppercase(),
+                style = AppTextStyles.sectionOverline.copy(fontSize = 7.sp),
+                color = AppColors.contentSecondary.copy(alpha = 0.6f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+            Text(
+                text = formatCurrency(balance, currency),
+                style = AppTextStyles.caption.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = LocalAppFont.current.monoFamily
+                ),
+                color = AppColors.contentPrimary,
+                maxLines = 1
+            )
+        }
 
-            // Account info
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = account?.name?.uppercase() ?: "No Account",
-                    style = AppTextStyles.sectionOverline.copy(fontSize = 8.sp),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = formatCurrency(accountBalance, accountCurrency),
-                    style = AppTextStyles.caption.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = LocalAppFont.current.monoFamily
-                    ),
-                    color = AppColors.contentPrimary,
-                    maxLines = 1
-                )
-            }
-
-            // Account Icon container
+        if (isEnd) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(30.dp)
                     .clip(CircleShape)
-                    .background(accountColor.copy(alpha = 0.15f))
-                    .aeonHairlineBorder(CircleShape, accent = accountColor.copy(alpha = 0.3f)),
+                    .background(color.copy(alpha = 0.15f))
+                    .aeonHairlineBorder(CircleShape, accent = color.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = getAccountIconByName(account?.icon),
+                    imageVector = icon,
                     contentDescription = null,
-                    tint = accountColor,
-                    modifier = Modifier.size(16.dp)
+                    tint = color,
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
@@ -241,10 +346,15 @@ private fun AmountHeroPanel(
     amount: String,
     expression: String,
     currency: String,
+    toCurrency: String = "",
     currencies: List<String>,
+    toCurrencies: List<String> = emptyList(),
     onCurrencyChange: (String) -> Unit,
+    onToCurrencyChange: (String) -> Unit = {},
     accountBalance: BigDecimal,
+    toAccountBalance: BigDecimal = BigDecimal.ZERO,
     accountCurrency: String,
+    toAccountCurrency: String = "USD",
     entryMode: EntryMode,
     inputAmount: BigDecimal,
     exchangeRates: ExchangeRateSnapshot,
@@ -282,6 +392,31 @@ private fun AmountHeroPanel(
         if (entryMode == EntryMode.INCOME) accountBalance + convertedInput
         else accountBalance - convertedInput
     }
+    
+    val toClosingBalance = remember(
+        toAccountBalance,
+        inputAmount,
+        entryMode,
+        currency,
+        toAccountCurrency,
+        exchangeRates,
+        baseCurrency
+    ) {
+        if (entryMode != EntryMode.TRANSFER) BigDecimal.ZERO
+        else {
+            val convertedInput = if (currency == toAccountCurrency) {
+                inputAmount
+            } else {
+                CurrencyService.convertAmount(
+                    amount = inputAmount,
+                    fromCurrency = currency,
+                    toCurrency = toAccountCurrency,
+                    exchangeRates = exchangeRates
+                )
+            }
+            toAccountBalance + convertedInput
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -298,9 +433,11 @@ private fun AmountHeroPanel(
                     color = AppColors.accent
                 )
                 Spacer(Modifier.width(10.dp))
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = AppColors.divider.copy(alpha = 0.3f)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(1.dp)
+                        .background(AppColors.divider.copy(alpha = 0.3f))
                 )
             }
 
@@ -311,29 +448,25 @@ private fun AmountHeroPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Currency Pill (Left)
-                Box {
-                    if (currencies.size > 1) {
-                        CurrencySelector(
-                            selectedCurrency = currency,
-                            onCurrencySelected = onCurrencyChange,
-                            supportedCurrencies = currencies
+                // Currency Selectors
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    CurrencyPill(
+                        currency = currency,
+                        currencies = currencies,
+                        onCurrencyChange = onCurrencyChange
+                    )
+                    
+                    if (entryMode == EntryMode.TRANSFER) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                            contentDescription = null,
+                            tint = AppColors.contentSecondary.copy(alpha = 0.4f),
+                            modifier = Modifier.size(10.dp)
                         )
-                    } else {
-                        Text(
-                            text = currency,
-                            style = AppTextStyles.sectionOverline.copy(
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = AppColors.contentSecondary,
-                            modifier = Modifier
-                                .background(
-                                    AppColors.recessedSurface.copy(alpha = 0.3f),
-                                    RoundedCornerShape(6.dp)
-                                )
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                        CurrencyPill(
+                            currency = toCurrency,
+                            currencies = toCurrencies,
+                            onCurrencyChange = onToCurrencyChange
                         )
                     }
                 }
@@ -359,7 +492,6 @@ private fun AmountHeroPanel(
                             lineHeight = 20.sp
                         ),
                         color = AppColors.contentSecondary.copy(alpha = 0.6f),
-//                        modifier = Modifier.padding(bottom = 3.dp)
                     )
                 }
             }
@@ -412,17 +544,62 @@ private fun AmountHeroPanel(
                 color = AppColors.contentSecondary
             )
 
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (entryMode == EntryMode.TRANSFER) {
+                    ClosingBalanceLabel("From: ${formatCurrency(closingBalance, accountCurrency)}")
+                    ClosingBalanceLabel("To: ${formatCurrency(toClosingBalance, toAccountCurrency)}")
+                } else {
+                    ClosingBalanceLabel("Closing: ${formatCurrency(closingBalance, accountCurrency)}")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrencyPill(
+    currency: String,
+    currencies: List<String>,
+    onCurrencyChange: (String) -> Unit
+) {
+    Box {
+        if (currencies.size > 1) {
+            CurrencySelector(
+                selectedCurrency = currency,
+                onCurrencySelected = onCurrencyChange,
+                supportedCurrencies = currencies
+            )
+        } else {
             Text(
-                text = "Closing: ${formatCurrency(closingBalance, accountCurrency)}",
-                style = AppTextStyles.metaLabel.copy(
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = LocalAppFont.current.monoFamily
+                text = currency,
+                style = AppTextStyles.sectionOverline.copy(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
                 ),
-                color = AppColors.accent.copy(alpha = 0.9f)
+                color = AppColors.contentSecondary,
+                modifier = Modifier
+                    .background(
+                        AppColors.recessedSurface.copy(alpha = 0.3f),
+                        RoundedCornerShape(6.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 3.dp)
             )
         }
     }
+}
+
+@Composable
+private fun ClosingBalanceLabel(text: String) {
+    Text(
+        text = text,
+        style = AppTextStyles.metaLabel.copy(
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Medium,
+            fontFamily = LocalAppFont.current.monoFamily
+        ),
+        color = AppColors.accent.copy(alpha = 0.9f)
+    )
 }
 
 @Preview(showBackground = true)
@@ -451,7 +628,7 @@ fun PreviewQuickAddAmountStep() {
                 exchangeRates = ExchangeRateSnapshot.EMPTY,
                 baseCurrency = "USD",
                 selectedCurrency = "USD",
-                onCurrencySelected = {},
+                onCurrencySelected = { _, _ -> },
                 onAmountChange = {},
                 onDone = {}
             )

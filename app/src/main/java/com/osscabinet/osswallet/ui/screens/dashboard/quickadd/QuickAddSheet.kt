@@ -291,7 +291,7 @@ private fun QuickAddSheetContent(
     val canGoNext = when (state.currentStep) {
         STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
         STEP_ACCOUNT -> state.selectedAccountId != null
-        STEP_AMOUNT -> state.amount > BigDecimal.ZERO
+        STEP_AMOUNT -> state.amount >= BigDecimal.ZERO
         else -> false
     }
     val isLastStep = state.currentStep == STEP_AMOUNT

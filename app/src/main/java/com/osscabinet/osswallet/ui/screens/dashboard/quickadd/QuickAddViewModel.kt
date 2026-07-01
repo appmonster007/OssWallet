@@ -170,7 +170,7 @@ class QuickAddViewModel @Inject constructor(
         val s = state.value
         val accountId = s.selectedAccountId ?: return
         val amount = s.amount
-        if (amount <= BigDecimal.ZERO) return
+        if (amount < BigDecimal.ZERO) return
         val signedAmount = if (s.entryMode == EntryMode.INCOME) amount else amount.negate()
 
         val account = s.accounts.find { it.id == accountId } ?: return
@@ -218,6 +218,6 @@ class QuickAddViewModel @Inject constructor(
     val canSave: Boolean
         get() {
             val s = state.value
-            return s.selectedAccountId != null && s.amount > BigDecimal.ZERO
+            return s.selectedAccountId != null && s.amount >= BigDecimal.ZERO
         }
 }

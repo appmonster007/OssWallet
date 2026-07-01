@@ -89,7 +89,7 @@ data class TransactionPrefillDTO(
         ): TransactionPrefillDTO {
             return TransactionPrefillDTO(
                 name = template.name,
-                amount = if (template.amount.signum() != 0) template.amount.abs().toPlainString() else "",
+                amount = template.amount.abs().toPlainString(),
                 categoryId = template.categoryId,
                 entryMode = template.entryMode,
                 accountId = template.accountId,

@@ -8,7 +8,7 @@ import java.math.BigDecimal
  */
 data class TransactionSide(
     val account: AccountRef = AccountRef.Unselected,
-    val amount: String = "",
+    val amount: String = "0",
     val currency: String = "",
     val categoryId: Long = Category.SYSTEM_UNKNOWN
 ) {

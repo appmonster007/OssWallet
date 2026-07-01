@@ -6,8 +6,8 @@ import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class AccountRepositoryImpl @Inject constructor(

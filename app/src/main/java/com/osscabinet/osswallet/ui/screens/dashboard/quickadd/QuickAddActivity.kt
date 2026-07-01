@@ -15,7 +15,7 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 @AndroidEntryPoint
 class QuickAddActivity : ComponentActivity() {

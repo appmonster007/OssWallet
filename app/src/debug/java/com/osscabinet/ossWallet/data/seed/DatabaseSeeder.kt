@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.first
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.math.BigDecimal
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 private fun BigDecimal.enforceSign(type: TransactionType): BigDecimal = when (type) {
     TransactionType.EXPENSE, TransactionType.TRANSFER_OUTFLOW -> abs().negate()

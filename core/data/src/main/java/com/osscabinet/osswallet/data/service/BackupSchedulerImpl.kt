@@ -5,8 +5,8 @@ import com.osscabinet.ossWallet.data.worker.AutoBackupWorker
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class BackupSchedulerImpl @Inject constructor(

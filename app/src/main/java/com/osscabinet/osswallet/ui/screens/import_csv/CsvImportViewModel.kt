@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 @HiltViewModel
 class CsvImportViewModel @Inject constructor(

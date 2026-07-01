@@ -7,8 +7,8 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class TagRepositoryImpl @Inject constructor(

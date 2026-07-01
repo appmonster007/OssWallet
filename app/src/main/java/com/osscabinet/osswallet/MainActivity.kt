@@ -18,7 +18,7 @@ import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
 import com.osscabinet.ossWallet.ui.navigation.OssWalletNavGraph
 import com.osscabinet.ossWallet.ui.navigation.TransactionListRoute
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
+import jakarta.inject.Inject
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import android.content.Intent
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings

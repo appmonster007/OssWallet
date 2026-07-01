@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 @HiltViewModel
 class TemplateViewModel @Inject constructor(

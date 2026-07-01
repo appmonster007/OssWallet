@@ -171,6 +171,9 @@ abstract class TransactionDao {
     abstract suspend fun updateTransactions(transactions: List<TransactionEntity>)
 
     @Upsert
+    abstract suspend fun insertTransactions(transactions: List<TransactionEntity>)
+
+    @Upsert
     abstract suspend fun insertTransaction(transaction: TransactionEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

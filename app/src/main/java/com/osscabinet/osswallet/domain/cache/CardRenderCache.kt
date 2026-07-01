@@ -2,8 +2,8 @@ package com.osscabinet.ossWallet.domain.cache
 
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 /**
  * Global cache for rendered dashboard cards.

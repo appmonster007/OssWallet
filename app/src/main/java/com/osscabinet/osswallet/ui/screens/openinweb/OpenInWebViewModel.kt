@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 data class OpenInWebUiState(
     val serverState: WebServerState = WebServerState.Stopped,

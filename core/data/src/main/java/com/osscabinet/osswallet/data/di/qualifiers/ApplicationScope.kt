@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.data.di.qualifiers
 
-import javax.inject.Qualifier
+import jakarta.inject.Qualifier
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

@@ -8,7 +8,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
-import javax.inject.Singleton
+import jakarta.inject.Singleton
 
 /**
  * Single source of truth for kotlinx.serialization configuration.

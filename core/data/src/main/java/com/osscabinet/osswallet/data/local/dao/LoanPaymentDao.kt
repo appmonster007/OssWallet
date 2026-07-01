@@ -34,6 +34,9 @@ interface LoanPaymentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(payment: LoanPaymentEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPayments(payments: List<LoanPaymentEntity>)
+
     /**
      * Cross-profile bulk read. ONLY for backup/export flows.
      */

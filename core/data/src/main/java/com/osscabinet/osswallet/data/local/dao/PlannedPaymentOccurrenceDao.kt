@@ -24,6 +24,9 @@ interface PlannedPaymentOccurrenceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PlannedPaymentOccurrenceEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOccurrences(entities: List<PlannedPaymentOccurrenceEntity>)
+
     @Query("SELECT * FROM planned_payment_occurrences")
     suspend fun getAllOccurrencesSync(): List<PlannedPaymentOccurrenceEntity>
 

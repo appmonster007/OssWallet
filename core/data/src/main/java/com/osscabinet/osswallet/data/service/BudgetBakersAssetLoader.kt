@@ -3,8 +3,8 @@ package com.osscabinet.ossWallet.data.service
 import android.content.Context
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 data class MappedCategory(
     val name: String,

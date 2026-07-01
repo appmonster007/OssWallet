@@ -35,7 +35,9 @@ import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.data.local.entity.TemplateEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
 import com.osscabinet.ossWallet.data.local.entity.TransactionLinkEntity
-import com.osscabinet.ossWallet.data.repository.util.CsvProcessor
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVPrinter
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
@@ -56,18 +58,20 @@ import com.osscabinet.ossWallet.domain.model.*
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.OutputStreamWriter
 import java.math.BigDecimal
 import java.util.zip.ZipInputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
 @Singleton
 class BackupRepositoryImpl @Inject constructor(
@@ -89,7 +93,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val settingsDataStore: SettingsDataStore,
     private val dispatcherProvider: DispatcherProvider,
     private val json: Json,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : BackupRepository {
 
     override suspend fun exportData(uriString: String, type: BackupType, scope: BackupScope): Result<Unit> =
@@ -120,33 +124,37 @@ class BackupRepositoryImpl @Inject constructor(
         val accountsById = accountDao.getAllAccountsSync().associateBy { it.id }
         val categoriesById = categoryDao.getAllCategoriesSync().associateBy { it.id }
 
-        val writer = outputStream.bufferedWriter()
-        writer.write("date,account,category,type,amount,currency,payee,note,payment_type,warranty_months,labels,is_transfer\n")
-        transactions.forEach { tx ->
-            val warrantyMonths = tx.warrantyExpiration?.let {
-                val months = ((it - tx.timestamp) / (1000L * 60 * 60 * 24 * 30)).toInt()
-                months.coerceAtLeast(0)
-            } ?: 0
-            val isTransfer = tx.transactionType.isTransfer
-            val tags = tx.tags.joinToString("|")
-            val row = listOf(
-                tx.timestamp.toString(),
-                accountsById[tx.accountId]?.name ?: tx.accountId ?: "",
-                categoriesById[tx.categoryId]?.name ?: tx.categoryId.toString(),
-                tx.transactionType.name,
-                tx.amount.toPlainString(),
-                tx.currency,
-                tx.payee?.replace(",", ";") ?: "",
-                tx.note?.replace(",", ";") ?: "",
-                tx.paymentMethod.name,
-                warrantyMonths.toString(),
-                tags.replace(",", ";"),
-                isTransfer.toString()
-            )
-            writer.write(row.joinToString(","))
-            writer.newLine()
+        val headers = listOf("date", "account", "category", "type", "amount", "currency", "payee", "note", "payment_type", "warranty_months", "labels", "is_transfer")
+        val format = CSVFormat.DEFAULT.builder()
+            .setHeader(*headers.toTypedArray())
+            .get()
+
+        val writer = OutputStreamWriter(outputStream, Charsets.UTF_8)
+        CSVPrinter(writer, format).use { printer ->
+            transactions.forEach { tx ->
+                val warrantyMonths = tx.warrantyExpiration?.let {
+                    val months = ((it - tx.timestamp) / (1000L * 60 * 60 * 24 * 30)).toInt()
+                    months.coerceAtLeast(0)
+                } ?: 0
+                val isTransfer = tx.transactionType.isTransfer
+                val tags = tx.tags.joinToString("|")
+                printer.printRecord(
+                    tx.timestamp.toString(),
+                    accountsById[tx.accountId]?.name ?: tx.accountId ?: "",
+                    categoriesById[tx.categoryId]?.name ?: tx.categoryId.toString(),
+                    tx.transactionType.name,
+                    tx.amount.toPlainString(),
+                    tx.currency,
+                    tx.payee,
+                    tx.note ?: "",
+                    tx.paymentMethod.name,
+                    warrantyMonths.toString(),
+                    tags,
+                    isTransfer.toString()
+                )
+            }
+            printer.flush()
         }
-        writer.flush()
     }
 
     private suspend fun createZipBackup(
@@ -167,7 +175,6 @@ class BackupRepositoryImpl @Inject constructor(
         val allAccounts = accountDao.getAllAccountsSync()
         val accounts = if (scope == BackupScope.SINGLE_PROFILE)
             allAccounts.filter { it.profileId == currentProfileId } else allAccounts
-        val accountIds = accounts.map { it.id }.toSet()
 
         writeCsvToZip(
             zos,
@@ -259,7 +266,7 @@ class BackupRepositoryImpl @Inject constructor(
                     it.targetCurrency,
                     it.transferRate,
                     it.categoryId,
-                    it.tags,
+                    it.tags.joinToString("|"),
                     it.paymentMethod.name,
                     it.payee,
                     it.note,
@@ -364,7 +371,7 @@ class BackupRepositoryImpl @Inject constructor(
                     it.location,
                     it.paymentMethod?.name,
                     it.currency,
-                    it.tags,
+                    it.tags.joinToString("|"),
                     it.isStarred,
                     it.displayOrder,
                     it.profileId,
@@ -565,8 +572,17 @@ class BackupRepositoryImpl @Inject constructor(
         rows: List<List<Any?>>
     ) {
         zos.putNextEntry(java.util.zip.ZipEntry(fileName))
-        val csv = CsvProcessor.buildCsv(headers, rows)
-        zos.write(csv.toByteArray())
+        val writer = OutputStreamWriter(zos, Charsets.UTF_8)
+        val format = CSVFormat.DEFAULT.builder()
+            .setHeader(*headers.toTypedArray())
+            .build()
+        val printer = CSVPrinter(writer, format)
+        rows.forEach { row ->
+            printer.printRecord(row)
+        }
+        printer.flush()
+        // We do NOT close the printer/writer here as it would close the underlying ZipOutputStream.
+        // ZipOutputStream.closeEntry() is sufficient.
         zos.closeEntry()
     }
 
@@ -655,12 +671,9 @@ class BackupRepositoryImpl @Inject constructor(
             // 9. Clear user preferences
             settingsDataStore.clearAll()
 
-            // 10. Force process kill to ensure fresh state on next launch
-            android.os.Process.killProcess(android.os.Process.myPid())
-
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("BackupRepo", "importDataSelective failed", e)
+            Log.e("BackupRepo", "deleteAllData failed", e)
             Result.failure(e)
         }
     }
@@ -668,11 +681,20 @@ class BackupRepositoryImpl @Inject constructor(
     private fun restoreSqliteBackup(inputStream: InputStream) {
         val dbFile = context.getDatabasePath("osswallet_manager_db")
         database.close()
+
+        val maxTotalSize = 1024 * 1024 * 1024L // 1GB limit
+        var totalSize = 0L
+
         FileOutputStream(dbFile).use { output ->
-            inputStream.copyTo(output)
+            val buffer = ByteArray(4096)
+            var n: Int
+            while (inputStream.read(buffer).also { n = it } != -1) {
+                output.write(buffer, 0, n)
+                totalSize += n
+                if (totalSize > maxTotalSize) throw IOException("SQLite backup exceeds 1GB limit")
+            }
         }
-        // Force process kill to ensure DB is re-opened with new file on next launch
-        android.os.Process.killProcess(android.os.Process.myPid())
+        // Restart will be handled by the caller to allow UI to show a message.
     }
 
     private suspend fun restoreZipBackup(inputStream: InputStream) {
@@ -680,11 +702,29 @@ class BackupRepositoryImpl @Inject constructor(
         tempDir.deleteRecursively()
         tempDir.mkdirs()
 
+        val maxTotalSize = 1024 * 1024 * 1024L // 1GB limit
+        var totalSize = 0L
+
         ZipInputStream(inputStream).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
                 val file = File(tempDir, entry.name)
-                FileOutputStream(file).use { fos -> zis.copyTo(fos) }
+                // ZIP Slip Validation
+                if (!file.canonicalPath.startsWith(tempDir.canonicalPath)) {
+                    throw SecurityException("Malicious ZIP entry detected: ${entry.name}")
+                }
+                if (!entry.isDirectory) {
+                    file.parentFile?.mkdirs()
+                    FileOutputStream(file).use { fos ->
+                        val buffer = ByteArray(4096)
+                        var n: Int
+                        while (zis.read(buffer).also { n = it } != -1) {
+                            fos.write(buffer, 0, n)
+                            totalSize += n
+                            if (totalSize > maxTotalSize) throw IOException("Zip Bomb detected: uncompressed size exceeds 1GB")
+                        }
+                    }
+                }
                 entry = zis.nextEntry
             }
         }
@@ -732,11 +772,28 @@ class BackupRepositoryImpl @Inject constructor(
         tempDir.deleteRecursively()
     }
 
-    private suspend fun restoreProfiles(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun parseCsv(file: File, action: suspend (Map<String, String>) -> Unit) {
+        if (!file.exists()) return
+        val format = CSVFormat.DEFAULT.builder()
+            .setHeader()
+            .setSkipHeaderRecord(true)
+            .setIgnoreEmptyLines(true)
+            .setTrim(true)
+            .build()
+        file.reader(Charsets.UTF_8).use { reader ->
+            CSVParser.parse(reader, format).use { parser ->
+                for (record in parser) {
+                    action(record.toMap())
+                }
+            }
+        }
+    }
+
+    private suspend fun restoreProfiles(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             profileDao.insertProfile(
                 ProfileEntity(
-                    id = p["id"]?.toInt() ?: 0,
+                    id = p["id"]?.toIntOrNull() ?: 0,
                     name = p["name"] ?: "",
                     baseCurrency = p["baseCurrency"] ?: "USD",
                     type = p["type"] ?: "PERSONAL"
@@ -745,8 +802,8 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreAccounts(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreAccounts(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             accountDao.upsertAccount(
                 AccountEntity(
                     id = p["id"] ?: "",
@@ -764,40 +821,41 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreCategories(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreCategories(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             categoryDao.insertCategory(
                 CategoryEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     name = p["name"] ?: "",
                     iconName = p["iconName"] ?: p["icon"] ?: "",
                     colorHex = p["colorHex"]?.toIntOrNull() ?: 0,
                     isDefault = p["isDefault"]?.toBoolean() ?: false,
                     parentId = p["parentId"]?.toLongOrNull(),
-                    nature = p["nature"]?.let { runCatching { CategoryNature.valueOf(it) }.getOrNull() }
+                    nature = p["nature"]?.let { n -> runCatching { CategoryNature.valueOf(n) }.getOrNull() }
                         ?: CategoryNature.WANT
                 )
             )
         }
     }
 
-    private suspend fun restoreTransactions(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
-            transactionDao.insertTransaction(
+    private suspend fun restoreTransactions(file: File) = file.takeIf { it.exists() }?.let { f ->
+        val batch = mutableListOf<TransactionEntity>()
+        parseCsv(f) { p ->
+            batch.add(
                 TransactionEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     name = p["name"] ?: "",
                     amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                     timestamp = p["timestamp"]?.toLongOrNull() ?: 0,
                     currency = p["currency"] ?: "USD",
                     transactionType = TransactionType.fromValue(p["transactionType"]),
-                    accountId = p["accountId"],
+                    accountId = p["accountId"] ?: "",
                     categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
-                    tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(),
+                    tags = p["tags"]?.split('|')?.filter { it.isNotBlank() }?.toSet() ?: emptySet(),
                     targetAccountId = p["targetAccountId"],
                     targetCurrency = p["targetCurrency"],
                     transferRate = p["transferRate"]?.toBigDecimalOrNull() ?: BigDecimal.ONE,
-                    paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) }
+                    paymentMethod = p["paymentMethod"]?.let { m -> PaymentMethod.fromString(m) }
                         ?: PaymentMethod.CASH,
                     payee = p["payee"] ?: "",
                     note = p["note"] ?: "",
@@ -806,29 +864,41 @@ class BackupRepositoryImpl @Inject constructor(
                     gpsLocation = p["gpsLocation"],
                     location = p["location"],
                     warrantyExpiration = p["warrantyExpiration"]?.toLongOrNull(),
-                    status = p["status"]?.let { TransactionStatus.fromString(it) }
+                    status = p["status"]?.let { s -> TransactionStatus.fromString(s) }
                         ?: TransactionStatus.CLEARED
-                ))
-        }
-    }
-
-    private suspend fun restoreLinks(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
-            transactionLinkDao.insertLink(
-                TransactionLinkEntity(
-                    id = p["id"]?.toLong() ?: 0,
-                    transactionId = p["transactionId"]?.toLong() ?: 0,
-                    linkedTransactionId = p["linkedTransactionId"]?.toLong() ?: 0
                 )
             )
+            if (batch.size >= 100) {
+                transactionDao.insertTransactions(batch.toList())
+                batch.clear()
+            }
         }
+        if (batch.isNotEmpty()) transactionDao.insertTransactions(batch)
     }
 
-    private suspend fun restoreTemplates(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreLinks(file: File) = file.takeIf { it.exists() }?.let { f ->
+        val batch = mutableListOf<TransactionLinkEntity>()
+        parseCsv(f) { p ->
+            batch.add(
+                TransactionLinkEntity(
+                    id = p["id"]?.toLongOrNull() ?: 0,
+                    transactionId = p["transactionId"]?.toLongOrNull() ?: 0,
+                    linkedTransactionId = p["linkedTransactionId"]?.toLongOrNull() ?: 0
+                )
+            )
+            if (batch.size >= 100) {
+                transactionLinkDao.insertLinks(batch.toList())
+                batch.clear()
+            }
+        }
+        if (batch.isNotEmpty()) transactionLinkDao.insertLinks(batch)
+    }
+
+    private suspend fun restoreTemplates(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             templateDao.insertTemplate(
                 TemplateEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     name = p["name"] ?: "",
                     categoryId = p["categoryId"]?.toLongOrNull() ?: 1002,
                     amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
@@ -846,28 +916,26 @@ class BackupRepositoryImpl @Inject constructor(
                     note = p["note"],
                     payee = p["payee"],
                     location = p["location"],
-                    paymentMethod = p["paymentMethod"]?.let { PaymentMethod.fromString(it) },
+                    paymentMethod = p["paymentMethod"]?.let { m -> PaymentMethod.fromString(m) },
                     currency = p["currency"] ?: "USD",
-                    tags = p["tags"]?.splitByComma()?.toSet() ?: emptySet(),
+                    tags = p["tags"]?.split('|')?.filter { it.isNotBlank() }?.toSet() ?: emptySet(),
                     isStarred = p["isStarred"]?.toBoolean() ?: false,
                     displayOrder = p["displayOrder"]?.toIntOrNull() ?: 0,
                     profileId = p["profileId"]?.toIntOrNull() ?: 1,
-                    transactionStatus = p["transactionStatus"]?.let {
-                        TransactionStatus.fromString(
-                            it
-                        )
+                    transactionStatus = p["transactionStatus"]?.let { s ->
+                        TransactionStatus.fromString(s)
                     } ?: TransactionStatus.CLEARED
                 ))
         }
     }
 
-    private suspend fun restoreBudgets(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreBudgets(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             val filterId = p["filterId"]?.toLongOrNull()
             if (filterId != null) {
                 budgetDao.insert(
                     BudgetEntity(
-                        id = p["id"]?.toLong() ?: 0,
+                        id = p["id"]?.toLongOrNull() ?: 0,
                         name = p["name"] ?: "",
                         currency = p["currency"] ?: "USD",
                         limitAmount = p["limitAmount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
@@ -882,13 +950,13 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restorePlannedPayments(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restorePlannedPayments(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             val templateId = p["templateId"]?.toLongOrNull()
             if (templateId != null) {
                 plannedPaymentDao.insert(
                     PlannedPaymentEntity(
-                        id = p["id"]?.toLong() ?: 0,
+                        id = p["id"]?.toLongOrNull() ?: 0,
                         schedule = RecurrenceScheduleEntity(
                             recurrenceType = p["recurrenceType"] ?: "MONTHLY",
                             interval = p["interval"]?.toIntOrNull() ?: 1,
@@ -901,38 +969,42 @@ class BackupRepositoryImpl @Inject constructor(
                             lastTriggeredDate = p["lastTriggeredDate"]?.toLongOrNull()
                         ),
                         autoConfirm = p["autoConfirm"]?.toBoolean() ?: false,
-                        status = p["status"]?.let { PlannedPaymentStatus.fromString(it) }
+                        status = p["status"]?.let { s -> PlannedPaymentStatus.fromString(s) }
                             ?: PlannedPaymentStatus.ACTIVE,
                         profileId = p["profileId"]?.toIntOrNull() ?: 1,
                         templateId = templateId
                     ))
-            } else {
-                // Handle legacy data without templateId if necessary
-                // For now, if we force non-nullable, we might need to create a dummy template or skip
             }
         }
     }
 
     private suspend fun restorePlannedPaymentOccurrences(file: File) =
-        file.takeIf { it.exists() }?.let {
-            CsvProcessor.parseCsv(it).forEach { p ->
-                plannedPaymentOccurrenceDao.insert(
+        file.takeIf { it.exists() }?.let { f ->
+            val batch = mutableListOf<PlannedPaymentOccurrenceEntity>()
+            parseCsv(f) { p ->
+                batch.add(
                     PlannedPaymentOccurrenceEntity(
-                        id = p["id"]?.toLong() ?: 0,
+                        id = p["id"]?.toLongOrNull() ?: 0,
                         plannedPaymentId = p["plannedPaymentId"]?.toLongOrNull() ?: 0,
                         scheduledDate = p["scheduledDate"]?.toLongOrNull() ?: 0,
                         generatedTransactionId = p["generatedTransactionId"]?.toLongOrNull(),
-                        status = p["status"]?.let { OccurrenceStatus.fromString(it) }
+                        status = p["status"]?.let { s -> OccurrenceStatus.fromString(s) }
                             ?: OccurrenceStatus.PENDING
-                    ))
+                    )
+                )
+                if (batch.size >= 100) {
+                    plannedPaymentOccurrenceDao.insertOccurrences(batch.toList())
+                    batch.clear()
+                }
             }
+            if (batch.isNotEmpty()) plannedPaymentOccurrenceDao.insertOccurrences(batch)
         }
 
-    private suspend fun restoreTags(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreTags(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             tagDao.insertTag(
                 TagEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     name = p["name"] ?: "",
                     colorHex = p["colorHex"]?.toIntOrNull() ?: 0
                 )
@@ -940,13 +1012,13 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreLoans(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreLoans(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             val filterId = p["filterId"]?.toLongOrNull()
             if (filterId != null) {
                 loanDao.insert(
                     LoanEntity(
-                        id = p["id"]?.toLong() ?: 0,
+                        id = p["id"]?.toLongOrNull() ?: 0,
                         name = p["name"] ?: "",
                         principalAmount = p["principalAmount"]?.toBigDecimalOrNull()
                             ?: BigDecimal.ZERO,
@@ -967,11 +1039,12 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreLoanPayments(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
-            loanPaymentDao.insert(
+    private suspend fun restoreLoanPayments(file: File) = file.takeIf { it.exists() }?.let { f ->
+        val batch = mutableListOf<LoanPaymentEntity>()
+        parseCsv(f) { p ->
+            batch.add(
                 LoanPaymentEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     loanId = p["loanId"]?.toLongOrNull() ?: 0,
                     amount = p["amount"]?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
                     date = p["date"]?.toLongOrNull() ?: 0,
@@ -979,18 +1052,23 @@ class BackupRepositoryImpl @Inject constructor(
                     note = p["note"] ?: ""
                 )
             )
+            if (batch.size >= 100) {
+                loanPaymentDao.insertPayments(batch.toList())
+                batch.clear()
+            }
         }
+        if (batch.isNotEmpty()) loanPaymentDao.insertPayments(batch)
     }
 
-    private suspend fun restoreFilters(file: File) = file.takeIf { it.exists() }?.let {
-        CsvProcessor.parseCsv(it).forEach { p ->
+    private suspend fun restoreFilters(file: File) = file.takeIf { it.exists() }?.let { f ->
+        parseCsv(f) { p ->
             filterDao.insertFilter(
                 FilterEntity(
-                    id = p["id"]?.toLong() ?: 0,
+                    id = p["id"]?.toLongOrNull() ?: 0,
                     name = p["name"] ?: "",
-                    timelineRange = p["timelineRange"]?.let {
+                    timelineRange = p["timelineRange"]?.let { tr ->
                         try {
-                            json.decodeFromString<TimelineRange>(it)
+                            json.decodeFromString<TimelineRange>(tr)
                         } catch (_: Exception) {
                             TimelineRange.AllTime()
                         }
@@ -999,65 +1077,65 @@ class BackupRepositoryImpl @Inject constructor(
                     isNoteRegex = p["isNoteRegex"]?.toBoolean() ?: false,
                     queryPayee = p["queryPayee"],
                     isPayeeRegex = p["isPayeeRegex"]?.toBoolean() ?: false,
-                    categoryIds = p["categoryIds"]?.let {
+                    categoryIds = p["categoryIds"]?.let { cids ->
                         try {
-                            json.decodeFromString<Set<Long>>(it)
+                            json.decodeFromString<Set<Long>>(cids)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    accountIds = p["accountIds"]?.let {
+                    accountIds = p["accountIds"]?.let { aids ->
                         try {
-                            json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(aids)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
                     startDate = p["startDate"]?.toLongOrNull(),
                     endDate = p["endDate"]?.toLongOrNull(),
-                    paymentMethods = p["paymentMethods"]?.let {
+                    paymentMethods = p["paymentMethods"]?.let { pms ->
                         try {
-                            json.decodeFromString<Set<PaymentMethod>>(it)
+                            json.decodeFromString<Set<PaymentMethod>>(pms)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    hasWarranty = p["hasWarranty"]?.let { if (it == "true") true else if (it == "false") false else null },
+                    hasWarranty = p["hasWarranty"]?.let { hw -> if (hw == "true") true else if (hw == "false") false else null },
                     warrantyExpirationStart = p["warrantyExpirationStart"]?.toLongOrNull(),
                     warrantyExpirationEnd = p["warrantyExpirationEnd"]?.toLongOrNull(),
                     minAmount = p["minAmount"]?.toBigDecimalOrNull(),
                     maxAmount = p["maxAmount"]?.toBigDecimalOrNull(),
-                    transactionTypes = p["transactionTypes"]?.let {
+                    transactionTypes = p["transactionTypes"]?.let { tts ->
                         try {
-                            json.decodeFromString<Set<TransactionType>>(it)
+                            json.decodeFromString<Set<TransactionType>>(tts)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    currencies = p["currencies"]?.let {
+                    currencies = p["currencies"]?.let { curs ->
                         try {
-                            json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(curs)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    statuses = p["statuses"]?.let {
+                    statuses = p["statuses"]?.let { st ->
                         try {
-                            json.decodeFromString<Set<TransactionStatus>>(it)
+                            json.decodeFromString<Set<TransactionStatus>>(st)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    linkedTransactionIds = p["linkedTransactionIds"]?.let {
+                    linkedTransactionIds = p["linkedTransactionIds"]?.let { ltids ->
                         try {
-                            json.decodeFromString<Set<Long>>(it)
+                            json.decodeFromString<Set<Long>>(ltids)
                         } catch (_: Exception) {
                             emptySet()
                         }
                     } ?: emptySet(),
-                    tags = p["tags"]?.let {
+                    tags = p["tags"]?.let { tgs ->
                         try {
-                            json.decodeFromString<Set<String>>(it)
+                            json.decodeFromString<Set<String>>(tgs)
                         } catch (_: Exception) {
                             emptySet()
                         }
@@ -1066,19 +1144,27 @@ class BackupRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun restoreCurrencyRates(file: File) = file.takeIf { it.exists() }?.let {
+    private suspend fun restoreCurrencyRates(file: File) = file.takeIf { it.exists() }?.let { f ->
         // Backup-restore path: wipe and re-insert. clearAll() is safe here because the
         // backup contains all cached bases; ARC-09's scoped delete is for runtime fetches.
         currencyDao.clearAll()
-        currencyDao.insertRates(CsvProcessor.parseCsv(it).map { p ->
-            CurrencyRateEntity(
-                currencyCode = p["currencyCode"] ?: "",
-                baseCurrency = p["baseCurrency"] ?: "USD",
-                rate = p["rate"] ?: "1.0",
-                timestamp = p["timestamp"]?.toLongOrNull() ?: 0,
-                nextUpdate = p["nextUpdate"]?.toLongOrNull() ?: 0
+        val rates = mutableListOf<CurrencyRateEntity>()
+        parseCsv(f) { p ->
+            rates.add(
+                CurrencyRateEntity(
+                    currencyCode = p["currencyCode"] ?: "",
+                    baseCurrency = p["baseCurrency"] ?: "USD",
+                    rate = p["rate"] ?: "1.0",
+                    timestamp = p["timestamp"]?.toLongOrNull() ?: 0,
+                    nextUpdate = p["nextUpdate"]?.toLongOrNull() ?: 0
+                )
             )
-        })
+            if (rates.size >= 100) {
+                currencyDao.insertRates(rates.toList())
+                rates.clear()
+            }
+        }
+        if (rates.isNotEmpty()) currencyDao.insertRates(rates)
     }
 
     override suspend fun importDataSelective(
@@ -1102,8 +1188,10 @@ class BackupRepositoryImpl @Inject constructor(
 
     private suspend fun restoreZipBackupSelective(inputStream: InputStream, entities: Set<RestorableEntity>) {
         val safeEntities = entities.toMutableSet()
-        if (RestorableEntity.TRANSACTIONS in safeEntities && RestorableEntity.ACCOUNTS !in safeEntities) {
+        if (RestorableEntity.TRANSACTIONS in safeEntities) {
             safeEntities.add(RestorableEntity.ACCOUNTS)
+            safeEntities.add(RestorableEntity.CATEGORIES)
+            safeEntities.add(RestorableEntity.TAGS)
         }
         if (RestorableEntity.BUDGETS in safeEntities && RestorableEntity.FILTERS !in safeEntities) {
             safeEntities.add(RestorableEntity.FILTERS)
@@ -1119,30 +1207,65 @@ class BackupRepositoryImpl @Inject constructor(
         tempDir.deleteRecursively()
         tempDir.mkdirs()
 
+        val maxTotalSize = 1024 * 1024 * 1024L // 1GB limit
+        var totalSize = 0L
+
         ZipInputStream(inputStream).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
                 val file = File(tempDir, entry.name)
-                FileOutputStream(file).use { fos -> zis.copyTo(fos) }
+                // ZIP Slip Validation
+                if (!file.canonicalPath.startsWith(tempDir.canonicalPath)) {
+                    throw SecurityException("Malicious ZIP entry detected: ${entry.name}")
+                }
+                
+                val fileName = entry.name
+                val shouldRestore = safeEntities.any { entity ->
+                    when (entity) {
+                        RestorableEntity.PROFILES -> fileName == "profiles.csv"
+                        RestorableEntity.ACCOUNTS -> fileName == "accounts.csv"
+                        RestorableEntity.CATEGORIES -> fileName == "categories.csv"
+                        RestorableEntity.TRANSACTIONS -> fileName == "transactions.csv" || fileName == "transaction_links.csv"
+                        RestorableEntity.BUDGETS -> fileName == "budgets.csv"
+                        RestorableEntity.LOANS -> fileName == "loans.csv" || fileName == "loan_payments.csv"
+                        RestorableEntity.PLANNED_PAYMENTS -> fileName == "planned_payments.csv" || fileName == "planned_payment_occurrences.csv"
+                        RestorableEntity.TEMPLATES -> fileName == "templates.csv"
+                        RestorableEntity.FILTERS -> fileName == "filters.csv"
+                        RestorableEntity.TAGS -> fileName == "tags.csv"
+                        RestorableEntity.CURRENCY_RATES -> fileName == "currency_rates.csv"
+                    }
+                }
+
+                if (shouldRestore && !entry.isDirectory) {
+                    file.parentFile?.mkdirs()
+                    FileOutputStream(file).use { fos ->
+                        val buffer = ByteArray(4096)
+                        var n: Int
+                        while (zis.read(buffer).also { n = it } != -1) {
+                            fos.write(buffer, 0, n)
+                            totalSize += n
+                            if (totalSize > maxTotalSize) throw IOException("Zip Bomb detected: uncompressed size exceeds 1GB")
+                        }
+                    }
+                }
                 entry = zis.nextEntry
             }
         }
 
         database.withTransaction {
             // Restore in strict parent-before-child order to satisfy all FK constraints.
-            // filters must precede budgets and loans; templates must precede planned_payments;
-            // planned_payments must precede occurrences; loans must precede loan_payments.
-            if (RestorableEntity.PROFILES in safeEntities) { profileDao.clearAll(); restoreProfiles(File(tempDir, "profiles.csv")) }
-            if (RestorableEntity.ACCOUNTS in safeEntities) { accountDao.clearAll(); restoreAccounts(File(tempDir, "accounts.csv")) }
-            if (RestorableEntity.CATEGORIES in safeEntities) { categoryDao.clearAll(); restoreCategories(File(tempDir, "categories.csv")) }
-            if (RestorableEntity.TAGS in safeEntities) { tagDao.clearAll(); restoreTags(File(tempDir, "tags.csv")) }
-            if (RestorableEntity.FILTERS in safeEntities) { filterDao.clearAll(); restoreFilters(File(tempDir, "filters.csv")) }
-            if (RestorableEntity.TEMPLATES in safeEntities) { templateDao.clearAll(); restoreTemplates(File(tempDir, "templates.csv")) }
-            if (RestorableEntity.TRANSACTIONS in safeEntities) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(File(tempDir, "transactions.csv")); restoreLinks(File(tempDir, "transaction_links.csv")) }
-            if (RestorableEntity.BUDGETS in safeEntities) { budgetDao.clearAll(); restoreBudgets(File(tempDir, "budgets.csv")) }
-            if (RestorableEntity.LOANS in safeEntities) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(File(tempDir, "loans.csv")); restoreLoanPayments(File(tempDir, "loan_payments.csv")) }
-            if (RestorableEntity.PLANNED_PAYMENTS in safeEntities) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(File(tempDir, "planned_payments.csv")); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) }
-            if (RestorableEntity.CURRENCY_RATES in safeEntities) { restoreCurrencyRates(File(tempDir, "currency_rates.csv")) }
+            // Only clear and restore if the file actually exists in the ZIP to prevent accidental wipes.
+            if (RestorableEntity.PROFILES in safeEntities) File(tempDir, "profiles.csv").let { if (it.exists()) { profileDao.clearAll(); restoreProfiles(it) } }
+            if (RestorableEntity.ACCOUNTS in safeEntities) File(tempDir, "accounts.csv").let { if (it.exists()) { accountDao.clearAll(); restoreAccounts(it) } }
+            if (RestorableEntity.CATEGORIES in safeEntities) File(tempDir, "categories.csv").let { if (it.exists()) { categoryDao.clearAll(); restoreCategories(it) } }
+            if (RestorableEntity.TAGS in safeEntities) File(tempDir, "tags.csv").let { if (it.exists()) { tagDao.clearAll(); restoreTags(it) } }
+            if (RestorableEntity.FILTERS in safeEntities) File(tempDir, "filters.csv").let { if (it.exists()) { filterDao.clearAll(); restoreFilters(it) } }
+            if (RestorableEntity.TEMPLATES in safeEntities) File(tempDir, "templates.csv").let { if (it.exists()) { templateDao.clearAll(); restoreTemplates(it) } }
+            if (RestorableEntity.TRANSACTIONS in safeEntities) File(tempDir, "transactions.csv").let { if (it.exists()) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(it); restoreLinks(File(tempDir, "transaction_links.csv")) } }
+            if (RestorableEntity.BUDGETS in safeEntities) File(tempDir, "budgets.csv").let { if (it.exists()) { budgetDao.clearAll(); restoreBudgets(it) } }
+            if (RestorableEntity.LOANS in safeEntities) File(tempDir, "loans.csv").let { if (it.exists()) { loanDao.clearAll(); loanPaymentDao.clearAll(); restoreLoans(it); restoreLoanPayments(File(tempDir, "loan_payments.csv")) } }
+            if (RestorableEntity.PLANNED_PAYMENTS in safeEntities) File(tempDir, "planned_payments.csv").let { if (it.exists()) { plannedPaymentDao.clearAll(); plannedPaymentOccurrenceDao.clearAll(); restorePlannedPayments(it); restorePlannedPaymentOccurrences(File(tempDir, "planned_payment_occurrences.csv")) } }
+            if (RestorableEntity.CURRENCY_RATES in safeEntities) File(tempDir, "currency_rates.csv").let { if (it.exists()) { restoreCurrencyRates(it) } }
         }
         tempDir.deleteRecursively()
     }

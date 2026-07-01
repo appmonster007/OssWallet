@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 /**
  * ViewModel dedicated to transaction entry screen state management.

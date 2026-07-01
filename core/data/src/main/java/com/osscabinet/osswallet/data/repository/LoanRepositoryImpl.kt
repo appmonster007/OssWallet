@@ -10,8 +10,8 @@ import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import com.osscabinet.ossWallet.domain.repository.LoanRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class LoanRepositoryImpl @Inject constructor(

@@ -23,6 +23,7 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadat
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +34,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -487,13 +488,27 @@ class SettingsViewModel @Inject constructor(
             } else {
                 backupRepository.importData(uri.toString(), type)
             }
-            _backupMessage.send(if (result.isSuccess) "Backup imported successfully" else "Import failed: ${result.exceptionOrNull()?.message}")
+            
+            if (result.isSuccess) {
+                if (type == BackupType.SQLITE) {
+                    _backupMessage.send("Database restored. Restarting app...")
+                    delay(1500)
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                } else {
+                    _backupMessage.send("Backup imported successfully")
+                }
+            } else {
+                _backupMessage.send("Import failed: ${result.exceptionOrNull()?.message}")
+            }
         }
     }
 
     fun deleteAllData() {
         viewModelScope.launch {
+            _backupMessage.send("Clearing all data and restarting...")
             backupRepository.deleteAllData()
+            delay(1500)
+            android.os.Process.killProcess(android.os.Process.myPid())
         }
     }
 }

@@ -7,8 +7,8 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class TemplateRepositoryImpl @Inject constructor(

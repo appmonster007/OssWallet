@@ -41,8 +41,8 @@ import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class CsvImportServiceImpl @Inject constructor(
@@ -98,17 +98,18 @@ class CsvImportServiceImpl @Inject constructor(
      * Parse the input stream using Apache Commons CSV, returning (headers, rows).
      * Each row is a Map<columnName, value>.
      */
-    private fun parseBudgetBakersRows(inputStream: InputStream): Pair<List<String>, List<Map<String, String>>> {
+    private suspend fun <T> parseBudgetBakersRows(inputStream: InputStream, block: suspend (List<String>, Sequence<Map<String, String>>) -> T): T {
         val format = buildBudgetBakersCsvFormat()
-        val parser = CSVParser.parse(inputStream.bufferedReader(), format)
-        val records = parser.records
-        if (records.isEmpty()) return emptyList<String>() to emptyList()
+        return CSVParser.parse(inputStream.bufferedReader(Charsets.UTF_8), format).use { parser ->
+            val iterator = parser.iterator()
+            if (!iterator.hasNext()) return@use block(emptyList(), emptySequence())
 
-        val headers = records.first().toList().map { it.trim().lowercase() }
-        val rows = records.drop(1).map { record ->
-            headers.mapIndexed { i, header -> header to (record.get(i).ifEmpty { "" }) }.toMap()
+            val headers = iterator.next().toList().map { it.trim().lowercase() }
+            val rows = iterator.asSequence().map { record ->
+                headers.mapIndexed { i, header -> header to (record.get(i).ifEmpty { "" }) }.toMap()
+            }
+            block(headers, rows)
         }
-        return headers to rows
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -159,10 +160,10 @@ class CsvImportServiceImpl @Inject constructor(
      * - amount is the original/foreign amount
      * If ref_currency_amount is absent or zero, fall back to amount.
      */
-    private fun resolveBaseAmount(row: Map<String, String>): BigDecimal {
-        val ref = row["ref_currency_amount"]?.replace(",", "")?.toBigDecimalOrNull()
-        val raw = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
-        return if (ref != null && ref.compareTo(BigDecimal.ZERO) != 0) ref else raw
+    private fun resolveBaseAmount(row: Map<String, String>, delimiter: Char = ','): BigDecimal {
+        val ref = normalizeAmount(row["ref_currency_amount"], delimiter)
+        val raw = normalizeAmount(row["amount"], delimiter)
+        return if (ref.signum() != 0) ref else raw
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -224,27 +225,30 @@ class CsvImportServiceImpl @Inject constructor(
 
     override suspend fun parseHeaders(inputStream: InputStream): CsvImportSession =
         withContext(dispatcherProvider.io) {
-            val bufferedReader = inputStream.bufferedReader()
-            val firstLine = bufferedReader.readLine()
-                ?: return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null)
+            val reader = inputStream.bufferedReader()
+            // Read a sample for delimiter sniffing
+            val sampleSize = 2048
+            reader.mark(sampleSize + 100)
+            val buffer = CharArray(sampleSize)
+            val charsRead = reader.read(buffer)
+            val sample = if (charsRead > 0) String(buffer, 0, charsRead) else ""
+            reader.reset()
 
-            val (headers, previewRows, delimiter) = if (firstLine.contains(';')) {
-                val remaining = firstLine + "\n" + bufferedReader.readText()
-                val records = CSVParser.parse(remaining.reader(), buildBudgetBakersCsvFormat()).records
-                if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ';')
-                val h = records.first().toList().map { it.trim().lowercase() }
-                val p = records.drop(1).take(5).map { it.toList() }
-                Triple(h, p, ';')
-            } else {
-                val commaFormat = CSVFormat.DEFAULT.builder()
-                    .setDelimiter(',').setQuote('"').setIgnoreEmptyLines(true).setTrim(true).build()
-                val remaining = firstLine + "\n" + bufferedReader.readText()
-                val records = CSVParser.parse(remaining.reader(), commaFormat).records
-                if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, ',')
-                val h = records.first().toList().map { it.trim().lowercase() }
-                val p = records.drop(1).take(5).map { it.toList() }
-                Triple(h, p, ',')
-            }
+            val delimiter = if (sample.contains(';')) ';' else ','
+
+            val format = CSVFormat.DEFAULT.builder()
+                .setDelimiter(delimiter)
+                .setQuote('"')
+                .setIgnoreEmptyLines(true)
+                .setTrim(true)
+                .build()
+
+            val parser = CSVParser.parse(reader, format)
+            val records = parser.records
+            if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, delimiter)
+
+            val headers = records.first().toList().map { it.trim().lowercase() }
+            val previewRows = records.drop(1).take(5).map { it.toList() }
 
             // Detect source app if possible
             val detectedApp = if (headers.toSet().containsAll(budgetBakersHeaders)) {
@@ -326,12 +330,7 @@ class CsvImportServiceImpl @Inject constructor(
     private suspend fun generateBudgetBakersPreview(
         session: CsvImportSession,
         inputStream: InputStream
-    ): ImportPreview {
-        val (_, rows) = parseBudgetBakersRows(inputStream)
-        if (rows.isEmpty()) {
-            return ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList(), 0)
-        }
-
+    ): ImportPreview = parseBudgetBakersRows(inputStream) { _, rows ->
         // ARC-15: preview must use the active profile's existing data, not every profile's.
         val profileId = settingsDataStore.currentProfileId.first()
         val existingTxs = transactionDao.getAllTransactionsSync(profileId)
@@ -352,17 +351,19 @@ class CsvImportServiceImpl @Inject constructor(
         val duplicates = mutableListOf<DuplicateGroup>()
         val parseErrors = mutableListOf<ParseError>()
         var validRows = 0
+        var totalRows = 0
 
         // Transfer pairing: group transfer rows by pair key to detect unpaired rows
         val transferGroups = mutableMapOf<String, MutableList<Int>>() // pairKey -> list of row indices
 
         rows.forEachIndexed { idx, row ->
+            totalRows++
             try {
                 val accountName = row["account"] ?: ""
                 val dateStr = row["date"] ?: ""
                 val note = row["note"] ?: ""
                 val currency = row["currency"] ?: ""
-                val baseAmount = resolveBaseAmount(row)
+                val baseAmount = resolveBaseAmount(row, ';')
                 val timestamp = parseDate(dateStr)
                 val isTransfer = isTransferRow(row)
 
@@ -400,20 +401,26 @@ class CsvImportServiceImpl @Inject constructor(
                 // Duplicate detection
                 val dupKey = "${timestamp / 60000}|${baseAmount.abs().toPlainString()}|${note}"
                 if (dupKey in existingKeys) {
-                    duplicates.add(
-                        DuplicateGroup(
-                            key = dupKey,
-                            existingNote = note,
-                            incomingRowIndex = idx,
-                            incomingValues = row.values.toList()
+                    if (duplicates.size < 500) {
+                        duplicates.add(
+                            DuplicateGroup(
+                                key = dupKey,
+                                existingNote = note,
+                                incomingRowIndex = idx,
+                                incomingValues = row.values.toList()
+                            )
                         )
-                    )
+                    }
                 } else {
                     validRows++
                 }
             } catch (e: Exception) {
                 parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
             }
+        }
+
+        if (totalRows == 0) {
+            return@parseBudgetBakersRows ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList(), 0)
         }
 
         // Count unpaired transfer rows (groups with only one entry)
@@ -430,8 +437,8 @@ class CsvImportServiceImpl @Inject constructor(
             )
         }.sortedBy { it.name }
 
-        return ImportPreview(
-            totalRows = rows.size,
+        ImportPreview(
+            totalRows = totalRows,
             validRows = validRows,
             duplicates = duplicates,
             allCsvAccounts = allCsvAccounts,
@@ -444,8 +451,7 @@ class CsvImportServiceImpl @Inject constructor(
     private suspend fun generateGenericPreview(
         session: CsvImportSession,
         inputStream: InputStream
-    ): ImportPreview {
-        val lines = inputStream.bufferedReader().readLines().drop(1)
+    ): ImportPreview = withContext(dispatcherProvider.io) {
         // ARC-15: scope existence checks to the active profile.
         val profileId = settingsDataStore.currentProfileId.first()
         val existingTxs = transactionDao.getAllTransactionsSync(profileId)
@@ -457,6 +463,7 @@ class CsvImportServiceImpl @Inject constructor(
         val duplicates = mutableListOf<DuplicateGroup>()
         val parseErrors = mutableListOf<ParseError>()
         var validRows = 0
+        var totalCount = 0
 
         val existingKeys = existingTxs.map { tx ->
             "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
@@ -469,59 +476,72 @@ class CsvImportServiceImpl @Inject constructor(
             .setTrim(true)
             .build()
 
-        lines.forEachIndexed { idx, line ->
-            try {
-                val cols = CSVParser.parse(line.reader(), genericFormat).use { it.records.firstOrNull()?.toList() ?: emptyList() }
-                val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
-                val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
-                val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"
-                val dateStr = session.mapping[OssWalletField.DATE]?.let { cols.getOrNull(it) } ?: ""
-                val note = session.mapping[OssWalletField.NOTE]?.let { cols.getOrNull(it) } ?: ""
+        CSVParser.parse(inputStream.bufferedReader(Charsets.UTF_8), genericFormat).use { parser ->
+            val iterator = parser.iterator()
+            if (!iterator.hasNext()) return@use ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList())
+            
+            iterator.next() // Skip header
 
-                if (accountName.isNotBlank() && accountName.lowercase() !in existingAccounts) {
-                    newAccounts.add(accountName)
-                }
-                if (categoryName.isNotBlank() && categoryName.lowercase() !in existingCategories) {
-                    newCategories.add(categoryName)
-                }
+            iterator.forEachRemaining { record ->
+                val idx = totalCount
+                totalCount++
+                try {
+                    val cols = record.toList()
+                    val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
+                    val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
+                    val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"
+                    val dateStr = session.mapping[OssWalletField.DATE]?.let { cols.getOrNull(it) } ?: ""
+                    val note = session.mapping[OssWalletField.NOTE]?.let { cols.getOrNull(it) } ?: ""
 
-                val amount = amountStr.replace(",", "").toBigDecimalOrNull() ?: BigDecimal.ZERO
-                val timestamp = parseDate(dateStr)
+                    if (accountName.isNotBlank() && accountName.lowercase() !in existingAccounts) {
+                        newAccounts.add(accountName)
+                    }
+                    if (categoryName.isNotBlank() && categoryName.lowercase() !in existingCategories) {
+                        newCategories.add(categoryName)
+                    }
 
-                val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
-                if (dupKey in existingKeys) {
-                    duplicates.add(
-                        DuplicateGroup(
-                            key = dupKey,
-                            existingNote = note,
-                            incomingRowIndex = idx,
-                            incomingValues = cols
-                        )
-                    )
-                } else {
-                    validRows++
+                    val amount = normalizeAmount(amountStr, session.delimiter)
+                    val timestamp = parseDate(dateStr)
+
+                    val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
+                    if (dupKey in existingKeys) {
+                        if (duplicates.size < 500) {
+                            duplicates.add(
+                                DuplicateGroup(
+                                    key = dupKey,
+                                    existingNote = note,
+                                    incomingRowIndex = idx,
+                                    incomingValues = cols
+                                )
+                            )
+                        }
+                    } else {
+                        validRows++
+                    }
+                } catch (e: Exception) {
+                    if (parseErrors.size < 100) {
+                        parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
+                    }
                 }
-            } catch (e: Exception) {
-                parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
             }
-        }
 
-        return ImportPreview(
-            totalRows = lines.size,
-            validRows = validRows,
-            duplicates = duplicates,
-            allCsvAccounts = newAccounts.map { name ->
-                AccountToMap(
-                    name = name,
-                    suggestedExistingId = null,
-                    suggestedExistingName = null,
-                    hasDetectedCurrency = session.headers.any { it.contains("currency", ignoreCase = true) }
-                )
-            },
-            newCategories = newCategories.map { CategoryToMap(name = it) },
-            parseErrors = parseErrors,
-            unpairedTransferRows = 0
-        )
+            ImportPreview(
+                totalRows = totalCount,
+                validRows = validRows,
+                duplicates = duplicates,
+                allCsvAccounts = newAccounts.map { name ->
+                    AccountToMap(
+                        name = name,
+                        suggestedExistingId = null,
+                        suggestedExistingName = null,
+                        hasDetectedCurrency = session.headers.any { it.contains("currency", ignoreCase = true) }
+                    )
+                },
+                newCategories = newCategories.map { CategoryToMap(name = it) },
+                parseErrors = parseErrors,
+                unpairedTransferRows = 0
+            )
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -556,10 +576,9 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>
-    ): Result<ImportSummary> {
+    ): Result<ImportSummary> = parseBudgetBakersRows(inputStream) { _, rows ->
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-        val (_, rows) = parseBudgetBakersRows(inputStream)
 
         // ARC-15: profile-scoped reads so the import doesn't dedupe against another profile's data.
         val existingAccountEntities = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
@@ -699,7 +718,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val accountName = row["account"] ?: return@mapNotNull null
                     val dateStr = row["date"] ?: ""
                     val note = row["note"] ?: ""
-                    val baseAmount = resolveBaseAmount(row)
+                    val baseAmount = resolveBaseAmount(row, ';')
                     val timestamp = parseDate(dateStr)
                     val currency = row["currency"] ?: "INR"
                     val paymentMethod = resolvePaymentMethod(row)
@@ -722,14 +741,14 @@ class CsvImportServiceImpl @Inject constructor(
             pairGroups.forEach { (_, group) ->
                 if (group.size == 2) {
                     val sourceEntry = group.firstOrNull { entry ->
-                        (entry.row["amount"]?.replace(",", "")?.toBigDecimalOrNull()?.signum() ?: 1) < 0
+                        normalizeAmount(entry.row["amount"], ';').signum() < 0
                     } ?: group[0]
                     val targetEntry = group.firstOrNull { it != sourceEntry } ?: group[1]
 
                     val sourceExcluded = sourceEntry.accountName.lowercase() in excludedAccountNames
                     val targetExcluded = targetEntry.accountName.lowercase() in excludedAccountNames
 
-                        when {
+                    when {
                         sourceExcluded && targetExcluded -> {
                             skipped += 2
                             return@forEach
@@ -945,7 +964,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val dateStr = row["date"] ?: ""
                     val note = row["note"] ?: ""
                     val payee = row["payee"] ?: ""
-                    val baseAmount = resolveBaseAmount(row)
+                    val baseAmount = resolveBaseAmount(row, ';')
                     val timestamp = parseDate(dateStr)
                     val currency = row["currency"] ?: "INR"
                     val txType = detectTransactionType(row)
@@ -1012,23 +1031,25 @@ class CsvImportServiceImpl @Inject constructor(
             }
         }
 
-        return Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
+        Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
     }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Cashew-specific import
     // ──────────────────────────────────────────────────────────────────────────
 
-    private fun parseCashewRows(inputStream: InputStream): List<Map<String, String>> {
+    private suspend fun <T> parseCashewRows(inputStream: InputStream, block: suspend (Sequence<Map<String, String>>) -> T): T {
         val format = CSVFormat.DEFAULT.builder()
             .setDelimiter(',').setQuote('"')
             .setIgnoreEmptyLines(true).setTrim(true).build()
-        val parser = CSVParser.parse(inputStream.bufferedReader(), format)
-        val records = parser.records
-        if (records.isEmpty()) return emptyList()
-        val headers = records.first().toList().map { it.trim().lowercase() }
-        return records.drop(1).map { rec ->
-            headers.mapIndexed { i, h -> h to (rec.get(i).ifEmpty { "" }) }.toMap()
+        return CSVParser.parse(inputStream.bufferedReader(Charsets.UTF_8), format).use { parser ->
+            val iterator = parser.iterator()
+            if (!iterator.hasNext()) return@use block(emptySequence())
+            val headers = iterator.next().toList().map { it.trim().lowercase() }
+            val rows = iterator.asSequence().map { rec ->
+                headers.mapIndexed { i, h -> h to (rec.get(i).ifEmpty { "" }) }.toMap()
+            }
+            block(rows)
         }
     }
 
@@ -1041,10 +1062,7 @@ class CsvImportServiceImpl @Inject constructor(
     private suspend fun generateCashewPreview(
         session: CsvImportSession,
         inputStream: InputStream
-    ): ImportPreview {
-        val rows = parseCashewRows(inputStream)
-        if (rows.isEmpty()) return ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList())
-
+    ): ImportPreview = parseCashewRows(inputStream) { rows ->
         // ARC-15: scope existence checks to the active profile.
         val profileId = settingsDataStore.currentProfileId.first()
         val existingAccountsList = accountDao.getAllAccountsSync(profileId)
@@ -1059,12 +1077,14 @@ class CsvImportServiceImpl @Inject constructor(
         val duplicates = mutableListOf<DuplicateGroup>()
         val parseErrors = mutableListOf<ParseError>()
         var validRows = 0
+        var totalRows = 0
         val transferGroups = mutableMapOf<String, MutableList<Int>>()
 
         rows.forEachIndexed { idx, row ->
+            totalRows++
             try {
                 val accountName = row["account"] ?: ""
-                val amount = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val amount = normalizeAmount(row["amount"], ',')
                 val timestamp = parseDate(row["date"] ?: "")
                 val categoryName = row["category name"] ?: ""
                 val subcategoryName = row["subcategory name"] ?: ""
@@ -1093,20 +1113,26 @@ class CsvImportServiceImpl @Inject constructor(
 
                 val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$combinedNote"
                 if (dupKey in existingKeys) {
-                    duplicates.add(DuplicateGroup(dupKey, combinedNote, idx, row.values.toList()))
+                    if (duplicates.size < 500) {
+                        duplicates.add(DuplicateGroup(dupKey, combinedNote, idx, row.values.toList()))
+                    }
                 } else validRows++
             } catch (e: Exception) {
-                parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
+                if (parseErrors.size < 100) {
+                    parseErrors.add(ParseError(idx, e.message ?: "Parse error"))
+                }
             }
         }
+
+        if (totalRows == 0) return@parseCashewRows ImportPreview(0, 0, emptyList(), emptyList(), emptyList(), emptyList())
 
         val allCsvAccounts = accountRowCounts.map { (name, count) ->
             val match = existingAccountsByName[name.lowercase()]
             AccountToMap(name, match?.id, match?.name, count)
         }.sortedBy { it.name }
 
-        return ImportPreview(
-            totalRows = rows.size,
+        ImportPreview(
+            totalRows = totalRows,
             validRows = validRows,
             duplicates = duplicates,
             allCsvAccounts = allCsvAccounts,
@@ -1122,10 +1148,9 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>
-    ): Result<ImportSummary> {
+    ): Result<ImportSummary> = parseCashewRows(inputStream) { rows ->
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-        val rows = parseCashewRows(inputStream)
 
         // ARC-15: scope reads to the active profile (profileId resolved above).
         val existingAccountEntities = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
@@ -1240,7 +1265,7 @@ class CsvImportServiceImpl @Inject constructor(
                         accountName = row["account"] ?: return@mapNotNull null,
                         timestamp = parseDate(row["date"] ?: ""),
                         note = cashewCombinedNote(row),
-                        baseAmount = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO,
+                        baseAmount = normalizeAmount(row["amount"], ','),
                         currency = row["currency"] ?: accountCurrencyMap[row["account"]?.lowercase()] ?: profileBaseCurrency
                     )
                 } catch (e: Exception) {
@@ -1380,7 +1405,7 @@ class CsvImportServiceImpl @Inject constructor(
                     val accountName = row["account"] ?: ""
                     if (accountName.lowercase() in excludedAccountNames) { skipped++; return@forEachIndexed }
 
-                    val amountRaw = row["amount"]?.replace(",", "")?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val amountRaw = normalizeAmount(row["amount"], ',')
                     val isIncome = row["income"]?.equals("true", ignoreCase = true) == true
                     val finalAmount = if (isIncome) amountRaw.abs() else amountRaw.abs().negate()
                     val txType = if (isIncome) TransactionType.INCOME else TransactionType.EXPENSE
@@ -1440,7 +1465,7 @@ class CsvImportServiceImpl @Inject constructor(
             }
         }
 
-        return Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
+        Result.success(ImportSummary(imported, skipped, errors, transfersRerouted))
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -1453,17 +1478,30 @@ class CsvImportServiceImpl @Inject constructor(
         duplicatePolicy: DuplicatePolicy,
         entityMappings: List<EntityMapping>,
         selectedDuplicateRowIndices: Set<Int>
-    ): Result<ImportSummary> {
+    ): Result<ImportSummary> = withContext(dispatcherProvider.io) {
         val profileId = settingsDataStore.currentProfileId.first()
         val profileBaseCurrency = profileDao.getProfileById(profileId)?.baseCurrency ?: "INR"
-        val lines = inputStream.bufferedReader().readLines().drop(1)
-        // ARC-15: scope reads to the active profile (profileId resolved above).
-        val existingAccounts = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
-        val existingCategories = categoryDao.getAllCategoriesSync().associateBy { it.name.lowercase() }
-        val existingTxs = transactionDao.getAllTransactionsSync(profileId)
-        val existingKeys = existingTxs.map { tx ->
-            "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
-        }.toSet()
+        
+        val genericFormat = CSVFormat.DEFAULT.builder()
+            .setDelimiter(session.delimiter)
+            .setQuote('"')
+            .setIgnoreEmptyLines(true)
+            .setTrim(true)
+            .build()
+
+        CSVParser.parse(inputStream.bufferedReader(Charsets.UTF_8), genericFormat).use { parser ->
+            val iterator = parser.iterator()
+            if (!iterator.hasNext()) return@use Result.success(ImportSummary(0, 0, emptyList()))
+            
+            iterator.next() // Skip header
+
+            // ARC-15: scope reads to the active profile (profileId resolved above).
+            val existingAccounts = accountDao.getAllAccountsSync(profileId).associateBy { it.name.lowercase() }
+            val existingCategories = categoryDao.getAllCategoriesSync().associateBy { it.name.lowercase() }
+            val existingTxs = transactionDao.getAllTransactionsSync(profileId)
+            val existingKeys = existingTxs.map { tx ->
+                "${tx.timestamp / 60000}|${tx.amount.abs().toPlainString()}|${tx.note}"
+            }.toSet()
 
         val accountMap = existingAccounts.mapValues { it.value.id }.toMutableMap()
         val categoryMap = existingCategories.mapValues { it.value.id }.toMutableMap()
@@ -1477,13 +1515,6 @@ class CsvImportServiceImpl @Inject constructor(
         var imported = 0
         var skipped = 0
         val errors = mutableListOf<ParseError>()
-
-        val genericFormat = CSVFormat.DEFAULT.builder()
-            .setDelimiter(session.delimiter)
-            .setQuote('"')
-            .setIgnoreEmptyLines(true)
-            .setTrim(true)
-            .build()
 
         val newCategoryColorMap = mutableMapOf<Long, Int>()
         val sortedMappings = entityMappings.sortedWith(compareBy { em ->
@@ -1548,9 +1579,10 @@ class CsvImportServiceImpl @Inject constructor(
                 }
             }
 
-            lines.forEachIndexed { idx, line ->
+            var idx = 0
+            for (record in iterator) {
                 try {
-                    val cols = CSVParser.parse(line.reader(), genericFormat).use { it.records.firstOrNull()?.toList() ?: emptyList() }
+                    val cols = record.toList()
                     val accountName = session.mapping[OssWalletField.ACCOUNT]?.let { cols.getOrNull(it) } ?: ""
                     val categoryName = session.mapping[OssWalletField.CATEGORY]?.let { cols.getOrNull(it) } ?: ""
                     val amountStr = session.mapping[OssWalletField.AMOUNT]?.let { cols.getOrNull(it) } ?: "0"
@@ -1563,18 +1595,24 @@ class CsvImportServiceImpl @Inject constructor(
                     val warrantyStr = session.mapping[OssWalletField.WARRANTY_MONTHS]?.let { cols.getOrNull(it) } ?: "0"
                     val isTransferStr = session.mapping[OssWalletField.IS_TRANSFER]?.let { cols.getOrNull(it) } ?: "false"
 
-                    val amount = amountStr.replace(",", "").toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val amount = normalizeAmount(amountStr, session.delimiter)
                     val timestamp = parseDate(dateStr)
 
                     val dupKey = "${timestamp / 60000}|${amount.abs().toPlainString()}|$note"
                     if (dupKey in existingKeys) {
                         if (!handleDuplicate(duplicatePolicy, idx, selectedDuplicateRowIndices)) {
-                            skipped++; return@forEachIndexed
+                            skipped++
+                            idx++
+                            continue
                         }
                     }
 
                     val accountId = accountMap[accountName.lowercase()]
-                    if (accountId == null) { skipped++; return@forEachIndexed }
+                    if (accountId == null) { 
+                        skipped++
+                        idx++
+                        continue
+                    }
 
                     val categoryId = categoryMap[categoryName.lowercase()] ?: Category.SYSTEM_OTHERS
 
@@ -1633,15 +1671,32 @@ class CsvImportServiceImpl @Inject constructor(
                 } catch (e: Exception) {
                     errors.add(ParseError(idx, e.message ?: "Row error"))
                 }
+                idx++
             }
         }
 
-        return Result.success(ImportSummary(imported, skipped, errors))
-    }
+        Result.success(ImportSummary(imported, skipped, errors))
+    } }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────────────
+
+    private fun normalizeAmount(s: String?, delimiter: Char): BigDecimal {
+        if (s.isNullOrBlank()) return BigDecimal.ZERO
+        
+        // Remove common non-numeric fluff like currency symbols or spaces
+        val clean = s.filter { it.isDigit() || it == '-' || it == ',' || it == '.' }
+        
+        val normalized = if (delimiter == ';') {
+            // Heuristic: semicolon delimiter usually implies European locale (comma as decimal)
+            clean.replace(".", "").replace(",", ".")
+        } else {
+            // Heuristic: comma delimiter usually implies US/UK locale (dot as decimal)
+            clean.replace(",", "")
+        }
+        return normalized.toBigDecimalOrNull() ?: BigDecimal.ZERO
+    }
 
     private fun resolvePaymentMethod(row: Map<String, String>): PaymentMethod {
         val bbType = row["payment_type"] ?: ""

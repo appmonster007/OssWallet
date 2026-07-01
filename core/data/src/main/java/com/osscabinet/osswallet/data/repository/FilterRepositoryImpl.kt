@@ -7,8 +7,8 @@ import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.repository.FilterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class FilterRepositoryImpl @Inject constructor(

@@ -15,9 +15,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material3.Surface
+import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.PanelOverline
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,9 +67,10 @@ fun QuickAddAccountStep(
     accounts: List<Account>,
     structureTypes: List<AccountStructureType>,
     selectedAccountId: String?,
+    selectedToAccountId: String? = null,
     entryMode: EntryMode,
     isStepActive: Boolean = false,
-    onAccountTapped: (String) -> Unit,
+    onAccountTapped: (String, Boolean) -> Unit,
     onToggleType: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -120,21 +124,65 @@ fun QuickAddAccountStep(
                     EmptyState("No accounts found")
                 } else {
                     AtelierGrid(numColumns, Modifier.weight(1f, fill = false)) {
-                        items(filtered, key = { it.id }) { account ->
-                            val accountColor = remember(account.colorHex, fallbackIconColor) {
-                                runCatching {
-                                    Color(android.graphics.Color.parseColor(account.colorHex))
-                                }.getOrDefault(fallbackIconColor)
+                        if (entryMode == EntryMode.TRANSFER) {
+                            // FROM ACCOUNT Section
+                            item(span = { GridItemSpan(numColumns) }) {
+                                PanelOverline("FROM ACCOUNT")
                             }
-                            AtelierTile(
-                                label = account.name,
-                                icon = getAccountIconByName(account.icon),
-                                iconColor = accountColor,
-                                isSelected = account.id == selectedAccountId,
-                                selectionColor = typeColor,
-                                selectionContentColor = Color.White,
-                                onTap = { onAccountTapped(account.id) }
-                            )
+                            items(filtered, key = { "from_${it.id}" }) { account ->
+                                val accountColor = remember(account.colorHex, fallbackIconColor) {
+                                    runCatching {
+                                        Color(android.graphics.Color.parseColor(account.colorHex))
+                                    }.getOrDefault(fallbackIconColor)
+                                }
+                                AtelierTile(
+                                    label = account.name,
+                                    icon = getAccountIconByName(account.icon),
+                                    iconColor = accountColor,
+                                    isSelected = account.id == selectedAccountId,
+                                    selectionColor = typeColor,
+                                    selectionContentColor = Color.White,
+                                    onTap = { onAccountTapped(account.id, true) }
+                                )
+                            }
+
+                            // TO ACCOUNT Section
+                            item(span = { GridItemSpan(numColumns) }) {
+                                PanelOverline("TO ACCOUNT")
+                            }
+                            items(filtered, key = { "to_${it.id}" }) { account ->
+                                val accountColor = remember(account.colorHex, fallbackIconColor) {
+                                    runCatching {
+                                        Color(android.graphics.Color.parseColor(account.colorHex))
+                                    }.getOrDefault(fallbackIconColor)
+                                }
+                                AtelierTile(
+                                    label = account.name,
+                                    icon = getAccountIconByName(account.icon),
+                                    iconColor = accountColor,
+                                    isSelected = account.id == selectedToAccountId,
+                                    selectionColor = typeColor,
+                                    selectionContentColor = Color.White,
+                                    onTap = { onAccountTapped(account.id, false) }
+                                )
+                            }
+                        } else {
+                            items(filtered, key = { it.id }) { account ->
+                                val accountColor = remember(account.colorHex, fallbackIconColor) {
+                                    runCatching {
+                                        Color(android.graphics.Color.parseColor(account.colorHex))
+                                    }.getOrDefault(fallbackIconColor)
+                                }
+                                AtelierTile(
+                                    label = account.name,
+                                    icon = getAccountIconByName(account.icon),
+                                    iconColor = accountColor,
+                                    isSelected = account.id == selectedAccountId,
+                                    selectionColor = typeColor,
+                                    selectionContentColor = Color.White,
+                                    onTap = { onAccountTapped(account.id, true) }
+                                )
+                            }
                         }
                     }
                 }
@@ -257,11 +305,16 @@ private fun AtelierTypeToggle(
     activeColor: Color,
 ) {
     val shape = RoundedCornerShape(12.dp)
-    val isIncome = entryMode == EntryMode.INCOME
-    val icon = if (isIncome) Icons.AutoMirrored.Rounded.TrendingUp
-    else Icons.AutoMirrored.Rounded.TrendingDown
-    val a11yLabel = if (isIncome) "Income, tap to switch to Expense"
-    else "Expense, tap to switch to Income"
+    val icon = when (entryMode) {
+        EntryMode.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
+        EntryMode.INCOME -> Icons.AutoMirrored.Rounded.TrendingUp
+        EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
+    }
+    val a11yLabel = when (entryMode) {
+        EntryMode.EXPENSE -> "Expense, tap to switch to Income"
+        EntryMode.INCOME -> "Income, tap to switch to Transfer"
+        EntryMode.TRANSFER -> "Transfer, tap to switch to Expense"
+    }
 
     Surface(
         onClick = onClick,
@@ -302,7 +355,7 @@ fun PreviewQuickAddAccountStep() {
                 structureTypes = AccountStructureType.entries,
                 selectedAccountId = "3",
                 entryMode = EntryMode.EXPENSE,
-                onAccountTapped = {},
+                onAccountTapped = { _, _ -> },
                 onToggleType = {}
             )
         }

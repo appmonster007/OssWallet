@@ -118,7 +118,11 @@ fun QuickAddAccountStep(
             )
 
             AtelierPanel(
-                overline = if (searchQuery.isNotBlank()) "Results" else "Accounts",
+                header = {
+                    if (entryMode != EntryMode.TRANSFER) {
+                        PanelOverline(if (searchQuery.isNotBlank()) "Results" else "Accounts")
+                    }
+                },
                 modifier = Modifier.weight(1f, fill = false),
             ) {
                 val fallbackIconColor = AppColors.contentSecondary
@@ -134,7 +138,7 @@ fun QuickAddAccountStep(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    PanelOverline("FROM ACCOUNT")
+                                    PanelOverline("From Account")
                                     IconButton(
                                         onClick = onSwapAccounts,
                                         modifier = Modifier.size(24.dp)
@@ -167,7 +171,7 @@ fun QuickAddAccountStep(
 
                             // TO ACCOUNT Section
                             item(span = { GridItemSpan(numColumns) }) {
-                                PanelOverline("TO ACCOUNT")
+                                PanelOverline("To Account")
                             }
                             items(filtered, key = { "to_${it.id}" }) { account ->
                                 val accountColor = remember(account.colorHex, fallbackIconColor) {

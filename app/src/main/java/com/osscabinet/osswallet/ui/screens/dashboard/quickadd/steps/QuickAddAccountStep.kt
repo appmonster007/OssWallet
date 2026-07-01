@@ -300,7 +300,7 @@ fun PreviewQuickAddAccountStep() {
             QuickAddAccountStep(
                 accounts = mockAccounts,
                 structureTypes = AccountStructureType.entries,
-                selectedAccountId = "1",
+                selectedAccountId = "3",
                 entryMode = EntryMode.EXPENSE,
                 onAccountTapped = {},
                 onToggleType = {}

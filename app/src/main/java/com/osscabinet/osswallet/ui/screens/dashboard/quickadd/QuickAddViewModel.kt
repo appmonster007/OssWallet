@@ -6,7 +6,10 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import kotlinx.coroutines.flow.map
+import java.util.concurrent.TimeUnit
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -31,14 +34,45 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
+sealed interface QuickAddResult {
+    data class TemplateItem(
+        val template: Template,
+        val iconName: String?,
+        val colorHex: Int
+    ) : QuickAddResult
+    data class CategoryItem(val category: Category) : QuickAddResult
+    data class SuggestionItem(
+        val label: String,
+        val categoryId: Long,
+        val iconName: String?,
+        val colorHex: Int,
+        val accountId: String?,
+        val amount: BigDecimal,
+        val currency: String,
+        val entryMode: EntryMode,
+        val note: String,
+        val payee: String,
+        val tags: Set<String>
+    ) : QuickAddResult
+}
+
+data class QuickAddSection(
+    val title: String,
+    val items: List<QuickAddResult>
+)
+
 data class QuickAddState(
     val currentStep: Int = 0,
+    val searchQuery: String = "",
     val amount: BigDecimal = BigDecimal.ZERO,
     val selectedTemplate: Template? = null,
     val selectedCategoryId: Long? = null,
     val selectedAccountId: String? = null,
     val selectedCurrency: String = "",
     val entryMode: EntryMode = EntryMode.EXPENSE,
+    val note: String = "",
+    val payee: String = "",
+    val tags: Set<String> = emptySet(),
     val accounts: List<Account> = emptyList(),
     val structureTypes: List<AccountStructureType> = emptyList(),
     val accountBalances: Map<String, BigDecimal> = emptyMap(),
@@ -70,6 +104,108 @@ class QuickAddViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
 
+    val sections: StateFlow<List<QuickAddSection>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId ->
+            combine(
+                _uiState.map { it.searchQuery },
+                templates,
+                categories,
+                transactionRepository.getAllTransactions(profileId)
+            ) { query, allTemplates, allCategories, allTransactions ->
+                val sections = mutableListOf<QuickAddSection>()
+
+                // 1. Templates Section
+                val matchedTemplates = allTemplates.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                            it.note?.contains(query, ignoreCase = true) == true
+                }.sortedByDescending { it.isStarred }
+                
+                if (matchedTemplates.isNotEmpty()) {
+                    sections.add(
+                        QuickAddSection(
+                            title = "TEMPLATES",
+                            items = matchedTemplates.map { t ->
+                                val cat = allCategories.find { it.id == t.categoryId }
+                                QuickAddResult.TemplateItem(
+                                    template = t,
+                                    iconName = t.icon ?: cat?.iconName,
+                                    colorHex = t.colorHex?.let {
+                                        runCatching { android.graphics.Color.parseColor(it) }.getOrNull()
+                                    } ?: cat?.colorHex ?: -1
+                                )
+                            }
+                        )
+                    )
+                }
+
+                // 2. Suggestions Section (Only when searching)
+                if (query.isNotBlank()) {
+                    val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(367)
+                    val suggestions = allTransactions
+                        .filter { it.timestamp >= cutoff }
+                        .filter {
+                            it.note.contains(query, ignoreCase = true) ||
+                                    it.payee.contains(query, ignoreCase = true)
+                        }
+                        .mapNotNull { tx ->
+                            val label = when {
+                                tx.note.isNotBlank() && tx.payee.isNotBlank() -> "${tx.note}: ${tx.payee}"
+                                tx.note.isNotBlank() -> tx.note
+                                tx.payee.isNotBlank() -> tx.payee
+                                else -> null
+                            }
+                            label?.let { l -> tx to l }
+                        }
+                        .groupBy { it.second } // Group by label
+                        .map { (label, pairs) ->
+                            val latest = pairs.maxBy { it.first.timestamp }.first
+                            val cat = allCategories.find { it.id == latest.categoryId }
+                            QuickAddResult.SuggestionItem(
+                                label = label,
+                                categoryId = latest.categoryId,
+                                iconName = cat?.iconName,
+                                colorHex = cat?.colorHex ?: -1,
+                                accountId = latest.accountId,
+                                amount = latest.amount.abs(),
+                                currency = latest.currency,
+                                entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
+                                note = latest.note,
+                                payee = latest.payee,
+                                tags = latest.tags
+                            )
+                        }
+                        .sortedByDescending { it.label } // Or some other relevance
+                        .take(5)
+
+                    if (suggestions.isNotEmpty()) {
+                        sections.add(
+                            QuickAddSection(
+                                title = "SUGGESTIONS",
+                                items = suggestions
+                            )
+                        )
+                    }
+                }
+
+                // 3. Categories Section
+                val matchedCategories = allCategories
+                    .filter { !Category.isSystemCategory(it.id) }
+                    .filter { it.name.contains(query, ignoreCase = true) }
+                    .sortedBy { it.name }
+
+                if (matchedCategories.isNotEmpty()) {
+                    sections.add(
+                        QuickAddSection(
+                            title = "CATEGORIES",
+                            items = matchedCategories.map { QuickAddResult.CategoryItem(it) }
+                        )
+                    )
+                }
+
+                sections
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val state: StateFlow<QuickAddState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
@@ -80,7 +216,14 @@ class QuickAddViewModel @Inject constructor(
                 computationRepository.exchangeRatesSnapshot
             ) { uiState, allAccounts, transactions, baseCurrency, rates ->
                 val activeAccounts = allAccounts.filter { !it.isArchived }
-                val structureTypes = allAccounts.map { it.structureType }
+                
+                // Sort accounts: preselected first (from template/suggestion), then by name
+                val sortedAccounts = activeAccounts.sortedWith(
+                    compareByDescending<Account> { it.id == uiState.selectedAccountId }
+                        .thenBy { it.name }
+                )
+
+                val structureTypes = activeAccounts.map { it.structureType }
                     .distinct()
                     .sortedBy { it.displayName }
 
@@ -94,7 +237,7 @@ class QuickAddViewModel @Inject constructor(
                 }
 
                 uiState.copy(
-                    accounts = activeAccounts,
+                    accounts = sortedAccounts,
                     structureTypes = structureTypes,
                     accountBalances = balances,
                     exchangeRates = rates,
@@ -107,6 +250,10 @@ class QuickAddViewModel @Inject constructor(
             QuickAddState(entryMode = initialType)
         )
 
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
     fun onTemplateSelected(template: Template) {
         val account = state.value.accounts.find { it.id == template.accountId }
         _uiState.update {
@@ -117,6 +264,37 @@ class QuickAddViewModel @Inject constructor(
                 selectedCurrency = account?.currencyCode ?: template.currency,
                 entryMode = template.entryMode,
                 amount = template.amount.abs(),
+                note = template.note ?: "",
+                payee = template.payee ?: "",
+                tags = template.tags ?: emptySet(),
+                currentStep = 1
+            )
+        }
+    }
+
+    fun onSuggestionSelected(
+        label: String,
+        categoryId: Long,
+        accountId: String?,
+        amount: BigDecimal,
+        currency: String,
+        entryMode: EntryMode,
+        note: String,
+        payee: String,
+        tags: Set<String>
+    ) {
+        val account = state.value.accounts.find { it.id == accountId }
+        _uiState.update {
+            it.copy(
+                selectedTemplate = null,
+                selectedCategoryId = categoryId,
+                selectedAccountId = accountId,
+                selectedCurrency = account?.currencyCode ?: currency,
+                entryMode = entryMode,
+                amount = amount.abs(),
+                note = note,
+                payee = payee,
+                tags = tags,
                 currentStep = 1
             )
         }
@@ -130,6 +308,9 @@ class QuickAddViewModel @Inject constructor(
                 selectedAccountId = null,
                 entryMode = EntryMode.EXPENSE,
                 amount = BigDecimal.ZERO,
+                note = "",
+                payee = "",
+                tags = emptySet(),
                 currentStep = 1
             )
         }
@@ -192,11 +373,11 @@ class QuickAddViewModel @Inject constructor(
                             accountId = accountId,
                             currency = s.selectedCurrency.ifBlank { account.currencyCode },
                             categoryId = categoryId,
-                            note = s.selectedTemplate?.note ?: "",
-                            payee = s.selectedTemplate?.payee ?: "",
+                            note = s.note.ifBlank { s.selectedTemplate?.note ?: "" },
+                            payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
                             status = s.selectedTemplate?.transactionStatus
                                 ?: TransactionStatus.CLEARED,
-                            tags = s.selectedTemplate?.tags ?: emptySet()
+                            tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() }
                         ),
                         profileId = profileId
                     )

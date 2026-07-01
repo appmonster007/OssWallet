@@ -19,8 +19,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.PanelOverline
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,14 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.ui.semantics.Role
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -72,6 +73,7 @@ fun QuickAddAccountStep(
     isStepActive: Boolean = false,
     onAccountTapped: (String, Boolean) -> Unit,
     onToggleType: () -> Unit,
+    onSwapAccounts: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -127,7 +129,24 @@ fun QuickAddAccountStep(
                         if (entryMode == EntryMode.TRANSFER) {
                             // FROM ACCOUNT Section
                             item(span = { GridItemSpan(numColumns) }) {
-                                PanelOverline("FROM ACCOUNT")
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    PanelOverline("FROM ACCOUNT")
+                                    IconButton(
+                                        onClick = onSwapAccounts,
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.SwapVert,
+                                            contentDescription = "Swap accounts",
+                                            tint = typeColor,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             }
                             items(filtered, key = { "from_${it.id}" }) { account ->
                                 val accountColor = remember(account.colorHex, fallbackIconColor) {
@@ -357,6 +376,31 @@ fun PreviewQuickAddAccountStep() {
                 entryMode = EntryMode.EXPENSE,
                 onAccountTapped = { _, _ -> },
                 onToggleType = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddTransferAccountStep() {
+    val mockAccounts = listOf(
+        Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
+        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance"),
+        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, "#F44336", "CreditCard")
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.background(AppColors.background)) {
+            QuickAddAccountStep(
+                accounts = mockAccounts,
+                structureTypes = AccountStructureType.entries,
+                selectedAccountId = "1",
+                selectedToAccountId = "2",
+                entryMode = EntryMode.TRANSFER,
+                onAccountTapped = { _, _ -> },
+                onToggleType = {},
+                onSwapAccounts = {}
             )
         }
     }

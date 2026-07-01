@@ -77,19 +77,19 @@ fun CurrencySelector(
             border = BorderStroke(1.dp, AppColors.outlineVariant)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    selectedCurrency.ifEmpty { "USD" },
+                    text = selectedCurrency.ifEmpty { "USD" },
                     style = AppTextStyles.chipLabel,
                     color = AppColors.contentPrimary
                 )
                 Icon(
                     if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
                     contentDescription = null,
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
                     tint = AppColors.contentSecondary
                 )
             }

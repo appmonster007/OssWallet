@@ -75,8 +75,10 @@ fun QuickAddTemplateStep(
         label: String,
         categoryId: Long,
         accountId: String?,
+        targetAccountId: String?,
         amount: BigDecimal,
         currency: String,
+        targetCurrency: String?,
         entryMode: EntryMode,
         note: String,
         payee: String,
@@ -164,8 +166,10 @@ fun QuickAddTemplateStep(
                                                     item.label,
                                                     item.categoryId,
                                                     item.accountId,
+                                                    item.targetAccountId,
                                                     item.amount,
                                                     item.currency,
+                                                    item.targetCurrency,
                                                     item.entryMode,
                                                     item.note,
                                                     item.payee,
@@ -305,7 +309,7 @@ fun PreviewQuickAddTemplateStep() {
                 selectedCategoryId = null,
                 isSheetSettled = true,
                 onTemplateSelected = {},
-                onSuggestionSelected = { _, _, _, _, _, _, _, _, _ -> },
+                onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
                 onCategorySelected = {}
             )
         }

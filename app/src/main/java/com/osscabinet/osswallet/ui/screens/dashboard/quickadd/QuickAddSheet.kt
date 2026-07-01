@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -60,12 +59,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
@@ -80,6 +81,10 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
 
 private const val STEP_TEMPLATE = 0
@@ -90,17 +95,62 @@ private const val TOTAL_STEPS = 3
 @Composable
 fun QuickAddSheet(
     onDismiss: () -> Unit,
-    viewModel: QuickAddViewModel = hiltViewModel()
+    viewModel: QuickAddViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val sections by viewModel.sections.collectAsState()
+
+    QuickAddSheetInternal(
+        state = state,
+        sections = sections,
+        onDismiss = onDismiss,
+        onReset = viewModel::reset,
+        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+        onTemplateSelected = viewModel::onTemplateSelected,
+        onSuggestionSelected = viewModel::onSuggestionSelected,
+        onCategorySelected = viewModel::onCategorySelected,
+        onAccountTapped = viewModel::onAccountTapped,
+        onToggleType = viewModel::toggleTransactionType,
+        onSwapAccounts = viewModel::onSwapAccounts,
+        onAmountChange = viewModel::onAmountChanged,
+        onAmountOverrideChange = viewModel::onAmountOverrideChanged,
+        onCurrencySelected = viewModel::onCurrencySelected,
+        onSetAmountFocus = viewModel::setAmountFocus,
+        onToggleAmountOverride = viewModel::toggleAmountOverride,
+        onSaveTransaction = { viewModel.saveTransaction(onSuccess = onDismiss) },
+        goToStep = viewModel::goToStep
+    )
+}
+
+@Composable
+internal fun QuickAddSheetInternal(
+    state: QuickAddState,
+    sections: List<QuickAddSection>,
+    onDismiss: () -> Unit,
+    onReset: () -> Unit,
+    onSearchQueryChanged: (String) -> Unit,
+    onTemplateSelected: (Template) -> Unit,
+    onSuggestionSelected: (String, Long, String?, String?, BigDecimal, String, String?, EntryMode, String, String, Set<String>) -> Unit,
+    onCategorySelected: (Category) -> Unit,
+    onAccountTapped: (String, Boolean) -> Unit,
+    onToggleType: () -> Unit,
+    onSwapAccounts: () -> Unit,
+    onAmountChange: (BigDecimal) -> Unit,
+    onAmountOverrideChange: (BigDecimal) -> Unit,
+    onCurrencySelected: (String, Boolean) -> Unit,
+    onSetAmountFocus: (AmountEditingSide) -> Unit,
+    onToggleAmountOverride: () -> Unit,
+    onSaveTransaction: () -> Unit,
+    goToStep: (Int) -> Unit
+) {
     val glassEnabled = LocalGlassmorphismEnabled.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val isPreview = LocalInspectionMode.current
 
-    // State to manage entry/exit transitions
+    // State to manage entry/exit transitions. Start "true" in previews so the sheet is visible.
     val visibleState = remember {
-        MutableTransitionState(false).apply {
+        MutableTransitionState(initialState = isPreview).apply {
             targetState = true
         }
     }
@@ -113,7 +163,7 @@ fun QuickAddSheet(
     }
 
     // Reset state every time the sheet opens
-    LaunchedEffect(Unit) { viewModel.reset() }
+    LaunchedEffect(Unit) { onReset() }
 
     fun hideKeyboard() {
         keyboardController?.hide()
@@ -150,12 +200,10 @@ fun QuickAddSheet(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-//                    .background(ColorScrimDark)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { animateDismiss() }
-                    )
+                    ) { animateDismiss() }
             )
         }
 
@@ -211,7 +259,20 @@ fun QuickAddSheet(
                             QuickAddSheetContent(
                                 state = state,
                                 sections = sections,
-                                viewModel = viewModel,
+                                onSearchQueryChanged = onSearchQueryChanged,
+                                onTemplateSelected = onTemplateSelected,
+                                onSuggestionSelected = onSuggestionSelected,
+                                onCategorySelected = onCategorySelected,
+                                onAccountTapped = onAccountTapped,
+                                onToggleType = onToggleType,
+                                onSwapAccounts = onSwapAccounts,
+                                onAmountChange = onAmountChange,
+                                onAmountOverrideChange = onAmountOverrideChange,
+                                onCurrencySelected = onCurrencySelected,
+                                onSetAmountFocus = onSetAmountFocus,
+                                onToggleAmountOverride = onToggleAmountOverride,
+                                onSaveTransaction = onSaveTransaction,
+                                goToStep = goToStep,
                                 hideKeyboard = ::hideKeyboard,
                                 onDismiss = { animateDismiss() }, // Trigger exit animation instead of instant finish
                                 onSettled = {},
@@ -266,7 +327,20 @@ fun QuickAddSheet(
 private fun QuickAddSheetContent(
     state: QuickAddState,
     sections: List<QuickAddSection>,
-    viewModel: QuickAddViewModel,
+    onSearchQueryChanged: (String) -> Unit,
+    onTemplateSelected: (Template) -> Unit,
+    onSuggestionSelected: (String, Long, String?, String?, BigDecimal, String, String?, EntryMode, String, String, Set<String>) -> Unit,
+    onCategorySelected: (Category) -> Unit,
+    onAccountTapped: (String, Boolean) -> Unit,
+    onToggleType: () -> Unit,
+    onSwapAccounts: () -> Unit,
+    onAmountChange: (BigDecimal) -> Unit,
+    onAmountOverrideChange: (BigDecimal) -> Unit,
+    onCurrencySelected: (String, Boolean) -> Unit,
+    onSetAmountFocus: (AmountEditingSide) -> Unit,
+    onToggleAmountOverride: () -> Unit,
+    onSaveTransaction: () -> Unit,
+    goToStep: (Int) -> Unit,
     hideKeyboard: () -> Unit,
     onDismiss: () -> Unit,
     onSettled: () -> Unit,
@@ -277,7 +351,7 @@ private fun QuickAddSheetContent(
 
     fun goBackStep() {
         if (state.currentStep > STEP_TEMPLATE) {
-            viewModel.goToStep(state.currentStep - 1)
+            goToStep(state.currentStep - 1)
         }
     }
 
@@ -285,11 +359,11 @@ private fun QuickAddSheetContent(
         if (state.currentStep == STEP_ACCOUNT) {
             hideKeyboard()
         }
-        viewModel.goToStep(state.currentStep + 1)
+        goToStep(state.currentStep + 1)
     }
 
     val canGoNext = when (state.currentStep) {
-        STEP_TEMPLATE -> state.selectedTemplate != null || state.selectedCategoryId != null
+        STEP_TEMPLATE -> (state.selectedTemplate != null) || (state.selectedCategoryId != null)
         STEP_ACCOUNT -> {
             if (state.entryMode == EntryMode.TRANSFER) {
                 state.selectedAccountId != null && state.selectedToAccountId != null
@@ -339,7 +413,7 @@ private fun QuickAddSheetContent(
                         onSettled()
                     }
                 }
-            }
+            },
     ) {
         // ── Editorial header ───────────────────────────────────────────────────
         EditorialHeader(title = title, subtext = subtext)
@@ -366,16 +440,16 @@ private fun QuickAddSheetContent(
                     STEP_TEMPLATE -> QuickAddTemplateStep(
                         sections = sections,
                         searchQuery = state.searchQuery,
-                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
+                        onSearchQueryChanged = onSearchQueryChanged,
                         selectedTemplateId = state.selectedTemplate?.id,
                         selectedCategoryId = state.selectedCategoryId,
                         isSheetSettled = isSheetSettled,
                         onTemplateSelected = { template ->
-                            viewModel.onTemplateSelected(template)
+                            onTemplateSelected(template)
                         },
-                        onSuggestionSelected = viewModel::onSuggestionSelected,
+                        onSuggestionSelected = onSuggestionSelected,
                         onCategorySelected = { category ->
-                            viewModel.onCategorySelected(category)
+                            onCategorySelected(category)
                         }
                     )
 
@@ -386,8 +460,9 @@ private fun QuickAddSheetContent(
                         selectedToAccountId = state.selectedToAccountId,
                         entryMode = state.entryMode,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
-                        onAccountTapped = viewModel::onAccountTapped,
-                        onToggleType = { viewModel.toggleTransactionType() }
+                        onAccountTapped = onAccountTapped,
+                        onToggleType = { onToggleType() },
+                        onSwapAccounts = onSwapAccounts
                     )
 
                     STEP_AMOUNT -> {
@@ -399,6 +474,9 @@ private fun QuickAddSheetContent(
                         val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                         QuickAddAmountStep(
                             amount = state.amount,
+                            amountOverride = state.amountOverride,
+                            isAmountOverridden = state.isAmountOverridden,
+                            activeAmountSide = state.activeAmountSide,
                             template = state.selectedTemplate,
                             category = selectedCategory,
                             account = selectedAccount,
@@ -410,11 +488,14 @@ private fun QuickAddSheetContent(
                             baseCurrency = state.baseCurrency,
                             selectedCurrency = state.selectedCurrency,
                             selectedToCurrency = state.selectedToCurrency,
-                            onCurrencySelected = viewModel::onCurrencySelected,
-                            onAmountChange = viewModel::onAmountChanged,
+                            onCurrencySelected = onCurrencySelected,
+                            onAmountChange = onAmountChange,
+                            onAmountOverrideChange = onAmountOverrideChange,
+                            onSetAmountFocus = onSetAmountFocus,
+                            onToggleAmountOverride = onToggleAmountOverride,
                             onDone = {
                                 if (!state.isSaving) {
-                                    viewModel.saveTransaction(onSuccess = onDismiss)
+                                    onSaveTransaction()
                                 }
                             }
                         )
@@ -436,11 +517,141 @@ private fun QuickAddSheetContent(
             onBack = ::goBackStep,
             onCta = {
                 if (isLastStep) {
-                    if (!state.isSaving) viewModel.saveTransaction(onSuccess = onDismiss)
+                    if (!state.isSaving) onSaveTransaction()
                 } else if (canGoNext) {
                     goNext()
                 }
             }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddSheet_Template() {
+    val mockState = QuickAddState(
+        currentStep = STEP_TEMPLATE,
+        accounts = listOf(
+            Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
+            Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+        )
+    )
+    val mockSections = listOf(
+        QuickAddSection(
+            "TEMPLATES",
+            listOf(
+                QuickAddResult.TemplateItem(
+                    Template(1, "Coffee", 1, BigDecimal("5.00"), EntryMode.EXPENSE, currency = "USD", accountId = "1"),
+                    "Coffee",
+                    -123456
+                )
+            )
+        ),
+        QuickAddSection(
+            "CATEGORIES",
+            listOf(
+                QuickAddResult.CategoryItem(Category(1, "Food", "Restaurant", -16737025, false, null))
+            )
+        )
+    )
+
+    OssWalletTheme {
+        QuickAddSheetInternal(
+            state = mockState,
+            sections = mockSections,
+            onDismiss = {},
+            onReset = {},
+            onSearchQueryChanged = {},
+            onTemplateSelected = {},
+            onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
+            onCategorySelected = {},
+            onAccountTapped = { _, _ -> },
+            onToggleType = {},
+            onSwapAccounts = {},
+            onAmountChange = {},
+            onAmountOverrideChange = {},
+            onCurrencySelected = { _, _ -> },
+            onSetAmountFocus = {},
+            onToggleAmountOverride = {},
+            onSaveTransaction = {},
+            goToStep = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddSheet_Account() {
+    val mockState = QuickAddState(
+        currentStep = STEP_ACCOUNT,
+        entryMode = EntryMode.TRANSFER,
+        selectedAccountId = "1",
+        accounts = listOf(
+            Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
+            Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+        ),
+        structureTypes = AccountStructureType.entries
+    )
+
+    OssWalletTheme {
+        QuickAddSheetInternal(
+            state = mockState,
+            sections = emptyList(),
+            onDismiss = {},
+            onReset = {},
+            onSearchQueryChanged = {},
+            onTemplateSelected = {},
+            onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
+            onCategorySelected = {},
+            onAccountTapped = { _, _ -> },
+            onToggleType = {},
+            onSwapAccounts = {},
+            onAmountChange = {},
+            onAmountOverrideChange = {},
+            onCurrencySelected = { _, _ -> },
+            onSetAmountFocus = {},
+            onToggleAmountOverride = {},
+            onSaveTransaction = {},
+            goToStep = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewQuickAddSheet_Amount() {
+    val fromAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments")
+    val toAccount = Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+    val mockState = QuickAddState(
+        currentStep = STEP_AMOUNT,
+        entryMode = EntryMode.TRANSFER,
+        selectedAccountId = "1",
+        selectedToAccountId = "2",
+        amount = BigDecimal("100.00"),
+        accounts = listOf(fromAccount, toAccount),
+        accountBalances = mapOf("1" to BigDecimal("500.00"), "2" to BigDecimal("1200.00"))
+    )
+
+    OssWalletTheme {
+        QuickAddSheetInternal(
+            state = mockState,
+            sections = emptyList(),
+            onDismiss = {},
+            onReset = {},
+            onSearchQueryChanged = {},
+            onTemplateSelected = {},
+            onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
+            onCategorySelected = {},
+            onAccountTapped = { _, _ -> },
+            onToggleType = {},
+            onSwapAccounts = {},
+            onAmountChange = {},
+            onAmountOverrideChange = {},
+            onCurrencySelected = { _, _ -> },
+            onSetAmountFocus = {},
+            onToggleAmountOverride = {},
+            onSaveTransaction = {},
+            goToStep = {}
         )
     }
 }
@@ -450,7 +661,7 @@ private fun EditorialHeader(title: String, subtext: String? = null) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 6.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -505,7 +716,7 @@ private fun QuickAddFooter(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 8.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showBack) {

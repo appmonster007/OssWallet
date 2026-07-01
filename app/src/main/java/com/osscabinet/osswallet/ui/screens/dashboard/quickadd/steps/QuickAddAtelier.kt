@@ -65,9 +65,9 @@ internal fun AtelierGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(numColumns),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(bottom = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+//        contentPadding = PaddingValues(bottom = 2.dp),
         modifier = modifier.fillMaxWidth(),
         content = content
     )
@@ -130,9 +130,9 @@ internal fun AtelierTile(
     hasChildren: Boolean = false,
     onLongPress: (() -> Unit)? = null
 ) {
-    val tileShape = RoundedCornerShape(16.dp)
+    val tileShape = RoundedCornerShape(10.dp)
     val bg = if (isSelected) selectionColor.copy(alpha = 0.10f) else AppColors.recessedSurface
-
+    val fontSize = 8.sp
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -155,17 +155,18 @@ internal fun AtelierTile(
                 imageVector = icon,
                 contentDescription = label,
                 tint = iconColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = label,
-                style = AppTextStyles.chartAxisLabel.copy(fontSize = 6.sp),
+                style = AppTextStyles.chartAxisLabel.copy(fontSize = fontSize),
                 color = AppColors.contentPrimary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                lineHeight = fontSize
             )
         }
 
@@ -304,11 +305,11 @@ internal fun AtelierSegmentedToggle(
  */
 @Composable
 internal fun AtelierPanel(
-    overline: String,
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(20.dp),
-    contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 14.dp),
-    spacing: Dp = 12.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 10.dp, vertical = 10.dp),
+    spacing: Dp = 8.dp,
+    header: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(
@@ -324,7 +325,7 @@ internal fun AtelierPanel(
                 .padding(contentPadding),
             verticalArrangement = Arrangement.spacedBy(spacing)
         ) {
-            PanelOverline(overline)
+            header()
             content()
         }
     }
@@ -348,7 +349,7 @@ private fun PreviewAtelierTile() {
                     modifier = Modifier.width(80.dp)
                 )
                 AtelierTile(
-                    label = "Restaurant",
+                    label = "Restaurant & Fine Dining",
                     icon = Icons.Rounded.Restaurant,
                     iconColor = Color(0xFFFF5722),
                     isSelected = true,
@@ -365,6 +366,69 @@ private fun PreviewAtelierTile() {
                     modifier = Modifier.width(80.dp)
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewAtelierPanel() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(20.dp)) {
+            AtelierPanel(
+                header = { PanelOverline("FREQUENT") }
+            ) {
+                AtelierGrid(numColumns = 4) {
+                    items(8) { index ->
+                        AtelierTile(
+                            label = "Item $index",
+                            icon = Icons.Rounded.Coffee,
+                            iconColor = AppColors.accent,
+                            isSelected = index == 2,
+                            onTap = {}
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewAtelierTileFontSizes() {
+    OssWalletTheme {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Short label
+            AtelierTile(
+                label = "Coffee",
+                icon = Icons.Rounded.Coffee,
+                iconColor = AppColors.accent,
+                isSelected = false,
+                onTap = {},
+                modifier = Modifier.width(72.dp)
+            )
+            // Long label (testing 8.sp wrapping)
+            AtelierTile(
+                label = "Restaurant & Fine Dining",
+                icon = Icons.Rounded.Restaurant,
+                iconColor = AppColors.accent,
+                isSelected = false,
+                onTap = {},
+                modifier = Modifier.width(72.dp)
+            )
+            // Very long label with ellipsis
+            AtelierTile(
+                label = "International Wire Transfer Fees",
+                icon = Icons.Rounded.AccountBalance,
+                iconColor = AppColors.accent,
+                isSelected = false,
+                onTap = {},
+                modifier = Modifier.width(72.dp)
+            )
         }
     }
 }

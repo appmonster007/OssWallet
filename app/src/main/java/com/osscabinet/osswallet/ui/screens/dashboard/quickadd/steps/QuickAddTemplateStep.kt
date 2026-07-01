@@ -7,19 +7,23 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -89,9 +95,25 @@ fun QuickAddTemplateStep(
 ) {
     val focusRequester = remember { FocusRequester() }
     var activeMode by rememberSaveable { mutableStateOf(QuickAddMode.ALL) }
+    var categoryNavStack by rememberSaveable { mutableStateOf(emptyList<Long>()) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) categoryNavStack = emptyList()
+    }
 
     LaunchedEffect(isSheetSettled) {
         if (isSheetSettled) focusRequester.requestFocus()
+    }
+
+    val allCategories = remember(sections) {
+        sections.flatMap { it.items }
+            .filterIsInstance<QuickAddResult.CategoryItem>()
+            .map { it.category }
+    }
+    val childrenMap = remember(allCategories) {
+        allCategories.groupBy { it.parentId }
     }
 
     val filteredSections = remember(sections, activeMode) {
@@ -119,7 +141,11 @@ fun QuickAddTemplateStep(
             }
 
             AtelierPanel(
-                overline = overline,
+                header = {
+                    if (searchQuery.isNotEmpty()) {
+                        PanelOverline(overline)
+                    }
+                },
                 modifier = Modifier.weight(1f, fill = false),
             ) {
                 if (filteredSections.isEmpty()) {
@@ -133,6 +159,8 @@ fun QuickAddTemplateStep(
                 } else {
                     AtelierGrid(numColumns, Modifier.weight(1f, fill = false)) {
                         filteredSections.forEach { section ->
+                            val isCategorySection = section.title == "CATEGORIES"
+
                             // Section Header (Only show in ALL mode)
                             if (activeMode == QuickAddMode.ALL) {
                                 item(span = { GridItemSpan(numColumns) }) {
@@ -140,8 +168,31 @@ fun QuickAddTemplateStep(
                                 }
                             }
 
+                            if (isCategorySection && searchQuery.isBlank() && categoryNavStack.isNotEmpty()) {
+                                val currentParentId = categoryNavStack.last()
+                                val currentParent = allCategories.find { it.id == currentParentId }
+                                if (currentParent != null) {
+                                    item(span = { GridItemSpan(numColumns) }) {
+                                        DrillBackHeader(
+                                            parent = currentParent,
+                                            onBack = { categoryNavStack = categoryNavStack.dropLast(1) },
+                                            onSelectParent = { onCategorySelected(currentParent) }
+                                        )
+                                    }
+                                }
+                            }
+
+                            val itemsToDisplay = if (isCategorySection && searchQuery.isBlank()) {
+                                val currentParentId = categoryNavStack.lastOrNull()
+                                section.items.filter { item ->
+                                    item is QuickAddResult.CategoryItem && item.category.parentId == currentParentId
+                                }
+                            } else {
+                                section.items
+                            }
+
                             items(
-                                items = section.items,
+                                items = itemsToDisplay,
                                 span = { GridItemSpan(1) }
                             ) { item ->
                                 when (item) {
@@ -180,12 +231,22 @@ fun QuickAddTemplateStep(
                                     }
 
                                     is QuickAddResult.CategoryItem -> {
+                                        val hasChildren = searchQuery.isBlank() && 
+                                                childrenMap[item.category.id]?.isNotEmpty() == true
                                         AtelierTile(
                                             label = item.category.name,
                                             icon = getIconByName(item.category.iconName),
                                             iconColor = item.category.colorHex.toOpaqueColor(),
                                             isSelected = item.category.id == selectedCategoryId && selectedTemplateId == null,
-                                            onTap = { onCategorySelected(item.category) }
+                                            hasChildren = hasChildren,
+                                            onTap = { onCategorySelected(item.category) },
+                                            onLongPress = if (hasChildren) {
+                                                {
+                                                    categoryNavStack = categoryNavStack + item.category.id
+                                                    keyboardController?.hide()
+                                                    focusManager.clearFocus()
+                                                }
+                                            } else null
                                         )
                                     }
                                 }
@@ -245,11 +306,67 @@ private fun AtelierModeToggle(
                 tint = AppColors.accent,
                 modifier = Modifier.size(16.dp)
             )
-            Text(
-                text = mode.label,
-                style = AppTextStyles.sectionOverline,
-                color = AppColors.accent
+//            Text(
+//                text = mode.label,
+//                style = AppTextStyles.sectionOverline,
+//                color = AppColors.accent
+//            )
+        }
+    }
+}
+
+@Composable
+private fun DrillBackHeader(
+    parent: Category,
+    onBack: () -> Unit,
+    onSelectParent: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack, modifier = Modifier.size(28.dp)) {
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = "Back to categories",
+                tint = AppColors.contentSecondary,
+                modifier = Modifier.size(16.dp)
             )
+        }
+        Spacer(Modifier.width(8.dp))
+        Surface(
+            onClick = onSelectParent,
+            shape = RoundedCornerShape(12.dp),
+            color = AppColors.recessedSurface,
+            modifier = Modifier.weight(1f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    getIconByName(parent.iconName),
+                    contentDescription = null,
+                    tint = parent.colorHex.toOpaqueColor(),
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    parent.name,
+                    style = AppTextStyles.managementItemTitle,
+                    color = AppColors.contentPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "SELECT",
+                    style = AppTextStyles.metaLabel,
+                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }

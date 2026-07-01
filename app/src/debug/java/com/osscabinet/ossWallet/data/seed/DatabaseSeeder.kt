@@ -275,6 +275,20 @@ class DatabaseSeeder @Inject constructor(
         return list
     }
 
+    companion object {
+        fun parseTagNames(labelsStr: String?): Set<String> {
+            if (labelsStr.isNullOrBlank()) return emptySet()
+            return labelsStr
+                .trim()
+                .removePrefix("[")
+                .removeSuffix("]")
+                .split("|", ";", ",")
+                .map { it.trim().removePrefix("\"").removeSuffix("\"").trim() }
+                .filter { it.isNotBlank() }
+                .toSet()
+        }
+    }
+
     // ── Seed row data classes ─────────────────────────────────────────────────
 
     private data class ProfileSeedRow(val id: Int, val name: String, val baseCurrency: String, val type: String) {
@@ -302,7 +316,7 @@ class DatabaseSeeder @Inject constructor(
             categoryIds = categoryNames.split(",").filter { it.isNotBlank() }.mapNotNull { categoryNameToId[it] }.toSet(),
             transactionTypes = transactionTypes.split(",").filter { it.isNotBlank() }.map { TransactionType.fromValue(it) }.toSet(),
             currencies = currencies.split(",").filter { it.isNotBlank() }.toSet(),
-            tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
+            tags = DatabaseSeeder.parseTagNames(tags),
             queryPayee = queryPayee
         )
         companion object {
@@ -378,7 +392,7 @@ class DatabaseSeeder @Inject constructor(
             name = name, categoryId = categoryNameToId[categoryName] ?: Category.SYSTEM_UNKNOWN,
             amount = amount, entryMode = transactionType.toEntryMode(), currency = currency,
             paymentMethod = paymentMethod, payee = payee, note = note,
-            tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
+            tags = DatabaseSeeder.parseTagNames(tags),
             accountId = accountId.takeIf { !it.isNullOrBlank() }
         )
         companion object {
@@ -491,7 +505,7 @@ class DatabaseSeeder @Inject constructor(
             currency = currency, transactionType = transactionType,
             accountId = accountId, categoryId = categoryId ?: Category.SYSTEM_UNKNOWN,
             paymentMethod = paymentMethod, payee = payee, note = note,
-            tags = tags.split(",").filter { it.isNotBlank() }.toSet(),
+            tags = DatabaseSeeder.parseTagNames(tags),
             sourcePlannedPaymentId = sourcePlannedPaymentId,
             profileId = profileId, gpsLocation = gpsLocation,
             warrantyExpiration = warrantyExpiration, status = status,

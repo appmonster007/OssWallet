@@ -92,8 +92,7 @@ fun QuickAddSheet(
     viewModel: QuickAddViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val templates by viewModel.templates.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+    val sections by viewModel.sections.collectAsState()
     val glassEnabled = LocalGlassmorphismEnabled.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -210,8 +209,7 @@ fun QuickAddSheet(
 
                             QuickAddSheetContent(
                                 state = state,
-                                templates = templates,
-                                categories = categories,
+                                sections = sections,
                                 viewModel = viewModel,
                                 hideKeyboard = ::hideKeyboard,
                                 onDismiss = { animateDismiss() }, // Trigger exit animation instead of instant finish
@@ -266,8 +264,7 @@ fun QuickAddSheet(
 @Composable
 private fun QuickAddSheetContent(
     state: QuickAddState,
-    templates: List<Template>,
-    categories: List<Category>,
+    sections: List<QuickAddSection>,
     viewModel: QuickAddViewModel,
     hideKeyboard: () -> Unit,
     onDismiss: () -> Unit,
@@ -350,14 +347,16 @@ private fun QuickAddSheetContent(
             ) { step ->
                 when (step) {
                     STEP_TEMPLATE -> QuickAddTemplateStep(
-                        templates = templates,
-                        categories = categories,
+                        sections = sections,
+                        searchQuery = state.searchQuery,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged,
                         selectedTemplateId = state.selectedTemplate?.id,
                         selectedCategoryId = state.selectedCategoryId,
                         isSheetSettled = isSheetSettled,
                         onTemplateSelected = { template ->
                             viewModel.onTemplateSelected(template)
                         },
+                        onSuggestionSelected = viewModel::onSuggestionSelected,
                         onCategorySelected = { category ->
                             viewModel.onCategorySelected(category)
                         }
@@ -378,6 +377,9 @@ private fun QuickAddSheetContent(
 
                     STEP_AMOUNT -> {
                         val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
+                        val categories = sections.flatMap { it.items }
+                            .filterIsInstance<QuickAddResult.CategoryItem>()
+                            .map { it.category }
                         val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                         QuickAddAmountStep(
                             amount = state.amount,

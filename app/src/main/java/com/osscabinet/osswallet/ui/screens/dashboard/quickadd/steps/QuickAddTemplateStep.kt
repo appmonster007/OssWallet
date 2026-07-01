@@ -1,98 +1,104 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddResult
+import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddSection
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.toOpaqueColor
+import java.math.BigDecimal
+
+enum class QuickAddMode(val label: String, val icon: ImageVector) {
+    ALL("ALL", Icons.Rounded.AllInclusive),
+    TEMPLATES("TEMPLATES", Icons.Rounded.Dashboard),
+    CATEGORIES("CATEGORIES", Icons.Rounded.Category),
+    SUGGESTIONS("SUGGESTIONS", Icons.Rounded.History)
+}
 
 /**
- * Step 1 — "Atelier Grid". Editorial template/category picker.
- *
- * Layout (top→bottom): segmented Templates/Categories toggle, a gradient-hairline
- * glass panel (the only scrollable region), and the shared search field. The caller
- * passes [modifier] carrying a weight so the panel flexes between the pinned
- * sheet header and footer.
+ * Step 1 — "Atelier Grid". Editorial unified template/suggestion/category picker.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickAddTemplateStep(
-    templates: List<Template>,
-    categories: List<Category>,
+    sections: List<QuickAddSection>,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
     selectedTemplateId: Long?,
     selectedCategoryId: Long?,
     isSheetSettled: Boolean,
     onTemplateSelected: (Template) -> Unit,
+    onSuggestionSelected: (
+        label: String,
+        categoryId: Long,
+        accountId: String?,
+        amount: BigDecimal,
+        currency: String,
+        entryMode: EntryMode,
+        note: String,
+        payee: String,
+        tags: Set<String>
+    ) -> Unit,
     onCategorySelected: (Category) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var query by remember { mutableStateOf("") }
-    val hasTemplates = templates.isNotEmpty()
-    // Keep the tab in sync with template availability: templates → show template tab,
-    // no templates → fall back to categories. LaunchedEffect re-fires whenever
-    // hasTemplates changes (including the initial emission), so a late async load
-    // will always switch to the template tab once data arrives.
-    // If the user manually toggles the tab, their choice is preserved until the next
-    // hasTemplates change (oscillation while the sheet is open is unlikely).
-    var showCategories by remember { mutableStateOf(!hasTemplates) }
-    LaunchedEffect(hasTemplates) {
-        showCategories = !hasTemplates
-    }
-    var categoryNavStack by remember { mutableStateOf(emptyList<Long>()) }
     val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
-
-    LaunchedEffect(query) {
-        if (query.isNotBlank()) categoryNavStack = emptyList()
-    }
+    var activeMode by rememberSaveable { mutableStateOf(QuickAddMode.ALL) }
 
     LaunchedEffect(isSheetSettled) {
         if (isSheetSettled) focusRequester.requestFocus()
+    }
+
+    val filteredSections = remember(sections, activeMode) {
+        when (activeMode) {
+            QuickAddMode.ALL -> sections
+            QuickAddMode.TEMPLATES -> sections.filter { it.title == "TEMPLATES" }
+            QuickAddMode.CATEGORIES -> sections.filter { it.title == "CATEGORIES" }
+            QuickAddMode.SUGGESTIONS -> sections.filter { it.title == "SUGGESTIONS" }
+        }
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -105,43 +111,83 @@ fun QuickAddTemplateStep(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             val overline = when {
-                query.isNotBlank() -> "Results"
-                showCategories -> "Categories"
-                else -> "Frequent"
+                searchQuery.isNotBlank() -> "Results"
+                activeMode != QuickAddMode.ALL -> activeMode.label
+                else -> "Atelier"
             }
 
             AtelierPanel(
                 overline = overline,
                 modifier = Modifier.weight(1f, fill = false),
             ) {
-                if (!showCategories && hasTemplates) {
-                    TemplatesGrid(
-                        templates = templates,
-                        categories = categories,
-                        query = query,
-                        numColumns = numColumns,
-                        selectedTemplateId = selectedTemplateId,
-                        onTemplateSelected = onTemplateSelected,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+                if (filteredSections.isEmpty()) {
+                    val emptyMsg = when (activeMode) {
+                        QuickAddMode.TEMPLATES -> "No templates found"
+                        QuickAddMode.CATEGORIES -> "No categories found"
+                        QuickAddMode.SUGGESTIONS -> if (searchQuery.isBlank()) "Search to see suggestions" else "No matches found"
+                        else -> if (searchQuery.isBlank()) "No items found" else "No matches found"
+                    }
+                    EmptyState(emptyMsg)
                 } else {
-                    CategoriesGrid(
-                        categories = categories,
-                        query = query,
-                        numColumns = numColumns,
-                        selectedTemplateId = selectedTemplateId,
-                        selectedCategoryId = selectedCategoryId,
-                        categoryNavStack = categoryNavStack,
-                        onCategorySelected = onCategorySelected,
-                        onDrillInto = { id ->
-                            query = ""
-                            categoryNavStack = categoryNavStack + id
-                            keyboardController?.hide()
-                            focusManager.clearFocus()
-                        },
-                        onDrillOut = { categoryNavStack = categoryNavStack.dropLast(1) },
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+                    AtelierGrid(numColumns, Modifier.weight(1f, fill = false)) {
+                        filteredSections.forEach { section ->
+                            // Section Header (Only show in ALL mode)
+                            if (activeMode == QuickAddMode.ALL) {
+                                item(span = { GridItemSpan(numColumns) }) {
+                                    PanelOverline(section.title)
+                                }
+                            }
+
+                            items(
+                                items = section.items,
+                                span = { GridItemSpan(1) }
+                            ) { item ->
+                                when (item) {
+                                    is QuickAddResult.TemplateItem -> {
+                                        AtelierTile(
+                                            label = item.template.name,
+                                            icon = getIconByName(item.iconName),
+                                            iconColor = item.colorHex.toOpaqueColor(),
+                                            isSelected = item.template.id == selectedTemplateId,
+                                            onTap = { onTemplateSelected(item.template) }
+                                        )
+                                    }
+
+                                    is QuickAddResult.SuggestionItem -> {
+                                        AtelierTile(
+                                            label = item.label,
+                                            icon = getIconByName(item.iconName),
+                                            iconColor = item.colorHex.toOpaqueColor(),
+                                            isSelected = false,
+                                            onTap = {
+                                                onSuggestionSelected(
+                                                    item.label,
+                                                    item.categoryId,
+                                                    item.accountId,
+                                                    item.amount,
+                                                    item.currency,
+                                                    item.entryMode,
+                                                    item.note,
+                                                    item.payee,
+                                                    item.tags
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    is QuickAddResult.CategoryItem -> {
+                                        AtelierTile(
+                                            label = item.category.name,
+                                            icon = getIconByName(item.category.iconName),
+                                            iconColor = item.category.colorHex.toOpaqueColor(),
+                                            isSelected = item.category.id == selectedCategoryId && selectedTemplateId == null,
+                                            onTap = { onCategorySelected(item.category) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -150,20 +196,17 @@ fun QuickAddTemplateStep(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                if (hasTemplates) {
-                    AtelierModeToggle(
-                        showCategories = showCategories,
-                        onClick = {
-                            showCategories = !showCategories
-                            query = ""
-                            categoryNavStack = emptyList()
-                        }
-                    )
-                }
+                AtelierModeToggle(
+                    mode = activeMode,
+                    onClick = {
+                        val nextIndex = (activeMode.ordinal + 1) % QuickAddMode.entries.size
+                        activeMode = QuickAddMode.entries[nextIndex]
+                    }
+                )
 
                 AeonSearchField(
-                    query = query,
-                    onQueryChange = { query = it },
+                    query = searchQuery,
+                    onQueryChange = onSearchQueryChanged,
                     placeholder = "Search",
                     modifier = Modifier.weight(1f),
                     focusRequester = focusRequester
@@ -175,13 +218,10 @@ fun QuickAddTemplateStep(
 
 @Composable
 private fun AtelierModeToggle(
-    showCategories: Boolean,
+    mode: QuickAddMode,
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(12.dp)
-    val label = if (showCategories) "CATEGORIES" else "TEMPLATES"
-    val icon = if (showCategories) Icons.Rounded.Category else Icons.Rounded.Dashboard
-
     Surface(
         onClick = onClick,
         shape = shape,
@@ -196,13 +236,13 @@ private fun AtelierModeToggle(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                imageVector = icon,
+                imageVector = mode.icon,
                 contentDescription = null,
                 tint = AppColors.accent,
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                text = label,
+                text = mode.label,
                 style = AppTextStyles.sectionOverline,
                 color = AppColors.accent
             )
@@ -210,188 +250,64 @@ private fun AtelierModeToggle(
     }
 }
 
+@Preview(showBackground = true, widthDp = 360)
 @Composable
-private fun ColumnScope.TemplatesGrid(
-    templates: List<Template>,
-    categories: List<Category>,
-    query: String,
-    numColumns: Int,
-    selectedTemplateId: Long?,
-    onTemplateSelected: (Template) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val filtered = remember(templates, query) {
-        if (query.isBlank()) templates.sortedByDescending { it.isStarred }
-        else templates.filter { t ->
-            t.name.contains(query, ignoreCase = true) ||
-                    (t.note?.contains(query, ignoreCase = true) == true)
-        }.sortedByDescending { it.isStarred }
-    }
+fun PreviewQuickAddTemplateStep() {
+    val mockTemplates = listOf(
+        Template(id = 1, name = "Starbucks", categoryId = 1, amount = BigDecimal("5.50"), entryMode = EntryMode.EXPENSE, currency = "USD", accountId = "1"),
+        Template(id = 2, name = "Rent", categoryId = 2, amount = BigDecimal("1200.00"), entryMode = EntryMode.EXPENSE, currency = "USD", accountId = "2", isStarred = true)
+    )
 
-    if (filtered.isEmpty()) {
-        EmptyState("No templates found")
-        return
-    }
-    AtelierGrid(numColumns, modifier) {
-        items(filtered, key = { it.id }) { template ->
-            val category = categories.find { it.id == template.categoryId }
-            AtelierTile(
-                label = template.name,
-                icon = getIconByName(category?.iconName),
-                iconColor = category?.colorHex?.toOpaqueColor()
-                    ?: AppColors.contentSecondary,
-                isSelected = template.id == selectedTemplateId,
-                onTap = { onTemplateSelected(template) }
+    val mockCategories = listOf(
+        Category(id = 1, name = "Coffee", iconName = "Coffee", colorHex = -123456, isDefault = false, parentId = null),
+        Category(id = 2, name = "Housing", iconName = "Home", colorHex = -654321, isDefault = false, parentId = null),
+        Category(id = 3, name = "Food", iconName = "Restaurant", colorHex = -987654, isDefault = false, parentId = null)
+    )
+
+    val mockSections = listOf(
+        QuickAddSection(
+            title = "TEMPLATES",
+            items = mockTemplates.map { 
+                QuickAddResult.TemplateItem(it, "Coffee", -123456)
+            }
+        ),
+        QuickAddSection(
+            title = "SUGGESTIONS",
+            items = listOf(
+                QuickAddResult.SuggestionItem(
+                    label = "Lunch: Chipotle",
+                    categoryId = 3,
+                    iconName = "Restaurant",
+                    colorHex = -987654,
+                    accountId = "1",
+                    amount = BigDecimal("15.20"),
+                    currency = "USD",
+                    entryMode = EntryMode.EXPENSE,
+                    note = "Lunch",
+                    payee = "Chipotle",
+                    tags = emptySet()
+                )
             )
-        }
-    }
-}
+        ),
+        QuickAddSection(
+            title = "CATEGORIES",
+            items = mockCategories.map { QuickAddResult.CategoryItem(it) }
+        )
+    )
 
-@Composable
-private fun ColumnScope.CategoriesGrid(
-    categories: List<Category>,
-    query: String,
-    numColumns: Int,
-    selectedTemplateId: Long?,
-    selectedCategoryId: Long?,
-    categoryNavStack: List<Long>,
-    onCategorySelected: (Category) -> Unit,
-    onDrillInto: (Long) -> Unit,
-    onDrillOut: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val allUserCategories = remember(categories) {
-        categories.filter { !Category.isSystemCategory(it.id) }
-    }
-    val childrenMap = remember(allUserCategories) {
-        allUserCategories.groupBy { it.parentId }
-    }
-    val currentParentId = categoryNavStack.lastOrNull()
-    val currentParent = remember(currentParentId, allUserCategories) {
-        currentParentId?.let { pid -> allUserCategories.find { it.id == pid } }
-    }
-
-    if (query.isNotBlank()) {
-        val searchResults = remember(allUserCategories, query) {
-            allUserCategories.filter { it.name.contains(query, ignoreCase = true) }
-                .sortedBy { it.name }
-        }
-        if (searchResults.isEmpty()) {
-            EmptyState("No categories found")
-            return
-        }
-        AtelierGrid(numColumns, modifier) {
-            items(searchResults, key = { it.id }) { category ->
-                AtelierTile(
-                    label = category.name,
-                    icon = getIconByName(category.iconName),
-                    iconColor = category.colorHex.toOpaqueColor(),
-                    isSelected = category.id == selectedCategoryId && selectedTemplateId == null,
-                    hasChildren = childrenMap[category.id]?.isNotEmpty() == true,
-                    onTap = { onCategorySelected(category) },
-                    onLongPress = if (childrenMap[category.id]?.isNotEmpty() == true)
-                        ({ onDrillInto(category.id) }) else null
-                )
-            }
-        }
-        return
-    }
-
-    AnimatedContent(
-        targetState = currentParentId,
-        modifier = modifier,
-        transitionSpec = {
-            if (targetState != null) {
-                slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-            } else {
-                slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-            }
-        },
-        label = "categoryDrillDown"
-    ) { parentId ->
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (parentId != null && currentParent != null) {
-                DrillBackHeader(
-                    parent = currentParent,
-                    onBack = onDrillOut,
-                    onSelectParent = { onCategorySelected(currentParent) }
-                )
-            }
-            val visibleItems = remember(parentId, childrenMap) {
-                childrenMap[parentId]?.sortedBy { it.name } ?: emptyList()
-            }
-            if (visibleItems.isEmpty()) {
-                EmptyState("No categories")
-            } else {
-                AtelierGrid(numColumns, Modifier.weight(1f, fill = false)) {
-                    items(visibleItems, key = { it.id }) { category ->
-                        AtelierTile(
-                            label = category.name,
-                            icon = getIconByName(category.iconName),
-                            iconColor = category.colorHex.toOpaqueColor(),
-                            isSelected = category.id == selectedCategoryId && selectedTemplateId == null,
-                            hasChildren = childrenMap[category.id]?.isNotEmpty() == true,
-                            onTap = { onCategorySelected(category) },
-                            onLongPress = if (childrenMap[category.id]?.isNotEmpty() == true)
-                                ({ onDrillInto(category.id) }) else null
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DrillBackHeader(
-    parent: Category,
-    onBack: () -> Unit,
-    onSelectParent: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(28.dp)) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Back to categories",
-                tint = AppColors.contentSecondary,
-                modifier = Modifier.size(16.dp)
+    OssWalletTheme {
+        Box(modifier = Modifier.background(AppColors.background).padding(vertical = 20.dp)) {
+            QuickAddTemplateStep(
+                sections = mockSections,
+                searchQuery = "",
+                onSearchQueryChanged = {},
+                selectedTemplateId = null,
+                selectedCategoryId = null,
+                isSheetSettled = true,
+                onTemplateSelected = {},
+                onSuggestionSelected = { _, _, _, _, _, _, _, _, _ -> },
+                onCategorySelected = {}
             )
-        }
-        Spacer(Modifier.width(8.dp))
-        Surface(
-            onClick = onSelectParent,
-            shape = RoundedCornerShape(12.dp),
-            color = AppColors.recessedSurface,
-            modifier = Modifier.weight(1f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    getIconByName(parent.iconName),
-                    contentDescription = null,
-                    tint = parent.colorHex.toOpaqueColor(),
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    parent.name,
-                    style = AppTextStyles.managementItemTitle,
-                    color = AppColors.contentPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "SELECT",
-                    style = AppTextStyles.metaLabel,
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                )
-            }
         }
     }
 }

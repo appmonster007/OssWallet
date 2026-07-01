@@ -30,6 +30,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.Coffee
+import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,9 +50,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /** Shared 4/5-column tile grid used by the QuickAdd Atelier steps. */
 @Composable
@@ -155,7 +160,7 @@ internal fun AtelierTile(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = label,
-                style = AppTextStyles.chartAxisLabel.copy(fontSize = 8.sp),
+                style = AppTextStyles.chartAxisLabel.copy(fontSize = 6.sp),
                 color = AppColors.contentPrimary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -325,3 +330,41 @@ internal fun AtelierPanel(
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun PreviewAtelierTile() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                AtelierTile(
+                    label = "Coffee",
+                    icon = Icons.Rounded.Coffee,
+                    iconColor = Color(0xFF795548),
+                    isSelected = false,
+                    onTap = {},
+                    modifier = Modifier.width(80.dp)
+                )
+                AtelierTile(
+                    label = "Restaurant",
+                    icon = Icons.Rounded.Restaurant,
+                    iconColor = Color(0xFFFF5722),
+                    isSelected = true,
+                    onTap = {},
+                    modifier = Modifier.width(80.dp)
+                )
+                AtelierTile(
+                    label = "Savings",
+                    icon = Icons.Rounded.AccountBalance,
+                    iconColor = Color(0xFF2196F3),
+                    isSelected = false,
+                    hasChildren = true,
+                    onTap = {},
+                    modifier = Modifier.width(80.dp)
+                )
+            }
+        }
+    }
+}

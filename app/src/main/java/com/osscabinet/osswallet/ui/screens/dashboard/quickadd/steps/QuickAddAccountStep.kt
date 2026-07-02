@@ -86,7 +86,7 @@ fun QuickAddAccountStep(
 
     val filtered = remember(accounts, searchQuery, structureFilter) {
         accounts.filter { acc ->
-            (structureFilter == null || acc.structureType == structureFilter) &&
+            (acc.id.isBlank() || structureFilter == null || acc.structureType == structureFilter) &&
                     (searchQuery.isBlank() || acc.name.contains(searchQuery, ignoreCase = true))
         }
     }
@@ -138,7 +138,10 @@ fun QuickAddAccountStep(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    PanelOverline("From Account")
+                                    PanelOverline(
+                                        text = "From Account",
+                                        modifier = Modifier.weight(1f)
+                                    )
                                     IconButton(
                                         onClick = onSwapAccounts,
                                         modifier = Modifier.size(24.dp)

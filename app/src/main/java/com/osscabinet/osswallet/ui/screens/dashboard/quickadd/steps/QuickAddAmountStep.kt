@@ -88,17 +88,25 @@ fun QuickAddAmountStep(
     modifier: Modifier = Modifier
 ) {
     val currencies = remember(account) {
-        account?.let {
-            (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
-                .filter { c -> c.isNotBlank() }
-        } ?: emptyList()
+        if (account?.id?.isBlank() == true) {
+            CurrencyService.getAllCurrencies()
+        } else {
+            account?.let {
+                (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
+                    .filter { c -> c.isNotBlank() }
+            } ?: emptyList()
+        }
     }
     
     val toCurrencies = remember(toAccount) {
-        toAccount?.let {
-            (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
-                .filter { c -> c.isNotBlank() }
-        } ?: emptyList()
+        if (toAccount?.id?.isBlank() == true) {
+            CurrencyService.getAllCurrencies()
+        } else {
+            toAccount?.let {
+                (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
+                    .filter { c -> c.isNotBlank() }
+            } ?: emptyList()
+        }
     }
 
     Column(
@@ -412,7 +420,7 @@ private fun AccountSummary(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = formatCurrency(balance, currency),
+                text = if (currency.isBlank()) "EXTERNAL" else formatCurrency(balance, currency),
                 style = AppTextStyles.caption.copy(
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,

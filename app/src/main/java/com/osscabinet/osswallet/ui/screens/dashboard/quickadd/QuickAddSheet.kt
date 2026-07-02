@@ -84,6 +84,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
 
@@ -534,7 +535,8 @@ fun PreviewQuickAddSheet_Template() {
         accounts = listOf(
             Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
             Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
-        )
+        ),
+        selectedAccount = AccountRef.Unselected
     )
     val mockSections = listOf(
         QuickAddSection(
@@ -585,7 +587,7 @@ fun PreviewQuickAddSheet_Account() {
     val mockState = QuickAddState(
         currentStep = STEP_ACCOUNT,
         entryMode = EntryMode.TRANSFER,
-        selectedAccountId = "1",
+        selectedAccount = AccountRef.Wallet("1"),
         accounts = listOf(
             Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
             Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
@@ -625,8 +627,8 @@ fun PreviewQuickAddSheet_Amount() {
     val mockState = QuickAddState(
         currentStep = STEP_AMOUNT,
         entryMode = EntryMode.TRANSFER,
-        selectedAccountId = "1",
-        selectedToAccountId = "2",
+        selectedAccount = AccountRef.Wallet("1"),
+        selectedToAccount = AccountRef.Wallet("2"),
         amount = BigDecimal("100.00"),
         accounts = listOf(fromAccount, toAccount),
         accountBalances = mapOf("1" to BigDecimal("500.00"), "2" to BigDecimal("1200.00"))

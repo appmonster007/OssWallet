@@ -6,7 +6,11 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
@@ -21,6 +25,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,8 +76,8 @@ data class QuickAddState(
     val amount: BigDecimal = BigDecimal.ZERO,
     val selectedTemplate: Template? = null,
     val selectedCategoryId: Long? = null,
-    val selectedAccountId: String? = null,
-    val selectedToAccountId: String? = null,
+    val selectedAccount: AccountRef = AccountRef.Unselected,
+    val selectedToAccount: AccountRef = AccountRef.Unselected,
     val selectedCurrency: String = "",
     val selectedToCurrency: String = "",
     val amountOverride: BigDecimal? = null,
@@ -88,7 +93,10 @@ data class QuickAddState(
     val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot.EMPTY,
     val baseCurrency: String = "USD",
     val isSaving: Boolean = false
-)
+) {
+    val selectedAccountId: String? get() = (selectedAccount as? AccountRef.Wallet)?.id ?: if (selectedAccount.isOutside) "" else null
+    val selectedToAccountId: String? get() = (selectedToAccount as? AccountRef.Wallet)?.id ?: if (selectedToAccount.isOutside) "" else null
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -258,19 +266,24 @@ class QuickAddViewModel @Inject constructor(
                 settingsRepository.currency,
                 computationRepository.exchangeRatesSnapshot
             ) { uiState, allAccounts, transactions, baseCurrency, rates ->
-                val activeAccounts = allAccounts.filter { !it.isArchived }
+                val baseAccounts = allAccounts.filter { !it.isArchived }
+                val activeAccounts = if (uiState.entryMode == EntryMode.TRANSFER) {
+                    listOf(Account.OUTSIDE_WALLET) + baseAccounts
+                } else {
+                    baseAccounts
+                }
                 
                 // Sort accounts: preselected first (from template/suggestion), then by name
                 val sortedAccounts = activeAccounts.sortedWith(
-                    compareByDescending<Account> { it.id == uiState.selectedAccountId }
+                    compareByDescending<Account> { AccountRef.Wallet(it.id) == uiState.selectedAccount }
                         .thenBy { it.name }
                 )
 
-                val structureTypes = activeAccounts.map { it.structureType }
+                val structureTypes = baseAccounts.map { it.structureType }
                     .distinct()
                     .sortedBy { it.displayName }
 
-                val balances = activeAccounts.associate { acc ->
+                val balances = baseAccounts.associate { acc ->
                     acc.id to AggregationService.calculateAccountBalance(
                         acc.id,
                         transactions,
@@ -284,8 +297,7 @@ class QuickAddViewModel @Inject constructor(
                 if (uiState.entryMode == EntryMode.TRANSFER && 
                     uiState.selectedCurrency.isNotBlank() && 
                     uiState.selectedToCurrency.isNotBlank()) {
-                    effectiveRate = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                        amount = BigDecimal.ONE,
+                    effectiveRate = TransactionEntryService.getMarketRate(
                         fromCurrency = uiState.selectedCurrency,
                         toCurrency = uiState.selectedToCurrency,
                         exchangeRates = rates
@@ -311,21 +323,32 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onTemplateSelected(template: Template) {
-        val account = state.value.accounts.find { it.id == template.accountId }
-        val toAccount = state.value.accounts.find { it.id == template.targetAccountId }
+        val prefill = TransactionEntryService.resolvePrefill(
+            entryMode = template.entryMode,
+            accountId = template.accountId,
+            targetAccountId = template.targetAccountId,
+            currency = template.currency,
+            targetCurrency = template.targetCurrency,
+            amount = template.amount,
+            categoryId = template.categoryId,
+            note = template.note,
+            payee = template.payee,
+            tags = template.tags,
+            accounts = state.value.accounts
+        )
         _uiState.update {
             it.copy(
                 selectedTemplate = template,
-                selectedCategoryId = template.categoryId,
-                selectedAccountId = template.accountId,
-                selectedToAccountId = template.targetAccountId,
-                selectedCurrency = account?.currencyCode ?: template.currency,
-                selectedToCurrency = toAccount?.currencyCode ?: template.targetCurrency ?: "",
-                entryMode = template.entryMode,
-                amount = template.amount.abs(),
-                note = template.note ?: "",
-                payee = template.payee ?: "",
-                tags = template.tags ?: emptySet(),
+                selectedCategoryId = prefill.categoryId,
+                selectedAccount = prefill.account,
+                selectedToAccount = prefill.targetAccount,
+                selectedCurrency = prefill.currency,
+                selectedToCurrency = prefill.targetCurrency,
+                entryMode = prefill.entryMode,
+                amount = prefill.amount,
+                note = prefill.note,
+                payee = prefill.payee,
+                tags = prefill.tags,
                 currentStep = 1
             )
         }
@@ -344,21 +367,32 @@ class QuickAddViewModel @Inject constructor(
         payee: String,
         tags: Set<String>
     ) {
-        val account = state.value.accounts.find { it.id == accountId }
-        val toAccount = state.value.accounts.find { it.id == targetAccountId }
+        val prefill = TransactionEntryService.resolvePrefill(
+            entryMode = entryMode,
+            accountId = accountId,
+            targetAccountId = targetAccountId,
+            currency = currency,
+            targetCurrency = targetCurrency,
+            amount = amount,
+            categoryId = categoryId,
+            note = note,
+            payee = payee,
+            tags = tags,
+            accounts = state.value.accounts
+        )
         _uiState.update {
             it.copy(
                 selectedTemplate = null,
-                selectedCategoryId = categoryId,
-                selectedAccountId = accountId,
-                selectedToAccountId = targetAccountId,
-                selectedCurrency = account?.currencyCode ?: currency,
-                selectedToCurrency = toAccount?.currencyCode ?: targetCurrency ?: "",
-                entryMode = entryMode,
-                amount = amount.abs(),
-                note = note,
-                payee = payee,
-                tags = tags,
+                selectedCategoryId = prefill.categoryId,
+                selectedAccount = prefill.account,
+                selectedToAccount = prefill.targetAccount,
+                selectedCurrency = prefill.currency,
+                selectedToCurrency = prefill.targetCurrency,
+                entryMode = prefill.entryMode,
+                amount = prefill.amount,
+                note = prefill.note,
+                payee = prefill.payee,
+                tags = prefill.tags,
                 currentStep = 1
             )
         }
@@ -369,7 +403,7 @@ class QuickAddViewModel @Inject constructor(
             it.copy(
                 selectedTemplate = null,
                 selectedCategoryId = category.id,
-                selectedAccountId = null,
+                selectedAccount = AccountRef.Unselected,
                 entryMode = EntryMode.EXPENSE,
                 amount = BigDecimal.ZERO,
                 note = "",
@@ -395,12 +429,8 @@ class QuickAddViewModel @Inject constructor(
                 activeAmountSide = side,
                 isAmountOverridden = isManual,
                 amountOverride = if (isManual && s.amountOverride == null) {
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                        amount = s.amount,
-                        fromCurrency = s.selectedCurrency,
-                        toCurrency = s.selectedToCurrency,
-                        exchangeRates = s.exchangeRates
-                    )
+                    val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                    TransactionEntryService.calculateTargetAmount(s.amount, rate).toBigDecimalOrNull()
                 } else s.amountOverride
             )
         }
@@ -413,12 +443,8 @@ class QuickAddViewModel @Inject constructor(
                 isAmountOverridden = next,
                 activeAmountSide = if (!next) AmountEditingSide.SOURCE else s.activeAmountSide,
                 amountOverride = if (next && s.amountOverride == null) {
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                        amount = s.amount,
-                        fromCurrency = s.selectedCurrency,
-                        toCurrency = s.selectedToCurrency,
-                        exchangeRates = s.exchangeRates
-                    )
+                    val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                    TransactionEntryService.calculateTargetAmount(s.amount, rate).toBigDecimalOrNull()
                 } else if (!next) null else s.amountOverride
             )
         }
@@ -428,8 +454,8 @@ class QuickAddViewModel @Inject constructor(
         _uiState.update { s ->
             if (s.entryMode != EntryMode.TRANSFER) return@update s
             s.copy(
-                selectedAccountId = s.selectedToAccountId,
-                selectedToAccountId = s.selectedAccountId,
+                selectedAccount = s.selectedToAccount,
+                selectedToAccount = s.selectedAccount,
                 selectedCurrency = s.selectedToCurrency,
                 selectedToCurrency = s.selectedCurrency,
                 amount = s.amountOverride ?: s.amount,
@@ -444,17 +470,30 @@ class QuickAddViewModel @Inject constructor(
 
     fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
         val account = state.value.accounts.find { it.id == accountId }
+        val newRef = if (accountId.isBlank()) AccountRef.Outside else AccountRef.Wallet(accountId)
         _uiState.update { s ->
             if (isFrom) {
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = s.selectedCurrency,
+                    baseCurrency = s.baseCurrency
+                )
                 s.copy(
-                    selectedAccountId = accountId,
-                    selectedCurrency = account?.currencyCode ?: s.selectedCurrency,
+                    selectedAccount = newRef,
+                    selectedCurrency = newCurrency,
                     currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2
                 )
             } else {
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = s.selectedCurrency, // QuickAdd inherits from Source by default
+                    baseCurrency = s.baseCurrency
+                )
                 s.copy(
-                    selectedToAccountId = accountId,
-                    selectedToCurrency = account?.currencyCode ?: s.selectedToCurrency,
+                    selectedToAccount = newRef,
+                    selectedToCurrency = newCurrency,
                 )
             }
         }
@@ -484,18 +523,10 @@ class QuickAddViewModel @Inject constructor(
 
     fun saveTransaction(onSuccess: () -> Unit) {
         val s = state.value
-        val accountId = s.selectedAccountId ?: return
+        if (s.selectedAccount is AccountRef.Unselected) return
         val amount = s.amount
         if (amount < BigDecimal.ZERO) return
         
-        // Signed amount only for non-transfers
-        val signedAmount = if (s.entryMode == EntryMode.TRANSFER) {
-            amount
-        } else {
-            if (s.entryMode == EntryMode.INCOME) amount else amount.negate()
-        }
-
-        val account = s.accounts.find { it.id == accountId } ?: return
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
         val name = s.selectedTemplate?.name
             ?: categories.value.find { it.id == categoryId }?.name
@@ -505,38 +536,27 @@ class QuickAddViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
             runCatching {
                 withProfile { profileId ->
+                    val request = TransactionEntryService.createRequest(
+                        name = name,
+                        amount = amount,
+                        entryMode = s.entryMode,
+                        sourceAccount = s.selectedAccount,
+                        sourceCurrency = s.selectedCurrency,
+                        targetAccount = s.selectedToAccount,
+                        targetCurrency = s.selectedToCurrency,
+                        categoryId = categoryId,
+                        note = s.note.ifBlank { s.selectedTemplate?.note ?: "" },
+                        payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
+                        status = s.selectedTemplate?.transactionStatus ?: TransactionStatus.CLEARED,
+                        tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
+                        amountOverride = s.amountOverride,
+                        exchangeRates = s.exchangeRates,
+                        accounts = s.accounts,
+                        baseCurrency = s.baseCurrency
+                    )
                     transactionManager.handleSaveTransaction(
                         existingTransaction = null,
-                        request = TransactionRequest(
-                            name = name,
-                            amount = signedAmount,
-                            entryMode = s.entryMode,
-                            accountId = accountId,
-                            currency = s.selectedCurrency.ifBlank { account.currencyCode },
-                            targetAccountId = s.selectedToAccountId,
-                            targetCurrency = s.selectedToCurrency.ifBlank { 
-                                s.accounts.find { it.id == s.selectedToAccountId }?.currencyCode 
-                            },
-                            categoryId = categoryId,
-                            note = s.note.ifBlank { s.selectedTemplate?.note ?: "" },
-                            payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
-                            status = s.selectedTemplate?.transactionStatus
-                                ?: TransactionStatus.CLEARED,
-                            tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
-                            transferRate = if (s.entryMode == EntryMode.TRANSFER) {
-                                val destAmount = s.amountOverride ?: com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                                    amount = s.amount,
-                                    fromCurrency = s.selectedCurrency.ifBlank { account.currencyCode },
-                                    toCurrency = s.selectedToCurrency.ifBlank { 
-                                        s.accounts.find { it.id == s.selectedToAccountId }?.currencyCode ?: "" 
-                                    },
-                                    exchangeRates = s.exchangeRates
-                                )
-                                if (s.amount.compareTo(BigDecimal.ZERO) != 0) {
-                                    destAmount.divide(s.amount, 8, java.math.RoundingMode.HALF_UP)
-                                } else BigDecimal.ONE
-                            } else BigDecimal.ONE
-                        ),
+                        request = request,
                         profileId = profileId
                     )
                 }
@@ -558,12 +578,7 @@ class QuickAddViewModel @Inject constructor(
         get() {
             val s = state.value
             if (s.amount < BigDecimal.ZERO) return false
-            if (s.selectedAccountId == null) return false
             
-            if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccountId == null) {
-                return false
-            }
-            
-            return true
+            return TransactionEntryService.validateTransferAccounts(s.selectedAccount, s.selectedToAccount)
         }
 }

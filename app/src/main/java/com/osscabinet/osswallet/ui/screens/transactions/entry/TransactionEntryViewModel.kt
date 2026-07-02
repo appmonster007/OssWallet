@@ -22,7 +22,11 @@ import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -192,17 +196,13 @@ class TransactionEntryViewModel @Inject constructor(
                 targetAmountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
                     ?: if (transaction.transferRate.signum() != 0) {
-                        transaction.amount.abs()
-                            .multiply(transaction.transferRate)
-                            .stripTrailingZeros().toPlainString()
+                        TransactionEntryService.calculateSourceAmount(transaction.amount.abs(), transaction.transferRate)
                     } else "0"
             } else {
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =
                     linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
-                        ?: transaction.amount.abs().multiply(transaction.transferRate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString()
+                        ?: TransactionEntryService.calculateTargetAmount(transaction.amount.abs(), transaction.transferRate)
             }
             // Semantic Normalization: Unified category for both sides
             categoryId = if (Category.isInitialBalance(transaction.categoryId))
@@ -394,9 +394,7 @@ class TransactionEntryViewModel @Inject constructor(
                                 amount = finalInput.stripTrailingZeros().toPlainString()
                             ),
                             destination = state.destination.copy(
-                                amount = finalInput.multiply(state.exchangeRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                    .toPlainString()
+                                amount = TransactionEntryService.calculateTargetAmount(finalInput, state.exchangeRate)
                             ),
                             entryMode = newMode
                         )
@@ -406,9 +404,7 @@ class TransactionEntryViewModel @Inject constructor(
                         it.copy(
                             source = it.source.copy(amount = event.amount),
                             destination = it.destination.copy(
-                                amount = inputAmount.multiply(it.exchangeRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                    .toPlainString()
+                                amount = TransactionEntryService.calculateTargetAmount(inputAmount, it.exchangeRate)
                             )
                         )
                     }
@@ -418,10 +414,7 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetTargetAmount -> {
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 _state.update { state ->
-                    val newSourceAmount = if (state.exchangeRate.signum() != 0) {
-                        inputAmount.divide(state.exchangeRate, 8, java.math.RoundingMode.HALF_UP)
-                            .stripTrailingZeros().toPlainString()
-                    } else state.amount
+                    val newSourceAmount = TransactionEntryService.calculateSourceAmount(inputAmount, state.exchangeRate)
 
                     state.copy(
                         destination = state.destination.copy(amount = event.amount),
@@ -543,11 +536,18 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetAccount -> {
                 val newRef = AccountRef.fromStored(event.account?.id)
-                update {
-                    it.copy(
-                        source = it.source.copy(
+                update { s ->
+                    val newCurrency = TransactionEntryService.resolveSideCurrency(
+                        account = newRef,
+                        accountCurrency = event.account?.currencyCode,
+                        currentCurrency = s.selectedCurrency,
+                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                    )
+
+                    s.copy(
+                        source = s.source.copy(
                             account = newRef,
-                            currency = event.account?.currencyCode?.ifBlank { null } ?: it.selectedCurrency
+                            currency = newCurrency
                         )
                     )
                 }
@@ -561,11 +561,18 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetTargetAccount -> {
                 val newRef = AccountRef.fromStored(event.account?.id)
-                update {
-                    it.copy(
-                        destination = it.destination.copy(
+                update { s ->
+                    val newCurrency = TransactionEntryService.resolveSideCurrency(
+                        account = newRef,
+                        accountCurrency = event.account?.currencyCode,
+                        currentCurrency = s.targetCurrency,
+                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                    )
+
+                    s.copy(
+                        destination = s.destination.copy(
                             account = newRef,
-                            currency = event.account?.currencyCode?.ifBlank { null } ?: it.targetCurrency
+                            currency = newCurrency
                         )
                     )
                 }
@@ -582,9 +589,7 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(
                     exchangeRate = event.rate,
                     destination = it.destination.copy(
-                        amount = inputAmt.multiply(event.rate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString()
+                        amount = TransactionEntryService.calculateTargetAmount(inputAmt, event.rate)
                     )
                 )
             }
@@ -723,9 +728,8 @@ class TransactionEntryViewModel @Inject constructor(
                 currentState.targetCurrency.isNotEmpty()
             ) {
 
-                val rates = computationRepository.exchangeRates.first()
-                val rate = CurrencyService.convertAmount(
-                    amount = BigDecimal.ONE,
+                val rates = computationRepository.exchangeRatesSnapshot.first()
+                val rate = TransactionEntryService.getMarketRate(
                     fromCurrency = currentState.selectedCurrency,
                     toCurrency = currentState.targetCurrency,
                     exchangeRates = rates
@@ -734,9 +738,7 @@ class TransactionEntryViewModel @Inject constructor(
                     it.copy(
                         exchangeRate = rate,
                         destination = it.destination.copy(
-                            amount = it.amountValue.multiply(rate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString()
+                            amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
                         )
                     )
                 }
@@ -759,38 +761,24 @@ class TransactionEntryViewModel @Inject constructor(
             currentState.selectedDateMillis
         }
 
-        return TransactionRequest(
-            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
-                ?: "Transaction",
-            amount = when {
-                currentState.isIncome -> currentState.amountValue.abs()
-                currentState.isExpense -> currentState.amountValue.abs().negate()
-                currentState.isTransfer -> currentState.amountValue.abs().negate() // TransactionManager handles sign
-                else -> currentState.amountValue
-            },
-            entryMode = when {
-                currentState.isIncome -> EntryMode.INCOME
-                currentState.isTransfer -> EntryMode.TRANSFER
-                else -> EntryMode.EXPENSE
-            },
-            accountId = currentState.source.account.toDbTransferSide(),
-            currency = currentState.selectedCurrency,
-            categoryId = currentState.selectedCategoryId,
-            tags = currentState.selectedTags,
-            paymentMethod = currentState.paymentMethod,
-            timestamp = finalTimestamp,
-            payee = currentState.payee,
-            note = currentState.note,
-            gpsLocation = currentState.gpsLocation,
-            location = currentState.location,
-            warrantyExpiration = if (currentState.isWarrantyEnabled) {
-                currentState.warrantyExpirationMillis
-            } else null,
-            status = currentState.status,
-            sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-            targetAccountId = currentState.destination.account.toDbTransferSide(),
+        return TransactionEntryService.createRequest(
+            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
+            amount = currentState.amountValue,
+            entryMode = currentState.entryMode,
+            sourceAccount = currentState.source.account,
+            sourceCurrency = currentState.selectedCurrency,
+            targetAccount = currentState.destination.account,
             targetCurrency = currentState.targetCurrency,
-            transferRate = if (currentState.isTransfer) currentState.exchangeRate else BigDecimal.ONE
+            categoryId = currentState.selectedCategoryId,
+            note = currentState.note,
+            payee = currentState.payee,
+            tags = currentState.selectedTags,
+            status = currentState.status,
+            amountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
+            exchangeRates = ExchangeRateSnapshot(anchor = "USD", rates = currentState.exchangeRates), // Fallback if snapshot not in state
+            accounts = currentState.accounts,
+            baseCurrency = currentState.shortlistedCurrencies.firstOrNull() ?: "USD",
+            timestamp = finalTimestamp
         )
     }
 

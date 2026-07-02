@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -14,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
 
@@ -123,17 +125,12 @@ data class TransactionEntryState(
 
             // Account validation
             if (isTransfer) {
-                // Both sides must be explicitly chosen (Unselected = not yet picked)
-                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
-                if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
-                // Wallet minimum rule: at least one side must be an internal wallet account
-                // This implicitly prevents Outside -> Outside transfers.
-                if (source.account is AccountRef.Outside && destination.account is AccountRef.Outside) {
-                    add(EntryField.ACCOUNT)
-                    add(EntryField.TARGET_ACCOUNT)
+                if (!TransactionEntryService.validateTransferAccounts(source.account, destination.account)) {
+                    if (source.account is AccountRef.Unselected || (source.account.isOutside && destination.account.isOutside)) add(EntryField.ACCOUNT)
+                    if (destination.account is AccountRef.Unselected || (source.account.isOutside && destination.account.isOutside)) add(EntryField.TARGET_ACCOUNT)
                 }
             } else {
-                if (source.account !is AccountRef.Wallet) add(EntryField.ACCOUNT)
+                if (!TransactionEntryService.validateNormalAccount(source.account)) add(EntryField.ACCOUNT)
             }
 
             // Split validation

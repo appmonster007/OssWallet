@@ -75,9 +75,9 @@ internal fun AtelierGrid(
 
 /** Mono overline with a fading hairline rule — the panel section header. */
 @Composable
-internal fun PanelOverline(text: String) {
+internal fun PanelOverline(text: String, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {

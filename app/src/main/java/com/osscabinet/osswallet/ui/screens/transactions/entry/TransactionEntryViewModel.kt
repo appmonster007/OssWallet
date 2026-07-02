@@ -132,7 +132,7 @@ class TransactionEntryViewModel @Inject constructor(
                     allNotes = notes,
                     mapsAccessEnabled = mapsAccess,
                     source = TransactionSide(
-                        account = selectedAccount?.id?.let { AccountRef.Wallet(it) } ?: AccountRef.Unselected,
+                        account = selectedAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
                         currency = selectedAccount?.currencyCode ?: "",
                         categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
                     ),
@@ -223,14 +223,14 @@ class TransactionEntryViewModel @Inject constructor(
         // id is the persistence convention for "Outside Wallet" (not "Unselected"); for
         // non-transfer rows the source is always a real wallet.
         val sourceRef: AccountRef = if (txType == EntryMode.TRANSFER) {
-            selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
+            selectedAcc?.let { AccountRef.fromStored(it.id) } ?: AccountRef.Outside
         } else {
-            selectedAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
+            selectedAcc?.let { AccountRef.fromStored(it.id) } ?: AccountRef.Unselected
         }
         val destinationRef: AccountRef = if (txType == EntryMode.TRANSFER) {
-            targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Outside
+            targetAcc?.let { AccountRef.fromStored(it.id) } ?: AccountRef.Outside
         } else {
-            targetAcc?.let { AccountRef.Wallet(it.id) } ?: AccountRef.Unselected
+            targetAcc?.let { AccountRef.fromStored(it.id) } ?: AccountRef.Unselected
         }
 
         _state.update {
@@ -383,43 +383,41 @@ class TransactionEntryViewModel @Inject constructor(
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 if (inputAmount < BigDecimal.ZERO) {
                     _state.update { state ->
-                        val newMode = when (state.entryMode) {
-                            EntryMode.EXPENSE -> EntryMode.INCOME
-                            EntryMode.INCOME -> EntryMode.EXPENSE
-                            else -> state.entryMode
-                        }
-                        val finalInput = inputAmount.abs()
+                        val result = TransactionEntryService.transitionType(
+                            oldMode = state.entryMode,
+                            newMode = if (state.isIncome) EntryMode.EXPENSE else EntryMode.INCOME,
+                            currentSource = state.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
+                            currentDestination = state.destination,
+                            isSplitMode = state.isSplitMode
+                        )
                         state.copy(
-                            source = state.source.copy(
-                                amount = finalInput.stripTrailingZeros().toPlainString()
-                            ),
-                            destination = state.destination.copy(
-                                amount = TransactionEntryService.calculateTargetAmount(finalInput, state.exchangeRate)
-                            ),
-                            entryMode = newMode
+                            entryMode = result.newMode,
+                            source = result.source,
+                            destination = result.destination,
+                            isSplitMode = result.isSplitModeAllowed
                         )
                     }
                 } else {
-                    _state.update {
-                        it.copy(
-                            source = it.source.copy(amount = event.amount),
-                            destination = it.destination.copy(
-                                amount = TransactionEntryService.calculateTargetAmount(inputAmount, it.exchangeRate)
-                            )
+                    _state.update { state ->
+                        val (newSrc, newDst) = TransactionEntryService.updateAmounts(
+                            source = state.source.copy(amount = event.amount),
+                            destination = state.destination,
+                            rate = state.exchangeRate
                         )
+                        state.copy(source = newSrc, destination = newDst)
                     }
                 }
             }
 
             is TransactionEntryEvent.SetTargetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 _state.update { state ->
-                    val newSourceAmount = TransactionEntryService.calculateSourceAmount(inputAmount, state.exchangeRate)
-
-                    state.copy(
+                    val (newSrc, newDst) = TransactionEntryService.updateAmounts(
+                        source = state.source,
                         destination = state.destination.copy(amount = event.amount),
-                        source = state.source.copy(amount = newSourceAmount)
+                        rate = state.exchangeRate,
+                        updateSource = true
                     )
+                    state.copy(source = newSrc, destination = newDst)
                 }
             }
 
@@ -698,18 +696,14 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SwapAccounts -> update { state ->
                 if (!state.isTransfer) return@update state
-                val src = state.source
-                val dst = state.destination
-                val effectiveDstAmount = dst.amount.ifBlank {
-                    src.amountValue.multiply(state.exchangeRate)
-                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
-                }
-                val newRate = if (state.exchangeRate.signum() != 0)
-                    java.math.BigDecimal.ONE.divide(state.exchangeRate, 8, java.math.RoundingMode.HALF_UP)
-                else java.math.BigDecimal.ONE
+                val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
+                    source = state.source,
+                    destination = state.destination,
+                    transferRate = state.exchangeRate
+                )
                 state.copy(
-                    source = src.copy(account = dst.account, currency = dst.currency, amount = effectiveDstAmount),
-                    destination = dst.copy(account = src.account, currency = src.currency, amount = src.amount),
+                    source = newSrc,
+                    destination = newDst,
                     exchangeRate = newRate
                 )
             }

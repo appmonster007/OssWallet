@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +47,7 @@ import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.CalculatorNumpad
 import com.osscabinet.ossWallet.ui.components.CurrencySelector
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -84,28 +86,25 @@ fun QuickAddAmountStep(
     onAmountOverrideChange: (BigDecimal) -> Unit = {},
     onSetAmountFocus: (AmountEditingSide) -> Unit = {},
     onToggleAmountOverride: () -> Unit = {},
+    onSwapAccounts: () -> Unit = {},
     onDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currencies = remember(account) {
-        if (account?.id?.isBlank() == true) {
+        if (account == null || account.id.isBlank()) {
             CurrencyService.getAllCurrencies()
         } else {
-            account?.let {
-                (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
-                    .filter { c -> c.isNotBlank() }
-            } ?: emptyList()
+            (listOf(account.currencyCode) + account.allowedCurrencies).distinct()
+                .filter { it.isNotBlank() }
         }
     }
     
     val toCurrencies = remember(toAccount) {
-        if (toAccount?.id?.isBlank() == true) {
+        if (toAccount == null || toAccount.id.isBlank()) {
             CurrencyService.getAllCurrencies()
         } else {
-            toAccount?.let {
-                (listOf(it.currencyCode) + it.allowedCurrencies).distinct()
-                    .filter { c -> c.isNotBlank() }
-            } ?: emptyList()
+            (listOf(toAccount.currencyCode) + toAccount.allowedCurrencies).distinct()
+                .filter { it.isNotBlank() }
         }
     }
 
@@ -125,49 +124,68 @@ fun QuickAddAmountStep(
             accountBalance = accountBalance,
             toAccountBalance = toAccountBalance,
             entryMode = entryMode,
+            onSwapAccounts = onSwapAccounts,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
-        CalculatorNumpad(
-            amount = if (activeAmountSide == AmountEditingSide.TARGET) {
-                (amountOverride ?: BigDecimal.ZERO).stripTrailingZeros().toPlainString()
-            } else {
-                amount.stripTrailingZeros().toPlainString()
-            },
-            onAmountChange = { 
-                val valBD = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                if (activeAmountSide == AmountEditingSide.TARGET) onAmountOverrideChange(valBD)
-                else onAmountChange(valBD)
-            },
-            onDone = onDone,
-            showDoneButton = false,
-            modifier = Modifier.fillMaxWidth(),
-            header = { state, _, _ ->
-                AmountHeroPanel(
-                    amount = state.display,
-                    expression = state.displayExpression,
-                    amountOverride = amountOverride,
-                    isOverriding = isAmountOverridden,
-                    activeSide = activeAmountSide,
-                    onToggleOverriding = onToggleAmountOverride,
-                    onSetFocus = onSetAmountFocus,
-                    currency = selectedCurrency.ifBlank { currencies.firstOrNull() ?: "USD" },
-                    toCurrency = selectedToCurrency.ifBlank { toCurrencies.firstOrNull() ?: "" },
-                    currencies = currencies,
-                    toCurrencies = toCurrencies,
-                    onCurrencyChange = { onCurrencySelected(it, true) },
-                    onToCurrencyChange = { onCurrencySelected(it, false) },
-                    accountBalance = accountBalance,
-                    toAccountBalance = toAccountBalance,
-                    accountCurrency = account?.currencyCode ?: "USD",
-                    toAccountCurrency = toAccount?.currencyCode ?: "USD",
-                    entryMode = entryMode,
-                    inputAmount = amount,
-                    exchangeRates = exchangeRates,
-                    baseCurrency = baseCurrency
-                )
-            }
-        )
+        key(activeAmountSide) {
+            CalculatorNumpad(
+                amount = if (activeAmountSide == AmountEditingSide.TARGET) {
+                    (amountOverride ?: BigDecimal.ZERO).stripTrailingZeros().toPlainString()
+                } else {
+                    amount.stripTrailingZeros().toPlainString()
+                },
+                onAmountChange = { 
+                    val valBD = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    if (activeAmountSide == AmountEditingSide.TARGET) onAmountOverrideChange(valBD)
+                    else onAmountChange(valBD)
+                },
+                onDone = onDone,
+                showDoneButton = false,
+                modifier = Modifier.fillMaxWidth(),
+                header = { state, _, _ ->
+                    // LIVE EVALUATION: Use ghostResult if present (during expression typing)
+                    val liveValueString = if (state.ghostResult.isNotEmpty()) state.ghostResult else state.display
+                    val liveAmount = liveValueString.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    
+                    val marketRate = if (selectedCurrency == selectedToCurrency) BigDecimal.ONE 
+                                     else TransactionEntryService.getMarketRate(selectedCurrency, selectedToCurrency, exchangeRates)
+
+                    val (sourceToDisplay, targetToDisplay) = if (activeAmountSide == AmountEditingSide.SOURCE) {
+                        // We are typing the Source. If not overriding, Target = Source * Rate
+                        liveAmount to (if (isAmountOverridden) (amountOverride ?: BigDecimal.ZERO) 
+                                       else TransactionEntryService.calculateTargetAmountValue(liveAmount, marketRate))
+                    } else {
+                        // We are typing the Target. Source is static, Target is live.
+                        amount to liveAmount
+                    }
+
+                    AmountHeroPanel(
+                        amount = state.display,
+                        expression = state.displayExpression,
+                        sourceAmount = sourceToDisplay,
+                        targetAmount = targetToDisplay,
+                        isOverriding = isAmountOverridden,
+                        activeSide = activeAmountSide,
+                        onToggleOverriding = onToggleAmountOverride,
+                        onSetFocus = onSetAmountFocus,
+                        currency = selectedCurrency.ifBlank { currencies.firstOrNull() ?: "USD" },
+                        toCurrency = selectedToCurrency.ifBlank { toCurrencies.firstOrNull() ?: "" },
+                        currencies = currencies,
+                        toCurrencies = toCurrencies,
+                        onCurrencyChange = { onCurrencySelected(it, true) },
+                        onToCurrencyChange = { onCurrencySelected(it, false) },
+                        accountBalance = accountBalance,
+                        toAccountBalance = toAccountBalance,
+                        accountCurrency = account?.currencyCode ?: "USD",
+                        toAccountCurrency = toAccount?.currencyCode ?: "USD",
+                        entryMode = entryMode,
+                        exchangeRates = exchangeRates,
+                        baseCurrency = baseCurrency
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -180,6 +198,7 @@ private fun EditorialContextStrip(
     accountBalance: BigDecimal,
     toAccountBalance: BigDecimal = BigDecimal.ZERO,
     entryMode: EntryMode,
+    onSwapAccounts: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val displayCategory = template?.categoryId?.let { _ -> category } ?: category
@@ -228,9 +247,14 @@ private fun EditorialContextStrip(
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = null,
-                    tint = AppColors.contentSecondary.copy(alpha = 0.4f),
-                    modifier = Modifier.size(14.dp)
+                    contentDescription = "Swap accounts",
+                    tint = AppColors.accent,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.accent.copy(alpha = 0.1f))
+                        .clickable { onSwapAccounts() }
+                        .padding(4.dp)
                 )
 
                 // To Account
@@ -455,7 +479,8 @@ private fun AccountSummary(
 private fun AmountHeroPanel(
     amount: String,
     expression: String,
-    amountOverride: BigDecimal? = null,
+    sourceAmount: BigDecimal,
+    targetAmount: BigDecimal,
     isOverriding: Boolean = false,
     activeSide: AmountEditingSide = AmountEditingSide.SOURCE,
     onToggleOverriding: () -> Unit = {},
@@ -471,13 +496,12 @@ private fun AmountHeroPanel(
     accountCurrency: String,
     toAccountCurrency: String = "USD",
     entryMode: EntryMode,
-    inputAmount: BigDecimal,
     exchangeRates: ExchangeRateSnapshot,
     baseCurrency: String
 ) {
     val closingBalance = remember(
         accountBalance,
-        inputAmount,
+        sourceAmount,
         entryMode,
         currency,
         accountCurrency,
@@ -485,10 +509,10 @@ private fun AmountHeroPanel(
         baseCurrency
     ) {
         val convertedInput = if (currency == accountCurrency) {
-            inputAmount
+            sourceAmount
         } else {
             CurrencyService.convertAmount(
-                amount = inputAmount,
+                amount = sourceAmount,
                 fromCurrency = currency,
                 toCurrency = accountCurrency,
                 exchangeRates = exchangeRates
@@ -501,24 +525,20 @@ private fun AmountHeroPanel(
     
     val toClosingBalance = remember(
         toAccountBalance,
-        inputAmount,
-        amountOverride,
+        targetAmount,
         entryMode,
-        currency,
+        toCurrency,
         toAccountCurrency,
-        exchangeRates,
-        baseCurrency
+        exchangeRates
     ) {
         if (entryMode != EntryMode.TRANSFER) BigDecimal.ZERO
         else {
-            val convertedInput = if (amountOverride != null) {
-                amountOverride
-            } else if (currency == toAccountCurrency) {
-                inputAmount
+            val convertedInput = if (toCurrency == toAccountCurrency) {
+                targetAmount
             } else {
                 CurrencyService.convertAmount(
-                    amount = inputAmount,
-                    fromCurrency = currency,
+                    amount = targetAmount,
+                    fromCurrency = toCurrency,
                     toCurrency = toAccountCurrency,
                     exchangeRates = exchangeRates
                 )
@@ -562,12 +582,29 @@ private fun AmountHeroPanel(
             Spacer(Modifier.height(4.dp))
 
             if (entryMode == EntryMode.TRANSFER) {
-                // Dual Row Transfer Display
+                // Destination Leg
+                val marketRate = remember(currency, toCurrency, exchangeRates) {
+                    if (currency == toCurrency) BigDecimal.ONE
+                    else TransactionEntryService.getMarketRate(currency, toCurrency, exchangeRates)
+                }
+
+                if (marketRate != BigDecimal.ONE && !isOverriding) {
+                    Text(
+                        text = "Rate: 1 $currency = ${marketRate.stripTrailingZeros().toPlainString()} $toCurrency",
+                        style = AppTextStyles.metaLabel.copy(
+                            fontSize = 8.sp,
+                            fontFamily = LocalAppFont.current.monoFamily
+                        ),
+                        color = AppColors.accent.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
+                }
+
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // Source Leg
                     TransferLegRow(
                         label = "FROM",
-                        amount = inputAmount.stripTrailingZeros().toPlainString(),
+                        amount = sourceAmount.toPlainString(),
                         currency = currency,
                         currencies = currencies,
                         isActive = activeSide == AmountEditingSide.SOURCE,
@@ -578,12 +615,7 @@ private fun AmountHeroPanel(
                     // Destination Leg
                     TransferLegRow(
                         label = "TO",
-                        amount = (amountOverride ?: CurrencyService.convertAmount(
-                            amount = inputAmount,
-                            fromCurrency = currency,
-                            toCurrency = toAccountCurrency,
-                            exchangeRates = exchangeRates
-                        )).stripTrailingZeros().toPlainString(),
+                        amount = targetAmount.toPlainString(),
                         currency = toCurrency,
                         currencies = toCurrencies,
                         isActive = activeSide == AmountEditingSide.TARGET,

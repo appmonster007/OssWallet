@@ -70,6 +70,7 @@ import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps.QuickAddAccountStep
@@ -366,11 +367,11 @@ private fun QuickAddSheetContent(
     val canGoNext = when (state.currentStep) {
         STEP_TEMPLATE -> (state.selectedTemplate != null) || (state.selectedCategoryId != null)
         STEP_ACCOUNT -> {
-            if (state.entryMode == EntryMode.TRANSFER) {
-                state.selectedAccountId != null && state.selectedToAccountId != null
-            } else {
-                state.selectedAccountId != null
-            }
+            TransactionEntryService.validateAccountSelection(
+                entryMode = state.entryMode,
+                source = state.selectedAccount,
+                target = state.selectedToAccount
+            ).isValid
         }
         STEP_AMOUNT -> state.amount >= BigDecimal.ZERO
         else -> false
@@ -494,6 +495,7 @@ private fun QuickAddSheetContent(
                             onAmountOverrideChange = onAmountOverrideChange,
                             onSetAmountFocus = onSetAmountFocus,
                             onToggleAmountOverride = onToggleAmountOverride,
+                            onSwapAccounts = onSwapAccounts,
                             onDone = {
                                 if (!state.isSaving) {
                                     onSaveTransaction()

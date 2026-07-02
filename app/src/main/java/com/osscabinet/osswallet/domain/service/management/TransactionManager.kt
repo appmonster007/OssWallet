@@ -141,13 +141,17 @@ class TransactionManager(
         val baseCategory = if (Category.isInitialBalance(request.categoryId))
             Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
 
+        val isSourceWallet = !sourceAccountId.isNullOrBlank()
+        val isTargetWallet = !targetAccountId.isNullOrBlank()
+
         return when {
             // Outflow: Wallet -> Outside
-            sourceAccountId != null && targetAccountId == null -> {
+            isSourceWallet && !isTargetWallet -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),
                     transactionType = TransactionType.TRANSFER_OUTFLOW,
                     categoryId = baseCategory,
+                    targetAccountId = null,
                     targetCurrency = request.targetCurrency
                 )
                 if (existingTransaction != null) {
@@ -159,7 +163,7 @@ class TransactionManager(
                 }
             }
             // Inflow: Outside -> Wallet
-            sourceAccountId == null && targetAccountId != null -> {
+            !isSourceWallet && isTargetWallet -> {
                 val tx = request.toNormalTransaction(existingTransaction).copy(
                     accountId = targetAccountId,
                     amount = amount,
@@ -178,7 +182,7 @@ class TransactionManager(
                 }
             }
             // Internal: Wallet -> Wallet
-            sourceAccountId != null && targetAccountId != null -> {
+            isSourceWallet && isTargetWallet -> {
                 // If it's an internal transfer, we force the signs: Source is -ve, Target is +ve
                 val sourceTransaction = request.toNormalTransaction(existingTransaction).copy(
                     amount = amount.negate(),

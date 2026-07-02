@@ -239,14 +239,16 @@ fun QuickAddTemplateStep(
                                             iconColor = item.category.colorHex.toOpaqueColor(),
                                             isSelected = item.category.id == selectedCategoryId && selectedTemplateId == null,
                                             hasChildren = hasChildren,
-                                            onTap = { onCategorySelected(item.category) },
-                                            onLongPress = if (hasChildren) {
-                                                {
+                                            onTap = { 
+                                                if (hasChildren && !Category.isSystemCategory(item.category.id)) {
                                                     categoryNavStack = categoryNavStack + item.category.id
                                                     keyboardController?.hide()
                                                     focusManager.clearFocus()
+                                                } else {
+                                                    onCategorySelected(item.category)
                                                 }
-                                            } else null
+                                            },
+                                            onLongPress = { onCategorySelected(item.category) }
                                         )
                                     }
                                 }

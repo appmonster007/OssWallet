@@ -18,6 +18,7 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -78,7 +79,7 @@ class TemplateEntryViewModel @Inject constructor(
                     _state.update { current ->
                         val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && accounts.isNotEmpty()) {
                             current.source.copy(
-                                account = AccountRef.Wallet(accounts.first().id),
+                                account = AccountRef.fromStored(accounts.first().id),
                                 currency = accounts.first().currencyCode
                             )
                         } else current.source
@@ -139,7 +140,7 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = false,
                         templateId = null,
                         source = if (firstAccount != null && current.source.account is AccountRef.Unselected) {
-                            current.source.copy(account = AccountRef.Wallet(firstAccount.id), currency = firstAccount.currencyCode)
+                            current.source.copy(account = AccountRef.fromStored(firstAccount.id), currency = firstAccount.currencyCode)
                         } else current.source
                     )
                 }
@@ -215,50 +216,40 @@ class TemplateEntryViewModel @Inject constructor(
                 val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 if (inputAmount < BigDecimal.ZERO) {
                     _state.update { state ->
-                        val newMode = when (state.entryMode) {
-                            EntryMode.EXPENSE -> EntryMode.INCOME
-                            EntryMode.INCOME -> EntryMode.EXPENSE
-                            else -> state.entryMode
-                        }
-                        val finalAmt = inputAmount.abs()
+                        val result = TransactionEntryService.transitionType(
+                            oldMode = state.entryMode,
+                            newMode = if (state.isIncome) EntryMode.EXPENSE else EntryMode.INCOME,
+                            currentSource = state.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
+                            currentDestination = state.destination,
+                            isSplitMode = false
+                        )
                         state.copy(
-                            source = state.source.copy(
-                                amount = finalAmt.stripTrailingZeros().toPlainString()
-                            ),
-                            destination = state.destination.copy(
-                                amount = finalAmt.multiply(state.transferRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                    .toPlainString()
-                            ),
-                            entryMode = newMode
+                            entryMode = result.newMode,
+                            source = result.source,
+                            destination = result.destination
                         )
                     }
                 } else {
-                    _state.update {
-                        it.copy(
-                            source = it.source.copy(amount = event.amount),
-                            destination = it.destination.copy(
-                                amount = inputAmount.multiply(it.transferRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                    .toPlainString()
-                            )
+                    _state.update { state ->
+                        val (newSrc, newDst) = TransactionEntryService.updateAmounts(
+                            source = state.source.copy(amount = event.amount),
+                            destination = state.destination,
+                            rate = state.transferRate
                         )
+                        state.copy(source = newSrc, destination = newDst)
                     }
                 }
             }
 
             is TemplateEntryEvent.SetTargetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 _state.update { state ->
-                    val newSourceAmount = if (state.transferRate.signum() != 0) {
-                        inputAmount.divide(state.transferRate, 8, java.math.RoundingMode.HALF_UP)
-                            .stripTrailingZeros().toPlainString()
-                    } else state.amount
-
-                    state.copy(
+                    val (newSrc, newDst) = TransactionEntryService.updateAmounts(
+                        source = state.source,
                         destination = state.destination.copy(amount = event.amount),
-                        source = state.source.copy(amount = newSourceAmount)
+                        rate = state.transferRate,
+                        updateSource = true
                     )
+                    state.copy(source = newSrc, destination = newDst)
                 }
             }
 
@@ -266,7 +257,7 @@ class TemplateEntryViewModel @Inject constructor(
                 val oldMode = _state.value.entryMode
                 val newMode = event.type
                 _state.update { state ->
-                    val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                    val result = TransactionEntryService.transitionType(
                         oldMode = oldMode,
                         newMode = newMode,
                         currentSource = state.source,
@@ -449,18 +440,14 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SwapAccounts -> _state.update { state ->
                 if (!state.isTransfer) return@update state
-                val src = state.source
-                val dst = state.destination
-                val effectiveDstAmount = dst.amount.ifBlank {
-                    src.amountValue.multiply(state.transferRate)
-                        .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
-                }
-                val newRate = if (state.transferRate.signum() != 0)
-                    java.math.BigDecimal.ONE.divide(state.transferRate, 8, java.math.RoundingMode.HALF_UP)
-                else java.math.BigDecimal.ONE
+                val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
+                    source = state.source,
+                    destination = state.destination,
+                    transferRate = state.transferRate
+                )
                 state.copy(
-                    source = src.copy(account = dst.account, currency = dst.currency, amount = effectiveDstAmount),
-                    destination = dst.copy(account = src.account, currency = src.currency, amount = src.amount),
+                    source = newSrc,
+                    destination = newDst,
                     transferRate = newRate
                 )
             }

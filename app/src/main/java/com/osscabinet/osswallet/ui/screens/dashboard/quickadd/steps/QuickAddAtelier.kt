@@ -34,6 +34,10 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Style
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -246,7 +250,7 @@ internal fun AtelierSegmentedToggle(
     modifier: Modifier = Modifier,
     activeColor: Color = AppColors.accent,
     activeContentColor: Color = AppColors.onAccent,
-    height: Dp = 40.dp,
+    height: Dp = 32.dp,
 ) {
     require(segments.size == 2) { "AtelierSegmentedToggle expects exactly 2 segments" }
     val outerShape = RoundedCornerShape(12.dp)
@@ -447,6 +451,38 @@ private fun PreviewAtelierTileFontSizes() {
                 isSelected = false,
                 onTap = {},
                 modifier = Modifier.width(72.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewAtelierSegmentedToggle() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Standard toggle
+            AtelierSegmentedToggle(
+                segments = listOf(
+                    AtelierSegment("TEMPLATES", Icons.Rounded.Style),
+                    AtelierSegment("CATEGORIES", Icons.Rounded.Category)
+                ),
+                selectedIndex = 0,
+                onSelect = {}
+            )
+
+            // Custom color toggle (e.g. for Income/Expense)
+            AtelierSegmentedToggle(
+                segments = listOf(
+                    AtelierSegment("EXPENSE", Icons.Rounded.ArrowDownward),
+                    AtelierSegment("INCOME", Icons.Rounded.ArrowUpward)
+                ),
+                selectedIndex = 1,
+                activeColor = Color(0xFF4CAF50), // Semantic green
+                onSelect = {}
             )
         }
     }

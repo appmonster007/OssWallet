@@ -82,24 +82,32 @@ fun calculatorReducer(
             val currentTokens = if (state.isCalculated) emptyList() else state.tokens
             val newTokens = when (val lastToken = currentTokens.lastOrNull()) {
                 is Token.Number -> {
-                    // Prevent multiple decimals
                     if (action.number == "." && lastToken.value.contains(".")) {
                         currentTokens
                     } else {
-                        currentTokens.dropLast(1) + Token.Number(lastToken.value + action.number)
+                        val combined = lastToken.value + action.number
+                        // Use BigDecimal to auto-strip leading zeros (e.g. "05" -> "5")
+                        // but preserve the trailing dot while typing.
+                        val newValue = if (combined.endsWith(".")) combined
+                        else combined.toBigDecimalOrNull()?.toPlainString() ?: combined
+                        
+                        currentTokens.dropLast(1) + Token.Number(newValue)
                     }
                 }
 
                 is Token.Percent, is Token.Parenthesis -> {
+                    val initialValue = if (action.number == ".") "0." else action.number
                     if (lastToken is Token.Parenthesis && lastToken.symbol == '(') {
-                        currentTokens + Token.Number(action.number)
+                        currentTokens + Token.Number(initialValue)
                     } else {
-                        // Implicit multiplication: 5% 2 -> 5% * 2
-                        currentTokens + Token.Operator('*') + Token.Number(action.number)
+                        currentTokens + Token.Operator('*') + Token.Number(initialValue)
                     }
                 }
 
-                else -> currentTokens + Token.Number(action.number)
+                else -> {
+                    val initialValue = if (action.number == ".") "0." else action.number
+                    currentTokens + Token.Number(initialValue)
+                }
             }
 
             updateStateWithTokens(state.copy(isCalculated = false), newTokens, evaluator)

@@ -85,7 +85,11 @@ fun CalculatorDialog(
                                         }
                                     }
 
-                                    else -> expression += button
+                                    else -> {
+                                        val combined = expression + button
+                                        expression = if (combined.endsWith(".")) combined
+                                        else combined.toBigDecimalOrNull()?.toPlainString() ?: combined
+                                    }
                                 }
                             },
                             modifier = Modifier.aspectRatio(1f),

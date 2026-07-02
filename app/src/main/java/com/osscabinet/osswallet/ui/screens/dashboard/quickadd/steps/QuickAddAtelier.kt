@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -127,6 +129,7 @@ internal fun AtelierTile(
     modifier: Modifier = Modifier,
     selectionColor: Color = AppColors.accent,
     selectionContentColor: Color = AppColors.onAccent,
+    selectionLabel: String? = null,
     hasChildren: Boolean = false,
     onLongPress: (() -> Unit)? = null
 ) {
@@ -175,17 +178,33 @@ internal fun AtelierTile(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(6.dp)
-                    .size(15.dp)
+                    .then(
+                        if (selectionLabel != null) Modifier.defaultMinSize(minWidth = 15.dp)
+                        else Modifier.size(15.dp)
+                    )
+                    .height(15.dp)
                     .clip(RoundedCornerShape(5.dp))
-                    .background(selectionColor),
+                    .background(selectionColor)
+                    .padding(horizontal = if (selectionLabel != null) 4.dp else 0.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = selectionContentColor,
-                    modifier = Modifier.size(9.dp)
-                )
+                if (selectionLabel != null) {
+                    Text(
+                        text = selectionLabel,
+                        style = AppTextStyles.sectionOverline.copy(
+                            fontSize = 7.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = selectionContentColor
+                        )
+                    )
+                } else {
+                    Icon(
+                        Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = selectionContentColor,
+                        modifier = Modifier.size(9.dp)
+                    )
+                }
             }
         } else if (hasChildren) {
             Box(

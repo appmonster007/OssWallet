@@ -41,12 +41,15 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.automirrored.rounded.Login
+import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
@@ -70,9 +73,11 @@ fun QuickAddAccountStep(
     selectedAccountId: String?,
     selectedToAccountId: String? = null,
     entryMode: EntryMode,
+    activeSide: AmountEditingSide = AmountEditingSide.SOURCE,
     isStepActive: Boolean = false,
     onAccountTapped: (String, Boolean) -> Unit,
     onToggleType: () -> Unit,
+    onSetFocus: (AmountEditingSide) -> Unit = {},
     onSwapAccounts: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -119,7 +124,35 @@ fun QuickAddAccountStep(
 
             AtelierPanel(
                 header = {
-                    if (entryMode != EntryMode.TRANSFER) {
+                    if (entryMode == EntryMode.TRANSFER) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            AtelierSegmentedToggle(
+                                segments = listOf(
+                                    AtelierSegment("FROM", Icons.AutoMirrored.Rounded.Logout),
+                                    AtelierSegment("TO", Icons.AutoMirrored.Rounded.Login)
+                                ),
+                                selectedIndex = if (activeSide == AmountEditingSide.SOURCE) 0 else 1,
+                                onSelect = { onSetFocus(if (it == 0) AmountEditingSide.SOURCE else AmountEditingSide.TARGET) },
+                                activeColor = typeColor,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = onSwapAccounts,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.SwapVert,
+                                    contentDescription = "Swap accounts",
+                                    tint = typeColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    } else {
                         PanelOverline(if (searchQuery.isNotBlank()) "Results" else "Accounts")
                     }
                 },
@@ -130,85 +163,34 @@ fun QuickAddAccountStep(
                     EmptyState("No accounts found")
                 } else {
                     AtelierGrid(numColumns, Modifier.weight(1f, fill = false)) {
-                        if (entryMode == EntryMode.TRANSFER) {
-                            // FROM ACCOUNT Section
-                            item(span = { GridItemSpan(numColumns) }) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    PanelOverline(
-                                        text = "From Account",
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    IconButton(
-                                        onClick = onSwapAccounts,
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.SwapVert,
-                                            contentDescription = "Swap accounts",
-                                            tint = typeColor,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                        items(filtered, key = { it.id }) { account ->
+                            val accountColor = remember(account.colorHex, fallbackIconColor) {
+                                runCatching {
+                                    Color(android.graphics.Color.parseColor(account.colorHex))
+                                }.getOrDefault(fallbackIconColor)
                             }
-                            items(filtered, key = { "from_${it.id}" }) { account ->
-                                val accountColor = remember(account.colorHex, fallbackIconColor) {
-                                    runCatching {
-                                        Color(android.graphics.Color.parseColor(account.colorHex))
-                                    }.getOrDefault(fallbackIconColor)
+                            val isSource = account.id == selectedAccountId
+                            val isTarget = account.id == selectedToAccountId
+                            
+                            val selectionLabel = if (entryMode == EntryMode.TRANSFER) {
+                                when {
+                                    isSource && isTarget -> "FROM/TO"
+                                    isSource -> "FROM"
+                                    isTarget -> "TO"
+                                    else -> null
                                 }
-                                AtelierTile(
-                                    label = account.name,
-                                    icon = getAccountIconByName(account.icon),
-                                    iconColor = accountColor,
-                                    isSelected = account.id == selectedAccountId,
-                                    selectionColor = typeColor,
-                                    selectionContentColor = Color.White,
-                                    onTap = { onAccountTapped(account.id, true) }
-                                )
-                            }
+                            } else null
 
-                            // TO ACCOUNT Section
-                            item(span = { GridItemSpan(numColumns) }) {
-                                PanelOverline("To Account")
-                            }
-                            items(filtered, key = { "to_${it.id}" }) { account ->
-                                val accountColor = remember(account.colorHex, fallbackIconColor) {
-                                    runCatching {
-                                        Color(android.graphics.Color.parseColor(account.colorHex))
-                                    }.getOrDefault(fallbackIconColor)
-                                }
-                                AtelierTile(
-                                    label = account.name,
-                                    icon = getAccountIconByName(account.icon),
-                                    iconColor = accountColor,
-                                    isSelected = account.id == selectedToAccountId,
-                                    selectionColor = typeColor,
-                                    selectionContentColor = Color.White,
-                                    onTap = { onAccountTapped(account.id, false) }
-                                )
-                            }
-                        } else {
-                            items(filtered, key = { it.id }) { account ->
-                                val accountColor = remember(account.colorHex, fallbackIconColor) {
-                                    runCatching {
-                                        Color(android.graphics.Color.parseColor(account.colorHex))
-                                    }.getOrDefault(fallbackIconColor)
-                                }
-                                AtelierTile(
-                                    label = account.name,
-                                    icon = getAccountIconByName(account.icon),
-                                    iconColor = accountColor,
-                                    isSelected = account.id == selectedAccountId,
-                                    selectionColor = typeColor,
-                                    selectionContentColor = Color.White,
-                                    onTap = { onAccountTapped(account.id, true) }
-                                )
-                            }
+                            AtelierTile(
+                                label = account.name,
+                                icon = getAccountIconByName(account.icon),
+                                iconColor = accountColor,
+                                isSelected = isSource || isTarget,
+                                selectionColor = typeColor,
+                                selectionContentColor = Color.White,
+                                selectionLabel = selectionLabel,
+                                onTap = { onAccountTapped(account.id, activeSide == AmountEditingSide.SOURCE) }
+                            )
                         }
                     }
                 }

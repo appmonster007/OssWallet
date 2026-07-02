@@ -491,7 +491,18 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun goToStep(step: Int) {
-        _uiState.update { it.copy(currentStep = step) }
+        _uiState.update { s ->
+            var next = s.copy(currentStep = step)
+            // Auto-focus the only visible side if it's a transfer to/from Outside
+            if (step == 2 && s.entryMode == EntryMode.TRANSFER) {
+                if (s.selectedAccount.isOutside) {
+                    next = next.copy(activeAmountSide = AmountEditingSide.TARGET)
+                } else if (s.selectedToAccount.isOutside) {
+                    next = next.copy(activeAmountSide = AmountEditingSide.SOURCE)
+                }
+            }
+            next
+        }
     }
 
     fun onAccountTapped(accountId: String, isFrom: Boolean = true) {

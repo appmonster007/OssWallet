@@ -77,9 +77,9 @@ fun CalculatorNumpad(
     modifier: Modifier = Modifier,
     allowSigned: Boolean = false,
     showDoneButton: Boolean = true,
-    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null
+    header: @Composable ((state: CalculatorState, onSave: () -> Unit, onHistory: () -> Unit) -> Unit)? = null,
+    keyHeight: Dp = 54.dp
 ) {
-    val keyHeight = 54.dp
     var state by remember { mutableStateOf(CalculatorState()) }
     var showHistory by remember { mutableStateOf(false) }
     val evaluator = remember { ExpressionEvaluator() }

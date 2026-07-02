@@ -130,6 +130,7 @@ fun QuickAddAmountStep(
 
         key(activeAmountSide) {
             CalculatorNumpad(
+                keyHeight = 48.dp,
                 amount = if (activeAmountSide == AmountEditingSide.TARGET) {
                     (amountOverride ?: BigDecimal.ZERO).stripTrailingZeros().toPlainString()
                 } else {
@@ -220,6 +221,10 @@ private fun EditorialContextStrip(
     val accountCurrency = account?.currencyCode ?: "USD"
     val toAccountCurrency = toAccount?.currencyCode ?: "USD"
 
+    val categoryTitle = if (template != null) "TEMPLATE" else "CATEGORY"
+    val categoryName = template?.name ?: category?.name ?: "Quick Entry"
+    val categoryIcon = getIconByName(displayCategory?.iconName)
+
     GlassSurface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -234,16 +239,30 @@ private fun EditorialContextStrip(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (entryMode == EntryMode.TRANSFER) {
+                val isFromOutside = account?.id.isNullOrEmpty()
+                val isToOutside = toAccount?.id.isNullOrEmpty()
+
                 // From Account
-                AccountSummary(
-                    name = account?.name ?: "From",
-                    balance = accountBalance,
-                    currency = accountCurrency,
-                    color = accountColor,
-                    icon = getAccountIconByName(account?.icon),
-                    isEnd = false,
-                    modifier = Modifier.weight(1f)
-                )
+                if (isFromOutside) {
+                    CategorySummary(
+                        title = categoryTitle,
+                        name = categoryName,
+                        color = categoryColor,
+                        icon = categoryIcon,
+                        isEnd = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    AccountSummary(
+                        name = account?.name ?: "From",
+                        balance = accountBalance,
+                        currency = accountCurrency,
+                        color = accountColor,
+                        icon = getAccountIconByName(account?.icon),
+                        isEnd = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
@@ -258,20 +277,28 @@ private fun EditorialContextStrip(
                 )
 
                 // To Account
-                AccountSummary(
-                    name = toAccount?.name ?: "To",
-                    balance = toAccountBalance,
-                    currency = toAccountCurrency,
-                    color = toAccountColor,
-                    icon = getAccountIconByName(toAccount?.icon),
-                    isEnd = true,
-                    modifier = Modifier.weight(1f)
-                )
+                if (isToOutside) {
+                    CategorySummary(
+                        title = categoryTitle,
+                        name = categoryName,
+                        color = categoryColor,
+                        icon = categoryIcon,
+                        isEnd = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    AccountSummary(
+                        name = toAccount?.name ?: "To",
+                        balance = toAccountBalance,
+                        currency = toAccountCurrency,
+                        color = toAccountColor,
+                        icon = getAccountIconByName(toAccount?.icon),
+                        isEnd = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             } else {
                 val isIncome = entryMode == EntryMode.INCOME
-                val categoryTitle = if (template != null) "TEMPLATE" else "CATEGORY"
-                val categoryName = template?.name ?: category?.name ?: "Quick Entry"
-                val categoryIcon = getIconByName(displayCategory?.iconName)
 
                 if (isIncome) {
                     CategorySummary(
@@ -601,27 +628,34 @@ private fun AmountHeroPanel(
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val isFromOutside = accountCurrency.isBlank()
+                    val isToOutside = toAccountCurrency.isBlank()
+
                     // Source Leg
-                    TransferLegRow(
-                        label = "FROM",
-                        amount = sourceAmount.toPlainString(),
-                        currency = currency,
-                        currencies = currencies,
-                        isActive = activeSide == AmountEditingSide.SOURCE,
-                        onCurrencyChange = onCurrencyChange,
-                        onRowClick = { onSetFocus(AmountEditingSide.SOURCE) }
-                    )
+                    if (!isFromOutside) {
+                        TransferLegRow(
+                            label = "FROM",
+                            amount = sourceAmount.toPlainString(),
+                            currency = currency,
+                            currencies = currencies,
+                            isActive = activeSide == AmountEditingSide.SOURCE,
+                            onCurrencyChange = onCurrencyChange,
+                            onRowClick = { onSetFocus(AmountEditingSide.SOURCE) }
+                        )
+                    }
 
                     // Destination Leg
-                    TransferLegRow(
-                        label = "TO",
-                        amount = targetAmount.toPlainString(),
-                        currency = toCurrency,
-                        currencies = toCurrencies,
-                        isActive = activeSide == AmountEditingSide.TARGET,
-                        onCurrencyChange = onToCurrencyChange,
-                        onRowClick = { onSetFocus(AmountEditingSide.TARGET) }
-                    )
+                    if (!isToOutside) {
+                        TransferLegRow(
+                            label = "TO",
+                            amount = targetAmount.toPlainString(),
+                            currency = toCurrency,
+                            currencies = toCurrencies,
+                            isActive = activeSide == AmountEditingSide.TARGET,
+                            onCurrencyChange = onToCurrencyChange,
+                            onRowClick = { onSetFocus(AmountEditingSide.TARGET) }
+                        )
+                    }
                 }
             } else {
                 // Standard single amount display

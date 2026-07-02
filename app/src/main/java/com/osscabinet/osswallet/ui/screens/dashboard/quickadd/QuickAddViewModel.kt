@@ -84,6 +84,7 @@ data class QuickAddState(
     val amountOverride: BigDecimal? = null,
     val isAmountOverridden: Boolean = false,
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
+    val activeAccountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val note: String = "",
     val payee: String = "",
@@ -507,7 +508,8 @@ class QuickAddViewModel @Inject constructor(
                 s.copy(
                     selectedAccount = newRef,
                     selectedCurrency = newCurrency,
-                    currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2
+                    currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2,
+                    activeAccountSide = if (s.entryMode == EntryMode.TRANSFER) AmountEditingSide.TARGET else s.activeAccountSide
                 )
             } else {
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
@@ -522,6 +524,10 @@ class QuickAddViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun setAccountFocus(side: AmountEditingSide) {
+        _uiState.update { it.copy(activeAccountSide = side) }
     }
 
     fun onCurrencySelected(currency: String, isFrom: Boolean = true) {

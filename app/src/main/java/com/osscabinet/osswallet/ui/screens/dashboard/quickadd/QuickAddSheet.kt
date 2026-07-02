@@ -118,6 +118,7 @@ fun QuickAddSheet(
         onAmountOverrideChange = viewModel::onAmountOverrideChanged,
         onCurrencySelected = viewModel::onCurrencySelected,
         onSetAmountFocus = viewModel::setAmountFocus,
+        onSetAccountFocus = viewModel::setAccountFocus,
         onToggleAmountOverride = viewModel::toggleAmountOverride,
         onSaveTransaction = { viewModel.saveTransaction(onSuccess = onDismiss) },
         goToStep = viewModel::goToStep
@@ -141,6 +142,7 @@ internal fun QuickAddSheetInternal(
     onAmountOverrideChange: (BigDecimal) -> Unit,
     onCurrencySelected: (String, Boolean) -> Unit,
     onSetAmountFocus: (AmountEditingSide) -> Unit,
+    onSetAccountFocus: (AmountEditingSide) -> Unit,
     onToggleAmountOverride: () -> Unit,
     onSaveTransaction: () -> Unit,
     goToStep: (Int) -> Unit
@@ -272,6 +274,7 @@ internal fun QuickAddSheetInternal(
                                 onAmountOverrideChange = onAmountOverrideChange,
                                 onCurrencySelected = onCurrencySelected,
                                 onSetAmountFocus = onSetAmountFocus,
+                                onSetAccountFocus = onSetAccountFocus,
                                 onToggleAmountOverride = onToggleAmountOverride,
                                 onSaveTransaction = onSaveTransaction,
                                 goToStep = goToStep,
@@ -340,6 +343,7 @@ private fun QuickAddSheetContent(
     onAmountOverrideChange: (BigDecimal) -> Unit,
     onCurrencySelected: (String, Boolean) -> Unit,
     onSetAmountFocus: (AmountEditingSide) -> Unit,
+    onSetAccountFocus: (AmountEditingSide) -> Unit,
     onToggleAmountOverride: () -> Unit,
     onSaveTransaction: () -> Unit,
     goToStep: (Int) -> Unit,
@@ -461,9 +465,11 @@ private fun QuickAddSheetContent(
                         selectedAccountId = state.selectedAccountId,
                         selectedToAccountId = state.selectedToAccountId,
                         entryMode = state.entryMode,
+                        activeSide = state.activeAccountSide,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
                         onAccountTapped = onAccountTapped,
                         onToggleType = { onToggleType() },
+                        onSetFocus = onSetAccountFocus,
                         onSwapAccounts = onSwapAccounts
                     )
 
@@ -576,6 +582,7 @@ fun PreviewQuickAddSheet_Template() {
             onAmountOverrideChange = {},
             onCurrencySelected = { _, _ -> },
             onSetAmountFocus = {},
+            onSetAccountFocus = {},
             onToggleAmountOverride = {},
             onSaveTransaction = {},
             goToStep = {}
@@ -614,6 +621,7 @@ fun PreviewQuickAddSheet_Account() {
             onAmountOverrideChange = {},
             onCurrencySelected = { _, _ -> },
             onSetAmountFocus = {},
+            onSetAccountFocus = {},
             onToggleAmountOverride = {},
             onSaveTransaction = {},
             goToStep = {}
@@ -653,6 +661,7 @@ fun PreviewQuickAddSheet_Amount() {
             onAmountOverrideChange = {},
             onCurrencySelected = { _, _ -> },
             onSetAmountFocus = {},
+            onSetAccountFocus = {},
             onToggleAmountOverride = {},
             onSaveTransaction = {},
             goToStep = {}

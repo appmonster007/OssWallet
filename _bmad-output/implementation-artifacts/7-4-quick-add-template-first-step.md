@@ -82,3 +82,12 @@ N/A — pure UI state logic fix.
 ### Review Findings
 
 - [x] [Review][Decision → Patch] LaunchedEffect seed/flash fixed: inverted logic to `mutableStateOf(false)` (templates first) with `LaunchedEffect(hasTemplates) { if (!hasTemplates) showCategories = true }`. Oscillation risk noted in comment; treated as low probability while sheet is open. [QuickAddTemplateStep.kt:74-78]
+- [x] [Review][Decision] Hierarchical Navigation: chevron hints navigation but tap selects. Decision: Switch tap to drill-down if children exist, and use long-press (or explicit button) for selection.
+- [x] [Review][Decision] Mode Toggle Labels: user confirmed intentional minimalist UI (icons only).
+- [x] [Review][Patch] Outside Wallet ID Leak: `TransactionManager` uses `accountId != null` but `AccountRef.Wallet("")` can leak `""` into DB fields, causing orphan links. Fix `AccountRef.toDbTransferSide()` to treat `""` as null.
+- [x] [Review][Patch] Transfer Validation: `QuickAddViewModel.saveTransaction` missing account validation for transfers.
+- [x] [Review][Patch] Accessibility Regression: `AtelierTile` font size (8sp) is too small. Increase to 10sp and fix descender clipping.
+- [x] [Review][Patch] Destructive Calculation: `calculateSourceAmount` returns "0" on zero rate, wiping source input. Change to empty string.
+- [x] [Review][Patch] Currency Selection Dead-end: `QuickAddAmountStep` shows empty currencies if account is null. Default to all currencies.
+- [x] [Review][Patch] Hidden Panel Context: Panel headers hidden when not searching. Restore mode visibility.
+- [x] [Review][Patch] System Category Drill-down: Prevent drilling into system categories.

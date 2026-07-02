@@ -45,3 +45,8 @@
 ## Deferred from: code review of 7-1-suppress-duplicate-numpad-planned-payment (2026-06-29)
 
 - `PlannedPaymentEntryViewModel.initialize()` idempotency guards (`lastInitParams` checks) are now dead code after `LaunchedEffect(Unit)` change — safe but misleading. Consider removing or replacing with an assertion. [PlannedPaymentEntryViewModel.kt:107-108]
+
+## Deferred from: code review of Quick Add Refactor (2026-07-02)
+- "EXTERNAL" Label Naming [QuickAddAmountStep.kt:423] — functional but string can be refined to better status indicator.
+- Transfer Rate Fallback [TransactionEntryService.kt:179] — returning `BigDecimal.ONE` for zero-input rates is an arbitrary fallback but prevents crashes.
+- Inconsistent Corner Radius [QuickAddAtelier.kt] — tiles use 10dp, panel uses 20dp. Intentional design variation for now.

@@ -130,7 +130,7 @@ fun QuickAddAmountStep(
 
         key(activeAmountSide) {
             CalculatorNumpad(
-                keyHeight = 48.dp,
+                keyHeight = 44.dp,
                 amount = if (activeAmountSide == AmountEditingSide.TARGET) {
                     (amountOverride ?: BigDecimal.ZERO).stripTrailingZeros().toPlainString()
                 } else {
@@ -574,6 +574,11 @@ private fun AmountHeroPanel(
         }
     }
 
+    val marketRate = remember(currency, toCurrency, exchangeRates) {
+        if (currency == toCurrency) BigDecimal.ONE
+        else TransactionEntryService.getMarketRate(currency, toCurrency, exchangeRates)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -609,24 +614,6 @@ private fun AmountHeroPanel(
             Spacer(Modifier.height(4.dp))
 
             if (entryMode == EntryMode.TRANSFER) {
-                // Destination Leg
-                val marketRate = remember(currency, toCurrency, exchangeRates) {
-                    if (currency == toCurrency) BigDecimal.ONE
-                    else TransactionEntryService.getMarketRate(currency, toCurrency, exchangeRates)
-                }
-
-                if (marketRate != BigDecimal.ONE && !isOverriding) {
-                    Text(
-                        text = "Rate: 1 $currency = ${marketRate.stripTrailingZeros().toPlainString()} $toCurrency",
-                        style = AppTextStyles.metaLabel.copy(
-                            fontSize = 8.sp,
-                            fontFamily = LocalAppFont.current.monoFamily
-                        ),
-                        color = AppColors.accent.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
-                }
-
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     val isFromOutside = accountCurrency.isBlank()
                     val isToOutside = toAccountCurrency.isBlank()
@@ -713,17 +700,34 @@ private fun AmountHeroPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Today · Now",
-                style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
-                color = AppColors.contentSecondary
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = "Today · Now",
+                    style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
+                    color = AppColors.contentSecondary
+                )
+                if (entryMode == EntryMode.TRANSFER && marketRate != BigDecimal.ONE && !isOverriding) {
+                    Text(
+                        text = "Rate: 1 $currency = ${marketRate.stripTrailingZeros().toPlainString()} $toCurrency",
+                        style = AppTextStyles.metaLabel.copy(
+                            fontSize = 8.sp,
+                            fontFamily = LocalAppFont.current.monoFamily
+                        ),
+                        color = AppColors.accent.copy(alpha = 0.7f)
+                    )
+                }
+            }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 if (entryMode == EntryMode.TRANSFER) {
                     ClosingBalanceLabel("From: ${formatCurrency(closingBalance, accountCurrency)}")
                     ClosingBalanceLabel("To: ${formatCurrency(toClosingBalance, toAccountCurrency)}")

@@ -234,7 +234,7 @@ private fun EditorialContextStrip(
         fallbackColor = AppColors.recessedSurface.copy(alpha = 0.4f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {

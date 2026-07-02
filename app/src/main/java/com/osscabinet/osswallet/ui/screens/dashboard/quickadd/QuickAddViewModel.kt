@@ -479,29 +479,22 @@ class QuickAddViewModel @Inject constructor(
                 transferRate = rate
             )
 
-            s.copy(
-                selectedAccount = newSrc.account,
-                selectedToAccount = newDst.account,
-                selectedCurrency = newSrc.currency,
-                selectedToCurrency = newDst.currency,
-                amount = newSrc.amountValue,
-                amountOverride = if (s.isAmountOverridden) newDst.amountValue else null
+            applyFocusGuard(
+                s.copy(
+                    selectedAccount = newSrc.account,
+                    selectedToAccount = newDst.account,
+                    selectedCurrency = newSrc.currency,
+                    selectedToCurrency = newDst.currency,
+                    amount = newSrc.amountValue,
+                    amountOverride = if (s.isAmountOverridden) newDst.amountValue else null
+                )
             )
         }
     }
 
     fun goToStep(step: Int) {
         _uiState.update { s ->
-            var next = s.copy(currentStep = step)
-            // Auto-focus the only visible side if it's a transfer to/from Outside
-            if (step == 2 && s.entryMode == EntryMode.TRANSFER) {
-                if (s.selectedAccount.isOutside) {
-                    next = next.copy(activeAmountSide = AmountEditingSide.TARGET)
-                } else if (s.selectedToAccount.isOutside) {
-                    next = next.copy(activeAmountSide = AmountEditingSide.SOURCE)
-                }
-            }
-            next
+            applyFocusGuard(s.copy(currentStep = step))
         }
     }
 
@@ -574,16 +567,18 @@ class QuickAddViewModel @Inject constructor(
                 isSplitMode = false
             )
 
-            s.copy(
-                entryMode = result.newMode,
-                selectedAccount = result.source.account,
-                selectedToAccount = result.destination.account,
-                selectedCurrency = result.source.currency,
-                selectedToCurrency = result.destination.currency,
-                amount = result.source.amountValue,
-                amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
-                selectedCategoryId = result.source.categoryId,
-                isAmountOverridden = false
+            applyFocusGuard(
+                s.copy(
+                    entryMode = result.newMode,
+                    selectedAccount = result.source.account,
+                    selectedToAccount = result.destination.account,
+                    selectedCurrency = result.source.currency,
+                    selectedToCurrency = result.destination.currency,
+                    amount = result.source.amountValue,
+                    amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+                    selectedCategoryId = result.source.categoryId,
+                    isAmountOverridden = false
+                )
             )
         }
     }
@@ -610,17 +605,31 @@ class QuickAddViewModel @Inject constructor(
                 isSplitMode = false
             )
 
-            s.copy(
-                entryMode = result.newMode,
-                selectedAccount = result.source.account,
-                selectedToAccount = result.destination.account,
-                selectedCurrency = result.source.currency,
-                selectedToCurrency = result.destination.currency,
-                amount = result.source.amountValue,
-                amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
-                selectedCategoryId = result.source.categoryId,
-                isAmountOverridden = false
+            applyFocusGuard(
+                s.copy(
+                    entryMode = result.newMode,
+                    selectedAccount = result.source.account,
+                    selectedToAccount = result.destination.account,
+                    selectedCurrency = result.source.currency,
+                    selectedToCurrency = result.destination.currency,
+                    amount = result.source.amountValue,
+                    amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+                    selectedCategoryId = result.source.categoryId,
+                    isAmountOverridden = false
+                )
             )
+        }
+    }
+
+    private fun applyFocusGuard(s: QuickAddState): QuickAddState {
+        if (s.entryMode != EntryMode.TRANSFER) return s
+        
+        return when {
+            s.activeAmountSide == AmountEditingSide.SOURCE && s.selectedAccount.isOutside -> 
+                s.copy(activeAmountSide = AmountEditingSide.TARGET)
+            s.activeAmountSide == AmountEditingSide.TARGET && s.selectedToAccount.isOutside -> 
+                s.copy(activeAmountSide = AmountEditingSide.SOURCE)
+            else -> s
         }
     }
 
@@ -632,7 +641,7 @@ class QuickAddViewModel @Inject constructor(
         val account = state.value.accounts.find { it.id == accountId }
         val newRef = if (accountId.isBlank()) AccountRef.Outside else AccountRef.Wallet(accountId)
         _uiState.update { s ->
-            if (isFrom) {
+            val next = if (isFrom) {
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
                     accountCurrency = account?.currencyCode,
@@ -655,6 +664,7 @@ class QuickAddViewModel @Inject constructor(
                     selectedToCurrency = newCurrency,
                 )
             }
+            applyFocusGuard(next)
         }
     }
 

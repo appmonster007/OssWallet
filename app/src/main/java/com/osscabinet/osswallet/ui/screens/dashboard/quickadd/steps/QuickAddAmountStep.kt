@@ -151,7 +151,7 @@ fun QuickAddAmountStep(
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
-        key(activeAmountSide) {
+        key(activeAmountSide, account?.id, toAccount?.id) {
             CalculatorNumpad(
                 keyHeight = 48.dp,
                 amount = if (activeAmountSide == AmountEditingSide.TARGET) {

@@ -588,6 +588,76 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
+    fun toggleTransferMode() {
+        _uiState.update { s ->
+            val nextMode = if (s.entryMode == EntryMode.TRANSFER) EntryMode.EXPENSE else EntryMode.TRANSFER
+            
+            val result = TransactionEntryService.transitionType(
+                oldMode = s.entryMode,
+                newMode = nextMode,
+                currentSource = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                currentDestination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                isSplitMode = false
+            )
+
+            s.copy(
+                entryMode = result.newMode,
+                selectedAccount = result.source.account,
+                selectedToAccount = result.destination.account,
+                selectedCurrency = result.source.currency,
+                selectedToCurrency = result.destination.currency,
+                amount = result.source.amountValue,
+                amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+                selectedCategoryId = result.source.categoryId,
+                isAmountOverridden = false
+            )
+        }
+    }
+
+    fun updateCategory(category: Category) {
+        _uiState.update { it.copy(selectedCategoryId = category.id) }
+    }
+
+    fun updateAccount(accountId: String, isFrom: Boolean) {
+        val account = state.value.accounts.find { it.id == accountId }
+        val newRef = if (accountId.isBlank()) AccountRef.Outside else AccountRef.Wallet(accountId)
+        _uiState.update { s ->
+            if (isFrom) {
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = s.selectedCurrency,
+                    baseCurrency = s.baseCurrency
+                )
+                s.copy(
+                    selectedAccount = newRef,
+                    selectedCurrency = newCurrency
+                )
+            } else {
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = s.selectedCurrency, // QuickAdd inherits from Source by default
+                    baseCurrency = s.baseCurrency
+                )
+                s.copy(
+                    selectedToAccount = newRef,
+                    selectedToCurrency = newCurrency,
+                )
+            }
+        }
+    }
+
     fun saveTransaction(onSuccess: () -> Unit) {
         val s = state.value
         if (!canSave) return

@@ -101,10 +101,12 @@ fun QuickAddSheet(
 ) {
     val state by viewModel.state.collectAsState()
     val sections by viewModel.sections.collectAsState()
+    val categories by viewModel.categories.collectAsState()
 
     QuickAddSheetInternal(
         state = state,
         sections = sections,
+        categories = categories,
         onDismiss = onDismiss,
         onReset = viewModel::reset,
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
@@ -112,7 +114,10 @@ fun QuickAddSheet(
         onSuggestionSelected = viewModel::onSuggestionSelected,
         onCategorySelected = viewModel::onCategorySelected,
         onAccountTapped = viewModel::onAccountTapped,
+        onUpdateAccount = viewModel::updateAccount,
+        onUpdateCategory = viewModel::updateCategory,
         onToggleType = viewModel::toggleTransactionType,
+        onToggleTransfer = viewModel::toggleTransferMode,
         onSwapAccounts = viewModel::onSwapAccounts,
         onAmountChange = viewModel::onAmountChanged,
         onAmountOverrideChange = viewModel::onAmountOverrideChanged,
@@ -129,6 +134,7 @@ fun QuickAddSheet(
 internal fun QuickAddSheetInternal(
     state: QuickAddState,
     sections: List<QuickAddSection>,
+    categories: List<Category>,
     onDismiss: () -> Unit,
     onReset: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
@@ -136,7 +142,10 @@ internal fun QuickAddSheetInternal(
     onSuggestionSelected: (String, Long, String?, String?, BigDecimal, String, String?, EntryMode, String, String, Set<String>) -> Unit,
     onCategorySelected: (Category) -> Unit,
     onAccountTapped: (String, Boolean) -> Unit,
+    onUpdateAccount: (String, Boolean) -> Unit,
+    onUpdateCategory: (Category) -> Unit,
     onToggleType: () -> Unit,
+    onToggleTransfer: () -> Unit,
     onSwapAccounts: () -> Unit,
     onAmountChange: (BigDecimal) -> Unit,
     onAmountOverrideChange: (BigDecimal) -> Unit,
@@ -263,12 +272,16 @@ internal fun QuickAddSheetInternal(
                             QuickAddSheetContent(
                                 state = state,
                                 sections = sections,
+                                categories = categories,
                                 onSearchQueryChanged = onSearchQueryChanged,
                                 onTemplateSelected = onTemplateSelected,
                                 onSuggestionSelected = onSuggestionSelected,
                                 onCategorySelected = onCategorySelected,
                                 onAccountTapped = onAccountTapped,
+                                onUpdateAccount = onUpdateAccount,
+                                onUpdateCategory = onUpdateCategory,
                                 onToggleType = onToggleType,
+                                onToggleTransfer = onToggleTransfer,
                                 onSwapAccounts = onSwapAccounts,
                                 onAmountChange = onAmountChange,
                                 onAmountOverrideChange = onAmountOverrideChange,
@@ -332,12 +345,16 @@ internal fun QuickAddSheetInternal(
 private fun QuickAddSheetContent(
     state: QuickAddState,
     sections: List<QuickAddSection>,
+    categories: List<Category>,
     onSearchQueryChanged: (String) -> Unit,
     onTemplateSelected: (Template) -> Unit,
     onSuggestionSelected: (String, Long, String?, String?, BigDecimal, String, String?, EntryMode, String, String, Set<String>) -> Unit,
     onCategorySelected: (Category) -> Unit,
     onAccountTapped: (String, Boolean) -> Unit,
+    onUpdateAccount: (String, Boolean) -> Unit,
+    onUpdateCategory: (Category) -> Unit,
     onToggleType: () -> Unit,
+    onToggleTransfer: () -> Unit,
     onSwapAccounts: () -> Unit,
     onAmountChange: (BigDecimal) -> Unit,
     onAmountOverrideChange: (BigDecimal) -> Unit,
@@ -476,9 +493,6 @@ private fun QuickAddSheetContent(
                     STEP_AMOUNT -> {
                         val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
                         val selectedToAccount = state.accounts.find { it.id == state.selectedToAccountId }
-                        val categories = sections.flatMap { it.items }
-                            .filterIsInstance<QuickAddResult.CategoryItem>()
-                            .map { it.category }
                         val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                         QuickAddAmountStep(
                             amount = state.amount,
@@ -487,8 +501,10 @@ private fun QuickAddSheetContent(
                             activeAmountSide = state.activeAmountSide,
                             template = state.selectedTemplate,
                             category = selectedCategory,
+                            categories = categories,
                             account = selectedAccount,
                             toAccount = selectedToAccount,
+                            accounts = state.accounts,
                             accountBalance = state.accountBalances[state.selectedAccountId] ?: BigDecimal.ZERO,
                             toAccountBalance = state.accountBalances[state.selectedToAccountId] ?: BigDecimal.ZERO,
                             entryMode = state.entryMode,
@@ -502,6 +518,10 @@ private fun QuickAddSheetContent(
                             onSetAmountFocus = onSetAmountFocus,
                             onToggleAmountOverride = onToggleAmountOverride,
                             onSwapAccounts = onSwapAccounts,
+                            onAccountSelected = onUpdateAccount,
+                            onCategorySelected = onUpdateCategory,
+                            onToggleEntryMode = onToggleType,
+                            onToggleTransfer = onToggleTransfer,
                             onDone = {
                                 if (!state.isSaving) {
                                     onSaveTransaction()
@@ -569,6 +589,7 @@ fun PreviewQuickAddSheet_Template() {
         QuickAddSheetInternal(
             state = mockState,
             sections = mockSections,
+            categories = emptyList(),
             onDismiss = {},
             onReset = {},
             onSearchQueryChanged = {},
@@ -576,7 +597,10 @@ fun PreviewQuickAddSheet_Template() {
             onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
             onCategorySelected = {},
             onAccountTapped = { _, _ -> },
+            onUpdateAccount = { _, _ -> },
+            onUpdateCategory = {},
             onToggleType = {},
+            onToggleTransfer = {},
             onSwapAccounts = {},
             onAmountChange = {},
             onAmountOverrideChange = {},
@@ -608,6 +632,7 @@ fun PreviewQuickAddSheet_Account() {
         QuickAddSheetInternal(
             state = mockState,
             sections = emptyList(),
+            categories = emptyList(),
             onDismiss = {},
             onReset = {},
             onSearchQueryChanged = {},
@@ -615,7 +640,10 @@ fun PreviewQuickAddSheet_Account() {
             onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
             onCategorySelected = {},
             onAccountTapped = { _, _ -> },
+            onUpdateAccount = { _, _ -> },
+            onUpdateCategory = {},
             onToggleType = {},
+            onToggleTransfer = {},
             onSwapAccounts = {},
             onAmountChange = {},
             onAmountOverrideChange = {},
@@ -648,6 +676,7 @@ fun PreviewQuickAddSheet_Amount() {
         QuickAddSheetInternal(
             state = mockState,
             sections = emptyList(),
+            categories = emptyList(),
             onDismiss = {},
             onReset = {},
             onSearchQueryChanged = {},
@@ -655,7 +684,10 @@ fun PreviewQuickAddSheet_Amount() {
             onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
             onCategorySelected = {},
             onAccountTapped = { _, _ -> },
+            onUpdateAccount = { _, _ -> },
+            onUpdateCategory = {},
             onToggleType = {},
+            onToggleTransfer = {},
             onSwapAccounts = {},
             onAmountChange = {},
             onAmountOverrideChange = {},

@@ -154,10 +154,17 @@ object TransactionEntryService {
         sourceAmount: BigDecimal,
         rate: BigDecimal
     ): String {
-        return sourceAmount.multiply(rate)
-            .setScale(8, RoundingMode.HALF_UP)
+        return calculateTargetAmountValue(sourceAmount, rate)
             .stripTrailingZeros()
             .toPlainString()
+    }
+
+    fun calculateTargetAmountValue(
+        sourceAmount: BigDecimal,
+        rate: BigDecimal
+    ): BigDecimal {
+        return sourceAmount.multiply(rate)
+            .setScale(CurrencyService.precision, RoundingMode.HALF_UP)
     }
 
     /**
@@ -167,12 +174,19 @@ object TransactionEntryService {
         targetAmount: BigDecimal,
         rate: BigDecimal
     ): String {
+        return calculateSourceAmountValue(targetAmount, rate)
+            .stripTrailingZeros()
+            .toPlainString()
+    }
+
+    fun calculateSourceAmountValue(
+        targetAmount: BigDecimal,
+        rate: BigDecimal
+    ): BigDecimal {
         return if (rate.signum() != 0) {
-            targetAmount.divide(rate, 8, RoundingMode.HALF_UP)
-                .stripTrailingZeros()
-                .toPlainString()
+            targetAmount.divide(rate, CurrencyService.precision, RoundingMode.HALF_UP)
         } else {
-            "0"
+            BigDecimal.ZERO
         }
     }
 
@@ -301,8 +315,8 @@ object TransactionEntryService {
         tags: Set<String>?,
         accounts: List<com.osscabinet.ossWallet.domain.model.Account>
     ): PrefillResult {
-        val sourceRef = accountId?.let { AccountRef.Wallet(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
-        val targetRef = targetAccountId?.let { AccountRef.Wallet(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
+        val sourceRef = accountId?.let { AccountRef.fromStored(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
+        val targetRef = targetAccountId?.let { AccountRef.fromStored(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
 
         val sourceAcc = sourceRef.resolve(accounts)
         val targetAcc = targetRef.resolve(accounts)
@@ -340,5 +354,87 @@ object TransactionEntryService {
      */
     fun validateNormalAccount(account: AccountRef): Boolean {
         return account is AccountRef.Wallet
+    }
+
+    data class AccountValidationResult(
+        val isSourceValid: Boolean,
+        val isTargetValid: Boolean
+    ) {
+        val isValid: Boolean get() = isSourceValid && isTargetValid
+    }
+
+    /**
+     * Intelligent account/currency swap for transfers.
+     */
+    fun swapAccounts(
+        source: TransactionSide,
+        destination: TransactionSide,
+        transferRate: BigDecimal
+    ): Triple<TransactionSide, TransactionSide, BigDecimal> {
+        val effectiveDstAmount = destination.amount.ifBlank {
+            source.amountValue.multiply(transferRate)
+                .setScale(8, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+        }
+        val newRate = if (transferRate.signum() != 0)
+            BigDecimal.ONE.divide(transferRate, 8, RoundingMode.HALF_UP).stripTrailingZeros()
+        else BigDecimal.ONE
+
+        val newSource = destination.copy(
+            amount = effectiveDstAmount,
+            categoryId = source.categoryId // Category stays pinned to the conceptual source
+        )
+        val newDestination = source.copy(
+            amount = source.amount,
+            categoryId = destination.categoryId
+        )
+
+        return Triple(newSource, newDestination, newRate)
+    }
+
+    /**
+     * Unified validation for account selection across all entry forms.
+     */
+    fun validateAccountSelection(
+        entryMode: EntryMode,
+        source: AccountRef,
+        target: AccountRef
+    ): AccountValidationResult {
+        return if (entryMode == EntryMode.TRANSFER) {
+            val transferValid = validateTransferAccounts(source, target)
+            if (!transferValid) {
+                // If invalid, determine which sides to flag based on Unselected or both being Outside
+                val sourceInvalid = source is AccountRef.Unselected || (source.isOutside && target.isOutside)
+                val targetInvalid = target is AccountRef.Unselected || (source.isOutside && target.isOutside)
+                AccountValidationResult(!sourceInvalid, !targetInvalid)
+            } else {
+                AccountValidationResult(true, true)
+            }
+        } else {
+            AccountValidationResult(validateNormalAccount(source), true)
+        }
+    }
+
+    /**
+     * Centralized logic to update source/target amounts based on exchange rate.
+     */
+    fun updateAmounts(
+        source: TransactionSide,
+        destination: TransactionSide,
+        rate: BigDecimal,
+        updateSource: Boolean = false // If true, target is master; if false, source is master
+    ): Pair<TransactionSide, TransactionSide> {
+        return if (updateSource) {
+            // Guard: only update the source side if the exchange rate is non-zero.
+            // If the rate is zero (e.g., fallback on error), we avoid destructive recalculation.
+            if (rate.signum() != 0) {
+                val newSourceAmt = calculateSourceAmount(destination.amountValue, rate)
+                source.copy(amount = newSourceAmt) to destination
+            } else {
+                source to destination
+            }
+        } else {
+            val newTargetAmt = calculateTargetAmount(source.amountValue, rate)
+            source to destination.copy(amount = newTargetAmt)
+        }
     }
 }

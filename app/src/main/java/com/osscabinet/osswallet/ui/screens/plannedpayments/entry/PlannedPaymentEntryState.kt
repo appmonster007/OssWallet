@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import java.math.BigDecimal
 
@@ -116,12 +117,14 @@ data class PlannedPaymentEntryState(
             if (name.isBlank()) add(EntryField.NAME)
             if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
             if (selectedCategoryId <= 0) add(EntryField.CATEGORY)
-            if (isTransfer) {
-                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
-                if (destination.account is AccountRef.Unselected) add(EntryField.TARGET_ACCOUNT)
-            } else {
-                if (source.account is AccountRef.Unselected) add(EntryField.ACCOUNT)
-            }
+
+            val accountResult = TransactionEntryService.validateAccountSelection(
+                entryMode = entryMode,
+                source = source.account,
+                target = destination.account
+            )
+            if (!accountResult.isSourceValid) add(EntryField.ACCOUNT)
+            if (!accountResult.isTargetValid) add(EntryField.TARGET_ACCOUNT)
         }
 
     fun hasError(field: EntryField) = errors.contains(field)

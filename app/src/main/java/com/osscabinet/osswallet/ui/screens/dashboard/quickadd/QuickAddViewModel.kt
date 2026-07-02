@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.resolve
@@ -75,7 +76,7 @@ data class QuickAddState(
     val searchQuery: String = "",
     val amount: BigDecimal = BigDecimal.ZERO,
     val selectedTemplate: Template? = null,
-    val selectedCategoryId: Long? = null,
+    val selectedCategoryId: Long? = Category.SYSTEM_UNKNOWN,
     val selectedAccount: AccountRef = AccountRef.Unselected,
     val selectedToAccount: AccountRef = AccountRef.Unselected,
     val selectedCurrency: String = "",
@@ -96,6 +97,12 @@ data class QuickAddState(
 ) {
     val selectedAccountId: String? get() = (selectedAccount as? AccountRef.Wallet)?.id ?: if (selectedAccount.isOutside) "" else null
     val selectedToAccountId: String? get() = (selectedToAccount as? AccountRef.Wallet)?.id ?: if (selectedToAccount.isOutside) "" else null
+
+    val effectiveTargetAmount: BigDecimal
+        get() = amountOverride ?: if (entryMode == EntryMode.TRANSFER) {
+            val rate = TransactionEntryService.getMarketRate(selectedCurrency, selectedToCurrency, exchangeRates)
+            TransactionEntryService.calculateTargetAmountValue(amount, rate)
+        } else BigDecimal.ZERO
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -120,6 +127,14 @@ class QuickAddViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Category>())
 
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
+
+    init {
+        viewModelScope.launch {
+            computationRepository.exchangeRatesSnapshot.collect { rates ->
+                _uiState.update { it.copy(exchangeRates = rates) }
+            }
+        }
+    }
 
     val sections: StateFlow<List<QuickAddSection>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
@@ -275,7 +290,7 @@ class QuickAddViewModel @Inject constructor(
                 
                 // Sort accounts: preselected first (from template/suggestion), then by name
                 val sortedAccounts = activeAccounts.sortedWith(
-                    compareByDescending<Account> { AccountRef.Wallet(it.id) == uiState.selectedAccount }
+                    compareByDescending<Account> { AccountRef.fromStored(it.id) == uiState.selectedAccount }
                         .thenBy { it.name }
                 )
 
@@ -289,18 +304,6 @@ class QuickAddViewModel @Inject constructor(
                         transactions,
                         baseCurrency,
                         rates
-                    )
-                }
-
-                // Auto-calculate transfer rate if in transfer mode
-                var effectiveRate = BigDecimal.ONE
-                if (uiState.entryMode == EntryMode.TRANSFER && 
-                    uiState.selectedCurrency.isNotBlank() && 
-                    uiState.selectedToCurrency.isNotBlank()) {
-                    effectiveRate = TransactionEntryService.getMarketRate(
-                        fromCurrency = uiState.selectedCurrency,
-                        toCurrency = uiState.selectedToCurrency,
-                        exchangeRates = rates
                     )
                 }
 
@@ -424,13 +427,16 @@ class QuickAddViewModel @Inject constructor(
 
     fun setAmountFocus(side: AmountEditingSide) {
         _uiState.update { s ->
+            // If switching to Source, we keep the existing override mode.
+            // If switching to Target, we MUST be in manual mode to edit it.
             val isManual = if (side == AmountEditingSide.TARGET) true else s.isAmountOverridden
+            
             s.copy(
                 activeAmountSide = side,
                 isAmountOverridden = isManual,
                 amountOverride = if (isManual && s.amountOverride == null) {
                     val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
-                    TransactionEntryService.calculateTargetAmount(s.amount, rate).toBigDecimalOrNull()
+                    TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
                 } else s.amountOverride
             )
         }
@@ -444,7 +450,9 @@ class QuickAddViewModel @Inject constructor(
                 activeAmountSide = if (!next) AmountEditingSide.SOURCE else s.activeAmountSide,
                 amountOverride = if (next && s.amountOverride == null) {
                     val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
-                    TransactionEntryService.calculateTargetAmount(s.amount, rate).toBigDecimalOrNull()
+                    if (rate.signum() != 0) {
+                        TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
+                    } else BigDecimal.ZERO
                 } else if (!next) null else s.amountOverride
             )
         }
@@ -453,13 +461,30 @@ class QuickAddViewModel @Inject constructor(
     fun onSwapAccounts() {
         _uiState.update { s ->
             if (s.entryMode != EntryMode.TRANSFER) return@update s
+            val rates = s.exchangeRates
+            val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, rates)
+            
+            val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
+                source = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency
+                ),
+                destination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    currency = s.selectedToCurrency
+                ),
+                transferRate = rate
+            )
+
             s.copy(
-                selectedAccount = s.selectedToAccount,
-                selectedToAccount = s.selectedAccount,
-                selectedCurrency = s.selectedToCurrency,
-                selectedToCurrency = s.selectedCurrency,
-                amount = s.amountOverride ?: s.amount,
-                amountOverride = s.amount
+                selectedAccount = newSrc.account,
+                selectedToAccount = newDst.account,
+                selectedCurrency = newSrc.currency,
+                selectedToCurrency = newDst.currency,
+                amount = newSrc.amountValue,
+                amountOverride = if (s.isAmountOverridden) newDst.amountValue else null
             )
         }
     }
@@ -507,23 +532,48 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun toggleTransactionType() {
-        _uiState.update {
-            val next = when (it.entryMode) {
+        _uiState.update { s ->
+            val nextMode = when (s.entryMode) {
                 EntryMode.EXPENSE -> EntryMode.INCOME
                 EntryMode.INCOME -> EntryMode.TRANSFER
                 EntryMode.TRANSFER -> EntryMode.EXPENSE
             }
-            it.copy(
-                entryMode = next,
-                isAmountOverridden = false,
-                amountOverride = null
+            
+            val result = TransactionEntryService.transitionType(
+                oldMode = s.entryMode,
+                newMode = nextMode,
+                currentSource = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                currentDestination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                isSplitMode = false
+            )
+
+            s.copy(
+                entryMode = result.newMode,
+                selectedAccount = result.source.account,
+                selectedToAccount = result.destination.account,
+                selectedCurrency = result.source.currency,
+                selectedToCurrency = result.destination.currency,
+                amount = result.source.amountValue,
+                amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+                selectedCategoryId = result.source.categoryId,
+                isAmountOverridden = false
             )
         }
     }
 
     fun saveTransaction(onSuccess: () -> Unit) {
         val s = state.value
-        if (s.selectedAccount is AccountRef.Unselected) return
+        if (!canSave) return
         val amount = s.amount
         if (amount < BigDecimal.ZERO) return
         
@@ -579,6 +629,10 @@ class QuickAddViewModel @Inject constructor(
             val s = state.value
             if (s.amount < BigDecimal.ZERO) return false
             
-            return TransactionEntryService.validateTransferAccounts(s.selectedAccount, s.selectedToAccount)
+            return TransactionEntryService.validateAccountSelection(
+                entryMode = s.entryMode,
+                source = s.selectedAccount,
+                target = s.selectedToAccount
+            ).isValid
         }
 }

@@ -124,14 +124,13 @@ data class TransactionEntryState(
             if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
 
             // Account validation
-            if (isTransfer) {
-                if (!TransactionEntryService.validateTransferAccounts(source.account, destination.account)) {
-                    if (source.account is AccountRef.Unselected || (source.account.isOutside && destination.account.isOutside)) add(EntryField.ACCOUNT)
-                    if (destination.account is AccountRef.Unselected || (source.account.isOutside && destination.account.isOutside)) add(EntryField.TARGET_ACCOUNT)
-                }
-            } else {
-                if (!TransactionEntryService.validateNormalAccount(source.account)) add(EntryField.ACCOUNT)
-            }
+            val accountResult = TransactionEntryService.validateAccountSelection(
+                entryMode = entryMode,
+                source = source.account,
+                target = destination.account
+            )
+            if (!accountResult.isSourceValid) add(EntryField.ACCOUNT)
+            if (!accountResult.isTargetValid) add(EntryField.TARGET_ACCOUNT)
 
             // Split validation
             if (isSplitMode) {

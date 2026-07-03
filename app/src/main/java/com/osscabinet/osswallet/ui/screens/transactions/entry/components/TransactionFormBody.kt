@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
+import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.model.TransactionSide
@@ -274,8 +275,14 @@ fun TransactionFormBody(
                     onEvent(TransactionEntryEvent.SetTargetAmount(amt))
                 }
             },
-            onAccountChange = { accId -> onEvent(TransactionEntryEvent.SetAccount(state.accounts.find { acc -> acc.id == accId })) },
-            onTargetAccountChange = { accId -> onEvent(TransactionEntryEvent.SetTargetAccount(state.accounts.find { acc -> acc.id == accId })) },
+            onAccountChange = { accId ->
+                val account = if (accId.isBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
+                onEvent(TransactionEntryEvent.SetAccount(account))
+            },
+            onTargetAccountChange = { accId ->
+                val account = if (accId.isBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
+                onEvent(TransactionEntryEvent.SetTargetAccount(account))
+            },
             onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategory(catId)) },
             onCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetCurrency(curr)) },
             onTargetCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetTargetCurrency(curr)) },

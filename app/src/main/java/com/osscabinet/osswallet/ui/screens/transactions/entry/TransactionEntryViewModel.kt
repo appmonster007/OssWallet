@@ -513,7 +513,7 @@ class TransactionEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetCurrency -> {
@@ -521,13 +521,13 @@ class TransactionEntryViewModel @Inject constructor(
                     val nextTarget = if (s.isTransfer && s.destination.account.isOutside) {
                         event.currency
                     } else s.targetCurrency
-                    
+
                     s.copy(
                         source = s.source.copy(currency = event.currency),
                         destination = s.destination.copy(currency = nextTarget)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetTargetAccount -> {
@@ -541,7 +541,7 @@ class TransactionEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetTargetCurrency -> {
@@ -555,7 +555,7 @@ class TransactionEntryViewModel @Inject constructor(
                         source = s.source.copy(currency = nextSource)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.SetExchangeRate -> update {
@@ -683,21 +683,14 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SwapAccounts -> {
                 update { s ->
                     if (!s.isTransfer) return@update s
-
-                    val oldSrc = s.source
-                    val oldDst = s.destination
-
-                    s.copy(
-                        source = oldDst.copy(
-                            amount = oldDst.amount,
-                            categoryId = oldSrc.categoryId
-                        ),
-                        destination = oldSrc.copy(
-                            amount = oldSrc.amount
-                        )
+                    val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
+                        source = s.source,
+                        destination = s.destination,
+                        transferRate = s.exchangeRate
                     )
+                    s.copy(source = newSrc, destination = newDst, exchangeRate = newRate)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TransactionEntryEvent.ToggleRateMode -> {

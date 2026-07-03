@@ -280,7 +280,7 @@ class TemplateEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetAccount -> {
@@ -294,7 +294,7 @@ class TemplateEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetCurrency -> {
@@ -308,7 +308,7 @@ class TemplateEntryViewModel @Inject constructor(
                         destination = state.destination.copy(currency = nextTarget)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetCurrency -> {
@@ -322,7 +322,7 @@ class TemplateEntryViewModel @Inject constructor(
                         source = state.source.copy(currency = nextSource)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetExchangeRate -> _state.update {
@@ -465,7 +465,7 @@ class TemplateEntryViewModel @Inject constructor(
                         exchangeRate = newRate
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.ToggleRateMode -> {

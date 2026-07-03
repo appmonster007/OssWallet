@@ -49,8 +49,6 @@ import jakarta.inject.Inject
 class TemplateEntryViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
-    private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
     private val transactionUseCases: TransactionUseCases,
     private val computationRepository: ComputationRepository,
@@ -79,33 +77,26 @@ class TemplateEntryViewModel @Inject constructor(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                combine(
-                    accountRepository.getAllAccounts(profileId),
-                    categoryRepository.categories,
-                    tagRepository.getAllTags()
-                ) { accounts, categories, tags ->
-                    val payees = transactionUseCases.getUniquePayees(profileId)
-                    val notes = transactionUseCases.getUniqueNotes(profileId)
-
-                    _state.update { current ->
-                        val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && accounts.isNotEmpty()) {
-                            current.source.copy(
-                                account = AccountRef.fromStored(accounts.first().id),
-                                currency = accounts.first().currencyCode
-                            )
-                        } else current.source
-                        current.copy(
-                            accounts = accounts,
-                            categories = categories,
-                            allTags = tags,
-                            uniquePayees = payees,
-                            uniqueNotes = notes,
-                            source = defaultSource,
-                            fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                transactionUseCases.observeEntryCoreData(profileId)
+            }.collect { data ->
+                _state.update { current ->
+                    val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && data.accounts.isNotEmpty()) {
+                        current.source.copy(
+                            account = AccountRef.fromStored(data.accounts.first().id),
+                            currency = data.accounts.first().currencyCode
                         )
-                    }
+                    } else current.source
+                    current.copy(
+                        accounts = data.accounts,
+                        categories = data.categories,
+                        allTags = data.tags,
+                        uniquePayees = data.payees,
+                        uniqueNotes = data.notes,
+                        source = defaultSource,
+                        fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                    )
                 }
-            }.collect()
+            }
         }
     }
 
@@ -225,64 +216,25 @@ class TemplateEntryViewModel @Inject constructor(
         when (event) {
             is TemplateEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
             is TemplateEntryEvent.SetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                if (inputAmount < BigDecimal.ZERO) {
-                    _state.update { state ->
-                        val result = TransactionEntryService.transitionType(
-                            oldMode = state.entryMode,
-                            newMode = if (state.isIncome) EntryMode.EXPENSE else EntryMode.INCOME,
-                            currentSource = state.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
-                            currentDestination = state.destination,
-                            isSplitMode = false
+                _state.update { s ->
+                    s.applyUpdate(
+                        TransactionEntryService.handleAmountChange(
+                            amountStr = event.amount,
+                            currentState = s.toUpdateResult(),
+                            exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
                         )
-                        state.copy(
-                            entryMode = result.newMode,
-                            source = result.source,
-                            destination = result.destination
-                        )
-                    }
-                } else {
-                    _state.update { state ->
-                        if (!state.isTransfer) {
-                            return@update state.copy(source = state.source.copy(amount = event.amount))
-                        }
-
-                        val sync = TransactionEntryService.syncTransferState(
-                            sourceAmount = inputAmount,
-                            targetAmount = state.destination.amountValue,
-                            sourceCurrency = state.currency,
-                            targetCurrency = state.targetCurrency,
-                            isFixed = state.isRateFixed,
-                            activeSide = AmountEditingSide.SOURCE,
-                            exchangeRates = ExchangeRateSnapshot(state.currency, state.exchangeRates)
-                        )
-
-                        state.copy(
-                            source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-                            destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-                            exchangeRate = sync.impliedRate
-                        )
-                    }
+                    )
                 }
             }
 
             is TemplateEntryEvent.SetTargetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                _state.update { state ->
-                    val sync = TransactionEntryService.syncTransferState(
-                        sourceAmount = state.source.amountValue,
-                        targetAmount = inputAmount,
-                        sourceCurrency = state.currency,
-                        targetCurrency = state.targetCurrency,
-                        isFixed = state.isRateFixed,
-                        activeSide = AmountEditingSide.TARGET,
-                        exchangeRates = ExchangeRateSnapshot(state.currency, state.exchangeRates)
-                    )
-
-                    state.copy(
-                        source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-                        destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-                        exchangeRate = sync.impliedRate
+                _state.update { s ->
+                    s.applyUpdate(
+                        TransactionEntryService.handleTargetAmountChange(
+                            amountStr = event.amount,
+                            currentState = s.toUpdateResult(),
+                            exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates)
+                        )
                     )
                 }
             }
@@ -318,59 +270,29 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetAccount -> {
-                val newRef = AccountRef.fromStored(event.accountId)
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.accountId }
-                    val newCurrency = TransactionEntryService.resolveSideCurrency(
-                        account = newRef,
-                        accountCurrency = account?.currencyCode,
-                        currentCurrency = state.currency,
-                        baseCurrency = state.accounts.firstOrNull()?.currencyCode ?: "USD"
+                _state.update { s ->
+                    val result = TransactionEntryService.handleAccountSelection(
+                        accountId = event.accountId,
+                        isSource = true,
+                        currentState = s.toUpdateResult(),
+                        accounts = s.accounts,
+                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
-
-                    // Enforcement: if side is Outside, it must match the other side
-                    val finalTargetCurrency = if (state.isTransfer && !newRef.isOutside && state.destination.account.isOutside) {
-                        newCurrency
-                    } else state.targetCurrency
-
-                    state.copy(
-                        source = state.source.copy(
-                            account = newRef,
-                            currency = newCurrency
-                        ),
-                        destination = state.destination.copy(
-                            currency = finalTargetCurrency
-                        )
-                    )
+                    s.applyUpdate(result)
                 }
                 recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetAccount -> {
-                val newRef = AccountRef.fromStored(event.accountId)
-                _state.update { state ->
-                    val account = state.accounts.find { it.id == event.accountId }
-                    val newCurrency = TransactionEntryService.resolveSideCurrency(
-                        account = newRef,
-                        accountCurrency = account?.currencyCode,
-                        currentCurrency = state.targetCurrency,
-                        baseCurrency = state.accounts.firstOrNull()?.currencyCode ?: "USD"
+                _state.update { s ->
+                    val result = TransactionEntryService.handleAccountSelection(
+                        accountId = event.accountId,
+                        isSource = false,
+                        currentState = s.toUpdateResult(),
+                        accounts = s.accounts,
+                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
-
-                    // Enforcement: if side is Outside, it must match the other side
-                    val finalSourceCurrency = if (state.isTransfer && !newRef.isOutside && state.source.account.isOutside) {
-                        newCurrency
-                    } else state.currency
-
-                    state.copy(
-                        destination = state.destination.copy(
-                            account = newRef,
-                            currency = newCurrency
-                        ),
-                        source = state.source.copy(
-                            currency = finalSourceCurrency
-                        )
-                    )
+                    s.applyUpdate(result)
                 }
                 recalculateExchangeRate()
             }

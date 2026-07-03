@@ -16,9 +16,12 @@ import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.RecentActivitiesCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.TagUpSetPlotCardComputer
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
@@ -37,9 +40,20 @@ object UseCaseModule {
     @Singleton
     fun provideTransactionUseCases(
         transactionRepository: TransactionRepository,
-        sharedWalletRepository: SharedWalletRepository
+        sharedWalletRepository: SharedWalletRepository,
+        accountRepository: AccountRepository,
+        categoryRepository: CategoryRepository,
+        tagRepository: TagRepository,
+        templateRepository: TemplateRepository
     ): TransactionUseCases {
-        return TransactionUseCases(transactionRepository, sharedWalletRepository)
+        return TransactionUseCases(
+            transactionRepository,
+            sharedWalletRepository,
+            accountRepository,
+            categoryRepository,
+            tagRepository,
+            templateRepository
+        )
     }
 
     @Provides

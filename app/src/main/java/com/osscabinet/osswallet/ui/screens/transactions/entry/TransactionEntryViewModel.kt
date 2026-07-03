@@ -53,10 +53,7 @@ class TransactionEntryViewModel @Inject constructor(
     private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
-    private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
-    private val tagRepository: TagRepository,
-    private val templateRepository: TemplateRepository
+    private val tagRepository: TagRepository
 ) : BaseViewModel(settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
@@ -90,73 +87,66 @@ class TransactionEntryViewModel @Inject constructor(
 
         viewModelScope.launch {
             initialTimestamp = System.currentTimeMillis()
-
-            // Load initial data
             val profileId = settingsRepository.currentProfileId.first()
-            val accounts = accountRepository.getAllAccounts(profileId).first()
-            val categories = categoryRepository.categories.first()
-            val tags = tagRepository.getAllTags().first()
-            val templates = templateRepository.getAllTemplatesSync(profileId)
-            val payees = transactionUseCases.getUniquePayees(profileId)
-            val notes = transactionUseCases.getUniqueNotes(profileId)
-            val mapsAccess = settingsRepository.mapsAccessEnabled.first()
+            
+            // Shared Data Loading
+            transactionUseCases.observeEntryCoreData(profileId).first().let { data ->
+                val mapsAccess = settingsRepository.mapsAccessEnabled.first()
 
-            val isEditMode = transactionId != null && transactionId != -1L
-            val existingTransaction = if (isEditMode) {
-                transactionUseCases.getTransactionById(transactionId!!, profileId)
-            } else null
+                val isEditMode = transactionId != null && transactionId != -1L
+                val existingTransaction = if (isEditMode) {
+                    transactionUseCases.getTransactionById(transactionId!!, profileId)
+                } else null
 
-            val linkedTxs = if (isEditMode) {
-                transactionUseCases.getLinkedTransactions(transactionId!!).first()
-            } else emptyList()
+                val linkedTxs = if (isEditMode) {
+                    transactionUseCases.getLinkedTransactions(transactionId!!).first()
+                } else emptyList()
 
-            // Set default account if provided
-            val selectedAccount = accountId?.let { id -> accounts.find { it.id == id } }
-                ?: accounts.firstOrNull()
+                val selectedAccount = accountId?.let { id -> data.accounts.find { it.id == id } }
+                    ?: data.accounts.firstOrNull()
 
-            val defaultCategory =
-                categories.find { it.id == Category.SYSTEM_UNKNOWN } ?: categories.firstOrNull()
+                val defaultCategory =
+                    data.categories.find { it.id == Category.SYSTEM_UNKNOWN } ?: data.categories.firstOrNull()
 
-            _state.update {
-                TransactionEntryState(
-                    transactionId = transactionId,
-                    isEditMode = isEditMode,
-                    existingTransaction = existingTransaction,
-                    linkedTxs = linkedTxs,
-                    linkedTransactionIds = linkedTxs.map { it.id },
-                    prefillDto = prefillDto,
-                    accounts = accounts,
-                    categories = categories,
-                    allTags = tags,
-                    templates = templates,
-                    allPayees = payees,
-                    allNotes = notes,
-                    mapsAccessEnabled = mapsAccess,
-                    source = TransactionSide(
-                        account = selectedAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
-                        currency = selectedAccount?.currencyCode ?: "",
-                        categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
-                    ),
-                    entryMode = initialType,
-                    selectedTemplateName = null,
-                    selectedDateMillis = initialTimestamp,
-                    shortlistedCurrencies = effectiveShortlistedCurrencies.value,
-                    fullProviderCurrencies = CurrencyService.getAllCurrencies()
-                )
-            }
-
-            // Initialize from template ID if provided
-            if (initialTemplateId != null && initialTemplateId != -1L) {
-                templates.find { it.id == initialTemplateId }?.let { template ->
-                    applyPrefill(TransactionPrefillDTO.fromTemplate(template))
+                update {
+                    it.copy(
+                        transactionId = transactionId,
+                        isEditMode = isEditMode,
+                        existingTransaction = existingTransaction,
+                        linkedTxs = linkedTxs,
+                        linkedTransactionIds = linkedTxs.map { it.id },
+                        prefillDto = prefillDto,
+                        accounts = data.accounts,
+                        categories = data.categories,
+                        allTags = data.tags,
+                        templates = data.templates,
+                        allPayees = data.payees,
+                        allNotes = data.notes,
+                        mapsAccessEnabled = mapsAccess,
+                        source = TransactionSide(
+                            account = selectedAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
+                            currency = selectedAccount?.currencyCode ?: "",
+                            categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
+                        ),
+                        entryMode = initialType,
+                        selectedTemplateName = null,
+                        selectedDateMillis = initialTimestamp,
+                        shortlistedCurrencies = effectiveShortlistedCurrencies.value,
+                        fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                    )
                 }
-            }
 
-            // Initialize from existing transaction or prefill DTO
-            if (isEditMode && existingTransaction != null) {
-                initializeFromTransaction(existingTransaction, accounts, linkedTxs)
-            } else if (prefillDto != null) {
-                applyPrefill(prefillDto)
+                if (initialTemplateId != null && initialTemplateId != -1L) {
+                    data.templates.find { it.id == initialTemplateId }?.let { template ->
+                        applyPrefill(TransactionPrefillDTO.fromTemplate(template))
+                    }
+                }
+
+                if (isEditMode && existingTransaction != null) {
+                    initializeFromTransaction(existingTransaction, data.accounts, linkedTxs)
+                } else if (prefillDto != null) {
+                    applyPrefill(prefillDto)
+                }
             }
         }
     }
@@ -380,68 +370,25 @@ class TransactionEntryViewModel @Inject constructor(
      */
     fun onEvent(event: TransactionEntryEvent) {
         when (event) {
-            is TransactionEntryEvent.SetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                if (inputAmount < BigDecimal.ZERO) {
-                    _state.update { state ->
-                        val result = TransactionEntryService.transitionType(
-                            oldMode = state.entryMode,
-                            newMode = if (state.isIncome) EntryMode.EXPENSE else EntryMode.INCOME,
-                            currentSource = state.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
-                            currentDestination = state.destination,
-                            isSplitMode = state.isSplitMode
-                        )
-                        state.copy(
-                            entryMode = result.newMode,
-                            source = result.source,
-                            destination = result.destination,
-                            isSplitMode = result.isSplitModeAllowed
-                        )
-                    }
-                } else {
-                    _state.update { state ->
-                        if (!state.isTransfer) {
-                            return@update state.copy(source = state.source.copy(amount = event.amount))
-                        }
-
-                        val sync = TransactionEntryService.syncTransferState(
-                            sourceAmount = inputAmount,
-                            targetAmount = state.destination.amountValue,
-                            sourceCurrency = state.source.currency,
-                            targetCurrency = state.destination.currency,
-                            isFixed = state.isRateFixed,
-                            activeSide = AmountEditingSide.SOURCE,
-                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(state.source.currency, state.exchangeRates)
-                        )
-
-                        state.copy(
-                            source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-                            destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-                            exchangeRate = sync.impliedRate
-                        )
-                    }
-                }
+            is TransactionEntryEvent.SetAmount -> update { s ->
+                s.applyUpdate(
+                    TransactionEntryService.handleAmountChange(
+                        amountStr = event.amount,
+                        currentState = s.toUpdateResult(),
+                        exchangeRates = ExchangeRateSnapshot(s.selectedCurrency, s.exchangeRates),
+                        isSplitMode = s.isSplitMode
+                    )
+                )
             }
 
-            is TransactionEntryEvent.SetTargetAmount -> {
-                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                _state.update { state ->
-                    val sync = TransactionEntryService.syncTransferState(
-                        sourceAmount = state.source.amountValue,
-                        targetAmount = inputAmount,
-                        sourceCurrency = state.source.currency,
-                        targetCurrency = state.destination.currency,
-                        isFixed = state.isRateFixed,
-                        activeSide = AmountEditingSide.TARGET,
-                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(state.source.currency, state.exchangeRates)
+            is TransactionEntryEvent.SetTargetAmount -> update { s ->
+                s.applyUpdate(
+                    TransactionEntryService.handleTargetAmountChange(
+                        amountStr = event.amount,
+                        currentState = s.toUpdateResult(),
+                        exchangeRates = ExchangeRateSnapshot(s.selectedCurrency, s.exchangeRates)
                     )
-
-                    state.copy(
-                        source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-                        destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-                        exchangeRate = sync.impliedRate
-                    )
-                }
+                )
             }
 
             is TransactionEntryEvent.SetCategory -> {
@@ -556,29 +503,15 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetAccount -> {
-                val newRef = AccountRef.fromStored(event.account?.id)
                 update { s ->
-                    val newCurrency = TransactionEntryService.resolveSideCurrency(
-                        account = newRef,
-                        accountCurrency = event.account?.currencyCode,
-                        currentCurrency = s.selectedCurrency,
+                    val result = TransactionEntryService.handleAccountSelection(
+                        accountId = event.account?.id,
+                        isSource = true,
+                        currentState = s.toUpdateResult(),
+                        accounts = s.accounts,
                         baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
-
-                    // Enforcement: if side is Outside, it must match the other side
-                    val finalTargetCurrency = if (s.isTransfer && !newRef.isOutside && s.destination.account.isOutside) {
-                        newCurrency
-                    } else s.targetCurrency
-
-                    s.copy(
-                        source = s.source.copy(
-                            account = newRef,
-                            currency = newCurrency
-                        ),
-                        destination = s.destination.copy(
-                            currency = finalTargetCurrency
-                        )
-                    )
+                    s.applyUpdate(result)
                 }
                 recalculateExchangeRate()
             }
@@ -598,29 +531,15 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTargetAccount -> {
-                val newRef = AccountRef.fromStored(event.account?.id)
                 update { s ->
-                    val newCurrency = TransactionEntryService.resolveSideCurrency(
-                        account = newRef,
-                        accountCurrency = event.account?.currencyCode,
-                        currentCurrency = s.targetCurrency,
+                    val result = TransactionEntryService.handleAccountSelection(
+                        accountId = event.account?.id,
+                        isSource = false,
+                        currentState = s.toUpdateResult(),
+                        accounts = s.accounts,
                         baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
-
-                    // Enforcement: if side is Outside, it must match the other side
-                    val finalSourceCurrency = if (s.isTransfer && !newRef.isOutside && s.source.account.isOutside) {
-                        newCurrency
-                    } else s.selectedCurrency
-
-                    s.copy(
-                        destination = s.destination.copy(
-                            account = newRef,
-                            currency = newCurrency
-                        ),
-                        source = s.source.copy(
-                            currency = finalSourceCurrency
-                        )
-                    )
+                    s.applyUpdate(result)
                 }
                 recalculateExchangeRate()
             }

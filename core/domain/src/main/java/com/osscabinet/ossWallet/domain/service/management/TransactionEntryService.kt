@@ -396,6 +396,137 @@ object TransactionEntryService {
     }
 
     /**
+     * Shared result for state-updating logic.
+     */
+    data class StateUpdateResult(
+        val source: TransactionSide,
+        val destination: TransactionSide,
+        val entryMode: EntryMode,
+        val exchangeRate: BigDecimal,
+        val isRateFixed: Boolean
+    )
+
+    /**
+     * Unified logic for updating source amount. Handles type transitions for negative inputs
+     * and multi-leg synchronization for transfers.
+     */
+    fun handleAmountChange(
+        amountStr: String,
+        currentState: StateUpdateResult,
+        exchangeRates: ExchangeRateSnapshot,
+        isSplitMode: Boolean = false
+    ): StateUpdateResult {
+        val inputAmount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
+
+        if (inputAmount < BigDecimal.ZERO) {
+            val transition = transitionType(
+                oldMode = currentState.entryMode,
+                newMode = if (currentState.entryMode == EntryMode.INCOME) EntryMode.EXPENSE else EntryMode.INCOME,
+                currentSource = currentState.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
+                currentDestination = currentState.destination,
+                isSplitMode = isSplitMode
+            )
+            return currentState.copy(
+                entryMode = transition.newMode,
+                source = transition.source,
+                destination = transition.destination
+            )
+        }
+
+        if (currentState.entryMode != EntryMode.TRANSFER) {
+            return currentState.copy(source = currentState.source.copy(amount = amountStr))
+        }
+
+        val sync = syncTransferState(
+            sourceAmount = inputAmount,
+            targetAmount = currentState.destination.amountValue,
+            sourceCurrency = currentState.source.currency,
+            targetCurrency = currentState.destination.currency,
+            isFixed = currentState.isRateFixed,
+            activeSide = AmountEditingSide.SOURCE,
+            exchangeRates = exchangeRates
+        )
+
+        return currentState.copy(
+            source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+            destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+            exchangeRate = sync.impliedRate
+        )
+    }
+
+    /**
+     * Unified logic for updating target amount in transfers.
+     */
+    fun handleTargetAmountChange(
+        amountStr: String,
+        currentState: StateUpdateResult,
+        exchangeRates: ExchangeRateSnapshot
+    ): StateUpdateResult {
+        val inputAmount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val sync = syncTransferState(
+            sourceAmount = currentState.source.amountValue,
+            targetAmount = inputAmount,
+            sourceCurrency = currentState.source.currency,
+            targetCurrency = currentState.destination.currency,
+            isFixed = currentState.isRateFixed,
+            activeSide = AmountEditingSide.TARGET,
+            exchangeRates = exchangeRates
+        )
+
+        return currentState.copy(
+            source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+            destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+            exchangeRate = sync.impliedRate
+        )
+    }
+
+    /**
+     * Standardised account selection logic with currency resolution and transfer enforcement.
+     */
+    fun handleAccountSelection(
+        accountId: String?,
+        isSource: Boolean,
+        currentState: StateUpdateResult,
+        accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
+        baseCurrency: String
+    ): StateUpdateResult {
+        val account = accounts.find { it.id == accountId }
+        val newRef = accountId?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected
+
+        return if (isSource) {
+            val newCurrency = resolveSideCurrency(
+                account = newRef,
+                accountCurrency = account?.currencyCode,
+                currentCurrency = currentState.source.currency,
+                baseCurrency = baseCurrency
+            )
+            val finalTargetCurrency = if (currentState.entryMode == EntryMode.TRANSFER && !newRef.isOutside && currentState.destination.account.isOutside) {
+                newCurrency
+            } else currentState.destination.currency
+
+            currentState.copy(
+                source = currentState.source.copy(account = newRef, currency = newCurrency),
+                destination = currentState.destination.copy(currency = finalTargetCurrency)
+            )
+        } else {
+            val newCurrency = resolveSideCurrency(
+                account = newRef,
+                accountCurrency = account?.currencyCode,
+                currentCurrency = currentState.destination.currency,
+                baseCurrency = baseCurrency
+            )
+            val finalSourceCurrency = if (currentState.entryMode == EntryMode.TRANSFER && !newRef.isOutside && currentState.source.account.isOutside) {
+                newCurrency
+            } else currentState.source.currency
+
+            currentState.copy(
+                destination = currentState.destination.copy(account = newRef, currency = newCurrency),
+                source = currentState.source.copy(currency = finalSourceCurrency)
+            )
+        }
+    }
+
+    /**
      * Standardised result for dynamic transfer state updates.
      */
     data class TransferSyncResult(

@@ -19,6 +19,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
+import com.osscabinet.ossWallet.ui.components.entry.FormSheetState
 import java.math.BigDecimal
 
 data class PlannedPaymentEntryState(
@@ -90,6 +91,24 @@ data class PlannedPaymentEntryState(
     val fullProviderCurrencies: List<String> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap()
 ) {
+    val sheetState: FormSheetState get() = FormSheetState(
+        showAccount = showAccountSheet,
+        showTargetAccount = showTargetAccountSheet,
+        showCategory = showCategorySheet,
+        showPaymentMethod = showPaymentMethodSheet,
+        showStatus = showStatusSheet,
+        showTag = showTagSheet,
+        showCurrency = showCurrencySheet,
+        showTargetCurrency = showTargetCurrencySheet,
+        showExchangeRate = showExchangeRateDialog,
+        showDate = false, // Handled by schedule builder
+        showWarrantyDate = showWarrantyDatePicker,
+        showLocation = showLocationSheet,
+        showLinkedTransaction = showLinkedTransactionSheet,
+        isNumpadVisible = showNumpad,
+        activeAmountSide = activeAmountSide
+    )
+
     // Legacy mapping
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
@@ -131,4 +150,26 @@ data class PlannedPaymentEntryState(
         }
 
     fun hasError(field: EntryField) = errors.contains(field)
+
+    /**
+     * Map to unified logic structure.
+     */
+    fun toUpdateResult() = TransactionEntryService.StateUpdateResult(
+        source = source,
+        destination = destination,
+        entryMode = entryMode,
+        exchangeRate = exchangeRate,
+        isRateFixed = isRateFixed
+    )
+
+    /**
+     * Update from unified logic result.
+     */
+    fun applyUpdate(result: TransactionEntryService.StateUpdateResult) = copy(
+        source = result.source,
+        destination = result.destination,
+        entryMode = result.entryMode,
+        exchangeRate = result.exchangeRate,
+        isRateFixed = result.isRateFixed
+    )
 }

@@ -48,6 +48,7 @@ import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
+import com.osscabinet.ossWallet.ui.components.entry.EntrySheetOrchestrator
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
@@ -307,9 +308,132 @@ fun PlannedPaymentFormBody(
             Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
 
-        // Dedicated sheets for selecting multi-value parameters
-        PlannedPaymentEntrySheets(state = state, onSearch = onSearch, onEvent = onEvent)
+        PlannedPaymentSheetOrchestrator(
+            state = state,
+            onSearch = onSearch,
+            onEvent = onEvent
+        )
     }
+}
+
+@Composable
+private fun PlannedPaymentSheetOrchestrator(
+    state: PlannedPaymentEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
+    onEvent: (PlannedPaymentEntryEvent) -> Unit
+) {
+    // Schedule builder is unique to planned payments, kept here
+    if (state.showScheduleBuilder) {
+        com.osscabinet.ossWallet.ui.components.entry.AeonScheduleBuilder(
+            initialStartDate = state.startDateMillis,
+            initialRecurrenceType = state.recurrenceType,
+            initialInterval = state.recurrenceInterval,
+            initialDayOfWeek = state.dayOfWeek,
+            initialDayOfMonth = state.dayOfMonth,
+            initialCronExpression = state.cronExpression,
+            onConfirm = { start, type, interval, dow, dom, cron ->
+                onEvent(
+                    PlannedPaymentEntryEvent.SetRecurrence(
+                        start,
+                        type,
+                        interval,
+                        dow,
+                        dom,
+                        cron
+                    )
+                )
+                onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false))
+            },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowScheduleBuilder(false)) }
+        )
+    }
+
+    if (state.showEndDatePicker) {
+        com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog(
+            selectedDateMillis = state.endDateMillis,
+            onDateSelected = {
+                onEvent(PlannedPaymentEntryEvent.SetEndDate(it))
+                onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false))
+            },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false)) }
+        )
+    }
+
+    if (state.showTemplateSheet) {
+        com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection(
+            templates = state.templates,
+            categories = state.categories,
+            onTemplateSelected = { template ->
+                onEvent(PlannedPaymentEntryEvent.SetLinkedTemplate(template))
+                onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false))
+            },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false)) }
+        )
+    }
+
+    EntrySheetOrchestrator(
+        sheetState = state.sheetState,
+        accounts = state.accounts,
+        categories = state.categories,
+        allTags = state.availableTags,
+        selectedTags = state.selectedTagNames,
+        currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
+        currentExchangeRate = state.exchangeRate,
+        shortlistedCurrencies = state.shortlistedCurrencies,
+        fullCurrencies = state.fullProviderCurrencies,
+        isTransfer = state.isTransfer,
+        onAmountChange = { amt ->
+            if (state.activeAmountSide == AmountEditingSide.SOURCE) {
+                onEvent(PlannedPaymentEntryEvent.SetAmount(amt))
+            } else {
+                onEvent(PlannedPaymentEntryEvent.SetTargetAmount(amt))
+            }
+        },
+        onAccountChange = { accId -> onEvent(PlannedPaymentEntryEvent.SetAccountId(accId)) },
+        onTargetAccountChange = { accId -> onEvent(PlannedPaymentEntryEvent.SetTargetAccountId(accId)) },
+        onCategoryChange = { catId -> onEvent(PlannedPaymentEntryEvent.SetCategoryId(catId)) },
+        onCurrencyChange = { curr -> onEvent(PlannedPaymentEntryEvent.SetCurrency(curr)) },
+        onTargetCurrencyChange = { curr -> onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(curr)) },
+        onExchangeRateChange = { rate -> onEvent(PlannedPaymentEntryEvent.SetExchangeRate(rate)) },
+        onTagsChange = { tags -> onEvent(PlannedPaymentEntryEvent.SetTags(tags)) },
+        onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames + name)) },
+        onDismissSheet = { field ->
+            when (field) {
+                EntryField.AMOUNT -> onEvent(PlannedPaymentEntryEvent.ShowNumpad(false))
+                EntryField.ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
+                EntryField.TARGET_ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
+                EntryField.CATEGORY -> onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
+                else -> {
+                    onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowTransactionStatusSheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false))
+                    onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(false))
+                }
+            }
+        },
+        onSearchTransactions = onSearch,
+        linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
+        onLinkedTransactionsChanged = { ids -> onEvent(PlannedPaymentEntryEvent.SetLinkedTransactionIds(ids.toList())) },
+        selectedAccountId = state.selectedAccountId,
+        selectedTargetAccountId = state.targetAccountId,
+        selectedCategoryId = state.selectedCategoryId,
+        selectedCurrency = state.currency,
+        selectedTargetCurrency = state.targetCurrency,
+        warrantyDateMillis = state.warrantyExpirationMillis,
+        onWarrantyDateChange = { date -> onEvent(PlannedPaymentEntryEvent.SetWarrantyExpiration(date)) },
+        gpsLocation = state.gpsLocation,
+        onLocationChange = { gps, loc -> onEvent(PlannedPaymentEntryEvent.SetLocation(gps, loc)) },
+        paymentMethod = state.paymentMethod,
+        onPaymentMethodChange = { method -> onEvent(PlannedPaymentEntryEvent.SetPaymentMethod(method)) },
+        transactionStatus = state.transactionStatus,
+        onTransactionStatusChange = { status -> onEvent(PlannedPaymentEntryEvent.SetTransactionStatus(status)) }
+    )
 }
 
 @Preview(showBackground = true)

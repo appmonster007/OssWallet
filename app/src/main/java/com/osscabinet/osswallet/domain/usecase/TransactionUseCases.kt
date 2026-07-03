@@ -47,8 +47,8 @@ class TransactionUseCases(
     fun observeEntryCoreData(profileId: Int): Flow<EntryCoreData> {
         return combine(
             accountRepository.getAllAccounts(profileId),
-            categoryRepository.categories,
-            tagRepository.getAllTags(),
+            categoryRepository.getAllCategories(profileId),
+            tagRepository.getAllTags(profileId),
             templateRepository.getAllTemplates(profileId)
         ) { accounts, categories, tags, templates ->
             EntryCoreData(

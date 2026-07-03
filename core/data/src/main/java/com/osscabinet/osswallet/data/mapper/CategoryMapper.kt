@@ -11,7 +11,8 @@ fun CategoryEntity.toDomain(): Category {
         colorHex = colorHex,
         isDefault = isDefault,
         parentId = parentId,
-        nature = nature
+        nature = nature,
+        profileId = profileId
     )
 }
 
@@ -23,6 +24,7 @@ fun Category.toEntity(): CategoryEntity {
         colorHex = colorHex,
         isDefault = isDefault,
         parentId = parentId,
-        nature = nature
+        nature = nature,
+        profileId = profileId
     )
 }

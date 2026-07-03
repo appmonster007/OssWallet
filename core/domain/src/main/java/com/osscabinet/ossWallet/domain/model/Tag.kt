@@ -11,7 +11,8 @@ enum class SystemTag(
 data class Tag(
     val id: Long = 0,
     val name: String,
-    val colorHex: Int = -1
+    val colorHex: Int = -1,
+    val profileId: Int = 1
 ) {
     companion object {
         val SYSTEM_PLANNED = SystemTag.PLANNED.tagName

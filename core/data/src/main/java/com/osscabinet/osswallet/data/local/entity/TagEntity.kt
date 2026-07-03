@@ -6,11 +6,12 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "tags",
-    indices = [Index(value = ["name"], unique = true)]
+    indices = [Index(value = ["name", "profileId"], unique = true)]
 )
 data class TagEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
-    val colorHex: Int
+    val colorHex: Int,
+    val profileId: Int = 1
 )

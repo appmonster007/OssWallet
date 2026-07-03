@@ -16,7 +16,11 @@ class TagRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao
 ) : TagRepository {
     override fun getAllTags(): Flow<List<Tag>> = tagDao.getAllTags().map { entities ->
-        entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex) }
+        entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex, profileId = it.profileId) }
+    }
+
+    override fun getAllTags(profileId: Int): Flow<List<Tag>> = tagDao.getAllTags(profileId).map { entities ->
+        entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex, profileId = it.profileId) }
     }
 
     override suspend fun insertTag(tag: Tag) {

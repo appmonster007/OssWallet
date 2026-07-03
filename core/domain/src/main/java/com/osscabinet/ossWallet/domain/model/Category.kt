@@ -22,7 +22,8 @@ data class Category(
     val colorHex: Int,
     val isDefault: Boolean,
     val parentId: Long?,
-    val nature: CategoryNature = CategoryNature.WANT
+    val nature: CategoryNature = CategoryNature.WANT,
+    val profileId: Int = 1
 ) {
     companion object {
         val SYSTEM_OTHERS          = SystemCategory.OTHERS.id

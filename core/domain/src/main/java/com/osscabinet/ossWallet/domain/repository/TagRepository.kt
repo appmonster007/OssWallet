@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface TagRepository {
     fun getAllTags(): Flow<List<Tag>>
+    fun getAllTags(profileId: Int): Flow<List<Tag>>
     suspend fun insertTag(tag: Tag)
     suspend fun deleteTag(tag: Tag)
     suspend fun deleteTagAndRemoveFromTransactions(tag: Tag)

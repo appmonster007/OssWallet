@@ -5,10 +5,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 
-// Categories are global and shared across all profiles.
 @Entity(
     tableName = "categories",
-    indices = [Index(value = ["name"])]
+    indices = [Index(value = ["name", "profileId"])]
 )
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true)
@@ -18,5 +17,6 @@ data class CategoryEntity(
     val colorHex: Int,
     val isDefault: Boolean = false,
     val parentId: Long? = null,
-    val nature: CategoryNature = CategoryNature.WANT
+    val nature: CategoryNature = CategoryNature.WANT,
+    val profileId: Int = 1
 )

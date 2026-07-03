@@ -135,7 +135,8 @@ class QuickAddViewModel @Inject constructor(
         .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Template>())
 
-    val categories: StateFlow<List<Category>> = categoryRepository.categories
+    val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Category>())
 
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))

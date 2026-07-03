@@ -59,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 27,
+    version = 28,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -82,6 +82,29 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add profileId to categories — existing rows assigned to profile 1.
+                db.execSQL("ALTER TABLE categories ADD COLUMN profileId INTEGER NOT NULL DEFAULT 1")
+
+                // Tags: add profileId, then recreate table to replace the global name-unique
+                // index with a per-profile (name, profileId) unique index.
+                db.execSQL("ALTER TABLE tags ADD COLUMN profileId INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS tags_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        colorHex INTEGER NOT NULL,
+                        profileId INTEGER NOT NULL DEFAULT 1
+                    )
+                """.trimIndent())
+                db.execSQL("INSERT INTO tags_new (id, name, colorHex, profileId) SELECT id, name, colorHex, profileId FROM tags")
+                db.execSQL("DROP TABLE tags")
+                db.execSQL("ALTER TABLE tags_new RENAME TO tags")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tags_name_profileId ON tags (name, profileId)")
+            }
         }
 
         val MIGRATION_26_27 = object : Migration(26, 27) {
@@ -766,7 +789,8 @@ abstract class AppDatabase : RoomDatabase() {
                             MIGRATION_23_24,
                             MIGRATION_24_25,
                             MIGRATION_25_26,
-                            MIGRATION_26_27
+                            MIGRATION_26_27,
+                            MIGRATION_27_28
                         )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

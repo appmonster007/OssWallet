@@ -375,24 +375,15 @@ object TransactionEntryService {
         destination: TransactionSide,
         transferRate: BigDecimal
     ): Triple<TransactionSide, TransactionSide, BigDecimal> {
-        val effectiveDstAmount = destination.amount.ifBlank {
-            source.amountValue.multiply(transferRate)
-                .setScale(8, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
-        }
         val newRate = if (transferRate.signum() != 0)
             BigDecimal.ONE.divide(transferRate, 8, RoundingMode.HALF_UP).stripTrailingZeros()
         else BigDecimal.ONE
 
-        val newSource = destination.copy(
-            amount = effectiveDstAmount,
-            categoryId = source.categoryId // Category stays pinned to the conceptual source
+        return Triple(
+            destination.copy(categoryId = source.categoryId),
+            source.copy(categoryId = destination.categoryId),
+            newRate
         )
-        val newDestination = source.copy(
-            amount = source.amount,
-            categoryId = destination.categoryId
-        )
-
-        return Triple(newSource, newDestination, newRate)
     }
 
     /**
@@ -419,6 +410,10 @@ object TransactionEntryService {
         val inputAmount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
         if (inputAmount < BigDecimal.ZERO) {
+            if (currentState.entryMode == EntryMode.TRANSFER) {
+                val absStr = inputAmount.abs().stripTrailingZeros().toPlainString()
+                return handleAmountChange(absStr, currentState, exchangeRates, isSplitMode)
+            }
             val transition = transitionType(
                 oldMode = currentState.entryMode,
                 newMode = if (currentState.entryMode == EntryMode.INCOME) EntryMode.EXPENSE else EntryMode.INCOME,

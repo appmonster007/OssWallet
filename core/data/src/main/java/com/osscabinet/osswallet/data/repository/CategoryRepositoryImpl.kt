@@ -17,6 +17,9 @@ class CategoryRepositoryImpl @Inject constructor(
     override val categories: Flow<List<Category>> =
         categoryDao.getAllCategories().map { list -> list.map { it.toDomain() } }
 
+    override fun getAllCategories(profileId: Int): Flow<List<Category>> =
+        categoryDao.getAllCategories(profileId).map { list -> list.map { it.toDomain() } }
+
     override suspend fun upsertCategory(category: Category) {
         if (Category.isSystemCategory(category.id)) return
         categoryDao.insertCategory(category.toEntity())

@@ -13,7 +13,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
+import com.osscabinet.ossWallet.ui.components.entry.FormSheetState
 import java.math.BigDecimal
 
 /**
@@ -73,6 +75,23 @@ data class TemplateEntryState(
     val prefillDto: TransactionPrefillDTO? = null,
     val displayLinkedTxs: List<Transaction> = emptyList()
 ) {
+    val sheetState: FormSheetState get() = FormSheetState(
+        showAccount = showAccountSheet,
+        showTargetAccount = showTargetAccountSheet,
+        showCategory = showCategorySheet,
+        showPaymentMethod = showPaymentMethodSheet,
+        showStatus = showStatusSheet,
+        showTag = showTagSheet,
+        showCurrency = showCurrencySheet,
+        showTargetCurrency = showTargetCurrencySheet,
+        showExchangeRate = showExchangeRateDialog,
+        showWarrantyDate = showWarrantyDatePicker,
+        showLocation = showLocationSheet,
+        showLinkedTransaction = showLinkedTransactionSheet,
+        isNumpadVisible = isNumpadVisible,
+        activeAmountSide = activeAmountSide
+    )
+
     // Legacy mapping
     val accountId: String? get() = source.account.toStored()
     val targetAccountId: String? get() = destination.account.toStored()
@@ -102,4 +121,26 @@ data class TemplateEntryState(
 
     val canSave: Boolean
         get() = !hasError && !navTriggered
+
+    /**
+     * Map to unified logic structure.
+     */
+    fun toUpdateResult() = TransactionEntryService.StateUpdateResult(
+        source = source,
+        destination = destination,
+        entryMode = entryMode,
+        exchangeRate = exchangeRate,
+        isRateFixed = isRateFixed
+    )
+
+    /**
+     * Update from unified logic result.
+     */
+    fun applyUpdate(result: TransactionEntryService.StateUpdateResult) = copy(
+        source = result.source,
+        destination = result.destination,
+        entryMode = result.entryMode,
+        exchangeRate = result.exchangeRate,
+        isRateFixed = result.isRateFixed
+    )
 }

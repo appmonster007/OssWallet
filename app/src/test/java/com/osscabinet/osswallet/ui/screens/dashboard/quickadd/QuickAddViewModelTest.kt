@@ -415,6 +415,30 @@ class QuickAddViewModelTest {
     }
 
     @Test
+    fun `onAmountChanged updates target amount and triggers source conversion when focusing target`() = runTest {
+        backgroundScope.launch { viewModel.state.collect {} }
+        awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
+        
+        viewModel.toggleTransferMode()
+        awaitState { it.entryMode == EntryMode.TRANSFER }
+
+        viewModel.onAccountTapped("acc1", isFrom = true) // USD
+        viewModel.onAccountTapped("acc2", isFrom = false) // EUR (Rate 0.85)
+        
+        // Focus Target to enable override
+        viewModel.setAmountFocus(AmountEditingSide.TARGET)
+        awaitState { it.isAmountOverridden && it.activeAmountSide == AmountEditingSide.TARGET }
+        
+        // Update Target to 85 EUR using unified function
+        viewModel.onAmountChanged(BigDecimal("85"))
+        
+        // Source should be updated to 100 USD (85 / 0.85)
+        val state = awaitState { it.amount.compareTo(BigDecimal("100")) == 0 }
+        assertEquals(0, BigDecimal("100").compareTo(state.amount))
+        assertEquals(0, BigDecimal("85").compareTo(state.amountOverride ?: BigDecimal.ZERO))
+    }
+
+    @Test
     fun `reset clears input but preserves accounts`() = runTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() }

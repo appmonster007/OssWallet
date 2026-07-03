@@ -443,11 +443,26 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAmountChanged(amount: BigDecimal) {
-        _uiState.update { it.copy(amount = amount) }
-    }
-
-    fun onAmountOverrideChanged(amount: BigDecimal) {
-        _uiState.update { it.copy(amountOverride = amount) }
+        _uiState.update { s ->
+            if (s.entryMode == EntryMode.TRANSFER && s.activeAmountSide == AmountEditingSide.TARGET) {
+                // Updating Target side
+                val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                val newSourceAmt = TransactionEntryService.calculateSourceAmountValue(amount, rate)
+                s.copy(
+                    amountOverride = amount,
+                    amount = newSourceAmt,
+                    isAmountOverridden = true
+                )
+            } else {
+                // Updating Source side
+                val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                val newTargetAmt = TransactionEntryService.calculateTargetAmountValue(amount, rate)
+                s.copy(
+                    amount = amount,
+                    amountOverride = if (s.isAmountOverridden) newTargetAmt else null
+                )
+            }
+        }
     }
 
     fun setAmountFocus(side: AmountEditingSide) {

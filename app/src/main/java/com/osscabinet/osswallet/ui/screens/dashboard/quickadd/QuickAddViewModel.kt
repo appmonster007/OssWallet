@@ -306,7 +306,7 @@ class QuickAddViewModel @Inject constructor(
                 settingsRepository.currency,
                 computationRepository.exchangeRatesSnapshot
             ) { uiState, allAccounts, transactions, baseCurrency, rates ->
-                val baseAccounts = allAccounts.filter { !it.isArchived }
+                val baseAccounts = allAccounts.filter { !it.isArchived && it.id.isNotBlank() }
                 val activeAccounts = if (uiState.entryMode == EntryMode.TRANSFER) {
                     listOf(Account.OUTSIDE_WALLET) + baseAccounts
                 } else {

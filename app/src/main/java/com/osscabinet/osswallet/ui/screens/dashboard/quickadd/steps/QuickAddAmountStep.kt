@@ -599,7 +599,7 @@ private fun AccountSummary(
                     color = AppColors.divider.copy(alpha = 0.3f)
                 )
 
-                accounts.forEach { account ->
+                accounts.filter { it.id.isNotBlank() }.forEach { account ->
                     DropdownMenuItem(
                         text = {
                             Text(

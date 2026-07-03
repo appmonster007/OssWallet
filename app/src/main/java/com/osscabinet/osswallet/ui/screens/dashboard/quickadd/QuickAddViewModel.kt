@@ -501,31 +501,22 @@ class QuickAddViewModel @Inject constructor(
     fun onSwapAccounts() {
         _uiState.update { s ->
             if (s.entryMode != EntryMode.TRANSFER) return@update s
-            val rates = s.exchangeRates
-            val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, rates)
             
-            val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
-                source = TransactionSide(
-                    account = s.selectedAccount,
-                    amount = s.amount.stripTrailingZeros().toPlainString(),
-                    currency = s.selectedCurrency
-                ),
-                destination = TransactionSide(
-                    account = s.selectedToAccount,
-                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
-                    currency = s.selectedToCurrency
-                ),
-                transferRate = rate
-            )
+            val oldSourceAccount = s.selectedAccount
+            val oldTargetAccount = s.selectedToAccount
+            val oldSourceCurrency = s.selectedCurrency
+            val oldTargetCurrency = s.selectedToCurrency
+            val oldSourceAmount = s.amount
+            val oldTargetAmount = s.effectiveTargetAmount
 
             applyFocusGuard(
                 s.copy(
-                    selectedAccount = newSrc.account,
-                    selectedToAccount = newDst.account,
-                    selectedCurrency = newSrc.currency,
-                    selectedToCurrency = newDst.currency,
-                    amount = newSrc.amountValue,
-                    amountOverride = if (s.isAmountOverridden) newDst.amountValue else null
+                    selectedAccount = oldTargetAccount,
+                    selectedToAccount = oldSourceAccount,
+                    selectedCurrency = oldTargetCurrency,
+                    selectedToCurrency = oldSourceCurrency,
+                    amount = oldTargetAmount,
+                    amountOverride = if (s.isAmountOverridden) oldSourceAmount else null
                 )
             )
         }

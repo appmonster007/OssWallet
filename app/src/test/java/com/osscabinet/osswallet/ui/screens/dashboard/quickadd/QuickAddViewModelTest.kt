@@ -439,6 +439,40 @@ class QuickAddViewModelTest {
     }
 
     @Test
+    fun `swapping accounts in auto mode correctly swaps values and recalculates target`() = runTest {
+        backgroundScope.launch { viewModel.state.collect {} }
+        awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
+        
+        viewModel.toggleTransferMode()
+        viewModel.onAccountTapped("acc1", isFrom = true) // USD
+        viewModel.onAccountTapped("acc2", isFrom = false) // EUR (Rate 0.85)
+        viewModel.onAmountChanged(BigDecimal("100"))
+        
+        // Ensure initial state: 100 USD -> 85 EUR
+        awaitState { it.amount.compareTo(BigDecimal("100")) == 0 && it.effectiveTargetAmount.compareTo(BigDecimal("85")) == 0 }
+        
+        viewModel.onSwapAccounts()
+        
+        // Result should be: 85 EUR -> 100 USD
+        val state = awaitState { (it.selectedAccount as? AccountRef.Wallet)?.id == "acc2" }
+        
+        assertEquals("acc2", (state.selectedAccount as? AccountRef.Wallet)?.id)
+        assertEquals("EUR", state.selectedCurrency)
+        assertEquals("acc1", (state.selectedToAccount as? AccountRef.Wallet)?.id)
+        assertEquals("USD", state.selectedToCurrency)
+        
+        // Source should be exactly 85 (taken from previous effective target)
+        assertEquals(0, BigDecimal("85").compareTo(state.amount))
+        // Target should be 100 (recalculated from 85 * (1/0.85))
+        assertEquals(0, BigDecimal("100").compareTo(state.effectiveTargetAmount))
+        
+        // Verify scale/precision: previous bug introduced 8-precision scale
+        // The fix should maintain a clean representation.
+        // effectiveTargetAmount is scaled to CurrencyService.precision (2 in setup)
+        assertEquals(2, state.effectiveTargetAmount.scale())
+    }
+
+    @Test
     fun `reset clears input but preserves accounts`() = runTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() }

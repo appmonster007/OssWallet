@@ -96,7 +96,6 @@ fun QuickAddAmountStep(
     activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     onCurrencySelected: (String, Boolean) -> Unit,
     onAmountChange: (BigDecimal) -> Unit,
-    onAmountOverrideChange: (BigDecimal) -> Unit = {},
     onSetAmountFocus: (AmountEditingSide) -> Unit = {},
     onToggleAmountOverride: () -> Unit = {},
     onSwapAccounts: () -> Unit = {},
@@ -161,8 +160,7 @@ fun QuickAddAmountStep(
                 },
                 onAmountChange = {
                     val valBD = it.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    if (activeAmountSide == AmountEditingSide.TARGET) onAmountOverrideChange(valBD)
-                    else onAmountChange(valBD)
+                    onAmountChange(valBD)
                 },
                 onDone = onDone,
                 showDoneButton = false,
@@ -1126,7 +1124,6 @@ fun PreviewQuickAddFixedTransferAmountStep() {
                 selectedToCurrency = "EUR",
                 onCurrencySelected = { _, _ -> },
                 onAmountChange = {},
-                onAmountOverrideChange = {},
                 onToggleAmountOverride = {},
                 onDone = {}
             )

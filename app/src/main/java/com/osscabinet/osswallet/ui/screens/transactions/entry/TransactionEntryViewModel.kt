@@ -542,10 +542,18 @@ class TransactionEntryViewModel @Inject constructor(
                         baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
 
+                    // Enforcement: if side is Outside, it must match the other side
+                    val finalTargetCurrency = if (s.isTransfer && !newRef.isOutside && s.destination.account.isOutside) {
+                        newCurrency
+                    } else s.targetCurrency
+
                     s.copy(
                         source = s.source.copy(
                             account = newRef,
                             currency = newCurrency
+                        ),
+                        destination = s.destination.copy(
+                            currency = finalTargetCurrency
                         )
                     )
                 }
@@ -553,7 +561,16 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetCurrency -> {
-                update { it.copy(source = it.source.copy(currency = event.currency)) }
+                update { s ->
+                    val nextTarget = if (s.isTransfer && s.destination.account.isOutside) {
+                        event.currency
+                    } else s.targetCurrency
+                    
+                    s.copy(
+                        source = s.source.copy(currency = event.currency),
+                        destination = s.destination.copy(currency = nextTarget)
+                    )
+                }
                 recalculateExchangeRate()
             }
 
@@ -567,10 +584,18 @@ class TransactionEntryViewModel @Inject constructor(
                         baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
                     )
 
+                    // Enforcement: if side is Outside, it must match the other side
+                    val finalSourceCurrency = if (s.isTransfer && !newRef.isOutside && s.source.account.isOutside) {
+                        newCurrency
+                    } else s.selectedCurrency
+
                     s.copy(
                         destination = s.destination.copy(
                             account = newRef,
                             currency = newCurrency
+                        ),
+                        source = s.source.copy(
+                            currency = finalSourceCurrency
                         )
                     )
                 }
@@ -578,7 +603,16 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetTargetCurrency -> {
-                update { it.copy(destination = it.destination.copy(currency = event.currency)) }
+                update { s ->
+                    val nextSource = if (s.isTransfer && s.source.account.isOutside) {
+                        event.currency
+                    } else s.selectedCurrency
+
+                    s.copy(
+                        destination = s.destination.copy(currency = event.currency),
+                        source = s.source.copy(currency = nextSource)
+                    )
+                }
                 recalculateExchangeRate()
             }
 
@@ -694,18 +728,24 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
-            is TransactionEntryEvent.SwapAccounts -> update { state ->
-                if (!state.isTransfer) return@update state
-                val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
-                    source = state.source,
-                    destination = state.destination,
-                    transferRate = state.exchangeRate
-                )
-                state.copy(
-                    source = newSrc,
-                    destination = newDst,
-                    exchangeRate = newRate
-                )
+            is TransactionEntryEvent.SwapAccounts -> {
+                update { s ->
+                    if (!s.isTransfer) return@update s
+
+                    val oldSrc = s.source
+                    val oldDst = s.destination
+
+                    s.copy(
+                        source = oldDst.copy(
+                            amount = oldDst.amount,
+                            categoryId = oldSrc.categoryId
+                        ),
+                        destination = oldSrc.copy(
+                            amount = ""
+                        )
+                    )
+                }
+                recalculateExchangeRate()
             }
 
             // Navigation

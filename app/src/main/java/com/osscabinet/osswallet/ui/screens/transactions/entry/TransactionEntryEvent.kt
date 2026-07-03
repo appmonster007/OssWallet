@@ -78,6 +78,7 @@ sealed class TransactionEntryEvent {
     data class ShowTargetCurrencySheet(val show: Boolean) : TransactionEntryEvent()
 
     data object SwapAccounts : TransactionEntryEvent()
+    data object ToggleRateMode : TransactionEntryEvent()
 
     // Navigation
     data object TriggerNavigation : TransactionEntryEvent()

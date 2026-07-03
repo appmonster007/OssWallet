@@ -26,9 +26,12 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -37,7 +40,7 @@ import java.math.BigDecimal
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionEntryViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
@@ -104,8 +107,6 @@ class TransactionEntryViewModelTest {
             tagRepository = tagRepository,
             templateRepository = templateRepository
         )
-        
-        viewModel.initialize()
     }
 
     private suspend fun awaitState(predicate: (TransactionEntryState) -> Boolean): TransactionEntryState {
@@ -115,51 +116,62 @@ class TransactionEntryViewModelTest {
     private fun String.toBD() = toBigDecimalOrNull() ?: BigDecimal.ZERO
 
     @Test
-    fun `initial state is correct`() = runTest {
+    fun `initial state is correct`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
         backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+        
         val state = awaitState { it.accounts.isNotEmpty() }
         assertEquals(EntryMode.EXPENSE, state.entryMode)
         assertEquals("0", state.amount)
     }
 
     @Test
-    fun `outside wallet inherits currency from other side and enforces sync`() = runTest {
+    fun `outside wallet inherits currency from other side and enforces sync`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
         backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() }
+        advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
-        awaitState { it.isTransfer }
+        advanceUntilIdle()
         
         // 1. Source (EUR) -> Outside (should be EUR)
         viewModel.onEvent(TransactionEntryEvent.SetAccount(mockToAccount)) // acc2 is EUR
-        awaitState { state -> (state.source.account as? AccountRef.Wallet)?.id == "acc2" }
+        advanceUntilIdle()
         
         val state1 = awaitState { it.destination.account.isOutside && it.destination.currency == "EUR" }
         assertEquals("EUR", state1.destination.currency)
         
         // 2. Change Source to USD -> Target (Outside) should follow to USD
         viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // acc1 is USD
+        advanceUntilIdle()
+        
         val state2 = awaitState { state -> (state.source.account as? AccountRef.Wallet)?.id == "acc1" && state.source.currency == "USD" }
         assertEquals("USD", state2.destination.currency)
 
         // 3. Manually change Source currency to EUR -> Target (Outside) should follow
         viewModel.onEvent(TransactionEntryEvent.SetCurrency("EUR"))
+        advanceUntilIdle()
+        
         val state3 = awaitState { it.source.currency == "EUR" }
         assertEquals("EUR", state3.destination.currency)
     }
 
     @Test
-    fun `same source and target currency results in 1 to 1 rate`() = runTest {
+    fun `same source and target currency results in 1 to 1 rate`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
         backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() }
+        advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
-        awaitState { it.isTransfer }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount))
-        awaitState { (it.source.account as? AccountRef.Wallet)?.id == "acc1" }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
+        advanceUntilIdle()
+        
         val state = awaitState { 
             it.amount.toBD().compareTo(BigDecimal("100")) == 0 && 
             it.targetAmount.toBD().compareTo(BigDecimal("100")) == 0 && 
@@ -172,24 +184,23 @@ class TransactionEntryViewModelTest {
     }
 
     @Test
-    fun `swapping accounts in auto mode correctly swaps values and recalculates target`() = runTest {
+    fun `swapping accounts in auto mode correctly swaps values and recalculates target`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
         backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() }
+        advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
-        awaitState { it.isTransfer }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
         viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
-        awaitState { state -> 
-            (state.source.account as? AccountRef.Wallet)?.id == "acc1" && 
-            (state.destination.account as? AccountRef.Wallet)?.id == "acc2" 
-        }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
-        awaitState { it.amount.toBD().compareTo(BigDecimal("100")) == 0 && it.targetAmount.toBD().compareTo(BigDecimal("85")) == 0 }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SwapAccounts)
+        advanceUntilIdle()
         
         val state = awaitState { (it.source.account as? AccountRef.Wallet)?.id == "acc2" && it.amount.toBD().compareTo(BigDecimal("85")) == 0 }
         
@@ -200,26 +211,72 @@ class TransactionEntryViewModelTest {
         
         val finalState = awaitState { it.targetAmount.toBD().compareTo(BigDecimal("100")) == 0 }
         assertEquals(0, BigDecimal("100").compareTo(finalState.targetAmount.toBD()))
+        advanceUntilIdle()
     }
 
     @Test
-    fun `SetAmount updates target and SetTargetAmount updates source`() = runTest {
+    fun `SetAmount updates target and SetTargetAmount updates source`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
         backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() }
+        advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
-        awaitState { it.isTransfer }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
         viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
-        awaitState { (it.source.account as? AccountRef.Wallet)?.id == "acc1" && (it.destination.account as? AccountRef.Wallet)?.id == "acc2" }
+        advanceUntilIdle()
         
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
+        advanceUntilIdle()
+        
         val state1 = awaitState { it.targetAmount.toBD().compareTo(BigDecimal("85")) == 0 }
         assertEquals(0, BigDecimal("85").compareTo(state1.targetAmount.toBD()))
         
         viewModel.onEvent(TransactionEntryEvent.SetTargetAmount("170"))
+        advanceUntilIdle()
+        
         val state2 = awaitState { it.amount.toBD().compareTo(BigDecimal("200")) == 0 }
         assertEquals(0, BigDecimal("200").compareTo(state2.amount.toBD()))
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun `ToggleRateMode correctly decouples amounts`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
+        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
+        viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
+        viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
+        advanceUntilIdle()
+
+        // Enable Fixed mode
+        viewModel.onEvent(TransactionEntryEvent.ToggleRateMode)
+        advanceUntilIdle()
+        
+        val state1 = awaitState { it.isRateFixed }
+        assertTrue(state1.isRateFixed)
+
+        // Change source - target should NOT change
+        viewModel.onEvent(TransactionEntryEvent.SetAmount("200"))
+        advanceUntilIdle()
+        
+        val state2 = awaitState { it.amount.toBD().compareTo(BigDecimal("200")) == 0 }
+        assertEquals(0, BigDecimal("85").compareTo(state2.targetAmount.toBD()))
+        
+        // Implied rate should update (85 / 200 = 0.425)
+        assertEquals(0, BigDecimal("0.425").compareTo(state2.exchangeRate))
+
+        // Toggle back to Auto - target should re-align (200 * 0.85 = 170)
+        viewModel.onEvent(TransactionEntryEvent.ToggleRateMode)
+        advanceUntilIdle()
+
+        val state3 = awaitState { !it.isRateFixed }
+        assertFalse(state3.isRateFixed)
+        val state4 = awaitState { it.targetAmount.toBD().compareTo(BigDecimal("170")) == 0 }
+        assertEquals(0, BigDecimal("170").compareTo(state4.targetAmount.toBD()))
     }
 }

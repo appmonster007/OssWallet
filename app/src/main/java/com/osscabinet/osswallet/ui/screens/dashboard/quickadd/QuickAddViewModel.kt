@@ -444,24 +444,25 @@ class QuickAddViewModel @Inject constructor(
 
     fun onAmountChanged(amount: BigDecimal) {
         _uiState.update { s ->
-            if (s.entryMode == EntryMode.TRANSFER && s.activeAmountSide == AmountEditingSide.TARGET) {
-                // Updating Target side
-                val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
-                val newSourceAmt = TransactionEntryService.calculateSourceAmountValue(amount, rate)
-                s.copy(
-                    amountOverride = amount,
-                    amount = newSourceAmt,
-                    isAmountOverridden = true
-                )
-            } else {
-                // Updating Source side
-                val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
-                val newTargetAmt = TransactionEntryService.calculateTargetAmountValue(amount, rate)
-                s.copy(
-                    amount = amount,
-                    amountOverride = if (s.isAmountOverridden) newTargetAmt else null
-                )
+            if (s.entryMode != EntryMode.TRANSFER) {
+                return@update s.copy(amount = amount)
             }
+
+            val sync = TransactionEntryService.syncTransferState(
+                sourceAmount = if (s.activeAmountSide == AmountEditingSide.SOURCE) amount else s.amount,
+                targetAmount = if (s.activeAmountSide == AmountEditingSide.TARGET) amount else (s.amountOverride ?: BigDecimal.ZERO),
+                sourceCurrency = s.selectedCurrency,
+                targetCurrency = s.selectedToCurrency,
+                isFixed = s.isAmountOverridden,
+                activeSide = s.activeAmountSide,
+                exchangeRates = s.exchangeRates
+            )
+
+            s.copy(
+                amount = sync.sourceAmount,
+                amountOverride = if (s.isAmountOverridden || s.activeAmountSide == AmountEditingSide.TARGET) sync.targetAmount else null,
+                isAmountOverridden = s.isAmountOverridden || s.activeAmountSide == AmountEditingSide.TARGET
+            )
         }
     }
 

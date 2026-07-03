@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.domain.service.management
 
 import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionSide
@@ -392,6 +393,55 @@ object TransactionEntryService {
         )
 
         return Triple(newSource, newDestination, newRate)
+    }
+
+    /**
+     * Standardised result for dynamic transfer state updates.
+     */
+    data class TransferSyncResult(
+        val sourceAmount: BigDecimal,
+        val targetAmount: BigDecimal,
+        val impliedRate: BigDecimal
+    )
+
+    /**
+     * Centralized synchronization logic for transfer legs.
+     * Resolves the linked values of a transfer when one component (amount, currency, mode) changes.
+     */
+    fun syncTransferState(
+        sourceAmount: BigDecimal,
+        targetAmount: BigDecimal,
+        sourceCurrency: String,
+        targetCurrency: String,
+        isFixed: Boolean,
+        activeSide: AmountEditingSide,
+        exchangeRates: ExchangeRateSnapshot
+    ): TransferSyncResult {
+        val marketRate = getMarketRate(sourceCurrency, targetCurrency, exchangeRates)
+        
+        return if (isFixed) {
+            // FIXED MODE: Amounts are decoupled. Implied rate is calculated from current amounts.
+            val implied = if (sourceAmount.signum() != 0) {
+                targetAmount.divide(sourceAmount, 8, RoundingMode.HALF_UP).stripTrailingZeros()
+            } else BigDecimal.ONE
+            
+            TransferSyncResult(sourceAmount, targetAmount, implied)
+        } else {
+            // AUTO MODE: Target is projected from Source (or vice-versa) using market rate.
+            if (activeSide == AmountEditingSide.TARGET) {
+                TransferSyncResult(
+                    sourceAmount = calculateSourceAmountValue(targetAmount, marketRate),
+                    targetAmount = targetAmount,
+                    impliedRate = marketRate
+                )
+            } else {
+                TransferSyncResult(
+                    sourceAmount = sourceAmount,
+                    targetAmount = calculateTargetAmountValue(sourceAmount, marketRate),
+                    impliedRate = marketRate
+                )
+            }
+        }
     }
 
     /**

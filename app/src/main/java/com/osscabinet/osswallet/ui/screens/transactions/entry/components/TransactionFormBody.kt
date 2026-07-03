@@ -114,7 +114,9 @@ fun TransactionFormBody(
                 showAmount = true,
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,
+                isRateFixed = state.isRateFixed,
                 onExchangeRateClick = { onEvent(TransactionEntryEvent.ShowExchangeRateDialog(true)) },
+                onToggleRateMode = { onEvent(TransactionEntryEvent.ToggleRateMode) },
                 isSplitMode = state.isSplitMode,
                 onSplitClick = {
                     if (!state.isSplitMode) {

@@ -51,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
+import java.math.RoundingMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
@@ -170,23 +171,25 @@ fun QuickAddAmountStep(
                     val liveValueString = if (state.ghostResult.isNotEmpty()) state.ghostResult else state.display
                     val liveAmount = liveValueString.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
-                    val marketRate = if (selectedCurrency == selectedToCurrency) BigDecimal.ONE
-                    else TransactionEntryService.getMarketRate(selectedCurrency, selectedToCurrency, exchangeRates)
-
-                    val (sourceToDisplay, targetToDisplay) = if (activeAmountSide == AmountEditingSide.SOURCE) {
-                        // We are typing the Source. If not overriding, Target = Source * Rate
-                        liveAmount to (if (isAmountOverridden) (amountOverride ?: BigDecimal.ZERO)
-                        else TransactionEntryService.calculateTargetAmountValue(liveAmount, marketRate))
+                    val sync = if (entryMode == EntryMode.TRANSFER) {
+                        TransactionEntryService.syncTransferState(
+                            sourceAmount = if (activeAmountSide == AmountEditingSide.SOURCE) liveAmount else amount,
+                            targetAmount = if (activeAmountSide == AmountEditingSide.TARGET) liveAmount else (amountOverride ?: BigDecimal.ZERO),
+                            sourceCurrency = selectedCurrency,
+                            targetCurrency = selectedToCurrency,
+                            isFixed = isAmountOverridden,
+                            activeSide = activeAmountSide,
+                            exchangeRates = exchangeRates
+                        )
                     } else {
-                        // We are typing the Target. Source is static, Target is live.
-                        amount to liveAmount
+                        TransactionEntryService.TransferSyncResult(liveAmount, BigDecimal.ZERO, BigDecimal.ONE)
                     }
 
                     AmountHeroPanel(
                         amount = state.display,
                         expression = state.displayExpression,
-                        sourceAmount = sourceToDisplay,
-                        targetAmount = targetToDisplay,
+                        sourceAmount = sync.sourceAmount,
+                        targetAmount = sync.targetAmount,
                         isOverriding = isAmountOverridden,
                         activeSide = activeAmountSide,
                         onToggleOverriding = onToggleAmountOverride,
@@ -840,9 +843,18 @@ private fun AmountHeroPanel(
                     style = AppTextStyles.metaLabel.copy(fontSize = 9.sp),
                     color = AppColors.contentSecondary
                 )
-                if (entryMode == EntryMode.TRANSFER && marketRate != BigDecimal.ONE && !isOverriding) {
+                if (entryMode == EntryMode.TRANSFER && marketRate != BigDecimal.ONE) {
+                    val sync = TransactionEntryService.syncTransferState(
+                        sourceAmount = sourceAmount,
+                        targetAmount = targetAmount,
+                        sourceCurrency = currency,
+                        targetCurrency = toCurrency,
+                        isFixed = isOverriding,
+                        activeSide = activeSide,
+                        exchangeRates = exchangeRates
+                    )
                     Text(
-                        text = "Rate: 1 $currency = ${marketRate.stripTrailingZeros().toPlainString()} $toCurrency",
+                        text = "Rate: 1 $currency = ${sync.impliedRate.toPlainString()} $toCurrency",
                         style = AppTextStyles.metaLabel.copy(
                             fontSize = 8.sp,
                             fontFamily = LocalAppFont.current.monoFamily

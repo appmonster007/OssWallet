@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -399,25 +400,47 @@ class TransactionEntryViewModel @Inject constructor(
                     }
                 } else {
                     _state.update { state ->
-                        val (newSrc, newDst) = TransactionEntryService.updateAmounts(
-                            source = state.source.copy(amount = event.amount),
-                            destination = state.destination,
-                            rate = state.exchangeRate
+                        if (!state.isTransfer) {
+                            return@update state.copy(source = state.source.copy(amount = event.amount))
+                        }
+
+                        val sync = TransactionEntryService.syncTransferState(
+                            sourceAmount = inputAmount,
+                            targetAmount = state.destination.amountValue,
+                            sourceCurrency = state.source.currency,
+                            targetCurrency = state.destination.currency,
+                            isFixed = state.isRateFixed,
+                            activeSide = AmountEditingSide.SOURCE,
+                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(state.source.currency, state.exchangeRates)
                         )
-                        state.copy(source = newSrc, destination = newDst)
+
+                        state.copy(
+                            source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+                            destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+                            exchangeRate = sync.impliedRate
+                        )
                     }
                 }
             }
 
             is TransactionEntryEvent.SetTargetAmount -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 _state.update { state ->
-                    val (newSrc, newDst) = TransactionEntryService.updateAmounts(
-                        source = state.source,
-                        destination = state.destination.copy(amount = event.amount),
-                        rate = state.exchangeRate,
-                        updateSource = true
+                    val sync = TransactionEntryService.syncTransferState(
+                        sourceAmount = state.source.amountValue,
+                        targetAmount = inputAmount,
+                        sourceCurrency = state.source.currency,
+                        targetCurrency = state.destination.currency,
+                        isFixed = state.isRateFixed,
+                        activeSide = AmountEditingSide.TARGET,
+                        exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(state.source.currency, state.exchangeRates)
                     )
-                    state.copy(source = newSrc, destination = newDst)
+
+                    state.copy(
+                        source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+                        destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+                        exchangeRate = sync.impliedRate
+                    )
                 }
             }
 
@@ -617,11 +640,21 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetExchangeRate -> update {
-                val inputAmt = it.amountValue
+                val sync = TransactionEntryService.syncTransferState(
+                    sourceAmount = it.source.amountValue,
+                    targetAmount = TransactionEntryService.calculateTargetAmountValue(it.source.amountValue, event.rate),
+                    sourceCurrency = it.source.currency,
+                    targetCurrency = it.destination.currency,
+                    isFixed = true, // Manually setting rate always fixes it
+                    activeSide = AmountEditingSide.SOURCE,
+                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(it.source.currency, it.exchangeRates)
+                )
+
                 it.copy(
+                    isRateFixed = true,
                     exchangeRate = event.rate,
                     destination = it.destination.copy(
-                        amount = TransactionEntryService.calculateTargetAmount(inputAmt, event.rate)
+                        amount = sync.targetAmount.stripTrailingZeros().toPlainString()
                     )
                 )
             }
@@ -741,11 +774,21 @@ class TransactionEntryViewModel @Inject constructor(
                             categoryId = oldSrc.categoryId
                         ),
                         destination = oldSrc.copy(
-                            amount = ""
+                            amount = oldSrc.amount
                         )
                     )
                 }
                 recalculateExchangeRate()
+            }
+
+            is TransactionEntryEvent.ToggleRateMode -> {
+                update { s ->
+                    val nextFixed = !s.isRateFixed
+                    s.copy(isRateFixed = nextFixed)
+                }
+                if (!_state.value.isRateFixed) {
+                    recalculateExchangeRate()
+                }
             }
 
             // Navigation

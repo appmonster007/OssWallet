@@ -49,6 +49,7 @@ data class TransactionEntryState(
 
     // Transfer specific
     val exchangeRate: BigDecimal = BigDecimal.ONE,
+    val isRateFixed: Boolean = false,
 
     // Template
     val selectedTemplateName: String? = null,

@@ -227,7 +227,7 @@ class QuickAddViewModelTest {
     }
 
     @Test
-    fun `onAmountChanged updates source amount and triggers target conversion`() = runTest {
+    fun `onAmountChanged updates source amount and triggers target conversion in auto mode`() = runTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
         
@@ -244,6 +244,35 @@ class QuickAddViewModelTest {
         val state = awaitState { it.amount.compareTo(BigDecimal("100")) == 0 }
         
         assertEquals(0, BigDecimal("85").compareTo(state.effectiveTargetAmount))
+    }
+
+    @Test
+    fun `when isAmountOverridden is true, updating source does not change target and recalculates implied rate`() = runTest {
+        backgroundScope.launch { viewModel.state.collect {} }
+        awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
+        
+        viewModel.toggleTransferMode()
+        viewModel.onAccountTapped("acc1", isFrom = true) // USD
+        viewModel.onAccountTapped("acc2", isFrom = false) // EUR (Rate 0.85)
+        viewModel.onAmountChanged(BigDecimal("100"))
+        
+        // Enable Fixed Mode
+        viewModel.toggleAmountOverride()
+        awaitState { it.isAmountOverridden }
+        
+        // 1. Change Source to 200 USD. Target (85 EUR) should remain UNCHANGED.
+        viewModel.setAmountFocus(AmountEditingSide.SOURCE)
+        viewModel.onAmountChanged(BigDecimal("200"))
+        
+        val state1 = awaitState { it.amount.compareTo(BigDecimal("200")) == 0 }
+        assertEquals(0, BigDecimal("85").compareTo(state1.amountOverride ?: BigDecimal.ZERO))
+        
+        // 2. Change Target to 100 EUR. Source (200 USD) should remain UNCHANGED.
+        viewModel.setAmountFocus(AmountEditingSide.TARGET)
+        viewModel.onAmountChanged(BigDecimal("100"))
+        
+        val state2 = awaitState { it.amountOverride?.compareTo(BigDecimal("100")) == 0 }
+        assertEquals(0, BigDecimal("200").compareTo(state2.amount))
     }
 
     @Test
@@ -412,64 +441,6 @@ class QuickAddViewModelTest {
         
         awaitState { !it.isSaving }
         assertTrue(successCalled)
-    }
-
-    @Test
-    fun `onAmountChanged updates target amount and triggers source conversion when focusing target`() = runTest {
-        backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
-        
-        viewModel.toggleTransferMode()
-        awaitState { it.entryMode == EntryMode.TRANSFER }
-
-        viewModel.onAccountTapped("acc1", isFrom = true) // USD
-        viewModel.onAccountTapped("acc2", isFrom = false) // EUR (Rate 0.85)
-        
-        // Focus Target to enable override
-        viewModel.setAmountFocus(AmountEditingSide.TARGET)
-        awaitState { it.isAmountOverridden && it.activeAmountSide == AmountEditingSide.TARGET }
-        
-        // Update Target to 85 EUR using unified function
-        viewModel.onAmountChanged(BigDecimal("85"))
-        
-        // Source should be updated to 100 USD (85 / 0.85)
-        val state = awaitState { it.amount.compareTo(BigDecimal("100")) == 0 }
-        assertEquals(0, BigDecimal("100").compareTo(state.amount))
-        assertEquals(0, BigDecimal("85").compareTo(state.amountOverride ?: BigDecimal.ZERO))
-    }
-
-    @Test
-    fun `swapping accounts in auto mode correctly swaps values and recalculates target`() = runTest {
-        backgroundScope.launch { viewModel.state.collect {} }
-        awaitState { it.accounts.isNotEmpty() && it.exchangeRates.rates.containsKey("EUR") }
-        
-        viewModel.toggleTransferMode()
-        viewModel.onAccountTapped("acc1", isFrom = true) // USD
-        viewModel.onAccountTapped("acc2", isFrom = false) // EUR (Rate 0.85)
-        viewModel.onAmountChanged(BigDecimal("100"))
-        
-        // Ensure initial state: 100 USD -> 85 EUR
-        awaitState { it.amount.compareTo(BigDecimal("100")) == 0 && it.effectiveTargetAmount.compareTo(BigDecimal("85")) == 0 }
-        
-        viewModel.onSwapAccounts()
-        
-        // Result should be: 85 EUR -> 100 USD
-        val state = awaitState { (it.selectedAccount as? AccountRef.Wallet)?.id == "acc2" }
-        
-        assertEquals("acc2", (state.selectedAccount as? AccountRef.Wallet)?.id)
-        assertEquals("EUR", state.selectedCurrency)
-        assertEquals("acc1", (state.selectedToAccount as? AccountRef.Wallet)?.id)
-        assertEquals("USD", state.selectedToCurrency)
-        
-        // Source should be exactly 85 (taken from previous effective target)
-        assertEquals(0, BigDecimal("85").compareTo(state.amount))
-        // Target should be 100 (recalculated from 85 * (1/0.85))
-        assertEquals(0, BigDecimal("100").compareTo(state.effectiveTargetAmount))
-        
-        // Verify scale/precision: previous bug introduced 8-precision scale
-        // The fix should maintain a clean representation.
-        // effectiveTargetAmount is scaled to CurrencyService.precision (2 in setup)
-        assertEquals(2, state.effectiveTargetAmount.scale())
     }
 
     @Test

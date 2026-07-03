@@ -44,7 +44,81 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.SyncDisabled
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.VerticalDivider
 import androidx.core.graphics.toColorInt
+
+/**
+ * Pill component for displaying and toggling exchange rate mode.
+ */
+@Composable
+fun ExchangeRatePill(
+    rate: BigDecimal,
+    isFixed: Boolean,
+    onClick: () -> Unit,
+    onToggleMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+        color = AppColors.primary.copy(alpha = 0.08f),
+        border = BorderStroke(
+            (AeonTheme.dimensions.spacingXs / 8),
+            AppColors.primary.copy(alpha = 0.15f)
+        ),
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.height(IntrinsicSize.Min)
+        ) {
+            // Main Rate Display (Left side)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+                modifier = Modifier
+                    .clickable { onClick() }
+                    .padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingSm)
+            ) {
+                Icon(
+                    Icons.Rounded.CurrencyExchange,
+                    contentDescription = "Edit Exchange Rate",
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                    tint = AppColors.primary
+                )
+                Text(
+                    text = "1:${rate.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}",
+                    style = AppTextStyles.chipLabel,
+                    color = AppColors.primary
+                )
+            }
+
+            VerticalDivider(
+                modifier = Modifier.padding(vertical = 4.dp),
+                thickness = (AeonTheme.dimensions.spacingXs / 8),
+                color = AppColors.primary.copy(alpha = 0.2f)
+            )
+
+            // Mode Toggle (Right side)
+            Box(
+                modifier = Modifier
+                    .clickable { onToggleMode() }
+                    .padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingSm),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isFixed) Icons.Rounded.SyncDisabled else Icons.Rounded.Sync,
+                    contentDescription = if (isFixed) "Manual Mode" else "Auto Mode",
+                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                    tint = if (isFixed) AppColors.primary else AppColors.primary.copy(alpha = 0.6f)
+                )
+            }
+        }
+    }
+}
 
 /**
  * Data class representing amount-related state to reduce parameter bloating.
@@ -76,7 +150,9 @@ fun AeonImpactHeaderCard(
     showTypeSelector: Boolean = true,
     targetAccountId: String? = null,
     transferRate: BigDecimal = BigDecimal.ONE,
+    isRateFixed: Boolean = false,
     onExchangeRateClick: () -> Unit = {},
+    onToggleRateMode: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     onSwapClick: (() -> Unit)? = null,
@@ -173,7 +249,9 @@ fun <T> AeonImpactHeaderCard(
     isTransfer: Boolean = false,
     targetAccountId: String? = null,
     transferRate: BigDecimal = BigDecimal.ONE,
+    isRateFixed: Boolean = false,
     onExchangeRateClick: () -> Unit = {},
+    onToggleRateMode: () -> Unit = {},
     isSplitMode: Boolean = false,
     onSplitClick: (() -> Unit)? = null,
     onSwapClick: (() -> Unit)? = null,
@@ -243,38 +321,12 @@ fun <T> AeonImpactHeaderCard(
             if (showRateChip) {
                 Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
 
-                Surface(
+                ExchangeRatePill(
+                    rate = transferRate,
+                    isFixed = isRateFixed,
                     onClick = onExchangeRateClick,
-                    shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-                    color = AppColors.primary.copy(alpha = 0.08f),
-                    border = BorderStroke(
-                        (AeonTheme.dimensions.spacingXs / 8),
-                        AppColors.primary.copy(alpha = 0.15f)
-                    )
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-                        modifier = Modifier.padding(
-                            horizontal = AeonTheme.dimensions.spacingMd,
-                            vertical = AeonTheme.dimensions.spacingSm
-                        )
-                    ) {
-                        Icon(
-                            Icons.Rounded.CurrencyExchange,
-                            contentDescription = "Edit Exchange Rate",
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = AppColors.primary
-                        )
-                        Text(
-                            text = "1:${
-                                transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()
-                            }",
-                            style = AppTextStyles.chipLabel,
-                            color = AppColors.primary
-                        )
-                    }
-                }
+                    onToggleMode = onToggleRateMode
+                )
             }
 
             if (isTransfer && bothWalletAccounts && target != null) {

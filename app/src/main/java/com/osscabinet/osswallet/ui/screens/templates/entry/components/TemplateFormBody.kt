@@ -93,7 +93,7 @@ fun TemplateFormBody(
                     value = state.amount,
                     currency = state.currency,
                     onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
-                    onCurrencyClick = { onEvent(TemplateEntryEvent.SetCurrency(it)) },
+                    onCurrencyClick = { onEvent(TemplateEntryEvent.ShowCurrencySheet(true)) },
                     label = "SOURCE AMOUNT",
                     supportedCurrencies = sourceCurrencies
                 ),
@@ -101,7 +101,7 @@ fun TemplateFormBody(
                     value = state.targetAmount ?: "",
                     currency = state.targetCurrency ?: state.currency,
                     onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
-                    onCurrencyClick = { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) },
+                    onCurrencyClick = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
                     label = "DESTINATION AMOUNT",
                     supportedCurrencies = targetCurrencies
                 ),
@@ -113,7 +113,9 @@ fun TemplateFormBody(
                     isError = state.errors.contains(EntryField.NAME)
                 ),
                 targetAccountId = state.targetAccountId,
-                transferRate = state.transferRate,
+                transferRate = state.exchangeRate,
+                isRateFixed = state.isRateFixed,
+                onToggleRateMode = { onEvent(TemplateEntryEvent.ToggleRateMode) },
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
                 onSwapClick = if (state.isTransfer &&
                     (state.accountId != null || state.targetAccountId != null))

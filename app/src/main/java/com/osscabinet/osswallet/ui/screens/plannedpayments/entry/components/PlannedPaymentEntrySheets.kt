@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLinkedTransactionSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonLocationSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonPaymentMethodSelection
@@ -22,6 +23,8 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryEvent
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryState
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 
 @Composable
 fun PlannedPaymentEntrySheets(
@@ -62,6 +65,24 @@ fun PlannedPaymentEntrySheets(
                 onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowEndDatePicker(false)) }
+        )
+    }
+
+    if (state.showCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids -> ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) } },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false)) },
+            currencies = state.fullProviderCurrencies.ifEmpty { state.shortlistedCurrencies }
+        )
+    }
+
+    if (state.showTargetCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.targetCurrency),
+            onSelectionChange = { ids -> ids.firstOrNull()?.let { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) } },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false)) },
+            currencies = state.fullProviderCurrencies.ifEmpty { state.shortlistedCurrencies }
         )
     }
 
@@ -152,7 +173,7 @@ fun PlannedPaymentEntrySheets(
             currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
             onAmountChanged = { amount ->
                 if (state.activeAmountSide == AmountEditingSide.SOURCE) {
-                    onEvent(PlannedPaymentEntryEvent.SetAmountText(amount))
+                    onEvent(PlannedPaymentEntryEvent.SetAmount(amount))
                 } else {
                     onEvent(PlannedPaymentEntryEvent.SetTargetAmount(amount))
                 }
@@ -175,9 +196,9 @@ fun PlannedPaymentEntrySheets(
 
     if (state.showExchangeRateDialog) {
         ExchangeRateDialog(
-            initialRate = state.transferRate,
+            initialRate = state.exchangeRate,
             onConfirm = { rate ->
-                onEvent(PlannedPaymentEntryEvent.SetTransferRate(rate))
+                onEvent(PlannedPaymentEntryEvent.SetExchangeRate(rate))
                 onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false)) }

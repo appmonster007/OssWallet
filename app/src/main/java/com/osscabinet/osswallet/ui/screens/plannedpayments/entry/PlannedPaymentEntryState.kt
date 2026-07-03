@@ -27,7 +27,8 @@ data class PlannedPaymentEntryState(
     val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val entryMode: EntryMode = EntryMode.EXPENSE,
-    val transferRate: BigDecimal = BigDecimal.ONE,
+    val exchangeRate: BigDecimal = BigDecimal.ONE,
+    val isRateFixed: Boolean = false,
     val recurrenceType: RecurrenceType = RecurrenceType.MONTHLY,
     val recurrenceInterval: Int = 1,
     val dayOfWeek: Int? = null,
@@ -85,7 +86,9 @@ data class PlannedPaymentEntryState(
     val currentProfileId: Int = 1,
     val existingPayment: PlannedPayment? = null,
     val displayLinkedTxs: List<Transaction> = emptyList(),
-    val shortlistedCurrencies: List<String> = emptyList()
+    val shortlistedCurrencies: List<String> = emptyList(),
+    val fullProviderCurrencies: List<String> = emptyList(),
+    val exchangeRates: Map<String, BigDecimal> = emptyMap()
 ) {
     // Legacy mapping
     val amount: String get() = source.amount

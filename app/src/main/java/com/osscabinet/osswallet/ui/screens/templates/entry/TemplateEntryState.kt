@@ -27,7 +27,8 @@ data class TemplateEntryState(
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val categoryName: String = "Unknown",
-    val transferRate: BigDecimal = BigDecimal.ONE,
+    val exchangeRate: BigDecimal = BigDecimal.ONE,
+    val isRateFixed: Boolean = false,
     val note: String = "",
     val payee: String = "",
     val location: String = "",
@@ -62,6 +63,8 @@ data class TemplateEntryState(
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList(),
+    val fullProviderCurrencies: List<String> = emptyList(),
+    val exchangeRates: Map<String, BigDecimal> = emptyMap(),
 
     // Metadata
     val templateId: Long? = null,

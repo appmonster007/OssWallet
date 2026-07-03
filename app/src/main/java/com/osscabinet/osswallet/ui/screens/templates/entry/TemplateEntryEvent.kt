@@ -19,7 +19,7 @@ sealed class TemplateEntryEvent {
     data class SetTargetAccount(val accountId: String?) : TemplateEntryEvent()
     data class SetCurrency(val currency: String) : TemplateEntryEvent()
     data class SetTargetCurrency(val currency: String) : TemplateEntryEvent()
-    data class SetTransferRate(val rate: BigDecimal) : TemplateEntryEvent()
+    data class SetExchangeRate(val rate: BigDecimal) : TemplateEntryEvent()
     data class SetNote(val note: String) : TemplateEntryEvent()
     data class SetPayee(val payee: String) : TemplateEntryEvent()
     data class SetLocation(val gpsLocation: String?, val location: String? = null) :
@@ -54,6 +54,7 @@ sealed class TemplateEntryEvent {
     data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 
     data object SwapAccounts : TemplateEntryEvent()
+    data object ToggleRateMode : TemplateEntryEvent()
 
     // Navigation
     data object TriggerNavigation : TemplateEntryEvent()

@@ -13,14 +13,14 @@ import java.math.BigDecimal
 
 sealed class PlannedPaymentEntryEvent {
     data class SetName(val name: String) : PlannedPaymentEntryEvent()
-    data class SetAmountText(val amount: String) : PlannedPaymentEntryEvent()
+    data class SetAmount(val amount: String) : PlannedPaymentEntryEvent()
     data class SetTargetAmount(val amount: String) : PlannedPaymentEntryEvent()
     data class SetCurrency(val currency: String) : PlannedPaymentEntryEvent()
     data class SetTransactionType(val type: EntryMode) : PlannedPaymentEntryEvent()
     data class SetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetAccountId(val id: String?) : PlannedPaymentEntryEvent()
     data class SetTargetCurrency(val currency: String?) : PlannedPaymentEntryEvent()
-    data class SetTransferRate(val rate: BigDecimal) : PlannedPaymentEntryEvent()
+    data class SetExchangeRate(val rate: BigDecimal) : PlannedPaymentEntryEvent()
     data class SetRecurrence(
         val startDate: Long,
         val type: RecurrenceType,
@@ -72,6 +72,7 @@ sealed class PlannedPaymentEntryEvent {
     data class ShowDeleteDialog(val show: Boolean) : PlannedPaymentEntryEvent()
 
     data object SwapAccounts : PlannedPaymentEntryEvent()
+    data object ToggleRateMode : PlannedPaymentEntryEvent()
 
     data object TriggerNavigation : PlannedPaymentEntryEvent()
 }

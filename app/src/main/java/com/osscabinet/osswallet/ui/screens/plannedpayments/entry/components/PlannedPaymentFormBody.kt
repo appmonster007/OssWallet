@@ -98,7 +98,7 @@ fun PlannedPaymentFormBody(
                     value = state.amount,
                     currency = state.currency,
                     onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
-                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetCurrency(it)) },
+                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(true)) },
                     label = "SOURCE AMOUNT",
                     supportedCurrencies = sourceCurrencies,
                     isError = state.hasError(EntryField.AMOUNT)
@@ -107,7 +107,7 @@ fun PlannedPaymentFormBody(
                     value = state.targetAmount ?: "",
                     currency = state.targetCurrency ?: state.currency,
                     onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
-                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(it)) },
+                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
                     label = "DESTINATION AMOUNT",
                     supportedCurrencies = targetCurrencies,
                     isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
@@ -121,7 +121,9 @@ fun PlannedPaymentFormBody(
                 ),
                 showAmount = true,
                 targetAccountId = state.targetAccountId,
-                transferRate = state.transferRate,
+                transferRate = state.exchangeRate,
+                isRateFixed = state.isRateFixed,
+                onToggleRateMode = { onEvent(PlannedPaymentEntryEvent.ToggleRateMode) },
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
                 onSwapClick = if (state.isTransfer &&
                     (state.selectedAccountId != null || state.targetAccountId != null))

@@ -8,6 +8,7 @@ import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.ui.components.entry.AeonAccountSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCurrencySelection
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
@@ -18,6 +19,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonTagSelectionDialog
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 
 @Composable
 fun TemplateEntrySheets(
@@ -36,6 +38,24 @@ fun TemplateEntrySheets(
                 }
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowNumpad(false)) }
+        )
+    }
+
+    if (state.showCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.currency),
+            onSelectionChange = { ids -> ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetCurrency(it)) } },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowCurrencySheet(false)) },
+            currencies = state.fullProviderCurrencies.ifEmpty { state.shortlistedCurrencies }
+        )
+    }
+
+    if (state.showTargetCurrencySheet) {
+        AeonCurrencySelection(
+            selectedCurrencies = setOf(state.targetCurrency),
+            onSelectionChange = { ids -> ids.firstOrNull()?.let { onEvent(TemplateEntryEvent.SetTargetCurrency(it)) } },
+            onDismiss = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false)) },
+            currencies = state.fullProviderCurrencies.ifEmpty { state.shortlistedCurrencies }
         )
     }
 
@@ -111,9 +131,9 @@ fun TemplateEntrySheets(
 
     if (state.showExchangeRateDialog) {
         ExchangeRateDialog(
-            initialRate = state.transferRate,
+            initialRate = state.exchangeRate,
             onConfirm = {
-                onEvent(TemplateEntryEvent.SetTransferRate(it))
+                onEvent(TemplateEntryEvent.SetExchangeRate(it))
                 onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false))
             },
             onDismiss = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false)) }

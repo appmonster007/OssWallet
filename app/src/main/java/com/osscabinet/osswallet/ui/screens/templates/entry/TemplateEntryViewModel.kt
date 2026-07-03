@@ -18,7 +18,13 @@ import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
+import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -63,6 +69,11 @@ class TemplateEntryViewModel @Inject constructor(
                 _state.update { it.copy(shortlistedCurrencies = currencies) }
             }
         }
+        viewModelScope.launch {
+            computationRepository.exchangeRates.collect { rates ->
+                _state.update { it.copy(exchangeRates = rates) }
+            }
+        }
     }
 
     private fun loadInitialData() {
@@ -89,7 +100,8 @@ class TemplateEntryViewModel @Inject constructor(
                             allTags = tags,
                             uniquePayees = payees,
                             uniqueNotes = notes,
-                            source = defaultSource
+                            source = defaultSource,
+                            fullProviderCurrencies = CurrencyService.getAllCurrencies()
                         )
                     }
                 }
@@ -191,7 +203,7 @@ class TemplateEntryViewModel @Inject constructor(
                             currency = targetCurr
                         ),
                         entryMode = template.entryMode,
-                        transferRate = template.transferRate,
+                        exchangeRate = template.transferRate,
                         note = template.note ?: "",
                         payee = template.payee ?: "",
                         location = template.location ?: "",
@@ -231,25 +243,47 @@ class TemplateEntryViewModel @Inject constructor(
                     }
                 } else {
                     _state.update { state ->
-                        val (newSrc, newDst) = TransactionEntryService.updateAmounts(
-                            source = state.source.copy(amount = event.amount),
-                            destination = state.destination,
-                            rate = state.transferRate
+                        if (!state.isTransfer) {
+                            return@update state.copy(source = state.source.copy(amount = event.amount))
+                        }
+
+                        val sync = TransactionEntryService.syncTransferState(
+                            sourceAmount = inputAmount,
+                            targetAmount = state.destination.amountValue,
+                            sourceCurrency = state.currency,
+                            targetCurrency = state.targetCurrency,
+                            isFixed = state.isRateFixed,
+                            activeSide = AmountEditingSide.SOURCE,
+                            exchangeRates = ExchangeRateSnapshot(state.currency, state.exchangeRates)
                         )
-                        state.copy(source = newSrc, destination = newDst)
+
+                        state.copy(
+                            source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+                            destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+                            exchangeRate = sync.impliedRate
+                        )
                     }
                 }
             }
 
             is TemplateEntryEvent.SetTargetAmount -> {
+                val inputAmount = event.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 _state.update { state ->
-                    val (newSrc, newDst) = TransactionEntryService.updateAmounts(
-                        source = state.source,
-                        destination = state.destination.copy(amount = event.amount),
-                        rate = state.transferRate,
-                        updateSource = true
+                    val sync = TransactionEntryService.syncTransferState(
+                        sourceAmount = state.source.amountValue,
+                        targetAmount = inputAmount,
+                        sourceCurrency = state.currency,
+                        targetCurrency = state.targetCurrency,
+                        isFixed = state.isRateFixed,
+                        activeSide = AmountEditingSide.TARGET,
+                        exchangeRates = ExchangeRateSnapshot(state.currency, state.exchangeRates)
                     )
-                    state.copy(source = newSrc, destination = newDst)
+
+                    state.copy(
+                        source = state.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
+                        destination = state.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+                        exchangeRate = sync.impliedRate
+                    )
                 }
             }
 
@@ -287,10 +321,25 @@ class TemplateEntryViewModel @Inject constructor(
                 val newRef = AccountRef.fromStored(event.accountId)
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
+                    val newCurrency = TransactionEntryService.resolveSideCurrency(
+                        account = newRef,
+                        accountCurrency = account?.currencyCode,
+                        currentCurrency = state.currency,
+                        baseCurrency = state.accounts.firstOrNull()?.currencyCode ?: "USD"
+                    )
+
+                    // Enforcement: if side is Outside, it must match the other side
+                    val finalTargetCurrency = if (state.isTransfer && !newRef.isOutside && state.destination.account.isOutside) {
+                        newCurrency
+                    } else state.targetCurrency
+
                     state.copy(
                         source = state.source.copy(
                             account = newRef,
-                            currency = account?.currencyCode ?: state.currency
+                            currency = newCurrency
+                        ),
+                        destination = state.destination.copy(
+                            currency = finalTargetCurrency
                         )
                     )
                 }
@@ -301,10 +350,25 @@ class TemplateEntryViewModel @Inject constructor(
                 val newRef = AccountRef.fromStored(event.accountId)
                 _state.update { state ->
                     val account = state.accounts.find { it.id == event.accountId }
+                    val newCurrency = TransactionEntryService.resolveSideCurrency(
+                        account = newRef,
+                        accountCurrency = account?.currencyCode,
+                        currentCurrency = state.targetCurrency,
+                        baseCurrency = state.accounts.firstOrNull()?.currencyCode ?: "USD"
+                    )
+
+                    // Enforcement: if side is Outside, it must match the other side
+                    val finalSourceCurrency = if (state.isTransfer && !newRef.isOutside && state.source.account.isOutside) {
+                        newCurrency
+                    } else state.currency
+
                     state.copy(
                         destination = state.destination.copy(
                             account = newRef,
-                            currency = account?.currencyCode ?: state.targetCurrency ?: ""
+                            currency = newCurrency
+                        ),
+                        source = state.source.copy(
+                            currency = finalSourceCurrency
                         )
                     )
                 }
@@ -312,22 +376,49 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.SetCurrency -> {
-                _state.update { it.copy(source = it.source.copy(currency = event.currency)) }
+                _state.update { state ->
+                    val nextTarget = if (state.isTransfer && state.destination.account.isOutside) {
+                        event.currency
+                    } else state.targetCurrency
+
+                    state.copy(
+                        source = state.source.copy(currency = event.currency),
+                        destination = state.destination.copy(currency = nextTarget)
+                    )
+                }
                 recalculateExchangeRate()
             }
 
             is TemplateEntryEvent.SetTargetCurrency -> {
-                _state.update { it.copy(destination = it.destination.copy(currency = event.currency)) }
+                _state.update { state ->
+                    val nextSource = if (state.isTransfer && state.source.account.isOutside) {
+                        event.currency
+                    } else state.currency
+
+                    state.copy(
+                        destination = state.destination.copy(currency = event.currency),
+                        source = state.source.copy(currency = nextSource)
+                    )
+                }
                 recalculateExchangeRate()
             }
 
-            is TemplateEntryEvent.SetTransferRate -> _state.update {
+            is TemplateEntryEvent.SetExchangeRate -> _state.update {
+                val sync = TransactionEntryService.syncTransferState(
+                    sourceAmount = it.source.amountValue,
+                    targetAmount = TransactionEntryService.calculateTargetAmountValue(it.source.amountValue, event.rate),
+                    sourceCurrency = it.currency,
+                    targetCurrency = it.targetCurrency,
+                    isFixed = true,
+                    activeSide = AmountEditingSide.SOURCE,
+                    exchangeRates = ExchangeRateSnapshot(it.currency, it.exchangeRates)
+                )
+
                 it.copy(
-                    transferRate = event.rate,
+                    isRateFixed = true,
+                    exchangeRate = event.rate,
                     destination = it.destination.copy(
-                        amount = it.amountValue.multiply(event.rate)
-                            .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                            .toPlainString()
+                        amount = sync.targetAmount.stripTrailingZeros().toPlainString()
                     )
                 )
             }
@@ -438,18 +529,31 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.ShowDeleteDialog -> _state.update { it.copy(showDeleteDialog = event.show) }
 
-            is TemplateEntryEvent.SwapAccounts -> _state.update { state ->
-                if (!state.isTransfer) return@update state
-                val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
-                    source = state.source,
-                    destination = state.destination,
-                    transferRate = state.transferRate
-                )
-                state.copy(
-                    source = newSrc,
-                    destination = newDst,
-                    transferRate = newRate
-                )
+            is TemplateEntryEvent.SwapAccounts -> {
+                _state.update { state ->
+                    if (!state.isTransfer) return@update state
+                    val (newSrc, newDst, newRate) = TransactionEntryService.swapAccounts(
+                        source = state.source,
+                        destination = state.destination,
+                        transferRate = state.exchangeRate
+                    )
+                    state.copy(
+                        source = newSrc,
+                        destination = newDst,
+                        exchangeRate = newRate
+                    )
+                }
+                recalculateExchangeRate()
+            }
+
+            is TemplateEntryEvent.ToggleRateMode -> {
+                _state.update { s ->
+                    val nextFixed = !s.isRateFixed
+                    s.copy(isRateFixed = nextFixed)
+                }
+                if (!_state.value.isRateFixed) {
+                    recalculateExchangeRate()
+                }
             }
 
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
@@ -461,23 +565,19 @@ class TemplateEntryViewModel @Inject constructor(
             val currentState = _state.value
             if (currentState.entryMode == EntryMode.TRANSFER &&
                 currentState.currency.isNotEmpty() &&
-                currentState.targetCurrency?.isNotEmpty() == true
+                currentState.targetCurrency.isNotEmpty()
             ) {
-                val rates = computationRepository.exchangeRates.first()
-                val rate =
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                        amount = BigDecimal.ONE,
-                        fromCurrency = currentState.currency,
-                        toCurrency = currentState.targetCurrency ?: currentState.currency,
-                        exchangeRates = rates
-                    )
+                val rates = computationRepository.exchangeRatesSnapshot.first()
+                val rate = TransactionEntryService.getMarketRate(
+                    fromCurrency = currentState.currency,
+                    toCurrency = currentState.targetCurrency,
+                    exchangeRates = rates
+                )
                 _state.update {
                     it.copy(
-                        transferRate = rate,
+                        exchangeRate = rate,
                         destination = it.destination.copy(
-                            amount = it.amountValue.multiply(rate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-                                .toPlainString()
+                            amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
                         )
                     )
                 }
@@ -513,7 +613,7 @@ class TemplateEntryViewModel @Inject constructor(
                 accountId = s.accountId,
                 targetAccountId = s.targetAccountId,
                 targetCurrency = s.targetCurrency,
-                transferRate = s.transferRate,
+                transferRate = s.exchangeRate,
                 note = s.note.ifBlank { null },
                 payee = s.payee.ifBlank { null },
                 location = s.location.ifBlank { null },

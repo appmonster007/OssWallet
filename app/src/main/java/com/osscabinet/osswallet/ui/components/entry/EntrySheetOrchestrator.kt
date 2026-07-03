@@ -125,7 +125,7 @@ fun EntrySheetOrchestrator(
     if (sheetState.showExchangeRate) {
         ExchangeRateDialog(
             initialRate = currentExchangeRate,
-            onConfirm = { onExchangeRateChange(it) },
+            onConfirm = { onExchangeRateChange(it); onDismissSheet(null) },
             onDismiss = { onDismissSheet(null) }
         )
     }

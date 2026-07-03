@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -81,8 +82,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                transactionUseCases.observeEntryCoreData(profileId)
-            }.collect { data ->
+                transactionUseCases.observeEntryCoreData(profileId).map { profileId to it }
+            }.collect { (profileId, data) ->
                 _state.update { current ->
                     val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && data.accounts.isNotEmpty()) {
                         current.source.copy(
@@ -97,7 +98,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         availableTags = data.tags,
                         uniquePayees = data.payees,
                         uniqueNotes = data.notes,
-                        currentProfileId = current.currentProfileId,
+                        currentProfileId = profileId,
                         source = defaultSource,
                         fullProviderCurrencies = CurrencyService.getAllCurrencies()
                     )
@@ -359,7 +360,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetAccountId -> {
@@ -373,7 +374,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     )
                     s.applyUpdate(result)
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetTargetCurrency -> {
@@ -387,7 +388,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         source = state.source.copy(currency = nextSource ?: state.currency)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetExchangeRate -> _state.update {
@@ -421,7 +422,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         destination = state.destination.copy(currency = nextTarget)
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.SetRecurrence -> _state.update {
@@ -637,7 +638,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         exchangeRate = newRate
                     )
                 }
-                recalculateExchangeRate()
+                if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
             is PlannedPaymentEntryEvent.ToggleRateMode -> {

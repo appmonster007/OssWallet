@@ -36,6 +36,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
 import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
 import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
+import com.osscabinet.ossWallet.ui.components.entry.EntrySheetOrchestrator
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryEvent
 import com.osscabinet.ossWallet.ui.screens.templates.entry.TemplateEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -215,7 +216,83 @@ fun TemplateFormBody(
             )
             Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
         }
+
+        TemplateSheetOrchestrator(
+            state = state,
+            onSearch = onSearch,
+            onEvent = onEvent
+        )
     }
+}
+
+@Composable
+private fun TemplateSheetOrchestrator(
+    state: TemplateEntryState,
+    onSearch: (String) -> kotlinx.coroutines.flow.Flow<List<com.osscabinet.ossWallet.domain.model.Transaction>>,
+    onEvent: (TemplateEntryEvent) -> Unit
+) {
+    EntrySheetOrchestrator(
+        sheetState = state.sheetState,
+        accounts = state.accounts,
+        categories = state.categories,
+        allTags = state.allTags,
+        selectedTags = state.tags,
+        currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
+        currentExchangeRate = state.exchangeRate,
+        shortlistedCurrencies = state.shortlistedCurrencies,
+        fullCurrencies = state.fullProviderCurrencies,
+        isTransfer = state.isTransfer,
+        onAmountChange = { amt ->
+            if (state.activeAmountSide == AmountEditingSide.SOURCE) {
+                onEvent(TemplateEntryEvent.SetAmount(amt))
+            } else {
+                onEvent(TemplateEntryEvent.SetTargetAmount(amt))
+            }
+        },
+        onAccountChange = { accId -> onEvent(TemplateEntryEvent.SetAccount(accId)) },
+        onTargetAccountChange = { accId -> onEvent(TemplateEntryEvent.SetTargetAccount(accId)) },
+        onCategoryChange = { catId -> onEvent(TemplateEntryEvent.SetCategory(catId)) },
+        onCurrencyChange = { curr -> onEvent(TemplateEntryEvent.SetCurrency(curr)) },
+        onTargetCurrencyChange = { curr -> onEvent(TemplateEntryEvent.SetTargetCurrency(curr)) },
+        onExchangeRateChange = { rate -> onEvent(TemplateEntryEvent.SetExchangeRate(rate)) },
+        onTagsChange = { tags -> onEvent(TemplateEntryEvent.SetTags(tags)) },
+        onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
+        onDismissSheet = { field ->
+            when (field) {
+                EntryField.AMOUNT -> onEvent(TemplateEntryEvent.ShowNumpad(false))
+                EntryField.ACCOUNT -> onEvent(TemplateEntryEvent.ShowAccountSheet(false))
+                EntryField.TARGET_ACCOUNT -> onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false))
+                EntryField.CATEGORY -> onEvent(TemplateEntryEvent.ShowCategorySheet(false))
+                else -> {
+                    onEvent(TemplateEntryEvent.ShowTagSheet(false))
+                    onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false))
+                    onEvent(TemplateEntryEvent.ShowStatusSheet(false))
+                    onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(false))
+                    onEvent(TemplateEntryEvent.ShowLocationSheet(false))
+                    onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false))
+                    onEvent(TemplateEntryEvent.ShowCurrencySheet(false))
+                    onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false))
+                    onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(false))
+                }
+            }
+        },
+        onSearchTransactions = onSearch,
+        linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
+        onLinkedTransactionsChanged = { ids -> onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList())) },
+        selectedAccountId = state.accountId,
+        selectedTargetAccountId = state.targetAccountId,
+        selectedCategoryId = state.categoryId,
+        selectedCurrency = state.currency,
+        selectedTargetCurrency = state.targetCurrency,
+        warrantyDateMillis = state.warrantyExpirationMillis,
+        onWarrantyDateChange = { date -> onEvent(TemplateEntryEvent.SetWarrantyExpiration(date)) },
+        gpsLocation = state.gpsLocation,
+        onLocationChange = { gps, loc -> onEvent(TemplateEntryEvent.SetLocation(gps, loc)) },
+        paymentMethod = state.paymentMethod,
+        onPaymentMethodChange = { method -> onEvent(TemplateEntryEvent.SetPaymentMethod(method)) },
+        transactionStatus = state.transactionStatus,
+        onTransactionStatusChange = { status -> onEvent(TemplateEntryEvent.SetTransactionStatus(status)) }
+    )
 }
 
 @Preview(showBackground = true)

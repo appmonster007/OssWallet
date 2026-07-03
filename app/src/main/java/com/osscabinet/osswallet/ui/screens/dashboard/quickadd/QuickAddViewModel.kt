@@ -442,27 +442,53 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Map to unified logic structure.
+     */
+    private fun toUpdateResult(s: QuickAddState) = TransactionEntryService.StateUpdateResult(
+        source = TransactionSide(
+            account = s.selectedAccount,
+            amount = s.amount.stripTrailingZeros().toPlainString(),
+            currency = s.selectedCurrency,
+            categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+        ),
+        destination = TransactionSide(
+            account = s.selectedToAccount,
+            amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+            currency = s.selectedToCurrency,
+            categoryId = Category.SYSTEM_TRANSFER
+        ),
+        entryMode = s.entryMode,
+        exchangeRate = if (s.entryMode == EntryMode.TRANSFER) {
+            TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+        } else BigDecimal.ONE,
+        isRateFixed = s.isAmountOverridden
+    )
+
+    /**
+     * Update from unified logic result.
+     */
+    private fun applyUpdate(s: QuickAddState, result: TransactionEntryService.StateUpdateResult) = s.copy(
+        selectedAccount = result.source.account,
+        selectedToAccount = result.destination.account,
+        selectedCurrency = result.source.currency,
+        selectedToCurrency = result.destination.currency,
+        amount = result.source.amountValue,
+        amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+        selectedCategoryId = result.source.categoryId,
+        entryMode = result.entryMode,
+        isAmountOverridden = result.isRateFixed
+    )
+
     fun onAmountChanged(amount: BigDecimal) {
         _uiState.update { s ->
-            if (s.entryMode != EntryMode.TRANSFER) {
-                return@update s.copy(amount = amount)
-            }
-
-            val sync = TransactionEntryService.syncTransferState(
-                sourceAmount = if (s.activeAmountSide == AmountEditingSide.SOURCE) amount else s.amount,
-                targetAmount = if (s.activeAmountSide == AmountEditingSide.TARGET) amount else (s.amountOverride ?: BigDecimal.ZERO),
-                sourceCurrency = s.selectedCurrency,
-                targetCurrency = s.selectedToCurrency,
-                isFixed = s.isAmountOverridden,
-                activeSide = s.activeAmountSide,
-                exchangeRates = s.exchangeRates
+            val result = TransactionEntryService.handleAmountChange(
+                amountStr = amount.stripTrailingZeros().toPlainString(),
+                currentState = toUpdateResult(s),
+                exchangeRates = s.exchangeRates,
+                isSplitMode = false
             )
-
-            s.copy(
-                amount = sync.sourceAmount,
-                amountOverride = if (s.isAmountOverridden || s.activeAmountSide == AmountEditingSide.TARGET) sync.targetAmount else null,
-                isAmountOverridden = s.isAmountOverridden || s.activeAmountSide == AmountEditingSide.TARGET
-            )
+            applyUpdate(s, result)
         }
     }
 
@@ -503,21 +529,32 @@ class QuickAddViewModel @Inject constructor(
         _uiState.update { s ->
             if (s.entryMode != EntryMode.TRANSFER) return@update s
             
-            val oldSourceAccount = s.selectedAccount
-            val oldTargetAccount = s.selectedToAccount
-            val oldSourceCurrency = s.selectedCurrency
-            val oldTargetCurrency = s.selectedToCurrency
-            val oldSourceAmount = s.amount
-            val oldTargetAmount = s.effectiveTargetAmount
+            val (newSrc, newDst, _) = TransactionEntryService.swapAccounts(
+                source = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                destination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                transferRate = if (s.amount.signum() != 0 && s.amountOverride != null) {
+                    s.amountOverride.divide(s.amount, 8, java.math.RoundingMode.HALF_UP)
+                } else TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+            )
 
             applyFocusGuard(
                 s.copy(
-                    selectedAccount = oldTargetAccount,
-                    selectedToAccount = oldSourceAccount,
-                    selectedCurrency = oldTargetCurrency,
-                    selectedToCurrency = oldSourceCurrency,
-                    amount = oldTargetAmount,
-                    amountOverride = if (s.isAmountOverridden) oldSourceAmount else null
+                    selectedAccount = newSrc.account,
+                    selectedToAccount = newDst.account,
+                    selectedCurrency = newSrc.currency,
+                    selectedToCurrency = newDst.currency,
+                    amount = newSrc.amountValue,
+                    amountOverride = if (newDst.amount.isBlank()) null else newDst.amountValue
                 )
             )
         }
@@ -530,57 +567,18 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
-        val allAccounts = state.value.accounts
-        val account = allAccounts.find { it.id == accountId }
-        val newRef = if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(accountId)
         _uiState.update { s ->
-            val next = if (isFrom) {
-                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
-                    s.selectedToCurrency
-                } else s.selectedCurrency
-
-                val newCurrency = TransactionEntryService.resolveSideCurrency(
-                    account = newRef,
-                    accountCurrency = account?.currencyCode,
-                    currentCurrency = fallbackCurrency,
-                    baseCurrency = s.baseCurrency
-                )
-                
-                // Enforce: if NEW source is a Wallet and target is Outside, target MUST match new source currency
-                val finalToCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
-                    newCurrency
-                } else s.selectedToCurrency
-
-                s.copy(
-                    selectedAccount = newRef,
-                    selectedCurrency = newCurrency,
-                    selectedToCurrency = finalToCurrency,
-                    currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2,
-                    activeAccountSide = if (s.entryMode == EntryMode.TRANSFER) AmountEditingSide.TARGET else s.activeAccountSide
-                )
-            } else {
-                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
-                    s.selectedCurrency
-                } else s.selectedToCurrency
-
-                val newCurrency = TransactionEntryService.resolveSideCurrency(
-                    account = newRef,
-                    accountCurrency = account?.currencyCode,
-                    currentCurrency = fallbackCurrency,
-                    baseCurrency = s.baseCurrency
-                )
-
-                // Enforce: if NEW target is a Wallet and source is Outside, source MUST match new target currency
-                val finalFromCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
-                    newCurrency
-                } else s.selectedCurrency
-
-                s.copy(
-                    selectedToAccount = newRef,
-                    selectedToCurrency = newCurrency,
-                    selectedCurrency = finalFromCurrency
-                )
-            }
+            val result = TransactionEntryService.handleAccountSelection(
+                accountId = accountId,
+                isSource = isFrom,
+                currentState = toUpdateResult(s),
+                accounts = s.accounts,
+                baseCurrency = s.baseCurrency
+            )
+            val next = applyUpdate(s, result).copy(
+                currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2,
+                activeAccountSide = if (s.entryMode == EntryMode.TRANSFER && isFrom) AmountEditingSide.TARGET else s.activeAccountSide
+            )
             applyFocusGuard(next)
         }
     }
@@ -632,17 +630,13 @@ class QuickAddViewModel @Inject constructor(
             )
 
             applyFocusGuard(
-                s.copy(
+                applyUpdate(s, TransactionEntryService.StateUpdateResult(
+                    source = result.source,
+                    destination = result.destination,
                     entryMode = result.newMode,
-                    selectedAccount = result.source.account,
-                    selectedToAccount = result.destination.account,
-                    selectedCurrency = result.source.currency,
-                    selectedToCurrency = result.destination.currency,
-                    amount = result.source.amountValue,
-                    amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
-                    selectedCategoryId = result.source.categoryId,
-                    isAmountOverridden = false
-                )
+                    exchangeRate = BigDecimal.ONE, // Placeholder as we'll recalc
+                    isRateFixed = false
+                ))
             )
         }
     }
@@ -670,17 +664,13 @@ class QuickAddViewModel @Inject constructor(
             )
 
             applyFocusGuard(
-                s.copy(
+                applyUpdate(s, TransactionEntryService.StateUpdateResult(
+                    source = result.source,
+                    destination = result.destination,
                     entryMode = result.newMode,
-                    selectedAccount = result.source.account,
-                    selectedToAccount = result.destination.account,
-                    selectedCurrency = result.source.currency,
-                    selectedToCurrency = result.destination.currency,
-                    amount = result.source.amountValue,
-                    amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
-                    selectedCategoryId = result.source.categoryId,
-                    isAmountOverridden = false
-                )
+                    exchangeRate = BigDecimal.ONE,
+                    isRateFixed = false
+                ))
             )
         }
     }

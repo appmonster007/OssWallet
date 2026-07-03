@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryDateCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
+import com.osscabinet.ossWallet.ui.components.entry.EntrySheetOrchestrator
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.entry.TransactionEntryState
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -255,10 +256,71 @@ fun TransactionFormBody(
         }
 
         // Bottom sheets and dialogs
-        TransactionEntrySheets(
-            state = state,
-            onEvent = onEvent,
-            onSearch = onSearch
+        EntrySheetOrchestrator(
+            sheetState = state.sheetState,
+            accounts = state.accounts,
+            categories = state.categories,
+            allTags = state.allTags,
+            selectedTags = state.selectedTags,
+            currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
+            currentExchangeRate = state.exchangeRate,
+            shortlistedCurrencies = state.shortlistedCurrencies,
+            fullCurrencies = state.fullProviderCurrencies,
+            isTransfer = state.isTransfer,
+            onAmountChange = { amt ->
+                if (state.activeAmountSide == AmountEditingSide.SOURCE) {
+                    onEvent(TransactionEntryEvent.SetAmount(amt))
+                } else {
+                    onEvent(TransactionEntryEvent.SetTargetAmount(amt))
+                }
+            },
+            onAccountChange = { accId -> onEvent(TransactionEntryEvent.SetAccount(state.accounts.find { acc -> acc.id == accId })) },
+            onTargetAccountChange = { accId -> onEvent(TransactionEntryEvent.SetTargetAccount(state.accounts.find { acc -> acc.id == accId })) },
+            onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategory(catId)) },
+            onCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetCurrency(curr)) },
+            onTargetCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetTargetCurrency(curr)) },
+            onExchangeRateChange = { rate -> onEvent(TransactionEntryEvent.SetExchangeRate(rate)) },
+            onTagsChange = { tags -> onEvent(TransactionEntryEvent.SetTags(tags)) },
+            onAddTag = { name: String, color: Int? -> onEvent(TransactionEntryEvent.AddTag(name, color)) },
+            onDismissSheet = { field: EntryField? ->
+                when (field) {
+                    EntryField.AMOUNT -> onEvent(TransactionEntryEvent.ShowNumpad(false))
+                    EntryField.ACCOUNT -> onEvent(TransactionEntryEvent.ShowAccountSheet(false))
+                    EntryField.TARGET_ACCOUNT -> onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false))
+                    EntryField.CATEGORY -> onEvent(TransactionEntryEvent.ShowCategorySheet(false))
+                    else -> {
+                        // Close all for unspecified
+                        onEvent(TransactionEntryEvent.ShowDatePicker(false))
+                        onEvent(TransactionEntryEvent.ShowTagSheet(false))
+                        onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(false))
+                        onEvent(TransactionEntryEvent.ShowStatusSheet(false))
+                        onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false))
+                        onEvent(TransactionEntryEvent.ShowLocationSheet(false))
+                        onEvent(TransactionEntryEvent.ShowExchangeRateDialog(false))
+                        onEvent(TransactionEntryEvent.ShowCurrencySheet(false))
+                        onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false))
+                        onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(false))
+                    }
+                }
+            },
+            onSearchTransactions = onSearch,
+            linkedIds = state.linkedTransactionIds.toSet(),
+            onLinkedTransactionsChanged = { ids -> onEvent(TransactionEntryEvent.SetLinkedTransactionIds(ids.toList())) },
+            selectedAccountId = state.selectedAccount?.id,
+            selectedTargetAccountId = state.targetAccount?.id,
+            selectedCategoryId = state.selectedCategoryId,
+            selectedCurrency = state.selectedCurrency,
+            selectedTargetCurrency = state.targetCurrency,
+            selectedDateMillis = state.selectedDateMillis,
+            onDateChange = { date -> onEvent(TransactionEntryEvent.SetDate(date)) },
+            warrantyDateMillis = state.warrantyExpirationMillis,
+            onWarrantyDateChange = { date -> onEvent(TransactionEntryEvent.SetWarrantyExpiration(date)) },
+            gpsLocation = state.gpsLocation,
+            onLocationChange = { gps: String?, loc: String? -> onEvent(TransactionEntryEvent.SetLocation(gps, loc)) },
+            paymentMethod = state.paymentMethod,
+            onPaymentMethodChange = { method -> onEvent(TransactionEntryEvent.SetPaymentMethod(method)) },
+            transactionStatus = state.status,
+            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetStatus(status)) }
         )
     }
 }

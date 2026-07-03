@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
@@ -104,6 +105,16 @@ data class QuickAddState(
             val rate = TransactionEntryService.getMarketRate(selectedCurrency, selectedToCurrency, exchangeRates)
             TransactionEntryService.calculateTargetAmountValue(amount, rate)
         } else BigDecimal.ZERO
+
+    val canSave: Boolean
+        get() {
+            if (amount < BigDecimal.ZERO) return false
+            return TransactionEntryService.validateAccountSelection(
+                entryMode = entryMode,
+                source = selectedAccount,
+                target = selectedToAccount
+            ).isValid
+        }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -130,9 +141,22 @@ class QuickAddViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
 
     init {
+        // Initialize _uiState with base data from repositories
         viewModelScope.launch {
-            computationRepository.exchangeRatesSnapshot.collect { rates ->
-                _uiState.update { it.copy(exchangeRates = rates) }
+            settingsRepository.currentProfileId.flatMapLatest {
+                combine(
+                    settingsRepository.currency,
+                    computationRepository.exchangeRatesSnapshot
+                ) { currency, rates -> currency to rates }
+            }.collect { (currency, rates) ->
+                _uiState.update { s ->
+                    s.copy(
+                        baseCurrency = currency,
+                        exchangeRates = rates,
+                        selectedCurrency = if (s.selectedCurrency.isBlank()) currency else s.selectedCurrency,
+                        selectedToCurrency = if (s.selectedToCurrency.isBlank() && s.entryMode == EntryMode.TRANSFER) currency else s.selectedToCurrency
+                    )
+                }
             }
         }
     }
@@ -499,34 +523,58 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
-        val account = state.value.accounts.find { it.id == accountId }
-        val newRef = if (accountId.isBlank()) AccountRef.Outside else AccountRef.Wallet(accountId)
+        val allAccounts = state.value.accounts
+        val account = allAccounts.find { it.id == accountId }
+        val newRef = if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(accountId)
         _uiState.update { s ->
-            if (isFrom) {
+            val next = if (isFrom) {
+                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
+                    s.selectedToCurrency
+                } else s.selectedCurrency
+
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
                     accountCurrency = account?.currencyCode,
-                    currentCurrency = s.selectedCurrency,
+                    currentCurrency = fallbackCurrency,
                     baseCurrency = s.baseCurrency
                 )
+                
+                // Enforce: if NEW source is a Wallet and target is Outside, target MUST match new source currency
+                val finalToCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
+                    newCurrency
+                } else s.selectedToCurrency
+
                 s.copy(
                     selectedAccount = newRef,
                     selectedCurrency = newCurrency,
+                    selectedToCurrency = finalToCurrency,
                     currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2,
                     activeAccountSide = if (s.entryMode == EntryMode.TRANSFER) AmountEditingSide.TARGET else s.activeAccountSide
                 )
             } else {
+                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
+                    s.selectedCurrency
+                } else s.selectedToCurrency
+
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
                     accountCurrency = account?.currencyCode,
-                    currentCurrency = s.selectedCurrency, // QuickAdd inherits from Source by default
+                    currentCurrency = fallbackCurrency,
                     baseCurrency = s.baseCurrency
                 )
+
+                // Enforce: if NEW target is a Wallet and source is Outside, source MUST match new target currency
+                val finalFromCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
+                    newCurrency
+                } else s.selectedCurrency
+
                 s.copy(
                     selectedToAccount = newRef,
                     selectedToCurrency = newCurrency,
+                    selectedCurrency = finalFromCurrency
                 )
             }
+            applyFocusGuard(next)
         }
     }
 
@@ -535,9 +583,18 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onCurrencySelected(currency: String, isFrom: Boolean = true) {
-        _uiState.update {
-            if (isFrom) it.copy(selectedCurrency = currency)
-            else it.copy(selectedToCurrency = currency)
+        _uiState.update { s ->
+            if (isFrom) {
+                val nextTo = if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccount.isOutside) {
+                    currency
+                } else s.selectedToCurrency
+                s.copy(selectedCurrency = currency, selectedToCurrency = nextTo)
+            } else {
+                val nextFrom = if (s.entryMode == EntryMode.TRANSFER && s.selectedAccount.isOutside) {
+                    currency
+                } else s.selectedCurrency
+                s.copy(selectedToCurrency = currency, selectedCurrency = nextFrom)
+            }
         }
     }
 
@@ -638,30 +695,53 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun updateAccount(accountId: String, isFrom: Boolean) {
-        val account = state.value.accounts.find { it.id == accountId }
-        val newRef = if (accountId.isBlank()) AccountRef.Outside else AccountRef.Wallet(accountId)
+        val allAccounts = state.value.accounts
+        val account = allAccounts.find { it.id == accountId }
+        val newRef = if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(accountId)
         _uiState.update { s ->
             val next = if (isFrom) {
+                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
+                    s.selectedToCurrency
+                } else s.selectedCurrency
+
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
                     accountCurrency = account?.currencyCode,
-                    currentCurrency = s.selectedCurrency,
+                    currentCurrency = fallbackCurrency,
                     baseCurrency = s.baseCurrency
                 )
+
+                // Enforce: if NEW source is a Wallet and target is Outside, target MUST match new source currency
+                val finalToCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
+                    newCurrency
+                } else s.selectedToCurrency
+
                 s.copy(
                     selectedAccount = newRef,
-                    selectedCurrency = newCurrency
+                    selectedCurrency = newCurrency,
+                    selectedToCurrency = finalToCurrency
                 )
             } else {
+                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
+                    s.selectedCurrency
+                } else s.selectedToCurrency
+
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
                     accountCurrency = account?.currencyCode,
-                    currentCurrency = s.selectedCurrency, // QuickAdd inherits from Source by default
+                    currentCurrency = fallbackCurrency,
                     baseCurrency = s.baseCurrency
                 )
+
+                // Enforce: if NEW target is a Wallet and source is Outside, source MUST match new target currency
+                val finalFromCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
+                    newCurrency
+                } else s.selectedCurrency
+
                 s.copy(
                     selectedToAccount = newRef,
                     selectedToCurrency = newCurrency,
+                    selectedCurrency = finalFromCurrency
                 )
             }
             applyFocusGuard(next)
@@ -717,19 +797,9 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun reset() {
-        val currentAccounts = state.value.accounts
+        val currentAccounts = _uiState.value.accounts
         _uiState.value = QuickAddState(accounts = currentAccounts, entryMode = initialType)
     }
 
-    val canSave: Boolean
-        get() {
-            val s = state.value
-            if (s.amount < BigDecimal.ZERO) return false
-            
-            return TransactionEntryService.validateAccountSelection(
-                entryMode = s.entryMode,
-                source = s.selectedAccount,
-                target = s.selectedToAccount
-            ).isValid
-        }
+    val canSave: Boolean get() = state.value.canSave
 }

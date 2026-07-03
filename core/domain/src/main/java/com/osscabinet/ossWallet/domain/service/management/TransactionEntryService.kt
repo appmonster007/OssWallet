@@ -84,6 +84,7 @@ object TransactionEntryService {
             EntryMode.TRANSFER -> {
                 if (oldMode == EntryMode.INCOME) {
                     // Income account was receiving money → moves to Target (Receiver).
+                    // We keep the amount on the new Source side for consistency in editing.
                     newSource = TransactionSide(
                         account = otherSideRef,
                         categoryId = Category.SYSTEM_TRANSFER,
@@ -91,7 +92,8 @@ object TransactionEntryService {
                         currency = primarySide.currency
                     )
                     newDestination = primarySide.copy(
-                        categoryId = Category.SYSTEM_TRANSFER
+                        categoryId = Category.SYSTEM_TRANSFER,
+                        amount = ""
                     )
                 } else {
                     // Expense account was giving money → remains the Source.
@@ -102,6 +104,7 @@ object TransactionEntryService {
                     newDestination = TransactionSide(
                         account = otherSideRef,
                         categoryId = Category.SYSTEM_TRANSFER,
+                        amount = "",
                         currency = primarySide.currency
                     )
                 }
@@ -402,9 +405,9 @@ object TransactionEntryService {
         return if (entryMode == EntryMode.TRANSFER) {
             val transferValid = validateTransferAccounts(source, target)
             if (!transferValid) {
-                // If invalid, determine which sides to flag based on Unselected or both being Outside
-                val sourceInvalid = source is AccountRef.Unselected || (source.isOutside && target.isOutside)
-                val targetInvalid = target is AccountRef.Unselected || (source.isOutside && target.isOutside)
+                val bothOutside = source.isOutside && target.isOutside
+                val sourceInvalid = source is AccountRef.Unselected || bothOutside
+                val targetInvalid = target is AccountRef.Unselected || bothOutside
                 AccountValidationResult(!sourceInvalid, !targetInvalid)
             } else {
                 AccountValidationResult(true, true)

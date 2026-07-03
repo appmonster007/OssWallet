@@ -457,7 +457,7 @@ object TransactionEntryService {
         currentState: StateUpdateResult,
         exchangeRates: ExchangeRateSnapshot
     ): StateUpdateResult {
-        val inputAmount = amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO
+        val inputAmount = (amountStr.toBigDecimalOrNull() ?: BigDecimal.ZERO).abs()
         val sync = syncTransferState(
             sourceAmount = currentState.source.amountValue,
             targetAmount = inputAmount,

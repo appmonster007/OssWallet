@@ -810,7 +810,7 @@ class TransactionViewModel @Inject constructor(
             warrantyExpiration = pattern.warrantyExpiration,
             paymentMethod = pattern.paymentMethod,
             tags = pattern.tags,
-            profileId = 0
+            profileId = 1
         )
         _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
             template = template,

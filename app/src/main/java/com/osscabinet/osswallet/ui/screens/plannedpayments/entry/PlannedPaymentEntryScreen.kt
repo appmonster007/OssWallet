@@ -62,13 +62,9 @@ fun PlannedPaymentEntryScreen(
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // Handle screen resume for any periodic updates (e.g. settings changes)
-    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-        viewModel.onScreenResume()
-    }
-
     LaunchedEffect(state.navTriggered) {
         if (state.navTriggered) {
+            viewModel.onScreenResume()
             actions.onBackClick()
         }
     }

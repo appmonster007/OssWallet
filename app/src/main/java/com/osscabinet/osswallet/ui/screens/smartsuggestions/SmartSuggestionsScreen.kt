@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +78,14 @@ fun SmartSuggestionsScreen(
     val patterns by viewModel.discoveredPatterns.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
+    val plannedPaymentPrefill by viewModel.plannedPaymentPrefill.collectAsStateWithLifecycle()
     var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
+
+    LaunchedEffect(plannedPaymentPrefill) {
+        if (plannedPaymentPrefill != null) {
+            actions.onAcceptAsPlannedPayment()
+        }
+    }
     val visiblePatterns =
         patterns.filter { "${it.payee}|${it.averageAmount}" !in dismissedPatterns }
 
@@ -141,9 +149,6 @@ fun SmartSuggestionsScreen(
                                     },
                                     onAcceptAsPlannedPayment = {
                                         viewModel.setPlannedPaymentPrefillFromPattern(it)
-                                        if (viewModel.plannedPaymentPrefill.value != null) {
-                                            actions.onAcceptAsPlannedPayment()
-                                        }
                                     },
                                     onDismiss = {
                                         dismissedPatterns =

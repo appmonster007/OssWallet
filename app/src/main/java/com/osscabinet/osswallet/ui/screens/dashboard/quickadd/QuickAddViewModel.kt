@@ -686,7 +686,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     private fun applyFocusGuard(s: QuickAddState): QuickAddState {
-        if (s.entryMode != EntryMode.TRANSFER) return s
+        if (s.entryMode != EntryMode.TRANSFER) return s.copy(activeAmountSide = AmountEditingSide.SOURCE)
         
         return when {
             s.activeAmountSide == AmountEditingSide.SOURCE && s.selectedAccount.isOutside -> 

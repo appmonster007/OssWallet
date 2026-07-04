@@ -167,8 +167,8 @@ class TransactionEntryViewModel @Inject constructor(
         val isOpenedAsReceiver = transaction.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
         var selectedAcc: Account? = accounts.find { it.id == transaction.accountId }
         var targetAcc: Account? = accounts.find { it.id == transaction.targetAccountId }
-        var amountStr = ""
-        var targetAmountStr = ""
+        var amountStr = "0"
+        var targetAmountStr = "0"
         var currentCurrency = transaction.currency
         var targetCurrency = transaction.targetCurrency ?: transaction.currency
         var categoryId = transaction.categoryId
@@ -189,9 +189,7 @@ class TransactionEntryViewModel @Inject constructor(
                 targetCurrency = transaction.currency
                 targetAmountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
-                    ?: if (transaction.transferRate.signum() != 0) {
-                        TransactionEntryService.calculateSourceAmount(transaction.amount.abs(), transaction.transferRate)
-                    } else ""
+                    ?: TransactionEntryService.calculateSourceAmount(transaction.amount.abs(), transaction.transferRate)
             } else {
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =

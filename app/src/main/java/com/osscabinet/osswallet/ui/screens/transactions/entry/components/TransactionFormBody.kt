@@ -30,8 +30,12 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.isPicked
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
+import com.osscabinet.ossWallet.ui.components.entry.AeonCalculatorSheet
+import com.osscabinet.ossWallet.ui.components.entry.AeonCategorySelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
+import com.osscabinet.ossWallet.ui.components.entry.AeonTransactionSplitSheet
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
@@ -276,11 +280,11 @@ fun TransactionFormBody(
                 }
             },
             onAccountChange = { accId ->
-                val account = if (accId.isBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
+                val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
                 onEvent(TransactionEntryEvent.SetAccount(account))
             },
             onTargetAccountChange = { accId ->
-                val account = if (accId.isBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
+                val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
                 onEvent(TransactionEntryEvent.SetTargetAccount(account))
             },
             onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategory(catId)) },
@@ -295,19 +299,7 @@ fun TransactionFormBody(
                     EntryField.ACCOUNT -> onEvent(TransactionEntryEvent.ShowAccountSheet(false))
                     EntryField.TARGET_ACCOUNT -> onEvent(TransactionEntryEvent.ShowTargetAccountSheet(false))
                     EntryField.CATEGORY -> onEvent(TransactionEntryEvent.ShowCategorySheet(false))
-                    else -> {
-                        // Close all for unspecified
-                        onEvent(TransactionEntryEvent.ShowDatePicker(false))
-                        onEvent(TransactionEntryEvent.ShowTagSheet(false))
-                        onEvent(TransactionEntryEvent.ShowPaymentMethodSheet(false))
-                        onEvent(TransactionEntryEvent.ShowStatusSheet(false))
-                        onEvent(TransactionEntryEvent.ShowWarrantyDatePicker(false))
-                        onEvent(TransactionEntryEvent.ShowLocationSheet(false))
-                        onEvent(TransactionEntryEvent.ShowExchangeRateDialog(false))
-                        onEvent(TransactionEntryEvent.ShowCurrencySheet(false))
-                        onEvent(TransactionEntryEvent.ShowTargetCurrencySheet(false))
-                        onEvent(TransactionEntryEvent.ShowLinkedTransactionSheet(false))
-                    }
+                    else -> onEvent(TransactionEntryEvent.DismissAllSheets)
                 }
             },
             onSearchTransactions = onSearch,
@@ -330,6 +322,48 @@ fun TransactionFormBody(
             onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetStatus(status)) },
             currentTransactionId = state.transactionId
         )
+
+        // Split sheets — handled directly since they are transaction-specific
+        if (state.showSplitSheet) {
+            AeonTransactionSplitSheet(
+                totalAmount = state.amountValue,
+                currency = state.selectedCurrency,
+                splits = state.splits,
+                categories = state.categories,
+                isIncome = state.isIncome,
+                onAddSplit = { onEvent(TransactionEntryEvent.AddSplit) },
+                onRemoveSplit = { index -> onEvent(TransactionEntryEvent.RemoveSplit(index)) },
+                onUpdateSplit = { index, note, amount, categoryId ->
+                    onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId, amount, note))
+                },
+                onShowCategorySheet = { index -> onEvent(TransactionEntryEvent.ShowSplitCategorySheet(index)) },
+                onShowCalculator = { index -> onEvent(TransactionEntryEvent.ShowSplitNumpad(index)) },
+                onToggleSplitMode = { enabled -> onEvent(TransactionEntryEvent.ToggleSplitMode(enabled)) },
+                onDismiss = { onEvent(TransactionEntryEvent.ShowSplitSheet(false)) }
+            )
+        }
+
+        state.showSplitCategorySheet?.let { splitIndex ->
+            AeonCategorySelection(
+                categories = state.categories.filter { !Category.isInitialBalance(it.id) },
+                selectedCategoryIds = state.splits.getOrNull(splitIndex)?.categoryId?.let { setOf(it) } ?: emptySet(),
+                onSelectionChange = { ids ->
+                    onEvent(TransactionEntryEvent.UpdateSplit(splitIndex, ids.firstOrNull(), null, null))
+                    onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null))
+                },
+                onDismiss = { onEvent(TransactionEntryEvent.ShowSplitCategorySheet(null)) }
+            )
+        }
+
+        state.showSplitNumpad?.let { splitIndex ->
+            AeonCalculatorSheet(
+                currentAmount = state.splits.getOrNull(splitIndex)?.amount ?: "",
+                onAmountChanged = { amount ->
+                    onEvent(TransactionEntryEvent.UpdateSplit(splitIndex, null, amount, null))
+                },
+                onDismiss = { onEvent(TransactionEntryEvent.ShowSplitNumpad(null)) }
+            )
+        }
     }
 }
 

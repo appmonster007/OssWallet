@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import jakarta.inject.Inject
@@ -88,7 +89,8 @@ class TransactionEntryViewModel @Inject constructor(
         viewModelScope.launch {
             initialTimestamp = System.currentTimeMillis()
             val profileId = settingsRepository.currentProfileId.first()
-            
+            val baseCurrency = settingsRepository.currency.first()
+
             // Shared Data Loading
             transactionUseCases.observeEntryCoreData(profileId).first().let { data ->
                 val mapsAccess = settingsRepository.mapsAccessEnabled.first()
@@ -122,6 +124,7 @@ class TransactionEntryViewModel @Inject constructor(
                         templates = data.templates,
                         allPayees = data.payees,
                         allNotes = data.notes,
+                        baseCurrency = baseCurrency,
                         mapsAccessEnabled = mapsAccess,
                         source = TransactionSide(
                             account = selectedAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
@@ -188,7 +191,7 @@ class TransactionEntryViewModel @Inject constructor(
                 amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
                     ?: if (transaction.transferRate.signum() != 0) {
                         TransactionEntryService.calculateSourceAmount(transaction.amount.abs(), transaction.transferRate)
-                    } else "0"
+                    } else ""
             } else {
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =
@@ -375,7 +378,10 @@ class TransactionEntryViewModel @Inject constructor(
                     TransactionEntryService.handleAmountChange(
                         amountStr = event.amount,
                         currentState = s.toUpdateResult(),
-                        exchangeRates = ExchangeRateSnapshot(s.selectedCurrency, s.exchangeRates),
+                        exchangeRates = ExchangeRateSnapshot(
+                            anchor = s.selectedCurrency,
+                            rates = s.exchangeRates.ifEmpty { mapOf(s.targetCurrency to s.exchangeRate) }
+                        ),
                         isSplitMode = s.isSplitMode
                     )
                 )
@@ -386,7 +392,10 @@ class TransactionEntryViewModel @Inject constructor(
                     TransactionEntryService.handleTargetAmountChange(
                         amountStr = event.amount,
                         currentState = s.toUpdateResult(),
-                        exchangeRates = ExchangeRateSnapshot(s.selectedCurrency, s.exchangeRates)
+                        exchangeRates = ExchangeRateSnapshot(
+                            anchor = s.selectedCurrency,
+                            rates = s.exchangeRates.ifEmpty { mapOf(s.targetCurrency to s.exchangeRate) }
+                        )
                     )
                 )
             }
@@ -439,7 +448,8 @@ class TransactionEntryViewModel @Inject constructor(
                         source = result.source,
                         destination = result.destination,
                         isSplitMode = result.isSplitModeAllowed,
-                        showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet
+                        showSplitSheet = if (result.newMode == EntryMode.TRANSFER) false else state.showSplitSheet,
+                        isRateFixed = false
                     )
                 }
 
@@ -509,7 +519,7 @@ class TransactionEntryViewModel @Inject constructor(
                         isSource = true,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
-                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                        baseCurrency = s.baseCurrency
                     )
                     s.applyUpdate(result)
                 }
@@ -537,7 +547,7 @@ class TransactionEntryViewModel @Inject constructor(
                         isSource = false,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
-                        baseCurrency = s.accounts.firstOrNull()?.currencyCode ?: "USD"
+                        baseCurrency = s.baseCurrency
                     )
                     s.applyUpdate(result)
                 }
@@ -680,6 +690,21 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
+            is TransactionEntryEvent.DismissAllSheets -> update {
+                it.copy(
+                    showDatePicker = false,
+                    showTagSheet = false,
+                    showPaymentMethodSheet = false,
+                    showStatusSheet = false,
+                    showWarrantyDatePicker = false,
+                    showLocationSheet = false,
+                    showExchangeRateDialog = false,
+                    showCurrencySheet = false,
+                    showTargetCurrencySheet = false,
+                    showLinkedTransactionSheet = false,
+                )
+            }
+
             is TransactionEntryEvent.SwapAccounts -> {
                 update { s ->
                     if (!s.isTransfer) return@update s
@@ -709,28 +734,38 @@ class TransactionEntryViewModel @Inject constructor(
         }
     }
 
-    private fun recalculateExchangeRate() {
-        viewModelScope.launch {
-            val currentState = _state.value
-            if (currentState.isTransfer &&
-                currentState.selectedCurrency.isNotEmpty() &&
-                currentState.targetCurrency.isNotEmpty()
-            ) {
+    private var rateJob: Job? = null
 
-                val rates = computationRepository.exchangeRatesSnapshot.first()
-                val rate = TransactionEntryService.getMarketRate(
-                    fromCurrency = currentState.selectedCurrency,
-                    toCurrency = currentState.targetCurrency,
-                    exchangeRates = rates
-                )
-                update {
-                    it.copy(
-                        exchangeRate = rate,
-                        destination = it.destination.copy(
-                            amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
-                        )
+    private fun recalculateExchangeRate() {
+        rateJob?.cancel()
+        rateJob = viewModelScope.launch {
+            val snapshot = _state.value
+            if (!snapshot.isTransfer ||
+                snapshot.selectedCurrency.isEmpty() ||
+                snapshot.targetCurrency.isEmpty()
+            ) return@launch
+
+            val rates = computationRepository.exchangeRatesSnapshot.first()
+
+            // Re-read after suspension; abort if currencies changed under us
+            val current = _state.value
+            if (!current.isTransfer ||
+                current.selectedCurrency != snapshot.selectedCurrency ||
+                current.targetCurrency != snapshot.targetCurrency
+            ) return@launch
+
+            val rate = TransactionEntryService.getMarketRate(
+                fromCurrency = current.selectedCurrency,
+                toCurrency = current.targetCurrency,
+                exchangeRates = rates
+            )
+            update {
+                it.copy(
+                    exchangeRate = rate,
+                    destination = it.destination.copy(
+                        amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
                     )
-                }
+                )
             }
         }
     }
@@ -764,10 +799,15 @@ class TransactionEntryViewModel @Inject constructor(
             tags = currentState.selectedTags,
             status = currentState.status,
             amountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
-            exchangeRates = ExchangeRateSnapshot(anchor = "USD", rates = currentState.exchangeRates), // Fallback if snapshot not in state
+            exchangeRates = ExchangeRateSnapshot(anchor = "USD", rates = currentState.exchangeRates),
             accounts = currentState.accounts,
-            baseCurrency = currentState.shortlistedCurrencies.firstOrNull() ?: "USD",
+            baseCurrency = currentState.baseCurrency,
             timestamp = finalTimestamp
+        ).copy(
+            gpsLocation = currentState.gpsLocation,
+            location = currentState.location,
+            warrantyExpiration = if (currentState.isWarrantyEnabled) currentState.warrantyExpirationMillis else null,
+            paymentMethod = currentState.paymentMethod,
         )
     }
 

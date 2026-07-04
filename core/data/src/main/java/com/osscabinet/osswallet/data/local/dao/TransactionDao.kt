@@ -164,8 +164,14 @@ abstract class TransactionDao {
     @Query("SELECT DISTINCT payee FROM transactions WHERE profileId = :profileId AND payee IS NOT NULL AND payee != '' ORDER BY payee ASC")
     abstract suspend fun getUniquePayees(profileId: Int): List<String>
 
+    @Query("SELECT DISTINCT payee FROM transactions WHERE profileId = :profileId AND payee IS NOT NULL AND payee != '' ORDER BY payee ASC")
+    abstract fun observeUniquePayees(profileId: Int): Flow<List<String>>
+
     @Query("SELECT DISTINCT note FROM transactions WHERE profileId = :profileId AND note IS NOT NULL AND note != '' ORDER BY note ASC")
     abstract suspend fun getUniqueNotes(profileId: Int): List<String>
+
+    @Query("SELECT DISTINCT note FROM transactions WHERE profileId = :profileId AND note IS NOT NULL AND note != '' ORDER BY note ASC")
+    abstract fun observeUniqueNotes(profileId: Int): Flow<List<String>>
 
     @Update
     abstract suspend fun updateTransactions(transactions: List<TransactionEntity>)

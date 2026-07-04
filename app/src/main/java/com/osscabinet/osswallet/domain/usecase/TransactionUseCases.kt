@@ -49,15 +49,17 @@ class TransactionUseCases(
             accountRepository.getAllAccounts(profileId),
             categoryRepository.getAllCategories(profileId),
             tagRepository.getAllTags(profileId),
-            templateRepository.getAllTemplates(profileId)
-        ) { accounts, categories, tags, templates ->
+            templateRepository.getAllTemplates(profileId),
+            repository.observeUniquePayees(profileId),
+            repository.observeUniqueNotes(profileId)
+        ) { accounts, categories, tags, templates, payees, notes ->
             EntryCoreData(
                 accounts = accounts,
                 categories = categories,
                 tags = tags,
                 templates = templates,
-                payees = repository.getUniquePayees(profileId),
-                notes = repository.getUniqueNotes(profileId)
+                payees = payees,
+                notes = notes
             )
         }
     }

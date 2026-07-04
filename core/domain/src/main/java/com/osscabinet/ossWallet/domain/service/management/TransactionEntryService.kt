@@ -319,8 +319,10 @@ object TransactionEntryService {
         tags: Set<String>?,
         accounts: List<com.osscabinet.ossWallet.domain.model.Account>
     ): PrefillResult {
-        val sourceRef = accountId?.let { AccountRef.fromStored(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
-        val targetRef = targetAccountId?.let { AccountRef.fromStored(it) } ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
+        val sourceRef = accountId?.takeIf { it.isNotBlank() }?.let { AccountRef.fromStored(it) }
+            ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
+        val targetRef = targetAccountId?.takeIf { it.isNotBlank() }?.let { AccountRef.fromStored(it) }
+            ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
 
         val sourceAcc = sourceRef.resolve(accounts)
         val targetAcc = targetRef.resolve(accounts)
@@ -445,7 +447,7 @@ object TransactionEntryService {
         return currentState.copy(
             source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
             destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-            exchangeRate = sync.impliedRate
+            exchangeRate = if (!currentState.isRateFixed || inputAmount.signum() != 0) sync.impliedRate else currentState.exchangeRate
         )
     }
 
@@ -471,7 +473,7 @@ object TransactionEntryService {
         return currentState.copy(
             source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
             destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
-            exchangeRate = sync.impliedRate
+            exchangeRate = if (!currentState.isRateFixed || inputAmount.signum() != 0) sync.impliedRate else currentState.exchangeRate
         )
     }
 

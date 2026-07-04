@@ -42,7 +42,9 @@ interface TransactionRepository {
     ): Flow<Result<List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>>>
 
     suspend fun getUniquePayees(profileId: Int): List<String>
+    fun observeUniquePayees(profileId: Int): Flow<List<String>>
     suspend fun getUniqueNotes(profileId: Int): List<String>
+    fun observeUniqueNotes(profileId: Int): Flow<List<String>>
 
     suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
     suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>

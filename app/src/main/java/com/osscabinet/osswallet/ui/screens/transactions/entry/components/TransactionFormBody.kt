@@ -327,7 +327,8 @@ fun TransactionFormBody(
             paymentMethod = state.paymentMethod,
             onPaymentMethodChange = { method -> onEvent(TransactionEntryEvent.SetPaymentMethod(method)) },
             transactionStatus = state.status,
-            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetStatus(status)) }
+            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetStatus(status)) },
+            currentTransactionId = state.transactionId
         )
     }
 }

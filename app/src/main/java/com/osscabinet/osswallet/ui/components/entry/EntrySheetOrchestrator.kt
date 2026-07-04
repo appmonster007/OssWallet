@@ -9,6 +9,7 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
+import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
 import com.osscabinet.ossWallet.ui.components.entry.*
 import java.math.BigDecimal
@@ -131,9 +132,9 @@ fun EntrySheetOrchestrator(
     }
 
     if (sheetState.showDate && selectedDateMillis != null && onDateChange != null) {
-        AeonDatePickerDialog(
-            selectedDateMillis = selectedDateMillis,
-            onDateSelected = onDateChange,
+        AeonDateTimePicker(
+            initialDateTime = selectedDateMillis,
+            onDateTimeSelected = onDateChange,
             onDismiss = { onDismissSheet(null) }
         )
     }

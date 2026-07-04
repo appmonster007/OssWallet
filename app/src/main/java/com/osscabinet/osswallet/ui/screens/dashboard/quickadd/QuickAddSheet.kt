@@ -390,7 +390,7 @@ private fun QuickAddSheetContent(
                 target = state.selectedToAccount
             ).isValid
         }
-        STEP_AMOUNT -> state.amount >= BigDecimal.ZERO
+        STEP_AMOUNT -> state.amount > BigDecimal.ZERO
         else -> false
     }
     val isLastStep = state.currentStep == STEP_AMOUNT

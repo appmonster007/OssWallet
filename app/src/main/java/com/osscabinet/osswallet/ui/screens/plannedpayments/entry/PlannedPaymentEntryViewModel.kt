@@ -94,7 +94,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     current.copy(
                         accounts = data.accounts,
                         categories = data.categories,
-                        templates = current.templates,
+                        templates = data.templates,
                         availableTags = data.tags,
                         uniquePayees = data.payees,
                         uniqueNotes = data.notes,

@@ -46,21 +46,19 @@ class TransactionUseCases(
      */
     fun observeEntryCoreData(profileId: Int): Flow<EntryCoreData> {
         return combine(
-            accountRepository.getAllAccounts(profileId),
-            categoryRepository.getAllCategories(profileId),
-            tagRepository.getAllTags(profileId),
-            templateRepository.getAllTemplates(profileId),
+            combine(
+                accountRepository.getAllAccounts(profileId),
+                categoryRepository.getAllCategories(profileId),
+                tagRepository.getAllTags(profileId),
+                templateRepository.getAllTemplates(profileId)
+            ) { accounts, categories, tags, templates ->
+                accounts to Triple(categories, tags, templates)
+            },
             repository.observeUniquePayees(profileId),
             repository.observeUniqueNotes(profileId)
-        ) { accounts, categories, tags, templates, payees, notes ->
-            EntryCoreData(
-                accounts = accounts,
-                categories = categories,
-                tags = tags,
-                templates = templates,
-                payees = payees,
-                notes = notes
-            )
+        ) { (accounts, triple), payees, notes ->
+            val (categories, tags, templates) = triple
+            EntryCoreData(accounts, categories, tags, templates, payees, notes)
         }
     }
 

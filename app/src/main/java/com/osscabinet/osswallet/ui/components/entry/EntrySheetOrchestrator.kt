@@ -142,7 +142,7 @@ fun EntrySheetOrchestrator(
 
     if (sheetState.showWarrantyDate && onWarrantyDateChange != null) {
         AeonDatePickerDialog(
-            selectedDateMillis = warrantyDateMillis ?: System.currentTimeMillis(),
+            selectedDateMillis = warrantyDateMillis ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000),
             onDateSelected = onWarrantyDateChange,
             onDismiss = { onDismissSheet(null) }
         )

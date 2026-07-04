@@ -50,3 +50,19 @@
 - "EXTERNAL" Label Naming [QuickAddAmountStep.kt:423] — functional but string can be refined to better status indicator.
 - Transfer Rate Fallback [TransactionEntryService.kt:179] — returning `BigDecimal.ONE` for zero-input rates is an arbitrary fallback but prevents crashes.
 - Inconsistent Corner Radius [QuickAddAtelier.kt] — tiles use 10dp, panel uses 20dp. Intentional design variation for now.
+
+## Deferred from: meta-review of fix commits C9–C16 / M1–M11 / L1–L5 (2026-07-04)
+
+### Patches — RESOLVED
+- ~~`profileId = 1` hardcoded in planned-payment prefill~~ — FIXED: `setPlannedPaymentPrefillFromPattern` now launches coroutine, reads `settingsRepository.currentProfileId.first()` [TransactionViewModel.kt]
+- ~~Stale `plannedPaymentPrefill` triggers navigation with wrong pattern~~ — FIXED: prefill cleared to null before early-return; SmartSuggestionsScreen navigates reactively via `LaunchedEffect(plannedPaymentPrefill)` [TransactionViewModel.kt, SmartSuggestionsScreen.kt]
+- ~~Warranty date picker defaults to today when `warrantyDateMillis = null`~~ — FIXED: default is now `currentTimeMillis + 365 days` [EntrySheetOrchestrator.kt]
+- ~~6-flow `combine` exceeds typed-lambda API limit~~ — FIXED: rewritten as nested 4+2 combines using `Triple` intermediary [TransactionUseCases.kt]
+- ~~`activeAmountSide = TARGET` persists after TRANSFER→EXPENSE mode switch~~ — FIXED: `applyFocusGuard` now resets `activeAmountSide = SOURCE` for all non-TRANSFER modes [QuickAddViewModel.kt]
+- `AeonDateTimePicker` change desynchronizes linked transfer-leg timestamps — DISMISSED: entry screen saves both legs with the same `selectedDateMillis`; 5-second pairing in QuickAdd is for pre-fill discovery only, not for the financial link
+
+### Deferred
+- `onExpandedChange = { if (!it) expanded = false }` blocks dropdown re-open after focus+dismiss [EntryEditorialInput.kt:167] — intentional M7 fix trade-off; expansion via LaunchedEffect on refocus still works; acceptable for autocomplete
+- `accountId = ""` fallback for null transfer-leg accountId [QuickAddViewModel.kt:238–239] — pre-existing blank-string convention; `resolvePrefill` handles via `takeIf { isNotBlank() }`; other `!= null`-only checks are pre-existing risk
+- `reset()` causes transient blank account/currency window [QuickAddViewModel.kt:807] — intentional simplification; repository combine re-populates within frames on all normal devices
+- `delay(1500)` inside `withContext(NonCancellable)` can't be cancelled [SettingsViewModel.kt:497–500, 514–517] — theoretical only; path is user-triggered backup/clear; acceptable for the use case

@@ -34,8 +34,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -492,8 +494,10 @@ class SettingsViewModel @Inject constructor(
             if (result.isSuccess) {
                 if (type == BackupType.SQLITE) {
                     _backupMessage.send("Database restored. Restarting app...")
-                    delay(1500)
-                    android.os.Process.killProcess(android.os.Process.myPid())
+                    withContext(NonCancellable) {
+                        delay(1500)
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
                 } else {
                     _backupMessage.send("Backup imported successfully")
                 }
@@ -507,8 +511,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _backupMessage.send("Clearing all data and restarting...")
             backupRepository.deleteAllData()
-            delay(1500)
-            android.os.Process.killProcess(android.os.Process.myPid())
+            withContext(NonCancellable) {
+                delay(1500)
+                android.os.Process.killProcess(android.os.Process.myPid())
+            }
         }
     }
 }

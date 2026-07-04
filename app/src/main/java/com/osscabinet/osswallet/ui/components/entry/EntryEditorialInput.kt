@@ -165,7 +165,7 @@ fun EntryEditorialInput(
     // 5. UI STRUCTURE
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = it },
+        onExpandedChange = { if (!it) expanded = false },
         modifier = modifier.fillMaxWidth()
     ) {
         GlassSurface(

@@ -157,7 +157,7 @@ fun EntryAmountDisplayPreview() {
                 )
 
                 EntryAmountDisplay(
-                    amount = "",
+                    amount = "0",
                     currency = "EUR",
                     onCurrencyClick = {},
                     onAmountClick = {},

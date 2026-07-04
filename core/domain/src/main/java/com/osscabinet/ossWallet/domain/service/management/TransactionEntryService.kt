@@ -94,18 +94,18 @@ object TransactionEntryService {
                     )
                     newDestination = primarySide.copy(
                         categoryId = Category.SYSTEM_TRANSFER,
-                        amount = ""
+                        amount = "0"
                     )
                 } else {
                     // Expense account was giving money → remains the Source.
                     newSource = primarySide.copy(
                         categoryId = Category.SYSTEM_TRANSFER,
-                        amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
+                        amount = if (primarySide.amount.isEmpty()) "0" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
                     )
                     newDestination = TransactionSide(
                         account = otherSideRef,
                         categoryId = Category.SYSTEM_TRANSFER,
-                        amount = "",
+                        amount = "0",
                         currency = primarySide.currency
                     )
                 }

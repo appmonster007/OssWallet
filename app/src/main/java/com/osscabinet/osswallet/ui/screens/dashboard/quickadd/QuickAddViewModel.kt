@@ -455,7 +455,7 @@ class QuickAddViewModel @Inject constructor(
         ),
         destination = TransactionSide(
             account = s.selectedToAccount,
-            amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+            amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
             currency = s.selectedToCurrency,
             categoryId = Category.SYSTEM_TRANSFER
         ),
@@ -548,7 +548,7 @@ class QuickAddViewModel @Inject constructor(
                 ),
                 destination = TransactionSide(
                     account = s.selectedToAccount,
-                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
                     currency = s.selectedToCurrency,
                     categoryId = Category.SYSTEM_TRANSFER
                 ),
@@ -632,7 +632,7 @@ class QuickAddViewModel @Inject constructor(
                 ),
                 currentDestination = TransactionSide(
                     account = s.selectedToAccount,
-                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
                     currency = s.selectedToCurrency,
                     categoryId = Category.SYSTEM_TRANSFER
                 ),
@@ -666,7 +666,7 @@ class QuickAddViewModel @Inject constructor(
                 ),
                 currentDestination = TransactionSide(
                     account = s.selectedToAccount,
-                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "",
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
                     currency = s.selectedToCurrency,
                     categoryId = Category.SYSTEM_TRANSFER
                 ),

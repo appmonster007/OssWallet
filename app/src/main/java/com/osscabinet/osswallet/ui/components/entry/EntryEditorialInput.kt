@@ -49,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -283,9 +282,7 @@ fun EntryEditorialInput(
                                         coroutineScope.launch {
                                             delay(250) // Wait for keyboard expansion
                                             if (isFocused) {
-                                                bringIntoViewRequester.bringIntoView(
-                                                    rect = Rect(0f, 0f, 0f, 1500f)
-                                                )
+                                                bringIntoViewRequester.bringIntoView()
                                             }
                                         }
                                     }

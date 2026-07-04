@@ -379,13 +379,16 @@ class QuickAddViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() }
         
-        // 1. Standard - No amount -> Invalid
+        // 1. Standard - No amount, no account -> Invalid
         viewModel.onAmountChanged(BigDecimal.ZERO)
         assertFalse(viewModel.state.value.canSave)
-        
+
+        // 1b. Standard - Zero amount WITH valid account -> Invalid (amount guard, not account guard)
+        viewModel.onAccountTapped("acc1", isFrom = true)
+        assertFalse(awaitState { it.selectedAccount is AccountRef.Wallet }.canSave)
+
         // 2. Standard - Valid account and amount -> Valid
         viewModel.onAmountChanged(BigDecimal("10"))
-        viewModel.onAccountTapped("acc1", isFrom = true)
         assertTrue(awaitState { it.canSave }.canSave)
         
         // 3. Transfer - Both Outside -> Invalid

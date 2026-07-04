@@ -469,9 +469,15 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getUniquePayees(profileId)
     }
 
+    override fun observeUniquePayees(profileId: Int): Flow<List<String>> =
+        transactionDao.observeUniquePayees(profileId)
+
     override suspend fun getUniqueNotes(profileId: Int): List<String> {
         return transactionDao.getUniqueNotes(profileId)
     }
+
+    override fun observeUniqueNotes(profileId: Int): Flow<List<String>> =
+        transactionDao.observeUniqueNotes(profileId)
 
     override suspend fun <T> runAtomically(block: suspend () -> T): T =
         database.withTransaction { block() }

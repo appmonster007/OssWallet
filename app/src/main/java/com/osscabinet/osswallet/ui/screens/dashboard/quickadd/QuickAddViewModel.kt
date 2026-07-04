@@ -226,7 +226,7 @@ class QuickAddViewModel @Inject constructor(
                                     it.transactionType.isTransfer && 
                                     it.transactionType != latest.transactionType &&
                                     Math.abs(it.timestamp - latest.timestamp) < 5000 &&
-                                    it.amount.abs() == latest.amount.abs()
+                                    it.amount.abs().compareTo(latest.amount.abs()) == 0
                                 }
                                 
                                 // Source should be the one with OUTFLOW or negative amount
@@ -238,8 +238,8 @@ class QuickAddViewModel @Inject constructor(
                                     categoryId = latest.categoryId,
                                     iconName = cat?.iconName,
                                     colorHex = cat?.colorHex ?: -1,
-                                    accountId = sourceLeg?.accountId,
-                                    targetAccountId = targetLeg?.accountId,
+                                    accountId = sourceLeg?.accountId ?: "",
+                                    targetAccountId = targetLeg?.accountId ?: "",
                                     amount = sourceLeg?.amount?.abs() ?: latest.amount.abs(),
                                     currency = sourceLeg?.currency ?: latest.currency,
                                     targetCurrency = targetLeg?.currency,
@@ -804,8 +804,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun reset() {
-        val currentAccounts = _uiState.value.accounts
-        _uiState.value = QuickAddState(accounts = currentAccounts, entryMode = initialType)
+        _uiState.value = QuickAddState(entryMode = initialType)
     }
 
     val canSave: Boolean get() = state.value.canSave

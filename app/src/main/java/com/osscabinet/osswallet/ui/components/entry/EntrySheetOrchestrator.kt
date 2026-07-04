@@ -54,7 +54,8 @@ fun EntrySheetOrchestrator(
     paymentMethod: com.osscabinet.ossWallet.domain.model.PaymentMethod? = null,
     onPaymentMethodChange: ((com.osscabinet.ossWallet.domain.model.PaymentMethod) -> Unit)? = null,
     transactionStatus: com.osscabinet.ossWallet.domain.model.TransactionStatus? = null,
-    onTransactionStatusChange: ((com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit)? = null
+    onTransactionStatusChange: ((com.osscabinet.ossWallet.domain.model.TransactionStatus) -> Unit)? = null,
+    currentTransactionId: Long? = null
 ) {
     if (sheetState.isNumpadVisible) {
         AeonCalculatorSheet(
@@ -139,9 +140,9 @@ fun EntrySheetOrchestrator(
         )
     }
 
-    if (sheetState.showWarrantyDate && warrantyDateMillis != null && onWarrantyDateChange != null) {
+    if (sheetState.showWarrantyDate && onWarrantyDateChange != null) {
         AeonDatePickerDialog(
-            selectedDateMillis = warrantyDateMillis,
+            selectedDateMillis = warrantyDateMillis ?: System.currentTimeMillis(),
             onDateSelected = onWarrantyDateChange,
             onDismiss = { onDismissSheet(null) }
         )
@@ -155,9 +156,9 @@ fun EntrySheetOrchestrator(
         )
     }
 
-    if (sheetState.showPaymentMethod && paymentMethod != null && onPaymentMethodChange != null) {
+    if (sheetState.showPaymentMethod && onPaymentMethodChange != null) {
         AeonPaymentMethodSelection(
-            selectedMethods = setOf(paymentMethod),
+            selectedMethods = if (paymentMethod != null) setOf(paymentMethod) else emptySet(),
             onSelectionChange = { methods -> methods.firstOrNull()?.let { onPaymentMethodChange(it) } },
             onDismiss = { onDismissSheet(null) }
         )
@@ -174,7 +175,7 @@ fun EntrySheetOrchestrator(
     if (sheetState.showLinkedTransaction) {
         AeonLinkedTransactionSelection(
             onSearch = onSearchTransactions,
-            currentTransactionId = null,
+            currentTransactionId = currentTransactionId,
             linkedIds = linkedIds,
             accounts = accounts,
             categories = categories,

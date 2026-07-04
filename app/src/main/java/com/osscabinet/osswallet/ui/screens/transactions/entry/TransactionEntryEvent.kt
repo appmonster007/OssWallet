@@ -79,6 +79,7 @@ sealed class TransactionEntryEvent {
 
     data object SwapAccounts : TransactionEntryEvent()
     data object ToggleRateMode : TransactionEntryEvent()
+    data object DismissAllSheets : TransactionEntryEvent()
 
     // Navigation
     data object TriggerNavigation : TransactionEntryEvent()

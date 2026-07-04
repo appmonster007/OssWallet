@@ -77,7 +77,7 @@ data class QuickAddState(
     val searchQuery: String = "",
     val amount: BigDecimal = BigDecimal.ZERO,
     val selectedTemplate: Template? = null,
-    val selectedCategoryId: Long? = Category.SYSTEM_UNKNOWN,
+    val selectedCategoryId: Long? = null,
     val selectedAccount: AccountRef = AccountRef.Unselected,
     val selectedToAccount: AccountRef = AccountRef.Unselected,
     val selectedCurrency: String = "",
@@ -108,7 +108,7 @@ data class QuickAddState(
 
     val canSave: Boolean
         get() {
-            if (amount < BigDecimal.ZERO) return false
+            if (amount <= BigDecimal.ZERO) return false
             return TransactionEntryService.validateAccountSelection(
                 entryMode = entryMode,
                 source = selectedAccount,
@@ -483,12 +483,21 @@ class QuickAddViewModel @Inject constructor(
 
     fun onAmountChanged(amount: BigDecimal) {
         _uiState.update { s ->
-            val result = TransactionEntryService.handleAmountChange(
-                amountStr = amount.stripTrailingZeros().toPlainString(),
-                currentState = toUpdateResult(s),
-                exchangeRates = s.exchangeRates,
-                isSplitMode = false
-            )
+            val amountStr = amount.stripTrailingZeros().toPlainString()
+            val result = if (s.activeAmountSide == AmountEditingSide.TARGET) {
+                TransactionEntryService.handleTargetAmountChange(
+                    amountStr = amountStr,
+                    currentState = toUpdateResult(s),
+                    exchangeRates = s.exchangeRates
+                )
+            } else {
+                TransactionEntryService.handleAmountChange(
+                    amountStr = amountStr,
+                    currentState = toUpdateResult(s),
+                    exchangeRates = s.exchangeRates,
+                    isSplitMode = false
+                )
+            }
             applyUpdate(s, result)
         }
     }
@@ -750,7 +759,7 @@ class QuickAddViewModel @Inject constructor(
         val s = state.value
         if (!canSave) return
         val amount = s.amount
-        if (amount < BigDecimal.ZERO) return
+        if (amount <= BigDecimal.ZERO) return
         
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
         val name = s.selectedTemplate?.name

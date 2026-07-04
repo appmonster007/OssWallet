@@ -137,7 +137,7 @@ data class PlannedPaymentEntryState(
     val errors: Set<EntryField>
         get() = buildSet {
             if (name.isBlank()) add(EntryField.NAME)
-            if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
+            if (amountValue <= BigDecimal.ZERO) add(EntryField.AMOUNT)
             if (selectedCategoryId <= 0) add(EntryField.CATEGORY)
 
             val accountResult = TransactionEntryService.validateAccountSelection(

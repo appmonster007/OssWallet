@@ -141,7 +141,9 @@ fun SmartSuggestionsScreen(
                                     },
                                     onAcceptAsPlannedPayment = {
                                         viewModel.setPlannedPaymentPrefillFromPattern(it)
-                                        actions.onAcceptAsPlannedPayment()
+                                        if (viewModel.plannedPaymentPrefill.value != null) {
+                                            actions.onAcceptAsPlannedPayment()
+                                        }
                                     },
                                     onDismiss = {
                                         dismissedPatterns =

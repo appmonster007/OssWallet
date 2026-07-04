@@ -141,8 +141,8 @@ class TransactionManager(
         val baseCategory = if (Category.isInitialBalance(request.categoryId))
             Category.SYSTEM_INITIAL_BALANCE else Category.SYSTEM_TRANSFER
 
-        val isSourceWallet = !sourceAccountId.isNullOrBlank()
-        val isTargetWallet = !targetAccountId.isNullOrBlank()
+        val isSourceWallet = sourceAccountId != null && sourceAccountId.isNotBlank()
+        val isTargetWallet = targetAccountId != null && targetAccountId.isNotBlank()
 
         return when {
             // Outflow: Wallet -> Outside

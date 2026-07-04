@@ -923,7 +923,7 @@ class TransactionEntryViewModel @Inject constructor(
      * Clear prefill DTO state.
      */
     fun clearPrefillDto() {
-        // Handled by the DisposableEffect in the UI
+        update { it.copy(prefillDto = null) }
     }
 
     /**

@@ -257,7 +257,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             currency = targetCurr
                         ),
                         entryMode = existing.entryMode,
-                        transferRate = existing.transferRate,
                         recurrenceType = schedule.recurrenceRule.type,
                         recurrenceInterval = schedule.recurrenceRule.interval,
                         dayOfWeek = schedule.recurrenceRule.dayOfWeek,

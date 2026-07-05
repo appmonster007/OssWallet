@@ -364,6 +364,19 @@ fun TransactionFormBody(
                 onDismiss = { onEvent(TransactionEntryEvent.ShowSplitNumpad(null)) }
             )
         }
+
+        if (state.showTemplateSheet) {
+            com.osscabinet.ossWallet.ui.components.entry.AeonTemplateSelection(
+                templates = state.templates,
+                categories = state.categories,
+                onTemplateSelected = { template ->
+                    if (template != null) onEvent(TransactionEntryEvent.ApplyTemplate(template))
+                    onEvent(TransactionEntryEvent.ShowTemplateSheet(false))
+                },
+                onDismiss = { onEvent(TransactionEntryEvent.ShowTemplateSheet(false)) },
+                showCreateNew = false
+            )
+        }
     }
 }
 

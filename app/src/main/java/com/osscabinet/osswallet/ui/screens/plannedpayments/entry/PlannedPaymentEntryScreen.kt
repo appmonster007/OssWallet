@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentEntrySheets
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components.PlannedPaymentFormBody
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -88,12 +87,6 @@ fun PlannedPaymentEntryScreen(
             onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             contentPadding = innerPadding
-        )
-
-        PlannedPaymentEntrySheets(
-            state = state,
-            onSearch = viewModel::searchTransactions,
-            onEvent = viewModel::onEvent
         )
 
         AeonConfirmDeleteDialog(

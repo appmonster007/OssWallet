@@ -712,6 +712,10 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.DismissAllSheets -> update {
                 it.copy(
                     showDatePicker = false,
+                    showAccountSheet = false,
+                    showTargetAccountSheet = false,
+                    showCategorySheet = false,
+                    showTemplateSheet = false,
                     showTagSheet = false,
                     showPaymentMethodSheet = false,
                     showStatusSheet = false,

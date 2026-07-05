@@ -8,12 +8,9 @@ import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.isOutside
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
@@ -49,10 +46,7 @@ class TransactionEntryViewModelTest {
     private lateinit var transactionManager: TransactionManager
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var computationRepository: ComputationRepository
-    private lateinit var accountRepository: AccountRepository
-    private lateinit var categoryRepository: CategoryRepository
     private lateinit var tagRepository: TagRepository
-    private lateinit var templateRepository: TemplateRepository
 
     private lateinit var viewModel: TransactionEntryViewModel
 
@@ -82,19 +76,22 @@ class TransactionEntryViewModelTest {
         transactionManager = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         computationRepository = mockk(relaxed = true)
-        accountRepository = mockk(relaxed = true)
-        categoryRepository = mockk(relaxed = true)
         tagRepository = mockk(relaxed = true)
-        templateRepository = mockk(relaxed = true)
 
         every { settingsRepository.currentProfileId } returns MutableStateFlow(1)
         every { settingsRepository.currency } returns flowOf("USD")
         every { settingsRepository.mapsAccessEnabled } returns flowOf(false)
-        
-        every { accountRepository.getAllAccounts(any()) } returns MutableStateFlow(listOf(mockAccount, mockToAccount))
-        every { categoryRepository.categories } returns MutableStateFlow(emptyList())
-        every { tagRepository.getAllTags() } returns MutableStateFlow(emptyList<Tag>())
         every { computationRepository.exchangeRatesSnapshot } returns MutableStateFlow(ExchangeRateSnapshot("USD", mapOf("EUR" to BigDecimal("0.85"))))
+        every { transactionUseCases.observeEntryCoreData(any()) } returns flowOf(
+            TransactionUseCases.EntryCoreData(
+                accounts = listOf(mockAccount, mockToAccount),
+                categories = emptyList(),
+                tags = emptyList(),
+                templates = emptyList(),
+                payees = emptyList(),
+                notes = emptyList()
+            )
+        )
 
         viewModel = TransactionEntryViewModel(
             savedStateHandle = SavedStateHandle(),
@@ -102,10 +99,7 @@ class TransactionEntryViewModelTest {
             transactionManager = transactionManager,
             settingsRepository = settingsRepository,
             computationRepository = computationRepository,
-            accountRepository = accountRepository,
-            categoryRepository = categoryRepository,
-            tagRepository = tagRepository,
-            templateRepository = templateRepository
+            tagRepository = tagRepository
         )
     }
 

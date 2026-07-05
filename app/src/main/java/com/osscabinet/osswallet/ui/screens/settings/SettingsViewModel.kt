@@ -178,7 +178,7 @@ class SettingsViewModel @Inject constructor(
     private val _onboardingSyncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val onboardingSyncState: StateFlow<SyncState> = _onboardingSyncState
 
-    private val _backupMessage = Channel<String>()
+    private val _backupMessage = Channel<String>(Channel.BUFFERED)
     val backupMessage: Flow<String> = _backupMessage.receiveAsFlow()
 
     val autoBackupConfig: StateFlow<AutoBackupConfig> = settingsRepository.autoBackupConfig

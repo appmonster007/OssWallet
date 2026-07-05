@@ -96,7 +96,7 @@ data class PlannedPaymentEntryState(
         showTargetAccount = showTargetAccountSheet,
         showCategory = showCategorySheet,
         showPaymentMethod = showPaymentMethodSheet,
-        showStatus = showStatusSheet,
+        showStatus = showTransactionStatusSheet,
         showTag = showTagSheet,
         showCurrency = showCurrencySheet,
         showTargetCurrency = showTargetCurrencySheet,

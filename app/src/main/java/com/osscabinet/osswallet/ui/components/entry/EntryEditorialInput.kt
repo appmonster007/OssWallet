@@ -186,7 +186,8 @@ fun EntryEditorialInput(
                     }
                 },
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            hazeStyle = GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
+            hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp)
+                        else GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
             glassVariant = GlassVariant.Card,
             fallbackColor = backgroundColor,
             borderColor = borderColor,

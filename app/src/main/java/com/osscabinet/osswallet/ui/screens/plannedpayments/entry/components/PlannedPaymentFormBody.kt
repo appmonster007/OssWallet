@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
+import com.osscabinet.ossWallet.ui.components.entry.AeonPlannedPaymentStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
@@ -368,6 +369,17 @@ private fun PlannedPaymentSheetOrchestrator(
                 onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowTemplateSheet(false)) }
+        )
+    }
+
+    if (state.showStatusSheet) {
+        AeonPlannedPaymentStatusSelection(
+            selectedStatus = state.status,
+            onStatusSelected = { status ->
+                onEvent(PlannedPaymentEntryEvent.SetStatus(status))
+                onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
+            },
+            onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false)) }
         )
     }
 

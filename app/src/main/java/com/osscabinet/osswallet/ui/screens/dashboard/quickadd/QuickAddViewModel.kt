@@ -768,8 +768,8 @@ class QuickAddViewModel @Inject constructor(
             ?: categories.value.find { it.id == categoryId }?.name
             ?: if (s.entryMode == EntryMode.TRANSFER) "Transfer" else "Quick Transaction"
 
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true) }
             runCatching {
                 withProfile { profileId ->
                     val request = TransactionEntryService.createRequest(

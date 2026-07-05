@@ -140,7 +140,8 @@ class TransactionViewModel @Inject constructor(
     val allTags: StateFlow<List<Tag>> = tagRepository.getAllTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories: StateFlow<List<Category>> = categoryRepository.categories
+    val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val exchangeRates: StateFlow<ExchangeRateSnapshot> = computationRepository.exchangeRatesSnapshot

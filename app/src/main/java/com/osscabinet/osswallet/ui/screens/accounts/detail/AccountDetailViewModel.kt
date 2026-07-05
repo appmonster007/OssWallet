@@ -144,7 +144,7 @@ class AccountDetailViewModel @Inject constructor(
                 combine(
                     accountRepository.getAllAccounts(profileId),
                     transactionUseCases.getTransactions(profileId),
-                    categoryRepository.categories,
+                    categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
                     transactionUseCases.getAllTransactionLinks()
                 ) { acc, tx, cat, tags, links ->

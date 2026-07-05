@@ -341,7 +341,7 @@ class DashboardViewModel @Inject constructor(
             val structuralStateFlow = combine(
                 accountRepository.getAllAccounts(profileId),
                 transactionUseCases.getTransactions(profileId),
-                categoryRepository.categories,
+                categoryRepository.getAllCategories(profileId),
                 transactionManager.getAllTransactionLinks(),
                 combine(
                     computationRepository.selectedCurrency,
@@ -688,7 +688,7 @@ class DashboardViewModel @Inject constructor(
                 val enriched = TimelineService.enrichTransactions(
                     scopedLinked,
                     accountRepository.getAllAccounts(profileId).first(),
-                    categoryRepository.categories.first(),
+                    categoryRepository.getAllCategories(profileId).first(),
                     tagRepository.getAllTags().first(),
                     baseCurr,
                     rates

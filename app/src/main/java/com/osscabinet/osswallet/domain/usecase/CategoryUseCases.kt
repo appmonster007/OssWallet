@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 class CategoryUseCases(
     private val categoryRepository: CategoryRepository
 ) {
-    val categories: Flow<List<Category>> = categoryRepository.categories
+    fun getCategories(profileId: Int): Flow<List<Category>> = categoryRepository.getAllCategories(profileId)
 
     suspend fun upsertCategory(
         id: Long = 0,

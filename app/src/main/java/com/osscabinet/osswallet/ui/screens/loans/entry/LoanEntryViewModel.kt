@@ -64,7 +64,7 @@ class LoanEntryViewModel @Inject constructor(
                 val uniquePayees = transactionUseCases.getUniquePayees(profileId)
                 combine(
                     accountRepository.getAllAccounts(profileId),
-                    categoryRepository.categories,
+                    categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
                     filterRepository.getAllFilters()
                 ) { accounts, categories, tags, filters ->

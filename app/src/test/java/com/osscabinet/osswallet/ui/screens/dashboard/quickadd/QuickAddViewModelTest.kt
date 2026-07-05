@@ -95,7 +95,7 @@ class QuickAddViewModelTest {
         every { templateRepository.getAllTemplates(any()) } returns MutableStateFlow(emptyList<Template>())
 
         categoryRepository = mockk(relaxed = true)
-        every { categoryRepository.categories } returns MutableStateFlow(emptyList<Category>())
+        every { categoryRepository.getAllCategories(any()) } returns MutableStateFlow(emptyList<Category>())
 
         viewModel = QuickAddViewModel(
             settingsRepository = settingsRepository,

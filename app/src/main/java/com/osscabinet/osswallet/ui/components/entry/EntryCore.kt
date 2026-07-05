@@ -1,10 +1,9 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
+import androidx.compose.runtime.Immutable
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 
-/**
- * Common visibility state for entry forms.
- */
+@Immutable
 data class FormSheetState(
     val showAccount: Boolean = false,
     val showTargetAccount: Boolean = false,

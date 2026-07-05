@@ -478,6 +478,23 @@ class TemplateEntryViewModel @Inject constructor(
                 }
             }
 
+            is TemplateEntryEvent.DismissAllSheets -> _state.update {
+                it.copy(
+                    showAccountSheet = false,
+                    showTargetAccountSheet = false,
+                    showCategorySheet = false,
+                    showPaymentMethodSheet = false,
+                    showStatusSheet = false,
+                    showTagSheet = false,
+                    showCurrencySheet = false,
+                    showTargetCurrencySheet = false,
+                    showExchangeRateDialog = false,
+                    showWarrantyDatePicker = false,
+                    showLocationSheet = false,
+                    showLinkedTransactionSheet = false,
+                )
+            }
+
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }

@@ -415,18 +415,7 @@ private fun PlannedPaymentSheetOrchestrator(
                 EntryField.ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
                 EntryField.TARGET_ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
                 EntryField.CATEGORY -> onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
-                else -> {
-                    onEvent(PlannedPaymentEntryEvent.ShowTagSheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowPaymentMethodSheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowTransactionStatusSheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowWarrantyDatePicker(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowLocationSheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(false))
-                    onEvent(PlannedPaymentEntryEvent.ShowLinkedTransactionSheet(false))
-                }
+                else -> onEvent(PlannedPaymentEntryEvent.DismissAllSheets)
             }
         },
         onSearchTransactions = onSearch,

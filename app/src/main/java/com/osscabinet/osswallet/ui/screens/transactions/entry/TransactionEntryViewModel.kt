@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionEntryServic
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,6 +52,7 @@ import jakarta.inject.Inject
 class TransactionEntryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val transactionUseCases: TransactionUseCases,
+    private val entryFormDataUseCase: EntryFormDataUseCase,
     private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
     private val computationRepository: ComputationRepository,
@@ -92,7 +94,7 @@ class TransactionEntryViewModel @Inject constructor(
             val baseCurrency = settingsRepository.currency.first()
 
             // Shared Data Loading
-            transactionUseCases.observeEntryCoreData(profileId).first().let { data ->
+            entryFormDataUseCase.observeEntryCoreData(profileId).first().let { data ->
                 val mapsAccess = settingsRepository.mapsAccessEnabled.first()
 
                 val isEditMode = transactionId != null && transactionId != -1L

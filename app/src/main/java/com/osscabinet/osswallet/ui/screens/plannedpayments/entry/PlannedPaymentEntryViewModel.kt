@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
     private val transactionUseCases: TransactionUseCases,
+    private val entryFormDataUseCase: EntryFormDataUseCase,
     private val computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
@@ -82,7 +84,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     private fun loadInitialData() {
         viewModelScope.launch {
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                transactionUseCases.observeEntryCoreData(profileId).map { profileId to it }
+                entryFormDataUseCase.observeEntryCoreData(profileId).map { profileId to it }
             }.collect { (profileId, data) ->
                 _state.update { current ->
                     val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && data.accounts.isNotEmpty()) {

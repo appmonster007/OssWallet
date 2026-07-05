@@ -102,6 +102,7 @@ fun QuickAddSheet(
     val state by viewModel.state.collectAsState()
     val sections by viewModel.sections.collectAsState()
     val categories by viewModel.categories.collectAsState()
+    var saveSucceeded by remember { mutableStateOf(false) }
 
     QuickAddSheetInternal(
         state = state,
@@ -124,8 +125,9 @@ fun QuickAddSheet(
         onSetAmountFocus = viewModel::setAmountFocus,
         onSetAccountFocus = viewModel::setAccountFocus,
         onToggleAmountOverride = viewModel::toggleAmountOverride,
-        onSaveTransaction = { viewModel.saveTransaction(onSuccess = onDismiss) },
-        goToStep = viewModel::goToStep
+        onSaveTransaction = { viewModel.saveTransaction(onSuccess = { saveSucceeded = true }) },
+        goToStep = viewModel::goToStep,
+        isSaveSuccess = saveSucceeded
     )
 }
 
@@ -152,7 +154,8 @@ internal fun QuickAddSheetInternal(
     onSetAccountFocus: (AmountEditingSide) -> Unit,
     onToggleAmountOverride: () -> Unit,
     onSaveTransaction: () -> Unit,
-    goToStep: (Int) -> Unit
+    goToStep: (Int) -> Unit,
+    isSaveSuccess: Boolean = false
 ) {
     val glassEnabled = LocalGlassmorphismEnabled.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -184,6 +187,13 @@ internal fun QuickAddSheetInternal(
     fun animateDismiss() {
         hideKeyboard()
         visibleState.targetState = false
+    }
+
+    LaunchedEffect(isSaveSuccess) {
+        if (isSaveSuccess) {
+            kotlinx.coroutines.delay(650)
+            animateDismiss()
+        }
     }
 
     // Predictive Back Handling (Modern SDK) — system/gesture back always dismisses
@@ -438,7 +448,8 @@ private fun QuickAddSheetContent(
         EditorialHeader(title = title, subtext = subtext)
 
         // ── Step body (the flexible region) ────────────────────────────────────
-        AeonGlassHost(modifier = Modifier.weight(1f, fill = false)) {
+        Box(modifier = Modifier.weight(1f, fill = false)) {
+        AeonGlassHost {
             AnimatedContent(
                 targetState = state.currentStep,
                 modifier = Modifier.fillMaxWidth(),
@@ -529,6 +540,28 @@ private fun QuickAddSheetContent(
                 }
             }
         }
+
+        AnimatedVisibility(
+            visible = isSaveSuccess,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.matchParentSize()
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppColors.surface.copy(alpha = 0.85f))
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Done,
+                    contentDescription = null,
+                    tint = AppColors.primary,
+                    modifier = Modifier.size(56.dp)
+                )
+            }
+        }
+        } // end Box wrapper
 
         // ── Footer: back chevron · step dots · champagne CTA ───────────────────
         QuickAddFooter(

@@ -819,43 +819,47 @@ class TransactionEntryViewModel @Inject constructor(
     fun saveTransaction(
         onSuccess: (transactionId: Long) -> Unit = {}
     ) {
+        if (_state.value.isSaving) return
+        _state.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            val currentState = _state.value
-            if (!currentState.canSave) return@launch
+            try {
+                val currentState = _state.value
+                if (!currentState.canSave) return@launch
 
-            if (currentState.isEditMode && currentState.existingTransaction == null) {
-                // Stale edit state — VM was not yet initialized with the existing transaction.
-                // Do not proceed to avoid creating a duplicate insert.
-                return@launch
-            }
+                if (currentState.isEditMode && currentState.existingTransaction == null) {
+                    return@launch
+                }
 
-            val profileId = settingsRepository.currentProfileId.first()
+                val profileId = settingsRepository.currentProfileId.first()
 
-            if (currentState.isSplitMode) {
-                val baseRequest = buildBaseRequest()
-                val id = transactionManager.handleSaveSplitTransactions(
-                    existingTransactionId = if (currentState.isEditMode) currentState.transactionId else null,
-                    splits = currentState.splits,
-                    baseRequest = baseRequest,
-                    profileId = profileId,
-                    categoryNameLookup = { catId ->
-                        currentState.categories.find { it.id == catId }?.name ?: "Transaction"
-                    }
-                )
-                onSuccess(id)
-            } else {
-                val request = buildTransactionRequest() ?: return@launch
-                val id = transactionManager.handleSaveTransaction(
-                    existingTransaction = if (currentState.isEditMode) currentState.existingTransaction else null,
-                    request = request,
-                    profileId = profileId,
-                    linkedTransactionIds = currentState.linkedTransactionIds,
-                    clonedFromId = if (currentState.isEditMode) null else currentState.prefillDto?.clonedFromTransactionId,
-                    sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
-                    scheduledDate = currentState.prefillDto?.plannedScheduledDate
-                        ?: currentState.selectedDateMillis
-                )
-                onSuccess(id)
+                if (currentState.isSplitMode) {
+                    val baseRequest = buildBaseRequest()
+                    val id = transactionManager.handleSaveSplitTransactions(
+                        existingTransactionId = if (currentState.isEditMode) currentState.transactionId else null,
+                        splits = currentState.splits,
+                        baseRequest = baseRequest,
+                        profileId = profileId,
+                        categoryNameLookup = { catId ->
+                            currentState.categories.find { it.id == catId }?.name ?: "Transaction"
+                        }
+                    )
+                    onSuccess(id)
+                } else {
+                    val request = buildTransactionRequest() ?: return@launch
+                    val id = transactionManager.handleSaveTransaction(
+                        existingTransaction = if (currentState.isEditMode) currentState.existingTransaction else null,
+                        request = request,
+                        profileId = profileId,
+                        linkedTransactionIds = currentState.linkedTransactionIds,
+                        clonedFromId = if (currentState.isEditMode) null else currentState.prefillDto?.clonedFromTransactionId,
+                        sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
+                        scheduledDate = currentState.prefillDto?.plannedScheduledDate
+                            ?: currentState.selectedDateMillis
+                    )
+                    onSuccess(id)
+                }
+            } finally {
+                _state.update { it.copy(isSaving = false) }
             }
         }
     }

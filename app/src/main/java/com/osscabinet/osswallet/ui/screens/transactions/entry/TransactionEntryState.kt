@@ -100,6 +100,7 @@ data class TransactionEntryState(
     // Navigation
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false,
+    val isSaving: Boolean = false,
 
     // Profile configuration
     val baseCurrency: String = "",

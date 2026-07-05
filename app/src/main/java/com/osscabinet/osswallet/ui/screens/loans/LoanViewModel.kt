@@ -50,7 +50,9 @@ class LoanViewModel @Inject constructor(
         .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val categories: StateFlow<List<Category>> = categoryRepository.categories
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableTags: StateFlow<List<String>> = transactions

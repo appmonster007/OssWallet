@@ -79,7 +79,7 @@ class DashboardViewModelTest {
         every { cardRepository.getCardsConfig(any()) } returns flowOf(DashboardCardsConfig())
 
         categoryRepository = mockk(relaxed = true)
-        every { categoryRepository.categories } returns flowOf(emptyList())
+        every { categoryRepository.getAllCategories(any()) } returns flowOf(emptyList())
 
         cardComputerRegistry = mockk(relaxed = true)
         transactionManager = mockk(relaxed = true)

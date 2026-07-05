@@ -57,7 +57,7 @@ class FilterEntryViewModel @Inject constructor(
             settingsRepository.currentProfileId.flatMapLatest { profileId ->
                 combine(
                     accountRepository.getAllAccounts(profileId),
-                    categoryRepository.categories,
+                    categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags()
                 ) { accounts, categories, tags ->
                     _state.update {

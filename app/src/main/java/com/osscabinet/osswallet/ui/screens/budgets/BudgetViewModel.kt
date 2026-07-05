@@ -52,7 +52,9 @@ class BudgetViewModel @Inject constructor(
         .flatMapLatest { profileId -> transactionRepository.getAllTransactions(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val categories: StateFlow<List<Category>> = categoryRepository.categories
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableTags: StateFlow<List<String>> = transactions

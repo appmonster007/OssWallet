@@ -6,8 +6,10 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import jakarta.inject.Inject
@@ -18,7 +20,9 @@ class CategoryViewModel @Inject constructor(
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
-    val categories: StateFlow<List<Category>> = categoryRepository.categories
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun upsertCategory(category: Category) {

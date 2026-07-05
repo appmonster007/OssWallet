@@ -123,7 +123,7 @@ class AnalyticsViewModel @Inject constructor(
                 combine(
                     transactionUseCases.getTransactions(profileId),
                     accountRepository.getAllAccounts(profileId),
-                    categoryRepository.categories,
+                    categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags()
                 ) { tx, acc, cat, tags ->
                     DomainSnapshot(

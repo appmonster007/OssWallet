@@ -56,7 +56,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             excludeFuture = true
         )
 
-        val categoryMap = common.categoryRepository.categories.first().associateBy { it.id }
+        val categoryMap = common.categoryRepository.getAllCategories(common.profileId).first().associateBy { it.id }
         
         // Load accounts to map account names
         val ep = dagger.hilt.android.EntryPointAccessors.fromApplication(

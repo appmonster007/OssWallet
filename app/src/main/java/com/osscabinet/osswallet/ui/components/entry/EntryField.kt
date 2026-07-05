@@ -11,5 +11,15 @@ enum class EntryField {
     CATEGORY,
     DATE,
     PAYEE,
-    NOTE
+    NOTE,
+    CURRENCY,
+    TARGET_CURRENCY,
+    EXCHANGE_RATE,
+    TAGS,
+    STATUS,
+    PAYMENT_METHOD,
+    LOCATION,
+    WARRANTY_DATE,
+    LINKED_TRANSACTIONS,
+    TEMPLATE
 }

@@ -785,7 +785,7 @@ class QuickAddViewModel @Inject constructor(
                         payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
                         status = s.selectedTemplate?.transactionStatus ?: TransactionStatus.CLEARED,
                         tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
-                        amountOverride = s.amountOverride,
+                        targetAmountOverride = s.amountOverride,
                         exchangeRates = s.exchangeRates,
                         accounts = s.accounts,
                         baseCurrency = s.baseCurrency

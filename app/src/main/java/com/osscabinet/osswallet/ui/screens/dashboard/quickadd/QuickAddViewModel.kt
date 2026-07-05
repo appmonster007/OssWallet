@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
@@ -756,6 +757,7 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun saveTransaction(onSuccess: () -> Unit) {
+        if (_uiState.value.isSaving) return
         val s = state.value
         if (!canSave) return
         val amount = s.amount
@@ -798,6 +800,7 @@ class QuickAddViewModel @Inject constructor(
                 _uiState.update { it.copy(isSaving = false) }
                 onSuccess()
             }.onFailure {
+                if (it is CancellationException) throw it
                 _uiState.update { it.copy(isSaving = false) }
             }
         }

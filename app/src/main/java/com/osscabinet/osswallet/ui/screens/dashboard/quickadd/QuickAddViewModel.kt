@@ -424,7 +424,7 @@ class QuickAddViewModel @Inject constructor(
                 note = prefill.note,
                 payee = prefill.payee,
                 tags = prefill.tags,
-                currentStep = 1
+                currentStep = if (prefill.account.isPicked) 2 else 1
             )
         }
     }

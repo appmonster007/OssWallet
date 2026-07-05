@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -66,6 +67,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     val state: StateFlow<PlannedPaymentEntryState> = _state.asStateFlow()
 
     private var lastInitParams: Pair<Long?, PlannedPaymentPrefillDTO?>? = null
+    private var rateJob: Job? = null
 
     init {
         loadInitialData()
@@ -342,7 +344,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     state.copy(
                         entryMode = result.newMode,
                         source = result.source,
-                        destination = result.destination
+                        destination = result.destination,
+                        isRateFixed = if (newMode != EntryMode.TRANSFER) false else state.isRateFixed
                     )
                 }
                 if (newMode == EntryMode.TRANSFER) {
@@ -792,26 +795,35 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     }
 
     private fun recalculateExchangeRate() {
-        viewModelScope.launch {
-            val currentState = _state.value
-            if (currentState.entryMode == EntryMode.TRANSFER &&
-                currentState.currency.isNotEmpty() &&
-                currentState.targetCurrency.isNotEmpty()
-            ) {
-                val rates = computationRepository.exchangeRatesSnapshot.first()
-                val rate = TransactionEntryService.getMarketRate(
-                    fromCurrency = currentState.currency,
-                    toCurrency = currentState.targetCurrency,
-                    exchangeRates = rates
-                )
-                _state.update {
-                    it.copy(
-                        exchangeRate = rate,
-                        destination = it.destination.copy(
-                            amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
-                        )
+        rateJob?.cancel()
+        rateJob = viewModelScope.launch {
+            val snapshot = _state.value
+            if (snapshot.entryMode != EntryMode.TRANSFER ||
+                snapshot.currency.isEmpty() ||
+                snapshot.targetCurrency.isEmpty()
+            ) return@launch
+
+            val rates = computationRepository.exchangeRatesSnapshot.first()
+
+            val current = _state.value
+            if (current.entryMode != EntryMode.TRANSFER ||
+                current.currency != snapshot.currency ||
+                current.targetCurrency != snapshot.targetCurrency ||
+                current.isRateFixed
+            ) return@launch
+
+            val rate = TransactionEntryService.getMarketRate(
+                fromCurrency = current.currency,
+                toCurrency = current.targetCurrency,
+                exchangeRates = rates
+            )
+            _state.update {
+                it.copy(
+                    exchangeRate = rate,
+                    destination = it.destination.copy(
+                        amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
                     )
-                }
+                )
             }
         }
     }

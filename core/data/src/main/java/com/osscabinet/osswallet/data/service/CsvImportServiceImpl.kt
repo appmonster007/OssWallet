@@ -243,8 +243,7 @@ class CsvImportServiceImpl @Inject constructor(
                 .setTrim(true)
                 .build()
 
-            val parser = CSVParser.parse(reader, format)
-            val records = parser.records
+            val records = CSVParser.parse(reader, format).use { it.records }
             if (records.isEmpty()) return@withContext CsvImportSession(emptyList(), emptyList(), emptyMap(), null, delimiter)
 
             val headers = records.first().toList().map { it.trim().lowercase() }

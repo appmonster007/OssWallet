@@ -88,6 +88,8 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Add profileId to categories — existing rows assigned to profile 1.
                 db.execSQL("ALTER TABLE categories ADD COLUMN profileId INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("DROP INDEX IF EXISTS `index_categories_name`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_categories_name_profileId` ON `categories` (`name`, `profileId`)")
 
                 // Tags: add profileId, then recreate table to replace the global name-unique
                 // index with a per-profile (name, profileId) unique index.

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -18,5 +19,6 @@ data class CategoryEntity(
     val isDefault: Boolean = false,
     val parentId: Long? = null,
     val nature: CategoryNature = CategoryNature.WANT,
+    @ColumnInfo(defaultValue = "1")
     val profileId: Int = 1
 )

@@ -25,12 +25,12 @@ class TagRepositoryImpl @Inject constructor(
 
     override suspend fun insertTag(tag: Tag) {
         if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
-        tagDao.insertTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
+        tagDao.insertTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex, profileId = tag.profileId))
     }
 
     override suspend fun deleteTag(tag: Tag) {
         if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
-        tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex))
+        tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex, profileId = tag.profileId))
     }
 
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {
@@ -60,6 +60,6 @@ class TagRepositoryImpl @Inject constructor(
             // The junction table uses tagId, so no change needed there for a name change.
             // But if the ID were to change (it doesn't here), we'd need more logic.
         }
-        tagDao.insertTag(TagEntity(id = newTag.id, name = newTag.name, colorHex = newTag.colorHex))
+        tagDao.insertTag(TagEntity(id = newTag.id, name = newTag.name, colorHex = newTag.colorHex, profileId = newTag.profileId))
     }
 }

@@ -143,7 +143,6 @@ data class TransactionEntryState(
 
     val errors: Set<EntryField>
         get() = buildSet {
-            // Amount validation (Allowing 0.00 is fine, but negative or unparseable is not)
             if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
 
             // Account validation

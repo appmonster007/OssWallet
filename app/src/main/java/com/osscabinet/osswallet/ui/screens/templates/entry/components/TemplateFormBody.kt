@@ -289,17 +289,7 @@ private fun TemplateSheetOrchestrator(
                 EntryField.ACCOUNT -> onEvent(TemplateEntryEvent.ShowAccountSheet(false))
                 EntryField.TARGET_ACCOUNT -> onEvent(TemplateEntryEvent.ShowTargetAccountSheet(false))
                 EntryField.CATEGORY -> onEvent(TemplateEntryEvent.ShowCategorySheet(false))
-                else -> {
-                    onEvent(TemplateEntryEvent.ShowTagSheet(false))
-                    onEvent(TemplateEntryEvent.ShowPaymentMethodSheet(false))
-                    onEvent(TemplateEntryEvent.ShowStatusSheet(false))
-                    onEvent(TemplateEntryEvent.ShowWarrantyDatePicker(false))
-                    onEvent(TemplateEntryEvent.ShowLocationSheet(false))
-                    onEvent(TemplateEntryEvent.ShowExchangeRateDialog(false))
-                    onEvent(TemplateEntryEvent.ShowCurrencySheet(false))
-                    onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(false))
-                    onEvent(TemplateEntryEvent.ShowLinkedTransactionSheet(false))
-                }
+                else -> onEvent(TemplateEntryEvent.DismissAllSheets)
             }
         },
         onSearchTransactions = onSearch,

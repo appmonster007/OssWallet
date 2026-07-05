@@ -71,6 +71,7 @@ sealed class PlannedPaymentEntryEvent {
     data class ShowLinkedTransactionSheet(val show: Boolean) : PlannedPaymentEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : PlannedPaymentEntryEvent()
 
+    data object DismissAllSheets : PlannedPaymentEntryEvent()
     data object SwapAccounts : PlannedPaymentEntryEvent()
     data object ToggleRateMode : PlannedPaymentEntryEvent()
 

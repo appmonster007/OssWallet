@@ -653,6 +653,25 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 }
             }
 
+            is PlannedPaymentEntryEvent.DismissAllSheets -> _state.update {
+                it.copy(
+                    showAccountSheet = false,
+                    showTargetAccountSheet = false,
+                    showCategorySheet = false,
+                    showPaymentMethodSheet = false,
+                    showTagSheet = false,
+                    showStatusSheet = false,
+                    showTransactionStatusSheet = false,
+                    showWarrantyDatePicker = false,
+                    showLocationSheet = false,
+                    showLinkedTransactionSheet = false,
+                    showCurrencySheet = false,
+                    showTargetCurrencySheet = false,
+                    showTemplateSheet = false,
+                    showExchangeRateDialog = false,
+                )
+            }
+
             is PlannedPaymentEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
         }
     }

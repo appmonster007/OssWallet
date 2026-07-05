@@ -80,9 +80,13 @@ fun SmartSuggestionsScreen(
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val plannedPaymentPrefill by viewModel.plannedPaymentPrefill.collectAsStateWithLifecycle()
     var dismissedPatterns by remember { mutableStateOf(setOf<String>()) }
+    var navigationHandled by remember { mutableStateOf(false) }
 
     LaunchedEffect(plannedPaymentPrefill) {
-        if (plannedPaymentPrefill != null) {
+        if (plannedPaymentPrefill == null) {
+            navigationHandled = false
+        } else if (!navigationHandled) {
+            navigationHandled = true
             actions.onAcceptAsPlannedPayment()
         }
     }

@@ -102,7 +102,7 @@ data class TransactionEntryState(
     val navTriggered: Boolean = false,
 
     // Profile configuration
-    val baseCurrency: String = "USD",
+    val baseCurrency: String = "",
 ) {
     val sheetState: FormSheetState get() = FormSheetState(
         showAccount = showAccountSheet,

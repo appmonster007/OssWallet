@@ -333,7 +333,7 @@ fun TransactionFormBody(
                 isIncome = state.isIncome,
                 onAddSplit = { onEvent(TransactionEntryEvent.AddSplit) },
                 onRemoveSplit = { index -> onEvent(TransactionEntryEvent.RemoveSplit(index)) },
-                onUpdateSplit = { index, note, amount, categoryId ->
+                onUpdateSplit = { index, amount, note, categoryId ->
                     onEvent(TransactionEntryEvent.UpdateSplit(index, categoryId, amount, note))
                 },
                 onShowCategorySheet = { index -> onEvent(TransactionEntryEvent.ShowSplitCategorySheet(index)) },

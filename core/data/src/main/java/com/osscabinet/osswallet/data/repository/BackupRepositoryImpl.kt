@@ -1268,9 +1268,11 @@ class BackupRepositoryImpl @Inject constructor(
             // Restore in strict parent-before-child order to satisfy all FK constraints.
             // Only clear and restore if the file actually exists in the ZIP to prevent accidental wipes.
             if (RestorableEntity.PROFILES in safeEntities) File(tempDir, "profiles.csv").let { if (it.exists()) { profileDao.clearAll(); restoreProfiles(it) } }
-            if (RestorableEntity.ACCOUNTS in safeEntities) File(tempDir, "accounts.csv").let { if (it.exists()) { accountDao.clearAll(); restoreAccounts(it) } }
-            if (RestorableEntity.CATEGORIES in safeEntities) File(tempDir, "categories.csv").let { if (it.exists()) { categoryDao.clearAll(); restoreCategories(it) } }
-            if (RestorableEntity.TAGS in safeEntities) File(tempDir, "tags.csv").let { if (it.exists()) { tagDao.clearAll(); restoreTags(it) } }
+            // ACCOUNTS/CATEGORIES/TAGS use upsert semantics — no clearAll so records created
+            // after the backup date are preserved (fixes data loss when restoring Transactions only).
+            if (RestorableEntity.ACCOUNTS in safeEntities) File(tempDir, "accounts.csv").let { if (it.exists()) restoreAccounts(it) }
+            if (RestorableEntity.CATEGORIES in safeEntities) File(tempDir, "categories.csv").let { if (it.exists()) restoreCategories(it) }
+            if (RestorableEntity.TAGS in safeEntities) File(tempDir, "tags.csv").let { if (it.exists()) restoreTags(it) }
             if (RestorableEntity.FILTERS in safeEntities) File(tempDir, "filters.csv").let { if (it.exists()) { filterDao.clearAll(); restoreFilters(it) } }
             if (RestorableEntity.TEMPLATES in safeEntities) File(tempDir, "templates.csv").let { if (it.exists()) { templateDao.clearAll(); restoreTemplates(it) } }
             if (RestorableEntity.TRANSACTIONS in safeEntities) File(tempDir, "transactions.csv").let { if (it.exists()) { transactionDao.clearAll(); transactionLinkDao.clearAll(); restoreTransactions(it); restoreLinks(File(tempDir, "transaction_links.csv")) } }

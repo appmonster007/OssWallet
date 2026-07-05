@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import io.mockk.every
 import io.mockk.mockk
@@ -43,6 +44,7 @@ class TransactionEntryViewModelTest {
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
     private lateinit var transactionUseCases: TransactionUseCases
+    private lateinit var entryFormDataUseCase: EntryFormDataUseCase
     private lateinit var transactionManager: TransactionManager
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var computationRepository: ComputationRepository
@@ -73,6 +75,7 @@ class TransactionEntryViewModelTest {
         CurrencyService.setFormatConfig(2, CurrencyService.FormattingSystem.WESTERN)
 
         transactionUseCases = mockk(relaxed = true)
+        entryFormDataUseCase = mockk(relaxed = true)
         transactionManager = mockk(relaxed = true)
         settingsRepository = mockk(relaxed = true)
         computationRepository = mockk(relaxed = true)
@@ -82,8 +85,8 @@ class TransactionEntryViewModelTest {
         every { settingsRepository.currency } returns flowOf("USD")
         every { settingsRepository.mapsAccessEnabled } returns flowOf(false)
         every { computationRepository.exchangeRatesSnapshot } returns MutableStateFlow(ExchangeRateSnapshot("USD", mapOf("EUR" to BigDecimal("0.85"))))
-        every { transactionUseCases.observeEntryCoreData(any()) } returns flowOf(
-            TransactionUseCases.EntryCoreData(
+        every { entryFormDataUseCase.observeEntryCoreData(any()) } returns flowOf(
+            EntryFormDataUseCase.EntryCoreData(
                 accounts = listOf(mockAccount, mockToAccount),
                 categories = emptyList(),
                 tags = emptyList(),
@@ -96,6 +99,7 @@ class TransactionEntryViewModelTest {
         viewModel = TransactionEntryViewModel(
             savedStateHandle = SavedStateHandle(),
             transactionUseCases = transactionUseCases,
+            entryFormDataUseCase = entryFormDataUseCase,
             transactionManager = transactionManager,
             settingsRepository = settingsRepository,
             computationRepository = computationRepository,

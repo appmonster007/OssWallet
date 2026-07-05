@@ -12,56 +12,10 @@ import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
-import kotlinx.coroutines.flow.combine
-
 class TransactionUseCases(
     private val repository: TransactionRepository,
-    private val sharedWalletRepository: SharedWalletRepository,
-    private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
-    private val tagRepository: TagRepository,
-    private val templateRepository: TemplateRepository
+    private val sharedWalletRepository: SharedWalletRepository
 ) {
-    /**
-     * Unified data structure for entry form initialization.
-     */
-    data class EntryCoreData(
-        val accounts: List<Account>,
-        val categories: List<Category>,
-        val tags: List<Tag>,
-        val templates: List<Template>,
-        val payees: List<String>,
-        val notes: List<String>
-    )
-
-    /**
-     * Consolidates retrieval of all master data required for an entry form.
-     */
-    fun observeEntryCoreData(profileId: Int): Flow<EntryCoreData> {
-        return combine(
-            combine(
-                accountRepository.getAllAccounts(profileId),
-                categoryRepository.getAllCategories(profileId),
-                tagRepository.getAllTags(profileId),
-                templateRepository.getAllTemplates(profileId)
-            ) { accounts, categories, tags, templates ->
-                accounts to Triple(categories, tags, templates)
-            },
-            repository.observeUniquePayees(profileId),
-            repository.observeUniqueNotes(profileId)
-        ) { (accounts, triple), payees, notes ->
-            val (categories, tags, templates) = triple
-            EntryCoreData(accounts, categories, tags, templates, payees, notes)
-        }
-    }
-
     fun getTransactions(profileId: Int = 1): Flow<List<Transaction>> {
         return repository.getAllTransactions(profileId)
     }

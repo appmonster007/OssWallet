@@ -25,6 +25,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
+import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import dagger.Module
 import dagger.Provides
@@ -40,20 +41,21 @@ object UseCaseModule {
     @Singleton
     fun provideTransactionUseCases(
         transactionRepository: TransactionRepository,
-        sharedWalletRepository: SharedWalletRepository,
+        sharedWalletRepository: SharedWalletRepository
+    ): TransactionUseCases {
+        return TransactionUseCases(transactionRepository, sharedWalletRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEntryFormDataUseCase(
         accountRepository: AccountRepository,
         categoryRepository: CategoryRepository,
         tagRepository: TagRepository,
-        templateRepository: TemplateRepository
-    ): TransactionUseCases {
-        return TransactionUseCases(
-            transactionRepository,
-            sharedWalletRepository,
-            accountRepository,
-            categoryRepository,
-            tagRepository,
-            templateRepository
-        )
+        templateRepository: TemplateRepository,
+        transactionRepository: TransactionRepository
+    ): EntryFormDataUseCase {
+        return EntryFormDataUseCase(accountRepository, categoryRepository, tagRepository, templateRepository, transactionRepository)
     }
 
     @Provides

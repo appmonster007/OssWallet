@@ -81,16 +81,20 @@ class OssWalletApp : Application() {
 
         // ARC-19: clear process-wide caches on profile change so the newly-active profile
         // doesn't see stale aggregations or card data computed for the previous profile.
-        // drop(1) skips the initial emission so we don't no-op-clear on app start.
+        // Track previousProfileId so we evict the OLD profile's render slots (not the new one).
+        var previousProfileId: Int? = null
         settingsRepository.currentProfileId
             .distinctUntilChanged()
-            .drop(1)
-            .onEach { newProfileId ->
-                queryCache.clear()
-                // Belt-and-suspenders: CardRenderCache keys already include (profileId, currency),
-                // so a profile switch naturally misses the cache. We still clear the previous
-                // profile's slots to keep the cache from growing unboundedly across many switches.
-                cardRenderCache.invalidateProfile(newProfileId)
+            .onEach { profileId ->
+                val prev = previousProfileId
+                if (prev != null) {
+                    queryCache.clear()
+                    // Belt-and-suspenders: CardRenderCache keys already include (profileId, currency),
+                    // so a profile switch naturally misses the cache. We still clear the previous
+                    // profile's slots to keep the cache from growing unboundedly across many switches.
+                    cardRenderCache.invalidateProfile(prev)
+                }
+                previousProfileId = profileId
             }
             .launchIn(applicationScope)
 

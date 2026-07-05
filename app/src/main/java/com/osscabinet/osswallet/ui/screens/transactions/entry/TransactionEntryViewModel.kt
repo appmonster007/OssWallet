@@ -700,6 +700,9 @@ class TransactionEntryViewModel @Inject constructor(
                     showCurrencySheet = false,
                     showTargetCurrencySheet = false,
                     showLinkedTransactionSheet = false,
+                    showSplitSheet = false,
+                    showSplitCategorySheet = null,
+                    showSplitNumpad = null,
                 )
             }
 
@@ -745,11 +748,12 @@ class TransactionEntryViewModel @Inject constructor(
 
             val rates = computationRepository.exchangeRatesSnapshot.first()
 
-            // Re-read after suspension; abort if currencies changed under us
+            // Re-read after suspension; abort if currencies changed or rate was pinned under us
             val current = _state.value
             if (!current.isTransfer ||
                 current.selectedCurrency != snapshot.selectedCurrency ||
-                current.targetCurrency != snapshot.targetCurrency
+                current.targetCurrency != snapshot.targetCurrency ||
+                current.isRateFixed
             ) return@launch
 
             val rate = TransactionEntryService.getMarketRate(

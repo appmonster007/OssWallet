@@ -764,7 +764,17 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
                     endDate = if (s.hasEndDate) s.endDateMillis else null,
-                    nextDueDate = s.existingPayment?.schedule?.nextDueDate ?: s.startDateMillis,
+                    nextDueDate = run {
+                        val existing = s.existingPayment?.schedule
+                        val scheduleChanged = existing == null ||
+                            existing.startDate != s.startDateMillis ||
+                            existing.recurrenceRule.type != s.recurrenceType ||
+                            existing.recurrenceRule.interval != s.recurrenceInterval ||
+                            existing.recurrenceRule.dayOfMonth != s.dayOfMonth ||
+                            existing.recurrenceRule.dayOfWeek != s.dayOfWeek ||
+                            existing.recurrenceRule.cronExpression != s.cronExpression
+                        if (scheduleChanged) s.startDateMillis else existing!!.nextDueDate
+                    },
                     lastTriggeredDate = s.existingPayment?.schedule?.lastTriggeredDate
                 ),
                 autoConfirm = s.autoConfirm,

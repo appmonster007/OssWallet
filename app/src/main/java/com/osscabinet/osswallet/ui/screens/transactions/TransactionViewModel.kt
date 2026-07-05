@@ -488,25 +488,41 @@ class TransactionViewModel @Inject constructor(
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
             val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
+            val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
+
+            val amount       = template?.amount       ?: payment.amount
+            val entryMode    = template?.entryMode    ?: payment.entryMode
+            val accountId    = (template?.accountId  ?: payment.accountId) ?: ""
+            val currency     = template?.currency     ?: payment.currency
+            val categoryId   = template?.categoryId  ?: payment.categoryId
+            val tags         = template?.tags         ?: payment.tags
+            val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
+            val payee        = template?.payee        ?: payment.payee ?: ""
+            val note         = template?.note         ?: payment.note ?: ""
+            val gpsLocation  = template?.gpsLocation  ?: payment.gpsLocation
+            val warrantyExp  = template?.warrantyExpiration ?: payment.warrantyExpiration
+            val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
+            val targetCurrency  = template?.targetCurrency  ?: payment.targetCurrency
+            val transferRate    = template?.transferRate     ?: payment.transferRate
 
             val request = TransactionRequest(
                 name = payment.name,
-                amount = payment.amount,
-                entryMode = payment.entryMode,
-                accountId = payment.accountId ?: "",
-                currency = payment.currency,
-                categoryId = payment.categoryId,
-                tags = payment.tags,
-                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                amount = amount,
+                entryMode = entryMode,
+                accountId = accountId,
+                currency = currency,
+                categoryId = categoryId,
+                tags = tags,
+                paymentMethod = paymentMethod,
                 timestamp = System.currentTimeMillis(),
-                payee = payment.payee ?: "",
-                note = payment.note ?: "",
-                targetAccountId = payment.targetAccountId,
-                targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate,
+                payee = payee,
+                note = note,
+                targetAccountId = targetAccountId,
+                targetCurrency = targetCurrency,
+                transferRate = transferRate,
                 sourcePlannedPaymentId = payment.id,
-                warrantyExpiration = payment.warrantyExpiration,
-                gpsLocation = payment.gpsLocation
+                warrantyExpiration = warrantyExp,
+                gpsLocation = gpsLocation
             )
 
             transactionManager.handleSaveTransaction(

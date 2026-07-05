@@ -90,28 +90,45 @@ class PlannedPaymentViewModel @Inject constructor(
         profileId: Int
     ) {
         viewModelScope.launch {
+            val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
+
+            val amount       = template?.amount       ?: payment.amount
+            val entryMode    = template?.entryMode    ?: payment.entryMode
+            val accountId    = (template?.accountId  ?: payment.accountId).takeIf { !it.isNullOrBlank() } ?: return@launch
+            val currency     = template?.currency     ?: payment.currency
+            val categoryId   = template?.categoryId  ?: payment.categoryId
+            val tags         = template?.tags         ?: payment.tags
+            val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
+            val payee        = template?.payee        ?: payment.payee ?: ""
+            val note         = template?.note         ?: payment.note ?: ""
+            val gpsLocation  = template?.gpsLocation  ?: payment.gpsLocation
+            val warrantyExp  = template?.warrantyExpiration ?: payment.warrantyExpiration
+            val status       = template?.transactionStatus ?: payment.transactionStatus
+            val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
+            val targetCurrency  = template?.targetCurrency  ?: payment.targetCurrency
+            val transferRate    = template?.transferRate     ?: payment.transferRate
+
             val categories = categoryRepository.getAllCategoriesSync()
-            val categoryName =
-                categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
+            val categoryName = categories.find { it.id == categoryId }?.name ?: "Planned Payment"
 
             val request = TransactionRequest(
                 name = categoryName,
-                amount = payment.amount,
-                entryMode = payment.entryMode,
-                accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
-                currency = payment.currency,
-                categoryId = payment.categoryId,
-                tags = payment.tags,
-                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                amount = amount,
+                entryMode = entryMode,
+                accountId = accountId,
+                currency = currency,
+                categoryId = categoryId,
+                tags = tags,
+                paymentMethod = paymentMethod,
                 timestamp = System.currentTimeMillis(),
-                payee = payment.payee ?: "",
-                note = payment.note ?: "",
-                gpsLocation = payment.gpsLocation,
-                warrantyExpiration = payment.warrantyExpiration,
-                status = payment.transactionStatus,
-                targetAccountId = payment.targetAccountId,
-                targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate
+                payee = payee,
+                note = note,
+                gpsLocation = gpsLocation,
+                warrantyExpiration = warrantyExp,
+                status = status,
+                targetAccountId = targetAccountId,
+                targetCurrency = targetCurrency,
+                transferRate = transferRate
             )
             transactionManager.handleSaveTransaction(
                 existingTransaction = null,
@@ -140,26 +157,44 @@ class PlannedPaymentViewModel @Inject constructor(
     /** Confirm a payment for a specific scheduledDate (used when the occurrence date differs from nextDueDate). */
     fun quickConfirmDate(payment: PlannedPayment, scheduledDate: Long, profileId: Int) {
         viewModelScope.launch {
+            val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
+
+            val amount       = template?.amount       ?: payment.amount
+            val entryMode    = template?.entryMode    ?: payment.entryMode
+            val accountId    = (template?.accountId  ?: payment.accountId).takeIf { !it.isNullOrBlank() } ?: return@launch
+            val currency     = template?.currency     ?: payment.currency
+            val categoryId   = template?.categoryId  ?: payment.categoryId
+            val tags         = template?.tags         ?: payment.tags
+            val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
+            val payee        = template?.payee        ?: payment.payee ?: ""
+            val note         = template?.note         ?: payment.note ?: ""
+            val gpsLocation  = template?.gpsLocation  ?: payment.gpsLocation
+            val warrantyExp  = template?.warrantyExpiration ?: payment.warrantyExpiration
+            val status       = template?.transactionStatus ?: payment.transactionStatus
+            val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
+            val targetCurrency  = template?.targetCurrency  ?: payment.targetCurrency
+            val transferRate    = template?.transferRate     ?: payment.transferRate
+
             val categories = categoryRepository.getAllCategoriesSync()
-            val categoryName = categories.find { it.id == payment.categoryId }?.name ?: "Planned Payment"
+            val categoryName = categories.find { it.id == categoryId }?.name ?: "Planned Payment"
             val request = TransactionRequest(
                 name = categoryName,
-                amount = payment.amount,
-                entryMode = payment.entryMode,
-                accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
-                currency = payment.currency,
-                categoryId = payment.categoryId,
-                tags = payment.tags,
-                paymentMethod = payment.paymentMethod ?: PaymentMethod.CASH,
+                amount = amount,
+                entryMode = entryMode,
+                accountId = accountId,
+                currency = currency,
+                categoryId = categoryId,
+                tags = tags,
+                paymentMethod = paymentMethod,
                 timestamp = System.currentTimeMillis(),
-                payee = payment.payee ?: "",
-                note = payment.note ?: "",
-                gpsLocation = payment.gpsLocation,
-                warrantyExpiration = payment.warrantyExpiration,
-                status = payment.transactionStatus,
-                targetAccountId = payment.targetAccountId,
-                targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate
+                payee = payee,
+                note = note,
+                gpsLocation = gpsLocation,
+                warrantyExpiration = warrantyExp,
+                status = status,
+                targetAccountId = targetAccountId,
+                targetCurrency = targetCurrency,
+                transferRate = transferRate
             )
             val transactionId = transactionManager.handleSaveTransaction(
                 existingTransaction = null,

@@ -12,7 +12,7 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY name COLLATE NOCASE ASC")
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
-    @Query("SELECT * FROM categories WHERE profileId = :profileId ORDER BY name COLLATE NOCASE ASC")
+    @Query("SELECT * FROM categories WHERE profileId = :profileId OR isDefault = 1 ORDER BY name COLLATE NOCASE ASC")
     fun getAllCategories(profileId: Int): Flow<List<CategoryEntity>>
 
     @Upsert

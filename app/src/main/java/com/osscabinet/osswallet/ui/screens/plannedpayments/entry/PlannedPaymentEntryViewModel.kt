@@ -462,9 +462,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetWarrantyExpiration -> _state.update {
-                it.copy(
-                    warrantyExpirationMillis = event.millis
-                )
+                it.copy(warrantyExpirationMillis = event.millis, showWarrantyDatePicker = false)
             }
 
             is PlannedPaymentEntryEvent.SetTransactionStatus -> _state.update {

@@ -358,9 +358,7 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SetWarrantyEnabled -> _state.update { it.copy(isWarrantyEnabled = event.enabled) }
             is TemplateEntryEvent.SetWarrantyExpiration -> _state.update {
-                it.copy(
-                    warrantyExpirationMillis = event.millis
-                )
+                it.copy(warrantyExpirationMillis = event.millis, showWarrantyDatePicker = false)
             }
 
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }

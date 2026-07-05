@@ -486,7 +486,7 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.SetWarrantyExpiration -> update {
-                it.copy(warrantyExpirationMillis = event.millis)
+                it.copy(warrantyExpirationMillis = event.millis, showWarrantyDatePicker = false)
             }
 
             is TransactionEntryEvent.SetLocation -> update {

@@ -800,7 +800,7 @@ class TransactionEntryViewModel @Inject constructor(
             payee = currentState.payee,
             tags = currentState.selectedTags,
             status = currentState.status,
-            amountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
+            targetAmountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
             exchangeRates = ExchangeRateSnapshot(anchor = "USD", rates = currentState.exchangeRates),
             accounts = currentState.accounts,
             baseCurrency = currentState.baseCurrency,

@@ -248,7 +248,7 @@ object TransactionEntryService {
         payee: String = "",
         tags: Set<String> = emptySet(),
         status: TransactionStatus = TransactionStatus.CLEARED,
-        amountOverride: BigDecimal? = null,
+        targetAmountOverride: BigDecimal? = null,
         exchangeRates: ExchangeRateSnapshot,
         accounts: List<com.osscabinet.ossWallet.domain.model.Account>,
         baseCurrency: String,
@@ -261,7 +261,7 @@ object TransactionEntryService {
         val finalTargetCurrency = targetCurrency.ifBlank { toAccount?.currencyCode ?: "" }
 
         val transferRate = if (entryMode == EntryMode.TRANSFER) {
-            val destAmount = amountOverride ?: getMarketRate(
+            val destAmount = targetAmountOverride ?: getMarketRate(
                 fromCurrency = finalSourceCurrency,
                 toCurrency = finalTargetCurrency,
                 exchangeRates = exchangeRates

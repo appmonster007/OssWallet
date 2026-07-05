@@ -32,11 +32,13 @@ import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Job
@@ -70,6 +72,23 @@ class TransactionEntryViewModel @Inject constructor(
             effectiveShortlistedCurrencies.collect { currencies ->
                 _state.update { it.copy(shortlistedCurrencies = currencies) }
             }
+        }
+        @OptIn(ExperimentalCoroutinesApi::class)
+        viewModelScope.launch {
+            settingsRepository.currentProfileId
+                .flatMapLatest { profileId -> entryFormDataUseCase.observeEntryCoreData(profileId) }
+                .collect { data ->
+                    _state.update {
+                        it.copy(
+                            accounts = data.accounts,
+                            categories = data.categories,
+                            allTags = data.tags,
+                            templates = data.templates,
+                            allPayees = data.payees,
+                            allNotes = data.notes
+                        )
+                    }
+                }
         }
     }
 

@@ -77,19 +77,7 @@ fun QuickAddTemplateStep(
     selectedCategoryId: Long?,
     isSheetSettled: Boolean,
     onTemplateSelected: (Template) -> Unit,
-    onSuggestionSelected: (
-        label: String,
-        categoryId: Long,
-        accountId: String?,
-        targetAccountId: String?,
-        amount: BigDecimal,
-        currency: String,
-        targetCurrency: String?,
-        entryMode: EntryMode,
-        note: String,
-        payee: String,
-        tags: Set<String>
-    ) -> Unit,
+    onSuggestionSelected: (QuickAddResult.SuggestionItem) -> Unit,
     onCategorySelected: (Category) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -212,21 +200,7 @@ fun QuickAddTemplateStep(
                                             icon = getIconByName(item.iconName),
                                             iconColor = item.colorHex.toOpaqueColor(),
                                             isSelected = false,
-                                            onTap = {
-                                                onSuggestionSelected(
-                                                    item.label,
-                                                    item.categoryId,
-                                                    item.accountId,
-                                                    item.targetAccountId,
-                                                    item.amount,
-                                                    item.currency,
-                                                    item.targetCurrency,
-                                                    item.entryMode,
-                                                    item.note,
-                                                    item.payee,
-                                                    item.tags
-                                                )
-                                            }
+                                            onTap = { onSuggestionSelected(item) }
                                         )
                                     }
 
@@ -428,7 +402,7 @@ fun PreviewQuickAddTemplateStep() {
                 selectedCategoryId = null,
                 isSheetSettled = true,
                 onTemplateSelected = {},
-                onSuggestionSelected = { _, _, _, _, _, _, _, _, _, _, _ -> },
+                onSuggestionSelected = {},
                 onCategorySelected = {}
             )
         }

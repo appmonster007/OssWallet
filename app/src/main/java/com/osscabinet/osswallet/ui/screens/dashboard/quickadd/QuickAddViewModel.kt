@@ -385,30 +385,18 @@ class QuickAddViewModel @Inject constructor(
         }
     }
 
-    fun onSuggestionSelected(
-        label: String,
-        categoryId: Long,
-        accountId: String?,
-        targetAccountId: String? = null,
-        amount: BigDecimal,
-        currency: String,
-        targetCurrency: String? = null,
-        entryMode: EntryMode,
-        note: String,
-        payee: String,
-        tags: Set<String>
-    ) {
+    fun onSuggestionSelected(item: QuickAddResult.SuggestionItem) {
         val prefill = TransactionEntryService.resolvePrefill(
-            entryMode = entryMode,
-            accountId = accountId,
-            targetAccountId = targetAccountId,
-            currency = currency,
-            targetCurrency = targetCurrency,
-            amount = amount,
-            categoryId = categoryId,
-            note = note,
-            payee = payee,
-            tags = tags,
+            entryMode = item.entryMode,
+            accountId = item.accountId,
+            targetAccountId = item.targetAccountId,
+            currency = item.currency,
+            targetCurrency = item.targetCurrency,
+            amount = item.amount,
+            categoryId = item.categoryId,
+            note = item.note,
+            payee = item.payee,
+            tags = item.tags,
             accounts = state.value.accounts
         )
         _uiState.update {

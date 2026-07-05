@@ -15,6 +15,7 @@ import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.concurrent.TimeUnit
@@ -166,7 +167,7 @@ class QuickAddViewModel @Inject constructor(
     val sections: StateFlow<List<QuickAddSection>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
-                _uiState.map { it.searchQuery },
+                _uiState.map { it.searchQuery }.distinctUntilChanged(),
                 templates,
                 categories,
                 transactionRepository.getAllTransactions(profileId)

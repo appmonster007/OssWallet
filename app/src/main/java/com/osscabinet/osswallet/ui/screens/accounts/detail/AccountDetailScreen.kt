@@ -251,9 +251,9 @@ fun AccountDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .heightIn(max = screenHeight * 0.85f),
-                shape = RoundedCornerShape(32.dp),
+                shape = RoundedCornerShape(AeonSize.D32.value),
                 color = AppColors.sheetSurface,
-                tonalElevation = 6.dp
+                tonalElevation = AeonSize.D6.value
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(

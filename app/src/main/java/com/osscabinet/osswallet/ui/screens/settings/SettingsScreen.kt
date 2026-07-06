@@ -11,11 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Label
@@ -29,14 +26,12 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.TableRows
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -94,8 +89,6 @@ fun SettingsScreen(
                             .padding(horizontal = AeonTheme.dimensions.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacing2xl)
                     ) {
-                        HeroHeader()
-
                         // ── PERSONALIZATION ─────────────────────────────────
                         AeonSettingsSection(
                             title = "PERSONALIZATION",
@@ -220,50 +213,6 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun HeroHeader() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = AeonTheme.dimensions.spacingMd),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)
-    ) {
-        Text(
-            text = "PREFERENCES",
-            style = AppTextStyles.sectionOverline,
-            color = AppColors.accent
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Light),
-            color = AppColors.contentPrimary
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        // Version badge pill — accDim bg with 4dp accent dot
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(AppColors.accent.copy(alpha = 0.10f))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(4.dp)
-                    .clip(CircleShape)
-                    .background(AppColors.accent)
-            )
-            Text(
-                text = "v1.1.0",
-                style = AppTextStyles.metaLabel,
-                color = AppColors.accent
-            )
-        }
-    }
-}
-
-@Composable
 private fun SettingsFooter(attribution: String) {
     Column(
         modifier = Modifier
@@ -280,6 +229,12 @@ private fun SettingsFooter(attribution: String) {
                 .background(AppColors.outlineVariant)
         )
         Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingMd))
+        Text(
+            text = "v1.1.0",
+            style = AppTextStyles.metaLabel,
+            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "BUILT FOR MODERN ACCOUNTS",
             style = AppTextStyles.sectionOverline,

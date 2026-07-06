@@ -9,7 +9,7 @@ interface PlannedPaymentRepository {
     fun getActivePlannedPayments(profileId: Int): Flow<List<PlannedPayment>>
     fun getAllPlannedPayments(profileId: Int): Flow<List<PlannedPayment>>
     suspend fun getAllSync(profileId: Int): List<PlannedPayment>
-    suspend fun getDue(profileId: Int): List<PlannedPayment>
+    suspend fun getDue(profileId: Int, now: Long): List<PlannedPayment>
     suspend fun getById(id: Long): PlannedPayment?
     suspend fun insert(payment: PlannedPayment): Long
     suspend fun update(payment: PlannedPayment)

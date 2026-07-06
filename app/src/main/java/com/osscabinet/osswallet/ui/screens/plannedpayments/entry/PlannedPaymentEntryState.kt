@@ -8,8 +8,8 @@ import com.osscabinet.ossWallet.domain.model.toStored
 
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
@@ -85,7 +85,10 @@ data class PlannedPaymentEntryState(
     val uniquePayees: List<String> = emptyList(),
     val uniqueNotes: List<String> = emptyList(),
     val currentProfileId: Int = 1,
-    val existingPayment: PlannedPayment? = null,
+    val originalStartDate: Long? = null,
+    val originalRecurrenceRule: RecurrenceRule? = null,
+    val originalLastTriggeredDate: Long? = null,
+    val originalNextDueDate: Long? = null,
     val displayLinkedTxs: List<Transaction> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList(),
     val fullProviderCurrencies: List<String> = emptyList(),

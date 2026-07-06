@@ -88,6 +88,23 @@ internal fun PlannedPayment.toDto(
     )
 }
 
+internal fun PlannedPaymentSummary.toDto() = PlannedPaymentDto(
+    id = id,
+    name = name,
+    amount = amount.toDouble(),
+    currency = currency,
+    transactionType = entryMode.name,
+    categoryId = 0,
+    categoryName = null,
+    accountId = null,
+    accountName = null,
+    nextDueDate = scheduledDate,
+    recurrenceDescription = "",
+    status = if (isOverdue) "ACTIVE" else "ACTIVE",
+    isOverdue = isOverdue,
+    autoConfirm = false
+)
+
 internal fun Category.toDto(): CategoryDto = CategoryDto(
     id = id,
     name = name,
@@ -192,14 +209,8 @@ internal fun CardRenderData.toPayloadDto(
     )
 
     is CardRenderData.PlannedPayments -> CardPayloadDto.PlannedPayments(
-        upcoming = upcoming.map { item ->
-            item.plannedPayment.toDto(
-                now,
-                categoryMap,
-                accountMap
-            )
-        },
-        overdue = overdue.map { it.toDto(now, categoryMap, accountMap) }
+        upcoming = items.filter { !it.isOverdue }.map { it.toDto() },
+        overdue = items.filter { it.isOverdue }.map { it.toDto() }
     )
 
     is CardRenderData.Loans -> CardPayloadDto.Loans(

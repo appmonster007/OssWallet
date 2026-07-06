@@ -104,3 +104,13 @@ data class UpcomingPaymentItem(
     val occurrenceId: Long? = null,
     val isOverdue: Boolean
 )
+
+data class PlannedPaymentSummary(
+    val id: Long,
+    val name: String,
+    val amount: java.math.BigDecimal,
+    val currency: String,
+    val entryMode: EntryMode,
+    val scheduledDate: Long,
+    val isOverdue: Boolean
+)

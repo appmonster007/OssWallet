@@ -120,6 +120,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             allNotes = current.allNotes,
 
                             shortlistedCurrencies = current.shortlistedCurrencies,
+                            fullProviderCurrencies = current.fullProviderCurrencies,
                             isEditMode = false,
                             plannedPaymentId = null,
                             linkedTemplate = null,
@@ -178,6 +179,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             allNotes = current.allNotes,
 
                             shortlistedCurrencies = current.shortlistedCurrencies,
+                            fullProviderCurrencies = current.fullProviderCurrencies,
                             isEditMode = false,
                             plannedPaymentId = null,
                             startDateMillis = now,
@@ -228,6 +230,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         allPayees = current.allPayees,
                         allNotes = current.allNotes,
                         shortlistedCurrencies = current.shortlistedCurrencies,
+                        fullProviderCurrencies = current.fullProviderCurrencies,
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
                         originalStartDate = existing.schedule.startDate,

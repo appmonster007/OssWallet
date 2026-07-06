@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -385,7 +386,7 @@ private fun CategorySummary(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (isEnd) Arrangement.End else Arrangement.Start
     ) {
-        Box {
+        Box(modifier = Modifier.weight(1f, fill = false)) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
@@ -399,6 +400,7 @@ private fun CategorySummary(
                 }
 
                 Column(
+                    modifier = Modifier.weight(1f, fill = false),
                     horizontalAlignment = if (isEnd) Alignment.End else Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -461,7 +463,7 @@ private fun CategorySummary(
 private fun SummaryIcon(icon: ImageVector, color: Color) {
     Box(
         modifier = Modifier
-            .size(30.dp)
+            .requiredSize(30.dp)
             .clip(CircleShape)
             .background(color.copy(alpha = 0.15f))
             .aeonHairlineBorder(CircleShape, accent = color.copy(alpha = 0.3f)),
@@ -495,7 +497,7 @@ private fun AccountSummary(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (isEnd) Arrangement.End else Arrangement.Start
     ) {
-        Box {
+        Box(modifier = Modifier.weight(1f, fill = false)) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
@@ -509,6 +511,7 @@ private fun AccountSummary(
                 }
 
                 Column(
+                    modifier = Modifier.weight(1f, fill = false),
                     horizontalAlignment = if (isEnd) Alignment.End else Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {

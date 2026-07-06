@@ -554,7 +554,8 @@ fun PlannedPaymentDetailContent(
                                             PastOccurrenceItem(
                                                 occ = occ,
                                                 dateFormatter = dateFormatter,
-                                                payment = payment,
+                                                amount = payment.amount,
+                                                currency = payment.currency,
                                                 onTransactionClick = onTransactionClick
                                             )
                                         }
@@ -866,14 +867,15 @@ private fun OccurrenceItem(
 private fun PastOccurrenceItem(
     occ: PlannedPaymentOccurrence,
     dateFormatter: DateTimeFormatter,
-    payment: PlannedPayment,
+    amount: BigDecimal,
+    currency: String,
     onTransactionClick: (Long) -> Unit
 ) {
     val dateLabel = remember(occ.scheduledDate, dateFormatter) {
         dateFormatter.format(Instant.ofEpochMilli(occ.scheduledDate))
     }
-    val formattedAmount = remember(payment.amount, payment.currency) {
-        payment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = remember(amount, currency) {
+        amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
     val (statusLabel, statusColor, statusIcon) = when (occ.status) {
         OccurrenceStatus.CONFIRMED -> Triple(
@@ -891,7 +893,7 @@ private fun PastOccurrenceItem(
 
     AeonListItem(
         title = dateLabel,
-        subtitle = "$formattedAmount ${payment.currency} · $statusLabel",
+        subtitle = "$formattedAmount $currency · $statusLabel",
         icon = statusIcon,
         iconTint = statusColor,
         onClick = occ.generatedTransactionId?.let { { onTransactionClick(it) } },

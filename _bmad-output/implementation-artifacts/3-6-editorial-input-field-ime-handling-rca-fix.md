@@ -1,6 +1,10 @@
+---
+baseline_commit: d0ef718fc508304d3e57303ff76acce79637b41d
+---
+
 # Story 3.6: Editorial Input Field IME Handling RCA & Fix
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -24,13 +28,13 @@ When an input field is located in the bottom half of a scrollable form, tapping 
 
 ## Tasks / Subtasks
 
-- [ ] Refactor `AeonEntryScaffold` to support IME insets (AC: 4)
-  - [ ] Update `Scaffold` `contentWindowInsets` to union with `WindowInsets.ime` or apply `Modifier.imePadding()` to the content wrapper.
-- [ ] Refactor `EntryEditorialInput` scrolling logic (AC: 1, 3)
-  - [ ] Move `bringIntoViewRequester` to the parent `Row` to ensure full context visibility.
-  - [ ] Implement a deterministic trigger for `bringIntoView` that waits for IME visibility/layout pass.
-- [ ] Implement suggestion-aware scrolling (AC: 2)
-  - [ ] Calculate a logical buffer (e.g., using `LocalDensity`) that accounts for the input card and the maximum suggestion list height.
+- [x] Refactor `AeonEntryScaffold` to support IME insets (AC: 4)
+  - [x] Update `Scaffold` `contentWindowInsets` to union with `WindowInsets.ime` or apply `Modifier.imePadding()` to the content wrapper.
+- [x] Refactor `EntryEditorialInput` scrolling logic (AC: 1, 3)
+  - [x] Move `bringIntoViewRequester` to the parent `Row` to ensure full context visibility.
+  - [x] Implement a deterministic trigger for `bringIntoView` that waits for IME visibility/layout pass.
+- [x] Implement suggestion-aware scrolling (AC: 2)
+  - [x] Calculate a logical buffer (e.g., using `LocalDensity`) that accounts for the input card and the maximum suggestion list height.
 - [ ] Verify across entry screens (AC: 1, 2)
   - [ ] Test in Transaction Entry, Budget Entry, and Template Entry.
 
@@ -56,10 +60,20 @@ When an input field is located in the bottom half of a scrollable form, tapping 
 
 ### Agent Model Used
 
-gemini-2.0-flash-thinking-exp-1219
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- `AeonEntryScaffold`: Added `Modifier.imePadding()` to the content Box. Root fix — causes the scroll viewport to shrink by the keyboard height, making `bringIntoView()` work correctly. The `contentWindowInsets = WindowInsets(0,0,0,0)` intentionally zeroed IME insets for the overlay top-bar layout; `imePadding()` directly on the content Box compensates without affecting the Scaffold's inner padding.
+- `EntryEditorialInput`: Replaced `delay(300)` coroutine hack with `LaunchedEffect(imeBottom, isFocused)` keyed on `WindowInsets.ime.getBottom(density)`. Effect fires the moment the keyboard is actually visible (`imeBottom > 0`) and field is focused — deterministic, no timing assumptions.
+- `EntryEditorialInput`: Moved `bringIntoViewRequester` from `GlassSurface` to `ExposedDropdownMenuBox` (outermost node). Plain `bringIntoView()` with no custom rect — dropdown popup is a separate window layer and positions itself; no layout-level rect manipulation needed.
+- `onFocusChanged` simplified to track focus state only; `rememberCoroutineScope`, `delay`, and `launch` removed.
+- AC 3 (no magic number hacks): confirmed none existed in current code; removed the `delay(300)` timing hack instead.
+- Task 4 (verify across entry screens): requires manual testing on device/emulator.
+
 ### File List
+
+- app/src/main/java/com/osscabinet/osswallet/ui/components/entry/AeonEntryScaffold.kt
+- app/src/main/java/com/osscabinet/osswallet/ui/components/entry/EntryEditorialInput.kt

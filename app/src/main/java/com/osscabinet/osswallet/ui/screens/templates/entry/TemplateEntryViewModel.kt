@@ -88,14 +88,16 @@ class TemplateEntryViewModel @Inject constructor(
                             currency = data.accounts.first().currencyCode
                         )
                     } else current.source
+                    val newCategories = data.categories
                     current.copy(
                         accounts = data.accounts,
-                        categories = data.categories,
+                        categories = newCategories,
                         allTags = data.tags,
                         uniquePayees = data.payees,
                         uniqueNotes = data.notes,
                         source = defaultSource,
-                        fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                        fullProviderCurrencies = CurrencyService.getAllCurrencies(),
+                        selectedCategory = newCategories.find { it.id == current.categoryId }
                     )
                 }
             }
@@ -527,7 +529,7 @@ class TemplateEntryViewModel @Inject constructor(
     private fun updateCategoryName() {
         val categoryId = _state.value.categoryId
         val category = _state.value.categories.find { it.id == categoryId }
-        _state.update { it.copy(categoryName = category?.name ?: "Unknown") }
+        _state.update { it.copy(categoryName = category?.name ?: "Unknown", selectedCategory = category) }
     }
 
     fun saveTemplate(onSuccess: () -> Unit) {

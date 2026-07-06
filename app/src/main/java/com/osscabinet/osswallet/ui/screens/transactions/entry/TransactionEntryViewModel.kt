@@ -813,7 +813,7 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionEntryService.createRequest(
-            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name ?: "Transaction",
+            name = currentState.selectedCategory?.name ?: "Transaction",
             amount = currentState.amountValue,
             entryMode = currentState.entryMode,
             sourceAccount = currentState.source.account,
@@ -900,8 +900,7 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionRequest(
-            name = currentState.categories.find { it.id == currentState.selectedCategoryId }?.name
-                ?: "Transaction",
+            name = currentState.selectedCategory?.name ?: "Transaction",
             amount = BigDecimal.ZERO, // To be set by caller
             entryMode = when {
                 currentState.isIncome -> EntryMode.INCOME

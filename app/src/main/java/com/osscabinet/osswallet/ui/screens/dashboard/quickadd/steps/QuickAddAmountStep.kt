@@ -269,129 +269,98 @@ private fun EditorialContextStrip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (entryMode == EntryMode.TRANSFER) {
-                val isFromOutside = account?.id.isNullOrEmpty()
-                val isToOutside = toAccount?.id.isNullOrEmpty()
+            val pivotIcon = @Composable {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                    contentDescription = if (entryMode == EntryMode.TRANSFER) "Swap accounts" else "Toggle mode",
+                    tint = AppColors.accent,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.accent.copy(alpha = 0.1f))
+                        .combinedClickable(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                if (entryMode == EntryMode.TRANSFER) onSwapAccounts() else onToggleEntryMode()
+                            },
+                            onLongClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onToggleTransfer()
+                            }
+                        )
+                        .padding(4.dp)
+                )
+            }
 
-                // From Account
+            val primaryAccountSummary = @Composable { isEnd: Boolean ->
                 AccountSummary(
-                    name = if (isFromOutside) "Outside" else account?.name ?: "From",
+                    name = account?.name ?: "No Account",
                     balance = accountBalance,
                     currency = accountCurrency,
-                    color = if (isFromOutside) AppColors.contentSecondary else accountColor,
-                    icon = getAccountIconByName(account?.icon ?: "Public"),
-                    isEnd = false,
+                    color = accountColor,
+                    icon = getAccountIconByName(account?.icon),
+                    isEnd = isEnd,
                     accounts = accounts,
                     onAccountSelected = { onAccountSelected(it, true) },
                     modifier = Modifier.weight(1f)
                 )
+            }
 
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Swap accounts",
-                    tint = AppColors.accent,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(AppColors.accent.copy(alpha = 0.1f))
-                        .combinedClickable(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onSwapAccounts()
-                            },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onToggleTransfer()
-                            }
-                        )
-                        .padding(4.dp)
-                )
-
-                // To Account
-                AccountSummary(
-                    name = if (isToOutside) "Outside" else toAccount?.name ?: "To",
-                    balance = toAccountBalance,
-                    currency = toAccountCurrency,
-                    color = if (isToOutside) AppColors.contentSecondary else toAccountColor,
-                    icon = getAccountIconByName(toAccount?.icon ?: "Public"),
-                    isEnd = true,
-                    accounts = accounts,
-                    onAccountSelected = { onAccountSelected(it, false) },
+            val mainCategorySummary = @Composable { isEnd: Boolean ->
+                CategorySummary(
+                    title = categoryTitle,
+                    name = categoryName,
+                    color = categoryColor,
+                    icon = categoryIcon,
+                    isEnd = isEnd,
+                    categories = categories,
+                    onCategorySelected = onCategorySelected,
                     modifier = Modifier.weight(1f)
                 )
-            } else {
-                val isIncome = entryMode == EntryMode.INCOME
+            }
 
-                if (isIncome) {
-                    CategorySummary(
-                        title = categoryTitle,
-                        name = categoryName,
-                        color = categoryColor,
-                        icon = categoryIcon,
-                        isEnd = false,
-                        categories = categories,
-                        onCategorySelected = onCategorySelected,
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
+            when (entryMode) {
+                EntryMode.TRANSFER -> {
+                    val isFromOutside = account?.id.isNullOrEmpty()
+                    val isToOutside = toAccount?.id.isNullOrEmpty()
+
+                    // From Account
                     AccountSummary(
-                        name = account?.name ?: "No Account",
+                        name = if (isFromOutside) "Outside" else account?.name ?: "From",
                         balance = accountBalance,
                         currency = accountCurrency,
-                        color = accountColor,
-                        icon = getAccountIconByName(account?.icon),
+                        color = if (isFromOutside) AppColors.contentSecondary else accountColor,
+                        icon = getAccountIconByName(account?.icon ?: "Public"),
                         isEnd = false,
                         accounts = accounts,
                         onAccountSelected = { onAccountSelected(it, true) },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    pivotIcon()
+
+                    // To Account
+                    AccountSummary(
+                        name = if (isToOutside) "Outside" else toAccount?.name ?: "To",
+                        balance = toAccountBalance,
+                        currency = toAccountCurrency,
+                        color = if (isToOutside) AppColors.contentSecondary else toAccountColor,
+                        icon = getAccountIconByName(toAccount?.icon ?: "Public"),
+                        isEnd = true,
+                        accounts = accounts,
+                        onAccountSelected = { onAccountSelected(it, false) },
                         modifier = Modifier.weight(1f)
                     )
                 }
-
-                // Interactive Pivot Icon
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = "Toggle mode",
-                    tint = AppColors.accent,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(AppColors.accent.copy(alpha = 0.1f))
-                        .combinedClickable(
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onToggleEntryMode()
-                            },
-                            onLongClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onToggleTransfer()
-                            }
-                        )
-                        .padding(4.dp)
-                )
-
-                if (isIncome) {
-                    AccountSummary(
-                        name = account?.name ?: "No Account",
-                        balance = accountBalance,
-                        currency = accountCurrency,
-                        color = accountColor,
-                        icon = getAccountIconByName(account?.icon),
-                        isEnd = true,
-                        accounts = accounts,
-                        onAccountSelected = { onAccountSelected(it, true) },
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    CategorySummary(
-                        title = categoryTitle,
-                        name = categoryName,
-                        color = categoryColor,
-                        icon = categoryIcon,
-                        isEnd = true,
-                        categories = categories,
-                        onCategorySelected = onCategorySelected,
-                        modifier = Modifier.weight(1f)
-                    )
+                EntryMode.INCOME -> {
+                    mainCategorySummary(false)
+                    pivotIcon()
+                    primaryAccountSummary(true)
+                }
+                EntryMode.EXPENSE -> {
+                    primaryAccountSummary(false)
+                    pivotIcon()
+                    mainCategorySummary(true)
                 }
             }
         }

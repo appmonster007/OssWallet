@@ -44,10 +44,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.ui.util.formatCurrency
@@ -77,8 +76,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentsCard(
-    upcoming: List<UpcomingPaymentItem>,
-    overdue: List<PlannedPayment>,
+    items: List<PlannedPaymentSummary>,
     targetCurrency: String = "USD",
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
         com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = targetCurrency, rates = emptyMap()),
@@ -128,7 +126,7 @@ fun PlannedPaymentsCard(
                 .height(300.dp),
             contentPadding = PaddingValues(bottom = dims.cardPadding)
         ) {
-            if (overdue.isEmpty() && upcoming.isEmpty()) {
+            if (items.isEmpty()) {
                 item(key = "empty_state") {
                     Text(
                         text = when (config.viewMode) {
@@ -143,35 +141,19 @@ fun PlannedPaymentsCard(
                 }
             }
 
-            items(overdue, key = { "overdue_${it.id}" }) { payment ->
+            items(items, key = { "${if (it.isOverdue) "overdue" else "upcoming"}_${it.id}_${it.scheduledDate}" }) { summary ->
                 PlannedPaymentRow(
-                    title = payment.name,
-                    amount = payment.amount,
-                    currency = payment.currency,
+                    title = summary.name,
+                    amount = summary.amount,
+                    currency = summary.currency,
                     targetCurrency = targetCurrency,
                     exchangeRates = exchangeRates,
-                    entryMode = payment.entryMode,
-                    dateLabel = "OVERDUE",
-                    isOverdue = true,
-                    onClick = { callbacks.onItemClick(payment.id) },
-                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(payment.id, payment.schedule.nextDueDate) } },
-                    onSkip = callbacks.onSkip?.let { cb -> { cb(payment.id, payment.schedule.nextDueDate) } }
-                )
-            }
-
-            items(upcoming, key = { "upcoming_${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                PlannedPaymentRow(
-                    title = item.plannedPayment.name,
-                    amount = item.plannedPayment.amount,
-                    currency = item.plannedPayment.currency,
-                    targetCurrency = targetCurrency,
-                    exchangeRates = exchangeRates,
-                    entryMode = item.plannedPayment.entryMode,
-                    dateLabel = formatRelativeDate(item.scheduledDate, System.currentTimeMillis()),
-                    isOverdue = false,
-                    onClick = { callbacks.onItemClick(item.plannedPayment.id) },
-                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(item.plannedPayment.id, item.scheduledDate) } },
-                    onSkip = callbacks.onSkip?.let { cb -> { cb(item.plannedPayment.id, item.scheduledDate) } }
+                    entryMode = summary.entryMode,
+                    dateLabel = if (summary.isOverdue) "OVERDUE" else formatRelativeDate(summary.scheduledDate, System.currentTimeMillis()),
+                    isOverdue = summary.isOverdue,
+                    onClick = { callbacks.onItemClick(summary.id) },
+                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(summary.id, summary.scheduledDate) } },
+                    onSkip = callbacks.onSkip?.let { cb -> { cb(summary.id, summary.scheduledDate) } }
                 )
             }
         }
@@ -415,46 +397,24 @@ fun mapPlannedPayments(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun PlannedPaymentsCardPreview() {
-    val mockSchedule = com.osscabinet.ossWallet.domain.model.PaymentSchedule(
-        recurrenceRule = com.osscabinet.ossWallet.domain.model.RecurrenceRule(
-            type = com.osscabinet.ossWallet.domain.model.RecurrenceType.MONTHLY,
-            interval = 1
-        ),
-        startDate = System.currentTimeMillis(),
-        nextDueDate = System.currentTimeMillis() + 86400000L
-    )
-
-    val overduePayment = PlannedPayment(
-        id = 1L,
-        name = "Internet Bill",
-        categoryId = 1,
-        amount = BigDecimal("50.00"),
-        entryMode = EntryMode.EXPENSE,
-        currency = "USD",
-        schedule = mockSchedule
-    )
-
-    val upcomingPayment = PlannedPayment(
-        id = 2L,
-        name = "Netflix",
-        categoryId = 2,
-        amount = BigDecimal("15.99"),
-        entryMode = EntryMode.EXPENSE,
-        currency = "USD",
-        schedule = mockSchedule
-    )
-
+    val now = System.currentTimeMillis()
     com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             PlannedPaymentsCard(
-                upcoming = listOf(
-                    UpcomingPaymentItem(
-                        plannedPayment = upcomingPayment,
-                        scheduledDate = System.currentTimeMillis() + 86400000L,
-                        isOverdue = false
+                items = listOf(
+                    PlannedPaymentSummary(
+                        id = 1L, name = "Internet Bill",
+                        amount = BigDecimal("50.00"), currency = "USD",
+                        entryMode = EntryMode.EXPENSE,
+                        scheduledDate = now - 86400000L, isOverdue = true
+                    ),
+                    PlannedPaymentSummary(
+                        id = 2L, name = "Netflix",
+                        amount = BigDecimal("15.99"), currency = "USD",
+                        entryMode = EntryMode.EXPENSE,
+                        scheduledDate = now + 86400000L, isOverdue = false
                     )
                 ),
-                overdue = listOf(overduePayment),
                 config = PlannedPaymentsCardConfig(cardId = "preview"),
                 callbacks = CardCallbacks.PlannedPayments(
                     onUpdate = {},

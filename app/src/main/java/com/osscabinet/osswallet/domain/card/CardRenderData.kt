@@ -4,10 +4,9 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.LoanSummary
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.analytics.*
 import com.osscabinet.ossWallet.domain.model.settings.*
 import com.osscabinet.ossWallet.domain.service.*
@@ -120,8 +119,7 @@ sealed class CardRenderData {
 
     data class PlannedPayments(
         val config: PlannedPaymentsCardConfig,
-        val upcoming: List<UpcomingPaymentItem>,
-        val overdue: List<PlannedPayment>,
+        val items: List<PlannedPaymentSummary>,
         val currency: String,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData() {

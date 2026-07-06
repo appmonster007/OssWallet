@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
+import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
@@ -63,7 +64,6 @@ class PlannedPaymentsCardComputer :
             PlannedPaymentsViewMode.OVERDUE_ONLY -> overdue to emptyList()
             PlannedPaymentsViewMode.BOTH -> overdue to upcomingNonOverdue.take(config.maxItems)
             PlannedPaymentsViewMode.FUTURE_ONLY -> {
-                // One nearest upcoming occurrence per active payment schedule
                 val futureOnly = input.plannedPayments
                     .filter { it.status == PlannedPaymentStatus.ACTIVE }
                     .mapNotNull { payment -> upcomingById[payment.id] }
@@ -73,10 +73,32 @@ class PlannedPaymentsCardComputer :
             }
         }
 
+        val overdueSummaries = shownOverdue.map { p ->
+            PlannedPaymentSummary(
+                id = p.id,
+                name = p.name,
+                amount = p.amount,
+                currency = p.currency,
+                entryMode = p.entryMode,
+                scheduledDate = p.schedule.nextDueDate,
+                isOverdue = true
+            )
+        }
+        val upcomingSummaries = shownUpcoming.map { item ->
+            PlannedPaymentSummary(
+                id = item.plannedPayment.id,
+                name = item.plannedPayment.name,
+                amount = item.plannedPayment.amount,
+                currency = item.plannedPayment.currency,
+                entryMode = item.plannedPayment.entryMode,
+                scheduledDate = item.scheduledDate,
+                isOverdue = false
+            )
+        }
+
         return CardRenderData.PlannedPayments(
             config = config,
-            upcoming = shownUpcoming,
-            overdue = shownOverdue,
+            items = overdueSummaries + upcomingSummaries,
             currency = input.targetCurrency,
             exchangeRates = input.exchangeRates
         )

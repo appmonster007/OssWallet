@@ -182,8 +182,7 @@ fun UnifiedCardRenderer(
         is CardWithCallbacks.PlannedPayments -> {
             val renderData = cardWithCallbacks.renderData
             PlannedPaymentsCard(
-                upcoming = renderData.upcoming,
-                overdue = renderData.overdue,
+                items = renderData.items,
                 targetCurrency = renderData.currency,
                 exchangeRates = renderData.exchangeRates,
                 config = renderData.config,

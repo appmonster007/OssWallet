@@ -184,8 +184,7 @@ fun OssWalletNavGraph(
                     onSettingsClick = { navController.navigate(SettingsRoute) },
                     onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
                     onTemplateClick = { template ->
-                        vms.transactionViewModel.setTemplatePrefill(template.id)
-                        navController.navigate(TransactionEntryRoute())
+                        navController.navigate(TransactionEntryRoute(templateId = template.id))
                     },
                     onPlannedPaymentsClick = { navController.navigate(PlannedPaymentListRoute) },
                     onBudgetsClick = { navController.navigate(BudgetListRoute) },

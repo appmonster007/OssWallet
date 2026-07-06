@@ -506,7 +506,10 @@ fun PlannedPaymentDetailContent(
                                             val matchedOccurrence = occurrencesMap[item.scheduledDate]
                                             val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
                                             OccurrenceItem(
-                                                item = item,
+                                                scheduledDate = item.scheduledDate,
+                                                amount = item.plannedPayment.amount,
+                                                currency = item.plannedPayment.currency,
+                                                isOverdue = item.isOverdue,
                                                 status = status,
                                                 dateFormatter = dateFormatter,
                                                 onConfirm = { onConfirmOccurrence(item.scheduledDate) },
@@ -769,30 +772,33 @@ private fun DetailMetaRow(
 
 @Composable
 private fun OccurrenceItem(
-    item: UpcomingPaymentItem,
+    scheduledDate: Long,
+    amount: BigDecimal,
+    currency: String,
+    isOverdue: Boolean,
     status: OccurrenceStatus,
     dateFormatter: DateTimeFormatter,
     onConfirm: () -> Unit,
     onSkip: () -> Unit
 ) {
-    val dateLabel = remember(item.scheduledDate, dateFormatter) {
-        dateFormatter.format(Instant.ofEpochMilli(item.scheduledDate))
+    val dateLabel = remember(scheduledDate, dateFormatter) {
+        dateFormatter.format(Instant.ofEpochMilli(scheduledDate))
     }
-    val formattedAmount = remember(item.plannedPayment.amount, item.plannedPayment.currency) {
-        item.plannedPayment.amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
+    val formattedAmount = remember(amount, currency) {
+        amount.setScale(2, RoundingMode.HALF_UP).toPlainString()
     }
-    
+
     val zone = remember { ZoneId.systemDefault() }
-    val daysUntil = remember(item.scheduledDate, zone) {
+    val daysUntil = remember(scheduledDate, zone) {
         val today = java.time.LocalDate.now(zone)
-        val scheduledDay = Instant.ofEpochMilli(item.scheduledDate).atZone(zone).toLocalDate()
+        val scheduledDay = Instant.ofEpochMilli(scheduledDate).atZone(zone).toLocalDate()
         ChronoUnit.DAYS.between(today, scheduledDay).toInt()
     }
 
-    val hintLabel = remember(status, item.isOverdue, daysUntil) {
+    val hintLabel = remember(status, isOverdue, daysUntil) {
         if (status == OccurrenceStatus.PENDING) {
             when {
-                item.isOverdue -> "Overdue"
+                isOverdue -> "Overdue"
                 daysUntil == 0 -> "Due today"
                 daysUntil == 1 -> "Due tomorrow"
                 daysUntil > 1 -> "Due in $daysUntil days"
@@ -803,10 +809,10 @@ private fun OccurrenceItem(
 
     AeonListItem(
         title = dateLabel,
-        subtitle = "$formattedAmount ${item.plannedPayment.currency}${if (hintLabel != null) " · $hintLabel" else ""}",
+        subtitle = "$formattedAmount $currency${if (hintLabel != null) " · $hintLabel" else ""}",
         icon = Icons.Rounded.CalendarToday,
-        iconTint = if (item.isOverdue) AppColors.error else AppColors.secondary,
-        isWarning = item.isOverdue,
+        iconTint = if (isOverdue) AppColors.error else AppColors.secondary,
+        isWarning = isOverdue,
         trailingContent = {
             if (status == OccurrenceStatus.PENDING) {
                 Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs)) {
@@ -1033,7 +1039,10 @@ fun OccurrenceItemPreview() {
         ) {
             Text("Pending")
             OccurrenceItem(
-                item = sampleItem,
+                scheduledDate = sampleItem.scheduledDate,
+                amount = sampleItem.plannedPayment.amount,
+                currency = sampleItem.plannedPayment.currency,
+                isOverdue = false,
                 status = OccurrenceStatus.PENDING,
                 dateFormatter = dateFormatter,
                 onConfirm = {},
@@ -1042,10 +1051,10 @@ fun OccurrenceItemPreview() {
 
             Text("Overdue")
             OccurrenceItem(
-                item = sampleItem.copy(
-                    isOverdue = true,
-                    scheduledDate = System.currentTimeMillis() - 1 * 24 * 60 * 60 * 1000L
-                ),
+                scheduledDate = System.currentTimeMillis() - 1 * 24 * 60 * 60 * 1000L,
+                amount = sampleItem.plannedPayment.amount,
+                currency = sampleItem.plannedPayment.currency,
+                isOverdue = true,
                 status = OccurrenceStatus.PENDING,
                 dateFormatter = dateFormatter,
                 onConfirm = {},
@@ -1054,7 +1063,10 @@ fun OccurrenceItemPreview() {
 
             Text("Confirmed")
             OccurrenceItem(
-                item = sampleItem,
+                scheduledDate = sampleItem.scheduledDate,
+                amount = sampleItem.plannedPayment.amount,
+                currency = sampleItem.plannedPayment.currency,
+                isOverdue = false,
                 status = OccurrenceStatus.CONFIRMED,
                 dateFormatter = dateFormatter,
                 onConfirm = {},

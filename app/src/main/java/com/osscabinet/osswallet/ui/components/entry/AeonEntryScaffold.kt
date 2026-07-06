@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -58,7 +59,7 @@ fun AeonEntryScaffold(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxSize().imePadding()) {
                     content(
                         PaddingValues(
                             top = topBarHeight + scaledDp(8f, uiScale),

@@ -495,11 +495,15 @@ class DashboardViewModel @Inject constructor(
                 channelFlow<DashboardUiState> {
                     val configs = successState.cardsConfig.cards
 
-                    // Local flow scoped to this channelFlow round. Initialized with Loading so
-                    // the first collect emission is the Loading map — no race with compute children.
+                    // Seed from cache so recomputations (e.g. after saving a transaction) show
+                    // stale-but-valid data immediately instead of flashing Loading cards.
+                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(successState.profileId, successState.baseCurrency)
                     val localCardState = MutableStateFlow<PersistentMap<String, CardComputeState>>(
                         persistentMapOf<String, CardComputeState>().builder().apply {
-                            configs.forEach { c -> put(c.cardId, CardComputeState.Loading) }
+                            configs.forEach { c ->
+                                val cached = cachedSnapshot[c.cardId]
+                                put(c.cardId, if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading)
+                            }
                         }.build()
                     )
 

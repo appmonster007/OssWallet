@@ -42,8 +42,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -54,12 +56,15 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -74,8 +79,6 @@ import com.osscabinet.ossWallet.ui.theme.copyStyle
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * Editorial-style text input for entry forms.
@@ -108,7 +111,7 @@ fun EntryEditorialInput(
     val focusManager = LocalFocusManager.current
     val haptic = LocalHapticFeedback.current
     val glassEnabled = LocalGlassmorphismEnabled.current
-    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -125,6 +128,19 @@ fun EntryEditorialInput(
 
     LaunchedEffect(filteredSuggestions, isFocused) {
         expanded = isFocused && filteredSuggestions.isNotEmpty()
+    }
+
+    // Tracks keyboard animation frame-by-frame via snapshotFlow so bringIntoView runs
+    // continuously as the viewport shrinks — no arbitrary delay, no recomposition per frame.
+    val imeInsets = WindowInsets.ime
+    LaunchedEffect(isFocused) {
+        if (!isFocused) return@LaunchedEffect
+        snapshotFlow { imeInsets.getBottom(density) }
+            .filter { it > 0 }
+            .collectLatest {
+                scrollRequester?.bringIntoView()
+                bringIntoViewRequester.bringIntoView()
+            }
     }
 
     // 3. HIGHLIGHT STATE (FOCUS OR SELECTION)
@@ -166,13 +182,12 @@ fun EntryEditorialInput(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { if (!it) expanded = false },
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth().bringIntoViewRequester(bringIntoViewRequester)
     ) {
         GlassSurface(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()
-                .bringIntoViewRequester(bringIntoViewRequester)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -279,19 +294,7 @@ fun EntryEditorialInput(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
-                                .onFocusChanged {
-                                    if (it.isFocused && !isFocused) {
-                                        coroutineScope.launch {
-                                            delay(300)
-                                            if (isFocused) {
-                                                // Bring section header into view first, then fine-tune to card
-                                                scrollRequester?.bringIntoView()
-                                                bringIntoViewRequester.bringIntoView()
-                                            }
-                                        }
-                                    }
-                                    isFocused = it.isFocused
-                                }
+                                .onFocusChanged { isFocused = it.isFocused }
                         )
                     }
 

@@ -26,8 +26,8 @@ interface PlannedPaymentDao {
     suspend fun getAllPlannedPaymentsSync(profileId: Int): List<PlannedPaymentWithTemplate>
 
     @Transaction
-    @Query("SELECT * FROM planned_payments WHERE profileId = :profileId AND status = 'ACTIVE'")
-    suspend fun getDuePlannedPayments(profileId: Int): List<PlannedPaymentWithTemplate>
+    @Query("SELECT * FROM planned_payments WHERE profileId = :profileId AND status = 'ACTIVE' AND nextDueDate <= :now")
+    suspend fun getDuePlannedPayments(profileId: Int, now: Long): List<PlannedPaymentWithTemplate>
 
     /**
      * Cross-profile bulk read. ONLY for backup/export flows. Profile-scoped UI must

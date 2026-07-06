@@ -28,8 +28,8 @@ class PlannedPaymentRepositoryImpl @Inject constructor(
     override suspend fun getAllSync(profileId: Int): List<PlannedPayment> =
         dao.getAllPlannedPaymentsSync(profileId).map { it.toDomain() }
 
-    override suspend fun getDue(profileId: Int): List<PlannedPayment> =
-        dao.getDuePlannedPayments(profileId).map { it.toDomain() }
+    override suspend fun getDue(profileId: Int, now: Long): List<PlannedPayment> =
+        dao.getDuePlannedPayments(profileId, now).map { it.toDomain() }
 
     override suspend fun getById(id: Long): PlannedPayment? =
         dao.getById(id)?.toDomain()

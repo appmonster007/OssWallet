@@ -1,13 +1,11 @@
 package com.osscabinet.ossWallet.domain.service.management
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.cronutils.descriptor.CronDescriptor
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.model.time.ExecutionTime
 import com.cronutils.parser.CronParser
 import com.osscabinet.ossWallet.domain.model.*
-import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Locale
@@ -23,8 +21,11 @@ object PlannedPaymentService {
      * Calculates the next due date after [fromDate] according to the payment's recurrence rule.
      * Returns null when the payment has no further occurrences (ONE_TIME, or past endDate).
      */
-    fun calculateNextDueDate(payment: PlannedPayment, fromDate: Long): Long? {
-        val rule = payment.schedule.recurrenceRule
+    fun calculateNextDueDate(payment: PlannedPayment, fromDate: Long): Long? =
+        calculateNextDueDate(payment.schedule, fromDate)
+
+    private fun calculateNextDueDate(schedule: PaymentSchedule, fromDate: Long): Long? {
+        val rule = schedule.recurrenceRule
         if (rule.type == RecurrenceType.ONE_TIME) return null
 
         val fromInstant = Instant.ofEpochMilli(fromDate)
@@ -52,7 +53,7 @@ object PlannedPaymentService {
             next?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
         }
 
-        val endDate = payment.schedule.endDate
+        val endDate = schedule.endDate
         return if (nextMillis != null && endDate != null && nextMillis > endDate) null else nextMillis
     }
 
@@ -73,8 +74,31 @@ object PlannedPaymentService {
     }
 
     /**
-     * Core projection engine that generates future dates for a payment.
+     * Core projection engine — works directly from a [PaymentSchedule] with no status check.
+     * Status gate lives in the [PlannedPayment] overload below.
      */
+    private fun projectDates(
+        schedule: PaymentSchedule,
+        limitDate: Long? = null,
+        limitCount: Int? = null,
+        minDate: Long? = null
+    ): List<Long> {
+        val result = mutableListOf<Long>()
+        val scheduleEndDate = schedule.endDate
+        var due: Long? = schedule.nextDueDate
+        while (due != null) {
+            if (limitDate != null && due > limitDate) break
+            if (scheduleEndDate != null && due > scheduleEndDate) break
+            if (minDate == null || due >= minDate) result.add(due)
+            if (limitCount != null && result.size >= limitCount) break
+            if (schedule.recurrenceRule.type == RecurrenceType.ONE_TIME) break
+            val next = calculateNextDueDate(schedule, due)
+            if (next == null || next <= due) break
+            due = next
+        }
+        return result
+    }
+
     private fun projectDates(
         payment: PlannedPayment,
         limitDate: Long? = null,
@@ -82,28 +106,7 @@ object PlannedPaymentService {
         minDate: Long? = null
     ): List<Long> {
         if (payment.status != PlannedPaymentStatus.ACTIVE) return emptyList()
-        val result = mutableListOf<Long>()
-        var due: Long? = payment.schedule.nextDueDate
-
-        val scheduleEndDate = payment.schedule.endDate
-        while (due != null) {
-            if (limitDate != null && due > limitDate) break
-            if (scheduleEndDate != null && due > scheduleEndDate) break
-
-            if (minDate == null || due >= minDate) {
-                result.add(due)
-            }
-
-            if (limitCount != null && result.size >= limitCount) break
-            if (payment.schedule.recurrenceRule.type == RecurrenceType.ONE_TIME) break
-
-            val currentSchedule = payment.schedule.copy(nextDueDate = due)
-            val next = calculateNextDueDate(payment.copy(schedule = currentSchedule), due)
-            
-            if (next == null || next <= due) break
-            due = next
-        }
-        return result
+        return projectDates(payment.schedule, limitDate, limitCount, minDate)
     }
 
     /**
@@ -186,19 +189,7 @@ object PlannedPaymentService {
         rule: RecurrenceRule,
         n: Int,
         endDate: Long? = null
-    ): List<Long> {
-        // Temporary object to leverage existing calculation logic
-        val tempPayment = PlannedPayment(
-            name = "",
-            categoryId = 0,
-            amount = BigDecimal.ZERO,
-            entryMode = EntryMode.EXPENSE,
-            accountId = null,
-            currency = "USD",
-            schedule = PaymentSchedule(rule, startDate, endDate, startDate)
-        )
-        return projectDates(tempPayment, limitCount = n)
-    }
+    ): List<Long> = projectDates(PaymentSchedule(rule, startDate, endDate, startDate), limitCount = n)
 
     /**
      * Generates all ACTIVE payments whose [nextDueDate] is before [now].

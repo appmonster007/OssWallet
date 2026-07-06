@@ -75,6 +75,36 @@ fun TransactionFormBody(
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
+    val activeAmountSide = state.activeAmountSide
+    val onAmountChange = remember(activeAmountSide) {
+        { amt: String ->
+            if (activeAmountSide == AmountEditingSide.SOURCE) {
+                onEvent(TransactionEntryEvent.SetAmount(amt))
+            } else {
+                onEvent(TransactionEntryEvent.SetTargetAmount(amt))
+            }
+        }
+    }
+
+    val accounts = state.accounts
+    val onAccountChange = remember(accounts) {
+        { accId: String? ->
+            val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else accounts.find { it.id == accId }
+            onEvent(TransactionEntryEvent.SetAccount(account))
+        }
+    }
+    val onTargetAccountChange = remember(accounts) {
+        { accId: String? ->
+            val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else accounts.find { it.id == accId }
+            onEvent(TransactionEntryEvent.SetTargetAccount(account))
+        }
+    }
+
+    val currentTxId = state.transactionId
+    val onRemoveLink = remember(currentTxId) {
+        { txId: Long -> onEvent(TransactionEntryEvent.RemoveLinkedTransaction(currentTxId ?: -1L, txId)) }
+    }
+
     val focusManager = LocalFocusManager.current
 
     Box(
@@ -174,7 +204,7 @@ fun TransactionFormBody(
                     ),
                     categorySelector = if (!state.isTransfer) {
                         AeonSelectorState(
-                            selection = state.categories.find { it.id == state.selectedCategoryId },
+                            selection = state.selectedCategory,
                             onClick = { onEvent(TransactionEntryEvent.ShowCategorySheet(true)) },
                             isError = state.hasError(EntryField.CATEGORY)
                         )
@@ -228,14 +258,7 @@ fun TransactionFormBody(
                                 )
                             )
                         },
-                        onRemoveLink = { txId ->
-                            onEvent(
-                                TransactionEntryEvent.RemoveLinkedTransaction(
-                                    state.transactionId ?: -1L,
-                                    txId
-                                )
-                            )
-                        },
+                        onRemoveLink = onRemoveLink,
                         onPaymentMethodClick = {
                             onEvent(
                                 TransactionEntryEvent.ShowPaymentMethodSheet(
@@ -272,21 +295,9 @@ fun TransactionFormBody(
             shortlistedCurrencies = state.shortlistedCurrencies,
             fullCurrencies = state.fullProviderCurrencies,
             isTransfer = state.isTransfer,
-            onAmountChange = { amt ->
-                if (state.activeAmountSide == AmountEditingSide.SOURCE) {
-                    onEvent(TransactionEntryEvent.SetAmount(amt))
-                } else {
-                    onEvent(TransactionEntryEvent.SetTargetAmount(amt))
-                }
-            },
-            onAccountChange = { accId ->
-                val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
-                onEvent(TransactionEntryEvent.SetAccount(account))
-            },
-            onTargetAccountChange = { accId ->
-                val account = if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else state.accounts.find { it.id == accId }
-                onEvent(TransactionEntryEvent.SetTargetAccount(account))
-            },
+            onAmountChange = onAmountChange,
+            onAccountChange = onAccountChange,
+            onTargetAccountChange = onTargetAccountChange,
             onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategory(catId)) },
             onCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetCurrency(curr)) },
             onTargetCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetTargetCurrency(curr)) },
@@ -303,7 +314,7 @@ fun TransactionFormBody(
                 }
             },
             onSearchTransactions = onSearch,
-            linkedIds = state.linkedTransactionIds.toSet(),
+            linkedIds = state.linkedTransactionIdSet,
             onLinkedTransactionsChanged = { ids -> onEvent(TransactionEntryEvent.SetLinkedTransactionIds(ids.toList())) },
             selectedAccountId = state.selectedAccount?.id,
             selectedTargetAccountId = state.targetAccount?.id,
@@ -344,8 +355,9 @@ fun TransactionFormBody(
         }
 
         state.showSplitCategorySheet?.let { splitIndex ->
+            val editableCategories = remember(state.categories) { state.categories.filter { !Category.isInitialBalance(it.id) } }
             AeonCategorySelection(
-                categories = state.categories.filter { !Category.isInitialBalance(it.id) },
+                categories = editableCategories,
                 selectedCategoryIds = state.splits.getOrNull(splitIndex)?.categoryId?.let { setOf(it) } ?: emptySet(),
                 onSelectionChange = { ids ->
                     onEvent(TransactionEntryEvent.UpdateSplit(splitIndex, ids.firstOrNull(), null, null))

@@ -293,7 +293,7 @@ private fun TemplateSheetOrchestrator(
             }
         },
         onSearchTransactions = onSearch,
-        linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
+        linkedIds = state.linkedTransactionIdSet,
         onLinkedTransactionsChanged = { ids -> onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList())) },
         selectedAccountId = state.accountId,
         selectedTargetAccountId = state.targetAccountId,

@@ -73,7 +73,8 @@ data class TemplateEntryState(
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false,
     val prefillDto: TransactionPrefillDTO? = null,
-    val displayLinkedTxs: List<Transaction> = emptyList()
+    val displayLinkedTxs: List<Transaction> = emptyList(),
+    val selectedCategory: Category? = null,
 ) {
     val sheetState: FormSheetState get() = FormSheetState(
         showAccount = showAccountSheet,
@@ -103,7 +104,7 @@ data class TemplateEntryState(
 
     val selectedAccount: Account? get() = source.account.resolve(accounts)
     val selectedTargetAccount: Account? get() = destination.account.resolve(accounts)
-    val selectedCategory: Category? get() = categories.find { it.id == categoryId }
+    val linkedTransactionIdSet: Set<Long> get() = displayLinkedTxs.map { it.id }.toHashSet()
 
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME
     val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE

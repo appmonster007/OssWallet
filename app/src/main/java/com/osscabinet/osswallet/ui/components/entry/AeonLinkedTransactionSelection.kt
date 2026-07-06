@@ -100,6 +100,9 @@ fun AeonLinkedTransactionSelection(
         searchResults.filter { it.id != currentTransactionId }
     }
 
+    val accountMap = remember(accounts) { accounts.associateBy { it.id } }
+    val categoryMap = remember(categories) { categories.associateBy { it.id } }
+
     AeonFullScreenDialog(onDismissRequest = onDismiss) {
         AeonSelectionScreen(
             title = stringResource(R.string.link_records_title),
@@ -145,8 +148,8 @@ fun AeonLinkedTransactionSelection(
                             key = { it.id }
                         ) { tx ->
                             val isSelected = tx.id in selectedIds
-                            val account = accounts.find { it.id == tx.accountId }
-                            val category = categories.find { it.id == tx.categoryId }
+                            val account = accountMap[tx.accountId]
+                            val category = categoryMap[tx.categoryId]
                             val icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category
                             val iconBg = category?.colorHex?.let { Color(it) }
 

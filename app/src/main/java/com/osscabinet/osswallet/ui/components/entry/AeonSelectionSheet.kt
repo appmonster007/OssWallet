@@ -44,7 +44,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
  * Used as a base for Account, Category, and other entity selections.
  */
 @Composable
-fun <T, ID> AeonSelectionSheet(
+fun <T, ID : Any> AeonSelectionSheet(
     title: String,
     onDismiss: () -> Unit,
     items: List<T>,
@@ -168,7 +168,7 @@ fun <T, ID> AeonSelectionSheet(
                                     )
                                 }
                             } else {
-                                items(filteredItems) { item ->
+                                items(filteredItems, key = { idMapper(it) }) { item ->
                                     AeonHybridSelector(
                                         items = listOf(item),
                                         mode = mode,

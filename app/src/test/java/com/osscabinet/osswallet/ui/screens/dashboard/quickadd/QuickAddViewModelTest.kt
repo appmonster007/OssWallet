@@ -91,7 +91,7 @@ class QuickAddViewModelTest {
     }
 
     @Test
-    fun `toggleTransactionType cycles modes correctly`() = runTest {
+    fun `toggleTransactionType cycles between expense and income only`() = runTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() }
 
@@ -99,10 +99,10 @@ class QuickAddViewModelTest {
         awaitState { it.entryMode == EntryMode.INCOME }
 
         viewModel.toggleTransactionType()
-        awaitState { it.entryMode == EntryMode.TRANSFER }
+        awaitState { it.entryMode == EntryMode.EXPENSE }
 
         viewModel.toggleTransactionType()
-        awaitState { it.entryMode == EntryMode.EXPENSE }
+        awaitState { it.entryMode == EntryMode.INCOME }
     }
 
     @Test

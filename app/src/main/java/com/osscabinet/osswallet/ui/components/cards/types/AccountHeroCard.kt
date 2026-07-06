@@ -59,8 +59,16 @@ import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HNegativeDark
+import com.osscabinet.ossWallet.ui.theme.HNegativeLight
+import com.osscabinet.ossWallet.ui.theme.HPositiveDark
+import com.osscabinet.ossWallet.ui.theme.HPositiveLight
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.LocalUiIdentity
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
+import com.osscabinet.ossWallet.ui.theme.NegativeAmountDark
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.PositiveAmountDark
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
@@ -101,15 +109,15 @@ fun AccountHeroCard(
     val isH = LocalUiIdentity.current == UiIdentity.H
 
     val posColor = if (isH) {
-        if (isDarkBg) Color(0xFF7FBF8E) else Color(0xFF2C6E49)
+        if (isDarkBg) HPositiveDark else HPositiveLight
     } else {
-        if (isDarkBg) Color(0xFF4DCE85) else Color(0xFF1E9B4F)
+        if (isDarkBg) PositiveAmountDark else PositiveAmountColor
     }
 
     val negColor = if (isH) {
-        if (isDarkBg) Color(0xFFD88379) else Color(0xFF9B3B30)
+        if (isDarkBg) HNegativeDark else HNegativeLight
     } else {
-        if (isDarkBg) Color(0xFFE27974) else Color(0xFFC8463F)
+        if (isDarkBg) NegativeAmountDark else NegativeAmountColor
     }
 
     val subColor = if (isDarkBg) contentColor.copy(alpha = 0.7f) else AppColors.contentSecondary

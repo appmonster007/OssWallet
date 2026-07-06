@@ -68,12 +68,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.osscabinet.ossWallet.ui.theme.AccentDeepPurple
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.NearBlack
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -546,7 +549,7 @@ fun AeonTopBarInteractivePreviewWrapper(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF1A1A1A))
+                .background(NearBlack)
                 .padding(vertical = 8.dp, horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -760,10 +763,10 @@ fun AeonTopAppBarPreview(
 
                     Row(modifier = Modifier.fillMaxSize().then(sourceModifier)) {
                         Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                            Brush.verticalGradient(listOf(Color(0xFF673AB7).copy(alpha = 0.35f), Color.Transparent))
+                            Brush.verticalGradient(listOf(AccentDeepPurple.copy(alpha = 0.35f), Color.Transparent))
                         ))
                         Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                            Brush.verticalGradient(listOf(Color(0xFF00BCD4).copy(alpha = 0.35f), Color.Transparent))
+                            Brush.verticalGradient(listOf(AccountStructureColors.digitalWallet.copy(alpha = 0.35f), Color.Transparent))
                         ))
                     }
                     

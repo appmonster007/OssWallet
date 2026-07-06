@@ -45,9 +45,11 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TagUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.CategoryPink
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
@@ -348,7 +350,7 @@ fun AeonTransactionItemRegularPreview() {
                 TagUiModel("Work", -1)
             ),
             icon = Icons.Rounded.Category,
-            iconBg = Color(0xFF4CAF50),
+            iconBg = AccountStructureColors.savings,
             onClick = {}
         )
     }
@@ -373,7 +375,7 @@ fun AeonTransactionItemPlannedPreview() {
                 note = "Netflix Subscription",
                 isPlanned = true,
                 icon = Icons.Rounded.Category,
-                iconBg = Color(0xFFE91E63),
+                iconBg = CategoryPink,
                 onClick = {}
             )
         }

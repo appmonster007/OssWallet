@@ -126,6 +126,8 @@ val GlassBorderOpacityDark = 0.22f
 
 val PositiveAmountColor = Color(0xFF1E9B4F) // Aligned with colors.md Light
 val NegativeAmountColor = Color(0xFFC8463F) // Aligned with colors.md Light
+val PositiveAmountDark = Color(0xFF4DCE85)  // Dark-theme positive amount
+val NegativeAmountDark = Color(0xFFE27974)  // Dark-theme negative amount
 
 val SuccessColor = Color(0xFF22C55E)
 val WarningColor = Color(0xFFF59E0B)
@@ -133,6 +135,7 @@ val InfoColor = Color(0xFF3B82F6)
 val AccentBlue = Color(0xFF3B82F6)
 val AccentOrange = Color(0xFFF59E0B)
 val AccentPurple = Color(0xFFA855F7)
+val AccentDeepPurple = Color(0xFF673AB7)
 
 // --- STATIC UTILITY COLORS ---
 // True absolute colors needed for contrast-on-custom-accent logic and
@@ -145,9 +148,13 @@ val ColorOnDark =
     Color.White              // Content rendered directly on a dark custom-accent surface
 val ColorOnLight =
     Color.Black              // Content rendered directly on a light custom-accent surface
+val NearBlack = Color(0xFF1A1A1A)             // Near-black ink / structural dark surfaces
 
 // Neutral status color (paused / skipped / inactive states)
 val NeutralStatusColor = Color(0xFF9E9E9E)     // Material Gray-500
+
+// Light neutral background used in preview wrappers and structural scaffolding
+val PreviewLightGray = Color(0xFFF5F5F5)
 
 // --- CHART STATIC COLORS ---
 // Used as default parameter values or rendering constants in chart composables.
@@ -169,6 +176,10 @@ val ChartColorGreen = Color(0xFF00C853)
 val ChartColorRed = Color(0xFFB3261E)
 val ChartColorOrange = Color(0xFFFF5722)
 
+// Category icon / badge palette — semantic colors for category icon tints in UI samples
+val CategoryBrown = Color(0xFF795548)
+val CategoryPink = Color(0xFFE91E63)
+
 // Tag / category preset palette (user-facing color swatches)
 val TagPresetColors = listOf(
     Color(0xFFEF5350), Color(0xFFEC407A), Color(0xFFAB47BC), Color(0xFF7E57C2),
@@ -183,6 +194,23 @@ val BrandPresetColorHexes = listOf(
 )
 
 const val DefaultAccentColorHex = "#004D5F"
+val DefaultAccentColor = Color(0xFF004D5F)  // Color form of DefaultAccentColorHex
+val DeepTealGreen = Color(0xFF004D40)        // Deep teal-green for accent/preview use
+
+// --- ACCOUNT STRUCTURE TYPE COLORS ---
+// Semantic per-type colors for account icons and badges.
+// Single source of truth — reference these from AccountStructureTypeUi.kt.
+
+object AccountStructureColors {
+    val bank = Color(0xFF2196F3)
+    val savings = Color(0xFF4CAF50)
+    val cash = Color(0xFF8BC34A)
+    val digitalWallet = Color(0xFF00BCD4)
+    val credit = Color(0xFFF44336)
+    val investment = Color(0xFFFF9800)
+    val crypto = Color(0xFFFFC107)
+    val other = Color(0xFF9E9E9E)
+}
 
 // =============================================================================
 // APP COLORS

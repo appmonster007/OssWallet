@@ -34,6 +34,7 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.theme.PreviewLightGray
 import java.math.BigDecimal
 
 /**
@@ -289,7 +290,7 @@ fun FloatingTransactionHeaderPreview() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5)) // Lighter background to help see the shadow
+                .background(PreviewLightGray)
                 .padding(24.dp)
         ) {
             TransactionHeader(

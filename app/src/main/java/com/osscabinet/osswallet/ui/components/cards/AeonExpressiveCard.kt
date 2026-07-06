@@ -70,9 +70,11 @@ import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.DeepTealGreen
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.text.SimpleDateFormat
@@ -709,14 +711,14 @@ private fun AeonExpressiveCardAccentPreview() {
                 title = "Savings Goal",
                 subtitle = "85% of $10,000",
                 icon = Icons.Rounded.AccountBalance,
-                accentColor = Color(0xFF4CAF50),
+                accentColor = AccountStructureColors.savings,
                 filter = TransactionFilter(),
                 onFilterChange = {},
             ) {
                 Text(
                     text = "$8,500.00",
                     style = AppTextStyles.heroAmount,
-                    color = Color(0xFF4CAF50),
+                    color = AccountStructureColors.savings,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
@@ -751,7 +753,7 @@ private fun AeonHeroCardDarkPreview() {
                 amount = "$245,800.50",
                 label = "Total Balance",
                 icon = Icons.Rounded.AccountBalance,
-                accentColor = Color(0xFF004D40),
+                accentColor = DeepTealGreen,
             )
         }
     }

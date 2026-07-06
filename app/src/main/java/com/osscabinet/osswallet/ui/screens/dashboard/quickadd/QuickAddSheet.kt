@@ -252,7 +252,7 @@ internal fun QuickAddSheetInternal(
                         alpha = 1f - (backProgress * 0.2f)
                     }
             ) {
-                val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                val sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
                 val sheetBody: @Composable () -> Unit = {
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                         val maxSheetHeight = maxHeight

@@ -400,16 +400,8 @@ fun PlannedPaymentListContent(
                                     )
                                 }
                                 items(overdue, key = { it.id }) { payment ->
-                                    SwipeablePaymentItem(
-                                        payment = payment,
-                                        now = now,
-                                        isOverdue = true,
-                                        onTap = { onDetailClick(payment.id) },
-                                        onEdit = { onEditClick(payment.id) },
-                                        onDelete = { onDelete(payment.id) },
-                                        onPause = { onPause(payment) },
-                                        onResume = { onResume(payment) },
-                                        onConfirm = {
+                                    val onConfirmAction = remember(payment.id, payment.schedule.nextDueDate) {
+                                        {
                                             onConfirm(payment, payment.schedule.nextDueDate)
                                             scope.launch {
                                                 val result = snackbarHostState.showSnackbar(
@@ -419,8 +411,23 @@ fun PlannedPaymentListContent(
                                                 )
                                                 if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
                                             }
-                                        },
-                                        onSkip = { pendingOverdueSkip = payment to payment.schedule.nextDueDate }
+                                            Unit
+                                        }
+                                    }
+                                    val onSkipAction = remember(payment.id, payment.schedule.nextDueDate) {
+                                        { pendingOverdueSkip = payment to payment.schedule.nextDueDate }
+                                    }
+                                    SwipeablePaymentItem(
+                                        payment = payment,
+                                        now = now,
+                                        isOverdue = true,
+                                        onTap = { onDetailClick(payment.id) },
+                                        onEdit = { onEditClick(payment.id) },
+                                        onDelete = { onDelete(payment.id) },
+                                        onPause = { onPause(payment) },
+                                        onResume = { onResume(payment) },
+                                        onConfirm = onConfirmAction,
+                                        onSkip = onSkipAction
                                     )
                                 }
                             }
@@ -437,6 +444,34 @@ fun PlannedPaymentListContent(
                                     upcoming,
                                     key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
                                 ) { item ->
+                                    val onConfirmAction = remember(item.plannedPayment.id, item.scheduledDate) {
+                                        {
+                                            onConfirm(item.plannedPayment, item.scheduledDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Payment confirmed",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                            Unit
+                                        }
+                                    }
+                                    val onSkipAction = remember(item.plannedPayment.id, item.scheduledDate) {
+                                        {
+                                            onSkip(item.plannedPayment, item.scheduledDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Occurrence skipped",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                            Unit
+                                        }
+                                    }
                                     SwipeablePaymentItem(
                                         payment = item.plannedPayment,
                                         now = now,
@@ -447,28 +482,8 @@ fun PlannedPaymentListContent(
                                         onDelete = { onDelete(item.plannedPayment.id) },
                                         onPause = { onPause(item.plannedPayment) },
                                         onResume = { onResume(item.plannedPayment) },
-                                        onConfirm = {
-                                            onConfirm(item.plannedPayment, item.scheduledDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Payment confirmed",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                            }
-                                        },
-                                        onSkip = {
-                                            onSkip(item.plannedPayment, item.scheduledDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Occurrence skipped",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                            }
-                                        }
+                                        onConfirm = onConfirmAction,
+                                        onSkip = onSkipAction
                                     )
                                 }
                             }
@@ -482,6 +497,34 @@ fun PlannedPaymentListContent(
                                     )
                                 }
                                 items(scheduled, key = { it.id }) { payment ->
+                                    val onConfirmAction = remember(payment.id, payment.schedule.nextDueDate) {
+                                        {
+                                            onConfirm(payment, payment.schedule.nextDueDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Payment confirmed",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                            Unit
+                                        }
+                                    }
+                                    val onSkipAction = remember(payment.id, payment.schedule.nextDueDate) {
+                                        {
+                                            onSkip(payment, payment.schedule.nextDueDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Occurrence skipped",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                            Unit
+                                        }
+                                    }
                                     SwipeablePaymentItem(
                                         payment = payment,
                                         now = now,
@@ -492,28 +535,8 @@ fun PlannedPaymentListContent(
                                         onDelete = { onDelete(payment.id) },
                                         onPause = { onPause(payment) },
                                         onResume = { onResume(payment) },
-                                        onConfirm = {
-                                            onConfirm(payment, payment.schedule.nextDueDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Payment confirmed",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                            }
-                                        },
-                                        onSkip = {
-                                            onSkip(payment, payment.schedule.nextDueDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Occurrence skipped",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                            }
-                                        }
+                                        onConfirm = onConfirmAction,
+                                        onSkip = onSkipAction
                                     )
                                 }
                             }

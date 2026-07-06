@@ -44,6 +44,10 @@ interface PlannedPaymentDao {
     @Query("SELECT * FROM planned_payments WHERE id = :id")
     suspend fun getById(id: Long): PlannedPaymentWithTemplate?
 
+    @Transaction
+    @Query("SELECT * FROM planned_payments WHERE id = :id")
+    fun getByIdFlow(id: Long): Flow<PlannedPaymentWithTemplate?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: PlannedPaymentEntity): Long
 

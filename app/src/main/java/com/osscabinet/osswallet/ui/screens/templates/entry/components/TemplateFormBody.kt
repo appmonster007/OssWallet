@@ -189,8 +189,8 @@ fun TemplateFormBody(
                 onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
                 onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
                 onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
-                noteSuggestions = state.uniqueNotes,
-                payeeSuggestions = state.uniquePayees,
+                noteSuggestions = state.allNotes,
+                payeeSuggestions = state.allPayees,
                 additionalContent = {
                     AeonEntryMetadataSection(
                         state = AeonMetadataState(

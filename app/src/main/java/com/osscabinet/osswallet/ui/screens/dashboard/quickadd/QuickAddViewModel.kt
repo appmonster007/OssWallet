@@ -609,8 +609,7 @@ class QuickAddViewModel @Inject constructor(
         _uiState.update { s ->
             val nextMode = when (s.entryMode) {
                 EntryMode.EXPENSE -> EntryMode.INCOME
-                EntryMode.INCOME -> EntryMode.TRANSFER
-                EntryMode.TRANSFER -> EntryMode.EXPENSE
+                else -> EntryMode.EXPENSE
             }
             
             val result = TransactionEntryService.transitionType(

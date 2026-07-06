@@ -14,14 +14,10 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.model.isOutside
@@ -30,81 +26,71 @@ import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PlannedPaymentEntryViewModel @Inject constructor(
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val templateRepository: TemplateRepository,
     private val transactionUseCases: TransactionUseCases,
-    private val entryFormDataUseCase: EntryFormDataUseCase,
-    private val computationRepository: ComputationRepository,
+    entryFormDataUseCase: EntryFormDataUseCase,
+    computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
-) : BaseViewModel(settingsRepository) {
+) : BaseEntryViewModel(entryFormDataUseCase, computationRepository, settingsRepository) {
 
     private val _state = MutableStateFlow(PlannedPaymentEntryState())
     val state: StateFlow<PlannedPaymentEntryState> = _state.asStateFlow()
 
     private var lastInitParams: Pair<Long?, PlannedPaymentPrefillDTO?>? = null
-    private var rateJob: Job? = null
 
-    init {
-        loadInitialData()
-        viewModelScope.launch {
-            effectiveShortlistedCurrencies.collect { currencies ->
-                _state.update { it.copy(shortlistedCurrencies = currencies) }
-            }
-        }
-        viewModelScope.launch {
-            computationRepository.exchangeRates.collect { rates ->
-                _state.update { it.copy(exchangeRates = rates) }
-            }
-        }
+    // BaseEntryViewModel abstract overrides
+    override fun getSourceCurrency() = _state.value.source.currency
+    override fun getTargetCurrency() = _state.value.destination.currency
+    override fun getIsTransfer() = _state.value.isTransfer
+    override fun getIsRateFixed() = _state.value.isRateFixed
+    override fun getAmountValue() = _state.value.amountValue
+    override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
+        _state.update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
     }
 
-    private fun loadInitialData() {
+    init {
         viewModelScope.launch {
-            settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                entryFormDataUseCase.observeEntryCoreData(profileId).map { profileId to it }
-            }.collect { (profileId, data) ->
+            entryFormSnapshot.collect { snapshot ->
                 _state.update { current ->
-                    val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && data.accounts.isNotEmpty()) {
+                    val defaultSource = if (!current.isEditMode &&
+                        current.source.account is AccountRef.Unselected &&
+                        snapshot.accounts.isNotEmpty()
+                    ) {
                         current.source.copy(
-                            account = AccountRef.fromStored(data.accounts.first().id),
-                            currency = data.accounts.first().currencyCode
+                            account = AccountRef.fromStored(snapshot.accounts.first().id),
+                            currency = snapshot.accounts.first().currencyCode
                         )
                     } else current.source
                     current.copy(
-                        accounts = data.accounts,
-                        categories = data.categories,
-                        templates = data.templates,
-                        availableTags = data.tags,
-                        uniquePayees = data.payees,
-                        uniqueNotes = data.notes,
-                        currentProfileId = profileId,
-                        source = defaultSource,
-                        fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                        accounts = snapshot.accounts,
+                        categories = snapshot.categories,
+                        templates = snapshot.templates,
+                        allTags = snapshot.allTags,
+                        allPayees = snapshot.allPayees,
+                        allNotes = snapshot.allNotes,
+                        shortlistedCurrencies = snapshot.shortlistedCurrencies,
+                        fullProviderCurrencies = snapshot.fullProviderCurrencies,
+                        exchangeRates = snapshot.exchangeRates,
+                        source = defaultSource
                     )
                 }
             }
@@ -129,10 +115,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             accounts = current.accounts,
                             categories = current.categories,
                             templates = current.templates,
-                            availableTags = current.availableTags,
-                            uniquePayees = current.uniquePayees,
-                            uniqueNotes = current.uniqueNotes,
-                            currentProfileId = current.currentProfileId,
+                            allTags = current.allTags,
+                            allPayees = current.allPayees,
+                            allNotes = current.allNotes,
+
                             shortlistedCurrencies = current.shortlistedCurrencies,
                             isEditMode = false,
                             plannedPaymentId = null,
@@ -166,7 +152,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             hasEndDate = false,
                             endDateMillis = schedule.startDate,
                             payee = template.payee ?: "",
-                            noteUserPart = template.note ?: "",
+                            note = template.note ?: "",
                             location = template.location ?: "",
                             gpsLocation = template.gpsLocation,
                             warrantyExpirationMillis = template.warrantyExpiration
@@ -174,7 +160,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             isWarrantyEnabled = template.warrantyExpiration != null,
                             transactionStatus = template.transactionStatus,
                             paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                            selectedTagNames = template.tags,
+                            selectedTags = template.tags,
                             status = PlannedPaymentStatus.ACTIVE
                         )
                     }
@@ -187,10 +173,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             accounts = current.accounts,
                             categories = current.categories,
                             templates = current.templates,
-                            availableTags = current.availableTags,
-                            uniquePayees = current.uniquePayees,
-                            uniqueNotes = current.uniqueNotes,
-                            currentProfileId = current.currentProfileId,
+                            allTags = current.allTags,
+                            allPayees = current.allPayees,
+                            allNotes = current.allNotes,
+
                             shortlistedCurrencies = current.shortlistedCurrencies,
                             isEditMode = false,
                             plannedPaymentId = null,
@@ -238,10 +224,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         accounts = current.accounts,
                         categories = current.categories,
                         templates = current.templates,
-                        availableTags = current.availableTags,
-                        uniquePayees = current.uniquePayees,
-                        uniqueNotes = current.uniqueNotes,
-                        currentProfileId = current.currentProfileId,
+                        allTags = current.allTags,
+                        allPayees = current.allPayees,
+                        allNotes = current.allNotes,
                         shortlistedCurrencies = current.shortlistedCurrencies,
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
@@ -274,7 +259,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         hasEndDate = schedule.endDate != null,
                         endDateMillis = schedule.endDate ?: schedule.startDate,
                         payee = existing.payee ?: "",
-                        noteUserPart = existing.note ?: "",
+                        note = existing.note ?: "",
                         location = existing.location ?: "",
                         gpsLocation = existing.gpsLocation,
                         warrantyExpirationMillis = existing.warrantyExpiration
@@ -282,7 +267,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         isWarrantyEnabled = existing.warrantyExpiration != null,
                         transactionStatus = existing.transactionStatus,
                         paymentMethod = existing.paymentMethod ?: PaymentMethod.CASH,
-                        selectedTagNames = existing.tags,
+                        selectedTags = existing.tags,
                         status = existing.status,
                         exchangeRate = existing.transferRate,
                         showNumpad = false // Never auto-open in edit mode
@@ -297,14 +282,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetName -> {
                 _state.update { state ->
                     val newNote = when {
-                        state.noteUserPart.isEmpty() -> "${event.name} - "
-                        state.name.isNotEmpty() && state.noteUserPart.startsWith("${state.name} - ") -> {
-                            state.noteUserPart.replaceFirst("${state.name} - ", "${event.name} - ")
+                        state.note.isEmpty() -> "${event.name} - "
+                        state.name.isNotEmpty() && state.note.startsWith("${state.name} - ") -> {
+                            state.note.replaceFirst("${state.name} - ", "${event.name} - ")
                         }
 
-                        else -> state.noteUserPart
+                        else -> state.note
                     }
-                    state.copy(name = event.name, noteUserPart = newNote)
+                    state.copy(name = event.name, note = newNote)
                 }
             }
 
@@ -453,7 +438,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetPayee -> _state.update { it.copy(payee = event.payee) }
-            is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(noteUserPart = event.note) }
+            is PlannedPaymentEntryEvent.SetNote -> _state.update { it.copy(note = event.note) }
             is PlannedPaymentEntryEvent.SetLocation -> _state.update {
                 it.copy(
                     gpsLocation = event.gpsLocation,
@@ -478,7 +463,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             is PlannedPaymentEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
-            is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTagNames = event.tags) }
+            is PlannedPaymentEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
             is PlannedPaymentEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
                     val profileId = settingsRepository.currentProfileId.first()
@@ -523,9 +508,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             entryMode = event.template.entryMode,
                             exchangeRate = event.template.transferRate,
                             payee = event.template.payee ?: "",
-                            noteUserPart = event.template.note ?: "",
+                            note = event.template.note ?: "",
                             paymentMethod = event.template.paymentMethod ?: PaymentMethod.CASH,
-                            selectedTagNames = event.template.tags
+                            selectedTags = event.template.tags
                         )
                     } else {
                         state.copy(linkedTemplate = null)
@@ -684,6 +669,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
+            val profileId = settingsRepository.currentProfileId.first()
             val amountValue = if (s.isIncome) s.amountValue.abs()
             else s.amountValue.abs().negate() // Expense and Transfer normalized to negative
 
@@ -716,14 +702,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 transferRate = s.exchangeRate,
                 currency = s.currency,
                 payee = s.payee,
-                note = s.noteUserPart,
+                note = s.note,
                 location = s.location.ifBlank { null },
                 gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
-                tags = s.selectedTagNames + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
-                profileId = s.currentProfileId
+                tags = s.selectedTags + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
+                profileId = profileId
             )
 
             val templateId = if (template.id == 0L) {
@@ -756,13 +742,13 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 transferRate = s.exchangeRate,
                 currency = s.currency,
                 payee = s.payee,
-                note = s.noteUserPart,
+                note = s.note,
                 location = s.location.ifBlank { null },
                 gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
                 transactionStatus = s.transactionStatus,
                 paymentMethod = s.paymentMethod,
-                tags = s.selectedTagNames + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
+                tags = s.selectedTags + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
                 schedule = PaymentSchedule(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
@@ -772,7 +758,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 ),
                 autoConfirm = s.autoConfirm,
                 status = s.status,
-                profileId = s.currentProfileId,
+                profileId = profileId,
                 templateId = templateId
             )
 
@@ -811,40 +797,6 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             } catch (e: Exception) {
                 // Optional: Show error message to user
                 _state.update { it.copy(navTriggered = false) }
-            }
-        }
-    }
-
-    private fun recalculateExchangeRate() {
-        rateJob?.cancel()
-        rateJob = viewModelScope.launch {
-            val snapshot = _state.value
-            if (snapshot.entryMode != EntryMode.TRANSFER ||
-                snapshot.currency.isEmpty() ||
-                snapshot.targetCurrency.isEmpty()
-            ) return@launch
-
-            val rates = computationRepository.exchangeRatesSnapshot.first()
-
-            val current = _state.value
-            if (current.entryMode != EntryMode.TRANSFER ||
-                current.currency != snapshot.currency ||
-                current.targetCurrency != snapshot.targetCurrency ||
-                current.isRateFixed
-            ) return@launch
-
-            val rate = TransactionEntryService.getMarketRate(
-                fromCurrency = current.currency,
-                toCurrency = current.targetCurrency,
-                exchangeRates = rates
-            )
-            _state.update {
-                it.copy(
-                    exchangeRate = rate,
-                    destination = it.destination.copy(
-                        amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
-                    )
-                )
             }
         }
     }

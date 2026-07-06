@@ -16,12 +16,9 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
@@ -30,18 +27,15 @@ import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import jakarta.inject.Inject
@@ -54,12 +48,12 @@ import jakarta.inject.Inject
 class TransactionEntryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val transactionUseCases: TransactionUseCases,
-    private val entryFormDataUseCase: EntryFormDataUseCase,
+    entryFormDataUseCase: EntryFormDataUseCase,
     private val transactionManager: TransactionManager,
     settingsRepository: SettingsRepository,
-    private val computationRepository: ComputationRepository,
+    computationRepository: ComputationRepository,
     private val tagRepository: TagRepository
-) : BaseViewModel(settingsRepository) {
+) : BaseEntryViewModel(entryFormDataUseCase, computationRepository, settingsRepository) {
 
     private val _state = MutableStateFlow(TransactionEntryState())
     val state: StateFlow<TransactionEntryState> = _state.asStateFlow()
@@ -67,28 +61,33 @@ class TransactionEntryViewModel @Inject constructor(
     private var initialTimestamp: Long = System.currentTimeMillis()
     private var lastInitParams: Any? = null
 
+    // BaseEntryViewModel abstract overrides
+    override fun getSourceCurrency() = _state.value.source.currency
+    override fun getTargetCurrency() = _state.value.destination.currency
+    override fun getIsTransfer() = _state.value.isTransfer
+    override fun getIsRateFixed() = _state.value.isRateFixed
+    override fun getAmountValue() = _state.value.amountValue
+    override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
+        update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
+    }
+
     init {
         viewModelScope.launch {
-            effectiveShortlistedCurrencies.collect { currencies ->
-                _state.update { it.copy(shortlistedCurrencies = currencies) }
-            }
-        }
-        @OptIn(ExperimentalCoroutinesApi::class)
-        viewModelScope.launch {
-            settingsRepository.currentProfileId
-                .flatMapLatest { profileId -> entryFormDataUseCase.observeEntryCoreData(profileId) }
-                .collect { data ->
-                    _state.update {
-                        it.copy(
-                            accounts = data.accounts,
-                            categories = data.categories,
-                            allTags = data.tags,
-                            templates = data.templates,
-                            allPayees = data.payees,
-                            allNotes = data.notes
-                        )
-                    }
+            entryFormSnapshot.collect { snapshot ->
+                _state.update {
+                    it.copy(
+                        accounts = snapshot.accounts,
+                        categories = snapshot.categories,
+                        allTags = snapshot.allTags,
+                        templates = snapshot.templates,
+                        allPayees = snapshot.allPayees,
+                        allNotes = snapshot.allNotes,
+                        shortlistedCurrencies = snapshot.shortlistedCurrencies,
+                        fullProviderCurrencies = snapshot.fullProviderCurrencies,
+                        exchangeRates = snapshot.exchangeRates
+                    )
                 }
+            }
         }
     }
 
@@ -757,43 +756,6 @@ class TransactionEntryViewModel @Inject constructor(
             // Navigation
             is TransactionEntryEvent.TriggerNavigation -> update { it.copy(navTriggered = true) }
             is TransactionEntryEvent.ClearNavigationTrigger -> update { it.copy(navTriggered = false) }
-        }
-    }
-
-    private var rateJob: Job? = null
-
-    private fun recalculateExchangeRate() {
-        rateJob?.cancel()
-        rateJob = viewModelScope.launch {
-            val snapshot = _state.value
-            if (!snapshot.isTransfer ||
-                snapshot.selectedCurrency.isEmpty() ||
-                snapshot.targetCurrency.isEmpty()
-            ) return@launch
-
-            val rates = computationRepository.exchangeRatesSnapshot.first()
-
-            // Re-read after suspension; abort if currencies changed or rate was pinned under us
-            val current = _state.value
-            if (!current.isTransfer ||
-                current.selectedCurrency != snapshot.selectedCurrency ||
-                current.targetCurrency != snapshot.targetCurrency ||
-                current.isRateFixed
-            ) return@launch
-
-            val rate = TransactionEntryService.getMarketRate(
-                fromCurrency = current.selectedCurrency,
-                toCurrency = current.targetCurrency,
-                exchangeRates = rates
-            )
-            update {
-                it.copy(
-                    exchangeRate = rate,
-                    destination = it.destination.copy(
-                        amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
-                    )
-                )
-            }
         }
     }
 

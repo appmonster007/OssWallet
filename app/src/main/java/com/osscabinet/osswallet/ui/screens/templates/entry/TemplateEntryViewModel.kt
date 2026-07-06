@@ -11,14 +11,11 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
-import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.model.isOutside
@@ -27,77 +24,70 @@ import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
-import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import jakarta.inject.Inject
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TemplateEntryViewModel @Inject constructor(
     private val templateRepository: TemplateRepository,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val tagRepository: TagRepository,
     private val transactionUseCases: TransactionUseCases,
-    private val entryFormDataUseCase: EntryFormDataUseCase,
-    private val computationRepository: ComputationRepository,
+    entryFormDataUseCase: EntryFormDataUseCase,
+    computationRepository: ComputationRepository,
     settingsRepository: SettingsRepository
-) : BaseViewModel(settingsRepository) {
+) : BaseEntryViewModel(entryFormDataUseCase, computationRepository, settingsRepository) {
 
     private val _state = MutableStateFlow(TemplateEntryState())
     val state: StateFlow<TemplateEntryState> = _state.asStateFlow()
 
     private var lastInitParams: Pair<Long?, TemplatePrefillDTO?>? = null
 
-    init {
-        loadInitialData()
-        viewModelScope.launch {
-            effectiveShortlistedCurrencies.collect { currencies ->
-                _state.update { it.copy(shortlistedCurrencies = currencies) }
-            }
-        }
-        viewModelScope.launch {
-            computationRepository.exchangeRates.collect { rates ->
-                _state.update { it.copy(exchangeRates = rates) }
-            }
-        }
+    // BaseEntryViewModel abstract overrides
+    override fun getSourceCurrency() = _state.value.source.currency
+    override fun getTargetCurrency() = _state.value.destination.currency
+    override fun getIsTransfer() = _state.value.isTransfer
+    override fun getIsRateFixed() = _state.value.isRateFixed
+    override fun getAmountValue() = _state.value.amountValue
+    override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
+        _state.update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
     }
 
-    private fun loadInitialData() {
+    init {
         viewModelScope.launch {
-            settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                entryFormDataUseCase.observeEntryCoreData(profileId)
-            }.collect { data ->
+            entryFormSnapshot.collect { snapshot ->
                 _state.update { current ->
-                    val defaultSource = if (!current.isEditMode && current.source.account is AccountRef.Unselected && data.accounts.isNotEmpty()) {
+                    val defaultSource = if (!current.isEditMode &&
+                        current.source.account is AccountRef.Unselected &&
+                        snapshot.accounts.isNotEmpty()
+                    ) {
                         current.source.copy(
-                            account = AccountRef.fromStored(data.accounts.first().id),
-                            currency = data.accounts.first().currencyCode
+                            account = AccountRef.fromStored(snapshot.accounts.first().id),
+                            currency = snapshot.accounts.first().currencyCode
                         )
                     } else current.source
-                    val newCategories = data.categories
                     current.copy(
-                        accounts = data.accounts,
-                        categories = newCategories,
-                        allTags = data.tags,
-                        uniquePayees = data.payees,
-                        uniqueNotes = data.notes,
+                        accounts = snapshot.accounts,
+                        categories = snapshot.categories,
+                        allTags = snapshot.allTags,
+                        allPayees = snapshot.allPayees,
+                        allNotes = snapshot.allNotes,
+                        shortlistedCurrencies = snapshot.shortlistedCurrencies,
+                        fullProviderCurrencies = snapshot.fullProviderCurrencies,
+                        exchangeRates = snapshot.exchangeRates,
                         source = defaultSource,
-                        fullProviderCurrencies = CurrencyService.getAllCurrencies(),
-                        selectedCategory = newCategories.find { it.id == current.categoryId }
+                        selectedCategory = snapshot.categories.find { it.id == current.categoryId }
                     )
                 }
             }
@@ -498,31 +488,6 @@ class TemplateEntryViewModel @Inject constructor(
             }
 
             is TemplateEntryEvent.TriggerNavigation -> _state.update { it.copy(navTriggered = true) }
-        }
-    }
-
-    private fun recalculateExchangeRate() {
-        viewModelScope.launch {
-            val currentState = _state.value
-            if (currentState.entryMode == EntryMode.TRANSFER &&
-                currentState.currency.isNotEmpty() &&
-                currentState.targetCurrency.isNotEmpty()
-            ) {
-                val rates = computationRepository.exchangeRatesSnapshot.first()
-                val rate = TransactionEntryService.getMarketRate(
-                    fromCurrency = currentState.currency,
-                    toCurrency = currentState.targetCurrency,
-                    exchangeRates = rates
-                )
-                _state.update {
-                    it.copy(
-                        exchangeRate = rate,
-                        destination = it.destination.copy(
-                            amount = TransactionEntryService.calculateTargetAmount(it.amountValue, rate)
-                        )
-                    )
-                }
-            }
         }
     }
 

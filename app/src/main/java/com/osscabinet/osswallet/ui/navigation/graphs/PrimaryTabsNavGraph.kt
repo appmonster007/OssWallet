@@ -70,12 +70,10 @@ fun NavGraphBuilder.primaryTabsGraph(
                     navController.navigateToRecords(filter, topLevel = false)
                 },
                 onAddClick = { type, templateId ->
-                    if (templateId != null) {
-                        vms.transactionViewModel.setTemplatePrefill(templateId)
-                        navController.navigate(TransactionEntryRoute())
-                    } else {
-                        navController.navigate(TransactionEntryRoute(transactionType = type?.ordinal ?: -1))
-                    }
+                    navController.navigate(
+                        if (templateId != null) TransactionEntryRoute(templateId = templateId)
+                        else TransactionEntryRoute(transactionType = type?.ordinal ?: -1)
+                    )
                 },
                 onManageAccountsClick = { navController.navigate(AccountListRoute) },
                 onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },

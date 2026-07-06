@@ -81,6 +81,7 @@ fun TransactionFormBody(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .imePadding()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { focusManager.clearFocus() })
             }
@@ -89,8 +90,7 @@ fun TransactionFormBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = AeonTheme.dimensions.screenPadding)
-                .imePadding(),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))

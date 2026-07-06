@@ -79,6 +79,7 @@ fun TemplateFormBody(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .imePadding()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { focusManager.clearFocus() })
             }
@@ -87,8 +88,7 @@ fun TemplateFormBody(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = AeonTheme.dimensions.screenPadding)
-                .imePadding(),
+                .padding(horizontal = AeonTheme.dimensions.screenPadding),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
         ) {
             Spacer(Modifier.height(contentPadding.calculateTopPadding()))

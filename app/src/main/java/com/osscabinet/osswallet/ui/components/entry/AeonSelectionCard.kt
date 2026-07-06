@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.management.AeonListItem
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -130,10 +131,10 @@ fun AeonSelectionListPreview() {
             )
             
             val tags = listOf(
-                Triple("Work", "Professional tasks and business meetings", Color(0xFF2196F3)),
-                Triple("Personal", "Private matters and home life", Color(0xFF4CAF50)),
-                Triple("Urgent", "High priority - needs immediate attention", Color(0xFFF44336)),
-                Triple("Later", "Low priority tasks for next week", Color(0xFFFF9800))
+                Triple("Work", "Professional tasks and business meetings", AccountStructureColors.bank),
+                Triple("Personal", "Private matters and home life", AccountStructureColors.savings),
+                Triple("Urgent", "High priority - needs immediate attention", AccountStructureColors.credit),
+                Triple("Later", "Low priority tasks for next week", AccountStructureColors.investment)
             )
 
             tags.forEachIndexed { index, (label, detail, color) ->

@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
+import com.osscabinet.ossWallet.ui.theme.NearBlack
 
 fun Color.isDark(): Boolean {
     val luminance = 0.299 * red + 0.587 * green + 0.114 * blue
@@ -104,7 +105,7 @@ fun Color.applyAccountTint(mode: ThemeMode): Pair<Color, Color> {
         }
         else -> {
             // Exact user color; derive readable ink from luminance
-            val inkColor = if (this.isDark()) Color.White else Color(0xFF1A1A1A)
+            val inkColor = if (this.isDark()) Color.White else NearBlack
             this to inkColor
         }
     }

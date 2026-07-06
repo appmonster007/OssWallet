@@ -58,8 +58,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.CategoryBrown
+import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /** Shared 4/5-column tile grid used by the QuickAdd Atelier steps. */
@@ -366,7 +369,7 @@ private fun PreviewAtelierTile() {
                 AtelierTile(
                     label = "Coffee",
                     icon = Icons.Rounded.Coffee,
-                    iconColor = Color(0xFF795548),
+                    iconColor = CategoryBrown,
                     isSelected = false,
                     onTap = {},
                     modifier = Modifier.width(80.dp)
@@ -374,7 +377,7 @@ private fun PreviewAtelierTile() {
                 AtelierTile(
                     label = "Restaurant & Fine Dining",
                     icon = Icons.Rounded.Restaurant,
-                    iconColor = Color(0xFFFF5722),
+                    iconColor = ChartColorOrange,
                     isSelected = true,
                     onTap = {},
                     modifier = Modifier.width(80.dp)
@@ -382,7 +385,7 @@ private fun PreviewAtelierTile() {
                 AtelierTile(
                     label = "Savings",
                     icon = Icons.Rounded.AccountBalance,
-                    iconColor = Color(0xFF2196F3),
+                    iconColor = AccountStructureColors.bank,
                     isSelected = false,
                     hasChildren = true,
                     onTap = {},
@@ -481,7 +484,7 @@ private fun PreviewAtelierSegmentedToggle() {
                     AtelierSegment("INCOME", Icons.Rounded.ArrowUpward)
                 ),
                 selectedIndex = 1,
-                activeColor = Color(0xFF4CAF50), // Semantic green
+                activeColor = AccountStructureColors.savings,
                 onSelect = {}
             )
         }

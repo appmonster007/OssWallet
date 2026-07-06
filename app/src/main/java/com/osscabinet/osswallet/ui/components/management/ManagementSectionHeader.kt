@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.DefaultAccentColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -78,7 +79,7 @@ fun ManagementSectionHeaderPreview() {
         Surface {
             ManagementSectionHeader(
                 title = "Active Budgets",
-                sectionColor = Color(0xFF004D5F),
+                sectionColor = DefaultAccentColor,
                 count = 3
             )
         }

@@ -9,9 +9,9 @@ import androidx.compose.material.icons.rounded.CurrencyBitcoin
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Savings
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 
 val AccountStructureType.icon: ImageVector
     get() = when (this) {
@@ -25,14 +25,14 @@ val AccountStructureType.icon: ImageVector
         AccountStructureType.OTHER -> Icons.Rounded.Layers
     }
 
-val AccountStructureType.color: Color
+val AccountStructureType.color
     get() = when (this) {
-        AccountStructureType.BANK -> Color(0xFF2196F3)
-        AccountStructureType.SAVINGS -> Color(0xFF4CAF50)
-        AccountStructureType.CASH -> Color(0xFF8BC34A)
-        AccountStructureType.DIGITAL_WALLET -> Color(0xFF00BCD4)
-        AccountStructureType.CREDIT -> Color(0xFFF44336)
-        AccountStructureType.INVESTMENT -> Color(0xFFFF9800)
-        AccountStructureType.CRYPTO -> Color(0xFFFFC107)
-        AccountStructureType.OTHER -> Color(0xFF9E9E9E)
+        AccountStructureType.BANK -> AccountStructureColors.bank
+        AccountStructureType.SAVINGS -> AccountStructureColors.savings
+        AccountStructureType.CASH -> AccountStructureColors.cash
+        AccountStructureType.DIGITAL_WALLET -> AccountStructureColors.digitalWallet
+        AccountStructureType.CREDIT -> AccountStructureColors.credit
+        AccountStructureType.INVESTMENT -> AccountStructureColors.investment
+        AccountStructureType.CRYPTO -> AccountStructureColors.crypto
+        AccountStructureType.OTHER -> AccountStructureColors.other
     }

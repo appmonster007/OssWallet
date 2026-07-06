@@ -610,7 +610,12 @@ class DashboardViewModel @Inject constructor(
                 sourcePlannedPaymentId = payment.id,
                 scheduledDate = scheduledDate
             )
-            _lastUndoAction.value = UndoAction.ConfirmUndo(payment, scheduledDate, transactionId)
+            _lastUndoAction.value = UndoAction.ConfirmUndo(
+                paymentId = payment.id,
+                scheduledDate = scheduledDate,
+                transactionId = transactionId,
+                prevLastTriggeredDate = payment.schedule.lastTriggeredDate
+            )
         }
     }
 
@@ -622,7 +627,11 @@ class DashboardViewModel @Inject constructor(
                 paymentId = payment.id,
                 scheduledDate = scheduledDate
             )
-            _lastUndoAction.value = UndoAction.SkipUndo(payment, scheduledDate)
+            _lastUndoAction.value = UndoAction.SkipUndo(
+                paymentId = payment.id,
+                scheduledDate = scheduledDate,
+                prevLastTriggeredDate = payment.schedule.lastTriggeredDate
+            )
         }
     }
 
@@ -632,32 +641,32 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             when (action) {
                 is UndoAction.SkipUndo -> {
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(
-                        action.payment.id,
-                        action.scheduledDate
-                    )
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
-                        occ.id,
-                        OccurrenceStatus.PENDING
-                    )
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
-                        action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
+                        payment.copy(
+                            schedule = payment.schedule.copy(
+                                nextDueDate = action.scheduledDate,
+                                lastTriggeredDate = action.prevLastTriggeredDate
+                            )
+                        )
                     )
                 }
 
                 is UndoAction.ConfirmUndo -> {
                     val profileId = settingsRepository.currentProfileId.first()
                     transactionManager.deleteTransaction(action.transactionId, profileId)
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(
-                        action.payment.id,
-                        action.scheduledDate
-                    )
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
-                        occ.id,
-                        OccurrenceStatus.PENDING
-                    )
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
+                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
-                        action.payment.copy(schedule = action.payment.schedule.copy(nextDueDate = action.scheduledDate))
+                        payment.copy(
+                            schedule = payment.schedule.copy(
+                                nextDueDate = action.scheduledDate,
+                                lastTriggeredDate = action.prevLastTriggeredDate
+                            )
+                        )
                     )
                 }
             }

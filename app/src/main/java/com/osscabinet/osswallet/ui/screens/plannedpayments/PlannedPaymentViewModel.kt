@@ -106,6 +106,9 @@ class PlannedPaymentViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlannedPaymentListUiState())
 
+    fun getPaymentById(id: Long): Flow<PlannedPayment?> =
+        plannedPaymentRepository.getPaymentById(id)
+
     fun delete(paymentId: Long, deleteTemplate: Boolean = false) {
         viewModelScope.launch {
             val payment = plannedPaymentRepository.getById(paymentId)

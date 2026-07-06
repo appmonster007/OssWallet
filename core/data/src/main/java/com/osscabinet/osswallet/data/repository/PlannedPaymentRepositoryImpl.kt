@@ -34,6 +34,9 @@ class PlannedPaymentRepositoryImpl @Inject constructor(
     override suspend fun getById(id: Long): PlannedPayment? =
         dao.getById(id)?.toDomain()
 
+    override fun getPaymentById(id: Long): Flow<PlannedPayment?> =
+        dao.getByIdFlow(id).map { it?.toDomain() }
+
     override suspend fun insert(payment: PlannedPayment): Long =
         dao.insert(payment.toEntity())
 

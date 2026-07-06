@@ -154,9 +154,10 @@ fun PlannedPaymentDetailScreen(
     accounts: List<Account> = emptyList(),
     categories: List<Category> = emptyList()
 ) {
-    val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
-    val payment =
-        remember(config.plannedPaymentId, payments) { payments.find { it.id == config.plannedPaymentId } }
+    val paymentFlow = remember(config.plannedPaymentId) {
+        viewModel.getPaymentById(config.plannedPaymentId)
+    }
+    val payment by paymentFlow.collectAsStateWithLifecycle(null)
     val lastUndoAction by viewModel.lastUndoAction.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -178,12 +179,10 @@ fun PlannedPaymentDetailScreen(
 
     var hasLoadedInitially by remember { mutableStateOf(false) }
 
-    LaunchedEffect(payments) {
-        if (payments.isNotEmpty()) {
+    LaunchedEffect(payment) {
+        if (payment != null) {
             hasLoadedInitially = true
         }
-        
-        // If we previously had the payment (or at least loaded the list) and now it's gone, navigate back.
         if (hasLoadedInitially && payment == null) {
             actions.onBackClick()
         }
@@ -194,7 +193,8 @@ fun PlannedPaymentDetailScreen(
     }
     val occurrences by occurrencesFlow.collectAsStateWithLifecycle(emptyList())
 
-    if (payment == null) {
+    val p = payment
+    if (p == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -202,33 +202,33 @@ fun PlannedPaymentDetailScreen(
     }
 
     PlannedPaymentDetailContent(
-        payment = payment,
+        payment = p,
         occurrences = occurrences,
         accounts = accounts,
         categories = categories,
         onBackClick = actions.onBackClick,
-        onEditClick = { actions.onEditClick(payment.id) },
+        onEditClick = { actions.onEditClick(p.id) },
         onSaveAsTemplateClick = {
             templateViewModel?.addTemplate(
-                name = payment.name,
-                categoryId = payment.categoryId,
-                amount = payment.amount,
-                entryMode = payment.entryMode,
-                accountId = payment.accountId,
-                targetAccountId = payment.targetAccountId,
-                targetCurrency = payment.targetCurrency,
-                transferRate = payment.transferRate,
-                note = payment.note,
-                payee = payment.payee,
-                location = payment.location,
-                paymentMethod = payment.paymentMethod,
-                currency = payment.currency,
-                tags = payment.tags,
-                profileId = payment.profileId
+                name = p.name,
+                categoryId = p.categoryId,
+                amount = p.amount,
+                entryMode = p.entryMode,
+                accountId = p.accountId,
+                targetAccountId = p.targetAccountId,
+                targetCurrency = p.targetCurrency,
+                transferRate = p.transferRate,
+                note = p.note,
+                payee = p.payee,
+                location = p.location,
+                paymentMethod = p.paymentMethod,
+                currency = p.currency,
+                tags = p.tags,
+                profileId = p.profileId
             )
         },
-        onConfirmOccurrence = { date -> actions.onConfirmClick(payment.id, date) },
-        onSkipOccurrence = { viewModel.quickSkip(payment) },
+        onConfirmOccurrence = { date -> actions.onConfirmClick(p.id, date) },
+        onSkipOccurrence = { viewModel.quickSkip(p) },
         onTransactionClick = actions.onTransactionClick,
         snackbarHostState = snackbarHostState
     )

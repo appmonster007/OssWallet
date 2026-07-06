@@ -8,11 +8,13 @@ import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,9 +25,19 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import jakarta.inject.Inject
+
+data class PlannedPaymentListUiState(
+    val overdue: List<PlannedPayment> = emptyList(),
+    val upcoming: List<UpcomingPaymentItem> = emptyList(),
+    val scheduled: List<PlannedPayment> = emptyList(),
+    val paused: List<PlannedPayment> = emptyList()
+) {
+    val isEmpty: Boolean get() = overdue.isEmpty() && upcoming.isEmpty() && scheduled.isEmpty() && paused.isEmpty()
+}
 
 sealed class UndoAction {
     data class SkipUndo(val payment: PlannedPayment, val scheduledDate: Long) : UndoAction()
@@ -55,6 +67,34 @@ class PlannedPaymentViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val listUiState: StateFlow<PlannedPaymentListUiState> = plannedPayments
+        .map { payments ->
+            val now = System.currentTimeMillis()
+            val windowEnd = now + 30L * 24 * 60 * 60 * 1000
+            val overdue = PlannedPaymentService.getOverdue(payments, now)
+            val upcoming = PlannedPaymentService.generateUpcoming(
+                payments = payments.filter { it.status == PlannedPaymentStatus.ACTIVE },
+                fromDate = now,
+                daysAhead = 30
+            )
+            val upcomingNonOverdue = upcoming.filter { !it.isOverdue }.distinctBy { it.plannedPayment.id }
+            val upcomingIds = upcomingNonOverdue.map { it.plannedPayment.id }.toHashSet()
+            val overdueIds = overdue.map { it.id }.toHashSet()
+            val scheduled = payments.filter { p ->
+                p.status == PlannedPaymentStatus.ACTIVE &&
+                    p.schedule.nextDueDate > windowEnd &&
+                    p.id !in upcomingIds &&
+                    p.id !in overdueIds
+            }
+            val paused = payments.filter { it.status == PlannedPaymentStatus.PAUSED }
+            PlannedPaymentListUiState(
+                overdue = overdue,
+                upcoming = upcomingNonOverdue,
+                scheduled = scheduled,
+                paused = paused
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlannedPaymentListUiState())
 
     fun delete(paymentId: Long, deleteTemplate: Boolean = false) {
         viewModelScope.launch {

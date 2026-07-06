@@ -71,7 +71,9 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentListUiState
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -249,11 +251,11 @@ fun PlannedPaymentListScreen(
     actions: PlannedPaymentListActions,
     viewModel: PlannedPaymentViewModel
 ) {
-    val payments by viewModel.plannedPayments.collectAsStateWithLifecycle()
+    val listUiState by viewModel.listUiState.collectAsStateWithLifecycle()
     val profileId by viewModel.currentProfileId.collectAsStateWithLifecycle()
 
     PlannedPaymentListContent(
-        payments = payments,
+        listUiState = listUiState,
         onBackClick = actions.onBackClick,
         onAddClick = actions.onAddClick,
         onEditClick = actions.onEditClick,
@@ -276,7 +278,7 @@ fun PlannedPaymentListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlannedPaymentListContent(
-    payments: List<PlannedPayment>,
+    listUiState: PlannedPaymentListUiState,
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
     onEditClick: (Long) -> Unit,
@@ -294,26 +296,10 @@ fun PlannedPaymentListContent(
     val scope = rememberCoroutineScope()
     var pendingOverdueSkip by remember { mutableStateOf<Pair<PlannedPayment, Long>?>(null) }
 
-    val windowEnd = remember(now) { now + 30L * 24 * 60 * 60 * 1000 }
-    val overdue = remember(payments, now) { PlannedPaymentService.getOverdue(payments, now) }
-    val upcoming = remember(payments, now) {
-        PlannedPaymentService.generateUpcoming(
-            payments.filter { it.status == PlannedPaymentStatus.ACTIVE },
-            now,
-            30
-        )
-    }
-    val scheduled = remember(payments, now, windowEnd) {
-        val upcomingIds = upcoming.map { it.plannedPayment.id }.toSet()
-        val overdueIds = overdue.map { it.id }.toSet()
-        payments.filter { p ->
-            p.status == PlannedPaymentStatus.ACTIVE &&
-                    p.schedule.nextDueDate > windowEnd &&
-                    p.id !in upcomingIds &&
-                    p.id !in overdueIds
-        }
-    }
-    val paused = remember(payments) { payments.filter { it.status == PlannedPaymentStatus.PAUSED } }
+    val overdue = listUiState.overdue
+    val upcoming = listUiState.upcoming
+    val scheduled = listUiState.scheduled
+    val paused = listUiState.paused
 
     pendingOverdueSkip?.let { (payment, scheduledDate) ->
         androidx.compose.material3.AlertDialog(
@@ -353,7 +339,7 @@ fun PlannedPaymentListContent(
                         .fillMaxSize()
                         .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
                 ) {
-                    if (payments.isEmpty()) {
+                    if (listUiState.isEmpty) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -440,54 +426,50 @@ fun PlannedPaymentListContent(
                             }
 
                             if (upcoming.isNotEmpty()) {
-                                val upcomingNonOverdue = upcoming.filter { !it.isOverdue }
-                                    .distinctBy { it.plannedPayment.id }
-                                if (upcomingNonOverdue.isNotEmpty()) {
-                                    item {
-                                        ManagementSectionHeader(
-                                            title = "UPCOMING",
-                                            count = upcomingNonOverdue.size,
-                                            sectionColor = AppColors.primary
-                                        )
-                                    }
-                                    items(
-                                        upcomingNonOverdue,
-                                        key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
-                                    ) { item ->
-                                        SwipeablePaymentItem(
-                                            payment = item.plannedPayment,
-                                            now = now,
-                                            isOverdue = false,
-                                            scheduledDate = item.scheduledDate,
-                                            onTap = { onDetailClick(item.plannedPayment.id) },
-                                            onEdit = { onEditClick(item.plannedPayment.id) },
-                                            onDelete = { onDelete(item.plannedPayment.id) },
-                                            onPause = { onPause(item.plannedPayment) },
-                                            onResume = { onResume(item.plannedPayment) },
-                                            onConfirm = {
-                                                onConfirm(item.plannedPayment, item.scheduledDate)
-                                                scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
-                                                        message = "Payment confirmed",
-                                                        actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                                }
-                                            },
-                                            onSkip = {
-                                                onSkip(item.plannedPayment, item.scheduledDate)
-                                                scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
-                                                        message = "Occurrence skipped",
-                                                        actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                                                }
+                                item {
+                                    ManagementSectionHeader(
+                                        title = "UPCOMING",
+                                        count = upcoming.size,
+                                        sectionColor = AppColors.primary
+                                    )
+                                }
+                                items(
+                                    upcoming,
+                                    key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
+                                ) { item ->
+                                    SwipeablePaymentItem(
+                                        payment = item.plannedPayment,
+                                        now = now,
+                                        isOverdue = false,
+                                        scheduledDate = item.scheduledDate,
+                                        onTap = { onDetailClick(item.plannedPayment.id) },
+                                        onEdit = { onEditClick(item.plannedPayment.id) },
+                                        onDelete = { onDelete(item.plannedPayment.id) },
+                                        onPause = { onPause(item.plannedPayment) },
+                                        onResume = { onResume(item.plannedPayment) },
+                                        onConfirm = {
+                                            onConfirm(item.plannedPayment, item.scheduledDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Payment confirmed",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
                                             }
-                                        )
-                                    }
+                                        },
+                                        onSkip = {
+                                            onSkip(item.plannedPayment, item.scheduledDate)
+                                            scope.launch {
+                                                val result = snackbarHostState.showSnackbar(
+                                                    message = "Occurrence skipped",
+                                                    actionLabel = "Undo",
+                                                    duration = SnackbarDuration.Short
+                                                )
+                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                            }
+                                        }
+                                    )
                                 }
                             }
 
@@ -750,9 +732,16 @@ private fun PlannedPaymentListPreview() {
         )
     )
 
+    val now2 = System.currentTimeMillis()
     OssWalletTheme {
         PlannedPaymentListContent(
-            payments = mockPayments,
+            listUiState = PlannedPaymentListUiState(
+                overdue = mockPayments.filter { it.schedule.nextDueDate < now2 && it.status == PlannedPaymentStatus.ACTIVE },
+                upcoming = mockPayments.filter { it.schedule.nextDueDate in now2..(now2 + 30L * 24 * 60 * 60 * 1000) && it.status == PlannedPaymentStatus.ACTIVE }
+                    .map { UpcomingPaymentItem(it, it.schedule.nextDueDate, isOverdue = false) },
+                scheduled = emptyList(),
+                paused = mockPayments.filter { it.status == PlannedPaymentStatus.PAUSED }
+            ),
             onBackClick = {},
             onAddClick = {},
             onEditClick = {},

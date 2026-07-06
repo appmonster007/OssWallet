@@ -198,18 +198,18 @@ fun PlannedPaymentFormBody(
 
             // DETAIL: Metadata section
             AeonDetailSection(
-                note = state.noteUserPart,
+                note = state.note,
                 onNoteChange = { onEvent(PlannedPaymentEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(PlannedPaymentEntryEvent.SetPayee(it)) },
-                selectedNames = state.selectedTagNames,
-                allAvailableTags = state.availableTags,
+                selectedNames = state.selectedTags,
+                allAvailableTags = state.allTags,
                 onTagClick = { onEvent(PlannedPaymentEntryEvent.ShowTagSheet(true)) },
-                onRemoveTag = { tag -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames - tag)) },
+                onRemoveTag = { tag -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTags - tag)) },
                 onTagsSelected = { onEvent(PlannedPaymentEntryEvent.SetTags(it)) },
-                onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames + name)) },
-                noteSuggestions = state.uniqueNotes,
-                payeeSuggestions = state.uniquePayees,
+                onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTags + name)) },
+                noteSuggestions = state.allNotes,
+                payeeSuggestions = state.allPayees,
                 additionalContent = {
                     AeonEntryMetadataSection(
                         state = AeonMetadataState(
@@ -388,8 +388,8 @@ private fun PlannedPaymentSheetOrchestrator(
         sheetState = state.sheetState,
         accounts = state.accounts,
         categories = state.categories,
-        allTags = state.availableTags,
-        selectedTags = state.selectedTagNames,
+        allTags = state.allTags,
+        selectedTags = state.selectedTags,
         currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
         currentExchangeRate = state.exchangeRate,
         shortlistedCurrencies = state.shortlistedCurrencies,
@@ -409,7 +409,7 @@ private fun PlannedPaymentSheetOrchestrator(
         onTargetCurrencyChange = { curr -> onEvent(PlannedPaymentEntryEvent.SetTargetCurrency(curr)) },
         onExchangeRateChange = { rate -> onEvent(PlannedPaymentEntryEvent.SetExchangeRate(rate)) },
         onTagsChange = { tags -> onEvent(PlannedPaymentEntryEvent.SetTags(tags)) },
-        onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTagNames + name)) },
+        onAddTag = { name, _ -> onEvent(PlannedPaymentEntryEvent.SetTags(state.selectedTags + name)) },
         onDismissSheet = { field ->
             when (field) {
                 EntryField.AMOUNT -> onEvent(PlannedPaymentEntryEvent.ShowNumpad(false))

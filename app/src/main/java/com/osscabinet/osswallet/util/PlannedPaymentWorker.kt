@@ -35,7 +35,7 @@ class PlannedPaymentWorker(
         val now = System.currentTimeMillis()
 
         val allCategories = ep.categoryRepository().getAllCategoriesSync()
-        val due = repo.getDue(profileId).filter { it.schedule.nextDueDate <= now }
+        val due = repo.getDue(profileId, now)
 
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {

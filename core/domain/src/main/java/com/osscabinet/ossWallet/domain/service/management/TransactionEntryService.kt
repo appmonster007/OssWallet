@@ -497,22 +497,39 @@ object TransactionEntryService {
                 currentCurrency = currentState.source.currency,
                 baseCurrency = baseCurrency
             )
-            val finalTargetCurrency = if (currentState.entryMode == EntryMode.TRANSFER && !newRef.isOutside && currentState.destination.account.isOutside) {
-                newCurrency
-            } else currentState.destination.currency
+            val isTransfer = currentState.entryMode == EntryMode.TRANSFER
+            val destIsUnselected = currentState.destination.account is AccountRef.Unselected
+            val (finalTargetAccount, finalTargetCurrency) = when {
+                // Wallet selected as source in TRANSFER mode with no destination yet → auto-promote to Outside
+                isTransfer && newRef is AccountRef.Wallet && destIsUnselected ->
+                    AccountRef.Outside to newCurrency
+                // Source currency changed and destination is Outside → sync destination currency
+                isTransfer && !newRef.isOutside && currentState.destination.account.isOutside ->
+                    currentState.destination.account to newCurrency
+                else ->
+                    currentState.destination.account to currentState.destination.currency
+            }
 
             currentState.copy(
                 source = currentState.source.copy(account = newRef, currency = newCurrency),
-                destination = currentState.destination.copy(currency = finalTargetCurrency)
+                destination = currentState.destination.copy(account = finalTargetAccount, currency = finalTargetCurrency)
             )
         } else {
-            val newCurrency = resolveSideCurrency(
-                account = newRef,
-                accountCurrency = account?.currencyCode,
-                currentCurrency = currentState.destination.currency,
-                baseCurrency = baseCurrency
-            )
-            val finalSourceCurrency = if (currentState.entryMode == EntryMode.TRANSFER && !newRef.isOutside && currentState.source.account.isOutside) {
+            val isTransfer = currentState.entryMode == EntryMode.TRANSFER
+            val sourceIsWallet = currentState.source.account is AccountRef.Wallet
+            // When destination becomes Outside in TRANSFER mode and source is already a Wallet,
+            // inherit source currency so the Outside leg stays in sync.
+            val newCurrency = if (isTransfer && newRef.isOutside && sourceIsWallet) {
+                currentState.source.currency
+            } else {
+                resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = currentState.destination.currency,
+                    baseCurrency = baseCurrency
+                )
+            }
+            val finalSourceCurrency = if (isTransfer && !newRef.isOutside && currentState.source.account.isOutside) {
                 newCurrency
             } else currentState.source.currency
 

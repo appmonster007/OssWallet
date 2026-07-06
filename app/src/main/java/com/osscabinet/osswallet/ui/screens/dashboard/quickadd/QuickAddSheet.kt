@@ -345,6 +345,28 @@ internal fun QuickAddSheetInternal(
                 }
             }
         }
+
+        // Success overlay — shown after save, auto-dismissed after delay
+        AnimatedVisibility(
+            visible = isSaveSuccess,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+            modifier = Modifier.matchParentSize()
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppColors.surface.copy(alpha = 0.85f))
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Done,
+                    contentDescription = null,
+                    tint = AppColors.primary,
+                    modifier = Modifier.size(56.dp)
+                )
+            }
+        }
     }
 }
 
@@ -448,8 +470,7 @@ private fun QuickAddSheetContent(
         EditorialHeader(title = title, subtext = subtext)
 
         // ── Step body (the flexible region) ────────────────────────────────────
-        Box(modifier = Modifier.weight(1f, fill = false)) {
-        AeonGlassHost {
+        AeonGlassHost(modifier = Modifier.weight(1f, fill = false)) {
             AnimatedContent(
                 targetState = state.currentStep,
                 modifier = Modifier.fillMaxWidth(),
@@ -540,28 +561,6 @@ private fun QuickAddSheetContent(
                 }
             }
         }
-
-        AnimatedVisibility(
-            visible = isSaveSuccess,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.matchParentSize()
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(AppColors.surface.copy(alpha = 0.85f))
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Done,
-                    contentDescription = null,
-                    tint = AppColors.primary,
-                    modifier = Modifier.size(56.dp)
-                )
-            }
-        }
-        } // end Box wrapper
 
         // ── Footer: back chevron · step dots · champagne CTA ───────────────────
         QuickAddFooter(

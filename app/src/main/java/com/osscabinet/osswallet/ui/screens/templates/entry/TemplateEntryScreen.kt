@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
-import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateEntrySheets
 import com.osscabinet.ossWallet.ui.screens.templates.entry.components.TemplateFormBody
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,12 +55,6 @@ fun TemplateEntryScreen(
             onSearch = viewModel::searchTransactions,
             onEvent = viewModel::onEvent,
             contentPadding = innerPadding
-        )
-
-        TemplateEntrySheets(
-            state = state,
-            onSearch = viewModel::searchTransactions,
-            onEvent = viewModel::onEvent
         )
 
         AeonConfirmDeleteDialog(

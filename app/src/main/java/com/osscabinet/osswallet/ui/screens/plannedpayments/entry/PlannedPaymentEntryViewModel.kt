@@ -245,7 +245,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         shortlistedCurrencies = current.shortlistedCurrencies,
                         plannedPaymentId = plannedPaymentId,
                         isEditMode = true,
-                        existingPayment = existing,
+                        originalStartDate = existing.schedule.startDate,
+                        originalRecurrenceRule = existing.schedule.recurrenceRule,
+                        originalLastTriggeredDate = existing.schedule.lastTriggeredDate,
+                        originalNextDueDate = existing.schedule.nextDueDate,
                         linkedTemplate = existing.templateId?.let { id -> current.templates.find { t -> t.id == id } },
                         templateUsageCount = usageCount,
                         name = existing.name,
@@ -731,8 +734,18 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             // 2. Create or Update Planned Payment
-            val payment = (s.existingPayment ?: PlannedPayment(
-                id = 0,
+            val scheduleChanged = s.originalStartDate == null ||
+                s.originalStartDate != s.startDateMillis ||
+                s.originalRecurrenceRule?.type != s.recurrenceType ||
+                s.originalRecurrenceRule?.interval != s.recurrenceInterval ||
+                s.originalRecurrenceRule?.dayOfMonth != s.dayOfMonth ||
+                s.originalRecurrenceRule?.dayOfWeek != s.dayOfWeek ||
+                s.originalRecurrenceRule?.cronExpression != s.cronExpression
+            val nextDueDate = if (scheduleChanged) s.startDateMillis
+                              else s.originalNextDueDate ?: s.startDateMillis
+
+            val payment = PlannedPayment(
+                id = s.plannedPaymentId ?: 0L,
                 name = s.name,
                 categoryId = templateCategoryId,
                 amount = amountValue,
@@ -754,32 +767,11 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
                     endDate = if (s.hasEndDate) s.endDateMillis else null,
-                    nextDueDate = s.startDateMillis
-                ),
-                profileId = s.currentProfileId,
-                templateId = templateId
-            )).copy(
-                id = s.plannedPaymentId ?: 0L,
-                schedule = PaymentSchedule(
-                    recurrenceRule = rule,
-                    startDate = s.startDateMillis,
-                    endDate = if (s.hasEndDate) s.endDateMillis else null,
-                    nextDueDate = run {
-                        val existing = s.existingPayment?.schedule
-                        val scheduleChanged = existing == null ||
-                            existing.startDate != s.startDateMillis ||
-                            existing.recurrenceRule.type != s.recurrenceType ||
-                            existing.recurrenceRule.interval != s.recurrenceInterval ||
-                            existing.recurrenceRule.dayOfMonth != s.dayOfMonth ||
-                            existing.recurrenceRule.dayOfWeek != s.dayOfWeek ||
-                            existing.recurrenceRule.cronExpression != s.cronExpression
-                        if (scheduleChanged) s.startDateMillis else existing!!.nextDueDate
-                    },
-                    lastTriggeredDate = s.existingPayment?.schedule?.lastTriggeredDate
+                    nextDueDate = nextDueDate,
+                    lastTriggeredDate = s.originalLastTriggeredDate
                 ),
                 autoConfirm = s.autoConfirm,
                 status = s.status,
-                tags = s.selectedTagNames + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
                 profileId = s.currentProfileId,
                 templateId = templateId
             )
@@ -795,7 +787,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
     fun deletePlannedPayment() {
         val id = _state.value.plannedPaymentId ?: return
-        val templateId = _state.value.existingPayment?.templateId
+        val templateId = _state.value.linkedTemplate?.id
         val deleteTemplate = _state.value.deleteTemplateWithPayment
 
         // Close dialog immediately to prevent double clicks, but wait for deletion to navigate

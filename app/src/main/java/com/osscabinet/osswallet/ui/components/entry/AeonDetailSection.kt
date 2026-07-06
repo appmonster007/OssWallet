@@ -2,6 +2,9 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.remember
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -43,9 +46,12 @@ fun AeonDetailSection(
     payeeSuggestions: List<String> = emptyList(),
     additionalContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
+    val sectionRequester = remember { BringIntoViewRequester() }
+
     EntrySection(
         title = "ADDITIONAL DETAILS",
-        icon = Icons.Rounded.MoreHoriz
+        icon = Icons.Rounded.MoreHoriz,
+        modifier = Modifier.bringIntoViewRequester(sectionRequester)
     ) {
         if (showNote) {
             EntryEditorialInput(
@@ -56,7 +62,8 @@ fun AeonDetailSection(
                 suggestions = noteSuggestions,
                 placeholder = notePlaceholder,
                 isSelected = note.isNotEmpty(),
-                isFlush = false
+                isFlush = false,
+                scrollRequester = sectionRequester
             )
         }
 
@@ -68,7 +75,8 @@ fun AeonDetailSection(
                 icon = Icons.Rounded.Person,
                 suggestions = payeeSuggestions,
                 isSelected = payee.isNotEmpty(),
-                isFlush = false
+                isFlush = false,
+                scrollRequester = sectionRequester
             )
         }
 

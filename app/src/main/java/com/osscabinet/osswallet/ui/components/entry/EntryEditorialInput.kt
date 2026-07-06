@@ -98,6 +98,7 @@ fun EntryEditorialInput(
     isSelected: Boolean = false,
     isFlush: Boolean = false,
     isError: Boolean = false,
+    scrollRequester: BringIntoViewRequester? = null,
     additionalContent: @Composable ColumnScope.() -> Unit = {}
 ) {
     // 1. STATE & ANIMATION
@@ -171,6 +172,7 @@ fun EntryEditorialInput(
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()
+                .bringIntoViewRequester(bringIntoViewRequester)
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
@@ -276,13 +278,14 @@ fun EntryEditorialInput(
                             maxLines = maxLines,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .bringIntoViewRequester(bringIntoViewRequester)
                                 .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
                                 .onFocusChanged {
                                     if (it.isFocused && !isFocused) {
                                         coroutineScope.launch {
-                                            delay(250) // Wait for keyboard expansion
+                                            delay(300)
                                             if (isFocused) {
+                                                // Bring section header into view first, then fine-tune to card
+                                                scrollRequester?.bringIntoView()
                                                 bringIntoViewRequester.bringIntoView()
                                             }
                                         }

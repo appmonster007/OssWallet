@@ -11,6 +11,7 @@ import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.isPicked
 import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
@@ -567,12 +568,13 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
+        val currentAccounts = state.value.accounts
         _uiState.update { s ->
             val result = TransactionEntryService.handleAccountSelection(
                 accountId = accountId,
                 isSource = isFrom,
                 currentState = toUpdateResult(s),
-                accounts = s.accounts,
+                accounts = currentAccounts,
                 baseCurrency = s.baseCurrency
             )
             val next = applyUpdate(s, result).copy(

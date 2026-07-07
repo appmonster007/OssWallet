@@ -205,7 +205,9 @@ fun AeonTimelinePeriodSelector(
                                 showDropdown = showDropdown,
                                 onDropdownShow = { showDropdown = it },
                                 onDatePickerShow = { showDatePicker = it },
-                                onRangeSelected = onRangeSelected
+                                onRangeSelected = onRangeSelected,
+                                contentColor = contentColor,
+                                inactiveContentColor = inactiveContentColor,
                             )
                         }
                     }

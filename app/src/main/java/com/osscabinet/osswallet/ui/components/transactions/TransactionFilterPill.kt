@@ -26,7 +26,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -39,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -204,18 +207,23 @@ fun TransactionFilterPill(
         }
 
         // UI Visuals
+        val isActive = remember(filter, baseFilter) {
+            countActiveFilters(filter, baseFilter) > 0
+        }
+
         val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
         val horizMargin = lerp(pillHorizMargin, 8.dp, f)
         val corner = lerp(28.dp, 20.dp, f)
         val elevation = lerp(AeonSize.D8.value, 12.dp, f)
         val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
-        val contentColor = lerp(AppColors.onSelectionContainer, AppColors.primary, f)
-        val inactiveColor = lerp(
-            AppColors.onSelectionContainer.copy(alpha = 0.4f),
-            AppColors.contentSecondary.copy(alpha = 0.3f),
-            f
-        )
-        val selectorBg = lerp(AppColors.primaryContainer, AppColors.sheetSurface, f)
+
+        val collapsedSelectorBg = if (isActive) AppColors.accent else AppColors.primaryContainer
+        val expandedSelectorBg = if (isActive) AppColors.accent else AppColors.sheetSurface
+        val selectorBg = lerp(collapsedSelectorBg, expandedSelectorBg, f)
+
+        // Determine content color based on the actual background luminance of the selector area
+        val contentColor = if (selectorBg.luminance() > 0.5f) Color.Black else Color.White
+        val inactiveColor = contentColor.copy(alpha = 0.4f)
 
         if (isOpen) {
             Box(
@@ -258,55 +266,58 @@ fun TransactionFilterPill(
             glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
             fallbackColor = surfaceColor,
         ) {
-            Column(Modifier.fillMaxSize()) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(pillH)
-                        .anchoredDraggable(
-                            draggableState,
-                            Orientation.Vertical,
-                            flingBehavior = flingBehavior
-                        ),
-                ) {
-                    AeonTimelinePeriodSelector(
-                        currentRange = filter.timelineRange,
-                        onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
-                        swipeEntireComponent = false,
+            val pillContentColor = if (surfaceColor.luminance() > 0.5f) Color.Black else Color.White
+            CompositionLocalProvider(LocalContentColor provides pillContentColor) {
+                Column(Modifier.fillMaxSize()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp),
-                        isFlush = true,
-                        containerColor = selectorBg,
-                        contentColor = contentColor,
-                        inactiveContentColor = inactiveColor,
+                            .height(pillH)
+                            .anchoredDraggable(
+                                draggableState,
+                                Orientation.Vertical,
+                                flingBehavior = flingBehavior
+                            ),
+                    ) {
+                        AeonTimelinePeriodSelector(
+                            currentRange = filter.timelineRange,
+                            onRangeSelected = { onFilterEvent(FilterEvent.UpdateTimeline(it)) },
+                            swipeEntireComponent = false,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp),
+                            isFlush = true,
+                            containerColor = selectorBg,
+                            contentColor = contentColor,
+                            inactiveContentColor = inactiveColor,
+                        )
+                    }
+
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = AppColors.divider.copy(alpha = f * 0.6f),
+                    )
+
+                    FilterSheetContent(
+                        filter = filter,
+                        accounts = accounts,
+                        allCategories = categories,
+                        allTags = allTags,
+                        onSearchTransactions = onSearchTransactions,
+                        savedFilters = savedFilters,
+                        onFilterEvent = onFilterEvent,
+                        onSaveFilterClick = onSaveFilterClick,
+                        onAddTag = onAddTag,
+                        onClose = { actions.collapse() },
+                        backgroundColor = Color.Transparent,
+                        accountNames = remember(accounts) {
+                            accounts.associateBy({ it.id }, { it.name })
+                        },
+                        filterRules = filterRules.copy(timelineRule = ScalarRule.Disabled(filter.timelineRange)),
+                        baseFilter = baseFilter
                     )
                 }
-
-                HorizontalDivider(
-                    thickness = 0.5.dp,
-                    color = AppColors.divider.copy(alpha = f * 0.6f),
-                )
-
-                FilterSheetContent(
-                    filter = filter,
-                    accounts = accounts,
-                    allCategories = categories,
-                    allTags = allTags,
-                    onSearchTransactions = onSearchTransactions,
-                    savedFilters = savedFilters,
-                    onFilterEvent = onFilterEvent,
-                    onSaveFilterClick = onSaveFilterClick,
-                    onAddTag = onAddTag,
-                    onClose = { actions.collapse() },
-                    backgroundColor = Color.Transparent,
-                    accountNames = remember(accounts) {
-                        accounts.associateBy({ it.id }, { it.name })
-                    },
-                    filterRules = filterRules.copy(timelineRule = ScalarRule.Disabled(filter.timelineRange)),
-                    baseFilter = baseFilter
-                )
             }
         }
     }
@@ -349,6 +360,26 @@ private fun TransactionFilterPillCollapsedPreview() {
         Box(Modifier.fillMaxSize()) {
             TransactionFilterPill(
                 filter = TransactionFilter(),
+                accounts = emptyList(),
+                categories = emptyList(),
+                savedFilters = emptyList(),
+                onSearchTransactions = { kotlinx.coroutines.flow.flowOf(emptyList()) },
+                onFilterEvent = {},
+                onSaveFilterClick = {},
+                initialMorph = 0f,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Pill — Active (Collapsed)")
+@Composable
+private fun TransactionFilterPillActivePreview() {
+    OssWalletTheme {
+        Box(Modifier.fillMaxSize()) {
+            TransactionFilterPill(
+                filter = TransactionFilter(queryNote = "Active Filter"),
                 accounts = emptyList(),
                 categories = emptyList(),
                 savedFilters = emptyList(),

@@ -420,7 +420,7 @@ fun DashboardScreenLayout(
 
     LaunchedEffect(transactionSnackbarMessage) {
         transactionSnackbarMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showAeonSnackbar(it)
             onClearTransactionSnackbar()
         }
     }

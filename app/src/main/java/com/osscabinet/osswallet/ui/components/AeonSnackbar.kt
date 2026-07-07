@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -50,7 +51,8 @@ enum class AeonSnackbarType {
     DEFAULT,
     SUCCESS,
     ERROR,
-    INFO
+    INFO,
+    WARNING
 }
 
 /**
@@ -117,6 +119,7 @@ fun AeonSnackbar(
         AeonSnackbarType.SUCCESS -> AppColors.positive.copy(alpha = 0.95f)
         AeonSnackbarType.ERROR -> AppColors.error.copy(alpha = 0.95f)
         AeonSnackbarType.INFO -> MaterialTheme.colorScheme.secondaryContainer
+        AeonSnackbarType.WARNING -> AppColors.primaryContainer.copy(alpha = 0.95f)
     }
 
     val contentColor = when (type) {
@@ -124,6 +127,7 @@ fun AeonSnackbar(
         AeonSnackbarType.SUCCESS -> Color.White
         AeonSnackbarType.ERROR -> MaterialTheme.colorScheme.onError
         AeonSnackbarType.INFO -> MaterialTheme.colorScheme.onSecondaryContainer
+        AeonSnackbarType.WARNING -> AppColors.onPrimaryContainer
     }
 
     val actionColor = when (type) {
@@ -131,12 +135,14 @@ fun AeonSnackbar(
         AeonSnackbarType.SUCCESS -> Color.White
         AeonSnackbarType.ERROR -> Color.White
         AeonSnackbarType.INFO -> MaterialTheme.colorScheme.primary
+        AeonSnackbarType.WARNING -> AppColors.primary
     }
 
     val icon: ImageVector? = when (type) {
         AeonSnackbarType.SUCCESS -> Icons.Rounded.CheckCircle
         AeonSnackbarType.ERROR -> Icons.Rounded.Error
         AeonSnackbarType.INFO -> Icons.Rounded.Info
+        AeonSnackbarType.WARNING -> Icons.Rounded.Warning
         else -> null
     }
 
@@ -240,6 +246,14 @@ fun AeonSnackbarPreview() {
                 snackbarData = MockSnackbarData(
                     message = "New feature available in settings",
                     type = AeonSnackbarType.INFO
+                )
+            )
+
+            Text("Warning", style = MaterialTheme.typography.titleSmall)
+            AeonSnackbar(
+                snackbarData = MockSnackbarData(
+                    message = "Your storage is almost full",
+                    type = AeonSnackbarType.WARNING
                 )
             )
         }

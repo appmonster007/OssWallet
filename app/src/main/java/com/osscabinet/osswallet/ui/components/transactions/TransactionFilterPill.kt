@@ -318,6 +318,7 @@ fun TransactionFilterPill(
                         onSaveFilterClick = onSaveFilterClick,
                         onAddTag = onAddTag,
                         onClose = { actions.collapse() },
+                        modifier = Modifier.weight(1f),
                         backgroundColor = Color.Transparent,
                         accountNames = remember(accounts) {
                             accounts.associateBy({ it.id }, { it.name })

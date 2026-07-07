@@ -445,7 +445,7 @@ fun CategoryTreemapCard(
 private fun CategoryTreemapSettingsSheet(
     config: CategoryTreemapCardConfig,
     onUpdate: (CategoryTreemapCardConfig) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
@@ -593,7 +593,7 @@ fun mapCategoryTreemap(
     renderData: CardRenderData.CategoryTreemap,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -611,7 +611,7 @@ fun mapCategoryTreemap(
                     )
             }
         },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onRecordsClick = { drillDown ->
             onRecordsClick(
                 resolveDrillDown(

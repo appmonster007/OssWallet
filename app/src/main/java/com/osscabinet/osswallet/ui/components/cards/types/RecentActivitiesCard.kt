@@ -146,7 +146,7 @@ fun RecentActivitiesCard(
 private fun RecentActivitiesSettingsSheet(
     config: RecentActivitiesCardConfig,
     onUpdate: (RecentActivitiesCardConfig) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Recent Activities", onDismiss = onDismiss, onDelete = onDelete) {
@@ -263,7 +263,7 @@ fun mapRecentActivities(
     renderData: CardRenderData.RecentActivities,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -287,7 +287,7 @@ fun mapRecentActivities(
             )
         },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onItemExpanded = callbacks.transactionActions.onItemExpanded,
         onItemCollapsed = callbacks.transactionActions.onItemCollapsed,
         onStatusChange = callbacks.transactionActions.onStatusChange,

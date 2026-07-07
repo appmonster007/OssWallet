@@ -49,7 +49,7 @@ fun rememberCardWithCallbacks(
     state: CardComputeState?,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks = AeonInteractionCallbacks(),
     filterSheetEnabled: Boolean = true,
@@ -77,12 +77,13 @@ fun rememberCardWithCallbacks(
         )
 
         is CardComputeState.Success -> {
+            val effectiveOnDelete = if (input.deleteEnabled) onDelete else null
             mapSuccessState(
                 config,
                 state.data,
                 input,
                 updateHandler,
-                onDelete,
+                effectiveOnDelete,
                 onRecordsClick,
                 callbacks,
                 filterSheetEnabled
@@ -96,7 +97,7 @@ private fun mapSuccessState(
     renderData: CardRenderData,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean

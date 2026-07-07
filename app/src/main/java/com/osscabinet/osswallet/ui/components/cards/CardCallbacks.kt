@@ -19,7 +19,7 @@ sealed class CardCallbacks {
      * Common callbacks - just delete
      */
     data class Common(
-        val onDelete: () -> Unit,
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -40,7 +40,7 @@ sealed class CardCallbacks {
         val onClickNet: ((TransactionFilter) -> Unit)? = null,
         val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -54,7 +54,7 @@ sealed class CardCallbacks {
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onCurrencyClick: ((String, TimelineRange) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -75,7 +75,7 @@ sealed class CardCallbacks {
         val onClickNet: ((TransactionFilter) -> Unit)? = null,
         val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -84,7 +84,7 @@ sealed class CardCallbacks {
      */
     data class Analytics(
         val onUpdate: (Any) -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
@@ -133,7 +133,7 @@ sealed class CardCallbacks {
         val onClickNet: ((TransactionFilter) -> Unit)? = null,
         val onClickNetFlow: ((TransactionFilter) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -147,7 +147,7 @@ sealed class CardCallbacks {
         val onConfirm: ((Long, Long) -> Unit)? = null,
         val onSkip: ((Long, Long) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -159,7 +159,7 @@ sealed class CardCallbacks {
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onBudgetClick: (Long) -> Unit = {},
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -171,7 +171,7 @@ sealed class CardCallbacks {
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onLoanClick: (Long) -> Unit = {},
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
 
@@ -183,7 +183,7 @@ sealed class CardCallbacks {
         val onTransactionClick: (Long) -> Unit = {},
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSeeAll: () -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onItemExpanded: (String) -> Unit = {},
         val onItemCollapsed: (String) -> Unit = {},
         val onStatusChange: (Long, TransactionStatus) -> Unit = { _, _ -> },
@@ -202,7 +202,7 @@ sealed class CardCallbacks {
      */
     data class CashFlowComparison(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig) -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
@@ -212,7 +212,7 @@ sealed class CardCallbacks {
      */
     data class IncomeExpenseBar(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig) -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
@@ -222,7 +222,7 @@ sealed class CardCallbacks {
      */
     data class CategorySpendingTrend(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig) -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()
@@ -232,7 +232,7 @@ sealed class CardCallbacks {
      */
     data class TagUpSetPlot(
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig) -> Unit = {},
-        val onDelete: () -> Unit = {},
+        val onDelete: (() -> Unit)? = null,
         val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
     ) : CardCallbacks()

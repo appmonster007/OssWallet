@@ -39,7 +39,8 @@ data class CardInput(
     val loanPayments: Map<Long, List<LoanPayment>> = emptyMap(),
     // Pre-computed hierarchy — built once in ComputeCardUseCase before dispatching to all cards.
     // Default is Empty; ComputeCardUseCase always enriches it before compute.
-    val categoryHierarchy: CategoryHierarchyCache = CategoryHierarchyCache.Empty
+    val categoryHierarchy: CategoryHierarchyCache = CategoryHierarchyCache.Empty,
+    val deleteEnabled: Boolean = true
 ) {
     /**
      * Derived property that determines if the inherited filter's timeline

@@ -62,6 +62,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardType
+import com.osscabinet.ossWallet.domain.card.getAtelierTab
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
@@ -93,7 +94,7 @@ fun AeonCardAtelier(
     val filteredOptions = remember(searchQuery, selectedTab, allOptions) {
         allOptions.filter { type ->
             val matchesSearch = type.displayName.contains(searchQuery, ignoreCase = true)
-            val matchesTab = selectedTab == "ALL" || type.getIntentTab() == selectedTab
+            val matchesTab = selectedTab == "ALL" || type.getAtelierTab() == selectedTab
             matchesSearch && matchesTab
         }
     }
@@ -373,14 +374,6 @@ private fun AtelierCardTile(
             }
         }
     }
-}
-
-private fun CardType.getIntentTab(): String = when (this) {
-    CardType.NET_WORTH, CardType.CASH_FLOW, CardType.RECENT_ACTIVITIES -> "STATUS"
-    CardType.ACCOUNTS, CardType.CURRENCY_BALANCES, CardType.ACCOUNT_HERO -> "WALLET"
-    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS -> "TRACK"
-    CardType.CATEGORY_PIE_CHART, CardType.CATEGORY_TREEMAP, CardType.CASHFLOW_COMPARISON,
-    CardType.INCOME_EXPENSE_BAR, CardType.CATEGORY_SPENDING_TREND, CardType.TAG_UPSET_PLOT -> "TRENDS"
 }
 
 private fun CardType.getIntentSubtitle(): String = when (this) {

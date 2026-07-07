@@ -181,7 +181,7 @@ fun PlannedPaymentsCard(
 private fun PlannedPaymentsSettingsSheet(
     config: PlannedPaymentsCardConfig,
     onUpdate: (PlannedPaymentsCardConfig) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Planned Payments", onDismiss = onDismiss, onDelete = onDelete) {
@@ -398,7 +398,7 @@ fun mapPlannedPayments(
     renderData: CardRenderData.PlannedPayments,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.PlannedPayments(
@@ -415,7 +415,7 @@ fun mapPlannedPayments(
         onConfirm = callbacks.paymentActions.onConfirm,
         onSkip = callbacks.paymentActions.onSkip,
         onSeeAll = callbacks.paymentActions.onSeeAll,
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

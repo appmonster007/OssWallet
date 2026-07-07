@@ -78,7 +78,7 @@ fun mapTagUpSetPlot(
     renderData: CardRenderData.TagUpSetPlot,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -91,7 +91,7 @@ fun mapTagUpSetPlot(
                 newConfig
             )
         },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
@@ -393,7 +393,7 @@ private fun CompactMetricSelector(
 private fun TagUpSetSettingsSheet(
     config: TagUpSetPlotCardConfig,
     onUpdate: (TagUpSetPlotCardConfig) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Tag Analytics", onDismiss = onDismiss, onDelete = onDelete) {

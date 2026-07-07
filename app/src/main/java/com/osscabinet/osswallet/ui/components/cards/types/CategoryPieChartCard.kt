@@ -358,7 +358,7 @@ fun CategoryPieChartCard(
 private fun CategoryPieChartSettingsSheet(
     config: CategoryPieChartCardConfig,
     onUpdate: (CategoryPieChartCardConfig) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     onDismiss: () -> Unit
 ) {
     CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
@@ -524,7 +524,7 @@ fun mapCategoryPieChart(
     renderData: CardRenderData.CategoryPieChart,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -542,7 +542,7 @@ fun mapCategoryPieChart(
                     )
             }
         },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onRecordsClick = { drillDown ->
             onRecordsClick(
                 resolveDrillDown(

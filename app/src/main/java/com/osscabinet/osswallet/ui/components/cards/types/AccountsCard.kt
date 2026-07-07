@@ -508,7 +508,7 @@ fun mapAccounts(
     renderData: CardRenderData.Accounts,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -562,7 +562,7 @@ fun mapAccounts(
             )
         },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

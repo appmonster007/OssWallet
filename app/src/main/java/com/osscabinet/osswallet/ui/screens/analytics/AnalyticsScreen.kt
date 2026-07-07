@@ -10,11 +10,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.getAtelierTab
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
@@ -67,6 +70,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import kotlinx.coroutines.launch
 
 /**
  * A Value Object representing a valid configuration for the Analytics screen.
@@ -94,7 +98,7 @@ data class AnalyticsActions(
     val onSplitTransactionClick: (Long) -> Unit = {}
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AnalyticsScreen(
     config: AnalyticsConfig,
@@ -118,10 +122,15 @@ fun AnalyticsScreen(
         initialValue = true
     )
 
-    var showAddCardDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
+    val tabs = listOf("STATUS", "WALLET", "TRACK", "TRENDS")
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+
+    BackHandler(enabled = pagerState.currentPage > 0) {
+        scope.launch { pagerState.animateScrollToPage(0) }
+    }
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
 
     val pillHeight = AeonSize.D64.value
@@ -158,87 +167,126 @@ fun AnalyticsScreen(
                         }
 
                         is AnalyticsUiState.Success -> {
-                            AeonCardList(
-                                cards = cardsConfig.cards,
-                                cardDataMap = cardDataMap,
-                                cardInput = CardInput(
-                                    profileId = state.profileId,
-                                    transactions = state.allTransactions,
-                                    accounts = state.accounts,
-                                    categories = state.allCategories,
-                                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-                                        anchor = state.selectedCurrency,
-                                        rates = state.exchangeRates
-                                    ),
-                                    targetCurrency = state.selectedCurrency,
-                                    plannedPayments = state.plannedPayments,
-                                    budgets = state.budgets,
-                                    loans = state.loans,
-                                    tags = state.allTags,
-                                    filter = if (commonFilterEnabled) screenFilter else TransactionFilter(),
-                                    screenContext = ScreenContext.ANALYTICS,
-                                    commonFilterEnabled = commonFilterEnabled
-                                ),
-                                cardUpdateHandler = viewModel,
-                                onReorder = { viewModel.reorderCards(it) },
-                                onDelete = { viewModel.removeCard(it) },
-                                onRecordsClick = actions.onRecordsClick,
+                            HorizontalPager(
+                                state = pagerState,
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    start = AeonTheme.dimensions.screenPadding,
-                                    end = AeonTheme.dimensions.screenPadding,
-                                    top = AeonTheme.dimensions.spacingMd + pillHeight,
-                                    bottom = scrollBottomPadding() + innerPadding.calculateBottomPadding()
-                                ),
-                                animateCards = cardAnimationEnabled,
-                                filterContext = FilterSelectionContext(
-                                    accounts = state.accounts,
-                                    allCategories = state.allCategories,
-                                    allTags = state.allTags,
-                                    savedFilters = savedFilters,
-                                    onSearchTransactions = transactionViewModel::searchTransactions
-                                ),
-                                callbacks = AeonInteractionCallbacks(
-                                    accountActions = AccountActions(
-                                        onClick = actions.onAccountClick,
-                                        onSeeAll = { /* Analytics doesn't have a standard account list link */ }
-                                    ),
-                                    budgetActions = BudgetActions(
-                                        onClick = actions.onNavigateToBudgetDetail,
-                                        onSeeAll = actions.onNavigateToBudgetList
-                                    ),
-                                    loanActions = LoanActions(
-                                        onClick = actions.onNavigateToLoanDetail,
-                                        onSeeAll = actions.onNavigateToLoanList
-                                    ),
-                                    transactionActions = TransactionActions(
-                                        onClick = actions.onEditTransactionClick,
-                                        onClone = { actions.onCloneTransactionClick(it) },
-                                        onDelete = {
-                                            transactionViewModel.quickDeleteTransaction(
-                                                it
-                                            )
+                                verticalAlignment = Alignment.Top
+                            ) { page ->
+                                val currentTab = tabs[page]
+                                val filteredCards = remember(currentTab, cardsConfig.cards) {
+                                    cardsConfig.cards.filter { it.cardType.getAtelierTab() == currentTab }
+                                }
+
+                                if (filteredCards.isEmpty()) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "No ${currentTab.lowercase()} widgets active",
+                                            style = AppTextStyles.listItemSubtitle,
+                                            color = AppColors.contentSecondary.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                } else {
+                                    AeonCardList(
+                                        cards = filteredCards,
+                                        cardDataMap = cardDataMap,
+                                        cardInput = CardInput(
+                                            profileId = state.profileId,
+                                            transactions = state.allTransactions,
+                                            accounts = state.accounts,
+                                            categories = state.allCategories,
+                                            exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                                                anchor = state.selectedCurrency,
+                                                rates = state.exchangeRates
+                                            ),
+                                            targetCurrency = state.selectedCurrency,
+                                            plannedPayments = state.plannedPayments,
+                                            budgets = state.budgets,
+                                            loans = state.loans,
+                                            tags = state.allTags,
+                                            filter = if (commonFilterEnabled) screenFilter else TransactionFilter(),
+                                            screenContext = ScreenContext.ANALYTICS,
+                                            commonFilterEnabled = commonFilterEnabled
+                                        ),
+                                        cardUpdateHandler = viewModel,
+                                        onReorder = { reordered ->
+                                            val fullList = cardsConfig.cards
+                                            val filteredIds = reordered.map { it.cardId }.toSet()
+                                            val originalIndices =
+                                                fullList.mapIndexedNotNull { index, card ->
+                                                    if (card.cardId in filteredIds) index else null
+                                                }
+                                            val newFullList = fullList.toMutableList()
+                                            reordered.forEachIndexed { index, card ->
+                                                newFullList[originalIndices[index]] = card
+                                            }
+                                            viewModel.reorderCards(newFullList)
                                         },
-                                        onSplit = { actions.onSplitTransactionClick(it) },
-                                        onJump = { id, availableIds ->
-                                            transactionViewModel.handleJumpRequest(id, availableIds)
-                                        },
-                                        onFullSwipeRight = {
-                                            transactionViewModel.toggleStatusClearedUncleared(
-                                                it
+                                        onDelete = { /* Deletion disabled on Analytics */ },
+                                        onRecordsClick = actions.onRecordsClick,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(
+                                            start = AeonTheme.dimensions.screenPadding,
+                                            end = AeonTheme.dimensions.screenPadding,
+                                            top = AeonTheme.dimensions.spacingMd + pillHeight,
+                                            bottom = scrollBottomPadding() + innerPadding.calculateBottomPadding()
+                                        ),
+                                        animateCards = cardAnimationEnabled,
+                                        filterContext = FilterSelectionContext(
+                                            accounts = state.accounts,
+                                            allCategories = state.allCategories,
+                                            allTags = state.allTags,
+                                            savedFilters = savedFilters,
+                                            onSearchTransactions = transactionViewModel::searchTransactions
+                                        ),
+                                        callbacks = AeonInteractionCallbacks(
+                                            accountActions = AccountActions(
+                                                onClick = actions.onAccountClick,
+                                                onSeeAll = { /* Analytics doesn't have a standard account list link */ }
+                                            ),
+                                            budgetActions = BudgetActions(
+                                                onClick = actions.onNavigateToBudgetDetail,
+                                                onSeeAll = actions.onNavigateToBudgetList
+                                            ),
+                                            loanActions = LoanActions(
+                                                onClick = actions.onNavigateToLoanDetail,
+                                                onSeeAll = actions.onNavigateToLoanList
+                                            ),
+                                            transactionActions = TransactionActions(
+                                                onClick = actions.onEditTransactionClick,
+                                                onClone = { actions.onCloneTransactionClick(it) },
+                                                onDelete = {
+                                                    transactionViewModel.quickDeleteTransaction(
+                                                        it
+                                                    )
+                                                },
+                                                onSplit = { actions.onSplitTransactionClick(it) },
+                                                onJump = { id, availableIds ->
+                                                    transactionViewModel.handleJumpRequest(
+                                                        id,
+                                                        availableIds
+                                                    )
+                                                },
+                                                onFullSwipeRight = {
+                                                    transactionViewModel.toggleStatusClearedUncleared(
+                                                        it
+                                                    )
+                                                }
+                                            ),
+                                            paymentActions = PaymentActions(
+                                                onClick = actions.onNavigateToPlannedPaymentDetail,
+                                                onSeeAll = actions.onNavigateToPlannedPaymentList
+                                            ),
+                                            tagActions = TagActions(
+                                                onAdd = transactionViewModel::addTag
                                             )
-                                        }
-                                    ),
-                                    paymentActions = PaymentActions(
-                                        onClick = actions.onNavigateToPlannedPaymentDetail,
-                                        onSeeAll = actions.onNavigateToPlannedPaymentList
-                                    ),
-                                    tagActions = TagActions(
-                                        onAdd = transactionViewModel::addTag
+                                        ),
+                                        disableFilterSheet = commonFilterEnabled,
                                     )
-                                ),
-                                disableFilterSheet = commonFilterEnabled,
-                            )
+                                }
+                            }
                         }
                     }
                 }
@@ -252,7 +300,12 @@ fun AnalyticsScreen(
                             title = "Intelligence",
                             isTopLevel = config.isTopLevel,
                             onMenuClick = if (config.isTopLevel) actions.onMenuClick else null,
-                            onBackClick = if (!config.isTopLevel) actions.onBackClick else null
+                            onBackClick = if (!config.isTopLevel) actions.onBackClick else null,
+                            tabs = tabs,
+                            selectedTabIndex = pagerState.currentPage,
+                            onTabSelected = { index ->
+                                scope.launch { pagerState.animateScrollToPage(index) }
+                            }
                         )
                     }
                 ),
@@ -262,10 +315,6 @@ fun AnalyticsScreen(
                             AppBarIconButton(
                                 icon = Icons.Default.Settings,
                                 onClick = { showSettingsDialog = true }
-                            )
-                            AppBarIconButton(
-                                icon = Icons.Default.Add,
-                                onClick = { showAddCardDialog = true }
                             )
                         }
                     }
@@ -366,16 +415,6 @@ fun AnalyticsScreen(
                         }
                     }
                 }
-            }
-
-            if (showAddCardDialog) {
-                AeonCardAtelier(
-                    screenContext = ScreenContext.ANALYTICS,
-                    onDismiss = { showAddCardDialog = false },
-                    onCardTypeSelected = { cardType ->
-                        viewModel.addCard(cardType)
-                    }
-                )
             }
         }
     }

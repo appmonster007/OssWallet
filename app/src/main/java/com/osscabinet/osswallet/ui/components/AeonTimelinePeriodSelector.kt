@@ -69,6 +69,7 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -89,10 +90,22 @@ fun AeonTimelinePeriodSelector(
     modifier: Modifier = Modifier,
     swipeEntireComponent: Boolean = false,
     isFlush: Boolean = false,
+    isActive: Boolean = false,
     containerColor: Color = AppColors.cardSurface,
     contentColor: Color = AppColors.primary,
     inactiveContentColor: Color = AppColors.contentSecondary.copy(alpha = 0.3f)
 ) {
+    val glassEnabled = LocalGlassmorphismEnabled.current
+    val accentColor = AppColors.accent
+
+    val effectiveContainerColor = remember(containerColor, isActive, glassEnabled, accentColor) {
+        when {
+            glassEnabled && isActive && containerColor == accentColor -> containerColor.copy(alpha = 0.32f)
+            glassEnabled && containerColor != Color.Transparent -> containerColor.copy(alpha = 0.6f)
+            else -> containerColor
+        }
+    }
+
     val initialPage = remember(currentRange) {
         when (currentRange) {
             is TimelineRange.AllTime -> 0
@@ -143,7 +156,7 @@ fun AeonTimelinePeriodSelector(
             .fillMaxWidth()
             .then(if (isFlush) Modifier else Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding)),
         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-        color = containerColor,
+        color = effectiveContainerColor,
         tonalElevation = 1.dp,
         border = if (containerColor == Color.Transparent || isFlush) null else BorderStroke(
             1.dp,

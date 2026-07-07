@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
@@ -47,6 +48,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -63,7 +65,6 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
@@ -106,6 +107,7 @@ fun TransactionFilterPill(
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val focusManager = LocalFocusManager.current
 
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val totalBottomPadding = bottomPadding + navBarPadding
@@ -124,8 +126,8 @@ fun TransactionFilterPill(
     )
 
     val onDismissState = rememberUpdatedState(onDismiss)
-    val actions = remember(draggableState, scope, onDismissState) {
-        PillActions(draggableState, scope, onDismissState)
+    val actions = remember(draggableState, scope, onDismissState, focusManager) {
+        PillActions(draggableState, scope, onDismissState, focusManager)
     }
 
     val f by remember {
@@ -150,7 +152,7 @@ fun TransactionFilterPill(
 
     val isOpen by remember { derivedStateOf { (f > 0f) || (onDismiss != null) } }
 
-    BackHandler(enabled = draggableState.currentValue == PillState.Expanded) {
+    BackHandler(enabled = draggableState.currentValue == PillState.Expanded || f > 0.1f) {
         actions.collapse()
     }
 
@@ -217,10 +219,10 @@ fun TransactionFilterPill(
         val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
         val horizMargin = lerp(pillHorizMargin, 8.dp, f)
         val corner = lerp(28.dp, 20.dp, f)
-        val elevation = lerp(AeonSize.D8.value, 12.dp, f)
 
         val baseSurfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
-        val surfaceColor = if (glassEnabled) baseSurfaceColor.copy(alpha = 0.6f) else baseSurfaceColor
+        val surfaceColor =
+            if (glassEnabled) baseSurfaceColor.copy(alpha = 0.8f) else baseSurfaceColor
 
         val collapsedSelectorBg = if (isActive) AppColors.accent else AppColors.primaryContainer
         val expandedSelectorBg = if (isActive) AppColors.accent else AppColors.sheetSurface
@@ -336,12 +338,14 @@ private class PillActions(
     private val state: AnchoredDraggableState<PillState>,
     private val scope: CoroutineScope,
     private val onDismissState: State<(() -> Unit)?>,
+    private val focusManager: FocusManager,
 ) {
     fun expand() {
         scope.launch { state.animateTo(PillState.Expanded) }
     }
 
     fun collapse() {
+        focusManager.clearFocus()
         scope.launch {
             state.animateTo(PillState.Collapsed)
             onDismissState.value?.invoke()
@@ -352,12 +356,14 @@ private class PillActions(
         scope.launch {
             // Settle to the target value determined by the state.
             state.animateTo(state.targetValue)
-            if (state.currentValue == PillState.Collapsed) {
+            if (state.targetValue == PillState.Collapsed) {
+                focusManager.clearFocus()
                 onDismissState.value?.invoke()
             }
         }
     }
 }
+
 
 @Preview(showBackground = true, name = "Pill — Collapsed")
 @Composable

@@ -100,8 +100,8 @@ fun AeonTimelinePeriodSelector(
 
     val effectiveContainerColor = remember(containerColor, isActive, glassEnabled, accentColor) {
         when {
-            glassEnabled && isActive && containerColor == accentColor -> containerColor.copy(alpha = 0.32f)
-            glassEnabled && containerColor != Color.Transparent -> containerColor.copy(alpha = 0.6f)
+            glassEnabled && isActive && containerColor == accentColor -> containerColor.copy(alpha = 0.6f)
+            glassEnabled && containerColor != Color.Transparent -> containerColor.copy(alpha = 0.8f)
             else -> containerColor
         }
     }

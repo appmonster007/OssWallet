@@ -79,7 +79,7 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.components.CardTypeSelectionDialog
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
@@ -751,12 +751,11 @@ fun DynamicAccountDetailCards(
     }
 
     if (showAddCardDialog) {
-        CardTypeSelectionDialog(
+        AeonCardAtelier(
             screenContext = ScreenContext.ACCOUNT_DETAIL,
             onDismiss = { onShowAddCardDialogChange(false) },
             onCardTypeSelected = { cardType ->
                 accountDetailViewModel.addCard(cardType)
-                onShowAddCardDialogChange(false)
             }
         )
     }

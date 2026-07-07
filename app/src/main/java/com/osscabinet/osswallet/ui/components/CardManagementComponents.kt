@@ -35,10 +35,13 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -49,10 +52,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardCategory
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -76,114 +82,72 @@ fun CardType.toIcon(): ImageVector = when (this) {
     CardType.TAG_UPSET_PLOT -> Icons.Default.Analytics
 }
 
-/**
- * Unified card type selection dialog used across Dashboard, Analytics, and AccountDetail screens.
- *
- * Filters available card types by [screenContext] and applies [additionalFilter] for any
- * screen-specific exclusions (e.g. hiding unimplemented card types).
- */
-@Composable
-fun CardTypeSelectionDialog(
-    screenContext: ScreenContext,
-    onDismiss: () -> Unit,
-    onCardTypeSelected: (CardType) -> Unit,
-    additionalFilter: (CardType) -> Boolean = { true }
-) {
-    GenericAddCardDialog(
-        onDismiss = onDismiss,
-        cardOptions = CardType.entries
-            .filter { it.isUserAddableOn(screenContext) && additionalFilter(it) }
-            .map { type ->
-                CardTypeOptionData(
-                    title = type.displayName,
-                    description = type.description,
-                    icon = type.toIcon(),
-                    category = type.category,
-                    onClick = { onCardTypeSelected(type) }
-                )
-            }
-    )
-}
+
 
 /**
- * Reusable card type option for add card dialogs.
+ * Redesigned list option for card selection, matching the Atelier aesthetic.
  */
 @Composable
-fun CardTypeOption(
+fun AtelierListOption(
     title: String,
     description: String,
     onClick: () -> Unit,
     icon: ImageVector? = null
 ) {
-    Surface(
-        onClick = onClick,
+    val shape = RoundedCornerShape(16.dp)
+    Box(
         modifier = Modifier
-            .fillMaxWidth(),
-        color = AppColors.transparent,
-        shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .aeonHairlineBorder(shape)
+            .clip(shape)
+            .background(AppColors.recessedSurface)
+            .clickable(onClick = onClick)
+            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(AppColors.primaryContainer.copy(alpha = 0.4f)),
+                    .background(AppColors.accent.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = AppColors.primary,
+                        tint = AppColors.accent,
                         modifier = Modifier.size(20.dp)
                     )
                 }
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.SemiBold)
+                    style = AppTextStyles.listItemTitle.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = AppColors.contentPrimary
                 )
                 if (description.isNotEmpty()) {
                     Text(
                         text = description,
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary,
-                        maxLines = 2
+                        style = AppTextStyles.caption.copy(fontSize = 11.sp),
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         }
     }
 }
-
-@Preview(showBackground = true)
-@Composable
-fun CardTypeOptionPreview() {
-    OssWalletTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            CardTypeOption(
-                title = "Net Worth",
-                description = "Track your total assets and liabilities over time.",
-                onClick = {},
-                icon = Icons.Default.AccountBalance
-            )
-        }
-    }
-}
-
-/**
- * Data class representing a card type option for the add card dialog.
- */
 data class CardTypeOptionData(
     val title: String,
     val description: String,
@@ -271,15 +235,11 @@ fun GenericAddCardDialog(
                     items = options,
                     key = { it.title + category.name }
                 ) { option ->
-                    CardTypeOption(
+                    AtelierListOption(
                         title = option.title,
                         description = option.description,
                         onClick = option.onClick,
                         icon = option.icon
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                        color = AppColors.border.copy(alpha = 0.3f)
                     )
                 }
             }

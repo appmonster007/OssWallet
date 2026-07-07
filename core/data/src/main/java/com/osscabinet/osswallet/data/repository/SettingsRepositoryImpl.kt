@@ -5,9 +5,9 @@ import com.osscabinet.ossWallet.data.local.TransactionSectionSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
-import kotlinx.coroutines.flow.Flow
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.Flow
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
@@ -39,12 +39,14 @@ class SettingsRepositoryImpl @Inject constructor(
     override val accountDetailCardsConfig: Flow<String> = settingsDataStore.accountDetailCardsConfig
     override val accountsViewCardsConfig: Flow<String> = settingsDataStore.accountsViewCardsConfig
     override val analyticsCardsConfig: Flow<String> = settingsDataStore.analyticsCardsConfig
-    override val analyticsCommonFilterEnabled: Flow<Boolean> = settingsDataStore.analyticsCommonFilterEnabled
+    override val analyticsCommonFilterEnabled: Flow<Boolean> =
+        settingsDataStore.analyticsCommonFilterEnabled
     override val shortlistedCurrencies: Flow<Set<String>?> = settingsDataStore.shortlistedCurrencies
     override val glassmorphismEnabled: Flow<Boolean> = settingsDataStore.glassmorphismEnabled
     override val contourBgVersion: Flow<Int> = settingsDataStore.contourBgVersion
     override val contourLinesEnabled: Flow<Boolean> = settingsDataStore.contourLinesEnabled
-    override val randomizeContourEachLoad: Flow<Boolean> = settingsDataStore.randomizeContourEachLoad
+    override val randomizeContourEachLoad: Flow<Boolean> =
+        settingsDataStore.randomizeContourEachLoad
     override val glassSettings: Flow<GlassSettings> = settingsDataStore.glassSettings
     override val autoBackupConfig: Flow<AutoBackupConfig> = settingsDataStore.autoBackupConfig
     override val uiDensity: Flow<String> = settingsDataStore.uiDensity

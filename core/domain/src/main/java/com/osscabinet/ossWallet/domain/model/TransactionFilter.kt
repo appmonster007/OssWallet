@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
-import com.osscabinet.ossWallet.domain.model.util.NullableBigDecimalSerializer
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.util.NullableBigDecimalSerializer
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 

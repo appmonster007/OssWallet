@@ -21,7 +21,10 @@ data class CashFlowResult(
     val filteredTransactions: List<Transaction>
 ) {
     val totalNetTransferInBase: BigDecimal get() = totalTransferInInBase.add(totalTransferOutInBase)
-    val totalNetCrossCcyTransferInBase: BigDecimal get() = totalCrossCcyTransferInInBase.add(totalCrossCcyTransferOutInBase)
+    val totalNetCrossCcyTransferInBase: BigDecimal
+        get() = totalCrossCcyTransferInInBase.add(
+            totalCrossCcyTransferOutInBase
+        )
 
     /**
      * Transforms this result based on the requested perspective.
@@ -87,7 +90,10 @@ data class CashFlowBreakdownItem(
     val netTransfer: BigDecimal get() = transferIn.add(transferOut)
     val netTransferInBase: BigDecimal get() = transferInInBase.add(transferOutInBase)
     val netCrossCcyTransfer: BigDecimal get() = crossCcyTransferIn.add(crossCcyTransferOut)
-    val netCrossCcyTransferInBase: BigDecimal get() = crossCcyTransferInInBase.add(crossCcyTransferOutInBase)
+    val netCrossCcyTransferInBase: BigDecimal
+        get() = crossCcyTransferInInBase.add(
+            crossCcyTransferOutInBase
+        )
 
     /**
      * Transforms this breakdown item based on the requested perspective.

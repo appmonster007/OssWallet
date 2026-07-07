@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.domain.model
 
-import java.math.BigDecimal
-
 data class Account(
     val id: String,
     val name: String,

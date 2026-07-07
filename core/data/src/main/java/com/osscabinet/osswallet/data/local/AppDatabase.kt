@@ -94,14 +94,16 @@ abstract class AppDatabase : RoomDatabase() {
                 // Tags: add profileId, then recreate table to replace the global name-unique
                 // index with a per-profile (name, profileId) unique index.
                 db.execSQL("ALTER TABLE tags ADD COLUMN profileId INTEGER NOT NULL DEFAULT 1")
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS tags_new (
                         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         name TEXT NOT NULL,
                         colorHex INTEGER NOT NULL,
                         profileId INTEGER NOT NULL DEFAULT 1
                     )
-                """.trimIndent())
+                """.trimIndent()
+                )
                 db.execSQL("INSERT INTO tags_new (id, name, colorHex, profileId) SELECT id, name, colorHex, profileId FROM tags")
                 db.execSQL("DROP TABLE tags")
                 db.execSQL("ALTER TABLE tags_new RENAME TO tags")
@@ -153,7 +155,7 @@ abstract class AppDatabase : RoomDatabase() {
 
                 db.execSQL(
                     "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
-                    "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
+                            "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
                 )
                 db.execSQL(
                     """
@@ -193,7 +195,7 @@ abstract class AppDatabase : RoomDatabase() {
 
                 db.execSQL(
                     "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
-                    "USING fts4(note, payee, name, content=`transactions`)"
+                            "USING fts4(note, payee, name, content=`transactions`)"
                 )
                 db.execSQL(
                     """
@@ -254,7 +256,7 @@ abstract class AppDatabase : RoomDatabase() {
 
                 db.execSQL(
                     "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
-                    "USING fts4(note, payee, name, content=`transactions`)"
+                            "USING fts4(note, payee, name, content=`transactions`)"
                 )
                 db.execSQL(
                     """
@@ -301,7 +303,8 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_15_16 = object : Migration(15, 16) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // SQLite cannot ALTER COLUMN type, so recreate the table with rate as TEXT
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS currency_rates_new (
                         currencyCode TEXT NOT NULL PRIMARY KEY,
                         baseCurrency TEXT NOT NULL,
@@ -309,12 +312,15 @@ abstract class AppDatabase : RoomDatabase() {
                         timestamp INTEGER NOT NULL,
                         nextUpdate INTEGER NOT NULL
                     )
-                """)
-                db.execSQL("""
+                """
+                )
+                db.execSQL(
+                    """
                     INSERT INTO currency_rates_new
                     SELECT currencyCode, baseCurrency, CAST(rate AS TEXT), timestamp, nextUpdate
                     FROM currency_rates
-                """)
+                """
+                )
                 db.execSQL("DROP TABLE currency_rates")
                 db.execSQL("ALTER TABLE currency_rates_new RENAME TO currency_rates")
             }
@@ -324,7 +330,8 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Resolve duplicates before creating unique index
                 // If a user has both 1003 and 1004 for the same account/currency, delete the 1004 one
-                db.execSQL("""
+                db.execSQL(
+                    """
                     DELETE FROM transactions 
                     WHERE categoryId = 1004 
                     AND EXISTS (
@@ -333,7 +340,8 @@ abstract class AppDatabase : RoomDatabase() {
                         AND t2.currency = transactions.currency 
                         AND t2.categoryId = 1003
                     )
-                """)
+                """
+                )
 
                 // 2. Collapse categories in transactions table
                 db.execSQL("UPDATE transactions SET categoryId = 1003 WHERE categoryId = 1004")
@@ -677,7 +685,7 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("DROP TABLE IF EXISTS transactions_fts")
             db.execSQL(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
-                "USING fts4(note, payee, name, content=`transactions`)"
+                        "USING fts4(note, payee, name, content=`transactions`)"
             )
 
             // Create FTS4 triggers using docid (Room's standard for FTS4)
@@ -725,7 +733,7 @@ abstract class AppDatabase : RoomDatabase() {
             db.execSQL("DROP TABLE IF EXISTS transactions_fts")
             db.execSQL(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` " +
-                "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
+                        "USING fts5(note, payee, name, content=`transactions`, content_rowid=`id`)"
             )
 
             // Create FTS5 triggers using rowid. We use 'manual_' prefix to avoid Room's magic.
@@ -768,32 +776,32 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
-                        .addMigrations(
-                            MIGRATION_4_5,
-                            MIGRATION_5_6,
-                            MIGRATION_6_7,
-                            MIGRATION_7_8,
-                            MIGRATION_8_9,
-                            MIGRATION_9_10,
-                            MIGRATION_10_11,
-                            MIGRATION_11_12,
-                            MIGRATION_12_13,
-                            MIGRATION_13_14,
-                            MIGRATION_14_15,
-                            MIGRATION_15_16,
-                            MIGRATION_16_17,
-                            MIGRATION_17_18,
-                            MIGRATION_18_19,
-                            MIGRATION_19_20,
-                            MIGRATION_20_21,
-                            MIGRATION_21_22,
-                            MIGRATION_22_23,
-                            MIGRATION_23_24,
-                            MIGRATION_24_25,
-                            MIGRATION_25_26,
-                            MIGRATION_26_27,
-                            MIGRATION_27_28
-                        )
+                    .addMigrations(
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9,
+                        MIGRATION_9_10,
+                        MIGRATION_10_11,
+                        MIGRATION_11_12,
+                        MIGRATION_12_13,
+                        MIGRATION_13_14,
+                        MIGRATION_14_15,
+                        MIGRATION_15_16,
+                        MIGRATION_16_17,
+                        MIGRATION_17_18,
+                        MIGRATION_18_19,
+                        MIGRATION_19_20,
+                        MIGRATION_20_21,
+                        MIGRATION_21_22,
+                        MIGRATION_22_23,
+                        MIGRATION_23_24,
+                        MIGRATION_24_25,
+                        MIGRATION_25_26,
+                        MIGRATION_26_27,
+                        MIGRATION_27_28
+                    )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

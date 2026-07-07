@@ -5,10 +5,10 @@ import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class CategoryRepositoryImpl @Inject constructor(

@@ -5,16 +5,13 @@ import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.isOutside
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
-import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
-import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -60,6 +57,7 @@ object TransactionEntryService {
                     // INCOME is positive impact. In a transfer, the Target side (destination) was receiving.
                     if (currentDestination.account is AccountRef.Wallet) currentDestination else currentSource
                 }
+
                 else -> {
                     // EXPENSE is negative impact. In a transfer, the Source side was giving.
                     if (currentSource.account is AccountRef.Wallet) currentSource else currentDestination
@@ -100,7 +98,8 @@ object TransactionEntryService {
                     // Expense account was giving money → remains the Source.
                     newSource = primarySide.copy(
                         categoryId = Category.SYSTEM_TRANSFER,
-                        amount = if (primarySide.amount.isEmpty()) "0" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString()
+                        amount = if (primarySide.amount.isEmpty()) "0" else primarySide.amountValue.abs()
+                            .stripTrailingZeros().toPlainString()
                     )
                     newDestination = TransactionSide(
                         account = otherSideRef,
@@ -110,13 +109,15 @@ object TransactionEntryService {
                     )
                 }
             }
+
             else -> {
                 // Moving between Income/Expense or from Transfer to Normal.
                 // Reset category if switching natures or leaving Transfer.
                 val needsCategoryReset = isTransferToNormal || oldMode != newMode
 
                 newSource = primarySide.copy(
-                    amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs().stripTrailingZeros().toPlainString(),
+                    amount = if (primarySide.amount.isEmpty()) "" else primarySide.amountValue.abs()
+                        .stripTrailingZeros().toPlainString(),
                     categoryId = if (needsCategoryReset) Category.SYSTEM_UNKNOWN else primarySide.categoryId
                 )
                 newDestination = TransactionSide()
@@ -321,8 +322,9 @@ object TransactionEntryService {
     ): PrefillResult {
         val sourceRef = accountId?.takeIf { it.isNotBlank() }?.let { AccountRef.fromStored(it) }
             ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
-        val targetRef = targetAccountId?.takeIf { it.isNotBlank() }?.let { AccountRef.fromStored(it) }
-            ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
+        val targetRef =
+            targetAccountId?.takeIf { it.isNotBlank() }?.let { AccountRef.fromStored(it) }
+                ?: if (entryMode == EntryMode.TRANSFER) AccountRef.Outside else AccountRef.Unselected
 
         val sourceAcc = sourceRef.resolve(accounts)
         val targetAcc = targetRef.resolve(accounts)
@@ -419,7 +421,9 @@ object TransactionEntryService {
             val transition = transitionType(
                 oldMode = currentState.entryMode,
                 newMode = if (currentState.entryMode == EntryMode.INCOME) EntryMode.EXPENSE else EntryMode.INCOME,
-                currentSource = currentState.source.copy(amount = inputAmount.abs().stripTrailingZeros().toPlainString()),
+                currentSource = currentState.source.copy(
+                    amount = inputAmount.abs().stripTrailingZeros().toPlainString()
+                ),
                 currentDestination = currentState.destination,
                 isSplitMode = isSplitMode
             )
@@ -445,8 +449,12 @@ object TransactionEntryService {
         )
 
         return currentState.copy(
-            source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-            destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+            source = currentState.source.copy(
+                amount = sync.sourceAmount.stripTrailingZeros().toPlainString()
+            ),
+            destination = currentState.destination.copy(
+                amount = sync.targetAmount.stripTrailingZeros().toPlainString()
+            ),
             exchangeRate = if (!currentState.isRateFixed || inputAmount.signum() != 0) sync.impliedRate else currentState.exchangeRate
         )
     }
@@ -471,8 +479,12 @@ object TransactionEntryService {
         )
 
         return currentState.copy(
-            source = currentState.source.copy(amount = sync.sourceAmount.stripTrailingZeros().toPlainString()),
-            destination = currentState.destination.copy(amount = sync.targetAmount.stripTrailingZeros().toPlainString()),
+            source = currentState.source.copy(
+                amount = sync.sourceAmount.stripTrailingZeros().toPlainString()
+            ),
+            destination = currentState.destination.copy(
+                amount = sync.targetAmount.stripTrailingZeros().toPlainString()
+            ),
             exchangeRate = if (!currentState.isRateFixed || inputAmount.signum() != 0) sync.impliedRate else currentState.exchangeRate
         )
     }
@@ -506,13 +518,17 @@ object TransactionEntryService {
                 // Source currency changed and destination is Outside → sync destination currency
                 isTransfer && !newRef.isOutside && currentState.destination.account.isOutside ->
                     currentState.destination.account to newCurrency
+
                 else ->
                     currentState.destination.account to currentState.destination.currency
             }
 
             currentState.copy(
                 source = currentState.source.copy(account = newRef, currency = newCurrency),
-                destination = currentState.destination.copy(account = finalTargetAccount, currency = finalTargetCurrency)
+                destination = currentState.destination.copy(
+                    account = finalTargetAccount,
+                    currency = finalTargetCurrency
+                )
             )
         } else {
             val isTransfer = currentState.entryMode == EntryMode.TRANSFER
@@ -529,12 +545,16 @@ object TransactionEntryService {
                     baseCurrency = baseCurrency
                 )
             }
-            val finalSourceCurrency = if (isTransfer && !newRef.isOutside && currentState.source.account.isOutside) {
-                newCurrency
-            } else currentState.source.currency
+            val finalSourceCurrency =
+                if (isTransfer && !newRef.isOutside && currentState.source.account.isOutside) {
+                    newCurrency
+                } else currentState.source.currency
 
             currentState.copy(
-                destination = currentState.destination.copy(account = newRef, currency = newCurrency),
+                destination = currentState.destination.copy(
+                    account = newRef,
+                    currency = newCurrency
+                ),
                 source = currentState.source.copy(currency = finalSourceCurrency)
             )
         }
@@ -563,13 +583,13 @@ object TransactionEntryService {
         exchangeRates: ExchangeRateSnapshot
     ): TransferSyncResult {
         val marketRate = getMarketRate(sourceCurrency, targetCurrency, exchangeRates)
-        
+
         return if (isFixed) {
             // FIXED MODE: Amounts are decoupled. Implied rate is calculated from current amounts.
             val implied = if (sourceAmount.signum() != 0) {
                 targetAmount.divide(sourceAmount, 8, RoundingMode.HALF_UP).stripTrailingZeros()
             } else BigDecimal.ONE
-            
+
             TransferSyncResult(sourceAmount, targetAmount, implied)
         } else {
             // AUTO MODE: Target is projected from Source (or vice-versa) using market rate.

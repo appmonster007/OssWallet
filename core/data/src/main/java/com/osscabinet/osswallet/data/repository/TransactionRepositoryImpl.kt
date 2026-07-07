@@ -12,18 +12,18 @@ import com.osscabinet.ossWallet.domain.model.CurrencySummary
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
-import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.util.joinByComma
 import com.osscabinet.ossWallet.domain.util.toSmartRegex
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 import java.math.RoundingMode
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 @Singleton
 class TransactionRepositoryImpl @Inject constructor(
@@ -73,7 +73,8 @@ class TransactionRepositoryImpl @Inject constructor(
         profileId: Int,
         filter: TransactionFilter
     ): Pair<String, List<Any>> {
-        val queryBuilder = StringBuilder("SELECT * FROM transactions WHERE profileId = ? AND status != 'DELETED'")
+        val queryBuilder =
+            StringBuilder("SELECT * FROM transactions WHERE profileId = ? AND status != 'DELETED'")
         val args = mutableListOf<Any>(profileId)
 
         val (startTime, endTime) = TimelineService.getDateRange(filter.timelineRange)
@@ -201,12 +202,12 @@ class TransactionRepositoryImpl @Inject constructor(
 
     private suspend fun syncTransactionTags(transactionId: Long, tagNames: Set<String>) {
         if (transactionId <= 0) return
-        
+
         val sanitizedNames = tagNames.filter { it.isNotBlank() }.map { it.trim() }.toSet()
-        
+
         // 1. Clear existing links for this transaction to allow a clean sync
         transactionDao.deleteTransactionTagCrossRefs(transactionId)
-        
+
         if (sanitizedNames.isEmpty()) return
 
         // 2. Ensure tags exist and collect their IDs uniquely by name
@@ -305,9 +306,16 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getTransactionById(id, profileId)?.toDomain()
     }
 
-    override suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction? {
+    override suspend fun getInitialBalanceTransaction(
+        accountId: String,
+        currency: String,
+        profileId: Int
+    ): Transaction? {
         return transactionDao.getInitialBalanceTransaction(
-            accountId, currency, listOf(com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE), profileId
+            accountId,
+            currency,
+            listOf(com.osscabinet.ossWallet.domain.model.Category.SYSTEM_INITIAL_BALANCE),
+            profileId
         )?.toDomain()
     }
 
@@ -416,12 +424,19 @@ class TransactionRepositoryImpl @Inject constructor(
                         databaseQueryService, profileId,
                         TransactionFilter(
                             accountIds = filter.accountIds,
-                            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(end = windowStart - 1)
+                            timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
+                                end = windowStart - 1
+                            )
                         )
                     ).map { summaryMap ->
                         summaryMap.mapValues { (accountId, byCurrency) ->
-                            val accountCurrency = accounts.find { it.id == accountId }?.currencyCode ?: baseCurrency
-                            com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalFinancialSummary(byCurrency, accountCurrency, exchangeRateSnapshot).totalAmount
+                            val accountCurrency =
+                                accounts.find { it.id == accountId }?.currencyCode ?: baseCurrency
+                            com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalFinancialSummary(
+                                byCurrency,
+                                accountCurrency,
+                                exchangeRateSnapshot
+                            ).totalAmount
                         }
                     }
                 } else Result.success(emptyMap<String, BigDecimal>())
@@ -434,23 +449,30 @@ class TransactionRepositoryImpl @Inject constructor(
                         .flatMap { (accId, accountTransactions) ->
                             val accountCurrency = accountMap[accId]?.currencyCode ?: baseCurrency
                             var runningBalance = startingBalances[accId ?: ""] ?: BigDecimal.ZERO
-                            
+
                             accountTransactions.map { transaction ->
-                                val txAmountInAccountCurrency = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
-                                    amount = transaction.amount,
-                                    fromCurrency = transaction.currency,
-                                    toCurrency = accountCurrency,
-                                    exchangeRates = exchangeRates,
-                                    precision = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision + 4
-                                )
+                                val txAmountInAccountCurrency =
+                                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.convertAmount(
+                                        amount = transaction.amount,
+                                        fromCurrency = transaction.currency,
+                                        toCurrency = accountCurrency,
+                                        exchangeRates = exchangeRates,
+                                        precision = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision + 4
+                                    )
 
                                 val balanceBefore = runningBalance
                                 runningBalance = runningBalance.add(txAmountInAccountCurrency)
-                                
+
                                 TransactionWithBalance(
                                     transaction = transaction,
-                                    balanceBefore = balanceBefore.setScale(com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision, RoundingMode.HALF_UP),
-                                    balanceAfter = runningBalance.setScale(com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision, RoundingMode.HALF_UP)
+                                    balanceBefore = balanceBefore.setScale(
+                                        com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+                                        RoundingMode.HALF_UP
+                                    ),
+                                    balanceAfter = runningBalance.setScale(
+                                        com.osscabinet.ossWallet.domain.service.currency.CurrencyService.precision,
+                                        RoundingMode.HALF_UP
+                                    )
                                 )
                             }
                         }

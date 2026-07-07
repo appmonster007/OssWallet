@@ -14,7 +14,12 @@ interface CardRepository {
 
     // New unified API
     fun getCardsConfig(context: ScreenContext): Flow<DashboardCardsConfig>
-    suspend fun updateCard(context: ScreenContext, cardId: String, update: (CardConfig) -> CardConfig)
+    suspend fun updateCard(
+        context: ScreenContext,
+        cardId: String,
+        update: (CardConfig) -> CardConfig
+    )
+
     suspend fun addCard(context: ScreenContext, card: CardConfig)
     suspend fun removeCard(context: ScreenContext, cardId: String)
     suspend fun reorderCards(context: ScreenContext, cards: List<CardConfig>)

@@ -3,11 +3,10 @@ package com.osscabinet.ossWallet.domain.service.aggregation
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregatedData
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
-import com.osscabinet.ossWallet.domain.model.query.MetricConfig
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
 import com.osscabinet.ossWallet.domain.model.query.TimeGranularity
-import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.query.AggregationPlanner
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -180,7 +179,11 @@ object TransactionAggregationService {
     ): Result<Map<String, Map<Long, Map<String, FinancialSummary>>>> {
         return queryService.aggregate(
             profileId = profileId,
-            dimensions = listOf(AggregationDimension.CATEGORY, AggregationDimension.CURRENCY, AggregationDimension.TIME),
+            dimensions = listOf(
+                AggregationDimension.CATEGORY,
+                AggregationDimension.CURRENCY,
+                AggregationDimension.TIME
+            ),
             metrics = StandardMetrics.defaultSet(),
             filter = filter,
             timeGranularity = TimeGranularity.DAY,
@@ -189,10 +192,13 @@ object TransactionAggregationService {
         ).map { dataList ->
             dataList.groupBy { it.dimensions[AggregationDimension.TIME] ?: "" }
                 .mapValues { (_, dayRows) ->
-                    dayRows.groupBy { it.dimensions[AggregationDimension.CATEGORY]?.toLongOrNull() ?: -1L }
+                    dayRows.groupBy {
+                        it.dimensions[AggregationDimension.CATEGORY]?.toLongOrNull() ?: -1L
+                    }
                         .mapValues { (_, catRows) ->
                             catRows.associate { row ->
-                                val currency = row.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
+                                val currency =
+                                    row.dimensions[AggregationDimension.CURRENCY] ?: "Unknown"
                                 currency to mapToFinancialSummary(row)
                             }
                         }

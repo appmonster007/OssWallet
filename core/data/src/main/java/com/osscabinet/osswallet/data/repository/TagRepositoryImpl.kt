@@ -5,10 +5,10 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.entity.TagEntity
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.repository.TagRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class TagRepositoryImpl @Inject constructor(
@@ -16,21 +16,50 @@ class TagRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao
 ) : TagRepository {
     override fun getAllTags(): Flow<List<Tag>> = tagDao.getAllTags().map { entities ->
-        entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex, profileId = it.profileId) }
+        entities.map {
+            Tag(
+                id = it.id,
+                name = it.name,
+                colorHex = it.colorHex,
+                profileId = it.profileId
+            )
+        }
     }
 
-    override fun getAllTags(profileId: Int): Flow<List<Tag>> = tagDao.getAllTags(profileId).map { entities ->
-        entities.map { Tag(id = it.id, name = it.name, colorHex = it.colorHex, profileId = it.profileId) }
-    }
+    override fun getAllTags(profileId: Int): Flow<List<Tag>> =
+        tagDao.getAllTags(profileId).map { entities ->
+            entities.map {
+                Tag(
+                    id = it.id,
+                    name = it.name,
+                    colorHex = it.colorHex,
+                    profileId = it.profileId
+                )
+            }
+        }
 
     override suspend fun insertTag(tag: Tag) {
         if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
-        tagDao.insertTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex, profileId = tag.profileId))
+        tagDao.insertTag(
+            TagEntity(
+                id = tag.id,
+                name = tag.name,
+                colorHex = tag.colorHex,
+                profileId = tag.profileId
+            )
+        )
     }
 
     override suspend fun deleteTag(tag: Tag) {
         if (Tag.isSystemTag(tag.id) || Tag.isSystemTag(tag.name)) return
-        tagDao.deleteTag(TagEntity(id = tag.id, name = tag.name, colorHex = tag.colorHex, profileId = tag.profileId))
+        tagDao.deleteTag(
+            TagEntity(
+                id = tag.id,
+                name = tag.name,
+                colorHex = tag.colorHex,
+                profileId = tag.profileId
+            )
+        )
     }
 
     override suspend fun deleteTagAndRemoveFromTransactions(tag: Tag) {
@@ -60,6 +89,13 @@ class TagRepositoryImpl @Inject constructor(
             // The junction table uses tagId, so no change needed there for a name change.
             // But if the ID were to change (it doesn't here), we'd need more logic.
         }
-        tagDao.insertTag(TagEntity(id = newTag.id, name = newTag.name, colorHex = newTag.colorHex, profileId = newTag.profileId))
+        tagDao.insertTag(
+            TagEntity(
+                id = newTag.id,
+                name = newTag.name,
+                colorHex = newTag.colorHex,
+                profileId = newTag.profileId
+            )
+        )
     }
 }

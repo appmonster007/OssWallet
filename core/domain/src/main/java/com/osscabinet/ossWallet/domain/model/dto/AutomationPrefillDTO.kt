@@ -1,7 +1,10 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
 import com.osscabinet.ossWallet.domain.model.EntryMode
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.PaymentSchedule
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import java.math.BigDecimal
 
 /**

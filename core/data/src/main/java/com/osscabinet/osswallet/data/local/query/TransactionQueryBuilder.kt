@@ -21,7 +21,12 @@ class TransactionQueryBuilder {
         plan: AggregationPlanner.AggregationPlan,
         excludeInternalTransfers: Boolean = false
     ): SupportSQLiteQuery {
-        return buildQuery(profileId, filter, plan = plan, excludeInternalTransfers = excludeInternalTransfers)
+        return buildQuery(
+            profileId,
+            filter,
+            plan = plan,
+            excludeInternalTransfers = excludeInternalTransfers
+        )
     }
 
     fun buildListQuery(

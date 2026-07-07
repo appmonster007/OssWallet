@@ -6,10 +6,10 @@ import com.osscabinet.ossWallet.data.mapper.toDomain
 import com.osscabinet.ossWallet.data.mapper.toEntity
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.repository.ProfileRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class ProfileRepositoryImpl @Inject constructor(

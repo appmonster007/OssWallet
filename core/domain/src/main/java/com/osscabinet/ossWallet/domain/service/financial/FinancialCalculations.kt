@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.domain.service.financial
 
-import com.osscabinet.ossWallet.domain.service.financial.FinancialDelta
-import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import java.math.BigDecimal
 import java.math.RoundingMode
 

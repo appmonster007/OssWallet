@@ -26,11 +26,11 @@ data class Category(
     val profileId: Int = 1
 ) {
     companion object {
-        val SYSTEM_OTHERS          = SystemCategory.OTHERS.id
-        val SYSTEM_MISSING         = SystemCategory.MISSING.id
-        val SYSTEM_UNKNOWN         = SystemCategory.UNKNOWN.id
+        val SYSTEM_OTHERS = SystemCategory.OTHERS.id
+        val SYSTEM_MISSING = SystemCategory.MISSING.id
+        val SYSTEM_UNKNOWN = SystemCategory.UNKNOWN.id
         val SYSTEM_INITIAL_BALANCE = SystemCategory.INITIAL_BALANCE.id // 1003
-        val SYSTEM_TRANSFER        = SystemCategory.TRANSFER.id        // 1005
+        val SYSTEM_TRANSFER = SystemCategory.TRANSFER.id        // 1005
 
         fun isSystemCategory(id: Long) = SystemCategory.entries.any { it.id == id }
         fun isInitialBalance(id: Long) = id == SYSTEM_INITIAL_BALANCE

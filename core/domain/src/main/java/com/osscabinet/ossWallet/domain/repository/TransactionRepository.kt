@@ -5,17 +5,30 @@ import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import kotlinx.coroutines.flow.Flow
-import java.math.BigDecimal
 
 interface TransactionRepository {
     fun getAllTransactions(profileId: Int): Flow<List<Transaction>>
     suspend fun getAllTransactionsSync(profileId: Int): List<Transaction>
     fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>>
-    suspend fun getFilteredTransactionsSync(profileId: Int, filter: TransactionFilter): List<Transaction>
+    suspend fun getFilteredTransactionsSync(
+        profileId: Int,
+        filter: TransactionFilter
+    ): List<Transaction>
+
     suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long
-    suspend fun saveTransfer(sourceTransaction: Transaction, targetTransaction: Transaction, profileId: Int): Pair<Long, Long>
+    suspend fun saveTransfer(
+        sourceTransaction: Transaction,
+        targetTransaction: Transaction,
+        profileId: Int
+    ): Pair<Long, Long>
+
     suspend fun deleteTransaction(id: Long, profileId: Int)
-    suspend fun updateTransaction(oldTransaction: Transaction, newTransaction: Transaction, profileId: Int)
+    suspend fun updateTransaction(
+        oldTransaction: Transaction,
+        newTransaction: Transaction,
+        profileId: Int
+    )
+
     fun getTransactionsByAccount(accountId: String, profileId: Int): Flow<List<Transaction>>
     suspend fun getTransactionById(id: Long, profileId: Int): Transaction?
 
@@ -47,9 +60,17 @@ interface TransactionRepository {
     fun observeUniqueNotes(profileId: Int): Flow<List<String>>
 
     suspend fun getCurrencySummaries(profileId: Int): List<CurrencySummary>
-    suspend fun getCurrencySummariesInRange(profileId: Int, start: Long, end: Long): List<CurrencySummary>
+    suspend fun getCurrencySummariesInRange(
+        profileId: Int,
+        start: Long,
+        end: Long
+    ): List<CurrencySummary>
 
-    suspend fun getInitialBalanceTransaction(accountId: String, currency: String, profileId: Int): Transaction?
+    suspend fun getInitialBalanceTransaction(
+        accountId: String,
+        currency: String,
+        profileId: Int
+    ): Transaction?
 
     /** Executes [block] inside a single database transaction. */
     suspend fun <T> runAtomically(block: suspend () -> T): T

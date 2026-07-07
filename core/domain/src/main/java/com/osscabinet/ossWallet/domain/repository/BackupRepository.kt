@@ -34,14 +34,25 @@ data class AutoBackupConfig(
 ) {
     @Serializable
     enum class StorageMode { PRIVATE, CUSTOM_FOLDER, BOTH }
+
     @Serializable
     enum class NotifyMode { ALWAYS, FAILURE_ONLY, NEVER }
 }
 
 interface BackupRepository {
-    suspend fun exportData(uriString: String, type: BackupType, scope: BackupScope = BackupScope.ALL_PROFILES): Result<Unit>
+    suspend fun exportData(
+        uriString: String,
+        type: BackupType,
+        scope: BackupScope = BackupScope.ALL_PROFILES
+    ): Result<Unit>
+
     suspend fun importData(uriString: String, type: BackupType): Result<Unit>
-    suspend fun importDataSelective(uriString: String, type: BackupType, entities: Set<RestorableEntity>): Result<Unit>
+    suspend fun importDataSelective(
+        uriString: String,
+        type: BackupType,
+        entities: Set<RestorableEntity>
+    ): Result<Unit>
+
     suspend fun deleteAllData(): Result<Unit>
     suspend fun exportToPrivateStorage(scope: BackupScope = BackupScope.ALL_PROFILES): Result<String>
     suspend fun listPrivateBackups(): List<BackupMeta>

@@ -2,7 +2,8 @@ package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 
-private val ALL_SCREENS = setOf(ScreenContext.DASHBOARD, ScreenContext.ACCOUNT_DETAIL, ScreenContext.ANALYTICS)
+private val ALL_SCREENS =
+    setOf(ScreenContext.DASHBOARD, ScreenContext.ACCOUNT_DETAIL, ScreenContext.ANALYTICS)
 
 /**
  * Single source of truth for all card types.

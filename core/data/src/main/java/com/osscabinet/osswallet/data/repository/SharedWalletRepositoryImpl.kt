@@ -5,13 +5,13 @@ import com.osscabinet.ossWallet.domain.model.SharedWallet
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.math.BigDecimal
 import java.util.UUID
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 /**
  * Mock implementation of SharedWalletRepository since actual Firebase configuration

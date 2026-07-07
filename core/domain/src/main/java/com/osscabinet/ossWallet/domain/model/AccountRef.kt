@@ -16,8 +16,11 @@ sealed interface AccountRef {
     data object Outside : AccountRef
 
     /** A real wallet selected by id. Invariant: id is non-blank. */
-    @JvmInline value class Wallet(val id: String) : AccountRef {
-        init { require(id.isNotBlank()) { "AccountRef.Wallet.id must be non-blank" } }
+    @JvmInline
+    value class Wallet(val id: String) : AccountRef {
+        init {
+            require(id.isNotBlank()) { "AccountRef.Wallet.id must be non-blank" }
+        }
     }
 
     companion object {
@@ -26,9 +29,9 @@ sealed interface AccountRef {
          * `null` => Unselected, `""` => Outside, non-blank => Wallet.
          */
         fun fromStored(id: String?): AccountRef = when {
-            id == null   -> Unselected
+            id == null -> Unselected
             id.isBlank() -> Outside
-            else         -> Wallet(id)
+            else -> Wallet(id)
         }
 
         /**
@@ -37,9 +40,9 @@ sealed interface AccountRef {
          * not Unselected.
          */
         fun fromTransferSide(id: String?): AccountRef = when {
-            id == null   -> Outside
+            id == null -> Outside
             id.isBlank() -> Outside
-            else         -> Wallet(id)
+            else -> Wallet(id)
         }
     }
 }
@@ -49,8 +52,8 @@ sealed interface AccountRef {
  */
 fun AccountRef.toStored(): String? = when (this) {
     AccountRef.Unselected -> null
-    AccountRef.Outside    -> ""
-    is AccountRef.Wallet  -> id
+    AccountRef.Outside -> ""
+    is AccountRef.Wallet -> id
 }
 
 /**
@@ -58,15 +61,15 @@ fun AccountRef.toStored(): String? = when (this) {
  */
 fun AccountRef.toDbTransferSide(): String? = when (this) {
     AccountRef.Unselected -> null
-    AccountRef.Outside    -> null
-    is AccountRef.Wallet  -> id
+    AccountRef.Outside -> null
+    is AccountRef.Wallet -> id
 }
 
 /** Resolve to a renderable [Account]. */
 fun AccountRef.resolve(accounts: List<Account>): Account? = when (this) {
     AccountRef.Unselected -> null
-    AccountRef.Outside    -> Account.OUTSIDE_WALLET
-    is AccountRef.Wallet  -> accounts.find { it.id == id }
+    AccountRef.Outside -> Account.OUTSIDE_WALLET
+    is AccountRef.Wallet -> accounts.find { it.id == id }
 }
 
 val AccountRef.isPicked: Boolean get() = this !is AccountRef.Unselected

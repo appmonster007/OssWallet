@@ -27,9 +27,9 @@ enum class PaymentMethod(
 
     companion object {
         fun fromString(value: String): PaymentMethod {
-            return entries.find { 
-                it.name.equals(value, ignoreCase = true) || 
-                it.displayName.equals(value, ignoreCase = true) 
+            return entries.find {
+                it.name.equals(value, ignoreCase = true) ||
+                        it.displayName.equals(value, ignoreCase = true)
             } ?: OTHER
         }
     }

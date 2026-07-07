@@ -18,7 +18,11 @@ interface PlannedPaymentRepository {
     fun getOccurrences(plannedPaymentId: Long): Flow<List<PlannedPaymentOccurrence>>
     suspend fun upsertOccurrence(occurrence: PlannedPaymentOccurrence): Long
     suspend fun updateOccurrenceStatus(occurrenceId: Long, status: OccurrenceStatus)
-    suspend fun getOccurrenceForDate(plannedPaymentId: Long, scheduledDate: Long): PlannedPaymentOccurrence?
+    suspend fun getOccurrenceForDate(
+        plannedPaymentId: Long,
+        scheduledDate: Long
+    ): PlannedPaymentOccurrence?
+
     suspend fun isTemplateUsedInPlannedPayments(templateId: Long): Boolean
     suspend fun getCountByTemplateId(templateId: Long): Int
 }

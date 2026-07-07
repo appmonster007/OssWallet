@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.domain.service.timeline
 
-import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
-import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
@@ -10,13 +8,14 @@ import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionGroup
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
+import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
+import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import java.math.BigDecimal
 import java.time.DayOfWeek
 import java.time.Instant
@@ -73,33 +72,52 @@ object TimelineService {
             ThisPeriodType.TODAY -> base.toLocalDate().atStartOfDay(base.zone)
             ThisPeriodType.WEEK -> base.toLocalDate()
                 .with(TemporalAdjusters.previousOrSame(firstDayOfWeek)).atStartOfDay(base.zone)
-            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
+
+            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.firstDayOfMonth())
+                .atStartOfDay(base.zone)
+
             ThisPeriodType.QUARTER -> {
                 val month = base.monthValue
                 val firstMonthOfQuarter = ((month - 1) / 3) * 3 + 1
-                base.toLocalDate().withMonth(firstMonthOfQuarter).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
+                base.toLocalDate().withMonth(firstMonthOfQuarter)
+                    .with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
             }
+
             ThisPeriodType.HALF_YEAR -> {
                 val firstMonthOfHalf = if (base.monthValue <= 6) 1 else 7
-                base.toLocalDate().withMonth(firstMonthOfHalf).with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
+                base.toLocalDate().withMonth(firstMonthOfHalf)
+                    .with(TemporalAdjusters.firstDayOfMonth()).atStartOfDay(base.zone)
             }
-            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.firstDayOfYear()).atStartOfDay(base.zone)
+
+            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.firstDayOfYear())
+                .atStartOfDay(base.zone)
         }
         val end: ZonedDateTime = when (period) {
             ThisPeriodType.TODAY -> base.toLocalDate().atTime(LocalTime.MAX).atZone(base.zone)
             ThisPeriodType.WEEK -> start.toLocalDate()
-                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX).atZone(base.zone)
-            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
+                .with(TemporalAdjusters.nextOrSame(firstDayOfWeek.plus(6))).atTime(LocalTime.MAX)
+                .atZone(base.zone)
+
+            ThisPeriodType.MONTH -> base.toLocalDate().with(TemporalAdjusters.lastDayOfMonth())
+                .atTime(LocalTime.MAX).atZone(base.zone)
+
             ThisPeriodType.QUARTER -> {
                 val month = base.monthValue
                 val lastMonthOfQuarter = ((month - 1) / 3) * 3 + 3
-                base.toLocalDate().withMonth(lastMonthOfQuarter).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
+                base.toLocalDate().withMonth(lastMonthOfQuarter)
+                    .with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX)
+                    .atZone(base.zone)
             }
+
             ThisPeriodType.HALF_YEAR -> {
                 val lastMonthOfHalf = if (base.monthValue <= 6) 6 else 12
-                base.toLocalDate().withMonth(lastMonthOfHalf).with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX).atZone(base.zone)
+                base.toLocalDate().withMonth(lastMonthOfHalf)
+                    .with(TemporalAdjusters.lastDayOfMonth()).atTime(LocalTime.MAX)
+                    .atZone(base.zone)
             }
-            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.lastDayOfYear()).atTime(LocalTime.MAX).atZone(base.zone)
+
+            ThisPeriodType.YEAR -> base.toLocalDate().with(TemporalAdjusters.lastDayOfYear())
+                .atTime(LocalTime.MAX).atZone(base.zone)
         }
         return Pair(start.toInstant().toEpochMilli(), end.toInstant().toEpochMilli())
     }
@@ -117,7 +135,7 @@ object TimelineService {
         } else {
             ZonedDateTime.now(systemZoneId)
         }
-        
+
         // Duration of one period
         val (startDelta, endDelta) = when (period) {
             LastPeriodType.LAST_24H -> Pair(now.minusHours(24), now)
@@ -133,14 +151,17 @@ object TimelineService {
 
         val finalStart = startDelta.toInstant().toEpochMilli() + totalOffsetMs
         val finalEnd = endDelta.toInstant().toEpochMilli() + totalOffsetMs
-        
+
         return Pair(finalStart, finalEnd)
     }
 
     /**
      * Extracts the date range from a timeline range.
      */
-    fun getDateRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
+    fun getDateRange(
+        timelineRange: TimelineRange,
+        referenceTime: Long? = null
+    ): Pair<Long?, Long?> {
         val baseRange = when (timelineRange) {
             is TimelineRange.AllTime -> Pair(null, null)
             is TimelineRange.ThisPeriod -> getRangeForThis(
@@ -189,13 +210,20 @@ object TimelineService {
         val maxTs = maxOf(transactions.maxOf { it.timestamp }, now)
 
         val zone = systemZoneId
-        val resolvedStart = Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
-        val resolvedEnd = Instant.ofEpochMilli(maxTs).atZone(zone).toLocalDate().atTime(23, 59, 59, 999).atZone(zone).toInstant().toEpochMilli()
+        val resolvedStart =
+            Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant()
+                .toEpochMilli()
+        val resolvedEnd =
+            Instant.ofEpochMilli(maxTs).atZone(zone).toLocalDate().atTime(23, 59, 59, 999)
+                .atZone(zone).toInstant().toEpochMilli()
 
         return Pair(resolvedStart, resolvedEnd)
     }
 
-    fun getPreviousRange(timelineRange: TimelineRange, referenceTime: Long? = null): Pair<Long?, Long?> {
+    fun getPreviousRange(
+        timelineRange: TimelineRange,
+        referenceTime: Long? = null
+    ): Pair<Long?, Long?> {
         val prevRange = shiftRange(timelineRange, -1)
         return getDateRange(prevRange, referenceTime = referenceTime)
     }
@@ -256,11 +284,18 @@ object TimelineService {
         val accountMap = accounts.associateBy { it.id }
         val categoryMap = categories.associateBy { it.id }
         val tagMap = allTags.associateBy { it.name }
-        val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
+        val tagUiModelCache =
+            mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
 
         return transactions.map { tx ->
             val amountInBase = if (tx.currency != baseCurrency) {
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(
+                    tx.amount,
+                    tx.currency,
+                    baseCurrency,
+                    exchangeRates,
+                    precision
+                )
             } else tx.amount
 
             ConfirmedTransactionUiModel(
@@ -270,7 +305,14 @@ object TimelineService {
                 categoryName = categoryMap[tx.categoryId]?.name ?: "Uncategorized",
                 categoryIcon = categoryMap[tx.categoryId]?.iconName,
                 categoryColor = categoryMap[tx.categoryId]?.colorHex ?: 0,
-                tags = tx.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
+                tags = tx.tags.map { name ->
+                    tagUiModelCache.getOrPut(name) {
+                        com.osscabinet.ossWallet.domain.model.TagUiModel(
+                            name,
+                            tagMap[name]?.colorHex ?: -1
+                        )
+                    }
+                },
                 amountInBase = amountInBase,
                 linkedTransactionIds = emptyList()
             )
@@ -303,13 +345,20 @@ object TimelineService {
         val accountMap = accounts.associateBy { it.id }
         val categoryMap = categories.associateBy { it.id }
         val tagMap = allTags.associateBy { it.name }
-        val tagUiModelCache = mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
+        val tagUiModelCache =
+            mutableMapOf<String, com.osscabinet.ossWallet.domain.model.TagUiModel>()
 
         // 1. Enrich Records (O(N))
         val enrichedTransactions = transactions.map { txWithBalance ->
             val tx = txWithBalance.transaction
             val amountInBase = if (tx.currency != baseCurrency) {
-                CurrencyService.convertAmount(tx.amount, tx.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(
+                    tx.amount,
+                    tx.currency,
+                    baseCurrency,
+                    exchangeRates,
+                    precision
+                )
             } else tx.amount
 
             ConfirmedTransactionUiModel(
@@ -319,7 +368,14 @@ object TimelineService {
                 categoryName = categoryMap[tx.categoryId]?.name ?: "Uncategorized",
                 categoryIcon = categoryMap[tx.categoryId]?.iconName,
                 categoryColor = categoryMap[tx.categoryId]?.colorHex ?: 0,
-                tags = tx.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
+                tags = tx.tags.map { name ->
+                    tagUiModelCache.getOrPut(name) {
+                        com.osscabinet.ossWallet.domain.model.TagUiModel(
+                            name,
+                            tagMap[name]?.colorHex ?: -1
+                        )
+                    }
+                },
                 amountInBase = amountInBase,
                 linkedTransactionIds = linkedTransactionIds[tx.id] ?: emptyList()
             )
@@ -328,39 +384,61 @@ object TimelineService {
         val enrichedPlanned = plannedPayments.map { item ->
             val pp = item.plannedPayment
             val amountInBase = if (pp.currency != baseCurrency) {
-                CurrencyService.convertAmount(pp.amount, pp.currency, baseCurrency, exchangeRates, precision)
+                CurrencyService.convertAmount(
+                    pp.amount,
+                    pp.currency,
+                    baseCurrency,
+                    exchangeRates,
+                    precision
+                )
             } else pp.amount
 
             PlannedPaymentUiModel(
-                paymentId = pp.id, occurrenceId = item.occurrenceId, timestamp = item.scheduledDate,
-                amount = pp.amount, currency = pp.currency,
+                paymentId = pp.id,
+                occurrenceId = item.occurrenceId,
+                timestamp = item.scheduledDate,
+                amount = pp.amount,
+                currency = pp.currency,
                 categoryName = categoryMap[pp.categoryId]?.name ?: "Uncategorized",
                 categoryIcon = categoryMap[pp.categoryId]?.iconName,
                 categoryColor = categoryMap[pp.categoryId]?.colorHex ?: 0,
                 accountName = accountMap[pp.accountId]?.name ?: "Unknown",
                 accountCurrency = accountMap[pp.accountId]?.currencyCode ?: pp.currency,
-                note = pp.note, tags = pp.tags.map { name -> tagUiModelCache.getOrPut(name) { com.osscabinet.ossWallet.domain.model.TagUiModel(name, tagMap[name]?.colorHex ?: -1) } },
-                amountInBase = amountInBase, isOverdue = item.isOverdue
+                note = pp.note,
+                tags = pp.tags.map { name ->
+                    tagUiModelCache.getOrPut(name) {
+                        com.osscabinet.ossWallet.domain.model.TagUiModel(
+                            name,
+                            tagMap[name]?.colorHex ?: -1
+                        )
+                    }
+                },
+                amountInBase = amountInBase,
+                isOverdue = item.isOverdue
             )
         }
 
-        val allItems: List<RecordUiModel> = (enrichedTransactions + enrichedPlanned).sortedByDescending { it.timestamp }
+        val allItems: List<RecordUiModel> =
+            (enrichedTransactions + enrichedPlanned).sortedByDescending { it.timestamp }
         val groupsMap = allItems.groupBy { getGroupKey(it.timestamp, groupingType) }
 
         // 2. Optimized O(N) Balance Calculation for Headers using Anchor & Delta
         val sortedHistory = absoluteHistory.sortedBy { it.transaction.timestamp }
         val sortedGroupKeys = groupsMap.keys.sorted()
-        
+
         val openingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
         val closingBalancesMap = mutableMapOf<String, Map<String, BigDecimal>>()
-        val currentAccountBalances = accounts.associate { it.id to (initialBalances[it.id] ?: BigDecimal.ZERO) }.toMutableMap()
+        val currentAccountBalances =
+            accounts.associate { it.id to (initialBalances[it.id] ?: BigDecimal.ZERO) }
+                .toMutableMap()
 
         fun captureBalances(): Map<String, BigDecimal> {
             val balancesByCurrency = mutableMapOf<String, BigDecimal>()
             currentAccountBalances.forEach { (accId, balance) ->
                 val account = accountMap[accId]
                 val currency = account?.currencyCode ?: baseCurrency
-                balancesByCurrency[currency] = (balancesByCurrency[currency] ?: BigDecimal.ZERO).add(balance)
+                balancesByCurrency[currency] =
+                    (balancesByCurrency[currency] ?: BigDecimal.ZERO).add(balance)
             }
             return balancesByCurrency
         }
@@ -368,18 +446,18 @@ object TimelineService {
         var historyIdx = 0
         sortedGroupKeys.forEach { key ->
             openingBalancesMap[key] = captureBalances()
-            
+
             while (historyIdx < sortedHistory.size) {
                 val txWithBalance = sortedHistory[historyIdx]
                 val txKey = getGroupKey(txWithBalance.transaction.timestamp, groupingType)
                 if (txKey > key) break
-                
+
                 txWithBalance.transaction.accountId?.let { accId ->
                     currentAccountBalances[accId] = txWithBalance.balanceAfter
                 }
                 historyIdx++
             }
-            
+
             closingBalancesMap[key] = captureBalances()
         }
 
@@ -388,15 +466,37 @@ object TimelineService {
             val groupItems = groupsMap[key] ?: emptyList()
             val opening = openingBalancesMap[key] ?: emptyMap()
             val closing = closingBalancesMap[key] ?: emptyMap()
-            
-            val summaryByCurrency = AggregationService.calculateSummaryByCurrency(groupItems.filterIsInstance<ConfirmedTransactionUiModel>().map { it.item.transaction })
+
+            val summaryByCurrency = AggregationService.calculateSummaryByCurrency(
+                groupItems.filterIsInstance<ConfirmedTransactionUiModel>()
+                    .map { it.item.transaction })
             val incomeByCurrency = summaryByCurrency.mapValues { it.value.income }
             val expenseByCurrency = summaryByCurrency.mapValues { it.value.expense }
-            
-            val incomeBase = CurrencyService.calculateTotalInCurrency(incomeByCurrency, baseCurrency, exchangeRates, precision)
-            val expenseBase = CurrencyService.calculateTotalInCurrency(expenseByCurrency, baseCurrency, exchangeRates, precision)
-            val totalOpeningBase = CurrencyService.calculateTotalInCurrency(opening, baseCurrency, exchangeRates, precision)
-            val totalClosingBase = CurrencyService.calculateTotalInCurrency(closing, baseCurrency, exchangeRates, precision)
+
+            val incomeBase = CurrencyService.calculateTotalInCurrency(
+                incomeByCurrency,
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+            val expenseBase = CurrencyService.calculateTotalInCurrency(
+                expenseByCurrency,
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+            val totalOpeningBase = CurrencyService.calculateTotalInCurrency(
+                opening,
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
+            val totalClosingBase = CurrencyService.calculateTotalInCurrency(
+                closing,
+                baseCurrency,
+                exchangeRates,
+                precision
+            )
 
             TransactionGroup(
                 key = key,
@@ -407,7 +507,8 @@ object TimelineService {
                     expenseByCurrency = expenseByCurrency,
                     openingBalancesByCurrency = opening,
                     closingBalancesByCurrency = closing,
-                    allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys + opening.keys + closing.keys).distinct().sorted(),
+                    allCurrencies = (incomeByCurrency.keys + expenseByCurrency.keys + opening.keys + closing.keys).distinct()
+                        .sorted(),
                     incomeBase = incomeBase,
                     expenseBase = expenseBase,
                     netBase = incomeBase.add(expenseBase),
@@ -427,9 +528,13 @@ object TimelineService {
                 when (date) {
                     today -> "Today"
                     today.minusDays(1) -> "Yesterday"
-                    else -> date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+                    else -> date.dayOfWeek.getDisplayName(
+                        java.time.format.TextStyle.FULL,
+                        Locale.getDefault()
+                    )
                 }
             }
+
             TransactionGroupingType.BY_WEEK -> "WEEK ${key.split("-W")[1]}"
         }
     }
@@ -441,7 +546,9 @@ object TimelineService {
                 val parts = key.split("-W")
                 val year = parts[0].toInt()
                 val week = parts[1].toInt()
-                val start = LocalDate.now(systemZoneId).withYear(year).with(weekFields.weekOfWeekBasedYear(), week.toLong()).with(weekFields.dayOfWeek(), 1)
+                val start = LocalDate.now(systemZoneId).withYear(year)
+                    .with(weekFields.weekOfWeekBasedYear(), week.toLong())
+                    .with(weekFields.dayOfWeek(), 1)
                 "${start.format(shortDateFormatter)} - ${start.plusDays(6).format(dateFormatter)}"
             }
         }

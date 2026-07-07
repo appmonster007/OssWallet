@@ -50,7 +50,8 @@ class SettingsDataStore(private val context: Context) {
         val ACCOUNT_DETAIL_CARDS_CONFIG_KEY = stringPreferencesKey("account_detail_cards_config")
         val ACCOUNTS_VIEW_CARDS_CONFIG_KEY = stringPreferencesKey("accounts_view_cards_config")
         val ANALYTICS_CARDS_CONFIG_KEY = stringPreferencesKey("analytics_cards_config")
-        val ANALYTICS_COMMON_FILTER_ENABLED_KEY = booleanPreferencesKey("analytics_common_filter_enabled")
+        val ANALYTICS_COMMON_FILTER_ENABLED_KEY =
+            booleanPreferencesKey("analytics_common_filter_enabled")
         val GLASSMORPHISM_ENABLED_KEY = booleanPreferencesKey("glassmorphism_enabled")
         val CONTOUR_BG_VERSION_KEY = intPreferencesKey("contour_bg_version")
         val CONTOUR_LINES_ENABLED_KEY = booleanPreferencesKey("contour_lines_enabled")
@@ -194,7 +195,11 @@ class SettingsDataStore(private val context: Context) {
 
     val autoBackupConfig: Flow<AutoBackupConfig> = context.dataStore.data.map { prefs ->
         prefs[AUTO_BACKUP_CONFIG_KEY]?.let {
-            try { Json.decodeFromString<AutoBackupConfig>(it) } catch (_: Exception) { AutoBackupConfig() }
+            try {
+                Json.decodeFromString<AutoBackupConfig>(it)
+            } catch (_: Exception) {
+                AutoBackupConfig()
+            }
         } ?: AutoBackupConfig()
     }
 
@@ -415,7 +420,8 @@ class SettingsDataStore(private val context: Context) {
     }
 
     val uiDensity: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[UI_DENSITY_KEY] ?: com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name
+        preferences[UI_DENSITY_KEY]
+            ?: com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name
     }
 
     suspend fun saveUiDensity(name: String) {

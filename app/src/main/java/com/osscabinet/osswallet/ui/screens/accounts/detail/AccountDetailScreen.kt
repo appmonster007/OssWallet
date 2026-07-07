@@ -38,8 +38,10 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -169,8 +171,9 @@ fun AccountDetailScreen(
                 val filter = Json.decodeFromString<TransactionFilter>(decoded)
                 accountDetailViewModel.updateFilter(filter)
             } catch (e: Exception) {
-                snackbarHostState.showSnackbar(
-                    message = loadFilterErrorMessage
+                snackbarHostState.showAeonSnackbar(
+                    message = loadFilterErrorMessage,
+                    type = AeonSnackbarType.ERROR
                 )
             }
         }
@@ -320,8 +323,7 @@ fun AccountDetailScreen(
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
                 Scaffold(
-                    containerColor = Color.Transparent,
-                    snackbarHost = { SnackbarHost(snackbarHostState) }
+                    containerColor = Color.Transparent
                 ) { screenPadding ->
                     Column(
                         modifier = Modifier
@@ -547,6 +549,9 @@ fun AccountDetailScreen(
                         }
                     } else null
                 )
+
+                // 2. Snackbar Layer
+                AeonSnackbarHost(hostState = snackbarHostState)
 
                 // 3. Top Bar Layer (Layer 3 - Floating Pills)
                 AeonTopAppBar(

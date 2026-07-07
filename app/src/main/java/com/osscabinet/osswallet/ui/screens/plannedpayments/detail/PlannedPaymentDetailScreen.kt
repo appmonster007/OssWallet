@@ -47,9 +47,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -161,10 +163,11 @@ fun PlannedPaymentDetailScreen(
         val action = lastUndoAction ?: return@LaunchedEffect
         val message =
             if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
-        val result = snackbarHostState.showSnackbar(
+        val result = snackbarHostState.showAeonSnackbar(
             message = message,
             actionLabel = "Undo",
-            duration = SnackbarDuration.Short
+            duration = SnackbarDuration.Short,
+            type = AeonSnackbarType.SUCCESS
         )
         if (result == SnackbarResult.ActionPerformed) {
             viewModel.undoLastAction()
@@ -325,7 +328,6 @@ fun PlannedPaymentDetailContent(
     }
 
     val pillHeight = AeonSize.D64.value
-    val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     AeonHazeProvider { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -605,14 +607,7 @@ fun PlannedPaymentDetailContent(
             )
 
             // 3. Snackbar Layer (above navigation pill)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = pillHeight + navigationBarHeight + 8.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                SnackbarHost(hostState = snackbarHostState)
-            }
+            AeonSnackbarHost(hostState = snackbarHostState)
 
             // 4. Top Bar Layer
             AeonTopAppBar(

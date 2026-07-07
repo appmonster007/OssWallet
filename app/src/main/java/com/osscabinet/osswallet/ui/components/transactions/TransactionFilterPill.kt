@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -175,6 +176,16 @@ fun TransactionFilterPill(
                     PillState.Expanded at expandedTopPx
                 }
             )
+        }
+
+        // Clear focus if user starts dragging down from expanded state
+        LaunchedEffect(draggableState) {
+            snapshotFlow { draggableState.offset }
+                .collect { offset ->
+                    if (!offset.isNaN() && offset > expandedTopPx + 30f) {
+                        focusManager.clearFocus()
+                    }
+                }
         }
 
         val nestedScrollConnection = remember(draggableState, scope, actions) {

@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
 import androidx.compose.material3.SnackbarHostState
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,7 +63,7 @@ fun TransactionListScreen(
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showAeonSnackbar(it)
             viewModel.clearSnackbar()
         }
     }

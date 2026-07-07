@@ -1,12 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
-import com.osscabinet.ossWallet.domain.model.resolve
-import com.osscabinet.ossWallet.domain.model.toStored
-
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
@@ -16,7 +13,8 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toStored
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.FormSheetState
@@ -93,23 +91,24 @@ data class PlannedPaymentEntryState(
     val fullProviderCurrencies: List<String> = emptyList(),
     val exchangeRates: Map<String, BigDecimal> = emptyMap()
 ) {
-    val sheetState: FormSheetState get() = FormSheetState(
-        showAccount = showAccountSheet,
-        showTargetAccount = showTargetAccountSheet,
-        showCategory = showCategorySheet,
-        showPaymentMethod = showPaymentMethodSheet,
-        showStatus = showTransactionStatusSheet,
-        showTag = showTagSheet,
-        showCurrency = showCurrencySheet,
-        showTargetCurrency = showTargetCurrencySheet,
-        showExchangeRate = showExchangeRateDialog,
-        showDate = false, // Handled by schedule builder
-        showWarrantyDate = showWarrantyDatePicker,
-        showLocation = showLocationSheet,
-        showLinkedTransaction = showLinkedTransactionSheet,
-        isNumpadVisible = showNumpad,
-        activeAmountSide = activeAmountSide
-    )
+    val sheetState: FormSheetState
+        get() = FormSheetState(
+            showAccount = showAccountSheet,
+            showTargetAccount = showTargetAccountSheet,
+            showCategory = showCategorySheet,
+            showPaymentMethod = showPaymentMethodSheet,
+            showStatus = showTransactionStatusSheet,
+            showTag = showTagSheet,
+            showCurrency = showCurrencySheet,
+            showTargetCurrency = showTargetCurrencySheet,
+            showExchangeRate = showExchangeRateDialog,
+            showDate = false, // Handled by schedule builder
+            showWarrantyDate = showWarrantyDatePicker,
+            showLocation = showLocationSheet,
+            showLinkedTransaction = showLinkedTransactionSheet,
+            isNumpadVisible = showNumpad,
+            activeAmountSide = activeAmountSide
+        )
 
     // Legacy mapping
     val amount: String get() = source.amount

@@ -2,9 +2,11 @@ package com.osscabinet.ossWallet.ui.components.entry
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,12 +21,15 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CurrencyExchange
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.SyncDisabled
 import androidx.compose.material.icons.rounded.Title
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +38,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.ui.components.GlassSurface
-import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -44,12 +49,6 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.material.icons.rounded.Sync
-import androidx.compose.material.icons.rounded.SyncDisabled
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.VerticalDivider
-import androidx.core.graphics.toColorInt
 
 /**
  * Pill component for displaying and toggling exchange rate mode.
@@ -81,7 +80,10 @@ fun ExchangeRatePill(
                 horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
                 modifier = Modifier
                     .clickable { onClick() }
-                    .padding(horizontal = AeonTheme.dimensions.spacingMd, vertical = AeonTheme.dimensions.spacingSm)
+                    .padding(
+                        horizontal = AeonTheme.dimensions.spacingMd,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    )
             ) {
                 Icon(
                     Icons.Rounded.CurrencyExchange,
@@ -90,7 +92,9 @@ fun ExchangeRatePill(
                     tint = AppColors.primary
                 )
                 Text(
-                    text = "1:${rate.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()}",
+                    text = "1:${
+                        rate.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+                    }",
                     style = AppTextStyles.chipLabel,
                     color = AppColors.primary
                 )
@@ -106,7 +110,10 @@ fun ExchangeRatePill(
             Box(
                 modifier = Modifier
                     .clickable { onToggleMode() }
-                    .padding(horizontal = AeonTheme.dimensions.spacingSm, vertical = AeonTheme.dimensions.spacingSm),
+                    .padding(
+                        horizontal = AeonTheme.dimensions.spacingSm,
+                        vertical = AeonTheme.dimensions.spacingSm
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -197,7 +204,9 @@ fun AeonImpactHeaderCard(
     }
 
     // Default colors based on entry mode if not explicitly provided
-    val defaultSourceColor = if (isTransfer) Color(expenseColorHex.toColorInt()) else Color(transactionType.colorHex().toColorInt())
+    val defaultSourceColor = if (isTransfer) Color(expenseColorHex.toColorInt()) else Color(
+        transactionType.colorHex().toColorInt()
+    )
     val defaultTargetColor = if (isTransfer) Color(incomeColorHex.toColorInt()) else null
 
     AeonImpactHeaderCard(
@@ -286,16 +295,18 @@ fun <T> AeonImpactHeaderCard(
             }
 
             // "" = outside wallet explicitly chosen; null = not yet selected — semantically distinct
-            val isOutsideSource    = isTransfer && accountId?.isBlank() == true
-            val isOutsideTarget    = isTransfer && targetAccountId?.isBlank() == true
-            val bothWalletAccounts = isTransfer && !accountId.isNullOrBlank() && !targetAccountId.isNullOrBlank()
+            val isOutsideSource = isTransfer && accountId?.isBlank() == true
+            val isOutsideTarget = isTransfer && targetAccountId?.isBlank() == true
+            val bothWalletAccounts =
+                isTransfer && !accountId.isNullOrBlank() && !targetAccountId.isNullOrBlank()
             // Outside→Wallet: source is outside wallet AND target is a real wallet account (non-null, non-blank)
-            val isOutsideToWallet  = isOutsideSource && !targetAccountId.isNullOrBlank()
+            val isOutsideToWallet = isOutsideSource && !targetAccountId.isNullOrBlank()
 
             val primaryAmount = if (isOutsideToWallet && target != null) target else source
             // Any outside-source transfer is "money coming in" — use income styling even before target is picked
-            val primaryPrefix  = if (isOutsideSource) "+" else amountPrefix
-            val primaryColor   = if (isOutsideSource) (target?.color ?: AppColors.contentPrimary) else activeAmountColor
+            val primaryPrefix = if (isOutsideSource) "+" else amountPrefix
+            val primaryColor = if (isOutsideSource) (target?.color
+                ?: AppColors.contentPrimary) else activeAmountColor
 
             if (showAmount) {
                 Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth()) {

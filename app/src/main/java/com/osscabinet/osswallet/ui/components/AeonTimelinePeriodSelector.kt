@@ -66,7 +66,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
-import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -572,7 +571,10 @@ fun AeonTimelinePeriodTogglePreview() {
 
             Text("Exclude Future: FALSE (Lined Icon)")
             AeonTimelinePeriodSelector(
-                currentRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false),
+                currentRange = TimelineRange.ThisPeriod(
+                    ThisPeriodType.MONTH,
+                    excludeFuture = false
+                ),
                 onRangeSelected = {}
             )
         }

@@ -85,7 +85,10 @@ abstract class BaseEntryViewModel(
                 toCurrency = dstCurrency,
                 exchangeRates = rates
             )
-            applyRateUpdate(rate, TransactionEntryService.calculateTargetAmount(getAmountValue(), rate))
+            applyRateUpdate(
+                rate,
+                TransactionEntryService.calculateTargetAmount(getAmountValue(), rate)
+            )
         }
     }
 }

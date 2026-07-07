@@ -15,15 +15,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import androidx.compose.runtime.staticCompositionLocalOf
-import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.formatter.ThemeHelper
+import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.UiDensity
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
@@ -184,6 +184,7 @@ fun applyIdentityToColorScheme(
             h.copy(primary = accentOverride, onPrimary = onAccent)
         } else h
     }
+
     else -> base
 }
 
@@ -302,8 +303,8 @@ fun OssWalletPreviewTheme(
     }
     val baseScheme = when (theme) {
         "Amoled" -> AmoledColorScheme
-        "Dark"   -> darkColorScheme()
-        else     -> lightColorScheme()
+        "Dark" -> darkColorScheme()
+        else -> lightColorScheme()
     }
     // Reflect the active identity (H) so previews match the real app across Light/Dark/AMOLED.
     val colorScheme = applyIdentityToColorScheme(baseScheme, UiIdentity.DEFAULT, themeMode)

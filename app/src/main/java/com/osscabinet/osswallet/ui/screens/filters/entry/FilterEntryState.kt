@@ -62,9 +62,10 @@ data class FilterEntryState(
     val existingFilter: Filter? = null,
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
-    val errors: Set<EntryField> get() = buildSet {
-        if (name.isBlank()) add(EntryField.NAME)
-    }
+    val errors: Set<EntryField>
+        get() = buildSet {
+            if (name.isBlank()) add(EntryField.NAME)
+        }
 
     val hasError: Boolean get() = errors.isNotEmpty()
 

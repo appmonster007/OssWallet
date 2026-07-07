@@ -136,7 +136,8 @@ fun AeonTransactionSplitContent(
 ) {
     val dims = AeonTheme.dimensions
     val status = remember(totalAmount, splits) { SplitStatus.compute(totalAmount, splits) }
-    val currentSum = remember(splits) { splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO } }
+    val currentSum =
+        remember(splits) { splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO } }
     val progress = remember(currentSum, totalAmount) {
         if (totalAmount.signum() == 0) 0f
         else currentSum.divide(totalAmount, 4, RoundingMode.HALF_UP).toFloat().coerceIn(0f, 1.2f)
@@ -269,9 +270,21 @@ private fun SplitStatusPill(
     currency: String
 ) {
     val (label, color) = when (status) {
-        is SplitStatus.OverAllocated -> "OVER BY ${formatCurrency(status.excess, currency)}" to AppColors.error
+        is SplitStatus.OverAllocated -> "OVER BY ${
+            formatCurrency(
+                status.excess,
+                currency
+            )
+        }" to AppColors.error
+
         is SplitStatus.Balanced -> "BALANCED" to AppColors.positive
-        is SplitStatus.Splitting -> "SPLITTING (${formatCurrency(status.remaining, currency)} LEFT)" to AppColors.primary
+        is SplitStatus.Splitting -> "SPLITTING (${
+            formatCurrency(
+                status.remaining,
+                currency
+            )
+        } LEFT)" to AppColors.primary
+
         is SplitStatus.Drafting -> "REMAINING" to AppColors.contentSecondary
     }
     Row(
@@ -388,8 +401,12 @@ private fun SplitHeaderCard(
                     splits.forEach { split ->
                         val splitAmount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         if (splitAmount.signum() > 0 && totalAmount.signum() > 0) {
-                            val fraction = splitAmount.divide(totalAmount, 8, RoundingMode.HALF_UP).toFloat()
-                            val catColor = categories.find { it.id == split.categoryId }?.colorHex?.let { Color(it) } ?: primaryColor
+                            val fraction =
+                                splitAmount.divide(totalAmount, 8, RoundingMode.HALF_UP).toFloat()
+                            val catColor =
+                                categories.find { it.id == split.categoryId }?.colorHex?.let {
+                                    Color(it)
+                                } ?: primaryColor
                             list.add(ProgressBarSegment(fraction, catColor))
                             totalWeight += fraction
                         }
@@ -585,12 +602,16 @@ private fun SplitRow(
         Spacer(modifier = Modifier.width(dims.spacingSm))
 
         Row(
-            modifier = Modifier.weight(1f).height(IntrinsicSize.Max),
+            modifier = Modifier
+                .weight(1f)
+                .height(IntrinsicSize.Max),
             horizontalArrangement = Arrangement.spacedBy(dims.spacingXs),
         ) {
             // Middle column — title (12sp Bold) + note (11sp)
             Column(
-                modifier = Modifier.weight(1f).fillMaxHeight(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
@@ -701,12 +722,34 @@ fun AeonTransactionSplitSheetPreview() {
                 totalAmount = BigDecimal("100.00"),
                 currency = "USD",
                 splits = listOf(
-                    TransactionSplit(amount = "60.00", categoryId = 1L, note = "Dinner with the team"),
-                    TransactionSplit(amount = "40.00", categoryId = 2L, note = "Cabs split between us"),
+                    TransactionSplit(
+                        amount = "60.00",
+                        categoryId = 1L,
+                        note = "Dinner with the team"
+                    ),
+                    TransactionSplit(
+                        amount = "40.00",
+                        categoryId = 2L,
+                        note = "Cabs split between us"
+                    ),
                 ),
                 categories = listOf(
-                    Category(1L, "Food", "Restaurant", android.graphics.Color.parseColor("#FF5722"), false, null),
-                    Category(2L, "Transport", "DirectionsBus", android.graphics.Color.parseColor("#2196F3"), false, null),
+                    Category(
+                        1L,
+                        "Food",
+                        "Restaurant",
+                        android.graphics.Color.parseColor("#FF5722"),
+                        false,
+                        null
+                    ),
+                    Category(
+                        2L,
+                        "Transport",
+                        "DirectionsBus",
+                        android.graphics.Color.parseColor("#2196F3"),
+                        false,
+                        null
+                    ),
                 ),
                 onAddSplit = {},
                 onRemoveSplit = {},
@@ -755,8 +798,22 @@ fun AeonTransactionSplitSheetOverAllocatedPreview() {
                     TransactionSplit(amount = "40.00", categoryId = 2L, note = "Cabs"),
                 ),
                 categories = listOf(
-                    Category(1L, "Food", "Restaurant", android.graphics.Color.parseColor("#FF5722"), false, null),
-                    Category(2L, "Transport", "DirectionsBus", android.graphics.Color.parseColor("#2196F3"), false, null),
+                    Category(
+                        1L,
+                        "Food",
+                        "Restaurant",
+                        android.graphics.Color.parseColor("#FF5722"),
+                        false,
+                        null
+                    ),
+                    Category(
+                        2L,
+                        "Transport",
+                        "DirectionsBus",
+                        android.graphics.Color.parseColor("#2196F3"),
+                        false,
+                        null
+                    ),
                 ),
                 onAddSplit = {},
                 onRemoveSplit = {},

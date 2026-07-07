@@ -161,13 +161,13 @@ object GlassTokens {
     fun configForVariant(variant: String): GlassStyleConfig {
         val s = LocalGlassSettings.current
         return when (variant) {
-            GlassVariant.Card    -> s.card
-            GlassVariant.Pill    -> s.pill
-            GlassVariant.Drawer  -> s.drawer
-            GlassVariant.Sheet   -> s.sheet
-            GlassVariant.Popup   -> s.popup
-            GlassVariant.Item    -> s.item
-            else                 -> s.standard
+            GlassVariant.Card -> s.card
+            GlassVariant.Pill -> s.pill
+            GlassVariant.Drawer -> s.drawer
+            GlassVariant.Sheet -> s.sheet
+            GlassVariant.Popup -> s.popup
+            GlassVariant.Item -> s.item
+            else -> s.standard
         }
     }
 

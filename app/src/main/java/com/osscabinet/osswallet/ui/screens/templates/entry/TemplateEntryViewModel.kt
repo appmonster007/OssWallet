@@ -1,16 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.TemplatePrefillDTO
+import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
@@ -18,14 +19,11 @@ import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
-import com.osscabinet.ossWallet.domain.model.isOutside
-import com.osscabinet.ossWallet.domain.model.resolve
-import com.osscabinet.ossWallet.domain.model.toDbTransferSide
-import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +34,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import jakarta.inject.Inject
 
 @HiltViewModel
 class TemplateEntryViewModel @Inject constructor(
@@ -61,7 +58,12 @@ class TemplateEntryViewModel @Inject constructor(
     override fun getIsRateFixed() = _state.value.isRateFixed
     override fun getAmountValue() = _state.value.amountValue
     override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
-        _state.update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
+        _state.update {
+            it.copy(
+                exchangeRate = rate,
+                destination = it.destination.copy(amount = targetAmountStr)
+            )
+        }
     }
 
     init {
@@ -107,8 +109,10 @@ class TemplateEntryViewModel @Inject constructor(
                         templateId = null,
                         name = prefill.name,
                         source = TransactionSide(
-                            account = if (prefill.entryMode == EntryMode.TRANSFER) AccountRef.fromTransferSide(prefill.accountId)
-                                      else AccountRef.fromStored(prefill.accountId),
+                            account = if (prefill.entryMode == EntryMode.TRANSFER) AccountRef.fromTransferSide(
+                                prefill.accountId
+                            )
+                            else AccountRef.fromStored(prefill.accountId),
                             amount = prefill.amount.abs().stripTrailingZeros().toPlainString(),
                             currency = prefill.currency ?: "USD",
                             categoryId = prefill.categoryId
@@ -137,7 +141,10 @@ class TemplateEntryViewModel @Inject constructor(
                         isEditMode = false,
                         templateId = null,
                         source = if (firstAccount != null && current.source.account is AccountRef.Unselected) {
-                            current.source.copy(account = AccountRef.fromStored(firstAccount.id), currency = firstAccount.currencyCode)
+                            current.source.copy(
+                                account = AccountRef.fromStored(firstAccount.id),
+                                currency = firstAccount.currencyCode
+                            )
                         } else current.source
                     )
                 }
@@ -322,7 +329,10 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.SetExchangeRate -> _state.update {
                 val sync = TransactionEntryService.syncTransferState(
                     sourceAmount = it.source.amountValue,
-                    targetAmount = TransactionEntryService.calculateTargetAmountValue(it.source.amountValue, event.rate),
+                    targetAmount = TransactionEntryService.calculateTargetAmountValue(
+                        it.source.amountValue,
+                        event.rate
+                    ),
                     sourceCurrency = it.currency,
                     targetCurrency = it.targetCurrency,
                     isFixed = true,
@@ -494,7 +504,12 @@ class TemplateEntryViewModel @Inject constructor(
     private fun updateCategoryName() {
         val categoryId = _state.value.categoryId
         val category = _state.value.categories.find { it.id == categoryId }
-        _state.update { it.copy(categoryName = category?.name ?: "Unknown", selectedCategory = category) }
+        _state.update {
+            it.copy(
+                categoryName = category?.name ?: "Unknown",
+                selectedCategory = category
+            )
+        }
     }
 
     fun saveTemplate(onSuccess: () -> Unit) {

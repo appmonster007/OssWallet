@@ -41,15 +41,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,11 +59,10 @@ import com.osscabinet.ossWallet.ui.calculator.CalculatorAction
 import com.osscabinet.ossWallet.ui.calculator.CalculatorState
 import com.osscabinet.ossWallet.ui.calculator.Token
 import com.osscabinet.ossWallet.ui.calculator.calculatorReducer
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
-import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Stateful wrapper for the Financial Expression Engine.
@@ -220,7 +219,9 @@ object CalculatorDefaults {
             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)),
             modifier = modifier.fillMaxWidth()
         ) {
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = hPad, vertical = vPad)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = hPad, vertical = vPad)) {
                 CalculatorDisplay(
                     expression = state.displayExpression,
                     result = state.display,
@@ -372,10 +373,34 @@ fun CalculatorKeys(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(keyGridSpacing)
         ) {
-            CalculatorKey("C", onClearPress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
-            CalculatorKey("( )", onParenthesisToggle, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
-            CalculatorKey("%", onPercentPress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
-            CalculatorKey("÷", { onOperatorPress('/') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
+            CalculatorKey(
+                "C",
+                onClearPress,
+                Modifier.weight(1f),
+                isSpecial = true,
+                keyHeight = keyHeight
+            )
+            CalculatorKey(
+                "( )",
+                onParenthesisToggle,
+                Modifier.weight(1f),
+                isSpecial = true,
+                keyHeight = keyHeight
+            )
+            CalculatorKey(
+                "%",
+                onPercentPress,
+                Modifier.weight(1f),
+                isSpecial = true,
+                keyHeight = keyHeight
+            )
+            CalculatorKey(
+                "÷",
+                { onOperatorPress('/') },
+                Modifier.weight(1f),
+                isOperator = true,
+                keyHeight = keyHeight
+            )
         }
 
         Row(
@@ -385,7 +410,13 @@ fun CalculatorKeys(
             CalculatorKey("7", { onNumberPress("7") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("8", { onNumberPress("8") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("9", { onNumberPress("9") }, Modifier.weight(1f), keyHeight = keyHeight)
-            CalculatorKey("×", { onOperatorPress('*') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
+            CalculatorKey(
+                "×",
+                { onOperatorPress('*') },
+                Modifier.weight(1f),
+                isOperator = true,
+                keyHeight = keyHeight
+            )
         }
 
         Row(
@@ -395,7 +426,13 @@ fun CalculatorKeys(
             CalculatorKey("4", { onNumberPress("4") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("5", { onNumberPress("5") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("6", { onNumberPress("6") }, Modifier.weight(1f), keyHeight = keyHeight)
-            CalculatorKey("−", { onOperatorPress('-') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
+            CalculatorKey(
+                "−",
+                { onOperatorPress('-') },
+                Modifier.weight(1f),
+                isOperator = true,
+                keyHeight = keyHeight
+            )
         }
 
         Row(
@@ -405,7 +442,13 @@ fun CalculatorKeys(
             CalculatorKey("1", { onNumberPress("1") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("2", { onNumberPress("2") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("3", { onNumberPress("3") }, Modifier.weight(1f), keyHeight = keyHeight)
-            CalculatorKey("+", { onOperatorPress('+') }, Modifier.weight(1f), isOperator = true, keyHeight = keyHeight)
+            CalculatorKey(
+                "+",
+                { onOperatorPress('+') },
+                Modifier.weight(1f),
+                isOperator = true,
+                keyHeight = keyHeight
+            )
         }
 
         Row(
@@ -414,8 +457,20 @@ fun CalculatorKeys(
         ) {
             CalculatorKey(".", { onNumberPress(".") }, Modifier.weight(1f), keyHeight = keyHeight)
             CalculatorKey("0", { onNumberPress("0") }, Modifier.weight(1f), keyHeight = keyHeight)
-            CalculatorKey("⌫", onBackspacePress, Modifier.weight(1f), isSpecial = true, keyHeight = keyHeight)
-            CalculatorKey("=", onEqualsPress, Modifier.weight(1f), isAccent = canEvaluate, keyHeight = keyHeight)
+            CalculatorKey(
+                "⌫",
+                onBackspacePress,
+                Modifier.weight(1f),
+                isSpecial = true,
+                keyHeight = keyHeight
+            )
+            CalculatorKey(
+                "=",
+                onEqualsPress,
+                Modifier.weight(1f),
+                isAccent = canEvaluate,
+                keyHeight = keyHeight
+            )
         }
     }
 }
@@ -500,7 +555,10 @@ fun CalculatorKey(
         modifier = modifier.height(keyHeight),
         shape = RoundedCornerShape(cornerRadius),
         color = backgroundColor,
-        border = if (!isAccent) BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.1f)) else null,
+        border = if (!isAccent) BorderStroke(
+            0.5.dp,
+            AppColors.divider.copy(alpha = 0.1f)
+        ) else null,
         shadowElevation = 0.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -579,7 +637,9 @@ private fun CalculatorHistorySheet(
 
             if (history.isEmpty()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -602,7 +662,9 @@ private fun CalculatorHistorySheet(
                             border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.15f))
                         ) {
                             Column(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text(

@@ -16,12 +16,12 @@ import com.osscabinet.ossWallet.domain.card.computers.NetWorthCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.PlannedPaymentsCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.RecentActivitiesCardComputer
 import com.osscabinet.ossWallet.domain.card.computers.TagUpSetPlotCardComputer
-import com.osscabinet.ossWallet.domain.repository.CategoryRepository
-import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
@@ -55,7 +55,13 @@ object UseCaseModule {
         templateRepository: TemplateRepository,
         transactionRepository: TransactionRepository
     ): EntryFormDataUseCase {
-        return EntryFormDataUseCase(accountRepository, categoryRepository, tagRepository, templateRepository, transactionRepository)
+        return EntryFormDataUseCase(
+            accountRepository,
+            categoryRepository,
+            tagRepository,
+            templateRepository,
+            transactionRepository
+        )
     }
 
     @Provides

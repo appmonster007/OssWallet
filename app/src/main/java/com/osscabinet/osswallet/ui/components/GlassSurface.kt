@@ -95,9 +95,10 @@ fun AeonHazeProvider(
     CompositionLocalProvider(LocalAeonHaze provides hazeLayers) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Static background: sole hazeSource for Surface, Overlay, and Drawer states.
-            val sourceModifier = hazeLayers.states.take(3).fold(Modifier as Modifier) { mod, state ->
-                mod.aeonHazeSource(state)
-            }
+            val sourceModifier =
+                hazeLayers.states.take(3).fold(Modifier as Modifier) { mod, state ->
+                    mod.aeonHazeSource(state)
+                }
 
             Box(
                 modifier = Modifier
@@ -145,7 +146,10 @@ fun GlassSurface(
     val glassEnabled = LocalGlassmorphismEnabled.current
     val layers = LocalAeonHaze.current
     val depth = hazeLayer ?: LocalHazeDepth.current
-    val config = if (glassVariant != null) GlassTokens.configForVariant(glassVariant) else GlassTokens.config(depth)
+    val config =
+        if (glassVariant != null) GlassTokens.configForVariant(glassVariant) else GlassTokens.config(
+            depth
+        )
 
     // Default glass rim that catches light at the edges
     val effectiveBorderAlpha = borderAlpha ?: config.surface.borderAlpha
@@ -154,22 +158,24 @@ fun GlassSurface(
     } else {
         AppColors.outlineVariant.copy(alpha = effectiveBorderAlpha * 2.5f)
     }
-    
+
     // SOLID MODE RCA FIX: Use opaque outlineVariant when glass is disabled to prevent "transparent artifacts"
     val effectiveBorderColor = when {
         borderColor != null -> borderColor
         !glassEnabled -> AppColors.outlineVariant
         else -> glassRimColor
     }
-    
+
     val effectiveBorderWidth = when {
         borderWidth != null -> borderWidth
         else -> config.surface.borderWidth.dp
     }
 
     // Theme-aware shadow intensity — reads from config, independent of glass toggle
-    val effectiveAmbientAlpha = if (isDark) config.surface.ambientShadowAlpha else config.surface.ambientShadowAlpha * 1.5f
-    val effectiveSpotAlpha = if (isDark) config.surface.spotShadowAlpha else config.surface.spotShadowAlpha * 1.5f
+    val effectiveAmbientAlpha =
+        if (isDark) config.surface.ambientShadowAlpha else config.surface.ambientShadowAlpha * 1.5f
+    val effectiveSpotAlpha =
+        if (isDark) config.surface.spotShadowAlpha else config.surface.spotShadowAlpha * 1.5f
     val effectiveShadowElevation = shadowElevation ?: config.surface.shadowElevation.dp
 
     // Priority: explicit param → nearest AeonGlassHost ancestor → screen-level background.

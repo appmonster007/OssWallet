@@ -6,16 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion
 import com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad
 import kotlin.math.PI
 import kotlin.math.cos
@@ -109,7 +106,19 @@ private fun GeographicalContours(modifier: Modifier) {
                     if (cellIndex == 0 || cellIndex == 15) continue
 
                     // Inlined and optimized segment generation
-                    drawSegmentsInPath(targetPath, cellIndex, v0, v1, v2, v3, t, xPos, yPos, cellW, cellH)
+                    drawSegmentsInPath(
+                        targetPath,
+                        cellIndex,
+                        v0,
+                        v1,
+                        v2,
+                        v3,
+                        t,
+                        xPos,
+                        yPos,
+                        cellW,
+                        cellH
+                    )
                 }
             }
         }
@@ -121,7 +130,7 @@ private fun GeographicalContours(modifier: Modifier) {
             .fillMaxSize()
             .graphicsLayer {
                 // Hint for GPU to cache this layer
-                renderEffect = null 
+                renderEffect = null
                 clip = true
             }
     ) {
@@ -159,19 +168,48 @@ private fun drawSegmentsInPath(
     }
 
     when (cellIndex) {
-        1, 14 -> { val e0 = getOffset(0); val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y) }
-        2, 13 -> { val e0 = getOffset(0); val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y) }
-        3, 12 -> { val e1 = getOffset(1); val e3 = getOffset(3); path.moveTo(e1.x, e1.y); path.lineTo(e3.x, e3.y) }
-        4, 11 -> { val e1 = getOffset(1); val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y) }
-        5 -> {
-            val e0 = getOffset(0); val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y)
-            val e2 = getOffset(2); val e3 = getOffset(3); path.moveTo(e2.x, e2.y); path.lineTo(e3.x, e3.y)
+        1, 14 -> {
+            val e0 = getOffset(0);
+            val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y)
         }
-        6, 9 -> { val e0 = getOffset(0); val e2 = getOffset(2); path.moveTo(e0.x, e0.y); path.lineTo(e2.x, e2.y) }
-        7, 8 -> { val e3 = getOffset(3); val e2 = getOffset(2); path.moveTo(e3.x, e3.y); path.lineTo(e2.x, e2.y) }
+
+        2, 13 -> {
+            val e0 = getOffset(0);
+            val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y)
+        }
+
+        3, 12 -> {
+            val e1 = getOffset(1);
+            val e3 = getOffset(3); path.moveTo(e1.x, e1.y); path.lineTo(e3.x, e3.y)
+        }
+
+        4, 11 -> {
+            val e1 = getOffset(1);
+            val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y)
+        }
+
+        5 -> {
+            val e0 = getOffset(0);
+            val e1 = getOffset(1); path.moveTo(e0.x, e0.y); path.lineTo(e1.x, e1.y)
+            val e2 = getOffset(2);
+            val e3 = getOffset(3); path.moveTo(e2.x, e2.y); path.lineTo(e3.x, e3.y)
+        }
+
+        6, 9 -> {
+            val e0 = getOffset(0);
+            val e2 = getOffset(2); path.moveTo(e0.x, e0.y); path.lineTo(e2.x, e2.y)
+        }
+
+        7, 8 -> {
+            val e3 = getOffset(3);
+            val e2 = getOffset(2); path.moveTo(e3.x, e3.y); path.lineTo(e2.x, e2.y)
+        }
+
         10 -> {
-            val e0 = getOffset(0); val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y)
-            val e1 = getOffset(1); val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y)
+            val e0 = getOffset(0);
+            val e3 = getOffset(3); path.moveTo(e0.x, e0.y); path.lineTo(e3.x, e3.y)
+            val e1 = getOffset(1);
+            val e2 = getOffset(2); path.moveTo(e1.x, e1.y); path.lineTo(e2.x, e2.y)
         }
     }
 }
@@ -190,7 +228,7 @@ private fun OrganicContours(modifier: Modifier) {
         val random = if (randomize) Random.Default else Random(42)
         val count = random.nextInt(3, 4) // Further reduced
         val path = Path()
-        
+
         repeat(count) {
             val centerX = random.nextFloat() * 1400f - 200f
             val centerY = random.nextFloat() * 1400f - 200f
@@ -204,10 +242,10 @@ private fun OrganicContours(modifier: Modifier) {
                 for (p in 0..points) {
                     val angle = (p.toFloat() / points) * 2 * PI
                     val wobble = (
-                        sin(angle * 2 + i + seed) * (18f + i * 2) + 
-                        sin(angle * 4 - i * 0.5 + seed) * 12f
-                    ).toFloat()
-                    
+                            sin(angle * 2 + i + seed) * (18f + i * 2) +
+                                    sin(angle * 4 - i * 0.5 + seed) * 12f
+                            ).toFloat()
+
                     val x = centerX + (radius + wobble) * cos(angle).toFloat()
                     val y = centerY + (radius + wobble) * sin(angle).toFloat()
                     if (p == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -218,13 +256,19 @@ private fun OrganicContours(modifier: Modifier) {
         path
     }
 
-    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+    Canvas(modifier = modifier
+        .fillMaxSize()
+        .graphicsLayer { clip = true }) {
         val scaleX = size.width / 1000f
         val scaleY = size.height / 1000f
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.0f / scaleX))
+            drawPath(
+                path = combinedPath,
+                color = baseColor.copy(alpha = 0.08f),
+                style = Stroke(width = 1.0f / scaleX)
+            )
         }
     }
 }
@@ -253,10 +297,10 @@ private fun BoldContours(modifier: Modifier) {
                 for (p in 0..points) {
                     val angle = (p.toFloat() / points) * 2 * PI
                     val wobble = (
-                        sin(angle * 2 + i + seed) * 15f + 
-                        sin(angle * 5 - i + seed) * 10f
-                    ).toFloat()
-                    
+                            sin(angle * 2 + i + seed) * 15f +
+                                    sin(angle * 5 - i + seed) * 10f
+                            ).toFloat()
+
                     val x = centerX + (radius + wobble) * cos(angle).toFloat()
                     val y = centerY + (radius + wobble) * sin(angle).toFloat()
                     if (p == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -267,13 +311,19 @@ private fun BoldContours(modifier: Modifier) {
         path
     }
 
-    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+    Canvas(modifier = modifier
+        .fillMaxSize()
+        .graphicsLayer { clip = true }) {
         val scaleX = size.width / 1000f
         val scaleY = size.height / 1000f
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.2f), style = Stroke(width = 3.5f / scaleX))
+            drawPath(
+                path = combinedPath,
+                color = baseColor.copy(alpha = 0.2f),
+                style = Stroke(width = 3.5f / scaleX)
+            )
         }
     }
 }
@@ -313,13 +363,19 @@ private fun CleanContours(modifier: Modifier) {
         path
     }
 
-    Canvas(modifier = modifier.fillMaxSize().graphicsLayer { clip = true }) {
+    Canvas(modifier = modifier
+        .fillMaxSize()
+        .graphicsLayer { clip = true }) {
         val scaleX = size.width / 1000f
         val scaleY = size.height / 1000f
         withTransform({
             scale(scaleX, scaleY, pivot = Offset.Zero)
         }) {
-            drawPath(path = combinedPath, color = baseColor.copy(alpha = 0.08f), style = Stroke(width = 1.0f / scaleX))
+            drawPath(
+                path = combinedPath,
+                color = baseColor.copy(alpha = 0.08f),
+                style = Stroke(width = 1.0f / scaleX)
+            )
         }
     }
 }

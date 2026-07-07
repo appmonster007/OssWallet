@@ -90,7 +90,7 @@ fun calculatorReducer(
                         // but preserve the trailing dot while typing.
                         val newValue = if (combined.endsWith(".")) combined
                         else combined.toBigDecimalOrNull()?.toPlainString() ?: combined
-                        
+
                         currentTokens.dropLast(1) + Token.Number(newValue)
                     }
                 }
@@ -117,7 +117,11 @@ fun calculatorReducer(
             if (state.tokens.isEmpty()) {
                 // Allow unary minus at start if '-' is pressed
                 if (action.operator == '-') {
-                    return updateStateWithTokens(state.copy(isCalculated = false), listOf(Token.UnaryMinus), evaluator)
+                    return updateStateWithTokens(
+                        state.copy(isCalculated = false),
+                        listOf(Token.UnaryMinus),
+                        evaluator
+                    )
                 }
                 return state
             }

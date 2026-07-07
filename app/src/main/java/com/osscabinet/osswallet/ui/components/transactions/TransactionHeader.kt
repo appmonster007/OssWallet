@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,17 +24,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.PreviewLightGray
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 
 /**
@@ -130,27 +130,27 @@ fun TransactionHeader(
             if (showCurrencyBreakdown) {
                 Spacer(modifier = Modifier.height(AeonSize.D4.value))
 
-                    TransactionSummaryBreakdown(
-                        incomeByCurrency = incomeByCurrency,
-                        expenseByCurrency = expenseByCurrency,
-                        incomeBase = incomeBase,
-                        expenseBase = expenseBase,
-                        netBase = netBase,
-                        baseCurrency = baseCurrency,
-                        openingBalancesByCurrency = openingBalancesByCurrency,
-                        closingBalancesByCurrency = closingBalancesByCurrency,
-                        totalOpeningBalanceBase = totalOpeningBalanceBase,
-                        totalClosingBalanceBase = totalClosingBalanceBase,
-                        showOpeningBalance = showOpeningBalance,
-                        showClosingBalance = showClosingBalance,
-                        currenciesToDisplay = currenciesToDisplay,
-                        labelColumnWidth = styles.labelColumnWidth,
-                        showCurrencyBreakdown = true,
-                        initiallyExpanded = isExpanded
-                    )
-                }
+                TransactionSummaryBreakdown(
+                    incomeByCurrency = incomeByCurrency,
+                    expenseByCurrency = expenseByCurrency,
+                    incomeBase = incomeBase,
+                    expenseBase = expenseBase,
+                    netBase = netBase,
+                    baseCurrency = baseCurrency,
+                    openingBalancesByCurrency = openingBalancesByCurrency,
+                    closingBalancesByCurrency = closingBalancesByCurrency,
+                    totalOpeningBalanceBase = totalOpeningBalanceBase,
+                    totalClosingBalanceBase = totalClosingBalanceBase,
+                    showOpeningBalance = showOpeningBalance,
+                    showClosingBalance = showClosingBalance,
+                    currenciesToDisplay = currenciesToDisplay,
+                    labelColumnWidth = styles.labelColumnWidth,
+                    showCurrencyBreakdown = true,
+                    initiallyExpanded = isExpanded
+                )
             }
         }
+    }
 }
 
 

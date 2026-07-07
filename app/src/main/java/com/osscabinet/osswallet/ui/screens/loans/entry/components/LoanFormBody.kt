@@ -3,13 +3,13 @@ package com.osscabinet.ossWallet.ui.screens.loans.entry.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.NotificationAdd
 import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Verified
@@ -47,9 +46,9 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
-import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
 import com.osscabinet.ossWallet.ui.components.entry.EntryEditorialInput
+import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.EntryPaymentMethodStatusRow
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
@@ -82,7 +81,9 @@ fun LoanFormBody(
     val formatter =
         remember { java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()) }
 
-    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+        .statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

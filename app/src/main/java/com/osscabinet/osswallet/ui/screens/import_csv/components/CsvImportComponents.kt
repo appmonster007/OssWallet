@@ -2,14 +2,34 @@ package com.osscabinet.ossWallet.ui.screens.import_csv.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,9 +51,9 @@ fun StepProgressIndicator(stepIndex: Int) {
                 val isActive = index == stepIndex
                 val isCompleted = index < stepIndex
                 val color = when {
-                    isActive    -> AppColors.primary
+                    isActive -> AppColors.primary
                     isCompleted -> AppColors.primary.copy(alpha = 0.6f)
-                    else        -> AppColors.outlineVariant
+                    else -> AppColors.outlineVariant
                 }
                 Box(
                     modifier = Modifier
@@ -46,9 +66,9 @@ fun StepProgressIndicator(stepIndex: Int) {
         Spacer(Modifier.height(8.dp))
         Text(
             text = when (stepIndex) {
-                0    -> "Step 1: Source App"
-                1    -> "Step 2: Column Mapping"
-                2    -> "Step 3: Accounts & Categories"
+                0 -> "Step 1: Source App"
+                1 -> "Step 2: Column Mapping"
+                2 -> "Step 3: Accounts & Categories"
                 else -> "Step 4: Review & Confirm"
             },
             style = AppTextStyles.overlineLabel,
@@ -112,7 +132,10 @@ fun EntityMappingRow(
                                 ) {
                                     Text(
                                         chipText,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.padding(
+                                            horizontal = 6.dp,
+                                            vertical = 2.dp
+                                        ),
                                         style = AppTextStyles.chipLabel,
                                         color = AppColors.onAccentContainer
                                     )
@@ -138,11 +161,13 @@ fun EntityMappingRow(
                             isError -> AppColors.errorContainer.copy(alpha = 0.1f)
                             else -> AppColors.surfaceContainerLow
                         },
-                        border = BorderStroke(1.dp, when {
-                            isExcluded -> AppColors.error.copy(alpha = 0.5f)
-                            isError -> AppColors.error
-                            else -> AppColors.outlineVariant
-                        }),
+                        border = BorderStroke(
+                            1.dp, when {
+                                isExcluded -> AppColors.error.copy(alpha = 0.5f)
+                                isError -> AppColors.error
+                                else -> AppColors.outlineVariant
+                            }
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -186,7 +211,13 @@ fun EntityMappingRow(
                         }
                         if (showExcludeOption) {
                             DropdownMenuItem(
-                                text = { Text("Exclude account", style = AppTextStyles.caption, color = AppColors.error) },
+                                text = {
+                                    Text(
+                                        "Exclude account",
+                                        style = AppTextStyles.caption,
+                                        color = AppColors.error
+                                    )
+                                },
                                 onClick = { onSelect("__EXCLUDE__"); expanded = false }
                             )
                         }
@@ -202,7 +233,11 @@ fun EntityMappingRow(
 
             // Currency selector for "Create New" accounts
             if (isCreateNew && currencyCode != null) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding), color = AppColors.outlineVariant, thickness = 0.5.dp)
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = AeonTheme.dimensions.cardPadding),
+                    color = AppColors.outlineVariant,
+                    thickness = 0.5.dp
+                )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -228,7 +263,11 @@ fun EntityMappingRow(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(currencyCode, style = AppTextStyles.caption)
-                                Icon(Icons.Rounded.ArrowDropDown, null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Rounded.ArrowDropDown,
+                                    null,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                         DropdownMenu(
@@ -255,7 +294,10 @@ fun EntityMappingRow(
 private fun StepProgressIndicatorPreview() {
     OssWalletTheme {
         Surface(color = AppColors.screenBackground) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 StepProgressIndicator(stepIndex = 0)
                 StepProgressIndicator(stepIndex = 1)
                 StepProgressIndicator(stepIndex = 2)
@@ -270,7 +312,10 @@ private fun StepProgressIndicatorPreview() {
 private fun EntityMappingRowPreview() {
     OssWalletTheme {
         Surface(color = AppColors.screenBackground) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 EntityMappingRow(
                     label = "Amazon.in",
                     badgeText = "12 rows matched",

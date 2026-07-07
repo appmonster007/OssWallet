@@ -1,15 +1,13 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,34 +42,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.components.AeonStepperField
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.AeonStepperField
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +73,10 @@ fun PlannedPaymentsCard(
     items: List<PlannedPaymentSummary>,
     targetCurrency: String = "USD",
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = targetCurrency, rates = emptyMap()),
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+            anchor = targetCurrency,
+            rates = emptyMap()
+        ),
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
     filterContext: FilterSelectionContext = FilterSelectionContext(),
@@ -141,7 +138,9 @@ fun PlannedPaymentsCard(
                 }
             }
 
-            items(items, key = { "${if (it.isOverdue) "overdue" else "upcoming"}_${it.id}_${it.scheduledDate}" }) { summary ->
+            items(
+                items,
+                key = { "${if (it.isOverdue) "overdue" else "upcoming"}_${it.id}_${it.scheduledDate}" }) { summary ->
                 PlannedPaymentRow(
                     title = summary.name,
                     amount = summary.amount,
@@ -149,11 +148,28 @@ fun PlannedPaymentsCard(
                     targetCurrency = targetCurrency,
                     exchangeRates = exchangeRates,
                     entryMode = summary.entryMode,
-                    dateLabel = if (summary.isOverdue) "OVERDUE" else formatRelativeDate(summary.scheduledDate, System.currentTimeMillis()),
+                    dateLabel = if (summary.isOverdue) "OVERDUE" else formatRelativeDate(
+                        summary.scheduledDate,
+                        System.currentTimeMillis()
+                    ),
                     isOverdue = summary.isOverdue,
                     onClick = { callbacks.onItemClick(summary.id) },
-                    onConfirm = callbacks.onConfirm?.let { cb -> { cb(summary.id, summary.scheduledDate) } },
-                    onSkip = callbacks.onSkip?.let { cb -> { cb(summary.id, summary.scheduledDate) } }
+                    onConfirm = callbacks.onConfirm?.let { cb ->
+                        {
+                            cb(
+                                summary.id,
+                                summary.scheduledDate
+                            )
+                        }
+                    },
+                    onSkip = callbacks.onSkip?.let { cb ->
+                        {
+                            cb(
+                                summary.id,
+                                summary.scheduledDate
+                            )
+                        }
+                    }
                 )
             }
         }
@@ -210,7 +226,15 @@ private fun PlannedPaymentsSettingsSheet(
                 }
                 AeonStepperField(
                     value = config.maxItems,
-                    onDecrement = { onUpdate(config.copy(maxItems = (config.maxItems - 1).coerceAtLeast(1))) },
+                    onDecrement = {
+                        onUpdate(
+                            config.copy(
+                                maxItems = (config.maxItems - 1).coerceAtLeast(
+                                    1
+                                )
+                            )
+                        )
+                    },
                     onIncrement = { onUpdate(config.copy(maxItems = config.maxItems + 1)) },
                     min = 1
                 )
@@ -380,7 +404,12 @@ fun mapPlannedPayments(
 ) = CardWithCallbacks.PlannedPayments(
     renderData = renderData,
     callbacks = CardCallbacks.PlannedPayments(
-        onUpdate = { newConfig -> updateHandler.updateCardPlannedPaymentsConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateCardPlannedPaymentsConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onFilterChange = updateHandler::updateCardPlannedPaymentsFilter,
         onItemClick = callbacks.paymentActions.onClick,
         onConfirm = callbacks.paymentActions.onConfirm,

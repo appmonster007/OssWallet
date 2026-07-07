@@ -70,13 +70,13 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
- import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -87,9 +87,9 @@ import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.cards.AccountActions
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
@@ -840,9 +840,14 @@ fun DashboardContent(
                                         )
                                     }
                                 }
+
                                 is TransactionItemEvent.Expand -> onItemExpanded(event.id)
                                 is TransactionItemEvent.Collapse -> onItemCollapsed(event.id)
-                                is TransactionItemEvent.StatusChange -> onStatusChange(event.id, event.status)
+                                is TransactionItemEvent.StatusChange -> onStatusChange(
+                                    event.id,
+                                    event.status
+                                )
+
                                 is TransactionItemEvent.Clone -> onCloneTransactionClick(event.id)
                                 is TransactionItemEvent.Delete -> onDeleteTransaction(event.id)
                                 is TransactionItemEvent.Split -> onSplitTransactionClick(event.id)
@@ -850,11 +855,13 @@ fun DashboardContent(
                                     event.id,
                                     state.recentActivitiesState.getAllTransactionIds()
                                 )
+
                                 is TransactionItemEvent.FullSwipeRight -> onFullSwipeRight(event.id)
                                 is TransactionItemEvent.ConfirmPlanned -> onConfirmPlanned(
                                     event.paymentId,
                                     event.scheduledDate
                                 )
+
                                 is TransactionItemEvent.CancelPlanned -> onCancelPlanned(
                                     event.paymentId,
                                     event.scheduledDate

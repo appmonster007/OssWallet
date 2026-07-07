@@ -1,9 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.model
 
 import androidx.compose.runtime.Immutable
+import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
-import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 
 /**
  * UI-specific representation of a transaction record.

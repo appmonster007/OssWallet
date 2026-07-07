@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +38,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +47,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -55,8 +55,8 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.scaledDp
-import android.graphics.Color as AndroidColor
 import dev.chrisbanes.haze.HazeState
+import android.graphics.Color as AndroidColor
 
 @Composable
 fun AppDrawerContent(
@@ -127,7 +127,8 @@ fun AppDrawerContent(
                         )
                 ) {
                     // H editorial: inset square with initial letter
-                    val initial = (currentProfile?.name?.firstOrNull() ?: '?').uppercaseChar().toString()
+                    val initial =
+                        (currentProfile?.name?.firstOrNull() ?: '?').uppercaseChar().toString()
                     Box(
                         modifier = Modifier
                             .size(AeonTheme.dimensions.iconSize2xl)
@@ -172,9 +173,9 @@ fun AppDrawerContent(
                         onClick = {
                             onNavigate {
                                 when (route) {
-                                    "dashboard"      -> onDashboardClick()
+                                    "dashboard" -> onDashboardClick()
                                     "transaction_list" -> onRecordsClick()
-                                    "analytics"      -> onAnalyticsClick()
+                                    "analytics" -> onAnalyticsClick()
                                     "exchange_rates" -> onExchangeRatesClick()
                                 }
                             }
@@ -186,7 +187,9 @@ fun AppDrawerContent(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = drawerItemColors
                     )
@@ -208,8 +211,8 @@ fun AppDrawerContent(
                             onNavigate {
                                 when (route) {
                                     "planned_payment_list" -> onPlannedPaymentsClick()
-                                    "budget_list"          -> onBudgetsClick()
-                                    "loan_list"            -> onLoansClick()
+                                    "budget_list" -> onBudgetsClick()
+                                    "loan_list" -> onLoansClick()
                                 }
                             }
                         },
@@ -220,7 +223,9 @@ fun AppDrawerContent(
                                 modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = drawerItemColors
                     )
@@ -245,16 +250,18 @@ fun AppDrawerContent(
                             icon = {
                                 Icon(
                                     when (template.entryMode) {
-                                        EntryMode.INCOME   -> Icons.Rounded.ArrowUpward
+                                        EntryMode.INCOME -> Icons.Rounded.ArrowUpward
                                         EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
-                                        else               -> Icons.Rounded.ArrowDownward
+                                        else -> Icons.Rounded.ArrowDownward
                                     },
                                     contentDescription = null,
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeXs),
                                     tint = AppColors.accent
                                 )
                             },
-                            modifier = Modifier.fillMaxWidth().height(scaledDp(48f, uiScale)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(scaledDp(48f, uiScale)),
                             shape = RectangleShape,
                             colors = drawerItemColors
                         )
@@ -301,7 +308,9 @@ fun AppDrawerContent(
                                     .background(accountColor)
                             )
                         },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         shape = RectangleShape,
                         colors = drawerItemColors
                     )
@@ -322,7 +331,9 @@ fun AppDrawerContent(
                             modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm)
                         )
                     },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     shape = RectangleShape,
                     colors = drawerItemColors
                 )

@@ -14,6 +14,7 @@ import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRatePro
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import jakarta.inject.Inject
 
 data class OnboardingState(
     val userName: String = "",

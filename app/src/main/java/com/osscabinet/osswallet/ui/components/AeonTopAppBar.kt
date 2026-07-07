@@ -95,14 +95,14 @@ object AeonTopBarDefaults {
     val PillHeight = AeonSize.D48.value
     val HorizontalPadding = AeonSize.D12.value
     val ContentPadding = PaddingValues(AeonSize.D4.value)
-    
+
     val TitleStyle: TextStyle
         @Composable get() = AppTextStyles.screenTitle.copy(
             fontSize = 16.sp,
             lineHeight = 20.sp,
             letterSpacing = 0.sp
         )
-    
+
     val SubtitleStyle: TextStyle
         @Composable get() = AppTextStyles.caption.copy(
             fontWeight = FontWeight.Normal,
@@ -136,7 +136,9 @@ fun AeonTopAppBar(
             .padding(horizontal = AeonTopBarDefaults.HorizontalPadding)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(AeonSize.D8.value)
         ) {
@@ -196,7 +198,9 @@ fun AeonTopBarPill(
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(padding).fillMaxHeight(),
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxHeight(),
                 horizontalArrangement = Arrangement.spacedBy(AeonSize.D2.value),
                 content = content
             )
@@ -265,7 +269,9 @@ fun AeonTopBarSearchPill(
     onFocusChange: ((Boolean) -> Unit)? = null,
 ) {
     AeonTopBarPill(
-        modifier = modifier.fillMaxWidth().height(AeonTopBarDefaults.PillHeight),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(AeonTopBarDefaults.PillHeight),
         padding = PaddingValues(horizontal = AeonSize.D12.value)
     ) {
         Icon(
@@ -274,9 +280,9 @@ fun AeonTopBarSearchPill(
             modifier = Modifier.size(AeonSize.D20.value),
             tint = AppColors.contentSecondary
         )
-        
+
         Spacer(Modifier.width(AeonSize.D8.value))
-        
+
         BasicTextField(
             value = query,
             onValueChange = onQueryChange,
@@ -394,7 +400,8 @@ fun AeonTopBarTitle(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val isInteractive = tabs.size > 1
-    val displaySubtitle = if (tabs.isNotEmpty()) tabs.getOrElse(selectedTabIndex) { "" } else subtitle
+    val displaySubtitle =
+        if (tabs.isNotEmpty()) tabs.getOrElse(selectedTabIndex) { "" } else subtitle
 
     Column(
         modifier = modifier
@@ -563,7 +570,7 @@ fun AeonTopBarInteractivePreviewWrapper(
                     letterSpacing = 1.sp
                 )
             )
-            
+
             Spacer(Modifier.weight(1f))
 
             // Theme Toggle
@@ -669,7 +676,10 @@ fun PreviewCustomModularTopAppBar() = AeonTopBarInteractivePreviewWrapper {
         center = AeonTopBarSection(
             content = {
                 AeonTopBarPill {
-                    Text("STATUS: ACTIVE", style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold))
+                    Text(
+                        "STATUS: ACTIVE",
+                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
             }
         ),
@@ -733,7 +743,8 @@ fun AeonTopAppBarPreview(
     content: @Composable () -> Unit
 ) {
     val config = LocalConfiguration.current
-    val isDark = config.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    val isDark =
+        config.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 
     val themeName = theme ?: if (isDark) "Dark" else "Light"
     val finalGlassEnabled = glassEnabled ?: true
@@ -761,15 +772,38 @@ fun AeonTopAppBarPreview(
                         }
                     } else Modifier
 
-                    Row(modifier = Modifier.fillMaxSize().then(sourceModifier)) {
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                            Brush.verticalGradient(listOf(AccentDeepPurple.copy(alpha = 0.35f), Color.Transparent))
-                        ))
-                        Box(modifier = Modifier.weight(1f).fillMaxHeight().background(
-                            Brush.verticalGradient(listOf(AccountStructureColors.digitalWallet.copy(alpha = 0.35f), Color.Transparent))
-                        ))
+                    Row(modifier = Modifier
+                        .fillMaxSize()
+                        .then(sourceModifier)) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            AccentDeepPurple.copy(alpha = 0.35f),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            AccountStructureColors.digitalWallet.copy(
+                                                alpha = 0.35f
+                                            ), Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
                     }
-                    
+
                     Box(modifier = Modifier.fillMaxSize()) {
                         content()
                     }

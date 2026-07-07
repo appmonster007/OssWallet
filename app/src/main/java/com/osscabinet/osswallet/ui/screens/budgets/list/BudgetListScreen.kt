@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.budgets.list
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +40,10 @@ import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.service.management.BudgetService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
@@ -53,8 +52,8 @@ import com.osscabinet.ossWallet.ui.screens.budgets.BudgetViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import java.math.BigDecimal
 
 
@@ -156,11 +155,12 @@ fun BudgetListScreen(
                                     )
                                 }
                                 items(active, key = { it.id }) { budget ->
-                                    val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(
-                                        budget,
-                                        BigDecimal.ZERO,
-                                        BigDecimal.ZERO
-                                    )
+                                    val progress =
+                                        budgetProgress[budget.id] ?: BudgetService.buildProgress(
+                                            budget,
+                                            BigDecimal.ZERO,
+                                            BigDecimal.ZERO
+                                        )
                                     BudgetListItem(
                                         budget = budget,
                                         spentText = progress.spent.toPlainString(),
@@ -181,11 +181,12 @@ fun BudgetListScreen(
                                     )
                                 }
                                 items(archived, key = { it.id }) { budget ->
-                                    val progress = budgetProgress[budget.id] ?: BudgetService.buildProgress(
-                                        budget,
-                                        BigDecimal.ZERO,
-                                        BigDecimal.ZERO
-                                    )
+                                    val progress =
+                                        budgetProgress[budget.id] ?: BudgetService.buildProgress(
+                                            budget,
+                                            BigDecimal.ZERO,
+                                            BigDecimal.ZERO
+                                        )
                                     BudgetListItem(
                                         budget = budget,
                                         spentText = progress.spent.toPlainString(),

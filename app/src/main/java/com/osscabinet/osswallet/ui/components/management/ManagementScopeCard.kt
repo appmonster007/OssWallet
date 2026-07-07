@@ -1,12 +1,26 @@
 package com.osscabinet.ossWallet.ui.components.management
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Forward
 import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAddCheck
-import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.FilterAlt
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Payments
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.SyncAlt
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -15,15 +29,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
-import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.PaymentMethod
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -212,7 +232,14 @@ fun ManagementScopeCard(
                         items = filter.paymentMethods.map { method ->
                             ScopeItem(
                                 text = method.displayName,
-                                color = try { Color(method.colorHex?.toColorInt() ?: primaryColor.value.toLong().toInt()) } catch(_: Exception) { primaryColor },
+                                color = try {
+                                    Color(
+                                        method.colorHex?.toColorInt() ?: primaryColor.value.toLong()
+                                            .toInt()
+                                    )
+                                } catch (_: Exception) {
+                                    primaryColor
+                                },
                                 icon = AppIconMap[method.iconName]
                             )
                         }
@@ -374,7 +401,10 @@ fun ManagementScopeCardPreview() {
         Column(modifier = Modifier.padding(16.dp)) {
             ManagementScopeCard(
                 filter = TransactionFilter(
-                    timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false),
+                    timelineRange = TimelineRange.ThisPeriod(
+                        ThisPeriodType.MONTH,
+                        excludeFuture = false
+                    ),
                     accountIds = setOf("1"),
                     categoryIds = setOf(101L, 102L),
                     tags = setOf("Vacation", "Work"),
@@ -386,13 +416,48 @@ fun ManagementScopeCardPreview() {
                     linkedTransactionIds = setOf(1L, 2L, 3L)
                 ),
                 allAccounts = listOf(
-                    Account(id = "1", name = "Main Account", colorHex = "#FF0000", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, icon = "AccountBalance"),
-                    Account(id = "2", name = "Savings", colorHex = "#00FF00", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, icon = "AccountBalance")
+                    Account(
+                        id = "1",
+                        name = "Main Account",
+                        colorHex = "#FF0000",
+                        currencyCode = "USD",
+                        structureType = AccountStructureType.SAVINGS,
+                        icon = "AccountBalance"
+                    ),
+                    Account(
+                        id = "2",
+                        name = "Savings",
+                        colorHex = "#00FF00",
+                        currencyCode = "USD",
+                        structureType = AccountStructureType.SAVINGS,
+                        icon = "AccountBalance"
+                    )
                 ),
                 allCategories = listOf(
-                    Category(id = 101L, name = "Food", colorHex = 0xFFFF00FF.toInt(), iconName = "Fastfood", isDefault = false, parentId = null),
-                    Category(id = 102L, name = "Travel", colorHex = 0xFF00FFFF.toInt(), iconName = "Flight", isDefault = false, parentId = null),
-                    Category(id = 103L, name = "Rent", colorHex = 0xFF0000FF.toInt(), iconName = "Home", isDefault = false, parentId = null)
+                    Category(
+                        id = 101L,
+                        name = "Food",
+                        colorHex = 0xFFFF00FF.toInt(),
+                        iconName = "Fastfood",
+                        isDefault = false,
+                        parentId = null
+                    ),
+                    Category(
+                        id = 102L,
+                        name = "Travel",
+                        colorHex = 0xFF00FFFF.toInt(),
+                        iconName = "Flight",
+                        isDefault = false,
+                        parentId = null
+                    ),
+                    Category(
+                        id = 103L,
+                        name = "Rent",
+                        colorHex = 0xFF0000FF.toInt(),
+                        iconName = "Home",
+                        isDefault = false,
+                        parentId = null
+                    )
                 )
             )
         }

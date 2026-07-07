@@ -23,34 +23,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonLazyRow
+import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
-import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
-import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
-import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -59,7 +59,10 @@ fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = baseCurrency, rates = emptyMap()),
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+            anchor = baseCurrency,
+            rates = emptyMap()
+        ),
     config: CurrencyBalancesCardConfig,
     callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
     filterContext: FilterSelectionContext = FilterSelectionContext(),

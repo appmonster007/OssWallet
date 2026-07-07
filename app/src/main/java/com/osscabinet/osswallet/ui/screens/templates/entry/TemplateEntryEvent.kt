@@ -1,12 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.EntryMode
-
 import java.math.BigDecimal
 
 sealed class TemplateEntryEvent {
@@ -49,7 +47,11 @@ sealed class TemplateEntryEvent {
     data class ShowWarrantyDatePicker(val show: Boolean) : TemplateEntryEvent()
     data class ShowLocationSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowStatusSheet(val show: Boolean) : TemplateEntryEvent()
-    data class ShowNumpad(val show: Boolean, val side: AmountEditingSide = AmountEditingSide.SOURCE) : TemplateEntryEvent()
+    data class ShowNumpad(
+        val show: Boolean,
+        val side: AmountEditingSide = AmountEditingSide.SOURCE
+    ) : TemplateEntryEvent()
+
     data class ShowLinkedTransactionSheet(val show: Boolean) : TemplateEntryEvent()
     data class ShowDeleteDialog(val show: Boolean) : TemplateEntryEvent()
 

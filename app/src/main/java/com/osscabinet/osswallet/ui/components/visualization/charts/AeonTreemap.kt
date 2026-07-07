@@ -39,8 +39,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
@@ -53,6 +51,8 @@ import com.osscabinet.ossWallet.ui.theme.ColorOnLight
 import com.osscabinet.ossWallet.ui.theme.ColorTransparent
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.TagPresetColors
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 /**
@@ -283,7 +283,11 @@ fun AeonTreemap(
                                         }
                                     }
                                     Text(
-                                        formatCurrency(node.value, currency, CurrencyDisplaySpec(precision = precision)),
+                                        formatCurrency(
+                                            node.value,
+                                            currency,
+                                            CurrencyDisplaySpec(precision = precision)
+                                        ),
                                         style = AppTextStyles.chartLegendLabel,
                                         color = labelColor.copy(alpha = 0.85f),
                                         maxLines = 1,
@@ -466,9 +470,11 @@ private fun layoutRow(
 @Composable
 fun AeonTreemapPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .size(400.dp, 300.dp)
-            .padding(AeonTheme.dimensions.screenPadding)) {
+        Box(
+            modifier = Modifier
+                .size(400.dp, 300.dp)
+                .padding(AeonTheme.dimensions.screenPadding)
+        ) {
             AeonTreemap(
                 nodes = listOf(
                     AeonTreemapNode(

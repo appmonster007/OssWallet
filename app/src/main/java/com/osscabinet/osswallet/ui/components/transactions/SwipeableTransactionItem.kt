@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.rounded.CallSplit
 import androidx.compose.material.icons.automirrored.rounded.Launch
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Pending
@@ -48,8 +49,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.rounded.Close
-import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.RecordUiModel
@@ -171,8 +170,22 @@ fun SwipeableTransactionItem(
                     )
                 } else if (record is PlannedPaymentUiModel) {
                     PlannedActionsRow(
-                        onConfirm = { onEvent(TransactionItemEvent.ConfirmPlanned(record.paymentId, record.timestamp)) },
-                        onCancel = { onEvent(TransactionItemEvent.CancelPlanned(record.paymentId, record.timestamp)) },
+                        onConfirm = {
+                            onEvent(
+                                TransactionItemEvent.ConfirmPlanned(
+                                    record.paymentId,
+                                    record.timestamp
+                                )
+                            )
+                        },
+                        onCancel = {
+                            onEvent(
+                                TransactionItemEvent.CancelPlanned(
+                                    record.paymentId,
+                                    record.timestamp
+                                )
+                            )
+                        },
                         progress = progress,
                         onCollapse = { onEvent(TransactionItemEvent.Collapse(record.id)) },
                         modifier = Modifier.align(Alignment.CenterEnd)
@@ -194,14 +207,15 @@ fun SwipeableTransactionItem(
 
                             // Initialize direction
                             if (swipeDirection == SwipeDirection.NONE && abs(dragAmount) > 0.5f) {
-                                val direction = if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
-                                
+                                val direction =
+                                    if (dragAmount > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+
                                 // Disable right swipe (revealing left actions) for planned payments
                                 if (isPlanned && direction == SwipeDirection.RIGHT) return@detectHorizontalDragGestures
-                                
+
                                 swipeDirection = direction
                             }
-                            
+
                             if (swipeDirection == SwipeDirection.NONE) return@detectHorizontalDragGestures
 
                             // Constrain and apply offset with resistance

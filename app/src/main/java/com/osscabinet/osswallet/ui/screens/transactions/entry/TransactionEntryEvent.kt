@@ -73,7 +73,11 @@ sealed class TransactionEntryEvent {
     data class ShowSplitSheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowSplitCategorySheet(val splitIndex: Int?) : TransactionEntryEvent()
     data class ShowSplitNumpad(val splitIndex: Int?) : TransactionEntryEvent()
-    data class ShowNumpad(val show: Boolean, val side: AmountEditingSide = AmountEditingSide.SOURCE) : TransactionEntryEvent()
+    data class ShowNumpad(
+        val show: Boolean,
+        val side: AmountEditingSide = AmountEditingSide.SOURCE
+    ) : TransactionEntryEvent()
+
     data class ShowCurrencySheet(val show: Boolean) : TransactionEntryEvent()
     data class ShowTargetCurrencySheet(val show: Boolean) : TransactionEntryEvent()
 

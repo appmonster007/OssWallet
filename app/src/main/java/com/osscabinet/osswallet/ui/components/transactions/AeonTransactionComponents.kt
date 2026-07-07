@@ -37,8 +37,8 @@ import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import my.nanihadesuka.compose.LazyColumnScrollbar
-import my.nanihadesuka.compose.ScrollbarSettings
 import my.nanihadesuka.compose.ScrollbarLayoutSide
+import my.nanihadesuka.compose.ScrollbarSettings
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -208,7 +208,9 @@ fun AeonTransactionList(
             item(key = "footer_divider", contentType = "divider") {
                 // Min height keeps averageItemSize stable for the scrollbar thumb position calc.
                 // Without it, this near-zero-height item causes the thumb to snap to the bottom.
-                Box(modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 56.dp)) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         thickness = 0.5.dp,
@@ -234,7 +236,7 @@ fun AeonTransactionList(
                 thumbMaxLength = 0.1f,
                 thumbShape = RoundedCornerShape(12.dp),
                 side = if (fastScrollSide == FastScrollSide.LEFT) ScrollbarLayoutSide.Start
-                       else ScrollbarLayoutSide.End
+                else ScrollbarLayoutSide.End
             ),
             indicatorContent = { index: Int, isThumbSelected: Boolean ->
                 if (isThumbSelected) {

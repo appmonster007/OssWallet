@@ -3,7 +3,18 @@ package com.osscabinet.ossWallet.ui.screens.import_csv.steps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,8 +22,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,14 +71,15 @@ fun ColumnMappingStep(
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
     ) {
         SourceAppDropdown(session.sourceApp, onApplyPreset)
-        
+
         AeonSectionHeader(title = "Preview \u2014 first ${session.previewRows.size} rows")
         CsvPreviewTable(session)
 
         HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
-        val hasPreset = session.sourceApp == ImportSourceApp.BUDGET_BAKERS || session.sourceApp == ImportSourceApp.CASHEW
-        
+        val hasPreset =
+            session.sourceApp == ImportSourceApp.BUDGET_BAKERS || session.sourceApp == ImportSourceApp.CASHEW
+
         if (hasPreset && !customiseMappings) {
             ReadOnlyMappings(session, onCustomise = { customiseMappings = true })
         } else {
@@ -144,7 +167,9 @@ private fun CsvPreviewTable(session: CsvImportSession) {
                     session.headers.forEach { header ->
                         Text(
                             text = header,
-                            modifier = Modifier.width(120.dp).padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier
+                                .width(120.dp)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                             style = AppTextStyles.tableColumnHeader,
                             color = AppColors.contentSecondary,
                             maxLines = 1,
@@ -155,12 +180,15 @@ private fun CsvPreviewTable(session: CsvImportSession) {
                 }
                 // Data rows
                 session.previewRows.take(3).forEachIndexed { rowIdx, row ->
-                    val rowBg = if (rowIdx % 2 == 0) AppColors.cardSurface else AppColors.cardSurfaceRaised
+                    val rowBg =
+                        if (rowIdx % 2 == 0) AppColors.cardSurface else AppColors.cardSurfaceRaised
                     Row(modifier = Modifier.background(rowBg)) {
                         row.forEach { cell ->
                             Text(
                                 text = cell,
-                                modifier = Modifier.width(120.dp).padding(horizontal = 12.dp, vertical = 8.dp),
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
                                 style = AppTextStyles.caption,
                                 color = AppColors.contentSecondary,
                                 maxLines = 1,
@@ -177,17 +205,29 @@ private fun CsvPreviewTable(session: CsvImportSession) {
 
 @Composable
 private fun ReadOnlyMappings(session: CsvImportSession, onCustomise: () -> Unit) {
-    Text("Column Mappings", style = AppTextStyles.formSectionLabel, color = AppColors.contentSecondary)
+    Text(
+        "Column Mappings",
+        style = AppTextStyles.formSectionLabel,
+        color = AppColors.contentSecondary
+    )
     OssWalletField.entries.forEach { field ->
         val colIndex = session.mapping[field]
-        val colName = if (colIndex != null && colIndex < session.headers.size) session.headers[colIndex] else null
+        val colName =
+            if (colIndex != null && colIndex < session.headers.size) session.headers[colIndex] else null
         if (colName != null) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(field.displayName, style = AppTextStyles.listItemTitle, color = AppColors.contentPrimary, modifier = Modifier.weight(1f))
+                Text(
+                    field.displayName,
+                    style = AppTextStyles.listItemTitle,
+                    color = AppColors.contentPrimary,
+                    modifier = Modifier.weight(1f)
+                )
                 Text(colName, style = AppTextStyles.caption, color = AppColors.contentSecondary)
             }
         }
@@ -198,7 +238,10 @@ private fun ReadOnlyMappings(session: CsvImportSession, onCustomise: () -> Unit)
 }
 
 @Composable
-private fun EditableMappings(session: CsvImportSession, onUpdateMapping: (OssWalletField, Int?) -> Unit) {
+private fun EditableMappings(
+    session: CsvImportSession,
+    onUpdateMapping: (OssWalletField, Int?) -> Unit
+) {
     Text("Map Columns", style = AppTextStyles.formSectionLabel, color = AppColors.contentSecondary)
     OssWalletField.entries.forEach { field ->
         FieldMappingItem(field, session, onUpdateMapping)

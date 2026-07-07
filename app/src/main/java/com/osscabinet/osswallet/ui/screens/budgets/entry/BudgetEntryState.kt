@@ -82,10 +82,11 @@ data class BudgetEntryState(
     val availableFilters: List<Filter> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
-    val errors: Set<EntryField> get() = buildSet {
-        if (name.isBlank()) add(EntryField.NAME)
-        if (limitAmount.toBigDecimalOrNull() == null) add(EntryField.AMOUNT)
-    }
+    val errors: Set<EntryField>
+        get() = buildSet {
+            if (name.isBlank()) add(EntryField.NAME)
+            if (limitAmount.toBigDecimalOrNull() == null) add(EntryField.AMOUNT)
+        }
 
     val hasError: Boolean get() = errors.isNotEmpty()
 

@@ -40,12 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -139,9 +139,11 @@ private fun UpSetVerticalBar(
         val barColor = if (isPositive) ChartColorGreen else AppColors.error
 
         // Track & Bar
-        Box(modifier = Modifier
-            .fillMaxHeight()
-            .width(18.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(18.dp)
+        ) {
             // Background track
             Box(
                 modifier = Modifier
@@ -357,9 +359,11 @@ fun AeonUpSetPlot(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Main content: Set names + Bars | Dot Matrix
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .height(finalViewportHeight)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(finalViewportHeight)
+        ) {
             // Left Panel: Set names, Amounts + Bars (Vertical Scroll)
             Column(
                 modifier = Modifier

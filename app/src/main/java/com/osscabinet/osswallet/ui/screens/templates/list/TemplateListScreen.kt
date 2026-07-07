@@ -2,21 +2,17 @@ package com.osscabinet.ossWallet.ui.screens.templates.list
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -40,7 +36,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -56,45 +51,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
-
 import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFloatingActionButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.management.AeonListItem
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
+import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
+import com.osscabinet.ossWallet.ui.components.getIconByName
+import com.osscabinet.ossWallet.ui.components.management.AeonListItem
+import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.longPressDraggableHandle
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
 import com.osscabinet.ossWallet.ui.reorderable.reorderable
 import com.osscabinet.ossWallet.ui.reorderable.reorderableSemantics
-import com.osscabinet.ossWallet.ui.components.accounts.AccountSelection
-import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.accounts.AccountViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -189,7 +182,8 @@ fun TemplateListScreenContent(
                     if (isReorderMode) {
                         val reorderState = rememberReorderableLazyListState(
                             onMove = { from, to ->
-                                editList = editList.toMutableList().apply { add(to, removeAt(from)) }
+                                editList =
+                                    editList.toMutableList().apply { add(to, removeAt(from)) }
                             }
                         )
                         LazyColumn(
@@ -216,7 +210,10 @@ fun TemplateListScreenContent(
                                             key = template.id,
                                             onDragStopped = { onUpdateOrder(editList) },
                                         )
-                                        .reorderableSemantics(state = reorderState, key = template.id),
+                                        .reorderableSemantics(
+                                            state = reorderState,
+                                            key = template.id
+                                        ),
                                 ) { isDragging ->
                                     ReorderTemplateItem(
                                         template = template,
@@ -241,12 +238,17 @@ fun TemplateListScreenContent(
                             items(templates, key = { it.id }) { template ->
                                 TemplateItem(
                                     template = template,
-                                    categoryName = categoryMap[template.categoryId]?.name ?: "Unknown",
+                                    categoryName = categoryMap[template.categoryId]?.name
+                                        ?: "Unknown",
                                     categoryIconName = categoryMap[template.categoryId]?.iconName,
                                     onEdit = { navigate { actions.onAddTemplateClick(template.id) } },
                                     onDelete = { templateToDelete = template },
                                     onToggleStar = { onToggleStar(template) },
-                                    onCreatePlannedPayment = { actions.onCreatePlannedPayment(template) }
+                                    onCreatePlannedPayment = {
+                                        actions.onCreatePlannedPayment(
+                                            template
+                                        )
+                                    }
                                 )
                             }
                         }
@@ -403,7 +405,11 @@ fun TemplateDialog(
     onConfirm: (String, Long, Double, EntryMode, String?, String?) -> Unit
 ) {
     var name by remember { mutableStateOf(template?.name ?: "") }
-    var categoryId by remember { mutableLongStateOf(template?.categoryId ?: Category.SYSTEM_UNKNOWN) }
+    var categoryId by remember {
+        mutableLongStateOf(
+            template?.categoryId ?: Category.SYSTEM_UNKNOWN
+        )
+    }
     var amount by remember { mutableStateOf(template?.amount?.toString() ?: "") }
     var type by remember { mutableStateOf(template?.entryMode ?: EntryMode.EXPENSE) }
     var note by remember { mutableStateOf(template?.note ?: "") }
@@ -529,7 +535,7 @@ private fun TemplateItemPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Templates Overview", style = AppTextStyles.cardTitle)
-            
+
             TemplateItem(
                 template = Template(
                     name = "Starbucks Coffee",

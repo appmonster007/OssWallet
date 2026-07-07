@@ -47,9 +47,11 @@ fun AeonCurrencySelection(
                 else allCurrencies.filter { it.contains(query, ignoreCase = true) }
             }
 
-            Column(modifier = Modifier
-                .padding(padding)
-                .padding(horizontal = 24.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(horizontal = 24.dp)
+            ) {
                 AeonSearchField(
                     query = query,
                     onQueryChange = { query = it },

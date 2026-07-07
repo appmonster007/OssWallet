@@ -38,11 +38,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -54,6 +51,7 @@ import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.TagPresetColors
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.PI
@@ -105,7 +103,7 @@ fun AeonPieChart(
 
     val weightTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value.abs() }
     val displayTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc + slice.value }
-    
+
     if (weightTotal.signum() == 0) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data to display", style = AppTextStyles.caption)
@@ -133,7 +131,8 @@ fun AeonPieChart(
                 var currentAngle = 0f
                 slices.forEach { slice ->
                     val sweepAngle =
-                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP)
+                            .toFloat() * 360f)
                     if (angle >= currentAngle && angle <= currentAngle + sweepAngle) {
                         return slice
                     }
@@ -205,7 +204,8 @@ fun AeonPieChart(
 
                 slices.forEach { slice ->
                     val sliceSweep =
-                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP).toFloat() * 360f)
+                        (slice.value.abs().divide(weightTotal, 10, RoundingMode.HALF_UP)
+                            .toFloat() * 360f)
                     val isSelected = selectedSlice == slice
 
                     // Modern Look: Precise radial gaps
@@ -420,9 +420,11 @@ fun AeonPieChart(
 @Composable
 fun AeonPieChartPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .size(300.dp)
-            .padding(AeonTheme.dimensions.screenPadding)) {
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .padding(AeonTheme.dimensions.screenPadding)
+        ) {
             AeonPieChart(
                 slices = listOf(
                     AeonPieChartSlice(

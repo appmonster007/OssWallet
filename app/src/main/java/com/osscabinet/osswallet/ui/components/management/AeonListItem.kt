@@ -254,7 +254,11 @@ private fun AeonListItemPreview() {
                 iconTint = AppColors.primary,
                 onClick = {},
                 trailingContent = {
-                    Text("\$2,500.00", style = AppTextStyles.listItemTitle, color = AppColors.positive)
+                    Text(
+                        "\$2,500.00",
+                        style = AppTextStyles.listItemTitle,
+                        color = AppColors.positive
+                    )
                 }
             )
             AeonListItem(
@@ -265,7 +269,11 @@ private fun AeonListItemPreview() {
                 onClick = {},
                 isSelected = true,
                 trailingContent = {
-                    Text("\$12,000.00", style = AppTextStyles.listItemTitle, color = AppColors.positive)
+                    Text(
+                        "\$12,000.00",
+                        style = AppTextStyles.listItemTitle,
+                        color = AppColors.positive
+                    )
                 }
             )
             AeonListItem(

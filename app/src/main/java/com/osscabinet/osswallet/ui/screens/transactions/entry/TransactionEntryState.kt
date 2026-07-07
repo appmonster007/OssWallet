@@ -1,12 +1,9 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountRef
-import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
-import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Template
@@ -15,6 +12,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.FormSheetState
@@ -105,23 +103,24 @@ data class TransactionEntryState(
     // Profile configuration
     val baseCurrency: String = "",
 ) {
-    val sheetState: FormSheetState get() = FormSheetState(
-        showAccount = showAccountSheet,
-        showTargetAccount = showTargetAccountSheet,
-        showCategory = showCategorySheet,
-        showPaymentMethod = showPaymentMethodSheet,
-        showStatus = showStatusSheet,
-        showTag = showTagSheet,
-        showCurrency = showCurrencySheet,
-        showTargetCurrency = showTargetCurrencySheet,
-        showExchangeRate = showExchangeRateDialog,
-        showDate = showDatePicker,
-        showWarrantyDate = showWarrantyDatePicker,
-        showLocation = showLocationSheet,
-        showLinkedTransaction = showLinkedTransactionSheet,
-        isNumpadVisible = isNumpadVisible,
-        activeAmountSide = activeAmountSide
-    )
+    val sheetState: FormSheetState
+        get() = FormSheetState(
+            showAccount = showAccountSheet,
+            showTargetAccount = showTargetAccountSheet,
+            showCategory = showCategorySheet,
+            showPaymentMethod = showPaymentMethodSheet,
+            showStatus = showStatusSheet,
+            showTag = showTagSheet,
+            showCurrency = showCurrencySheet,
+            showTargetCurrency = showTargetCurrencySheet,
+            showExchangeRate = showExchangeRateDialog,
+            showDate = showDatePicker,
+            showWarrantyDate = showWarrantyDatePicker,
+            showLocation = showLocationSheet,
+            showLinkedTransaction = showLinkedTransactionSheet,
+            isNumpadVisible = isNumpadVisible,
+            activeAmountSide = activeAmountSide
+        )
 
     // Legacy mapping for UI and logic compatibility
     val amount: String get() = source.amount

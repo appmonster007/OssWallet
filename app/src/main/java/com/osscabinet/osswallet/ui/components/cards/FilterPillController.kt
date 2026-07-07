@@ -49,8 +49,13 @@ class FilterPillController {
     var activeRequest: FilterPillRequest? by mutableStateOf(null)
         private set
 
-    fun show(request: FilterPillRequest) { activeRequest = request }
-    fun dismiss() { activeRequest = null }
+    fun show(request: FilterPillRequest) {
+        activeRequest = request
+    }
+
+    fun dismiss() {
+        activeRequest = null
+    }
 }
 
 val LocalFilterPillController = staticCompositionLocalOf<FilterPillController?> { null }

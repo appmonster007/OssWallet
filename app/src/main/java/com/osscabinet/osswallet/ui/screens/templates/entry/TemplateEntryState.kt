@@ -1,18 +1,17 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry
 
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.resolve
-import com.osscabinet.ossWallet.domain.model.toStored
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
+import com.osscabinet.ossWallet.domain.model.resolve
+import com.osscabinet.ossWallet.domain.model.toStored
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.ui.components.entry.EntryField
 import com.osscabinet.ossWallet.ui.components.entry.FormSheetState
@@ -76,22 +75,23 @@ data class TemplateEntryState(
     val displayLinkedTxs: List<Transaction> = emptyList(),
     val selectedCategory: Category? = null,
 ) {
-    val sheetState: FormSheetState get() = FormSheetState(
-        showAccount = showAccountSheet,
-        showTargetAccount = showTargetAccountSheet,
-        showCategory = showCategorySheet,
-        showPaymentMethod = showPaymentMethodSheet,
-        showStatus = showStatusSheet,
-        showTag = showTagSheet,
-        showCurrency = showCurrencySheet,
-        showTargetCurrency = showTargetCurrencySheet,
-        showExchangeRate = showExchangeRateDialog,
-        showWarrantyDate = showWarrantyDatePicker,
-        showLocation = showLocationSheet,
-        showLinkedTransaction = showLinkedTransactionSheet,
-        isNumpadVisible = isNumpadVisible,
-        activeAmountSide = activeAmountSide
-    )
+    val sheetState: FormSheetState
+        get() = FormSheetState(
+            showAccount = showAccountSheet,
+            showTargetAccount = showTargetAccountSheet,
+            showCategory = showCategorySheet,
+            showPaymentMethod = showPaymentMethodSheet,
+            showStatus = showStatusSheet,
+            showTag = showTagSheet,
+            showCurrency = showCurrencySheet,
+            showTargetCurrency = showTargetCurrencySheet,
+            showExchangeRate = showExchangeRateDialog,
+            showWarrantyDate = showWarrantyDatePicker,
+            showLocation = showLocationSheet,
+            showLinkedTransaction = showLinkedTransactionSheet,
+            isNumpadVisible = isNumpadVisible,
+            activeAmountSide = activeAmountSide
+        )
 
     // Legacy mapping
     val accountId: String? get() = source.account.toStored()
@@ -113,10 +113,11 @@ data class TemplateEntryState(
     val amountValue: BigDecimal
         get() = source.amountValue
 
-    val errors: Set<EntryField> get() = buildSet {
-        if (name.isBlank()) add(EntryField.NAME)
-        // Templates can have empty amounts or categories as they are partially filled
-    }
+    val errors: Set<EntryField>
+        get() = buildSet {
+            if (name.isBlank()) add(EntryField.NAME)
+            // Templates can have empty amounts or categories as they are partially filled
+        }
 
     val hasError: Boolean get() = errors.isNotEmpty()
 

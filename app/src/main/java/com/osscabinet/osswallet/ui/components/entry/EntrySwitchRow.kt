@@ -54,7 +54,8 @@ fun EntrySwitchRow(
 ) {
     val uiScale = AeonTheme.uiScale
     val horizontalPadding = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding
-    val verticalPadding = if (isFlush) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.cardPadding
+    val verticalPadding =
+        if (isFlush) AeonTheme.dimensions.spacingSm else AeonTheme.dimensions.cardPadding
 
     Row(
         modifier = modifier
@@ -67,7 +68,12 @@ fun EntrySwitchRow(
             modifier = Modifier
                 .weight(1f)
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(start = horizontalPadding, top = verticalPadding, bottom = verticalPadding, end = scaledDp(12f, uiScale)),
+                .padding(
+                    start = horizontalPadding,
+                    top = verticalPadding,
+                    bottom = verticalPadding,
+                    end = scaledDp(12f, uiScale)
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, uiScale))
         ) {
@@ -92,7 +98,9 @@ fun EntrySwitchRow(
                 Text(
                     text = label,
                     style = AppTextStyles.transactionTitle,
-                    color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(alpha = 0.4f)
+                    color = if (enabled) AppColors.contentPrimary else AppColors.contentPrimary.copy(
+                        alpha = 0.4f
+                    )
                 )
                 if (subtitle != null) {
                     Text(

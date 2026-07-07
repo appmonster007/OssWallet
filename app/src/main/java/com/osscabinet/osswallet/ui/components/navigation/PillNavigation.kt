@@ -12,9 +12,9 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -69,10 +69,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.zIndex
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.EntryMode
-
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.theme.AeonSize
@@ -272,7 +270,8 @@ fun PillNavigationBar(
     val spacing = dimensions.spacingSm // 8.dp (The base grid unit)
     val itemWidth = AeonSize.D56.value // Standard touch target width
     val barHeight = AeonSize.D54.value // Matches Material BottomAppBar height
-    val indicatorHeight = barHeight - (2.times(spacing)) // Leaves exactly 8dp (spacingSm) vertical padding
+    val indicatorHeight =
+        barHeight - (2.times(spacing)) // Leaves exactly 8dp (spacingSm) vertical padding
 
     // Total width = (ItemWidth * Tabs) + (Spacing * (Tabs + 1))
     val barWidth = (itemWidth * tabs.size) + (spacing * (tabs.size + 1))
@@ -285,7 +284,7 @@ fun PillNavigationBar(
             modifier = Modifier
                 .width(barWidth)
                 .height(barHeight),
-            shape = RoundedCornerShape(barHeight/2),
+            shape = RoundedCornerShape(barHeight / 2),
             hazeLayer = HazeLayer.Overlay,
             hazeStyle = GlassTokens.pillStyle(),
             glassVariant = GlassVariant.Pill,
@@ -310,7 +309,7 @@ fun PillNavigationBar(
                         .align(Alignment.CenterStart)
                         .background(
                             color = AppColors.primaryContainer,
-                            shape = RoundedCornerShape(indicatorHeight/2)
+                            shape = RoundedCornerShape(indicatorHeight / 2)
                         )
                 )
 
@@ -616,9 +615,11 @@ fun UnifiedPillNavigationPreview() {
     var isExpanded by remember { mutableStateOf(false) }
 
     OssWalletTheme {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(AppColors.background)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(AppColors.background)
+        ) {
             UnifiedPillNavigation(
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },

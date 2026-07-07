@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -163,7 +162,9 @@ fun QuickAddTemplateStep(
                                     item(span = { GridItemSpan(numColumns) }) {
                                         DrillBackHeader(
                                             parent = currentParent,
-                                            onBack = { categoryNavStack = categoryNavStack.dropLast(1) },
+                                            onBack = {
+                                                categoryNavStack = categoryNavStack.dropLast(1)
+                                            },
                                             onSelectParent = { onCategorySelected(currentParent) }
                                         )
                                     }
@@ -205,7 +206,7 @@ fun QuickAddTemplateStep(
                                     }
 
                                     is QuickAddResult.CategoryItem -> {
-                                        val hasChildren = searchQuery.isBlank() && 
+                                        val hasChildren = searchQuery.isBlank() &&
                                                 childrenMap[item.category.id]?.isNotEmpty() == true
                                         AtelierTile(
                                             label = item.category.name,
@@ -213,9 +214,10 @@ fun QuickAddTemplateStep(
                                             iconColor = item.category.colorHex.toOpaqueColor(),
                                             isSelected = item.category.id == selectedCategoryId && selectedTemplateId == null,
                                             hasChildren = hasChildren,
-                                            onTap = { 
+                                            onTap = {
                                                 if (hasChildren && !Category.isSystemCategory(item.category.id)) {
-                                                    categoryNavStack = categoryNavStack + item.category.id
+                                                    categoryNavStack =
+                                                        categoryNavStack + item.category.id
                                                     keyboardController?.hide()
                                                     focusManager.clearFocus()
                                                 } else {
@@ -351,20 +353,58 @@ private fun DrillBackHeader(
 @Composable
 fun PreviewQuickAddTemplateStep() {
     val mockTemplates = listOf(
-        Template(id = 1, name = "Starbucks", categoryId = 1, amount = BigDecimal("5.50"), entryMode = EntryMode.EXPENSE, currency = "USD", accountId = "1"),
-        Template(id = 2, name = "Rent", categoryId = 2, amount = BigDecimal("1200.00"), entryMode = EntryMode.EXPENSE, currency = "USD", accountId = "2", isStarred = true)
+        Template(
+            id = 1,
+            name = "Starbucks",
+            categoryId = 1,
+            amount = BigDecimal("5.50"),
+            entryMode = EntryMode.EXPENSE,
+            currency = "USD",
+            accountId = "1"
+        ),
+        Template(
+            id = 2,
+            name = "Rent",
+            categoryId = 2,
+            amount = BigDecimal("1200.00"),
+            entryMode = EntryMode.EXPENSE,
+            currency = "USD",
+            accountId = "2",
+            isStarred = true
+        )
     )
 
     val mockCategories = listOf(
-        Category(id = 1, name = "Coffee", iconName = "Coffee", colorHex = -123456, isDefault = false, parentId = null),
-        Category(id = 2, name = "Housing", iconName = "Home", colorHex = -654321, isDefault = false, parentId = null),
-        Category(id = 3, name = "Food", iconName = "Restaurant", colorHex = -987654, isDefault = false, parentId = null)
+        Category(
+            id = 1,
+            name = "Coffee",
+            iconName = "Coffee",
+            colorHex = -123456,
+            isDefault = false,
+            parentId = null
+        ),
+        Category(
+            id = 2,
+            name = "Housing",
+            iconName = "Home",
+            colorHex = -654321,
+            isDefault = false,
+            parentId = null
+        ),
+        Category(
+            id = 3,
+            name = "Food",
+            iconName = "Restaurant",
+            colorHex = -987654,
+            isDefault = false,
+            parentId = null
+        )
     )
 
     val mockSections = listOf(
         QuickAddSection(
             title = "TEMPLATES",
-            items = mockTemplates.map { 
+            items = mockTemplates.map {
                 QuickAddResult.TemplateItem(it, "Coffee", -123456)
             }
         ),
@@ -393,7 +433,9 @@ fun PreviewQuickAddTemplateStep() {
     )
 
     OssWalletTheme {
-        Box(modifier = Modifier.background(AppColors.background).padding(vertical = 20.dp)) {
+        Box(modifier = Modifier
+            .background(AppColors.background)
+            .padding(vertical = 20.dp)) {
             QuickAddTemplateStep(
                 sections = mockSections,
                 searchQuery = "",

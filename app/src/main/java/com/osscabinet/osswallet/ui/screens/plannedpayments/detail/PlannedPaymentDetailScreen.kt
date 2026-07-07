@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.detail
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,9 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -22,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.Bookmark
@@ -38,15 +41,10 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -54,7 +52,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,17 +72,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
-import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -93,17 +89,16 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppBarIconButton
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.management.AeonListItem
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.NavigationTab
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
@@ -114,8 +109,8 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -164,7 +159,8 @@ fun PlannedPaymentDetailScreen(
 
     LaunchedEffect(lastUndoAction) {
         val action = lastUndoAction ?: return@LaunchedEffect
-        val message = if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
+        val message =
+            if (action is UndoAction.ConfirmUndo) "Payment confirmed" else "Occurrence skipped"
         val result = snackbarHostState.showSnackbar(
             message = message,
             actionLabel = "Undo",
@@ -279,7 +275,10 @@ fun PlannedPaymentDetailContent(
     var filter by remember {
         mutableStateOf(
             TransactionFilter(
-                timelineRange = TimelineRange.ThisPeriod(ThisPeriodType.MONTH, excludeFuture = false)
+                timelineRange = TimelineRange.ThisPeriod(
+                    ThisPeriodType.MONTH,
+                    excludeFuture = false
+                )
             )
         )
     }
@@ -294,9 +293,14 @@ fun PlannedPaymentDetailContent(
         occurrences.filter { it.scheduledDate < now }.sortedByDescending { it.scheduledDate }
     }
 
-    val account = remember(payment.accountId, accounts) { accounts.find { it.id == payment.accountId } }
-    val category = remember(payment.categoryId, categories) { categories.find { it.id == payment.categoryId } }
-    val targetAccount = remember(payment.targetAccountId, accounts) { accounts.find { it.id == payment.targetAccountId } }
+    val account =
+        remember(payment.accountId, accounts) { accounts.find { it.id == payment.accountId } }
+    val category =
+        remember(payment.categoryId, categories) { categories.find { it.id == payment.categoryId } }
+    val targetAccount = remember(
+        payment.targetAccountId,
+        accounts
+    ) { accounts.find { it.id == payment.targetAccountId } }
 
     val occurrencesMap = remember(occurrences) {
         occurrences.associateBy { it.scheduledDate }
@@ -308,7 +312,8 @@ fun PlannedPaymentDetailContent(
     }
 
     val targetAccountColor = remember(targetAccount?.colorHex, defaultColor) {
-        targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) } ?: defaultColor
+        targetAccount?.colorHex?.let { Color(android.graphics.Color.parseColor(it)) }
+            ?: defaultColor
     }
 
     val categoryColor = remember(category?.colorHex, defaultColor) {
@@ -361,7 +366,8 @@ fun PlannedPaymentDetailContent(
                                     item {
                                         Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
                                             CompactDetailCell(
-                                                icon = AppIconMap[account?.icon] ?: Icons.Rounded.AccountBalance,
+                                                icon = AppIconMap[account?.icon]
+                                                    ?: Icons.Rounded.AccountBalance,
                                                 label = "ACCOUNT",
                                                 value = account?.name ?: "Unknown",
                                                 modifier = Modifier.weight(1f),
@@ -370,7 +376,8 @@ fun PlannedPaymentDetailContent(
 
                                             if (payment.entryMode == EntryMode.TRANSFER) {
                                                 CompactDetailCell(
-                                                    icon = AppIconMap[targetAccount?.icon] ?: Icons.Rounded.AccountBalance,
+                                                    icon = AppIconMap[targetAccount?.icon]
+                                                        ?: Icons.Rounded.AccountBalance,
                                                     label = "TARGET ACCOUNT",
                                                     value = targetAccount?.name ?: "Unknown",
                                                     modifier = Modifier.weight(1f),
@@ -378,7 +385,8 @@ fun PlannedPaymentDetailContent(
                                                 )
                                             } else {
                                                 CompactDetailCell(
-                                                    icon = AppIconMap[category?.iconName] ?: Icons.Rounded.Category,
+                                                    icon = AppIconMap[category?.iconName]
+                                                        ?: Icons.Rounded.Category,
                                                     label = "CATEGORY",
                                                     value = category?.name ?: "Unknown",
                                                     modifier = Modifier.weight(1f),
@@ -394,7 +402,10 @@ fun PlannedPaymentDetailContent(
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                                             color = AppColors.cardSurface,
-                                            border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.12f))
+                                            border = BorderStroke(
+                                                0.5.dp,
+                                                AppColors.divider.copy(alpha = 0.12f)
+                                            )
                                         ) {
                                             Column(
                                                 modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
@@ -434,7 +445,8 @@ fun PlannedPaymentDetailContent(
                                                 DetailMetaRow(
                                                     icon = Icons.Rounded.LocalOffer,
                                                     label = "Tags",
-                                                    value = payment.tags.ifEmpty { setOf("None") }.joinToString(" · ")
+                                                    value = payment.tags.ifEmpty { setOf("None") }
+                                                        .joinToString(" · ")
                                                 )
 
                                                 HorizontalDivider(
@@ -444,7 +456,8 @@ fun PlannedPaymentDetailContent(
 
                                                 // 4. Payment Status Row (Planned Payment Status)
                                                 DetailMetaRow(
-                                                    icon = AppIconMap[payment.status.iconName] ?: Icons.Rounded.CheckCircle,
+                                                    icon = AppIconMap[payment.status.iconName]
+                                                        ?: Icons.Rounded.CheckCircle,
                                                     label = "Payment Status",
                                                     value = payment.status.displayName,
                                                     valueColor = statusColor
@@ -453,13 +466,16 @@ fun PlannedPaymentDetailContent(
                                                 // 5. Grid Row: Payment Method & Transaction Status
                                                 Row(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+                                                    horizontalArrangement = Arrangement.spacedBy(
+                                                        AeonTheme.dimensions.spacingMd
+                                                    )
                                                 ) {
                                                     Box(modifier = Modifier.weight(1f)) {
                                                         DetailMetaRow(
                                                             icon = Icons.Rounded.Payments,
                                                             label = "Method",
-                                                            value = payment.paymentMethod?.displayName ?: "Cash"
+                                                            value = payment.paymentMethod?.displayName
+                                                                ?: "Cash"
                                                         )
                                                     }
                                                     Box(modifier = Modifier.weight(1f)) {
@@ -484,7 +500,12 @@ fun PlannedPaymentDetailContent(
                                                     DetailMetaRow(
                                                         icon = Icons.Rounded.Repeat,
                                                         label = "Transfer Rate",
-                                                        value = "1 : ${payment.transferRate.setScale(3, RoundingMode.HALF_UP).toPlainString()}"
+                                                        value = "1 : ${
+                                                            payment.transferRate.setScale(
+                                                                3,
+                                                                RoundingMode.HALF_UP
+                                                            ).toPlainString()
+                                                        }"
                                                     )
                                                 }
                                             }
@@ -503,8 +524,10 @@ fun PlannedPaymentDetailContent(
                                         items(
                                             upcomingItems,
                                             key = { "${it.plannedPayment.id}_${it.scheduledDate}" }) { item ->
-                                            val matchedOccurrence = occurrencesMap[item.scheduledDate]
-                                            val status = matchedOccurrence?.status ?: OccurrenceStatus.PENDING
+                                            val matchedOccurrence =
+                                                occurrencesMap[item.scheduledDate]
+                                            val status = matchedOccurrence?.status
+                                                ?: OccurrenceStatus.PENDING
                                             OccurrenceItem(
                                                 scheduledDate = item.scheduledDate,
                                                 amount = item.plannedPayment.amount,
@@ -620,6 +643,7 @@ fun PlannedPaymentDetailContent(
                                         onClick = onEditClick
                                     )
                                 }
+
                                 1 -> {
                                     // No extra actions for history tab yet
                                 }
@@ -769,7 +793,6 @@ private fun DetailMetaRow(
 }
 
 
-
 @Composable
 private fun OccurrenceItem(
     scheduledDate: Long,
@@ -853,8 +876,18 @@ private fun OccurrenceItem(
                 }
             } else {
                 val (statusLabel, statusColor, statusIcon) = when (status) {
-                    OccurrenceStatus.CONFIRMED -> Triple("Confirmed", AppColors.primary, Icons.Rounded.CheckCircle)
-                    OccurrenceStatus.SKIPPED -> Triple("Skipped", AppColors.contentSecondary.copy(alpha = 0.4f), Icons.Rounded.Cancel)
+                    OccurrenceStatus.CONFIRMED -> Triple(
+                        "Confirmed",
+                        AppColors.primary,
+                        Icons.Rounded.CheckCircle
+                    )
+
+                    OccurrenceStatus.SKIPPED -> Triple(
+                        "Skipped",
+                        AppColors.contentSecondary.copy(alpha = 0.4f),
+                        Icons.Rounded.Cancel
+                    )
+
                     else -> Triple("Pending", AppColors.secondary, Icons.Rounded.Schedule)
                 }
                 Row(
@@ -889,7 +922,13 @@ private fun PastOccurrenceItem(
             AppColors.primary,
             Icons.Rounded.CheckCircle
         )
-        OccurrenceStatus.SKIPPED -> Triple("Skipped", AppColors.contentSecondary.copy(alpha = 0.5f), Icons.Rounded.Cancel)
+
+        OccurrenceStatus.SKIPPED -> Triple(
+            "Skipped",
+            AppColors.contentSecondary.copy(alpha = 0.5f),
+            Icons.Rounded.Cancel
+        )
+
         OccurrenceStatus.PENDING -> Triple(
             "Pending",
             AppColors.contentSecondary,
@@ -1028,8 +1067,8 @@ fun OccurrenceItemPreview() {
         )
     }
 
-    val dateFormatter = remember { 
-        DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault()) 
+    val dateFormatter = remember {
+        DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
     }
 
     OssWalletTheme {

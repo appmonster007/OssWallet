@@ -2,7 +2,16 @@ package com.osscabinet.ossWallet.ui.screens.import_csv.steps
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,12 +20,18 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.import_csv.EntityMapping
 import com.osscabinet.ossWallet.domain.model.import_csv.ImportPreview
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
@@ -123,11 +138,25 @@ private fun MainEntityMappingContent(
     onSelectGroup: (String) -> Unit,
     onConfirm: () -> Unit
 ) {
-    Text("Accounts & Categories", style = AppTextStyles.heroAmount, color = AppColors.contentPrimary)
-    Text("Map accounts and categories. Tap a category group to configure its mappings.", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+    Text(
+        "Accounts & Categories",
+        style = AppTextStyles.heroAmount,
+        color = AppColors.contentPrimary
+    )
+    Text(
+        "Map accounts and categories. Tap a category group to configure its mappings.",
+        style = AppTextStyles.caption,
+        color = AppColors.contentSecondary
+    )
 
     if (preview.allCsvAccounts.isNotEmpty()) {
-        AccountsSection(preview.allCsvAccounts, accounts, accountMappings, shortlistedCurrencies, onUpdateAccountMapping)
+        AccountsSection(
+            preview.allCsvAccounts,
+            accounts,
+            accountMappings,
+            shortlistedCurrencies,
+            onUpdateAccountMapping
+        )
     }
 
     if (categoryGroups.isNotEmpty()) {
@@ -154,7 +183,11 @@ private fun AccountsSection(
     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
     AeonSectionHeader(title = "ACCOUNTS \u2014 ${csvAccounts.size} found")
     csvAccounts.forEach { acc ->
-        val em = accountMappings[acc.name] ?: EntityMapping(acc.name, acc.suggestedExistingId, EntityMapping.EntityType.ACCOUNT)
+        val em = accountMappings[acc.name] ?: EntityMapping(
+            acc.name,
+            acc.suggestedExistingId,
+            EntityMapping.EntityType.ACCOUNT
+        )
         val isExcluded = em.existingId == "__EXCLUDE__"
         EntityMappingRow(
             label = acc.name,
@@ -165,7 +198,12 @@ private fun AccountsSection(
             onSelect = { id -> onUpdateAccountMapping(acc.name, em.copy(existingId = id)) },
             showExcludeOption = true,
             currencyCode = em.currencyCode,
-            onCurrencySelect = { curr -> onUpdateAccountMapping(acc.name, em.copy(currencyCode = curr)) },
+            onCurrencySelect = { curr ->
+                onUpdateAccountMapping(
+                    acc.name,
+                    em.copy(currencyCode = curr)
+                )
+            },
             supportedCurrencies = shortlistedCurrencies
         )
     }
@@ -194,16 +232,28 @@ private fun CategoriesSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(AeonTheme.dimensions.cardPadding),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(AeonTheme.dimensions.cardPadding),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = group.parentName ?: "Top-level categories", style = AppTextStyles.listItemTitle, color = AppColors.contentPrimary)
-                    Text(text = if (group.items.size == 1) "1 category" else "${group.items.size} categories", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+                    Text(
+                        text = group.parentName ?: "Top-level categories",
+                        style = AppTextStyles.listItemTitle,
+                        color = AppColors.contentPrimary
+                    )
+                    Text(
+                        text = if (group.items.size == 1) "1 category" else "${group.items.size} categories",
+                        style = AppTextStyles.caption,
+                        color = AppColors.contentSecondary
+                    )
                 }
                 Surface(
-                    color = if (allMapped) AppColors.primaryContainer else AppColors.accentContainer.copy(alpha = 0.3f),
+                    color = if (allMapped) AppColors.primaryContainer else AppColors.accentContainer.copy(
+                        alpha = 0.3f
+                    ),
                     shape = RoundedCornerShape(50)
                 ) {
                     Text(
@@ -213,7 +263,12 @@ private fun CategoriesSection(
                         color = if (allMapped) AppColors.primary else AppColors.contentSecondary
                     )
                 }
-                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = AppColors.contentSecondary, modifier = Modifier.size(20.dp))
+                Icon(
+                    Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = AppColors.contentSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -232,20 +287,30 @@ private fun GroupDetailView(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         TextButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = AppColors.primary, modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = "Back",
+                tint = AppColors.primary,
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(Modifier.width(4.dp))
             Text("Back", style = AppTextStyles.buttonLabel, color = AppColors.primary)
         }
         Spacer(Modifier.weight(1f))
-        Text(group.parentName ?: "Top-level", style = AppTextStyles.overlineLabel, color = AppColors.contentSecondary)
+        Text(
+            group.parentName ?: "Top-level",
+            style = AppTextStyles.overlineLabel,
+            color = AppColors.contentSecondary
+        )
     }
 
     val parentName = group.parentName
     if (parentName != null) {
         AeonSectionHeader(title = "PARENT CATEGORY")
-        val existingRootMatch = rootCategories.find { it.second.equals(parentName, ignoreCase = true) }
+        val existingRootMatch =
+            rootCategories.find { it.second.equals(parentName, ignoreCase = true) }
         val selectedParentId = parentGroupMappings[parentName] ?: existingRootMatch?.first
-        
+
         EntityMappingRow(
             label = "\"$parentName\"",
             badgeText = null,
@@ -259,7 +324,11 @@ private fun GroupDetailView(
 
     AeonSectionHeader(title = if (parentName != null) "SUB-CATEGORIES" else "CATEGORIES")
     group.items.forEach { (_, cat) ->
-        val em = categoryMappings[cat.name] ?: EntityMapping(cat.name, null, EntityMapping.EntityType.CATEGORY)
+        val em = categoryMappings[cat.name] ?: EntityMapping(
+            cat.name,
+            null,
+            EntityMapping.EntityType.CATEGORY
+        )
         EntityMappingRow(
             label = cat.name,
             badgeText = null,
@@ -271,7 +340,11 @@ private fun GroupDetailView(
     }
 
     Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
-    AeonDashedButton(onClick = onBack, text = "Done with this group", icon = Icons.Rounded.CheckCircle)
+    AeonDashedButton(
+        onClick = onBack,
+        text = "Done with this group",
+        icon = Icons.Rounded.CheckCircle
+    )
     Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
 }
 
@@ -285,12 +358,34 @@ private fun EntityMappingStepPreview() {
                     totalRows = 10,
                     validRows = 8,
                     allCsvAccounts = listOf(
-                        com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap("HDFC CSV", "1", "HDFC Bank", 5, true),
-                        com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap("Cash CSV", null, null, 3, false)
+                        com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap(
+                            "HDFC CSV",
+                            "1",
+                            "HDFC Bank",
+                            5,
+                            true
+                        ),
+                        com.osscabinet.ossWallet.domain.model.import_csv.AccountToMap(
+                            "Cash CSV",
+                            null,
+                            null,
+                            3,
+                            false
+                        )
                     ),
                     newCategories = listOf(
-                        com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap("Dining", null, true, "Food"),
-                        com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap("Uber", null, true, "Transport")
+                        com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap(
+                            "Dining",
+                            null,
+                            true,
+                            "Food"
+                        ),
+                        com.osscabinet.ossWallet.domain.model.import_csv.CategoryToMap(
+                            "Uber",
+                            null,
+                            true,
+                            "Transport"
+                        )
                     ),
                     duplicates = emptyList(),
                     parseErrors = emptyList(),

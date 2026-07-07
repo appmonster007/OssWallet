@@ -4,27 +4,27 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterAlt
@@ -43,27 +43,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -74,6 +68,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.util.applyFlowTint
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 @Composable
@@ -92,7 +87,11 @@ fun AeonSettingsToggle(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 4.dp)),
+                .padding(
+                    if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(
+                        vertical = 4.dp
+                    )
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -133,10 +132,15 @@ fun AeonSettingsToggle(
 
     if (showBackground) {
         Surface(
-            color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(alpha = 0.5f),
+            color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(
+                alpha = 0.5f
+            ),
             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
             modifier = modifier.fillMaxWidth(),
-            border = if (showBorder) BorderStroke(1.dp, AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f)) else null
+            border = if (showBorder) BorderStroke(
+                1.dp,
+                AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f)
+            ) else null
         ) {
             content()
         }
@@ -209,7 +213,11 @@ fun AeonGridColumnsSettings(
 ) {
     val content = @Composable {
         Column(
-            modifier = Modifier.padding(if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(vertical = 4.dp)),
+            modifier = Modifier.padding(
+                if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(
+                    vertical = 4.dp
+                )
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
@@ -457,7 +465,7 @@ fun AeonLazyRow(
                 if (visibleItems.isEmpty()) return@derivedStateOf -1
 
                 val center = layoutInfo.viewportStartOffset +
-                            (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset) / 2
+                        (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset) / 2
 
                 visibleItems.minByOrNull {
                     kotlin.math.abs((it.offset + it.size / 2) - center)

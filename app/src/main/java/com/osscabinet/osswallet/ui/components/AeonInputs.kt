@@ -22,7 +22,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -184,7 +182,9 @@ fun AeonStepperField(
                 Icon(
                     Icons.Rounded.Remove,
                     contentDescription = "Decrease",
-                    tint = if (value > min) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
+                    tint = if (value > min) AppColors.primary else AppColors.contentSecondary.copy(
+                        alpha = 0.3f
+                    )
                 )
             }
             Text(
@@ -201,7 +201,9 @@ fun AeonStepperField(
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = "Increase",
-                    tint = if (value < max) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.3f)
+                    tint = if (value < max) AppColors.primary else AppColors.contentSecondary.copy(
+                        alpha = 0.3f
+                    )
                 )
             }
         }

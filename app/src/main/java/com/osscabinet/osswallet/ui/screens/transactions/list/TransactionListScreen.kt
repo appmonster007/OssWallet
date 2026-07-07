@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,10 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
+import com.osscabinet.ossWallet.ui.navigation.SharedNavViewModels
 import kotlinx.serialization.json.Json
 
 /**
@@ -44,7 +43,7 @@ fun TransactionListScreen(
     val viewModel = vms.transactionViewModel
     val accountViewModel = vms.accountViewModel
     val analyticsViewModel = vms.analyticsViewModel
-    
+
     val listState by viewModel.listState.collectAsStateWithLifecycle()
     val accounts by accountViewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -89,9 +88,11 @@ fun TransactionListScreen(
                 Json.decodeFromString<TransactionFilter>(
                     java.net.URLDecoder.decode(config.filterJson, "UTF-8")
                 )
-            } catch (e: Exception) { null }
+            } catch (e: Exception) {
+                null
+            }
         } else null
-        
+
         viewModel.setRecordsMode(transient = !config.isTopLevel, filter = filter)
     }
 
@@ -119,13 +120,14 @@ fun TransactionListScreen(
         onJumpToLinked = { viewModel.performJump(it) },
         onTransactionEvent = { event ->
             when (event) {
-                is TransactionItemEvent.Click -> navigate { 
+                is TransactionItemEvent.Click -> navigate {
                     if (event.id.startsWith("tx_")) {
                         actions.onEditTransactionClick(event.id.removePrefix("tx_").toLong())
                     } else {
                         // Handle planned payment click if needed, maybe open detail?
                     }
                 }
+
                 is TransactionItemEvent.Expand -> viewModel.onItemExpanded(event.id)
                 is TransactionItemEvent.Collapse -> viewModel.onItemCollapsed(event.id)
                 is TransactionItemEvent.StatusChange -> viewModel.quickUpdateStatus(
@@ -140,8 +142,16 @@ fun TransactionListScreen(
                 is TransactionItemEvent.FullSwipeRight -> viewModel.toggleStatusClearedUncleared(
                     event.id
                 )
-                is TransactionItemEvent.ConfirmPlanned -> viewModel.confirmPlannedPayment(event.paymentId, event.scheduledDate)
-                is TransactionItemEvent.CancelPlanned -> viewModel.cancelPlannedPayment(event.paymentId, event.scheduledDate)
+
+                is TransactionItemEvent.ConfirmPlanned -> viewModel.confirmPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
+
+                is TransactionItemEvent.CancelPlanned -> viewModel.cancelPlannedPayment(
+                    event.paymentId,
+                    event.scheduledDate
+                )
             }
         },
         onBackClick = {

@@ -6,7 +6,6 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
-import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -46,6 +45,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListIte
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -65,7 +65,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import jakarta.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -490,20 +489,21 @@ class TransactionViewModel @Inject constructor(
             val payment = plannedPaymentRepository.getById(paymentId) ?: return@launch
             val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
 
-            val amount       = template?.amount       ?: payment.amount
-            val entryMode    = template?.entryMode    ?: payment.entryMode
-            val accountId    = (template?.accountId  ?: payment.accountId) ?: ""
-            val currency     = template?.currency     ?: payment.currency
-            val categoryId   = template?.categoryId  ?: payment.categoryId
-            val tags         = template?.tags         ?: payment.tags
-            val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
-            val payee        = template?.payee        ?: payment.payee ?: ""
-            val note         = template?.note         ?: payment.note ?: ""
-            val gpsLocation  = template?.gpsLocation  ?: payment.gpsLocation
-            val warrantyExp  = template?.warrantyExpiration ?: payment.warrantyExpiration
+            val amount = template?.amount ?: payment.amount
+            val entryMode = template?.entryMode ?: payment.entryMode
+            val accountId = (template?.accountId ?: payment.accountId) ?: ""
+            val currency = template?.currency ?: payment.currency
+            val categoryId = template?.categoryId ?: payment.categoryId
+            val tags = template?.tags ?: payment.tags
+            val paymentMethod =
+                template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
+            val payee = template?.payee ?: payment.payee ?: ""
+            val note = template?.note ?: payment.note ?: ""
+            val gpsLocation = template?.gpsLocation ?: payment.gpsLocation
+            val warrantyExp = template?.warrantyExpiration ?: payment.warrantyExpiration
             val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
-            val targetCurrency  = template?.targetCurrency  ?: payment.targetCurrency
-            val transferRate    = template?.transferRate     ?: payment.transferRate
+            val targetCurrency = template?.targetCurrency ?: payment.targetCurrency
+            val transferRate = template?.transferRate ?: payment.transferRate
 
             val request = TransactionRequest(
                 name = payment.name,
@@ -835,7 +835,8 @@ class TransactionViewModel @Inject constructor(
             _plannedPaymentPrefill.value = PlannedPaymentPrefillDTO(
                 template = template,
                 schedule = PaymentSchedule(
-                    recurrenceRule = pattern.recurrenceRule ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
+                    recurrenceRule = pattern.recurrenceRule
+                        ?: RecurrenceRule(RecurrenceType.MONTHLY, 1),
                     startDate = System.currentTimeMillis(),
                     nextDueDate = pattern.lastDate
                 )

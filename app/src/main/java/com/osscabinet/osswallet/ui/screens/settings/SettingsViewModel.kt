@@ -18,13 +18,14 @@ import com.osscabinet.ossWallet.domain.repository.ProfileRepository
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.BackupScheduler
-import com.osscabinet.ossWallet.domain.service.CsvImportService
 import com.osscabinet.ossWallet.domain.service.currency.provider.CurrencyMetadata
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProvider
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,8 +35,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -58,60 +57,64 @@ class SettingsViewModel @Inject constructor(
 
     val currency: StateFlow<String> = settingsRepository.currency
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
-    
+
     val theme: StateFlow<String> = settingsRepository.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "System")
-    
+
     val decimalPrecision: StateFlow<Int> = settingsRepository.decimalPrecision
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 2)
-    
+
     val numberingSystem: StateFlow<String> = settingsRepository.numberingSystem
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WESTERN")
-    
+
     val autoSaveExchangeRates: StateFlow<Boolean> = settingsRepository.autoSaveExchangeRates
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val cardAnimationEnabled: StateFlow<Boolean> = settingsRepository.cardAnimationEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val expandableFabEnabled: StateFlow<Boolean> = settingsRepository.expandableFabEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val use24HourFormat: StateFlow<Boolean> = settingsRepository.use24HourFormat
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val mapsAccessEnabled: StateFlow<Boolean> = settingsRepository.mapsAccessEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val currencyProvider: StateFlow<String> = settingsRepository.currencyProvider
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "exchangerate-api")
-    
+
     val useSystemFont: StateFlow<Boolean> = settingsRepository.useSystemFont
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val selectedFont: StateFlow<String> = settingsRepository.selectedFont
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Default")
-    
+
     val dynamicAccent: StateFlow<Boolean> = settingsRepository.dynamicAccent
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val glassmorphismEnabled: StateFlow<Boolean> = settingsRepository.glassmorphismEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val contourBgVersion: StateFlow<Int> = settingsRepository.contourBgVersion
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
-    
+
     val contourLinesEnabled: StateFlow<Boolean> = settingsRepository.contourLinesEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-    
+
     val randomizeContourEachLoad: StateFlow<Boolean> = settingsRepository.randomizeContourEachLoad
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-    
+
     val glassSettings: StateFlow<GlassSettings> = settingsRepository.glassSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GlassSettings())
 
     val uiDensity: StateFlow<String> = settingsRepository.uiDensity
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            com.osscabinet.ossWallet.domain.model.settings.UiDensity.DEFAULT.name
+        )
 
     val recentActivitiesBreakdown: StateFlow<Boolean> = settingsRepository.recentActivitiesBreakdown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -436,11 +439,36 @@ class SettingsViewModel @Inject constructor(
                     "lightAlpha" -> currentStyle.copy(glass = currentStyle.glass.copy(lightAlpha = defaultStyle.glass.lightAlpha))
                     "darkAlpha" -> currentStyle.copy(glass = currentStyle.glass.copy(darkAlpha = defaultStyle.glass.darkAlpha))
                     "noiseFactor" -> currentStyle.copy(glass = currentStyle.glass.copy(noiseFactor = defaultStyle.glass.noiseFactor))
-                    "shadowElevation" -> currentStyle.copy(surface = currentStyle.surface.copy(shadowElevation = defaultStyle.surface.shadowElevation))
-                    "borderAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(borderAlpha = defaultStyle.surface.borderAlpha))
-                    "ambientShadowAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(ambientShadowAlpha = defaultStyle.surface.ambientShadowAlpha))
-                    "spotShadowAlpha" -> currentStyle.copy(surface = currentStyle.surface.copy(spotShadowAlpha = defaultStyle.surface.spotShadowAlpha))
-                    "borderWidth" -> currentStyle.copy(surface = currentStyle.surface.copy(borderWidth = defaultStyle.surface.borderWidth))
+                    "shadowElevation" -> currentStyle.copy(
+                        surface = currentStyle.surface.copy(
+                            shadowElevation = defaultStyle.surface.shadowElevation
+                        )
+                    )
+
+                    "borderAlpha" -> currentStyle.copy(
+                        surface = currentStyle.surface.copy(
+                            borderAlpha = defaultStyle.surface.borderAlpha
+                        )
+                    )
+
+                    "ambientShadowAlpha" -> currentStyle.copy(
+                        surface = currentStyle.surface.copy(
+                            ambientShadowAlpha = defaultStyle.surface.ambientShadowAlpha
+                        )
+                    )
+
+                    "spotShadowAlpha" -> currentStyle.copy(
+                        surface = currentStyle.surface.copy(
+                            spotShadowAlpha = defaultStyle.surface.spotShadowAlpha
+                        )
+                    )
+
+                    "borderWidth" -> currentStyle.copy(
+                        surface = currentStyle.surface.copy(
+                            borderWidth = defaultStyle.surface.borderWidth
+                        )
+                    )
+
                     else -> currentStyle
                 }
 
@@ -490,7 +518,7 @@ class SettingsViewModel @Inject constructor(
             } else {
                 backupRepository.importData(uri.toString(), type)
             }
-            
+
             if (result.isSuccess) {
                 if (type == BackupType.SQLITE) {
                     _backupMessage.send("Database restored. Restarting app...")

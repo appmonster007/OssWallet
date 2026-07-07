@@ -49,7 +49,7 @@ fun AeonSearchField(
     trailingAction: @Composable (() -> Unit)? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
-    
+
     val fieldModifier = modifier
         .fillMaxWidth()
         .onFocusChanged { isFocused = it.isFocused }
@@ -113,7 +113,13 @@ fun AeonSearchField(
             onValueChange = onQueryChange,
             modifier = fieldModifier,
             placeholder = { Text(placeholder, style = AppTextStyles.formFieldHint) },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = AppColors.contentSecondary) },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = AppColors.contentSecondary
+                )
+            },
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (query.isNotEmpty()) {

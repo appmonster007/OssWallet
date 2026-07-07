@@ -124,7 +124,9 @@ object CurrencyReprUi {
             val v = amount ?: BigDecimal.ZERO
             when {
                 v < BigDecimal.ZERO -> partStyles.negative ?: AppColors.negative
-                v > BigDecimal.ZERO && spec.forceShowPlus -> partStyles.positive ?: AppColors.positive
+                v > BigDecimal.ZERO && spec.forceShowPlus -> partStyles.positive
+                    ?: AppColors.positive
+
                 else -> partStyles.neutral ?: Color.Unspecified
             }
         } else {

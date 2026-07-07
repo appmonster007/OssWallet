@@ -25,7 +25,6 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
-import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
@@ -54,6 +53,7 @@ import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListIte
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.ImmutableSet
@@ -85,7 +85,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import jakarta.inject.Inject
 
 enum class DashboardSection {
     NET_WORTH,
@@ -497,12 +496,18 @@ class DashboardViewModel @Inject constructor(
 
                     // Seed from cache so recomputations (e.g. after saving a transaction) show
                     // stale-but-valid data immediately instead of flashing Loading cards.
-                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(successState.profileId, successState.baseCurrency)
+                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(
+                        successState.profileId,
+                        successState.baseCurrency
+                    )
                     val localCardState = MutableStateFlow<PersistentMap<String, CardComputeState>>(
                         persistentMapOf<String, CardComputeState>().builder().apply {
                             configs.forEach { c ->
                                 val cached = cachedSnapshot[c.cardId]
-                                put(c.cardId, if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading)
+                                put(
+                                    c.cardId,
+                                    if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
+                                )
                             }
                         }.build()
                     )
@@ -645,9 +650,16 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             when (action) {
                 is UndoAction.SkipUndo -> {
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
-                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.paymentId,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
+                    val payment =
+                        plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
                         payment.copy(
                             schedule = payment.schedule.copy(
@@ -661,9 +673,16 @@ class DashboardViewModel @Inject constructor(
                 is UndoAction.ConfirmUndo -> {
                     val profileId = settingsRepository.currentProfileId.first()
                     transactionManager.deleteTransaction(action.transactionId, profileId)
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
-                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.paymentId,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
+                    val payment =
+                        plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
                         payment.copy(
                             schedule = payment.schedule.copy(

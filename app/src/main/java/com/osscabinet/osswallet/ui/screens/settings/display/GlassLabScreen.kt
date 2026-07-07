@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings.display
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -21,15 +20,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuOpen
 import androidx.compose.material.icons.rounded.Circle
-import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Dashboard
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
-import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,17 +48,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.GlassStyleConfig
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.screens.settings.SettingsViewModel
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -69,7 +66,6 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
 
 @Composable
@@ -148,7 +144,9 @@ fun GlassLabContent(
 
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.clickable { isDarkPreview = !isDarkPreview }
+                                        modifier = Modifier.clickable {
+                                            isDarkPreview = !isDarkPreview
+                                        }
                                     ) {
                                         Text(
                                             if (isDarkPreview) "DARK MODE" else "LIGHT MODE",
@@ -171,14 +169,20 @@ fun GlassLabContent(
                                         .height(200.dp),
                                     shape = RoundedCornerShape(24.dp),
                                     color = Color.Transparent,
-                                    border = BorderStroke(1.dp, if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant)
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isDarkPreview) Color.White.copy(alpha = 0.1f) else AppColors.outlineVariant
+                                    )
                                 ) {
                                     OssWalletPreviewTheme(theme = if (isDarkPreview) "Dark" else "Light") {
                                         AeonHazeProvider(
                                             backgroundColor = AppColors.screenBackground,
                                             drawContours = true
                                         ) { innerHaze ->
-                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Box(
+                                                contentAlignment = Alignment.Center,
+                                                modifier = Modifier.fillMaxSize()
+                                            ) {
                                                 // Background pattern to see the blur clearly
                                                 Column(
                                                     modifier = Modifier
@@ -191,7 +195,9 @@ fun GlassLabContent(
                                                         Text(
                                                             "GLASSMORPHISM PREVIEW TEXT ".repeat(2),
                                                             style = AppTextStyles.caption.copy(
-                                                                color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.2f),
+                                                                color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(
+                                                                    alpha = 0.2f
+                                                                ),
                                                                 letterSpacing = 2.sp
                                                             )
                                                         )
@@ -262,10 +268,14 @@ fun GlassLabContent(
                                     )
                                     Text(
                                         "Choose a glass profile to customize its specific properties",
-                                        style = AppTextStyles.caption.copy(color = AppColors.contentSecondary.copy(alpha = 0.6f))
+                                        style = AppTextStyles.caption.copy(
+                                            color = AppColors.contentSecondary.copy(
+                                                alpha = 0.6f
+                                            )
+                                        )
                                     )
                                 }
-                                
+
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -303,7 +313,9 @@ fun GlassLabContent(
                                                     Icon(
                                                         imageVector = icon,
                                                         contentDescription = null,
-                                                        tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.7f),
+                                                        tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(
+                                                            alpha = 0.7f
+                                                        ),
                                                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                                     )
                                                 }
@@ -336,10 +348,13 @@ fun GlassLabContent(
                                         style = AppTextStyles.sectionOverline,
                                         color = AppColors.primary
                                     )
-                                    
+
                                     TextButton(
                                         onClick = { onResetStyle(selectedToken) },
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                        contentPadding = PaddingValues(
+                                            horizontal = 12.dp,
+                                            vertical = 0.dp
+                                        ),
                                         modifier = Modifier.height(32.dp)
                                     ) {
                                         Icon(
@@ -371,53 +386,139 @@ fun GlassLabContent(
                                             value = currentConfig.glass.blurRadius,
                                             range = 0f..40f,
                                             valueDisplay = "${currentConfig.glass.blurRadius.toInt()}dp",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(blurRadius = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "blurRadius") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(blurRadius = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "blurRadius"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Light Alpha",
                                             value = currentConfig.glass.lightAlpha,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.lightAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(lightAlpha = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "lightAlpha") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(lightAlpha = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "lightAlpha"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Dark Alpha",
                                             value = currentConfig.glass.darkAlpha,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.darkAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(darkAlpha = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "darkAlpha") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(darkAlpha = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "darkAlpha"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Noise Factor",
                                             value = currentConfig.glass.noiseFactor,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.noiseFactor * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(noiseFactor = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "noiseFactor") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(noiseFactor = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "noiseFactor"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Shadow Elevation",
                                             value = currentConfig.surface.shadowElevation,
                                             range = 0f..32f,
                                             valueDisplay = "${currentConfig.surface.shadowElevation.toInt()}dp",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(shadowElevation = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "shadowElevation") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        surface = it.surface.copy(shadowElevation = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "shadowElevation"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Border Alpha",
                                             value = currentConfig.surface.borderAlpha,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.surface.borderAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(borderAlpha = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "borderAlpha") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        surface = it.surface.copy(borderAlpha = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "borderAlpha"
+                                                )
+                                            }
                                         )
                                     }
                                 }

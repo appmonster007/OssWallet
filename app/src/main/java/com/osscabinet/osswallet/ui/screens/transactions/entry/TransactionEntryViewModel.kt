@@ -1,13 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.entry
 
-import com.osscabinet.ossWallet.domain.model.toEntryMode
-import com.osscabinet.ossWallet.domain.model.isTransfer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
-import com.osscabinet.ossWallet.domain.model.toDbTransferSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Tag
@@ -16,6 +13,10 @@ import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.model.TransactionSplit
 import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
@@ -23,12 +24,11 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
-import com.osscabinet.ossWallet.domain.model.isOutside
-import com.osscabinet.ossWallet.domain.model.resolve
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import jakarta.inject.Inject
 
 /**
  * ViewModel dedicated to transaction entry screen state management.
@@ -68,7 +67,12 @@ class TransactionEntryViewModel @Inject constructor(
     override fun getIsRateFixed() = _state.value.isRateFixed
     override fun getAmountValue() = _state.value.amountValue
     override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
-        update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
+        update {
+            it.copy(
+                exchangeRate = rate,
+                destination = it.destination.copy(amount = targetAmountStr)
+            )
+        }
     }
 
     init {
@@ -128,7 +132,8 @@ class TransactionEntryViewModel @Inject constructor(
                     ?: data.accounts.firstOrNull()
 
                 val defaultCategory =
-                    data.categories.find { it.id == Category.SYSTEM_UNKNOWN } ?: data.categories.firstOrNull()
+                    data.categories.find { it.id == Category.SYSTEM_UNKNOWN }
+                        ?: data.categories.firstOrNull()
 
                 update {
                     it.copy(
@@ -147,7 +152,8 @@ class TransactionEntryViewModel @Inject constructor(
                         baseCurrency = baseCurrency,
                         mapsAccessEnabled = mapsAccess,
                         source = TransactionSide(
-                            account = selectedAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
+                            account = selectedAccount?.id?.let { AccountRef.fromStored(it) }
+                                ?: AccountRef.Unselected,
                             currency = selectedAccount?.currencyCode ?: "",
                             categoryId = defaultCategory?.id ?: Category.SYSTEM_UNKNOWN
                         ),
@@ -184,7 +190,8 @@ class TransactionEntryViewModel @Inject constructor(
             else -> transaction.transactionType.toEntryMode()
         }
 
-        val isOpenedAsReceiver = transaction.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
+        val isOpenedAsReceiver =
+            transaction.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
         var selectedAcc: Account? = accounts.find { it.id == transaction.accountId }
         var targetAcc: Account? = accounts.find { it.id == transaction.targetAccountId }
         var amountStr = "0"
@@ -209,12 +216,18 @@ class TransactionEntryViewModel @Inject constructor(
                 targetCurrency = transaction.currency
                 targetAmountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 amountStr = linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
-                    ?: TransactionEntryService.calculateSourceAmount(transaction.amount.abs(), transaction.transferRate)
+                    ?: TransactionEntryService.calculateSourceAmount(
+                        transaction.amount.abs(),
+                        transaction.transferRate
+                    )
             } else {
                 amountStr = transaction.amount.abs().stripTrailingZeros().toPlainString()
                 targetAmountStr =
                     linkedTransfer?.amount?.abs()?.stripTrailingZeros()?.toPlainString()
-                        ?: TransactionEntryService.calculateTargetAmount(transaction.amount.abs(), transaction.transferRate)
+                        ?: TransactionEntryService.calculateTargetAmount(
+                            transaction.amount.abs(),
+                            transaction.transferRate
+                        )
             }
             // Semantic Normalization: Unified category for both sides
             categoryId = if (Category.isInitialBalance(transaction.categoryId))
@@ -280,7 +293,8 @@ class TransactionEntryViewModel @Inject constructor(
         val accounts = currentState.accounts
         val txType = prefill.entryMode
 
-        val isOpenedAsReceiver = prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
+        val isOpenedAsReceiver =
+            prefill.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW
 
         // Use prefill data if available, otherwise fallback to current selection.
         // In TRANSFER mode: null id means Outside Wallet (DB convention) for all prefill sources.
@@ -290,6 +304,7 @@ class TransactionEntryViewModel @Inject constructor(
             prefId != null -> AccountRef.fromTransferSide(prefId)
             else -> AccountRef.Outside
         }
+
         var sourceRef = decode(prefill.accountId, currentState.source.account)
         var targetRef = decode(prefill.targetAccountId, currentState.destination.account)
         var sourceAccId: String? = (sourceRef as? AccountRef.Wallet)?.id
@@ -297,7 +312,8 @@ class TransactionEntryViewModel @Inject constructor(
 
         var sourceCurrency =
             prefill.currency.ifEmpty {
-                accounts.find { it.id == sourceAccId }?.currencyCode ?: currentState.selectedCurrency
+                accounts.find { it.id == sourceAccId }?.currencyCode
+                    ?: currentState.selectedCurrency
             }
         var targetCurr =
             prefill.targetCurrency ?: accounts.find { it.id == targetAccId }?.currencyCode ?: ""
@@ -338,9 +354,11 @@ class TransactionEntryViewModel @Inject constructor(
 
         // After a receiver flip the stored rate is the inflow inverse; invert it so it reads
         // source→destination from the form's now-normalised perspective.
-        val effectiveRate = if (txType == EntryMode.TRANSFER && isOpenedAsReceiver && rateBD.signum() != 0)
-            BigDecimal.ONE.divide(rateBD, 8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
-        else rateBD
+        val effectiveRate =
+            if (txType == EntryMode.TRANSFER && isOpenedAsReceiver && rateBD.signum() != 0)
+                BigDecimal.ONE.divide(rateBD, 8, java.math.RoundingMode.HALF_UP)
+                    .stripTrailingZeros()
+            else rateBD
 
         _state.update {
             it.copy(
@@ -453,13 +471,14 @@ class TransactionEntryViewModel @Inject constructor(
                 val newMode = event.type
 
                 _state.update { state ->
-                    val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
-                        oldMode = oldMode,
-                        newMode = newMode,
-                        currentSource = state.source,
-                        currentDestination = state.destination,
-                        isSplitMode = state.isSplitMode
-                    )
+                    val result =
+                        com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                            oldMode = oldMode,
+                            newMode = newMode,
+                            currentSource = state.source,
+                            currentDestination = state.destination,
+                            isSplitMode = state.isSplitMode
+                        )
 
                     state.copy(
                         entryMode = result.newMode,
@@ -524,7 +543,12 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
                     withProfile { profileId ->
-                        val txs = event.ids.mapNotNull { transactionUseCases.getTransactionById(it, profileId) }
+                        val txs = event.ids.mapNotNull {
+                            transactionUseCases.getTransactionById(
+                                it,
+                                profileId
+                            )
+                        }
                         update { it.copy(linkedTransactionIds = event.ids, linkedTxs = txs) }
                     }
                 }
@@ -589,12 +613,18 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetExchangeRate -> update {
                 val sync = TransactionEntryService.syncTransferState(
                     sourceAmount = it.source.amountValue,
-                    targetAmount = TransactionEntryService.calculateTargetAmountValue(it.source.amountValue, event.rate),
+                    targetAmount = TransactionEntryService.calculateTargetAmountValue(
+                        it.source.amountValue,
+                        event.rate
+                    ),
                     sourceCurrency = it.source.currency,
                     targetCurrency = it.destination.currency,
                     isFixed = true, // Manually setting rate always fixes it
                     activeSide = AmountEditingSide.SOURCE,
-                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(it.source.currency, it.exchangeRates)
+                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                        it.source.currency,
+                        it.exchangeRates
+                    )
                 )
 
                 it.copy(
@@ -788,7 +818,10 @@ class TransactionEntryViewModel @Inject constructor(
             tags = currentState.selectedTags,
             status = currentState.status,
             targetAmountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
-            exchangeRates = ExchangeRateSnapshot(anchor = "USD", rates = currentState.exchangeRates),
+            exchangeRates = ExchangeRateSnapshot(
+                anchor = "USD",
+                rates = currentState.exchangeRates
+            ),
             accounts = currentState.accounts,
             baseCurrency = currentState.baseCurrency,
             timestamp = finalTimestamp

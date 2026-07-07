@@ -56,7 +56,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -64,12 +63,12 @@ import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
+import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
-import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -154,7 +153,9 @@ fun AeonExpressiveCard(
     // with a non-zero, non-180 rotation (e.g., restored from saved state).
     var initialComposition by remember { mutableStateOf(true) }
     LaunchedEffect(isFrontVisible) {
-        if (initialComposition) { initialComposition = false; return@LaunchedEffect }
+        if (initialComposition) {
+            initialComposition = false; return@LaunchedEffect
+        }
         if (rotation > 0f && rotation < 180f) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
@@ -190,15 +191,17 @@ fun AeonExpressiveCard(
                     scaleX = scale
                     scaleY = scale
                     rotationY = rotation
-                    cameraDistance = 20f * density // Higher distance for a more premium, flat-instrument look
-                    
+                    cameraDistance =
+                        20f * density // Higher distance for a more premium, flat-instrument look
+
                     // Peak elevation at 90 degrees for a "leap" effect
-                    val elevationProgress = if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
+                    val elevationProgress =
+                        if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
                     shadowElevation = (2.dp + (8.dp * elevationProgress)).toPx()
-                    
+
                     // Subtle darkening as it rotates away from the viewer
                     alpha = 1f - (elevationProgress * 0.15f)
-                    
+
                     clip = true
                     shape = cardShape
                 }
@@ -211,7 +214,10 @@ fun AeonExpressiveCard(
                 .then(
                     if (rotation < 0.01f || rotation > 179.99f) {
                         Modifier.animateContentSize(
-                            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                            animationSpec = tween(
+                                durationMillis = 400,
+                                easing = FastOutSlowInEasing
+                            )
                         )
                     } else Modifier
                 )
@@ -342,6 +348,7 @@ fun AeonExpressiveCard(
                 is FilterEvent.UpdateTimeline -> currentOnFilterChange.value?.invoke(
                     currentFilter.value?.copy(timelineRange = event.range) ?: return@remember
                 )
+
                 is FilterEvent.Reset -> currentOnFilterChange.value?.invoke(TransactionFilter())
                 else -> Unit
             }
@@ -732,7 +739,9 @@ private fun AeonExpressiveCardAccentPreview() {
 @Composable
 private fun AeonHeroCardLightPreview() {
     OssWalletTheme(theme = "Light") {
-        Box(Modifier.background(AppColors.background).padding(16.dp)) {
+        Box(Modifier
+            .background(AppColors.background)
+            .padding(16.dp)) {
             AeonHeroCard(
                 title = "Net Worth",
                 amount = "$1,245,800.50",
@@ -747,7 +756,9 @@ private fun AeonHeroCardLightPreview() {
 @Composable
 private fun AeonHeroCardDarkPreview() {
     OssWalletTheme(theme = "Dark") {
-        Box(Modifier.background(AppColors.background).padding(16.dp)) {
+        Box(Modifier
+            .background(AppColors.background)
+            .padding(16.dp)) {
             AeonHeroCard(
                 title = "Wealth Fund",
                 amount = "$245,800.50",

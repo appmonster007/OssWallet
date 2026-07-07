@@ -2,14 +2,36 @@ package com.osscabinet.ossWallet.ui.screens.import_csv.steps
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -97,24 +119,57 @@ private fun ImportSummaryCard(preview: ImportPreview, effectiveCount: Int) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
             Row(modifier = Modifier.fillMaxWidth()) {
-                SummaryItem(effectiveCount.toString(), "will be imported", AppColors.primary, Modifier.weight(1f), true)
-                SummaryItem(preview.totalRows.toString(), "total rows", AppColors.contentSecondary, Modifier.weight(1f))
+                SummaryItem(
+                    effectiveCount.toString(),
+                    "will be imported",
+                    AppColors.primary,
+                    Modifier.weight(1f),
+                    true
+                )
+                SummaryItem(
+                    preview.totalRows.toString(),
+                    "total rows",
+                    AppColors.contentSecondary,
+                    Modifier.weight(1f)
+                )
             }
             Row(modifier = Modifier.fillMaxWidth()) {
-                val dupColor = if (preview.duplicates.isNotEmpty()) AppColors.accent else AppColors.contentSecondary
-                SummaryItem(preview.duplicates.size.toString(), "duplicates", dupColor, Modifier.weight(1f))
-                
-                val errColor = if (preview.parseErrors.isNotEmpty()) AppColors.error else AppColors.contentSecondary
-                SummaryItem(preview.parseErrors.size.toString(), "parse errors", errColor, Modifier.weight(1f))
+                val dupColor =
+                    if (preview.duplicates.isNotEmpty()) AppColors.accent else AppColors.contentSecondary
+                SummaryItem(
+                    preview.duplicates.size.toString(),
+                    "duplicates",
+                    dupColor,
+                    Modifier.weight(1f)
+                )
+
+                val errColor =
+                    if (preview.parseErrors.isNotEmpty()) AppColors.error else AppColors.contentSecondary
+                SummaryItem(
+                    preview.parseErrors.size.toString(),
+                    "parse errors",
+                    errColor,
+                    Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun SummaryItem(value: String, label: String, color: androidx.compose.ui.graphics.Color, modifier: Modifier, isHero: Boolean = false) {
+private fun SummaryItem(
+    value: String,
+    label: String,
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier,
+    isHero: Boolean = false
+) {
     Column(modifier = modifier) {
-        Text(value, style = if (isHero) AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Bold) else AppTextStyles.heroAmount, color = color)
+        Text(
+            value,
+            style = if (isHero) AppTextStyles.heroAmount.copy(fontWeight = FontWeight.Bold) else AppTextStyles.heroAmount,
+            color = color
+        )
         Text(label, style = AppTextStyles.caption, color = AppColors.contentSecondary)
     }
 }
@@ -130,10 +185,25 @@ private fun UnpairedTransferWarning(count: Int) {
             horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd),
             verticalAlignment = Alignment.Top
         ) {
-            Icon(Icons.Rounded.Warning, contentDescription = null, tint = AppColors.error, modifier = Modifier.size(20.dp).padding(top = 2.dp))
+            Icon(
+                Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = AppColors.error,
+                modifier = Modifier
+                    .size(20.dp)
+                    .padding(top = 2.dp)
+            )
             Column {
-                Text("$count unpaired transfer row${if (count > 1) "s" else ""}", style = AppTextStyles.cardSectionTitle, color = AppColors.onErrorContainer)
-                Text("Some transfer transactions are missing their counterpart in this file. These will be imported as outside-wallet transfers.", style = AppTextStyles.caption, color = AppColors.onErrorContainer)
+                Text(
+                    "$count unpaired transfer row${if (count > 1) "s" else ""}",
+                    style = AppTextStyles.cardSectionTitle,
+                    color = AppColors.onErrorContainer
+                )
+                Text(
+                    "Some transfer transactions are missing their counterpart in this file. These will be imported as outside-wallet transfers.",
+                    style = AppTextStyles.caption,
+                    color = AppColors.onErrorContainer
+                )
             }
         }
     }
@@ -150,8 +220,12 @@ private fun DuplicatePolicySection(
     onToggleDuplicate: (Int) -> Unit
 ) {
     HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
-    Text("DUPLICATE POLICY", style = AppTextStyles.formSectionLabel, color = AppColors.contentSecondary)
-    
+    Text(
+        "DUPLICATE POLICY",
+        style = AppTextStyles.formSectionLabel,
+        color = AppColors.contentSecondary
+    )
+
     DuplicatePolicy.entries.forEach { policy ->
         DuplicatePolicyItem(
             policy = policy,
@@ -162,7 +236,11 @@ private fun DuplicatePolicySection(
     }
 
     TextButton(onClick = onToggleDetail) {
-        Text(if (showDetail) "Hide Duplicates" else "Show ${preview.duplicates.size} Duplicates", style = AppTextStyles.buttonLabel, color = AppColors.primary)
+        Text(
+            if (showDetail) "Hide Duplicates" else "Show ${preview.duplicates.size} Duplicates",
+            style = AppTextStyles.buttonLabel,
+            color = AppColors.primary
+        )
     }
 
     AnimatedVisibility(visible = showDetail) {
@@ -199,23 +277,43 @@ private fun DuplicatePolicyItem(
         DuplicatePolicy.IMPORT_BOTH -> "Creates $count additional transaction${if (count != 1) "s" else ""} alongside existing ones"
         DuplicatePolicy.REPLACE_EXISTING -> "$count existing transaction${if (count != 1) "s" else ""} will be permanently updated"
     }
-    val consequenceColor = if (policy == DuplicatePolicy.REPLACE_EXISTING) AppColors.error else AppColors.contentSecondary
+    val consequenceColor =
+        if (policy == DuplicatePolicy.REPLACE_EXISTING) AppColors.error else AppColors.contentSecondary
 
     Surface(
         onClick = onSelect,
         color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.15f) else AppColors.cardSurface,
         shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-        border = if (isSelected) BorderStroke(1.dp, AppColors.accent) else BorderStroke(0.5.dp, AppColors.outlineVariant),
+        border = if (isSelected) BorderStroke(1.dp, AppColors.accent) else BorderStroke(
+            0.5.dp,
+            AppColors.outlineVariant
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(AeonTheme.dimensions.cardPadding)
+        ) {
             RadioButton(selected = isSelected, onClick = onSelect)
             Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
-            Icon(imageVector = icon, contentDescription = null, tint = if (isSelected) AppColors.accent else AppColors.contentSecondary, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isSelected) AppColors.accent else AppColors.contentSecondary,
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(Modifier.width(AeonTheme.dimensions.spacingSm))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold), color = if (isSelected) AppColors.contentPrimary else AppColors.contentSecondary)
-                Text(consequenceText, style = AppTextStyles.caption, color = if (isSelected) AppColors.contentPrimary.copy(alpha = 0.8f) else consequenceColor)
+                Text(
+                    text = title,
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold),
+                    color = if (isSelected) AppColors.contentPrimary else AppColors.contentSecondary
+                )
+                Text(
+                    consequenceText,
+                    style = AppTextStyles.caption,
+                    color = if (isSelected) AppColors.contentPrimary.copy(alpha = 0.8f) else consequenceColor
+                )
             }
         }
     }
@@ -230,13 +328,37 @@ private fun DuplicateRowItem(
     isSelected: Boolean,
     onToggle: () -> Unit
 ) {
-    Surface(color = AppColors.cardSurface, shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isSelected, onCheckedChange = { onToggle() }, modifier = Modifier.size(20.dp))
+    Surface(
+        color = AppColors.cardSurface,
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AeonTheme.dimensions.cardPadding, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onToggle() },
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Existing: ${existingNote.ifBlank { "(no note)" }}", style = AppTextStyles.caption, color = AppColors.contentSecondary)
-                Text("Incoming row $incomingRowIndex: ${incomingValues.take(4).joinToString(" · ")}", style = AppTextStyles.caption, color = AppColors.contentPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "Existing: ${existingNote.ifBlank { "(no note)" }}",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+                Text(
+                    "Incoming row $incomingRowIndex: ${
+                        incomingValues.take(4).joinToString(" · ")
+                    }",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -250,12 +372,20 @@ private fun ParseErrorsSection(
 ) {
     HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
     TextButton(onClick = onToggleDetail) {
-        Text(if (showDetail) "Hide ${errors.size} Errors" else "Show ${errors.size} Parse Errors", style = AppTextStyles.buttonLabel, color = AppColors.error)
+        Text(
+            if (showDetail) "Hide ${errors.size} Errors" else "Show ${errors.size} Parse Errors",
+            style = AppTextStyles.buttonLabel,
+            color = AppColors.error
+        )
     }
     AnimatedVisibility(visible = showDetail) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             errors.forEach { err ->
-                Text("Row ${err.rowIndex}: ${err.reason}", style = AppTextStyles.caption, color = AppColors.error)
+                Text(
+                    "Row ${err.rowIndex}: ${err.reason}",
+                    style = AppTextStyles.caption,
+                    color = AppColors.error
+                )
             }
         }
     }
@@ -271,13 +401,26 @@ private fun PreviewStepPreview() {
                     totalRows = 10,
                     validRows = 8,
                     duplicates = listOf(
-                        com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup("key1", "Lunch", 3, listOf("2023-10-01", "HDFC", "Food", "200")),
-                        com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup("key2", "Dinner", 5, listOf("2023-10-01", "Cash", "Food", "500"))
+                        com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup(
+                            "key1",
+                            "Lunch",
+                            3,
+                            listOf("2023-10-01", "HDFC", "Food", "200")
+                        ),
+                        com.osscabinet.ossWallet.domain.model.import_csv.DuplicateGroup(
+                            "key2",
+                            "Dinner",
+                            5,
+                            listOf("2023-10-01", "Cash", "Food", "500")
+                        )
                     ),
                     allCsvAccounts = emptyList(),
                     newCategories = emptyList(),
                     parseErrors = listOf(
-                        com.osscabinet.ossWallet.domain.model.import_csv.ParseError(2, "Invalid amount format")
+                        com.osscabinet.ossWallet.domain.model.import_csv.ParseError(
+                            2,
+                            "Invalid amount format"
+                        )
                     ),
                     unpairedTransferRows = 1
                 ),

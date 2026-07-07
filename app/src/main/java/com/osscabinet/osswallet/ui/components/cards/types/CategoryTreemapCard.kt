@@ -37,43 +37,40 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -108,7 +105,13 @@ fun CategoryTreemapCard(
 
     // D3+D6+N2: remember(filteredData) resets the stack immediately when underlying data or
     // active-categories filter changes — symmetric with CategoryPieChartCard.
-    var navigationStack by remember(filteredData) { mutableStateOf(listOf<List<CategoryChartData>>(filteredData)) }
+    var navigationStack by remember(filteredData) {
+        mutableStateOf(
+            listOf<List<CategoryChartData>>(
+                filteredData
+            )
+        )
+    }
     val currentData = navigationStack.last()
 
     // Grouping logic for "More Categories" grouping based on 2% threshold
@@ -126,7 +129,8 @@ fun CategoryTreemapCard(
 
         if (!isMoreCategoriesDrillDown) {
             val mainItems = sorted.filter { it.percentage >= 0.02f }
-            val others = sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
+            val others =
+                sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
 
             if (others.size > 1) {
                 val otherSum = others.sumOf { it.amount }
@@ -330,7 +334,7 @@ fun CategoryTreemapCard(
                         ),
                         color = AppColors.contentSecondary.copy(alpha = 0.6f)
                     )
-                    
+
                     val contentColor = AppColors.contentPrimary
                     Text(
                         text = CurrencyReprUi.formatCurrencyAnnotated(
@@ -338,7 +342,11 @@ fun CategoryTreemapCard(
                             currencyCode = currency,
                             spec = CurrencyDisplaySpec(useSemanticColor = false),
                             partStyles = CurrencyPartStyles(
-                                symbol = SpanStyle(fontWeight = FontWeight.Light, color = contentColor.copy(alpha = 0.6f), fontSize = 16.sp),
+                                symbol = SpanStyle(
+                                    fontWeight = FontWeight.Light,
+                                    color = contentColor.copy(alpha = 0.6f),
+                                    fontSize = 16.sp
+                                ),
                                 neutral = contentColor
                             )
                         ),
@@ -359,7 +367,8 @@ fun CategoryTreemapCard(
                     val isIncrease = delta.signum() > 0
                     val isDecrease = delta.signum() < 0
 
-                    val positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+                    val positiveDeltaIsGood =
+                        config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
 
                     val color = when {
                         isIncrease -> if (positiveDeltaIsGood) AppColors.positive else AppColors.negative
@@ -596,11 +605,22 @@ fun mapCategoryTreemap(
                 updateHandler.updateCardCategoryTreemapConfig(config.cardId, newConfig)
             } else {
                 if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
-                    android.util.Log.w("CardBridge", "CategoryTreemap.onUpdate: unexpected ${newConfig::class.simpleName}")
+                    android.util.Log.w(
+                        "CardBridge",
+                        "CategoryTreemap.onUpdate: unexpected ${newConfig::class.simpleName}"
+                    )
             }
         },
         onDelete = { onDelete(config.cardId) },
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

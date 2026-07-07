@@ -29,8 +29,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -63,9 +63,13 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -83,10 +87,6 @@ import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AccountRef
-import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import java.math.BigDecimal
 
 private const val STEP_TEMPLATE = 0
@@ -422,6 +422,7 @@ private fun QuickAddSheetContent(
                 target = state.selectedToAccount
             ).isValid
         }
+
         STEP_AMOUNT -> state.amount > BigDecimal.ZERO
         else -> false
     }
@@ -442,6 +443,7 @@ private fun QuickAddSheetContent(
                 state.accounts.find { it.id == state.selectedAccountId }?.name
             }
         }
+
         else -> null
     }
     val ctaLabel = when (state.currentStep) {
@@ -519,8 +521,10 @@ private fun QuickAddSheetContent(
                     )
 
                     STEP_AMOUNT -> {
-                        val selectedAccount = state.accounts.find { it.id == state.selectedAccountId }
-                        val selectedToAccount = state.accounts.find { it.id == state.selectedToAccountId }
+                        val selectedAccount =
+                            state.accounts.find { it.id == state.selectedAccountId }
+                        val selectedToAccount =
+                            state.accounts.find { it.id == state.selectedToAccountId }
                         val selectedCategory = categories.find { it.id == state.selectedCategoryId }
                         QuickAddAmountStep(
                             amount = state.amount,
@@ -533,8 +537,10 @@ private fun QuickAddSheetContent(
                             account = selectedAccount,
                             toAccount = selectedToAccount,
                             accounts = state.accounts,
-                            accountBalance = state.accountBalances[state.selectedAccountId] ?: BigDecimal.ZERO,
-                            toAccountBalance = state.accountBalances[state.selectedToAccountId] ?: BigDecimal.ZERO,
+                            accountBalance = state.accountBalances[state.selectedAccountId]
+                                ?: BigDecimal.ZERO,
+                            toAccountBalance = state.accountBalances[state.selectedToAccountId]
+                                ?: BigDecimal.ZERO,
                             entryMode = state.entryMode,
                             exchangeRates = state.exchangeRates,
                             baseCurrency = state.baseCurrency,
@@ -598,7 +604,15 @@ fun PreviewQuickAddSheet_Template() {
             "TEMPLATES",
             listOf(
                 QuickAddResult.TemplateItem(
-                    Template(1, "Coffee", 1, BigDecimal("5.00"), EntryMode.EXPENSE, currency = "USD", accountId = "1"),
+                    Template(
+                        1,
+                        "Coffee",
+                        1,
+                        BigDecimal("5.00"),
+                        EntryMode.EXPENSE,
+                        currency = "USD",
+                        accountId = "1"
+                    ),
                     "Coffee",
                     -123456
                 )
@@ -607,7 +621,16 @@ fun PreviewQuickAddSheet_Template() {
         QuickAddSection(
             "CATEGORIES",
             listOf(
-                QuickAddResult.CategoryItem(Category(1, "Food", "Restaurant", -16737025, false, null))
+                QuickAddResult.CategoryItem(
+                    Category(
+                        1,
+                        "Food",
+                        "Restaurant",
+                        -16737025,
+                        false,
+                        null
+                    )
+                )
             )
         )
     )
@@ -686,7 +709,8 @@ fun PreviewQuickAddSheet_Account() {
 @Composable
 fun PreviewQuickAddSheet_Amount() {
     val fromAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments")
-    val toAccount = Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+    val toAccount =
+        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
     val mockState = QuickAddState(
         currentStep = STEP_AMOUNT,
         entryMode = EntryMode.TRANSFER,
@@ -747,7 +771,7 @@ private fun EditorialHeader(title: String, subtext: String? = null) {
             )
         }
         Spacer(Modifier.height(4.dp))
-        Row (
+        Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween

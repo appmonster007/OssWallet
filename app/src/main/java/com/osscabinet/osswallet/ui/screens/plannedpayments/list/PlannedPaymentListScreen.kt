@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.list
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -62,40 +60,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.roundToInt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
-import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentListUiState
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.AppIconMap
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.management.ManagementListItem
 import com.osscabinet.ossWallet.ui.components.management.ManagementSectionHeader
 import com.osscabinet.ossWallet.ui.components.navigation.UnifiedPillNavigation
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
+import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentListUiState
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.PlannedPaymentViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonSize
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import kotlin.math.roundToInt
 
 @Composable
 private fun SwipeablePaymentItem(
@@ -175,7 +173,7 @@ private fun SwipeablePaymentItem(
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, dragAmount ->
                             val newOffset = offsetX + dragAmount
-                            
+
                             // Apply constraints and resistance
                             offsetX = when {
                                 newOffset > 0 && onConfirm == null -> 0f
@@ -184,6 +182,7 @@ private fun SwipeablePaymentItem(
                                     val sign = if (newOffset > 0) 1 else -1
                                     sign * (maxDragPx + (kotlin.math.abs(newOffset) - maxDragPx) * 0.3f)
                                 }
+
                                 else -> newOffset
                             }
 
@@ -199,7 +198,7 @@ private fun SwipeablePaymentItem(
                             val finalOffset = offsetX
                             offsetX = 0f // Reset UI state
                             isHapticTriggered = false
-                            
+
                             // Commit action
                             if (finalOffset >= thresholdPx) {
                                 onConfirm?.invoke()
@@ -400,23 +399,28 @@ fun PlannedPaymentListContent(
                                     )
                                 }
                                 items(overdue, key = { it.id }) { payment ->
-                                    val onConfirmAction = remember(payment.id, payment.schedule.nextDueDate) {
-                                        {
-                                            onConfirm(payment, payment.schedule.nextDueDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Payment confirmed",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                    val onConfirmAction =
+                                        remember(payment.id, payment.schedule.nextDueDate) {
+                                            {
+                                                onConfirm(payment, payment.schedule.nextDueDate)
+                                                scope.launch {
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Payment confirmed",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                }
+                                                Unit
                                             }
-                                            Unit
                                         }
-                                    }
-                                    val onSkipAction = remember(payment.id, payment.schedule.nextDueDate) {
-                                        { pendingOverdueSkip = payment to payment.schedule.nextDueDate }
-                                    }
+                                    val onSkipAction =
+                                        remember(payment.id, payment.schedule.nextDueDate) {
+                                            {
+                                                pendingOverdueSkip =
+                                                    payment to payment.schedule.nextDueDate
+                                            }
+                                        }
                                     SwipeablePaymentItem(
                                         payment = payment,
                                         now = now,
@@ -444,34 +448,36 @@ fun PlannedPaymentListContent(
                                     upcoming,
                                     key = { "${it.plannedPayment.id}_${it.scheduledDate}" }
                                 ) { item ->
-                                    val onConfirmAction = remember(item.plannedPayment.id, item.scheduledDate) {
-                                        {
-                                            onConfirm(item.plannedPayment, item.scheduledDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Payment confirmed",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                    val onConfirmAction =
+                                        remember(item.plannedPayment.id, item.scheduledDate) {
+                                            {
+                                                onConfirm(item.plannedPayment, item.scheduledDate)
+                                                scope.launch {
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Payment confirmed",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                }
+                                                Unit
                                             }
-                                            Unit
                                         }
-                                    }
-                                    val onSkipAction = remember(item.plannedPayment.id, item.scheduledDate) {
-                                        {
-                                            onSkip(item.plannedPayment, item.scheduledDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Occurrence skipped",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                    val onSkipAction =
+                                        remember(item.plannedPayment.id, item.scheduledDate) {
+                                            {
+                                                onSkip(item.plannedPayment, item.scheduledDate)
+                                                scope.launch {
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Occurrence skipped",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                }
+                                                Unit
                                             }
-                                            Unit
                                         }
-                                    }
                                     SwipeablePaymentItem(
                                         payment = item.plannedPayment,
                                         now = now,
@@ -497,34 +503,36 @@ fun PlannedPaymentListContent(
                                     )
                                 }
                                 items(scheduled, key = { it.id }) { payment ->
-                                    val onConfirmAction = remember(payment.id, payment.schedule.nextDueDate) {
-                                        {
-                                            onConfirm(payment, payment.schedule.nextDueDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Payment confirmed",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                    val onConfirmAction =
+                                        remember(payment.id, payment.schedule.nextDueDate) {
+                                            {
+                                                onConfirm(payment, payment.schedule.nextDueDate)
+                                                scope.launch {
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Payment confirmed",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                }
+                                                Unit
                                             }
-                                            Unit
                                         }
-                                    }
-                                    val onSkipAction = remember(payment.id, payment.schedule.nextDueDate) {
-                                        {
-                                            onSkip(payment, payment.schedule.nextDueDate)
-                                            scope.launch {
-                                                val result = snackbarHostState.showSnackbar(
-                                                    message = "Occurrence skipped",
-                                                    actionLabel = "Undo",
-                                                    duration = SnackbarDuration.Short
-                                                )
-                                                if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                    val onSkipAction =
+                                        remember(payment.id, payment.schedule.nextDueDate) {
+                                            {
+                                                onSkip(payment, payment.schedule.nextDueDate)
+                                                scope.launch {
+                                                    val result = snackbarHostState.showSnackbar(
+                                                        message = "Occurrence skipped",
+                                                        actionLabel = "Undo",
+                                                        duration = SnackbarDuration.Short
+                                                    )
+                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                }
+                                                Unit
                                             }
-                                            Unit
                                         }
-                                    }
                                     SwipeablePaymentItem(
                                         payment = payment,
                                         now = now,
@@ -648,7 +656,10 @@ private fun PlannedPaymentListItem(
         isWarning = isOverdue,
         modifier = Modifier.graphicsLayer { alpha = if (isPaused) 0.6f else 1f },
         trailingContent = {
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     formattedAmount,
                     style = AppTextStyles.listItemTitle.copy(
@@ -815,7 +826,7 @@ private fun SwipeablePaymentItemPreview() {
                 onConfirm = {},
                 onSkip = {}
             )
-            
+
             Text("Overdue State")
             SwipeablePaymentItem(
                 payment = mockPayment.copy(id = 2, name = "Electricity"),

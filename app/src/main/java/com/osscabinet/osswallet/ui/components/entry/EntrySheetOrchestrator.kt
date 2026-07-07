@@ -4,14 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.ui.components.AeonDatePickerDialog
 import com.osscabinet.ossWallet.ui.components.AeonDateTimePicker
 import com.osscabinet.ossWallet.ui.components.ExchangeRateDialog
-import com.osscabinet.ossWallet.ui.components.entry.*
 import java.math.BigDecimal
 
 @Composable
@@ -142,7 +140,8 @@ fun EntrySheetOrchestrator(
 
     if (sheetState.showWarrantyDate && onWarrantyDateChange != null) {
         AeonDatePickerDialog(
-            selectedDateMillis = warrantyDateMillis ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000),
+            selectedDateMillis = warrantyDateMillis
+                ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000),
             onDateSelected = onWarrantyDateChange,
             onDismiss = { onDismissSheet(null) }
         )
@@ -159,7 +158,9 @@ fun EntrySheetOrchestrator(
     if (sheetState.showPaymentMethod && onPaymentMethodChange != null) {
         AeonPaymentMethodSelection(
             selectedMethods = if (paymentMethod != null) setOf(paymentMethod) else emptySet(),
-            onSelectionChange = { methods -> methods.firstOrNull()?.let { onPaymentMethodChange(it) } },
+            onSelectionChange = { methods ->
+                methods.firstOrNull()?.let { onPaymentMethodChange(it) }
+            },
             onDismiss = { onDismissSheet(null) }
         )
     }
@@ -167,7 +168,9 @@ fun EntrySheetOrchestrator(
     if (sheetState.showStatus && transactionStatus != null && onTransactionStatusChange != null) {
         AeonStatusSelection(
             selectedStatuses = setOf(transactionStatus),
-            onSelectionChange = { statuses -> statuses.firstOrNull()?.let { onTransactionStatusChange(it) } },
+            onSelectionChange = { statuses ->
+                statuses.firstOrNull()?.let { onTransactionStatusChange(it) }
+            },
             onDismiss = { onDismissSheet(null) }
         )
     }

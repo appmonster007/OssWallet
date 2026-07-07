@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,8 +20,8 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
@@ -110,6 +109,7 @@ fun RecentActivitiesCard(
                             callbacks.onTransactionClick(event.id.removePrefix("tx_").toLong())
                         }
                     }
+
                     is TransactionItemEvent.Expand -> callbacks.onItemExpanded(event.id)
                     is TransactionItemEvent.Collapse -> callbacks.onItemCollapsed(event.id)
                     is TransactionItemEvent.StatusChange -> callbacks.onStatusChange(
@@ -124,9 +124,17 @@ fun RecentActivitiesCard(
                         event.id,
                         listState.getAllTransactionIds()
                     )
+
                     is TransactionItemEvent.FullSwipeRight -> callbacks.onFullSwipeRight(event.id)
-                    is TransactionItemEvent.ConfirmPlanned -> callbacks.onConfirmPlanned(event.paymentId, event.scheduledDate)
-                    is TransactionItemEvent.CancelPlanned -> callbacks.onCancelPlanned(event.paymentId, event.scheduledDate)
+                    is TransactionItemEvent.ConfirmPlanned -> callbacks.onConfirmPlanned(
+                        event.paymentId,
+                        event.scheduledDate
+                    )
+
+                    is TransactionItemEvent.CancelPlanned -> callbacks.onCancelPlanned(
+                        event.paymentId,
+                        event.scheduledDate
+                    )
                 }
             }
         )
@@ -262,9 +270,22 @@ fun mapRecentActivities(
 ) = CardWithCallbacks.RecentActivities(
     renderData = renderData,
     callbacks = CardCallbacks.RecentActivities(
-        onUpdate = { newConfig -> updateHandler.updateCardRecentActivitiesConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateCardRecentActivitiesConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onTransactionClick = callbacks.transactionActions.onClick,
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
         onDelete = { onDelete(config.cardId) },
         onItemExpanded = callbacks.transactionActions.onItemExpanded,

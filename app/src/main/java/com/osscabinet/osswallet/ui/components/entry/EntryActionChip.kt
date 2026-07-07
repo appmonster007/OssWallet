@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -129,7 +128,8 @@ fun EntryActionChip(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconTint ?: (if (isSelected) AppColors.onPrimaryContainer else AppColors.primary)
+                        tint = iconTint
+                            ?: (if (isSelected) AppColors.onPrimaryContainer else AppColors.primary)
                     )
                 }
             }

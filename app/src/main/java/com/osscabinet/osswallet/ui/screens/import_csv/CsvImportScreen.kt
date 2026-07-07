@@ -2,8 +2,23 @@ package com.osscabinet.ossWallet.ui.screens.import_csv
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,9 +45,6 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 
-import com.osscabinet.ossWallet.ui.theme.ThemePreviews
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CsvImportScreen(
@@ -48,7 +60,7 @@ fun CsvImportScreen(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
     val errorMessage by viewModel.error.collectAsStateWithLifecycle()
-    
+
     // Collecting ViewModel states for transient UI logic
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -171,6 +183,7 @@ private fun StepContent(
                     onConfirm = { app -> viewModel.confirmSourceApp(app) },
                     fileLoadError = if (session == null) errorMessage else null
                 )
+
                 is CsvImportViewModel.Step.ColumnMapping -> ColumnMappingStep(
                     session = session!!,
                     onUpdateMapping = { field, col -> viewModel.updateMapping(field, col) },
@@ -178,6 +191,7 @@ private fun StepContent(
                     onNext = { viewModel.proceedFromColumnMapping(context) },
                     isLoading = isLoading
                 )
+
                 is CsvImportViewModel.Step.EntityMapping -> EntityMappingStep(
                     preview = preview,
                     accounts = accounts.map { it.id to it.name },
@@ -189,11 +203,27 @@ private fun StepContent(
                     accountMappings = accountMappings,
                     categoryMappings = categoryMappings,
                     parentGroupMappings = parentGroupMappings,
-                    onUpdateAccountMapping = { name, mapping -> viewModel.updateAccountMapping(name, mapping) },
-                    onUpdateCategoryMapping = { name, mapping -> viewModel.updateCategoryMapping(name, mapping) },
-                    onUpdateParentGroupMapping = { name, id -> viewModel.updateParentGroupMapping(name, id) },
+                    onUpdateAccountMapping = { name, mapping ->
+                        viewModel.updateAccountMapping(
+                            name,
+                            mapping
+                        )
+                    },
+                    onUpdateCategoryMapping = { name, mapping ->
+                        viewModel.updateCategoryMapping(
+                            name,
+                            mapping
+                        )
+                    },
+                    onUpdateParentGroupMapping = { name, id ->
+                        viewModel.updateParentGroupMapping(
+                            name,
+                            id
+                        )
+                    },
                     onConfirmMappings = { viewModel.proceedFromEntityMapping() }
                 )
+
                 is CsvImportViewModel.Step.Preview -> PreviewStep(
                     preview = preview,
                     duplicatePolicy = duplicatePolicy,
@@ -221,7 +251,9 @@ private fun LoadingBanner(message: String?) {
         Row(
             modifier = Modifier.padding(AeonTheme.dimensions.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
+                AeonTheme.dimensions.spacingMd
+            )
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
@@ -253,7 +285,7 @@ private fun ImportErrorDialog(error: String, onDismiss: () -> Unit) {
 
 private fun getStepIndex(step: CsvImportViewModel.Step): Int = when (step) {
     is CsvImportViewModel.Step.SourceSelection -> 0
-    is CsvImportViewModel.Step.ColumnMapping   -> 1
-    is CsvImportViewModel.Step.EntityMapping   -> 2
-    is CsvImportViewModel.Step.Preview         -> 3
+    is CsvImportViewModel.Step.ColumnMapping -> 1
+    is CsvImportViewModel.Step.EntityMapping -> 2
+    is CsvImportViewModel.Step.Preview -> 3
 }

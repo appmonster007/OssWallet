@@ -40,8 +40,8 @@ import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.Contrast
-import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.LightMode
@@ -93,8 +93,8 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalContourBgVersion
 import com.osscabinet.ossWallet.ui.theme.LocalContourLinesEnabled
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.LocalRandomizeContourEachLoad
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -230,15 +230,25 @@ fun DesignLabContent(
                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                 )
                                 Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingLg))
-                                Text(name, modifier = Modifier.weight(1f), style = AppTextStyles.listItemTitle)
+                                Text(
+                                    name,
+                                    modifier = Modifier.weight(1f),
+                                    style = AppTextStyles.listItemTitle
+                                )
                                 if (v == contourBgVersion) {
-                                    Icon(Icons.Rounded.Check, contentDescription = null, tint = AppColors.primary)
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        tint = AppColors.primary
+                                    )
                                 }
                             }
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         TextButton(onClick = { showContourDialog = false }) {
@@ -260,10 +270,10 @@ fun DesignLabContent(
     val previewConfig = remember(isDarkPreview, baseConfig) {
         android.content.res.Configuration(baseConfig).apply {
             uiMode = (uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
-                if (isDarkPreview)
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES
-                else
-                    android.content.res.Configuration.UI_MODE_NIGHT_NO
+                    if (isDarkPreview)
+                        android.content.res.Configuration.UI_MODE_NIGHT_YES
+                    else
+                        android.content.res.Configuration.UI_MODE_NIGHT_NO
         }
     }
 
@@ -302,8 +312,8 @@ fun DesignLabContent(
                                     modifier = Modifier.clickable {
                                         previewMode = when (previewMode) {
                                             "Light" -> "Dark"
-                                            "Dark"  -> "Amoled"
-                                            else    -> "Light"
+                                            "Dark" -> "Amoled"
+                                            else -> "Light"
                                         }
                                     }
                                 ) {
@@ -315,9 +325,9 @@ fun DesignLabContent(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Icon(
                                         when (previewMode) {
-                                            "Light"  -> Icons.Rounded.LightMode
+                                            "Light" -> Icons.Rounded.LightMode
                                             "Amoled" -> Icons.Rounded.Contrast
-                                            else     -> Icons.Rounded.DarkMode
+                                            else -> Icons.Rounded.DarkMode
                                         },
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
@@ -328,7 +338,9 @@ fun DesignLabContent(
 
                             // Preview box — token-contextual mock inside
                             Surface(
-                                modifier = Modifier.fillMaxWidth().height(260.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(260.dp),
                                 shape = RoundedCornerShape(24.dp),
                                 color = Color.Transparent,
                                 border = BorderStroke(
@@ -343,105 +355,117 @@ fun DesignLabContent(
                                 // and MaterialTheme colors for the selected preview palette without
                                 // triggering window/status-bar side effects.
                                 com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme(theme = previewMode) {
-                                CompositionLocalProvider(
-                                    LocalConfiguration provides previewConfig,
-                                    LocalGlassmorphismEnabled provides glassmorphismEnabled,
-                                    LocalContourLinesEnabled provides contourLinesEnabled,
-                                    LocalContourBgVersion provides contourBgVersion,
-                                    LocalRandomizeContourEachLoad provides randomizeContourEachLoad,
-                                ) {
-                                AeonHazeProvider(
-                                    // AppColors.screenBackground now resolves to the M3 background
-                                    // token from the preview palette (Light/Dark/Amoled).
-                                    backgroundColor = AppColors.screenBackground,
-                                    drawContours = contourLinesEnabled
-                                ) { innerHaze ->
-                                    // hazeSource is on the background Column; the mock is its
-                                    // sibling — hazeEffect must never be a descendant of hazeSource
-                                    // for the same state (Haze 1.7.2+ constraint).
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .aeonHazeSource(innerHaze.states[0])
-                                                .padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            repeat(10) {
-                                                Text(
-                                                    "DESIGN LAB PREVIEW  ".repeat(3),
-                                                    style = AppTextStyles.caption.copy(
-                                                        color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(alpha = 0.15f),
-                                                        letterSpacing = 2.sp
-                                                    ),
-                                                    maxLines = 1
+                                    CompositionLocalProvider(
+                                        LocalConfiguration provides previewConfig,
+                                        LocalGlassmorphismEnabled provides glassmorphismEnabled,
+                                        LocalContourLinesEnabled provides contourLinesEnabled,
+                                        LocalContourBgVersion provides contourBgVersion,
+                                        LocalRandomizeContourEachLoad provides randomizeContourEachLoad,
+                                    ) {
+                                        AeonHazeProvider(
+                                            // AppColors.screenBackground now resolves to the M3 background
+                                            // token from the preview palette (Light/Dark/Amoled).
+                                            backgroundColor = AppColors.screenBackground,
+                                            drawContours = contourLinesEnabled
+                                        ) { innerHaze ->
+                                            // hazeSource is on the background Column; the mock is its
+                                            // sibling — hazeEffect must never be a descendant of hazeSource
+                                            // for the same state (Haze 1.7.2+ constraint).
+                                            Box(modifier = Modifier.fillMaxSize()) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .aeonHazeSource(innerHaze.states[0])
+                                                        .padding(16.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    repeat(10) {
+                                                        Text(
+                                                            "DESIGN LAB PREVIEW  ".repeat(3),
+                                                            style = AppTextStyles.caption.copy(
+                                                                color = (if (isDarkPreview) Color.White else AppColors.contentSecondary).copy(
+                                                                    alpha = 0.15f
+                                                                ),
+                                                                letterSpacing = 2.sp
+                                                            ),
+                                                            maxLines = 1
+                                                        )
+                                                    }
+                                                }
+
+                                                val previewBgColor = when (selectedToken) {
+                                                    "Pill" -> AppColors.componentOnCard
+                                                    "Card" -> AppColors.cardSurface
+                                                    "Sheet" -> AppColors.sheetSurface
+                                                    "Popup" -> AppColors.popupSurface
+                                                    "Item" -> AppColors.componentOnCard
+                                                    else -> AppColors.cardSurfaceProminent
+                                                }
+
+                                                val previewHazeStyle = GlassTokens.createHazeStyle(
+                                                    config = currentConfig,
+                                                    bgColor = previewBgColor,
+                                                    isDark = isDarkPreview
                                                 )
+
+                                                val fallback = previewBgColor
+                                                val contentTint =
+                                                    if (isDarkPreview) Color.White else AppColors.contentPrimary
+
+                                                // Token-contextual mock — sibling of hazeSource Column
+                                                AnimatedContent(
+                                                    targetState = selectedToken,
+                                                    transitionSpec = {
+                                                        (fadeIn(spring()) + scaleIn(
+                                                            spring(),
+                                                            0.92f
+                                                        ))
+                                                            .togetherWith(fadeOut(spring()))
+                                                    },
+                                                    label = "tokenPreview",
+                                                    modifier = Modifier.fillMaxSize()
+                                                ) { token ->
+                                                    when (token) {
+                                                        "Standard" -> StandardMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Drawer" -> DrawerMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Pill" -> PillMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Card" -> CardMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Sheet" -> SheetMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Popup" -> PopupMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint
+                                                        )
+
+                                                        "Item" -> ItemMock(
+                                                            innerHaze.states[0], previewHazeStyle,
+                                                            variantConstant, fallback, contentTint,
+                                                            isDarkPreview
+                                                        )
+                                                    }
+                                                }
                                             }
                                         }
-
-                                        val previewBgColor = when (selectedToken) {
-                                            "Pill" -> AppColors.componentOnCard
-                                            "Card" -> AppColors.cardSurface
-                                            "Sheet" -> AppColors.sheetSurface
-                                            "Popup" -> AppColors.popupSurface
-                                            "Item" -> AppColors.componentOnCard
-                                            else -> AppColors.cardSurfaceProminent
-                                        }
-
-                                        val previewHazeStyle = GlassTokens.createHazeStyle(
-                                            config = currentConfig,
-                                            bgColor = previewBgColor,
-                                            isDark = isDarkPreview
-                                        )
-
-                                        val fallback = previewBgColor
-                                        val contentTint = if (isDarkPreview) Color.White else AppColors.contentPrimary
-
-                                        // Token-contextual mock — sibling of hazeSource Column
-                                        AnimatedContent(
-                                            targetState = selectedToken,
-                                            transitionSpec = {
-                                                (fadeIn(spring()) + scaleIn(spring(), 0.92f))
-                                                    .togetherWith(fadeOut(spring()))
-                                            },
-                                            label = "tokenPreview",
-                                            modifier = Modifier.fillMaxSize()
-                                        ) { token ->
-                                            when (token) {
-                                                "Standard" -> StandardMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Drawer" -> DrawerMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Pill" -> PillMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Card" -> CardMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Sheet" -> SheetMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Popup" -> PopupMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint
-                                                )
-                                                "Item" -> ItemMock(
-                                                    innerHaze.states[0], previewHazeStyle,
-                                                    variantConstant, fallback, contentTint,
-                                                    isDarkPreview
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                } // CompositionLocalProvider
+                                    } // CompositionLocalProvider
                                 } // OssWalletPreviewTheme
                             }
                         }
@@ -457,7 +481,9 @@ fun DesignLabContent(
                     ) {
                         // Token selector
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = AeonTheme.dimensions.spacingSm),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = AeonTheme.dimensions.spacingSm),
                             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 4.dp)) {
@@ -509,7 +535,9 @@ fun DesignLabContent(
                                                 Icon(
                                                     imageVector = icon,
                                                     contentDescription = null,
-                                                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(alpha = 0.7f),
+                                                    tint = if (isSelected) AppColors.primary else AppColors.contentSecondary.copy(
+                                                        alpha = 0.7f
+                                                    ),
                                                     modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                                                 )
                                             }
@@ -647,35 +675,91 @@ fun DesignLabContent(
                                             value = currentConfig.glass.blurRadius,
                                             range = 0f..40f,
                                             valueDisplay = "${currentConfig.glass.blurRadius.toInt()}dp",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(blurRadius = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "blurRadius") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(blurRadius = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "blurRadius"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Light Alpha",
                                             value = currentConfig.glass.lightAlpha,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.lightAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(lightAlpha = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "lightAlpha") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(lightAlpha = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "lightAlpha"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Dark Alpha",
                                             value = currentConfig.glass.darkAlpha,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.darkAlpha * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(darkAlpha = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "darkAlpha") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(darkAlpha = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "darkAlpha"
+                                                )
+                                            }
                                         )
-                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                        HorizontalDivider(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            thickness = 0.5.dp,
+                                            color = AppColors.divider.copy(alpha = 0.2f)
+                                        )
                                         TuningSliderRow(
                                             label = "Noise Factor",
                                             value = currentConfig.glass.noiseFactor,
                                             range = 0f..1f,
                                             valueDisplay = "${(currentConfig.glass.noiseFactor * 100).toInt()}%",
-                                            onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(glass = it.glass.copy(noiseFactor = v)) } },
-                                            onReset = { onResetParameter(selectedToken, "noiseFactor") }
+                                            onValueChange = { v ->
+                                                onUpdateStyle(selectedToken) {
+                                                    it.copy(
+                                                        glass = it.glass.copy(noiseFactor = v)
+                                                    )
+                                                }
+                                            },
+                                            onReset = {
+                                                onResetParameter(
+                                                    selectedToken,
+                                                    "noiseFactor"
+                                                )
+                                            }
                                         )
                                     }
                                 }
@@ -704,43 +788,104 @@ fun DesignLabContent(
                                         value = currentConfig.surface.shadowElevation,
                                         range = 0f..32f,
                                         valueDisplay = "${currentConfig.surface.shadowElevation.toInt()}dp",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(shadowElevation = v)) } },
-                                        onReset = { onResetParameter(selectedToken, "shadowElevation") }
+                                        onValueChange = { v ->
+                                            onUpdateStyle(selectedToken) {
+                                                it.copy(
+                                                    surface = it.surface.copy(shadowElevation = v)
+                                                )
+                                            }
+                                        },
+                                        onReset = {
+                                            onResetParameter(
+                                                selectedToken,
+                                                "shadowElevation"
+                                            )
+                                        }
                                     )
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = AppColors.divider.copy(alpha = 0.2f)
+                                    )
                                     TuningSliderRow(
                                         label = "Ambient Shadow Alpha",
                                         value = currentConfig.surface.ambientShadowAlpha,
                                         range = 0f..0.4f,
                                         valueDisplay = "${(currentConfig.surface.ambientShadowAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(ambientShadowAlpha = v)) } },
-                                        onReset = { onResetParameter(selectedToken, "ambientShadowAlpha") }
+                                        onValueChange = { v ->
+                                            onUpdateStyle(selectedToken) {
+                                                it.copy(
+                                                    surface = it.surface.copy(ambientShadowAlpha = v)
+                                                )
+                                            }
+                                        },
+                                        onReset = {
+                                            onResetParameter(
+                                                selectedToken,
+                                                "ambientShadowAlpha"
+                                            )
+                                        }
                                     )
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = AppColors.divider.copy(alpha = 0.2f)
+                                    )
                                     TuningSliderRow(
                                         label = "Spot Shadow Alpha",
                                         value = currentConfig.surface.spotShadowAlpha,
                                         range = 0f..0.4f,
                                         valueDisplay = "${(currentConfig.surface.spotShadowAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(spotShadowAlpha = v)) } },
-                                        onReset = { onResetParameter(selectedToken, "spotShadowAlpha") }
+                                        onValueChange = { v ->
+                                            onUpdateStyle(selectedToken) {
+                                                it.copy(
+                                                    surface = it.surface.copy(spotShadowAlpha = v)
+                                                )
+                                            }
+                                        },
+                                        onReset = {
+                                            onResetParameter(
+                                                selectedToken,
+                                                "spotShadowAlpha"
+                                            )
+                                        }
                                     )
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = AppColors.divider.copy(alpha = 0.2f)
+                                    )
                                     TuningSliderRow(
                                         label = "Border Alpha",
                                         value = currentConfig.surface.borderAlpha,
                                         range = 0f..1f,
                                         valueDisplay = "${(currentConfig.surface.borderAlpha * 100).toInt()}%",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(borderAlpha = v)) } },
+                                        onValueChange = { v ->
+                                            onUpdateStyle(selectedToken) {
+                                                it.copy(
+                                                    surface = it.surface.copy(borderAlpha = v)
+                                                )
+                                            }
+                                        },
                                         onReset = { onResetParameter(selectedToken, "borderAlpha") }
                                     )
-                                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = AppColors.divider.copy(alpha = 0.2f))
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = AppColors.divider.copy(alpha = 0.2f)
+                                    )
                                     TuningSliderRow(
                                         label = "Border Width",
                                         value = currentConfig.surface.borderWidth,
                                         range = 0f..3f,
                                         valueDisplay = "${"%.1f".format(currentConfig.surface.borderWidth)}dp",
-                                        onValueChange = { v -> onUpdateStyle(selectedToken) { it.copy(surface = it.surface.copy(borderWidth = v)) } },
+                                        onValueChange = { v ->
+                                            onUpdateStyle(selectedToken) {
+                                                it.copy(
+                                                    surface = it.surface.copy(borderWidth = v)
+                                                )
+                                            }
+                                        },
                                         onReset = { onResetParameter(selectedToken, "borderWidth") }
                                     )
                                 }
@@ -789,13 +934,29 @@ private fun StandardMock(
             fallbackColor = fallback
         ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(modifier = Modifier.size(24.dp, 4.dp).background(tint.copy(alpha = 0.3f), RoundedCornerShape(2.dp)))
-                Text("STANDARD", style = AppTextStyles.caption.copy(color = tint.copy(alpha = 0.6f), letterSpacing = 1.sp))
-                Box(modifier = Modifier.size(24.dp, 4.dp).background(tint.copy(alpha = 0.3f), RoundedCornerShape(2.dp)))
+                Box(
+                    modifier = Modifier
+                        .size(24.dp, 4.dp)
+                        .background(tint.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                )
+                Text(
+                    "STANDARD",
+                    style = AppTextStyles.caption.copy(
+                        color = tint.copy(alpha = 0.6f),
+                        letterSpacing = 1.sp
+                    )
+                )
+                Box(
+                    modifier = Modifier
+                        .size(24.dp, 4.dp)
+                        .background(tint.copy(alpha = 0.3f), RoundedCornerShape(2.dp))
+                )
             }
         }
     }
@@ -822,13 +983,27 @@ private fun DrawerMock(
             fallbackColor = fallback
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 repeat(4) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(modifier = Modifier.size(16.dp).background(tint.copy(alpha = 0.25f), CircleShape))
-                        Box(modifier = Modifier.height(4.dp).width(80.dp).background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp)))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(tint.copy(alpha = 0.25f), CircleShape)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .height(4.dp)
+                                .width(80.dp)
+                                .background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                        )
                     }
                 }
             }
@@ -844,7 +1019,12 @@ private fun PillMock(
     fallback: Color,
     tint: Color
 ) {
-    Box(modifier = Modifier.fillMaxSize().padding(bottom = 16.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 16.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
         GlassSurface(
             modifier = Modifier
                 .widthIn(max = 280.dp)
@@ -857,12 +1037,18 @@ private fun PillMock(
             fallbackColor = fallback
         ) {
             Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 repeat(4) {
-                    Box(modifier = Modifier.size(20.dp).background(tint.copy(alpha = 0.25f), CircleShape))
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(tint.copy(alpha = 0.25f), CircleShape)
+                    )
                 }
             }
         }
@@ -889,14 +1075,31 @@ private fun CardMock(
             fallbackColor = fallback
         ) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Box(modifier = Modifier.height(4.dp).width(80.dp).background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp)))
-                    Box(modifier = Modifier.height(3.dp).width(48.dp).background(tint.copy(alpha = 0.12f), RoundedCornerShape(2.dp)))
+                    Box(
+                        modifier = Modifier
+                            .height(4.dp)
+                            .width(80.dp)
+                            .background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .height(3.dp)
+                            .width(48.dp)
+                            .background(tint.copy(alpha = 0.12f), RoundedCornerShape(2.dp))
+                    )
                 }
-                Box(modifier = Modifier.height(6.dp).width(120.dp).background(tint.copy(alpha = 0.3f), RoundedCornerShape(3.dp)))
+                Box(
+                    modifier = Modifier
+                        .height(6.dp)
+                        .width(120.dp)
+                        .background(tint.copy(alpha = 0.3f), RoundedCornerShape(3.dp))
+                )
             }
         }
     }
@@ -922,13 +1125,24 @@ private fun SheetMock(
             fallbackColor = fallback
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp, start = 16.dp, end = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, start = 16.dp, end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(modifier = Modifier.size(width = 36.dp, height = 4.dp).background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp)))
+                Box(
+                    modifier = Modifier
+                        .size(width = 36.dp, height = 4.dp)
+                        .background(tint.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+                )
                 repeat(3) {
-                    Box(modifier = Modifier.height(3.dp).fillMaxWidth(0.7f).background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp)))
+                    Box(
+                        modifier = Modifier
+                            .height(3.dp)
+                            .fillMaxWidth(0.7f)
+                            .background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
+                    )
                 }
             }
         }
@@ -957,9 +1171,21 @@ private fun PopupMock(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 repeat(3) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(modifier = Modifier.size(14.dp).background(tint.copy(alpha = 0.2f), CircleShape))
-                        Box(modifier = Modifier.height(3.dp).width(90.dp).background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp)))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .background(tint.copy(alpha = 0.2f), CircleShape)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .height(3.dp)
+                                .width(90.dp)
+                                .background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
+                        )
                     }
                 }
             }
@@ -994,7 +1220,9 @@ private fun ItemMock(
             ) {
                 repeat(2) {
                     GlassSurface(
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         hazeState = hazeState,
                         hazeStyle = itemHazeStyle,
@@ -1002,13 +1230,28 @@ private fun ItemMock(
                         fallbackColor = itemFallback
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Box(modifier = Modifier.size(24.dp).background(tint.copy(alpha = 0.2f), CircleShape))
-                            Box(modifier = Modifier.height(4.dp).weight(1f).background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp)))
-                            Box(modifier = Modifier.size(40.dp, 16.dp).background(tint.copy(alpha = 0.2f), RoundedCornerShape(8.dp)))
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(tint.copy(alpha = 0.2f), CircleShape)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .height(4.dp)
+                                    .weight(1f)
+                                    .background(tint.copy(alpha = 0.15f), RoundedCornerShape(2.dp))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp, 16.dp)
+                                    .background(tint.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                            )
                         }
                     }
                 }

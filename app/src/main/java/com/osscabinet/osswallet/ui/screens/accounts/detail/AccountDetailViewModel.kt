@@ -32,12 +32,12 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -51,9 +51,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import java.math.BigDecimal
 import java.util.concurrent.atomic.AtomicInteger
-import jakarta.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -290,7 +290,9 @@ class AccountDetailViewModel @Inject constructor(
                                         input,
                                         cardConfig
                                     )
-                                    if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
+                                    if (data is CardRenderData.Error) CardComputeState.Error(
+                                        data.message ?: "Compute error"
+                                    )
                                     else CardComputeState.Success(data)
                                 } catch (e: CancellationException) {
                                     throw e
@@ -299,7 +301,10 @@ class AccountDetailViewModel @Inject constructor(
                                 }
                                 // P1: check inside update{} to eliminate TOCTOU window.
                                 _cardDataMap.update { map ->
-                                    if (_computeGeneration.get() == myGen) map.putting(cardConfig.cardId, result) else map
+                                    if (_computeGeneration.get() == myGen) map.putting(
+                                        cardConfig.cardId,
+                                        result
+                                    ) else map
                                 }
                             }
                         }

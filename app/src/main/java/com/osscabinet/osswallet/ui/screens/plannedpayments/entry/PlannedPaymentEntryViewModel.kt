@@ -1,9 +1,10 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PaymentSchedule
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
@@ -12,18 +13,14 @@ import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.dto.PlannedPaymentPrefillDTO
+import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.PlannedPaymentRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
-import com.osscabinet.ossWallet.domain.model.isOutside
-import com.osscabinet.ossWallet.domain.model.resolve
-import com.osscabinet.ossWallet.domain.model.toDbTransferSide
-import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.usecase.EntryFormDataUseCase
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseEntryViewModel
@@ -64,7 +61,12 @@ class PlannedPaymentEntryViewModel @Inject constructor(
     override fun getIsRateFixed() = _state.value.isRateFixed
     override fun getAmountValue() = _state.value.amountValue
     override fun applyRateUpdate(rate: BigDecimal, targetAmountStr: String) {
-        _state.update { it.copy(exchangeRate = rate, destination = it.destination.copy(amount = targetAmountStr)) }
+        _state.update {
+            it.copy(
+                exchangeRate = rate,
+                destination = it.destination.copy(amount = targetAmountStr)
+            )
+        }
     }
 
     init {
@@ -127,18 +129,23 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             name = template.name,
                             showNumpad = false,
                             source = TransactionSide(
-                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.accountId)
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(
+                                    template.accountId
+                                )
                                 else AccountRef.fromStored(template.accountId),
                                 amount = template.amount.abs().stripTrailingZeros().toPlainString(),
                                 currency = template.currency,
                                 categoryId = template.categoryId
                             ),
                             destination = TransactionSide(
-                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(template.targetAccountId)
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(
+                                    template.targetAccountId
+                                )
                                 else AccountRef.fromStored(template.targetAccountId),
                                 amount = template.amount.abs()
                                     .multiply(template.transferRate)
-                                    .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros()
+                                    .setScale(8, java.math.RoundingMode.HALF_UP)
+                                    .stripTrailingZeros()
                                     .toPlainString(),
                                 currency = template.targetCurrency ?: ""
                             ),
@@ -186,7 +193,8 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             endDateMillis = now,
                             showNumpad = isFirstInit, // Auto-open only on fresh mount of new entry
                             source = current.source.copy(
-                                account = firstAccount?.id?.let { AccountRef.fromStored(it) } ?: AccountRef.Unselected,
+                                account = firstAccount?.id?.let { AccountRef.fromStored(it) }
+                                    ?: AccountRef.Unselected,
                                 currency = firstAccount?.currencyCode ?: current.source.currency
                             )
                         )
@@ -324,13 +332,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val oldMode = _state.value.entryMode
                 val newMode = event.type
                 _state.update { state ->
-                    val result = com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
-                        oldMode = oldMode,
-                        newMode = newMode,
-                        currentSource = state.source,
-                        currentDestination = state.destination,
-                        isSplitMode = false // Planned payments don't support split mode yet
-                    )
+                    val result =
+                        com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                            oldMode = oldMode,
+                            newMode = newMode,
+                            currentSource = state.source,
+                            currentDestination = state.destination,
+                            isSplitMode = false // Planned payments don't support split mode yet
+                        )
 
                     state.copy(
                         entryMode = result.newMode,
@@ -389,7 +398,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             is PlannedPaymentEntryEvent.SetExchangeRate -> _state.update {
                 val sync = TransactionEntryService.syncTransferState(
                     sourceAmount = it.source.amountValue,
-                    targetAmount = TransactionEntryService.calculateTargetAmountValue(it.source.amountValue, event.rate),
+                    targetAmount = TransactionEntryService.calculateTargetAmountValue(
+                        it.source.amountValue,
+                        event.rate
+                    ),
                     sourceCurrency = it.currency,
                     targetCurrency = it.targetCurrency,
                     isFixed = true,
@@ -495,19 +507,21 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             name = event.template.name,
                             source = TransactionSide(
                                 account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.accountId)
-                                          else AccountRef.fromStored(event.template.accountId),
-                                amount = event.template.amount.abs().stripTrailingZeros().toPlainString(),
-                            currency = event.template.currency,
-                            categoryId = event.template.categoryId
-                        ),
-                        destination = TransactionSide(
-                            account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.targetAccountId)
-                                      else AccountRef.fromStored(event.template.targetAccountId),
-                            amount = event.template.amount.abs()
-                                .multiply(event.template.transferRate)
-                                .setScale(8, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString(),
-                            currency = event.template.targetCurrency ?: ""
-                        ),
+                                else AccountRef.fromStored(event.template.accountId),
+                                amount = event.template.amount.abs().stripTrailingZeros()
+                                    .toPlainString(),
+                                currency = event.template.currency,
+                                categoryId = event.template.categoryId
+                            ),
+                            destination = TransactionSide(
+                                account = if (isTemplateTransfer) AccountRef.fromTransferSide(event.template.targetAccountId)
+                                else AccountRef.fromStored(event.template.targetAccountId),
+                                amount = event.template.amount.abs()
+                                    .multiply(event.template.transferRate)
+                                    .setScale(8, java.math.RoundingMode.HALF_UP)
+                                    .stripTrailingZeros().toPlainString(),
+                                currency = event.template.targetCurrency ?: ""
+                            ),
                             entryMode = event.template.entryMode,
                             exchangeRate = event.template.transferRate,
                             payee = event.template.payee ?: "",
@@ -724,14 +738,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             // 2. Create or Update Planned Payment
             val scheduleChanged = s.originalStartDate == null ||
-                s.originalStartDate != s.startDateMillis ||
-                s.originalRecurrenceRule?.type != s.recurrenceType ||
-                s.originalRecurrenceRule?.interval != s.recurrenceInterval ||
-                s.originalRecurrenceRule?.dayOfMonth != s.dayOfMonth ||
-                s.originalRecurrenceRule?.dayOfWeek != s.dayOfWeek ||
-                s.originalRecurrenceRule?.cronExpression != s.cronExpression
+                    s.originalStartDate != s.startDateMillis ||
+                    s.originalRecurrenceRule?.type != s.recurrenceType ||
+                    s.originalRecurrenceRule?.interval != s.recurrenceInterval ||
+                    s.originalRecurrenceRule?.dayOfMonth != s.dayOfMonth ||
+                    s.originalRecurrenceRule?.dayOfWeek != s.dayOfWeek ||
+                    s.originalRecurrenceRule?.cronExpression != s.cronExpression
             val nextDueDate = if (scheduleChanged) s.startDateMillis
-                              else s.originalNextDueDate ?: s.startDateMillis
+            else s.originalNextDueDate ?: s.startDateMillis
 
             val payment = PlannedPayment(
                 id = s.plannedPaymentId ?: 0L,
@@ -794,7 +808,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     // Only delete this specific planned payment
                     plannedPaymentRepository.delete(id)
                 }
-                
+
                 // Now that it's deleted from DB, trigger navigation
                 _state.update { it.copy(navTriggered = true) }
             } catch (e: Exception) {

@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -87,7 +89,8 @@ fun FilterFields(
     // Callback for immediate apply with custom debounce time
     onImmediateApply: ((TransactionFilter, Long) -> Unit)? = null,
     onAddTag: (String, Int) -> Unit = { _, _ -> },
-    filterRules: CardFilterRules = CardFilterRules.DEFAULT
+    filterRules: CardFilterRules = CardFilterRules.DEFAULT,
+    scrollRequester: BringIntoViewRequester? = null
 ) {
     var activeSheet by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -450,7 +453,10 @@ fun FilterFields(
         if (filterRules.searchRule.isVisible || filterRules.tagRule.isVisible) {
             EntrySection(
                 title = "SEARCH & TAGS",
-                icon = Icons.Rounded.Search
+                icon = Icons.Rounded.Search,
+                modifier = if (scrollRequester != null) Modifier.bringIntoViewRequester(
+                    scrollRequester
+                ) else Modifier
             ) {
                 if (filterRules.searchRule.isVisible) {
                     Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
@@ -461,7 +467,8 @@ fun FilterFields(
                             icon = Icons.Default.Subtitles,
                             placeholder = "Search note...",
                             enabled = !isSearchLocked,
-                            isSelected = filter.queryNote?.isNotEmpty() == true
+                            isSelected = filter.queryNote?.isNotEmpty() == true,
+                            scrollRequester = scrollRequester
                         )
                         EntryEditorialInput(
                             value = filter.queryPayee ?: "",
@@ -470,7 +477,8 @@ fun FilterFields(
                             icon = Icons.Default.Person,
                             placeholder = "Search payee...",
                             enabled = !isSearchLocked,
-                            isSelected = filter.queryPayee?.isNotEmpty() == true
+                            isSelected = filter.queryPayee?.isNotEmpty() == true,
+                            scrollRequester = scrollRequester
                         )
                     }
                 }

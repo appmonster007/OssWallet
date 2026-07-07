@@ -109,7 +109,10 @@
       "Bash(ffmpeg -i \"/Users/prathitaswar/Downloads/Screen_Recording_20260628_234533_OssWallet~2.mp4\" -vf \"fps=1\" -q:v 2 /tmp/bug_frame_%03d.jpg)",
       "Bash(brew list *)",
       "Bash(ffmpeg -i \"/Users/prathitaswar/Downloads/Screen_Recording_20260628_234533_OssWallet~2.mp4\" -vf \"fps=2\" -q:v 2 /tmp/bug_frame_%03d.jpg)",
-      "WebFetch(domain:nameisjayant.medium.com)"
+      "WebFetch(domain:nameisjayant.medium.com)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(git diff *)",
+      "Bash(awk 'NR>=1')"
     ]
   }
 }

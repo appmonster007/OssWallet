@@ -35,6 +35,8 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.oss.hilt.work)
+    ksp(libs.oss.hilt.work.compiler)
 
     // Room + SQLCipher
     implementation(libs.androidx.room.runtime)
@@ -60,6 +62,7 @@ dependencies {
 
     // CSV (for CsvProcessor / CsvImportServiceImpl)
     implementation(libs.commons.csv)
+    implementation(libs.univocity.parsers)
 
     // AndroidX Core (for BackupRepositoryImpl)
     implementation(libs.androidx.core.ktx)

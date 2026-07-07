@@ -7,13 +7,16 @@ import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
+import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.withClearedFilter
 import com.osscabinet.ossWallet.domain.model.settings.withOrder
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
@@ -88,31 +91,48 @@ class CardRepositoryImpl @Inject constructor(
                 order = 5,
                 screenContext = ScreenContext.ANALYTICS
             ),
+            PlannedPaymentsCardConfig(
+                cardId = "analytics_planned_payments",
+                order = 6,
+                screenContext = ScreenContext.ANALYTICS
+            ),
             // TRENDS
+            CashFlowCardConfig(
+                cardId = "analytics_cash_flow_trends",
+                order = 7,
+                title = "CASH FLOW TRENDS",
+                screenContext = ScreenContext.ANALYTICS
+            ),
             CategoryPieChartCardConfig(
                 cardId = "analytics_category_breakdown",
-                order = 6,
+                order = 8,
                 title = "CATEGORY PIE CHART",
                 screenContext = ScreenContext.ANALYTICS,
-                filter = TransactionFilter(
-                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-                ),
                 showLabels = true,
                 showLegend = true
             ),
+            CategorySpendingTrendCardConfig(
+                cardId = "analytics_category_spending_trend",
+                order = 9,
+                title = "CATEGORY SPENDING TREND",
+                screenContext = ScreenContext.ANALYTICS
+            ),
             CategoryTreemapCardConfig(
                 cardId = "analytics_category_expense_treemap",
-                order = 7,
+                order = 10,
                 title = "CATEGORY TREEMAP",
                 screenContext = ScreenContext.ANALYTICS,
-                filter = TransactionFilter(
-                    timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
-                ),
-                showLabels = true
+                showLabels = true,
+                showLegend = true
             ),
             IncomeExpenseBarCardConfig(
                 cardId = "analytics_income_expense_bar",
-                order = 8,
+                order = 11,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            TagUpSetPlotCardConfig(
+                cardId = "analytics_tag_upset_plot",
+                order = 12,
                 screenContext = ScreenContext.ANALYTICS
             )
         )

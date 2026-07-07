@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +25,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,18 +54,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalInspectionMode
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
-import com.osscabinet.ossWallet.ui.components.toIcon
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -302,7 +313,7 @@ private fun AtelierCardTile(
     onTap: () -> Unit
 ) {
     val tileShape = RoundedCornerShape(12.dp)
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -390,13 +401,36 @@ private fun CardType.getIntentSubtitle(): String = when (this) {
     CardType.TAG_UPSET_PLOT -> "Intersections"
 }
 
+/**
+ * Mapping from CardType to ImageVector icons for the UI.
+ */
+fun CardType.toIcon(): ImageVector = when (this) {
+    CardType.NET_WORTH -> Icons.Default.AccountBalance
+    CardType.CASH_FLOW -> Icons.AutoMirrored.Filled.TrendingUp
+    CardType.CURRENCY_BALANCES -> Icons.Default.AttachMoney
+    CardType.ACCOUNTS -> Icons.Default.AccountBox
+    CardType.BUDGETS -> Icons.Default.Savings
+    CardType.CATEGORY_PIE_CHART -> Icons.Default.PieChart
+    CardType.CATEGORY_TREEMAP -> Icons.Default.GridView
+    CardType.ACCOUNT_HERO -> Icons.Default.AccountCircle
+    CardType.PLANNED_PAYMENTS -> Icons.Default.Schedule
+    CardType.LOANS -> Icons.Default.CreditCard
+    CardType.RECENT_ACTIVITIES -> Icons.Default.History
+    CardType.CASHFLOW_COMPARISON -> Icons.AutoMirrored.Filled.ShowChart
+    CardType.INCOME_EXPENSE_BAR -> Icons.Default.BarChart
+    CardType.CATEGORY_SPENDING_TREND -> Icons.Default.BarChart
+    CardType.TAG_UPSET_PLOT -> Icons.Default.Analytics
+}
+
 // --- Previews ---
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewAeonCardAtelier_Dashboard() {
     OssWalletTheme {
-        Box(modifier = Modifier.fillMaxSize().background(Color.Gray)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Gray)) {
             AeonCardAtelier(
                 screenContext = ScreenContext.DASHBOARD,
                 onDismiss = {},

@@ -7,10 +7,24 @@ import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
+import com.osscabinet.ossWallet.ui.components.cards.types.AccountHeroCard
+import com.osscabinet.ossWallet.ui.components.cards.types.AccountsCard
+import com.osscabinet.ossWallet.ui.components.cards.types.BudgetsCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CashFlowCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CashFlowComparisonCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CategoryChartData
+import com.osscabinet.ossWallet.ui.components.cards.types.CategoryPieChartCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CategorySpendingTrendCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CategoryTreemapCard
+import com.osscabinet.ossWallet.ui.components.cards.types.CurrencyBalancesCard
+import com.osscabinet.ossWallet.ui.components.cards.types.IncomeExpenseBarCard
+import com.osscabinet.ossWallet.ui.components.cards.types.LoansCard
+import com.osscabinet.ossWallet.ui.components.cards.types.NetWorthCard
+import com.osscabinet.ossWallet.ui.components.cards.types.PlannedPaymentsCard
+import com.osscabinet.ossWallet.ui.components.cards.types.RecentActivitiesCard
+import com.osscabinet.ossWallet.ui.components.cards.types.TagUpSetPlotCard
 import java.math.BigDecimal
 import java.math.RoundingMode
-import com.osscabinet.ossWallet.ui.components.toIcon
-import com.osscabinet.ossWallet.ui.components.cards.types.*
 
 @Composable
 fun UnifiedCardRenderer(

@@ -1,6 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
-import android.widget.Toast
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +55,11 @@ import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import com.osscabinet.ossWallet.domain.repository.BackupScope
 import com.osscabinet.ossWallet.domain.repository.BackupType
 import com.osscabinet.ossWallet.domain.repository.RestorableEntity
+import androidx.compose.material3.SnackbarHostState
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsItem
@@ -80,14 +84,12 @@ fun DataManagementScreen(
     viewModel: SettingsViewModel,
     actions: DataManagementActions
 ) {
-    val context = LocalContext.current
     val autoBackupConfig by viewModel.autoBackupConfig.collectAsStateWithLifecycle()
     val recentBackups by viewModel.recentBackups.collectAsStateWithLifecycle()
 
     var showExportDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var autoBackupExpanded by remember { mutableStateOf(true) }
 
     // Entity selector state for selective import
     var showEntitySelector by remember { mutableStateOf(false) }
@@ -144,9 +146,19 @@ fun DataManagementScreen(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     LaunchedEffect(Unit) {
         viewModel.backupMessage.collect { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            val type = if (message.contains("failed", ignoreCase = true) || message.contains("error", ignoreCase = true)) {
+                AeonSnackbarType.ERROR
+            } else {
+                AeonSnackbarType.SUCCESS
+            }
+            snackbarHostState.showAeonSnackbar(
+                message = message,
+                type = type
+            )
         }
     }
 
@@ -560,6 +572,8 @@ fun DataManagementScreen(
                     }
                 }
             }
+
+            AeonSnackbarHost(hostState = snackbarHostState)
 
             AeonTopAppBar(
                 left = AeonTopBarSection(

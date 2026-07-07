@@ -33,9 +33,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -310,13 +312,12 @@ fun PlannedPaymentListContent(
                     pendingOverdueSkip = null
                     onSkip(payment, scheduledDate)
                     scope.launch {
-                        val result = snackbarHostState.showSnackbar(
+                        snackbarHostState.showAeonSnackbar(
                             message = "Occurrence skipped",
                             actionLabel = "Undo",
-                            duration = SnackbarDuration.Short
-                        )
-                        if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
-                        else onUndo?.let {} // expire: clear undo state via callback or just leave it
+                            duration = SnackbarDuration.Short,
+                            type = AeonSnackbarType.SUCCESS
+                        ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                     }
                 }) { Text("Skip") }
             },
@@ -404,12 +405,12 @@ fun PlannedPaymentListContent(
                                             {
                                                 onConfirm(payment, payment.schedule.nextDueDate)
                                                 scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
+                                                    snackbarHostState.showAeonSnackbar(
                                                         message = "Payment confirmed",
                                                         actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                        duration = SnackbarDuration.Short,
+                                                        type = AeonSnackbarType.SUCCESS
+                                                    ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                                                 }
                                                 Unit
                                             }
@@ -453,12 +454,12 @@ fun PlannedPaymentListContent(
                                             {
                                                 onConfirm(item.plannedPayment, item.scheduledDate)
                                                 scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
+                                                    snackbarHostState.showAeonSnackbar(
                                                         message = "Payment confirmed",
                                                         actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                        duration = SnackbarDuration.Short,
+                                                        type = AeonSnackbarType.SUCCESS
+                                                    ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                                                 }
                                                 Unit
                                             }
@@ -468,12 +469,12 @@ fun PlannedPaymentListContent(
                                             {
                                                 onSkip(item.plannedPayment, item.scheduledDate)
                                                 scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
+                                                    snackbarHostState.showAeonSnackbar(
                                                         message = "Occurrence skipped",
                                                         actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                        duration = SnackbarDuration.Short,
+                                                        type = AeonSnackbarType.SUCCESS
+                                                    ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                                                 }
                                                 Unit
                                             }
@@ -508,12 +509,12 @@ fun PlannedPaymentListContent(
                                             {
                                                 onConfirm(payment, payment.schedule.nextDueDate)
                                                 scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
+                                                    snackbarHostState.showAeonSnackbar(
                                                         message = "Payment confirmed",
                                                         actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                        duration = SnackbarDuration.Short,
+                                                        type = AeonSnackbarType.SUCCESS
+                                                    ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                                                 }
                                                 Unit
                                             }
@@ -523,12 +524,12 @@ fun PlannedPaymentListContent(
                                             {
                                                 onSkip(payment, payment.schedule.nextDueDate)
                                                 scope.launch {
-                                                    val result = snackbarHostState.showSnackbar(
+                                                    snackbarHostState.showAeonSnackbar(
                                                         message = "Occurrence skipped",
                                                         actionLabel = "Undo",
-                                                        duration = SnackbarDuration.Short
-                                                    )
-                                                    if (result == SnackbarResult.ActionPerformed) onUndo?.invoke()
+                                                        duration = SnackbarDuration.Short,
+                                                        type = AeonSnackbarType.SUCCESS
+                                                    ).let { if (it == SnackbarResult.ActionPerformed) onUndo?.invoke() }
                                                 }
                                                 Unit
                                             }
@@ -587,14 +588,7 @@ fun PlannedPaymentListContent(
                 showFab = true
             )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 56.dp + 16.dp + navigationBarHeight + 8.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                SnackbarHost(hostState = snackbarHostState)
-            }
+            AeonSnackbarHost(hostState = snackbarHostState)
 
             AeonTopAppBar(
                 left = AeonTopBarSection(

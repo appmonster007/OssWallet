@@ -1,6 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.settings
 
-import android.widget.Toast
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarType
+import com.osscabinet.ossWallet.ui.components.showAeonSnackbar
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,7 +59,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -91,7 +95,8 @@ fun CurrencySettingsScreen(
     val availableCurrencies by viewModel.availableCurrencies.collectAsStateWithLifecycle()
     val shortlistedCurrencies by viewModel.shortlistedCurrencies.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showProviderDialog by remember { mutableStateOf(false) }
     var showSystemDialog by remember { mutableStateOf(false) }
@@ -457,11 +462,12 @@ fun CurrencySettingsScreen(
                                                     .clickable {
                                                         if (decimalPrecision != p) {
                                                             viewModel.setDecimalPrecision(p)
-                                                            Toast.makeText(
-                                                                context,
-                                                                "Precision set to $p decimal places",
-                                                                Toast.LENGTH_SHORT
-                                                            ).show()
+                                                            scope.launch {
+                                                                snackbarHostState.showAeonSnackbar(
+                                                                    message = "Precision set to $p decimal places",
+                                                                    type = AeonSnackbarType.SUCCESS
+                                                                )
+                                                            }
                                                         }
                                                     },
                                                 shape = CircleShape,
@@ -512,6 +518,8 @@ fun CurrencySettingsScreen(
                     }
                 }
             }
+
+            AeonSnackbarHost(hostState = snackbarHostState)
 
             AeonTopAppBar(
                 left = AeonTopBarSection(

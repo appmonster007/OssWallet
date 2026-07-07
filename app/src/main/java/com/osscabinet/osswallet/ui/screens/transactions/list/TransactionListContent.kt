@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.osscabinet.ossWallet.ui.components.AeonSnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -157,12 +157,7 @@ fun TransactionListContent(
             ) { onFilterEvent(FilterEvent.UpdateSettings(it)) }
 
             // Snackbar Host
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 80.dp)
-            )
+            AeonSnackbarHost(hostState = snackbarHostState)
 
             // Linked Transactions Selection Sheet
             linkedPopupTxs?.let { txs ->

@@ -59,3 +59,18 @@ class FilterPillController {
 }
 
 val LocalFilterPillController = staticCompositionLocalOf<FilterPillController?> { null }
+
+/**
+ * Provides the ID of the card currently being rendered.
+ */
+val LocalCardId = staticCompositionLocalOf<String?> { null }
+
+/**
+ * Provides the ID of the card currently being edited/configured.
+ */
+val LocalEditingCardId = staticCompositionLocalOf<String?> { null }
+
+/**
+ * Callback to update the currently edited card ID.
+ */
+val LocalOnEditCard = staticCompositionLocalOf<((String?) -> Unit)?> { null }

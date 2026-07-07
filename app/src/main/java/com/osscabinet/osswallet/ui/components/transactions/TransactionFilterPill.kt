@@ -153,7 +153,7 @@ fun TransactionFilterPill(
 
     val isOpen by remember { derivedStateOf { (f > 0f) || (onDismiss != null) } }
 
-    BackHandler(enabled = draggableState.currentValue == PillState.Expanded || f > 0.1f) {
+    BackHandler(enabled = (onDismiss != null && isOpen) || draggableState.currentValue == PillState.Expanded || f > 0.1f) {
         actions.collapse()
     }
 

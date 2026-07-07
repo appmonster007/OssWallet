@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
@@ -39,7 +40,8 @@ fun UnifiedCardRenderer(
     highlightedId: String? = null,
     onScrollComplete: () -> Unit = {}
 ) {
-    when (cardWithCallbacks) {
+    CompositionLocalProvider(LocalCardId provides cardWithCallbacks.cardId) {
+        when (cardWithCallbacks) {
         is CardWithCallbacks.NetWorth -> {
             val renderData = cardWithCallbacks.renderData
             NetWorthCard(
@@ -357,6 +359,7 @@ fun UnifiedCardRenderer(
             }
         }
     }
+}
 }
 
 private fun mapCategoryMetrics(

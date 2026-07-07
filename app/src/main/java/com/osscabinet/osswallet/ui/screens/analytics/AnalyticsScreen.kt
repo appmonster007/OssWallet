@@ -30,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -55,8 +56,12 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonCardAtelier
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardList
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.BudgetActions
+import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
+import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
+import com.osscabinet.ossWallet.ui.components.cards.LocalOnEditCard
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
@@ -123,6 +128,7 @@ fun AnalyticsScreen(
     )
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var editingCardId by remember { mutableStateOf<String?>(null) }
 
     val tabs = listOf("STATUS", "WALLET", "TRACK", "TRENDS")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -132,11 +138,18 @@ fun AnalyticsScreen(
         scope.launch { pagerState.animateScrollToPage(0) }
     }
     BackHandler(enabled = showSettingsDialog) { showSettingsDialog = false }
+    BackHandler(enabled = editingCardId != null) { editingCardId = null }
 
     val pillHeight = AeonSize.D64.value
+    val filterPillController = remember { FilterPillController() }
 
     AeonHazeProvider { hazeLayers ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        CompositionLocalProvider(
+            LocalFilterPillController provides filterPillController,
+            LocalEditingCardId provides editingCardId,
+            LocalOnEditCard provides { editingCardId = it }
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
             // 1. Content Layer (Layer 1)
             Scaffold(
                 containerColor = Color.Transparent
@@ -322,6 +335,27 @@ fun AnalyticsScreen(
             )
 
             // 3. Floating Filter Pill Layer (Layer 4)
+            val pillRequest = filterPillController.activeRequest
+            if (pillRequest != null) {
+                TransactionFilterPill(
+                    filter = pillRequest.filter,
+                    accounts = pillRequest.accounts,
+                    categories = pillRequest.categories,
+                    allTags = pillRequest.allTags,
+                    savedFilters = pillRequest.savedFilters,
+                    onSearchTransactions = pillRequest.onSearchTransactions,
+                    onFilterEvent = pillRequest.onFilterEvent,
+                    onSaveFilterClick = pillRequest.onSaveFilterClick,
+                    onDismiss = {
+                        pillRequest.onDismiss()
+                        filterPillController.dismiss()
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    filterRules = pillRequest.filterRules,
+                    baseFilter = pillRequest.baseFilter,
+                )
+            }
+
             if (commonFilterEnabled) {
                 (uiState as? AnalyticsUiState.Success)?.let { state ->
                     TransactionFilterPill(
@@ -418,4 +452,5 @@ fun AnalyticsScreen(
             }
         }
     }
+}
 }

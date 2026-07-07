@@ -391,7 +391,6 @@ fun DashboardScreenLayout(
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
-    BackHandler(enabled = editingCardId != null) { editingCardId = null }
 
     val pageCount = 2
     val pagerState = rememberPagerState(pageCount = { pageCount })
@@ -457,6 +456,7 @@ fun DashboardScreenLayout(
     BackHandler(enabled = pagerState.currentPage > 0 && !showAddCardDialog && !isFabExpanded) {
         scope.launch { pagerState.animateScrollToPage(0) }
     }
+    BackHandler(enabled = editingCardId != null) { editingCardId = null }
 
     val filterPillController = remember { FilterPillController() }
 

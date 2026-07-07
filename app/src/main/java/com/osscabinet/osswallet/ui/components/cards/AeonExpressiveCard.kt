@@ -137,7 +137,25 @@ fun AeonExpressiveCard(
     val periodTappable = filterEnabled && filter != null && onFilterChange != null
     val hasSettings = displaySettings != null
 
-    var showFilterSheet by remember { mutableStateOf(false) }
+    val editingCardId = LocalEditingCardId.current
+    val cardId = LocalCardId.current
+    val onEditCard = LocalOnEditCard.current
+
+    var internalShowFilterSheet by remember { mutableStateOf(false) }
+    val showFilterSheet = if (editingCardId != null && cardId != null) {
+        editingCardId == cardId
+    } else {
+        internalShowFilterSheet
+    }
+
+    val setShowFilterSheet: (Boolean) -> Unit = { visible ->
+        if (onEditCard != null && cardId != null) {
+            if (visible) onEditCard(cardId) else onEditCard(null)
+        } else {
+            internalShowFilterSheet = visible
+        }
+    }
+
     var isFlipped by remember { mutableStateOf(false) }
 
     val rotation by animateFloatAsState(
@@ -289,7 +307,7 @@ fun AeonExpressiveCard(
                                             style = AppTextStyles.cardPeriodReadout,
                                             color = subtitleColor,
                                             modifier = Modifier
-                                                .clickable { showFilterSheet = true }
+                                                .clickable { setShowFilterSheet(true) }
                                                 .aeonDottedUnderline(),
                                         )
                                     } else {
@@ -372,7 +390,7 @@ fun AeonExpressiveCard(
                         onSearchTransactions = filterContext.onSearchTransactions,
                         onFilterEvent = onFilterEvent,
                         onSaveFilterClick = onSaveFilterClick,
-                        onDismiss = { showFilterSheet = false },
+                        onDismiss = { setShowFilterSheet(false) },
                         filterRules = filterRules ?: CardFilterRules.DEFAULT,
                         baseFilter = baseFilter,
                     )
@@ -385,7 +403,7 @@ fun AeonExpressiveCard(
             // Dialog fallback: screens that don't provide LocalFilterPillController
             // (Analytics, etc.) keep the existing behaviour unchanged.
             Dialog(
-                onDismissRequest = { showFilterSheet = false },
+                onDismissRequest = { setShowFilterSheet(false) },
                 properties = DialogProperties(
                     usePlatformDefaultWidth = false,
                     dismissOnBackPress = true,
@@ -404,7 +422,7 @@ fun AeonExpressiveCard(
                     savedFilters = filterContext.savedFilters,
                     onFilterEvent = onFilterEvent,
                     onSaveFilterClick = onSaveFilterClick,
-                    onDismiss = { showFilterSheet = false },
+                    onDismiss = { setShowFilterSheet(false) },
                     modifier = Modifier.fillMaxSize(),
                     filterRules = filterRules ?: CardFilterRules.DEFAULT,
                     baseFilter = baseFilter,

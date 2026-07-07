@@ -97,7 +97,9 @@ import com.osscabinet.ossWallet.ui.components.cards.FilterActions
 import com.osscabinet.ossWallet.ui.components.cards.FilterPillController
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.LoanActions
+import com.osscabinet.ossWallet.ui.components.cards.LocalEditingCardId
 import com.osscabinet.ossWallet.ui.components.cards.LocalFilterPillController
+import com.osscabinet.ossWallet.ui.components.cards.LocalOnEditCard
 import com.osscabinet.ossWallet.ui.components.cards.PaymentActions
 import com.osscabinet.ossWallet.ui.components.cards.TagActions
 import com.osscabinet.ossWallet.ui.components.cards.TransactionActions
@@ -385,9 +387,11 @@ fun DashboardScreenLayout(
     var showAddCardDialog by remember { mutableStateOf(false) }
     var isFabExpanded by remember { mutableStateOf(false) }
     var showQuickAddSheet by remember { mutableStateOf(false) }
+    var editingCardId by remember { mutableStateOf<String?>(null) }
 
     BackHandler(enabled = showAddCardDialog) { showAddCardDialog = false }
     BackHandler(enabled = isFabExpanded) { isFabExpanded = false }
+    BackHandler(enabled = editingCardId != null) { editingCardId = null }
 
     val pageCount = 2
     val pagerState = rememberPagerState(pageCount = { pageCount })
@@ -457,7 +461,11 @@ fun DashboardScreenLayout(
     val filterPillController = remember { FilterPillController() }
 
     AeonHazeProvider { hazeLayers ->
-        CompositionLocalProvider(LocalFilterPillController provides filterPillController) {
+        CompositionLocalProvider(
+            LocalFilterPillController provides filterPillController,
+            LocalEditingCardId provides editingCardId,
+            LocalOnEditCard provides { editingCardId = it }
+        ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
                 Scaffold(

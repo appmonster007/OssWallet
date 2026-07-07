@@ -67,7 +67,7 @@ fun NavGraphBuilder.transactionsGraph(
                 transactionId = route.transactionId.takeIf { it != -1L },
                 accountId = route.accountId,
                 initialType = if (route.transactionType == -1) null else {
-                    when(TransactionType.fromInt(route.transactionType)) {
+                    when (TransactionType.fromInt(route.transactionType)) {
                         TransactionType.INCOME -> EntryMode.INCOME
                         TransactionType.EXPENSE -> EntryMode.EXPENSE
                         else -> EntryMode.TRANSFER
@@ -78,8 +78,8 @@ fun NavGraphBuilder.transactionsGraph(
             ),
             actions = TransactionEntryActions(
                 onBackClick = { navController.popBackStack() },
-                onDispose = { 
-                    vms.transactionViewModel.clearPrefillDto() 
+                onDispose = {
+                    vms.transactionViewModel.clearPrefillDto()
                     vms.transactionViewModel.clearTemplatePrefill()
                     vms.transactionViewModel.clearPlannedPaymentPrefill()
                 }
@@ -108,7 +108,8 @@ fun NavGraphBuilder.transactionsGraph(
         popExitTransition = { PopExitTransitionSpec }
     ) {
         val categories by vms.transactionViewModel.categories.collectAsStateWithLifecycle()
-        val categoryMap = androidx.compose.runtime.remember(categories) { categories.associateBy { it.id } }
+        val categoryMap =
+            androidx.compose.runtime.remember(categories) { categories.associateBy { it.id } }
         TemplateListScreen(
             viewModel = vms.templateViewModel,
             accountViewModel = vms.accountViewModel,
@@ -135,7 +136,7 @@ fun NavGraphBuilder.transactionsGraph(
         val route = backStackEntry.toRoute<TemplateEntryRoute>()
         val prefill by vms.transactionViewModel.templatePrefill.collectAsStateWithLifecycle()
         val entryViewModel: TemplateEntryViewModel = hiltViewModel()
-        
+
         TemplateEntryScreen(
             viewModel = entryViewModel,
             config = TemplateEntryConfig(

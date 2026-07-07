@@ -177,7 +177,13 @@ fun AccountEntrySheets(
                                 // 1. Mode Selector
                                 EntryTypeSelector(
                                     selectedType = state.balanceUpdateMode,
-                                    onTypeSelected = { onEvent(AccountEntryEvent.SetBalanceUpdateMode(it)) },
+                                    onTypeSelected = {
+                                        onEvent(
+                                            AccountEntryEvent.SetBalanceUpdateMode(
+                                                it
+                                            )
+                                        )
+                                    },
                                     types = modes,
                                     selectedColor = selectedColor,
                                     itemWidth = 100.dp
@@ -201,7 +207,9 @@ fun AccountEntrySheets(
                                         Box(modifier = Modifier.fillMaxWidth()) {
                                             IconButton(
                                                 onClick = onHistory,
-                                                modifier = Modifier.align(Alignment.TopStart).size(iconBtnSize)
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .size(iconBtnSize)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.History,
@@ -220,7 +228,9 @@ fun AccountEntrySheets(
 
                                             IconButton(
                                                 onClick = onSave,
-                                                modifier = Modifier.align(Alignment.TopEnd).size(iconBtnSize)
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .size(iconBtnSize)
                                             ) {
                                                 Icon(
                                                     Icons.Rounded.Check,
@@ -234,11 +244,13 @@ fun AccountEntrySheets(
                                         Spacer(modifier = Modifier.size(afterHeaderSpacer))
 
                                         // PROJECTED TOTAL
-                                        val inputBD = calcState.display.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                                        val inputBD = calcState.display.toBigDecimalOrNull()
+                                            ?: BigDecimal.ZERO
                                         val isNeg = inputBD.signum() < 0
 
                                         Text(
-                                            text = inputBD.abs().stripTrailingZeros().toPlainString(),
+                                            text = inputBD.abs().stripTrailingZeros()
+                                                .toPlainString(),
                                             style = AppTextStyles.heroAmount.copy(
                                                 fontSize = amountFontSize,
                                                 fontWeight = FontWeight.Bold,
@@ -252,14 +264,19 @@ fun AccountEntrySheets(
 
                                         // CONTEXTUAL DELTA ROW
                                         Row(
-                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 4.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Column(horizontalAlignment = Alignment.Start) {
                                                 Text(
-                                                    text = currentBaseTotal.stripTrailingZeros().toPlainString(),
-                                                    style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
+                                                    text = currentBaseTotal.stripTrailingZeros()
+                                                        .toPlainString(),
+                                                    style = AppTextStyles.chartTooltipValue.copy(
+                                                        fontSize = deltaFontSize
+                                                    ),
                                                     color = AppColors.contentSecondary
                                                 )
                                                 Text(
@@ -288,8 +305,11 @@ fun AccountEntrySheets(
                                                     )
                                                     Spacer(Modifier.size(4.dp))
                                                     Text(
-                                                        text = (if (isGain) "+" else "") + delta.stripTrailingZeros().toPlainString(),
-                                                        style = AppTextStyles.chartTooltipValue.copy(fontSize = deltaFontSize),
+                                                        text = (if (isGain) "+" else "") + delta.stripTrailingZeros()
+                                                            .toPlainString(),
+                                                        style = AppTextStyles.chartTooltipValue.copy(
+                                                            fontSize = deltaFontSize
+                                                        ),
                                                         color = if (isGain) AppColors.positive else AppColors.negative
                                                     )
                                                 }

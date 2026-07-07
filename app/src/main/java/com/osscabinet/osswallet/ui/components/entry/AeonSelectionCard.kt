@@ -81,6 +81,7 @@ fun AeonSelectionCard(
                                 )
                             }
                         }
+
                         AeonSelectMode.MULTI -> {
                             Switch(
                                 checked = isSelected,
@@ -98,6 +99,7 @@ fun AeonSelectionCard(
                                 )
                             )
                         }
+
                         AeonSelectMode.MANAGEMENT -> {
                             Icon(
                                 imageVector = Icons.Rounded.Edit,
@@ -129,12 +131,24 @@ fun AeonSelectionListPreview() {
                 color = AppColors.primary,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
-            
+
             val tags = listOf(
-                Triple("Work", "Professional tasks and business meetings", AccountStructureColors.bank),
+                Triple(
+                    "Work",
+                    "Professional tasks and business meetings",
+                    AccountStructureColors.bank
+                ),
                 Triple("Personal", "Private matters and home life", AccountStructureColors.savings),
-                Triple("Urgent", "High priority - needs immediate attention", AccountStructureColors.credit),
-                Triple("Later", "Low priority tasks for next week", AccountStructureColors.investment)
+                Triple(
+                    "Urgent",
+                    "High priority - needs immediate attention",
+                    AccountStructureColors.credit
+                ),
+                Triple(
+                    "Later",
+                    "Low priority tasks for next week",
+                    AccountStructureColors.investment
+                )
             )
 
             tags.forEachIndexed { index, (label, detail, color) ->
@@ -161,7 +175,11 @@ fun AeonSelectionCardPreview() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("SINGLE SELECTION", style = AppTextStyles.sectionOverline, color = AppColors.primary)
+            Text(
+                "SINGLE SELECTION",
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.primary
+            )
             AeonSelectionCard(
                 icon = Icons.Rounded.Category,
                 label = "Active Item",
@@ -178,7 +196,11 @@ fun AeonSelectionCardPreview() {
             )
 
             Spacer(modifier = Modifier.size(16.dp))
-            Text("MULTI SELECTION", style = AppTextStyles.sectionOverline, color = AppColors.primary)
+            Text(
+                "MULTI SELECTION",
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.primary
+            )
             AeonSelectionCard(
                 icon = Icons.Rounded.Category,
                 label = "Multi-Select Item",
@@ -189,7 +211,11 @@ fun AeonSelectionCardPreview() {
             )
 
             Spacer(modifier = Modifier.size(16.dp))
-            Text("PARENT SELECTION", style = AppTextStyles.sectionOverline, color = AppColors.primary)
+            Text(
+                "PARENT SELECTION",
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.primary
+            )
             AeonSelectionCard(
                 icon = Icons.Rounded.Category,
                 label = "Parent Category",
@@ -200,7 +226,11 @@ fun AeonSelectionCardPreview() {
             )
 
             Spacer(modifier = Modifier.size(16.dp))
-            Text("MANAGEMENT MODE", style = AppTextStyles.sectionOverline, color = AppColors.primary)
+            Text(
+                "MANAGEMENT MODE",
+                style = AppTextStyles.sectionOverline,
+                color = AppColors.primary
+            )
             AeonSelectionCard(
                 icon = Icons.Rounded.Category,
                 label = "Editable Category",

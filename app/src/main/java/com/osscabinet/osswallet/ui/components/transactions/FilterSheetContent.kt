@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -336,7 +336,8 @@ fun FilterSheetContent(
                         FilterChip(
                             selected = localFilter.matchAllTags,
                             onClick = {
-                                val next = localFilter.copy(matchAllTags = !localFilter.matchAllTags)
+                                val next =
+                                    localFilter.copy(matchAllTags = !localFilter.matchAllTags)
                                 localFilter = next
                                 applyFilterWithDebounce(next, debounceMs = 0)
                             },
@@ -394,7 +395,10 @@ fun FilterSheetContent(
                 modifier = Modifier.weight(0.4f),
                 shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
             ) {
-                Text("Close", style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary))
+                Text(
+                    "Close",
+                    style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary)
+                )
             }
 
             Button(
@@ -418,7 +422,7 @@ fun FilterSheetContent(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(navPadding + 24.dp))
     }
 }

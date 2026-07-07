@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,8 +17,6 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.filled.ViewStream
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,8 +47,7 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetDynamicFilteringMode
@@ -60,8 +58,6 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
-import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
-import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
@@ -89,7 +85,12 @@ fun mapTagUpSetPlot(
 ) = CardWithCallbacks.TagUpSetPlot(
     renderData = renderData,
     callbacks = CardCallbacks.TagUpSetPlot(
-        onUpdate = { newConfig -> updateHandler.updateTagUpSetPlotConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateTagUpSetPlotConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onDelete = { onDelete(config.cardId) },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
@@ -477,7 +478,13 @@ private fun TagUpSetSettingsSheet(
                     }
                     AeonStepperField(
                         value = config.maxIntersections,
-                        onDecrement = { if (config.maxIntersections > 1) onUpdate(config.copy(maxIntersections = config.maxIntersections - 1)) },
+                        onDecrement = {
+                            if (config.maxIntersections > 1) onUpdate(
+                                config.copy(
+                                    maxIntersections = config.maxIntersections - 1
+                                )
+                            )
+                        },
                         onIncrement = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
                         min = 1
                     )

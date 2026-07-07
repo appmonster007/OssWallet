@@ -35,9 +35,9 @@ import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.scaledDp
 
 /**
@@ -67,7 +67,7 @@ fun EntryTagSection(
                 ?: Tag(name = name)
         }
     }
-    
+
     var showPopup by remember { mutableStateOf(false) }
 
     FlowRow(
@@ -114,7 +114,7 @@ fun EntryTagSection(
                 )
             }
         }
-        
+
         if (showPopup) {
             AeonTagSelectionDialog(
                 tags = allAvailableTags,
@@ -140,7 +140,10 @@ fun EntryTagSection(
                 modifier = Modifier.height(scaledDp(32f, uiScale))
             ) {
                 Row(
-                    modifier = Modifier.padding(start = scaledDp(12f, uiScale), end = scaledDp(6f, uiScale)),
+                    modifier = Modifier.padding(
+                        start = scaledDp(12f, uiScale),
+                        end = scaledDp(6f, uiScale)
+                    ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(

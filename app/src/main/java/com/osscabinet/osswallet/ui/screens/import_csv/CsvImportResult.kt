@@ -2,7 +2,13 @@ package com.osscabinet.ossWallet.ui.screens.import_csv
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,7 +16,11 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -37,11 +47,23 @@ fun ImportResultScreen(
     val isZero = result.imported == 0
 
     val (iconName, iconTint, headline, subLine) = when {
-        isFullSuccess -> Quad("CheckCircle", AppColors.positive, "Import complete", "${result.imported} transaction${if (result.imported != 1) "s" else ""} added")
-        isPartial -> Quad("Warning", WarningColor, "Import finished with issues", "${result.imported} added \u00b7 ${result.errors.size} failed")
+        isFullSuccess -> Quad(
+            "CheckCircle",
+            AppColors.positive,
+            "Import complete",
+            "${result.imported} transaction${if (result.imported != 1) "s" else ""} added"
+        )
+
+        isPartial -> Quad(
+            "Warning",
+            WarningColor,
+            "Import finished with issues",
+            "${result.imported} added \u00b7 ${result.errors.size} failed"
+        )
+
         else -> Quad(
-            "Info", 
-            AppColors.contentSecondary, 
+            "Info",
+            AppColors.contentSecondary,
             "Nothing was imported",
             if (result.skipped > 0) "All rows already exist in OssWallet"
             else "All rows failed to parse \u2014 check your column mappings"
@@ -69,11 +91,19 @@ fun ImportResultScreen(
         )
 
         if (result.skipped > 0 && !isZero) {
-            Text("${result.skipped} duplicate row${if (result.skipped != 1) "s" else ""} were skipped", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+            Text(
+                "${result.skipped} duplicate row${if (result.skipped != 1) "s" else ""} were skipped",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary
+            )
         }
 
         if (result.transfersRerouted > 0) {
-            Text("${result.transfersRerouted} transfer${if (result.transfersRerouted != 1) "s" else ""} re-routed to outside-wallet", style = AppTextStyles.caption, color = AppColors.contentSecondary)
+            Text(
+                "${result.transfersRerouted} transfer${if (result.transfersRerouted != 1) "s" else ""} re-routed to outside-wallet",
+                style = AppTextStyles.caption,
+                color = AppColors.contentSecondary
+            )
         }
 
         if (isPartial) {
@@ -83,13 +113,25 @@ fun ImportResultScreen(
         Spacer(Modifier.height(AeonTheme.dimensions.spacingLg))
 
         if (!isZero) {
-            AeonDashedButton(onClick = onViewTransactions, text = "View transactions", icon = Icons.AutoMirrored.Rounded.ArrowForward)
+            AeonDashedButton(
+                onClick = onViewTransactions,
+                text = "View transactions",
+                icon = Icons.AutoMirrored.Rounded.ArrowForward
+            )
         } else {
-            AeonDashedButton(onClick = onReviewMappings, text = "Review mappings", icon = Icons.Rounded.AttachFile)
+            AeonDashedButton(
+                onClick = onReviewMappings,
+                text = "Review mappings",
+                icon = Icons.Rounded.AttachFile
+            )
         }
 
         TextButton(onClick = onBack) {
-            Text("Back to Settings", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+            Text(
+                "Back to Settings",
+                style = AppTextStyles.buttonLabel,
+                color = AppColors.contentSecondary
+            )
         }
     }
 }
@@ -98,12 +140,20 @@ fun ImportResultScreen(
 private fun ErrorDetails(errors: List<com.osscabinet.ossWallet.domain.model.import_csv.ParseError>) {
     var showErrors by remember { mutableStateOf(false) }
     TextButton(onClick = { showErrors = !showErrors }) {
-        Text(if (showErrors) "Hide errors" else "Show ${errors.size} errors", style = AppTextStyles.buttonLabel, color = AppColors.error)
+        Text(
+            if (showErrors) "Hide errors" else "Show ${errors.size} errors",
+            style = AppTextStyles.buttonLabel,
+            color = AppColors.error
+        )
     }
     AnimatedVisibility(visible = showErrors) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             errors.forEach { err ->
-                Text("Row ${err.rowIndex}: ${err.reason}", style = AppTextStyles.caption, color = AppColors.error)
+                Text(
+                    "Row ${err.rowIndex}: ${err.reason}",
+                    style = AppTextStyles.caption,
+                    color = AppColors.error
+                )
             }
         }
     }
@@ -114,7 +164,12 @@ private fun ErrorDetails(errors: List<com.osscabinet.ossWallet.domain.model.impo
 private fun ImportResultScreenSuccessPreview() {
     OssWalletTheme {
         ImportResultScreen(
-            result = ImportSummary(imported = 10, skipped = 2, errors = emptyList(), transfersRerouted = 0),
+            result = ImportSummary(
+                imported = 10,
+                skipped = 2,
+                errors = emptyList(),
+                transfersRerouted = 0
+            ),
             onViewTransactions = {},
             onReviewMappings = {},
             onBack = {}
@@ -130,7 +185,12 @@ private fun ImportResultScreenPartialPreview() {
             result = ImportSummary(
                 imported = 5,
                 skipped = 1,
-                errors = listOf(com.osscabinet.ossWallet.domain.model.import_csv.ParseError(3, "Missing category")),
+                errors = listOf(
+                    com.osscabinet.ossWallet.domain.model.import_csv.ParseError(
+                        3,
+                        "Missing category"
+                    )
+                ),
                 transfersRerouted = 2
             ),
             onViewTransactions = {},

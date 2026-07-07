@@ -3,25 +3,18 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,18 +32,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import androidx.compose.ui.graphics.toArgb
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -60,8 +49,10 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Paint as AndroidPaint
@@ -111,7 +102,8 @@ fun AeonBarChart(
         val rightPadding = with(density) { dims.spacingMd.toPx() }
         val topPadding = with(density) { dims.spacingLg.toPx() }
         val xLabelHeight = with(density) { 16.dp.toPx() }
-        val bottomPadding = with(density) { dims.spacingXl.toPx() } + (if (showXAxisLabels) xLabelHeight else 0f)
+        val bottomPadding =
+            with(density) { dims.spacingXl.toPx() } + (if (showXAxisLabels) xLabelHeight else 0f)
 
         val chartWidth = widthPx - leftPadding - rightPadding
         val chartHeight = heightPx - topPadding - bottomPadding
@@ -158,7 +150,12 @@ fun AeonBarChart(
 
         val zeroY = valueToY(BigDecimal.ZERO)
         val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
-        val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
+        val chartSpec = remember(precision) {
+            CurrencyDisplaySpec(
+                precision = precision,
+                shortenThreshold = 10
+            )
+        }
 
         val isDark = LocalThemeMode.current.isDarkTheme
         val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
@@ -217,7 +214,11 @@ fun AeonBarChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
+                            currencyFormatter.format(
+                                amount = tick,
+                                currencyCode = currency,
+                                spec = chartSpec
+                            ),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -255,9 +256,11 @@ fun AeonBarChart(
             val barWidth = slotWidth * 0.85f
 
             val total = groups.size
-            val firstValidIdx = groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0
-            val lastValidIdx = groups.indexOfLast { it.label.isNotBlank() }.takeIf { it != -1 } ?: (total - 1)
-            
+            val firstValidIdx =
+                groups.indexOfFirst { it.label.isNotBlank() }.takeIf { it != -1 } ?: 0
+            val lastValidIdx =
+                groups.indexOfLast { it.label.isNotBlank() }.takeIf { it != -1 } ?: (total - 1)
+
             val indicesToShow = mutableSetOf<Int>()
             if (total > 0) {
                 indicesToShow.add(firstValidIdx)
@@ -315,14 +318,14 @@ fun AeonBarChart(
                         textSize = 9.sp.toPx()
                     }
 
-                if (groupIndex in indicesToShow) {
-                    drawContext.canvas.nativeCanvas.drawText(
-                        group.label,
-                        centerX,
-                        heightPx - bottomPadding + with(density) { 14.dp.toPx() },
-                        labelPaint
-                    )
-                }
+                    if (groupIndex in indicesToShow) {
+                        drawContext.canvas.nativeCanvas.drawText(
+                            group.label,
+                            centerX,
+                            heightPx - bottomPadding + with(density) { 14.dp.toPx() },
+                            labelPaint
+                        )
+                    }
                 }
             }
 
@@ -412,7 +415,10 @@ fun AeonBarChart(
 fun AeonBarChartLightPreview() {
     OssWalletPreviewTheme(theme = "Light") {
         Surface(color = AppColors.background) {
-            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(16.dp)) {
                 AeonBarChart(
                     data = listOf(
                         "Mon" to BigDecimal("120.00"),
@@ -434,7 +440,10 @@ fun AeonBarChartLightPreview() {
 fun AeonBarChartDarkPreview() {
     OssWalletPreviewTheme(theme = "Dark") {
         Surface(color = AppColors.background) {
-            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(16.dp)) {
                 AeonBarChart(
                     data = listOf(
                         "Mon" to BigDecimal("120.00"),
@@ -456,7 +465,10 @@ fun AeonBarChartDarkPreview() {
 fun AeonBarChartAmoledPreview() {
     OssWalletPreviewTheme(theme = "Amoled") {
         Surface(color = AppColors.background) {
-            Box(modifier = Modifier.fillMaxWidth().height(250.dp).padding(16.dp)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .padding(16.dp)) {
                 AeonBarChart(
                     data = listOf(
                         "Mon" to BigDecimal("120.00"),
@@ -480,10 +492,12 @@ fun AeonBarChartAmoledPreview() {
 @Composable
 fun AeonBarChartMixedPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .padding(16.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(16.dp)
+        ) {
             AeonBarChart(
                 groups = listOf(
                     AeonBarChartGroup(

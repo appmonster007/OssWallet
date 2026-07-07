@@ -1,75 +1,58 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
+import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
-import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.GlassTokens
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
@@ -160,7 +143,10 @@ fun CardPerspectiveSettings(
                 SegmentedButton(
                     selected = perspective == mode,
                     onClick = { onPerspectiveChange(mode) },
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = allPerspectives.size),
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = allPerspectives.size
+                    ),
                     label = {
                         Text(
                             text = @Suppress("REDUNDANT_ELSE_IN_WHEN")
@@ -186,7 +172,7 @@ fun CardPerspectiveSettings(
                 )
             }
         }
-        
+
         AeonSettingsToggle(
             label = "Exclude internal transfers",
             description = "Hides transfers between accounts",
@@ -265,7 +251,7 @@ fun CardSettingsSection(
                 color = AppColors.contentSecondary.copy(alpha = 0.6f),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
+
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
@@ -327,8 +313,16 @@ fun CardSettingsStandardizationLab() {
 
                 // 3. Layout & Visuals (Using showBackground = false for components with their own surfaces)
                 CardSettingsSection("Layout & Visuals", showBackground = false) {
-                    AeonLayoutToggle(layout = layout, onLayoutChange = { layout = it }, showBackground = false)
-                    AeonGridColumnsSettings(gridColumns = columns, onGridColumnsChange = { columns = it }, showBackground = false)
+                    AeonLayoutToggle(
+                        layout = layout,
+                        onLayoutChange = { layout = it },
+                        showBackground = false
+                    )
+                    AeonGridColumnsSettings(
+                        gridColumns = columns,
+                        onGridColumnsChange = { columns = it },
+                        showBackground = false
+                    )
                 }
 
                 // 4. Display Flags (Unified Boolean Controls)
@@ -389,7 +383,10 @@ fun CardSettingsStandardizationLab() {
                     ) {
                         Icon(Icons.Default.Settings, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Manage Connected Entities", style = AppTextStyles.buttonLabel.copy(fontSize = 13.sp))
+                        Text(
+                            "Manage Connected Entities",
+                            style = AppTextStyles.buttonLabel.copy(fontSize = 13.sp)
+                        )
                     }
                 }
             }

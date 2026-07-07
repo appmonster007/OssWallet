@@ -34,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -50,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.management.AeonListItem
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
@@ -184,9 +182,9 @@ private fun <T, ID> RecursiveHybridNode(
     var expanded by remember(itemId, startExpanded) {
         mutableStateOf(
             startExpanded && (selectedIds.contains(itemId) ||
-                selectedIds.any { id ->
-                    allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId
-                })
+                    selectedIds.any { id ->
+                        allItems.find { idMapper(it) == id }?.let { parentIdMapper(it) } == itemId
+                    })
         )
     }
 
@@ -326,6 +324,7 @@ private fun <T, ID> HybridSelectItem(
                             )
                         }
                     }
+
                     AeonSelectMode.MULTI -> {
                         Switch(
                             checked = isSelected,
@@ -340,6 +339,7 @@ private fun <T, ID> HybridSelectItem(
                             )
                         )
                     }
+
                     AeonSelectMode.MANAGEMENT -> {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             IconButton(onClick = onAddChildClick, modifier = Modifier.size(32.dp)) {

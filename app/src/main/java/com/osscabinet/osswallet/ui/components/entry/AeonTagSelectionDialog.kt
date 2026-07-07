@@ -1,10 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.entry
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,7 +50,6 @@ import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonColorSelection
-import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -143,7 +137,10 @@ fun AeonTagSelectionDialog(
                 ) {
                     Text(
                         text = "Select Tags",
-                        style = AppTextStyles.heroAmount.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.heroAmount.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
                         color = AppColors.contentPrimary
                     )
 
@@ -224,9 +221,14 @@ fun AeonTagSelectionDialog(
                                 containerColor = AppColors.primary,
                                 contentColor = AppColors.onPrimary
                             ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 24.dp)
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                horizontal = 24.dp
+                            )
                         ) {
-                            Text("Done", style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                "Done",
+                                style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }
@@ -338,15 +340,28 @@ fun AeonTagCreateDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.tag_create_dialog_title),
-                        style = AppTextStyles.heroAmount.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.heroAmount.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
                         color = AppColors.contentPrimary
                     )
 
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text(stringResource(R.string.tag_name_label), style = AppTextStyles.sectionOverline) },
-                        placeholder = { Text(stringResource(R.string.tag_name_placeholder), style = AppTextStyles.formFieldHint) },
+                        label = {
+                            Text(
+                                stringResource(R.string.tag_name_label),
+                                style = AppTextStyles.sectionOverline
+                            )
+                        },
+                        placeholder = {
+                            Text(
+                                stringResource(R.string.tag_name_placeholder),
+                                style = AppTextStyles.formFieldHint
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
@@ -365,7 +380,10 @@ fun AeonTagCreateDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancel", style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary))
+                            Text(
+                                "Cancel",
+                                style = AppTextStyles.buttonLabel.copy(color = AppColors.contentSecondary)
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Button(
@@ -386,7 +404,10 @@ fun AeonTagCreateDialog(
                                 contentColor = AppColors.onPrimary
                             )
                         ) {
-                            Text("Create", style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                "Create",
+                                style = AppTextStyles.buttonLabel.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }

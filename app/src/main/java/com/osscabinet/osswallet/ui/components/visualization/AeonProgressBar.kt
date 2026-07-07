@@ -85,7 +85,7 @@ fun AeonProgressBarPreview() {
                 AeonProgressBar(progress = 0.3f)
                 AeonProgressBar(progress = 0.7f, color = Color.Red)
                 AeonProgressBar(progress = 1.0f, color = Color.Green)
-                
+
                 AeonSegmentedProgressBar(
                     segments = listOf(
                         ProgressBarSegment(0.3f, Color.Red),

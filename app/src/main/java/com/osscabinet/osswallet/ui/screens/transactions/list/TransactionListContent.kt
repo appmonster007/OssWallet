@@ -1,47 +1,27 @@
 package com.osscabinet.ossWallet.ui.screens.transactions.list
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.Filter
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.TransactionGroup
-import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionWithBalance
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
@@ -49,11 +29,9 @@ import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
-import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionList
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.LinkedTransactionJumpSheet
-import com.osscabinet.ossWallet.ui.components.transactions.SwipeableTransactionItem
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionListEmptyState
@@ -63,11 +41,8 @@ import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionGroupUi
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListItem
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
 import com.osscabinet.ossWallet.ui.theme.AeonSize
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
@@ -126,7 +101,9 @@ fun TransactionListContent(
                             onFilterEvent(
                                 FilterEvent.Apply(
                                     filter.copy(
-                                        timelineRange = filter.timelineRange.withExcludeFuture(exclude = false)
+                                        timelineRange = filter.timelineRange.withExcludeFuture(
+                                            exclude = false
+                                        )
                                     )
                                 )
                             )
@@ -246,9 +223,13 @@ fun TransactionListScreenPopulatedPreview() {
         accountId = "acc1",
         categoryId = 1
     )
-    
+
     val dummyRecord = ConfirmedTransactionUiModel(
-        item = TransactionWithBalance(dummyTransaction, BigDecimal("1000.00"), BigDecimal("950.00")),
+        item = TransactionWithBalance(
+            dummyTransaction,
+            BigDecimal("1000.00"),
+            BigDecimal("950.00")
+        ),
         accountName = "Main Wallet",
         accountCurrency = "USD",
         categoryName = "Food",

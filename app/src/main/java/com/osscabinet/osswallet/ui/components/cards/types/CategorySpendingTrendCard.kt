@@ -23,9 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,14 +46,12 @@ import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyUtil
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
@@ -69,9 +64,10 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartG
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.InfoColor
-import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyUtil
 
 fun mapCategorySpendingTrend(
     config: CategorySpendingTrendCardConfig,
@@ -85,9 +81,22 @@ fun mapCategorySpendingTrend(
 ) = CardWithCallbacks.CategorySpendingTrend(
     renderData = renderData,
     callbacks = CardCallbacks.CategorySpendingTrend(
-        onUpdate = { newConfig -> updateHandler.updateCategorySpendingTrendConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateCategorySpendingTrendConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onDelete = { onDelete(config.cardId) },
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,
@@ -152,7 +161,8 @@ fun CategorySpendingTrendCard(
             val wantColor = WarningColor
 
             // Stacked bar chart
-            val chartGroups = buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative)
+            val chartGroups =
+                buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative)
             if (chartGroups.isNotEmpty()) {
                 AeonBarChart(
                     groups = chartGroups,
@@ -196,7 +206,8 @@ fun CategorySpendingTrendCard(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = nature.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    text = nature.name.lowercase()
+                                        .replaceFirstChar { it.uppercase() },
                                     style = AppTextStyles.caption.copy(
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -367,7 +378,13 @@ private fun CategorySpendingSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onUpdate(config.copy(excludeInternalTransfers = it)) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onUpdate(
+                    config.copy(
+                        excludeInternalTransfers = it
+                    )
+                )
+            }
         )
     }
 }

@@ -66,11 +66,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.ColorUtils
@@ -1165,10 +1163,12 @@ fun AeonColorSelection(
         ) {
             val color =
                 accentColorHex.toColorInt().let { if (it != -1) Color(it) else Color.DarkGray }
-            Box(modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(color))
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
             AeonTextField(
                 value = accentColorHex,
                 onValueChange = {

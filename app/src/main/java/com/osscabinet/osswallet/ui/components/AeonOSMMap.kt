@@ -467,9 +467,11 @@ fun AeonOSMMap(
 @Composable
 fun AeonOSMMapPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .width(360.dp)
-            .height(500.dp)) {
+        Box(
+            modifier = Modifier
+                .width(360.dp)
+                .height(500.dp)
+        ) {
             AeonOSMMap(
                 modifier = Modifier.fillMaxSize(),
                 center = GeoPoint(37.7749, -122.4194),

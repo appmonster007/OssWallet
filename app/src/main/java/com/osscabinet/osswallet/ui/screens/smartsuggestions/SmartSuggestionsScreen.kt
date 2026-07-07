@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.smartsuggestions
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +25,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,17 +43,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
 import com.osscabinet.ossWallet.domain.model.RecurrenceType
-import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.scrollBottomPadding
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
@@ -67,6 +63,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -301,8 +298,9 @@ private fun SuggestionListItem(
                         val categoryName =
                             categories.find { it.id == pattern.categoryId }?.name ?: "Unknown"
                         DetailItem("Category", categoryName, Modifier.weight(1f))
-                        val accountName = 
-                            accounts.find { it.id == pattern.accountId }?.name ?: pattern.accountId ?: "Outside Wallet"
+                        val accountName =
+                            accounts.find { it.id == pattern.accountId }?.name ?: pattern.accountId
+                            ?: "Outside Wallet"
                         DetailItem(
                             "Account",
                             accountName,

@@ -59,7 +59,9 @@ fun AeonEntryScaffold(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
-                Box(modifier = Modifier.fillMaxSize().imePadding()) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding()) {
                     content(
                         PaddingValues(
                             top = topBarHeight + scaledDp(8f, uiScale),

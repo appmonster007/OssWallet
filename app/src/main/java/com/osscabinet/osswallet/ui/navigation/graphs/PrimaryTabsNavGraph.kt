@@ -12,8 +12,8 @@ import com.osscabinet.ossWallet.ui.navigation.BudgetDetailRoute
 import com.osscabinet.ossWallet.ui.navigation.BudgetListRoute
 import com.osscabinet.ossWallet.ui.navigation.DashboardRoute
 import com.osscabinet.ossWallet.ui.navigation.EnterTransitionSpec
-import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.ExchangeRatesRoute
+import com.osscabinet.ossWallet.ui.navigation.ExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeEnterTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FadeExitTransitionSpec
 import com.osscabinet.ossWallet.ui.navigation.FilterEntryRoute
@@ -80,12 +80,25 @@ fun NavGraphBuilder.primaryTabsGraph(
                 onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
                 onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
                 onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToPlannedPaymentDetail = { id ->
+                    navController.navigate(
+                        PlannedPaymentDetailRoute(id)
+                    )
+                },
                 onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
                 onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onEditTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onSaveFilterClick = { filter ->
-                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    val encoded = URLEncoder.encode(
+                        Json.encodeToString(filter),
+                        StandardCharsets.UTF_8.toString()
+                    )
                     navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
                 },
                 onCloneTransactionClick = { id ->
@@ -116,7 +129,13 @@ fun NavGraphBuilder.primaryTabsGraph(
             actions = TransactionListActions(
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onBackClick = { navController.popBackStack() },
-                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onEditTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onCloneTransactionClick = { id ->
                     vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
@@ -126,7 +145,10 @@ fun NavGraphBuilder.primaryTabsGraph(
                     navController.navigate(TransactionEntryRoute())
                 },
                 onSaveFilterClick = { filter ->
-                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    val encoded = URLEncoder.encode(
+                        Json.encodeToString(filter),
+                        StandardCharsets.UTF_8.toString()
+                    )
                     navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
                 }
             ),
@@ -147,15 +169,30 @@ fun NavGraphBuilder.primaryTabsGraph(
             actions = AnalyticsActions(
                 onMenuClick = { scope.launch { drawerState.open() } },
                 onBackClick = { navController.popBackStack() },
-                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
+                onRecordsClick = { filter ->
+                    navController.navigateToRecords(
+                        filter,
+                        topLevel = false
+                    )
+                },
                 onAccountClick = { id -> navController.navigate(AccountDetailRoute(accountId = id)) },
                 onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
                 onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
                 onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToPlannedPaymentDetail = { id ->
+                    navController.navigate(
+                        PlannedPaymentDetailRoute(id)
+                    )
+                },
                 onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
                 onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onEditTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onCloneTransactionClick = { id ->
                     vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())

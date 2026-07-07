@@ -29,10 +29,9 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
@@ -40,10 +39,11 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.WarningColor
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -52,7 +52,10 @@ fun LoansCard(
     items: List<LoanSummary>,
     targetCurrency: String = "USD",
     exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(anchor = targetCurrency, rates = emptyMap()),
+        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+            anchor = targetCurrency,
+            rates = emptyMap()
+        ),
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
     filterContext: FilterSelectionContext = FilterSelectionContext(),

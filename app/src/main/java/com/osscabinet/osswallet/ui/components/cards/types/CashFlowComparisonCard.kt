@@ -11,9 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,14 +30,12 @@ import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
@@ -56,6 +51,8 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 private val CurrentPeriodColor = ChartColorBlue
@@ -74,9 +71,22 @@ fun mapCashFlowComparison(
 ) = CardWithCallbacks.CashFlowComparison(
     renderData = renderData,
     callbacks = CardCallbacks.CashFlowComparison(
-        onUpdate = { newConfig -> updateHandler.updateCashFlowComparisonConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateCashFlowComparisonConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onDelete = { onDelete(config.cardId) },
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,
@@ -180,7 +190,7 @@ fun CashFlowComparisonCard(
                 )
                 // Use maxXBuckets + 1 for cumulative view to account for zero origin point.
                 val totalXSlots = if (config.isCumulative) maxXBuckets + 1 else maxXBuckets
-                
+
                 // Labels: Prepend null for origin point in cumulative mode to avoid label repetition.
                 val xAxisLabels: List<String?> = if (config.isCumulative) {
                     listOf(null) + renderData.periodLabels
@@ -674,7 +684,13 @@ private fun CashFlowComparisonSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onUpdate(config.copy(excludeInternalTransfers = it)) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onUpdate(
+                    config.copy(
+                        excludeInternalTransfers = it
+                    )
+                )
+            }
         )
     }
 }

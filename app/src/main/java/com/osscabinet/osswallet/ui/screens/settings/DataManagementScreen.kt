@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.ui.screens.settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -29,15 +27,11 @@ import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -55,7 +49,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
@@ -104,11 +97,27 @@ fun DataManagementScreen(
 
     val exportZipAllLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri -> uri?.let { viewModel.exportBackup(it, BackupType.CSV_ZIP, BackupScope.ALL_PROFILES) } }
+    ) { uri ->
+        uri?.let {
+            viewModel.exportBackup(
+                it,
+                BackupType.CSV_ZIP,
+                BackupScope.ALL_PROFILES
+            )
+        }
+    }
 
     val exportZipProfileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri -> uri?.let { viewModel.exportBackup(it, BackupType.CSV_ZIP, BackupScope.SINGLE_PROFILE) } }
+    ) { uri ->
+        uri?.let {
+            viewModel.exportBackup(
+                it,
+                BackupType.CSV_ZIP,
+                BackupScope.SINGLE_PROFILE
+            )
+        }
+    }
 
     val exportCsvLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
@@ -246,7 +255,11 @@ fun DataManagementScreen(
                                     Switch(
                                         checked = autoBackupConfig.enabled,
                                         onCheckedChange = {
-                                            viewModel.updateAutoBackupConfig(autoBackupConfig.copy(enabled = it))
+                                            viewModel.updateAutoBackupConfig(
+                                                autoBackupConfig.copy(
+                                                    enabled = it
+                                                )
+                                            )
                                         }
                                     )
                                 }
@@ -272,14 +285,20 @@ fun DataManagementScreen(
                                             value = autoBackupConfig.intervalHours.toString(),
                                             onValueChange = { v ->
                                                 v.toIntOrNull()?.let { hours ->
-                                                    if (hours > 0) viewModel.updateAutoBackupConfig(autoBackupConfig.copy(intervalHours = hours))
+                                                    if (hours > 0) viewModel.updateAutoBackupConfig(
+                                                        autoBackupConfig.copy(intervalHours = hours)
+                                                    )
                                                 }
                                             },
                                             placeholder = "24",
                                             modifier = Modifier.width(100.dp)
                                         )
                                         Spacer(Modifier.width(AeonTheme.dimensions.spacingMd))
-                                        Text("hours", color = AppColors.contentSecondary, style = AppTextStyles.caption)
+                                        Text(
+                                            "hours",
+                                            color = AppColors.contentSecondary,
+                                            style = AppTextStyles.caption
+                                        )
                                     }
                                 }
 
@@ -299,8 +318,16 @@ fun DataManagementScreen(
                                     Spacer(Modifier.height(AeonTheme.dimensions.spacingSm))
                                     AeonStepperField(
                                         value = autoBackupConfig.maxRetained,
-                                        onDecrement = { if (autoBackupConfig.maxRetained > 1) viewModel.updateAutoBackupConfig(autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained - 1)) },
-                                        onIncrement = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained + 1)) },
+                                        onDecrement = {
+                                            if (autoBackupConfig.maxRetained > 1) viewModel.updateAutoBackupConfig(
+                                                autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained - 1)
+                                            )
+                                        },
+                                        onIncrement = {
+                                            viewModel.updateAutoBackupConfig(
+                                                autoBackupConfig.copy(maxRetained = autoBackupConfig.maxRetained + 1)
+                                            )
+                                        },
                                         min = 1,
                                         modifier = Modifier.width(140.dp)
                                     )
@@ -323,19 +350,30 @@ fun DataManagementScreen(
                                     AutoBackupConfig.StorageMode.entries.forEach { mode ->
                                         val isSelected = autoBackupConfig.storageMode == mode
                                         Surface(
-                                            onClick = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(storageMode = mode)) },
-                                            color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.1f) else Color.Transparent,
+                                            onClick = {
+                                                viewModel.updateAutoBackupConfig(
+                                                    autoBackupConfig.copy(storageMode = mode)
+                                                )
+                                            },
+                                            color = if (isSelected) AppColors.accentContainer.copy(
+                                                alpha = 0.1f
+                                            ) else Color.Transparent,
                                             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                                                modifier = Modifier.padding(
+                                                    vertical = 4.dp,
+                                                    horizontal = 4.dp
+                                                )
                                             ) {
                                                 RadioButton(
                                                     selected = isSelected,
                                                     onClick = {
-                                                        viewModel.updateAutoBackupConfig(autoBackupConfig.copy(storageMode = mode))
+                                                        viewModel.updateAutoBackupConfig(
+                                                            autoBackupConfig.copy(storageMode = mode)
+                                                        )
                                                     }
                                                 )
                                                 Text(
@@ -363,7 +401,10 @@ fun DataManagementScreen(
                                                 text = autoBackupConfig.customFolderUri!!,
                                                 style = AppTextStyles.caption,
                                                 color = AppColors.contentSecondary,
-                                                modifier = Modifier.padding(top = 4.dp, start = 8.dp)
+                                                modifier = Modifier.padding(
+                                                    top = 4.dp,
+                                                    start = 8.dp
+                                                )
                                             )
                                         }
                                     }
@@ -386,19 +427,30 @@ fun DataManagementScreen(
                                     AutoBackupConfig.NotifyMode.entries.forEach { mode ->
                                         val isSelected = autoBackupConfig.notifyMode == mode
                                         Surface(
-                                            onClick = { viewModel.updateAutoBackupConfig(autoBackupConfig.copy(notifyMode = mode)) },
-                                            color = if (isSelected) AppColors.accentContainer.copy(alpha = 0.1f) else Color.Transparent,
+                                            onClick = {
+                                                viewModel.updateAutoBackupConfig(
+                                                    autoBackupConfig.copy(notifyMode = mode)
+                                                )
+                                            },
+                                            color = if (isSelected) AppColors.accentContainer.copy(
+                                                alpha = 0.1f
+                                            ) else Color.Transparent,
                                             shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)
+                                                modifier = Modifier.padding(
+                                                    vertical = 4.dp,
+                                                    horizontal = 4.dp
+                                                )
                                             ) {
                                                 RadioButton(
                                                     selected = isSelected,
                                                     onClick = {
-                                                        viewModel.updateAutoBackupConfig(autoBackupConfig.copy(notifyMode = mode))
+                                                        viewModel.updateAutoBackupConfig(
+                                                            autoBackupConfig.copy(notifyMode = mode)
+                                                        )
                                                     }
                                                 )
                                                 Text(
@@ -449,7 +501,10 @@ fun DataManagementScreen(
                                                     color = AppColors.contentPrimary
                                                 )
                                                 Text(
-                                                    text = SimpleDateFormat("MMM d, yyyy HH:mm", LocalConfiguration.current.locales[0])
+                                                    text = SimpleDateFormat(
+                                                        "MMM d, yyyy HH:mm",
+                                                        LocalConfiguration.current.locales[0]
+                                                    )
                                                         .format(Date(backup.createdAt)) +
                                                             " · ${backup.sizeBytes / 1024} KB",
                                                     style = AppTextStyles.metaLabel,
@@ -536,22 +591,47 @@ private fun ExportDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Export Data", style = AppTextStyles.cardTitle) },
-        text = { Text("Select the format you want to export your data in.", style = AppTextStyles.caption) },
+        text = {
+            Text(
+                "Select the format you want to export your data in.",
+                style = AppTextStyles.caption
+            )
+        },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
-                AeonDashedButton(onClick = onExportZipAll, text = "ZIP - All Profiles", icon = Icons.Rounded.Folder)
-                AeonDashedButton(onClick = onExportZipProfile, text = "ZIP - Current Profile", icon = Icons.Rounded.Folder)
-                AeonDashedButton(onClick = onExportCsv, text = "Flat CSV", icon = Icons.Rounded.FileDownload)
-                AeonDashedButton(onClick = onExportSqlite, text = "SQLite Database", icon = Icons.Rounded.Backup)
-                
+                AeonDashedButton(
+                    onClick = onExportZipAll,
+                    text = "ZIP - All Profiles",
+                    icon = Icons.Rounded.Folder
+                )
+                AeonDashedButton(
+                    onClick = onExportZipProfile,
+                    text = "ZIP - Current Profile",
+                    icon = Icons.Rounded.Folder
+                )
+                AeonDashedButton(
+                    onClick = onExportCsv,
+                    text = "Flat CSV",
+                    icon = Icons.Rounded.FileDownload
+                )
+                AeonDashedButton(
+                    onClick = onExportSqlite,
+                    text = "SQLite Database",
+                    icon = Icons.Rounded.Backup
+                )
+
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+                    Text(
+                        "Cancel",
+                        style = AppTextStyles.buttonLabel,
+                        color = AppColors.contentSecondary
+                    )
                 }
             }
         }
@@ -568,21 +648,42 @@ private fun ImportDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Import / Migrate Data", style = AppTextStyles.cardTitle) },
-        text = { Text("Restore an OssWallet backup or import transactions from another app.", style = AppTextStyles.caption) },
+        text = {
+            Text(
+                "Restore an OssWallet backup or import transactions from another app.",
+                style = AppTextStyles.caption
+            )
+        },
         confirmButton = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
             ) {
-                AeonDashedButton(onClick = onImportZip, text = "OssWallet Backup (ZIP)", icon = Icons.Rounded.CloudSync)
-                AeonDashedButton(onClick = onImportSqlite, text = "SQLite Database", icon = Icons.Rounded.Backup)
-                AeonDashedButton(onClick = onImportCsv, text = "Another App (CSV)", icon = Icons.Rounded.AutoAwesome)
-                
+                AeonDashedButton(
+                    onClick = onImportZip,
+                    text = "OssWallet Backup (ZIP)",
+                    icon = Icons.Rounded.CloudSync
+                )
+                AeonDashedButton(
+                    onClick = onImportSqlite,
+                    text = "SQLite Database",
+                    icon = Icons.Rounded.Backup
+                )
+                AeonDashedButton(
+                    onClick = onImportCsv,
+                    text = "Another App (CSV)",
+                    icon = Icons.Rounded.AutoAwesome
+                )
+
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+                    Text(
+                        "Cancel",
+                        style = AppTextStyles.buttonLabel,
+                        color = AppColors.contentSecondary
+                    )
                 }
             }
         }
@@ -605,16 +706,24 @@ private fun RestorableEntitySelectorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                TextButton(
-                    onClick = { onSelectionChanged(RestorableEntity.entries.toSet()) }
-                ) {
-                    Text("Select All", style = AppTextStyles.buttonLabel, color = AppColors.primary)
-                }
-                TextButton(
-                    onClick = { onSelectionChanged(emptySet()) }
-                ) {
-                    Text("Deselect All", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
-                }
+                    TextButton(
+                        onClick = { onSelectionChanged(RestorableEntity.entries.toSet()) }
+                    ) {
+                        Text(
+                            "Select All",
+                            style = AppTextStyles.buttonLabel,
+                            color = AppColors.primary
+                        )
+                    }
+                    TextButton(
+                        onClick = { onSelectionChanged(emptySet()) }
+                    ) {
+                        Text(
+                            "Deselect All",
+                            style = AppTextStyles.buttonLabel,
+                            color = AppColors.contentSecondary
+                        )
+                    }
                 }
                 RestorableEntity.entries.forEach { entity ->
                     Row(
@@ -630,7 +739,8 @@ private fun RestorableEntitySelectorDialog(
                             }
                         )
                         Text(
-                            text = entity.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() },
+                            text = entity.name.replace('_', ' ').lowercase()
+                                .replaceFirstChar { it.uppercase() },
                             style = AppTextStyles.listItemTitle,
                             color = AppColors.contentPrimary
                         )
@@ -648,7 +758,11 @@ private fun RestorableEntitySelectorDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = AppTextStyles.buttonLabel, color = AppColors.contentSecondary)
+                Text(
+                    "Cancel",
+                    style = AppTextStyles.buttonLabel,
+                    color = AppColors.contentSecondary
+                )
             }
         }
     )

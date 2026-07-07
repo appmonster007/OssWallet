@@ -76,10 +76,20 @@ fun NavGraphBuilder.accountsGraph(
                 onNavigateToPlannedPaymentList = { navController.navigate(PlannedPaymentListRoute) },
                 onNavigateToBudgetList = { navController.navigate(BudgetListRoute) },
                 onNavigateToLoanList = { navController.navigate(LoanListRoute) },
-                onNavigateToPlannedPaymentDetail = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
+                onNavigateToPlannedPaymentDetail = { id ->
+                    navController.navigate(
+                        PlannedPaymentDetailRoute(id)
+                    )
+                },
                 onNavigateToBudgetDetail = { id -> navController.navigate(BudgetDetailRoute(id)) },
                 onNavigateToLoanDetail = { id -> navController.navigate(LoanDetailRoute(id)) },
-                onEditTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onEditTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onCloneTransactionClick = { id ->
                     vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
@@ -97,9 +107,17 @@ fun NavGraphBuilder.accountsGraph(
                         )
                     )
                 },
-                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) },
+                onRecordsClick = { filter ->
+                    navController.navigateToRecords(
+                        filter,
+                        topLevel = false
+                    )
+                },
                 onSaveFilterClick = { filter ->
-                    val encoded = URLEncoder.encode(Json.encodeToString(filter), StandardCharsets.UTF_8.toString())
+                    val encoded = URLEncoder.encode(
+                        Json.encodeToString(filter),
+                        StandardCharsets.UTF_8.toString()
+                    )
                     navController.navigate(FilterEntryRoute(initialFilterJson = encoded))
                 }
             ),

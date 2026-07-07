@@ -87,11 +87,12 @@ data class LoanEntryState(
     val availableFilters: List<Filter> = emptyList(),
     val shortlistedCurrencies: List<String> = emptyList()
 ) {
-    val errors: Set<EntryField> get() = buildSet {
-        if (name.isBlank()) add(EntryField.NAME)
-        if (principalAmount.toBigDecimalOrNull() == null) add(EntryField.AMOUNT)
-        if (linkedAccountId.isBlank()) add(EntryField.ACCOUNT)
-    }
+    val errors: Set<EntryField>
+        get() = buildSet {
+            if (name.isBlank()) add(EntryField.NAME)
+            if (principalAmount.toBigDecimalOrNull() == null) add(EntryField.AMOUNT)
+            if (linkedAccountId.isBlank()) add(EntryField.ACCOUNT)
+        }
 
     val hasError: Boolean get() = errors.isNotEmpty()
 

@@ -34,8 +34,6 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -52,6 +50,8 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 
 fun mapIncomeExpenseBar(
@@ -66,9 +66,22 @@ fun mapIncomeExpenseBar(
 ) = CardWithCallbacks.IncomeExpenseBar(
     renderData = renderData,
     callbacks = CardCallbacks.IncomeExpenseBar(
-        onUpdate = { newConfig -> updateHandler.updateIncomeExpenseBarConfig(config.cardId, newConfig) },
+        onUpdate = { newConfig ->
+            updateHandler.updateIncomeExpenseBarConfig(
+                config.cardId,
+                newConfig
+            )
+        },
         onDelete = { onDelete(config.cardId) },
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,
@@ -168,11 +181,13 @@ fun IncomeExpenseBarCard(
             // Build chart data.
             // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
             // For Cumulative mode, we prepend a zero point at the start so the trajectory begins at 0.
-            val incomeChartData = if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
-                                 else renderData.buckets.map { it.income }
-            val expenseChartData = if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
-                                  else renderData.buckets.map { it.expense }
-            
+            val incomeChartData =
+                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
+                else renderData.buckets.map { it.income }
+            val expenseChartData =
+                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
+                else renderData.buckets.map { it.expense }
+
             // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
             val xLabelData: List<String?> = if (isCumulative) {
                 listOf(null) + renderData.buckets.map { it.label }
@@ -343,7 +358,13 @@ private fun IncomeExpenseBarSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onUpdate(config.copy(excludeInternalTransfers = it)) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onUpdate(
+                    config.copy(
+                        excludeInternalTransfers = it
+                    )
+                )
+            }
         )
     }
 }

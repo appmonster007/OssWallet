@@ -38,8 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.graphics.ColorUtils
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -47,6 +45,8 @@ import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.ColorOnDark
 import com.osscabinet.ossWallet.ui.theme.ColorOnLight
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 import kotlin.math.roundToInt
 
@@ -290,9 +290,11 @@ fun AeonChartInteractionPopup(
 @Composable
 fun AeonChartInteractionPopupPreview() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .size(300.dp)
-            .padding(20.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .padding(20.dp), contentAlignment = Alignment.Center
+        ) {
             AeonChartInteractionPopup(
                 name = "Food & Dining",
                 value = BigDecimal("450.75"),

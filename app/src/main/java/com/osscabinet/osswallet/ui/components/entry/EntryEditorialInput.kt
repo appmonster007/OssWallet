@@ -14,10 +14,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,8 +45,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -63,8 +62,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.GlassSurface
@@ -76,9 +73,10 @@ import com.osscabinet.ossWallet.ui.theme.GlassVariant
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.copyStyle
-import com.osscabinet.ossWallet.ui.theme.scaledDp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 
 /**
  * Editorial-style text input for entry forms.
@@ -182,7 +180,9 @@ fun EntryEditorialInput(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { if (!it) expanded = false },
-        modifier = modifier.fillMaxWidth().bringIntoViewRequester(bringIntoViewRequester)
+        modifier = modifier
+            .fillMaxWidth()
+            .bringIntoViewRequester(bringIntoViewRequester)
     ) {
         GlassSurface(
             modifier = Modifier
@@ -203,8 +203,11 @@ fun EntryEditorialInput(
                     }
                 },
             shape = if (isFlush) RoundedCornerShape(0.dp) else RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
-            hazeStyle = if (isFlush) HazeStyle(tint = HazeTint(Color.Transparent), blurRadius = 0.dp)
-                        else GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
+            hazeStyle = if (isFlush) HazeStyle(
+                tint = HazeTint(Color.Transparent),
+                blurRadius = 0.dp
+            )
+            else GlassTokens.cardStyle().copyStyle(bgColor = AppColors.surfaceContainerLow),
             glassVariant = GlassVariant.Card,
             fallbackColor = backgroundColor,
             borderColor = borderColor,
@@ -213,94 +216,96 @@ fun EntryEditorialInput(
         ) {
             // Glass-mode color wash: parity with EntryActionCard
             if (glassEnabled && isHighlighted && !isFlush) {
-                Box(modifier = Modifier.fillMaxSize().background(iconColor.copy(alpha = 0.1f)))
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(iconColor.copy(alpha = 0.1f)))
             }
 
             AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // ICON CONTAINER (MATCHING EntryActionCard)
-                Surface(
-                    shape = CircleShape,
-                    color = iconColor.copy(alpha = 0.12f),
-                    modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = iconColor,
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm)) // Precise spacing parity
-
-                // CONTENT COLUMN
-                Column(
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = if (isFlush) 0.dp else AeonTheme.dimensions.spacingSm),
-                    verticalArrangement = Arrangement.Center
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .padding(horizontal = if (isFlush) 0.dp else AeonTheme.dimensions.cardPadding),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // LABEL (MATCHING EntryActionCard)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = label,
-                            style = AppTextStyles.overlineLabel,
-                            color = if (isError) AppColors.error else AppColors.contentSecondary
-                        )
-                        if (isError) {
-                            Spacer(modifier = Modifier.width(4.dp))
+                    // ICON CONTAINER (MATCHING EntryActionCard)
+                    Surface(
+                        shape = CircleShape,
+                        color = iconColor.copy(alpha = 0.12f),
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeLg)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Rounded.Error,
+                                imageVector = icon,
                                 contentDescription = null,
-                                tint = AppColors.error,
-                                modifier = Modifier.size(10.dp)
+                                tint = iconColor,
+                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeMd)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingSm)) // Precise spacing parity
 
-                    // INPUT FIELD (STYLE MATCHING EntryActionCard'S VALUE)
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        if (value.isEmpty()) {
+                    // CONTENT COLUMN
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = if (isFlush) 0.dp else AeonTheme.dimensions.spacingSm),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        // LABEL (MATCHING EntryActionCard)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = placeholder,
-                                style = AppTextStyles.formFieldHint,
-                                color = AppColors.contentSecondary
+                                text = label,
+                                style = AppTextStyles.overlineLabel,
+                                color = if (isError) AppColors.error else AppColors.contentSecondary
+                            )
+                            if (isError) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Rounded.Error,
+                                    contentDescription = null,
+                                    tint = AppColors.error,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        // INPUT FIELD (STYLE MATCHING EntryActionCard'S VALUE)
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            if (value.isEmpty()) {
+                                Text(
+                                    text = placeholder,
+                                    style = AppTextStyles.formFieldHint,
+                                    color = AppColors.contentSecondary
+                                )
+                            }
+                            BasicTextField(
+                                value = value,
+                                onValueChange = onValueChange,
+                                enabled = enabled,
+                                textStyle = AppTextStyles.formFieldValue.copy(
+                                    color = if (enabled) AppColors.contentPrimary else AppColors.contentSecondary
+                                ),
+                                cursorBrush = SolidColor(if (enabled) AppColors.contentPrimary else AppColors.contentSecondary),
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Sentences,
+                                    imeAction = ImeAction.Next
+                                ),
+                                maxLines = maxLines,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
+                                    .onFocusChanged { isFocused = it.isFocused }
                             )
                         }
-                        BasicTextField(
-                            value = value,
-                            onValueChange = onValueChange,
-                            enabled = enabled,
-                            textStyle = AppTextStyles.formFieldValue.copy(
-                                color = if (enabled) AppColors.contentPrimary else AppColors.contentSecondary
-                            ),
-                            cursorBrush = SolidColor(if (enabled) AppColors.contentPrimary else AppColors.contentSecondary),
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Sentences,
-                                imeAction = ImeAction.Next
-                            ),
-                            maxLines = maxLines,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(if (enabled) Modifier.focusRequester(focusRequester) else Modifier)
-                                .onFocusChanged { isFocused = it.isFocused }
-                        )
-                    }
 
-                    additionalContent()
+                        additionalContent()
+                    }
                 }
-            }
             }
         }
 

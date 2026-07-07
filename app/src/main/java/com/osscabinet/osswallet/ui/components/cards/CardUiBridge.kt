@@ -23,7 +23,21 @@ import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
-import com.osscabinet.ossWallet.ui.components.cards.types.*
+import com.osscabinet.ossWallet.ui.components.cards.types.mapAccountHero
+import com.osscabinet.ossWallet.ui.components.cards.types.mapAccounts
+import com.osscabinet.ossWallet.ui.components.cards.types.mapBudgets
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCashFlow
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCashFlowComparison
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCategoryPieChart
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCategorySpendingTrend
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCategoryTreemap
+import com.osscabinet.ossWallet.ui.components.cards.types.mapCurrencyBalances
+import com.osscabinet.ossWallet.ui.components.cards.types.mapIncomeExpenseBar
+import com.osscabinet.ossWallet.ui.components.cards.types.mapLoans
+import com.osscabinet.ossWallet.ui.components.cards.types.mapNetWorth
+import com.osscabinet.ossWallet.ui.components.cards.types.mapPlannedPayments
+import com.osscabinet.ossWallet.ui.components.cards.types.mapRecentActivities
+import com.osscabinet.ossWallet.ui.components.cards.types.mapTagUpSetPlot
 
 /**
  * Maps a [CardComputeState] + [config] pair to the matching [CardWithCallbacks] subtype.
@@ -100,56 +114,188 @@ private fun mapSuccessState(
     // CardRenderData.Error is listed last as unreachable (always caught by the early guard above).
     return when (renderData) {
         is CardRenderData.NetWorth ->
-            mapNetWorth(config as NetWorthCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapNetWorth(
+                config as NetWorthCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CurrencyBalances ->
-            mapCurrencyBalances(config as CurrencyBalancesCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCurrencyBalances(
+                config as CurrencyBalancesCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CashFlow ->
-            mapCashFlow(config as CashFlowCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCashFlow(
+                config as CashFlowCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.Accounts ->
-            mapAccounts(config as AccountsCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapAccounts(
+                config as AccountsCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CategoryPieChart ->
-            mapCategoryPieChart(config as CategoryPieChartCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCategoryPieChart(
+                config as CategoryPieChartCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CategoryTreemap ->
-            mapCategoryTreemap(config as CategoryTreemapCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCategoryTreemap(
+                config as CategoryTreemapCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.AccountHero ->
-            mapAccountHero(config as AccountHeroCardConfig, renderData, input, updateHandler, onRecordsClick, callbacks, filterSheetEnabled)
+            mapAccountHero(
+                config as AccountHeroCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.PlannedPayments ->
-            mapPlannedPayments(config as PlannedPaymentsCardConfig, renderData, input, updateHandler, onDelete, callbacks, filterSheetEnabled)
+            mapPlannedPayments(
+                config as PlannedPaymentsCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.Budgets ->
-            mapBudgets(config as BudgetsCardConfig, renderData, input, updateHandler, onDelete, callbacks, filterSheetEnabled)
+            mapBudgets(
+                config as BudgetsCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.Loans ->
-            mapLoans(config as LoansCardConfig, renderData, input, updateHandler, onDelete, callbacks, filterSheetEnabled)
+            mapLoans(
+                config as LoansCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.RecentActivities ->
-            mapRecentActivities(config as RecentActivitiesCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapRecentActivities(
+                config as RecentActivitiesCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CashFlowComparison ->
-            mapCashFlowComparison(config as CashFlowComparisonCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCashFlowComparison(
+                config as CashFlowComparisonCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.IncomeExpenseBar ->
-            mapIncomeExpenseBar(config as IncomeExpenseBarCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapIncomeExpenseBar(
+                config as IncomeExpenseBarCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.CategorySpendingTrend ->
-            mapCategorySpendingTrend(config as CategorySpendingTrendCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapCategorySpendingTrend(
+                config as CategorySpendingTrendCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.TagUpSetPlot ->
-            mapTagUpSetPlot(config as TagUpSetPlotCardConfig, renderData, input, updateHandler, onDelete, onRecordsClick, callbacks, filterSheetEnabled)
+            mapTagUpSetPlot(
+                config as TagUpSetPlotCardConfig,
+                renderData,
+                input,
+                updateHandler,
+                onDelete,
+                onRecordsClick,
+                callbacks,
+                filterSheetEnabled
+            )
 
         is CardRenderData.Error -> typeMismatch(config, renderData)
     }
 }
 
-private fun typeMismatch(config: CardConfig, renderData: CardRenderData) = CardWithCallbacks.ComputeError(
-    cardId = config.cardId,
-    cardType = config.cardType,
-    message = "Type mismatch: ${config.cardType} vs ${renderData.cardType ?: "Error"}"
-)
+private fun typeMismatch(config: CardConfig, renderData: CardRenderData) =
+    CardWithCallbacks.ComputeError(
+        cardId = config.cardId,
+        cardType = config.cardType,
+        message = "Type mismatch: ${config.cardType} vs ${renderData.cardType ?: "Error"}"
+    )

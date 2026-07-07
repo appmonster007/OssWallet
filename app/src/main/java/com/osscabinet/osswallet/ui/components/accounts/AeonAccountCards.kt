@@ -44,25 +44,24 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
-import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
-import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.domain.util.fuzzyMatch
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonHybridSelector
-import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
 import com.osscabinet.ossWallet.ui.components.AeonSearchField
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.AppIconMap
-import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
 import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 
@@ -316,64 +315,64 @@ fun AeonAccountCardLarge(
             ) {
                 when (perspective) {
                     is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting -> {
-                            AccountFlowReadout(
-                                label = "INC",
-                                amount = flow.income,
-                                currency = account.currencyCode,
-                                color = AppColors.positive,
-                                onClick = onClickIncome,
-                                previousAmount = prevFlow?.income,
-                                modifier = Modifier.weight(1f)
-                            )
-                            AccountFlowSeparator()
-                            AccountFlowReadout(
-                                label = "EXP",
-                                amount = flow.expense,
-                                currency = account.currencyCode,
-                                color = AppColors.negative,
-                                onClick = onClickExpense,
-                                previousAmount = prevFlow?.expense,
-                                modifier = Modifier.weight(1f)
-                            )
-                            AccountFlowSeparator()
-                            AccountFlowReadout(
-                                label = "TRF",
-                                amount = flow.netTransfer,
-                                currency = account.currencyCode,
-                                color = AppColors.accent,
-                                onClick = onClickTransfer,
-                                previousAmount = prevFlow?.netTransfer,
-                                modifier = Modifier.weight(1f),
-                                forceShowPlus = true
-                            )
-                        }
+                        AccountFlowReadout(
+                            label = "INC",
+                            amount = flow.income,
+                            currency = account.currencyCode,
+                            color = AppColors.positive,
+                            onClick = onClickIncome,
+                            previousAmount = prevFlow?.income,
+                            modifier = Modifier.weight(1f)
+                        )
+                        AccountFlowSeparator()
+                        AccountFlowReadout(
+                            label = "EXP",
+                            amount = flow.expense,
+                            currency = account.currencyCode,
+                            color = AppColors.negative,
+                            onClick = onClickExpense,
+                            previousAmount = prevFlow?.expense,
+                            modifier = Modifier.weight(1f)
+                        )
+                        AccountFlowSeparator()
+                        AccountFlowReadout(
+                            label = "TRF",
+                            amount = flow.netTransfer,
+                            currency = account.currencyCode,
+                            color = AppColors.accent,
+                            onClick = onClickTransfer,
+                            previousAmount = prevFlow?.netTransfer,
+                            modifier = Modifier.weight(1f),
+                            forceShowPlus = true
+                        )
+                    }
 
                     is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow -> {
-                            val prevInflow = prevFlow?.let { it.income + it.transferIn }
-                            val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
+                        val prevInflow = prevFlow?.let { it.income + it.transferIn }
+                        val prevOutflow = prevFlow?.let { it.expense + it.transferOut }
 
-                            AccountFlowReadout(
-                                label = "IN",
-                                amount = flow.income + flow.transferIn,
-                                currency = account.currencyCode,
-                                color = AppColors.positive,
-                                onClick = onClickInflow,
-                                previousAmount = prevInflow,
-                                modifier = Modifier.weight(1f)
-                            )
-                            AccountFlowSeparator()
-                            AccountFlowReadout(
-                                label = "OUT",
-                                amount = flow.expense + flow.transferOut,
-                                currency = account.currencyCode,
-                                color = AppColors.negative,
-                                onClick = onClickOutflow,
-                                previousAmount = prevOutflow,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        AccountFlowReadout(
+                            label = "IN",
+                            amount = flow.income + flow.transferIn,
+                            currency = account.currencyCode,
+                            color = AppColors.positive,
+                            onClick = onClickInflow,
+                            previousAmount = prevInflow,
+                            modifier = Modifier.weight(1f)
+                        )
+                        AccountFlowSeparator()
+                        AccountFlowReadout(
+                            label = "OUT",
+                            amount = flow.expense + flow.transferOut,
+                            currency = account.currencyCode,
+                            color = AppColors.negative,
+                            onClick = onClickOutflow,
+                            previousAmount = prevOutflow,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
+            }
 
             val currencyBalances = summary.currencyBalances
             val sortedCurrencyBalances = remember(currencyBalances) {
@@ -612,9 +611,30 @@ fun AeonAccountCardsPreview() {
 }
 
 private fun glassPreviewAccounts() = Triple(
-    Account(id = "1", name = "Main Savings", currencyCode = "USD", structureType = AccountStructureType.SAVINGS, colorHex = "#4CAF50", icon = "Savings"),
-    Account(id = "2", name = "Checking", currencyCode = "EUR", structureType = AccountStructureType.BANK, colorHex = "#2196F3", icon = "AccountBalance"),
-    Account(id = "3", name = "Portfolio", currencyCode = "USD", structureType = AccountStructureType.INVESTMENT, colorHex = "#9C27B0", icon = "ShowChart")
+    Account(
+        id = "1",
+        name = "Main Savings",
+        currencyCode = "USD",
+        structureType = AccountStructureType.SAVINGS,
+        colorHex = "#4CAF50",
+        icon = "Savings"
+    ),
+    Account(
+        id = "2",
+        name = "Checking",
+        currencyCode = "EUR",
+        structureType = AccountStructureType.BANK,
+        colorHex = "#2196F3",
+        icon = "AccountBalance"
+    ),
+    Account(
+        id = "3",
+        name = "Portfolio",
+        currencyCode = "USD",
+        structureType = AccountStructureType.INVESTMENT,
+        colorHex = "#9C27B0",
+        icon = "ShowChart"
+    )
 )
 
 private fun mockSummary(account: Account) = AccountSummaryItem(
@@ -622,7 +642,10 @@ private fun mockSummary(account: Account) = AccountSummaryItem(
     currencyBalances = mapOf(account.currencyCode to BigDecimal("12345.67")),
     balance = BigDecimal("12345.67"),
     balanceInBase = BigDecimal("12345.67"),
-    currentPeriodFlow = AccountFlowMetrics(income = BigDecimal("5200.00"), expense = BigDecimal("1840.50"))
+    currentPeriodFlow = AccountFlowMetrics(
+        income = BigDecimal("5200.00"),
+        expense = BigDecimal("1840.50")
+    )
 )
 
 @Preview(showBackground = true, name = "Glass – Light")

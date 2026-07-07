@@ -49,9 +49,11 @@ fun AeonTimelineSheet(
             color = surfaceColor,
             tonalElevation = 6.dp
         ) {
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
                 Text(
                     text = title,
                     style = AppTextStyles.cardTitle,

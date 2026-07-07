@@ -70,8 +70,8 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.TagPresetColors
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -205,7 +205,9 @@ fun AeonTagSelectionContent(
                                 },
                                 shape = RoundedCornerShape(dims.spacingMd),
                                 colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = if (glassEnabled) AppColors.transparent else tagColor.copy(alpha = 0.12f),
+                                    selectedContainerColor = if (glassEnabled) AppColors.transparent else tagColor.copy(
+                                        alpha = 0.12f
+                                    ),
                                     selectedLabelColor = tagColor,
                                     selectedTrailingIconColor = tagColor
                                 ),

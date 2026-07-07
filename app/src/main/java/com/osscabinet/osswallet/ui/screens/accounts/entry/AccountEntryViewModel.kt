@@ -12,6 +12,7 @@ import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +24,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import jakarta.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -77,11 +77,12 @@ class AccountEntryViewModel @Inject constructor(
                 }
 
                 // 1. Get all transactions for this account up to now
-                val accountTransactions = transactions.filter { it.accountId == accountId && it.timestamp <= now }
-                
+                val accountTransactions =
+                    transactions.filter { it.accountId == accountId && it.timestamp <= now }
+
                 // 2. Calculate current database state using reusable domain service
                 val dbSummaries = AggregationService.calculateSummaryByCurrency(accountTransactions)
-                
+
                 // 3. Identify the database's "Initial Balance" components
                 val dbInitialBalances = accountTransactions
                     .filter { Category.isInitialBalance(it.categoryId) }
@@ -90,23 +91,26 @@ class AccountEntryViewModel @Inject constructor(
 
                 // 4. Compute projected closing balances for all relevant currencies
                 // Projected = (DB Total) - (DB Initial) + (UI Initial) + (UI Pending Deltas)
-                val allRelevantCurrencies = (dbSummaries.keys + state.initialBalances.keys + state.pendingAdjustmentDeltas.keys).toSet()
-                
+                val allRelevantCurrencies =
+                    (dbSummaries.keys + state.initialBalances.keys + state.pendingAdjustmentDeltas.keys).toSet()
+
                 val projectedClosingBalances = allRelevantCurrencies.associateWith { currency ->
                     val dbTotal = dbSummaries[currency]?.totalAmount ?: BigDecimal.ZERO
                     val dbInitial = dbInitialBalances[currency] ?: BigDecimal.ZERO
-                    val uiInitial = state.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val uiInitial =
+                        state.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val uiPending = state.pendingAdjustmentDeltas[currency] ?: BigDecimal.ZERO
-                    
+
                     dbTotal - dbInitial + uiInitial + uiPending
                 }
 
                 // 5. Calculate account-level net balance in primary currency
-                val currentBalance = com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalInCurrency(
-                    projectedClosingBalances,
-                    state.primaryCurrency,
-                    exchangeRates
-                )
+                val currentBalance =
+                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalInCurrency(
+                        projectedClosingBalances,
+                        state.primaryCurrency,
+                        exchangeRates
+                    )
 
                 val currencyUsageMap = accountTransactions
                     .groupBy { it.currency }
@@ -143,7 +147,11 @@ class AccountEntryViewModel @Inject constructor(
             accountRepository.getAllAccountsSync(profileId).find { it.id == accountId }
                 ?.let { account ->
                     val txByCurrency = account.allowedCurrencies.mapNotNull { currency ->
-                        val tx = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
+                        val tx = transactionRepository.getInitialBalanceTransaction(
+                            accountId,
+                            currency,
+                            profileId
+                        )
                         tx?.let { currency to it }
                     }.toMap()
 
@@ -204,20 +212,27 @@ class AccountEntryViewModel @Inject constructor(
 
             is AccountEntryEvent.OpenBalanceUpdate -> {
                 val currency = event.currency
-                val currentProjectedTotal = _state.value.systemClosingBalances[currency] ?: BigDecimal.ZERO
+                val currentProjectedTotal =
+                    _state.value.systemClosingBalances[currency] ?: BigDecimal.ZERO
 
                 _state.update {
                     it.copy(
                         showBalanceUpdateSheet = true,
                         balanceUpdateCurrency = currency,
-                        balanceUpdateInputAmount = currentProjectedTotal.stripTrailingZeros().toPlainString(),
+                        balanceUpdateInputAmount = currentProjectedTotal.stripTrailingZeros()
+                            .toPlainString(),
                         balanceUpdateMode = BalanceUpdateMode.RECORD
                     )
                 }
             }
 
             is AccountEntryEvent.SetBalanceUpdateMode -> _state.update { it.copy(balanceUpdateMode = event.mode) }
-            is AccountEntryEvent.SetBalanceUpdateAmount -> _state.update { it.copy(balanceUpdateInputAmount = event.amount) }
+            is AccountEntryEvent.SetBalanceUpdateAmount -> _state.update {
+                it.copy(
+                    balanceUpdateInputAmount = event.amount
+                )
+            }
+
             is AccountEntryEvent.OpenCalculatorForUpdate -> {
                 val currency = _state.value.balanceUpdateCurrency
                 if (currency != null) {
@@ -235,12 +250,14 @@ class AccountEntryViewModel @Inject constructor(
                 val s = _state.value
                 val currency = s.balanceUpdateCurrency
                 if (currency != null) {
-                    val newUserTotal = s.balanceUpdateInputAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val newUserTotal =
+                        s.balanceUpdateInputAmount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val currentProjectedTotal = s.systemClosingBalances[currency] ?: BigDecimal.ZERO
                     val totalAdjustmentNeeded = newUserTotal - currentProjectedTotal
 
                     if (s.balanceUpdateMode == BalanceUpdateMode.INITIAL_BALANCE) {
-                        val currentInitial = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val currentInitial =
+                            s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                         val newOpening = currentInitial + totalAdjustmentNeeded
                         _state.update {
                             it.copy(
@@ -381,7 +398,7 @@ class AccountEntryViewModel @Inject constructor(
                                 currency = currency,
                                 categoryId = Category.SYSTEM_TRANSFER,
                                 transactionType = if (delta.signum() > 0) TransactionType.TRANSFER_INFLOW
-                                                  else TransactionType.TRANSFER_OUTFLOW,
+                                else TransactionType.TRANSFER_OUTFLOW,
                                 note = "Balance adjustment"
                             ),
                             profileId
@@ -389,7 +406,8 @@ class AccountEntryViewModel @Inject constructor(
                     }
                 }
                 s.allowedCurrencies.forEach { currency ->
-                    val signed = s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val signed =
+                        s.initialBalances[currency]?.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     accountUseCases.upsertInitialBalance(s.accountId!!, currency, signed, profileId)
                 }
             } else {

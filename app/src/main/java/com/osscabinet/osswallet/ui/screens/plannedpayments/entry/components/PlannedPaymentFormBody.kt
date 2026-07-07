@@ -1,17 +1,16 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.components
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,19 +28,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.RecurrenceRule
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.TransactionSide
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
-import com.osscabinet.ossWallet.ui.components.entry.AeonPlannedPaymentStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
 import com.osscabinet.ossWallet.ui.components.entry.AeonDetailSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryContextRow
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
+import com.osscabinet.ossWallet.ui.components.entry.AeonPlannedPaymentStatusSelection
 import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
 import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
@@ -78,13 +77,17 @@ fun PlannedPaymentFormBody(
                 ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
         }
 
-    val targetCurrencies = remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
-        state.accounts.find { it.id == state.targetAccountId }
-            ?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
-    }
+    val targetCurrencies =
+        remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
+            state.accounts.find { it.id == state.targetAccountId }
+                ?.allowedCurrencies?.toList()?.ifEmpty { null }
+                ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+        }
 
-    Box(modifier = modifier.fillMaxSize().statusBarsPadding().imePadding()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+        .statusBarsPadding()
+        .imePadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -96,11 +99,24 @@ fun PlannedPaymentFormBody(
             // IMPACT: Type selector + Amount input + Title
             AeonImpactHeaderCard(
                 transactionType = state.entryMode,
-                onTypeSelected = { onType -> onEvent(PlannedPaymentEntryEvent.SetTransactionType(onType)) },
+                onTypeSelected = { onType ->
+                    onEvent(
+                        PlannedPaymentEntryEvent.SetTransactionType(
+                            onType
+                        )
+                    )
+                },
                 source = AeonAmountData(
                     value = state.amount,
                     currency = state.currency,
-                    onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
+                    onValueClick = {
+                        onEvent(
+                            PlannedPaymentEntryEvent.ShowNumpad(
+                                true,
+                                AmountEditingSide.SOURCE
+                            )
+                        )
+                    },
                     onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowCurrencySheet(true)) },
                     label = "SOURCE AMOUNT",
                     supportedCurrencies = sourceCurrencies,
@@ -109,8 +125,21 @@ fun PlannedPaymentFormBody(
                 target = AeonAmountData(
                     value = state.targetAmount ?: "",
                     currency = state.targetCurrency ?: state.currency,
-                    onValueClick = { onEvent(PlannedPaymentEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
-                    onCurrencyClick = { onEvent(PlannedPaymentEntryEvent.ShowTargetCurrencySheet(true)) },
+                    onValueClick = {
+                        onEvent(
+                            PlannedPaymentEntryEvent.ShowNumpad(
+                                true,
+                                AmountEditingSide.TARGET
+                            )
+                        )
+                    },
+                    onCurrencyClick = {
+                        onEvent(
+                            PlannedPaymentEntryEvent.ShowTargetCurrencySheet(
+                                true
+                            )
+                        )
+                    },
                     label = "DESTINATION AMOUNT",
                     supportedCurrencies = targetCurrencies,
                     isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
@@ -129,7 +158,8 @@ fun PlannedPaymentFormBody(
                 onToggleRateMode = { onEvent(PlannedPaymentEntryEvent.ToggleRateMode) },
                 onExchangeRateClick = { onEvent(PlannedPaymentEntryEvent.ShowExchangeRateDialog(true)) },
                 onSwapClick = if (state.isTransfer &&
-                    (state.selectedAccountId != null || state.targetAccountId != null))
+                    (state.selectedAccountId != null || state.targetAccountId != null)
+                )
                     ({ onEvent(PlannedPaymentEntryEvent.SwapAccounts) }) else null,
                 accountId = state.selectedAccountId,
                 errors = state.errors
@@ -414,14 +444,25 @@ private fun PlannedPaymentSheetOrchestrator(
             when (field) {
                 EntryField.AMOUNT -> onEvent(PlannedPaymentEntryEvent.ShowNumpad(false))
                 EntryField.ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowAccountSheet(false))
-                EntryField.TARGET_ACCOUNT -> onEvent(PlannedPaymentEntryEvent.ShowTargetAccountSheet(false))
+                EntryField.TARGET_ACCOUNT -> onEvent(
+                    PlannedPaymentEntryEvent.ShowTargetAccountSheet(
+                        false
+                    )
+                )
+
                 EntryField.CATEGORY -> onEvent(PlannedPaymentEntryEvent.ShowCategorySheet(false))
                 else -> onEvent(PlannedPaymentEntryEvent.DismissAllSheets)
             }
         },
         onSearchTransactions = onSearch,
         linkedIds = state.displayLinkedTxs.map { it.id }.toSet(),
-        onLinkedTransactionsChanged = { ids -> onEvent(PlannedPaymentEntryEvent.SetLinkedTransactionIds(ids.toList())) },
+        onLinkedTransactionsChanged = { ids ->
+            onEvent(
+                PlannedPaymentEntryEvent.SetLinkedTransactionIds(
+                    ids.toList()
+                )
+            )
+        },
         selectedAccountId = state.selectedAccountId,
         selectedTargetAccountId = state.targetAccountId,
         selectedCategoryId = state.selectedCategoryId,
@@ -434,7 +475,13 @@ private fun PlannedPaymentSheetOrchestrator(
         paymentMethod = state.paymentMethod,
         onPaymentMethodChange = { method -> onEvent(PlannedPaymentEntryEvent.SetPaymentMethod(method)) },
         transactionStatus = state.transactionStatus,
-        onTransactionStatusChange = { status -> onEvent(PlannedPaymentEntryEvent.SetTransactionStatus(status)) }
+        onTransactionStatusChange = { status ->
+            onEvent(
+                PlannedPaymentEntryEvent.SetTransactionStatus(
+                    status
+                )
+            )
+        }
     )
 }
 

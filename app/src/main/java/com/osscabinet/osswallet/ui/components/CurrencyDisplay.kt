@@ -12,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import com.osscabinet.ossWallet.domain.model.EntryMode
@@ -24,8 +23,8 @@ import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyBase
 import java.math.BigDecimal
+import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyBase
 
 /**
  * Overload of [CurrencyText] that automatically determines color and formatting
@@ -370,7 +369,11 @@ fun NativeWithConvertedInline(
             append(")")
         }
     }
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End
+    ) {
         Text(text = text, style = style, color = color)
     }
 }

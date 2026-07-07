@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.navigation.graphs
 
+import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -53,7 +54,6 @@ import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentE
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.entry.PlannedPaymentEntryViewModel
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentListActions
 import com.osscabinet.ossWallet.ui.screens.plannedpayments.list.PlannedPaymentListScreen
-import androidx.compose.runtime.getValue
 
 fun NavGraphBuilder.planningGraph(
     navController: NavHostController,
@@ -71,7 +71,13 @@ fun NavGraphBuilder.planningGraph(
         PlannedPaymentListScreen(
             actions = PlannedPaymentListActions(
                 onAddClick = { navController.navigate(PlannedPaymentEntryRoute()) },
-                onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
+                onEditClick = { id ->
+                    navController.navigate(
+                        PlannedPaymentEntryRoute(
+                            plannedPaymentId = id
+                        )
+                    )
+                },
                 onDetailClick = { id -> navController.navigate(PlannedPaymentDetailRoute(id)) },
                 onConfirmClick = { id, date ->
                     vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
@@ -92,7 +98,7 @@ fun NavGraphBuilder.planningGraph(
         val route = backStackEntry.toRoute<PlannedPaymentEntryRoute>()
         val prefill by vms.transactionViewModel.plannedPaymentPrefill.collectAsStateWithLifecycle()
         val entryViewModel: PlannedPaymentEntryViewModel = hiltViewModel()
-        
+
         PlannedPaymentEntryScreen(
             config = PlannedPaymentEntryConfig(
                 plannedPaymentId = route.plannedPaymentId.takeIf { it != -1L },
@@ -119,13 +125,25 @@ fun NavGraphBuilder.planningGraph(
         PlannedPaymentDetailScreen(
             config = PlannedPaymentDetailConfig(plannedPaymentId = route.plannedPaymentId),
             actions = PlannedPaymentDetailActions(
-                onEditClick = { id -> navController.navigate(PlannedPaymentEntryRoute(plannedPaymentId = id)) },
+                onEditClick = { id ->
+                    navController.navigate(
+                        PlannedPaymentEntryRoute(
+                            plannedPaymentId = id
+                        )
+                    )
+                },
                 onConfirmClick = { id, date ->
                     vms.transactionViewModel.setPlannedPaymentPrefill(id, date)
                     navController.navigate(TransactionEntryRoute())
                 },
                 onBackClick = { navController.popBackStack() },
-                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) }
+                onTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                }
             ),
             viewModel = plannedPaymentViewModel,
             transactionManager = vms.dashboardViewModel.transactionManager,
@@ -188,7 +206,13 @@ fun NavGraphBuilder.planningGraph(
             actions = BudgetDetailActions(
                 onEditClick = { id -> navController.navigate(BudgetEntryRoute(budgetId = id)) },
                 onBackClick = { navController.popBackStack() },
-                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onCloneTransactionClick = { id ->
                     vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
@@ -197,7 +221,12 @@ fun NavGraphBuilder.planningGraph(
                     vms.transactionViewModel.setSplitTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
                 },
-                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+                onRecordsClick = { filter ->
+                    navController.navigateToRecords(
+                        filter,
+                        topLevel = false
+                    )
+                }
             ),
             viewModel = budgetViewModel,
             accountViewModel = vms.accountViewModel,
@@ -256,7 +285,13 @@ fun NavGraphBuilder.planningGraph(
             actions = LoanDetailActions(
                 onEditClick = { navController.navigate(LoanEntryRoute(loanId = route.loanId)) },
                 onBackClick = { navController.popBackStack() },
-                onTransactionClick = { id -> navController.navigate(TransactionEntryRoute(transactionId = id)) },
+                onTransactionClick = { id ->
+                    navController.navigate(
+                        TransactionEntryRoute(
+                            transactionId = id
+                        )
+                    )
+                },
                 onCloneTransactionClick = { id ->
                     vms.transactionViewModel.setCloneTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
@@ -265,7 +300,12 @@ fun NavGraphBuilder.planningGraph(
                     vms.transactionViewModel.setSplitTransactionId(id)
                     navController.navigate(TransactionEntryRoute())
                 },
-                onRecordsClick = { filter -> navController.navigateToRecords(filter, topLevel = false) }
+                onRecordsClick = { filter ->
+                    navController.navigateToRecords(
+                        filter,
+                        topLevel = false
+                    )
+                }
             ),
             viewModel = loanViewModel,
             accountViewModel = vms.accountViewModel,

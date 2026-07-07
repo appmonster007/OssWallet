@@ -3,23 +3,16 @@ package com.osscabinet.ossWallet.ui.components.visualization.charts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,24 +37,20 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartDotHighlight
-import com.osscabinet.ossWallet.ui.theme.ChartGridColor
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
 import com.osscabinet.ossWallet.ui.theme.ColorTransparent
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
-import com.osscabinet.ossWallet.ui.theme.TagPresetColors
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
@@ -112,7 +101,8 @@ fun AeonLineChart(
     val dims = AeonTheme.dimensions
 
     val currencyFormatter = remember { CurrencyReprUi.CurrencyNumberFormatter() }
-    val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
+    val chartSpec =
+        remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
 
     BoxWithConstraints(modifier = modifier) {
         val w = constraints.maxWidth.toFloat()
@@ -177,7 +167,8 @@ fun AeonLineChart(
         val labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
         val axisLabelColor = AppColors.contentSecondary.copy(alpha = 0.8f)
 
-        val effectiveTotal = if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
+        val effectiveTotal =
+            if (totalXSlots > 0) totalXSlots else (series.firstOrNull()?.dataPoints?.size ?: 1)
         val slotWidth = chartWidth / effectiveTotal.coerceAtLeast(1)
 
         fun indexToX(index: Float, total: Int): Float {
@@ -255,7 +246,11 @@ fun AeonLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
+                            currencyFormatter.format(
+                                amount = tick,
+                                currencyCode = currency,
+                                spec = chartSpec
+                            ),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -410,7 +405,7 @@ fun AeonLineChart(
 
                 if (xAxisLabels.isNotEmpty()) {
                     val total = xAxisLabels.size
-                    
+
                     // Find first and last non-null labels to define the range for 7 labels
                     val firstValidIdx = xAxisLabels.indexOfFirst { it != null }
                     val lastValidIdx = xAxisLabels.indexOfLast { it != null }
@@ -419,7 +414,7 @@ fun AeonLineChart(
                     if (firstValidIdx != -1 && lastValidIdx != -1) {
                         indicesToShow.add(firstValidIdx)
                         indicesToShow.add(lastValidIdx)
-                        
+
                         val validRange = lastValidIdx - firstValidIdx
                         if (validRange > 0) {
                             val interval = validRange.toFloat() / 6f
@@ -443,7 +438,7 @@ fun AeonLineChart(
                     val labelSeries = series.firstOrNull { it.dataPoints.isNotEmpty() }
                     if (labelSeries != null) {
                         val total = labelSeries.dataPoints.size
-                        
+
                         val firstValidIdx = labelSeries.dataPoints.indexOfFirst { it.label != null }
                         val lastValidIdx = labelSeries.dataPoints.indexOfLast { it.label != null }
 
@@ -451,7 +446,7 @@ fun AeonLineChart(
                         if (firstValidIdx != -1 && lastValidIdx != -1) {
                             indicesToShow.add(firstValidIdx)
                             indicesToShow.add(lastValidIdx)
-                            
+
                             val validRange = lastValidIdx - firstValidIdx
                             if (validRange > 0) {
                                 val interval = validRange.toFloat() / 6f

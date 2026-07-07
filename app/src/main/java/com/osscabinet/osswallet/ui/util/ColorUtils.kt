@@ -50,9 +50,26 @@ fun Color.applyFlowTint(mode: ThemeMode): Pair<Color, Color> {
     val baseSaturation = hsl[1]
 
     val (bgL, bgS, inkL, inkS) = when {
-        mode.isAmoled -> Quadruple(0.12f, baseSaturation.coerceIn(0.30f, 0.55f), 0.88f, baseSaturation.coerceIn(0.50f, 0.85f))
-        mode.isDarkTheme -> Quadruple(0.20f, baseSaturation.coerceIn(0.28f, 0.52f), 0.86f, baseSaturation.coerceIn(0.45f, 0.80f))
-        else -> Quadruple(0.92f, baseSaturation.coerceAtMost(0.30f), 0.28f, baseSaturation.coerceIn(0.50f, 0.90f))
+        mode.isAmoled -> Quadruple(
+            0.12f,
+            baseSaturation.coerceIn(0.30f, 0.55f),
+            0.88f,
+            baseSaturation.coerceIn(0.50f, 0.85f)
+        )
+
+        mode.isDarkTheme -> Quadruple(
+            0.20f,
+            baseSaturation.coerceIn(0.28f, 0.52f),
+            0.86f,
+            baseSaturation.coerceIn(0.45f, 0.80f)
+        )
+
+        else -> Quadruple(
+            0.92f,
+            baseSaturation.coerceAtMost(0.30f),
+            0.28f,
+            baseSaturation.coerceIn(0.50f, 0.90f)
+        )
     }
 
     val bgHsl = hsl.copyOf().also { it[1] = bgS; it[2] = bgL }
@@ -87,6 +104,7 @@ fun Color.applyAccountTint(mode: ThemeMode): Pair<Color, Color> {
             }
             Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
         }
+
         mode.isDarkTheme -> {
             val targetL = when {
                 baseLuminance > 0.7f -> 0.25f
@@ -103,6 +121,7 @@ fun Color.applyAccountTint(mode: ThemeMode): Pair<Color, Color> {
             }
             Color(ColorUtils.HSLToColor(bgHsl)) to Color(ColorUtils.HSLToColor(inkHsl))
         }
+
         else -> {
             // Exact user color; derive readable ink from luminance
             val inkColor = if (this.isDark()) Color.White else NearBlack

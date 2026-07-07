@@ -4,17 +4,16 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -46,15 +45,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,7 +71,9 @@ fun OpenInWebScreen(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0)
             ) { innerPadding ->
-                Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -187,9 +188,11 @@ fun OpenInWebScreen(
                             }
 
                             Card {
-                                Column(modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
                                     Text(
                                         "Access URL",
                                         style = AppTextStyles.formSectionLabel,
@@ -219,7 +222,10 @@ fun OpenInWebScreen(
                                                 )
                                             }
                                         ) {
-                                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL")
+                                            Icon(
+                                                Icons.Default.ContentCopy,
+                                                contentDescription = "Copy URL"
+                                            )
                                         }
                                     }
                                 }

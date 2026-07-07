@@ -34,12 +34,12 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.toUiModels
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.transactions.AeonTransactionItem
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 
 @Composable
@@ -137,7 +137,11 @@ private fun EntryLinkedTransactionItem(
             AeonTransactionItem(
                 category = categoryName,
                 account = accountName,
-                amount = formatCurrency(tx.amount, tx.currency, com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(precision = 2)),
+                amount = formatCurrency(
+                    tx.amount,
+                    tx.currency,
+                    com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec(precision = 2)
+                ),
                 balanceBefore = BigDecimal.ZERO.toPlainString(),
                 balanceAfter = tx.amount.toPlainString(),
                 type = when (tx.transactionType) {

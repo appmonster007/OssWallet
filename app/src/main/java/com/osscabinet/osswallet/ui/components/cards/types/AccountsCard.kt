@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,20 +19,21 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.analytics.*
+import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
+import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
@@ -44,20 +43,17 @@ import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardLarge
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardMedium
 import com.osscabinet.ossWallet.ui.components.accounts.AeonAccountCardSmall
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.theme.AppColors
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -215,7 +211,12 @@ private fun AccountsSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onExcludeInternalTransfersChange(config.cardId, it) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(
+                    config.cardId,
+                    it
+                )
+            }
         )
         OutlinedButton(
             onClick = { callbacks.onManageClick(); onDismiss() },
@@ -522,12 +523,44 @@ fun mapAccounts(
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onManageClick = callbacks.accountActions.onManageClick,
         onAccountClick = callbacks.accountActions.onClick,
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onClickTransfer = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
         onDelete = { onDelete(config.cardId) },
         onSaveFilterClick = callbacks.filterActions.onSaveClick

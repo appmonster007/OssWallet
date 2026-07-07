@@ -39,33 +39,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.ui.util.formatCurrency
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
-import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
+import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
-import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -104,7 +104,13 @@ fun CategoryPieChartCard(
 
     // D3+D6: remember(filteredData) resets the stack immediately when underlying data or filter
     // changes — no one-frame lag and no stale drill-down after a compute round.
-    var navigationStack by remember(filteredData) { mutableStateOf(listOf<List<CategoryChartData>>(filteredData)) }
+    var navigationStack by remember(filteredData) {
+        mutableStateOf(
+            listOf<List<CategoryChartData>>(
+                filteredData
+            )
+        )
+    }
 
     val currentData = navigationStack.last()
 
@@ -189,7 +195,7 @@ fun CategoryPieChartCard(
 
         val groupedData = remember(currentData, navigationStack.size) {
             val sorted = currentData.sortedByDescending { it.amount.abs() }
-            
+
             // Detect if we are in a synthesized "More Categories" view
             val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
                 val prevLevelRawData = navigationStack[navigationStack.size - 2]
@@ -200,7 +206,8 @@ fun CategoryPieChartCard(
 
             if (!isMoreCategoriesDrillDown) {
                 val mainItems = sorted.filter { it.percentage >= 0.02f }
-                val others = sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
+                val others =
+                    sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
 
                 if (others.size > 1) {
                     val otherSum = others.sumOf { it.amount }
@@ -260,7 +267,8 @@ fun CategoryPieChartCard(
                         hasSubcategories = item.hasSubcategories,
                         subcategoryCount = item.subcategoryCount,
                         percentageOfTotal = if (globalMagnitude.signum() != 0)
-                            sliceValue.abs().divide(globalMagnitude, 4, RoundingMode.HALF_UP).toFloat()
+                            sliceValue.abs().divide(globalMagnitude, 4, RoundingMode.HALF_UP)
+                                .toFloat()
                         else 0f,
                         id = item.categoryId
                     )
@@ -528,11 +536,22 @@ fun mapCategoryPieChart(
                 updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
             } else {
                 if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
-                    android.util.Log.w("CardBridge", "CategoryPieChart.onUpdate: unexpected ${newConfig::class.simpleName}")
+                    android.util.Log.w(
+                        "CardBridge",
+                        "CategoryPieChart.onUpdate: unexpected ${newConfig::class.simpleName}"
+                    )
             }
         },
         onDelete = { onDelete(config.cardId) },
-        onRecordsClick = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

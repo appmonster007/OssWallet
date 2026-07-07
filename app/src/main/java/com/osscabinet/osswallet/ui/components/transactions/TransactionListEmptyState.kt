@@ -33,7 +33,7 @@ fun TransactionListEmptyState(
                 style = AppTextStyles.listItemTitle,
                 color = AppColors.contentSecondary
             )
-            
+
             if (isFutureExcluded && onIncludeFutureClick != null) {
                 androidx.compose.material3.TextButton(onClick = onIncludeFutureClick) {
                     Text(

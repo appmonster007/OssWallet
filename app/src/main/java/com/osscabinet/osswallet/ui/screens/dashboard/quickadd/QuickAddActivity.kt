@@ -20,7 +20,8 @@ import jakarta.inject.Inject
 @AndroidEntryPoint
 class QuickAddActivity : ComponentActivity() {
 
-    @Inject lateinit var settingsRepository: SettingsRepository
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 1. Disable activity transitions (Modern API 34+ and Legacy fallback)

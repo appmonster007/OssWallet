@@ -1,27 +1,26 @@
 package com.osscabinet.ossWallet.ui.screens.templates.entry.components
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -29,8 +28,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.entry.AeonAmountData
 import com.osscabinet.ossWallet.ui.components.entry.AeonContextGrid
@@ -67,11 +66,12 @@ fun TemplateFormBody(
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
 
-    val targetCurrencies = remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
-        state.accounts.find { it.id == state.targetAccountId }
-            ?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
-    }
+    val targetCurrencies =
+        remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
+            state.accounts.find { it.id == state.targetAccountId }
+                ?.allowedCurrencies?.toList()?.ifEmpty { null }
+                ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+        }
 
     val focusManager = LocalFocusManager.current
 
@@ -99,7 +99,14 @@ fun TemplateFormBody(
                 source = AeonAmountData(
                     value = state.amount,
                     currency = state.currency,
-                    onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.SOURCE)) },
+                    onValueClick = {
+                        onEvent(
+                            TemplateEntryEvent.ShowNumpad(
+                                true,
+                                AmountEditingSide.SOURCE
+                            )
+                        )
+                    },
                     onCurrencyClick = { onEvent(TemplateEntryEvent.ShowCurrencySheet(true)) },
                     label = "SOURCE AMOUNT",
                     supportedCurrencies = sourceCurrencies
@@ -107,7 +114,14 @@ fun TemplateFormBody(
                 target = AeonAmountData(
                     value = state.targetAmount ?: "",
                     currency = state.targetCurrency ?: state.currency,
-                    onValueClick = { onEvent(TemplateEntryEvent.ShowNumpad(true, AmountEditingSide.TARGET)) },
+                    onValueClick = {
+                        onEvent(
+                            TemplateEntryEvent.ShowNumpad(
+                                true,
+                                AmountEditingSide.TARGET
+                            )
+                        )
+                    },
                     onCurrencyClick = { onEvent(TemplateEntryEvent.ShowTargetCurrencySheet(true)) },
                     label = "DESTINATION AMOUNT",
                     supportedCurrencies = targetCurrencies
@@ -125,7 +139,8 @@ fun TemplateFormBody(
                 onToggleRateMode = { onEvent(TemplateEntryEvent.ToggleRateMode) },
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
                 onSwapClick = if (state.isTransfer &&
-                    (state.accountId != null || state.targetAccountId != null))
+                    (state.accountId != null || state.targetAccountId != null)
+                )
                     ({ onEvent(TemplateEntryEvent.SwapAccounts) }) else null,
                 accountId = state.accountId,
                 errors = state.errors
@@ -133,7 +148,9 @@ fun TemplateFormBody(
 
             if (state.isTransfer) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = AeonTheme.dimensions.spacingSm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AeonTheme.dimensions.spacingSm),
                     horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXs),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
@@ -294,7 +311,13 @@ private fun TemplateSheetOrchestrator(
         },
         onSearchTransactions = onSearch,
         linkedIds = state.linkedTransactionIdSet,
-        onLinkedTransactionsChanged = { ids -> onEvent(TemplateEntryEvent.SetLinkedTransactionIds(ids.toList())) },
+        onLinkedTransactionsChanged = { ids ->
+            onEvent(
+                TemplateEntryEvent.SetLinkedTransactionIds(
+                    ids.toList()
+                )
+            )
+        },
         selectedAccountId = state.accountId,
         selectedTargetAccountId = state.targetAccountId,
         selectedCategoryId = state.categoryId,
@@ -307,7 +330,13 @@ private fun TemplateSheetOrchestrator(
         paymentMethod = state.paymentMethod,
         onPaymentMethodChange = { method -> onEvent(TemplateEntryEvent.SetPaymentMethod(method)) },
         transactionStatus = state.transactionStatus,
-        onTransactionStatusChange = { status -> onEvent(TemplateEntryEvent.SetTransactionStatus(status)) }
+        onTransactionStatusChange = { status ->
+            onEvent(
+                TemplateEntryEvent.SetTransactionStatus(
+                    status
+                )
+            )
+        }
     )
 }
 

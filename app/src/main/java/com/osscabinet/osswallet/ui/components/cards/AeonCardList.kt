@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -38,15 +37,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardComputeState
-import my.nanihadesuka.compose.LazyColumnScrollbar
-import my.nanihadesuka.compose.ScrollbarSettings
-import kotlinx.collections.immutable.ImmutableMap
-import kotlinx.collections.immutable.persistentMapOf
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import com.osscabinet.ossWallet.ui.reorderable.ReorderableItem
 import com.osscabinet.ossWallet.ui.reorderable.draggableHandle
 import com.osscabinet.ossWallet.ui.reorderable.rememberReorderableLazyListState
@@ -56,6 +52,10 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentMapOf
+import my.nanihadesuka.compose.LazyColumnScrollbar
+import my.nanihadesuka.compose.ScrollbarSettings
 
 @Composable
 fun AeonCardList(
@@ -106,7 +106,9 @@ fun AeonCardList(
 
         LazyColumn(
             state = reorderState.lazyListState,
-            modifier = Modifier.fillMaxSize().reorderable(reorderState),
+            modifier = Modifier
+                .fillMaxSize()
+                .reorderable(reorderState),
             contentPadding = contentPadding,
             verticalArrangement = verticalArrangement,
         ) {

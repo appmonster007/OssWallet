@@ -44,7 +44,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.components.AeonConfirmDeleteDialog
 import com.osscabinet.ossWallet.ui.components.AeonFullScreenDialog
 import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
@@ -61,6 +60,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.color
 import com.osscabinet.ossWallet.ui.util.icon
 import com.osscabinet.ossWallet.ui.util.toColorInt
+import java.math.BigDecimal
 
 @Composable
 fun AccountFormBody(
@@ -94,7 +94,9 @@ fun AccountFormBody(
         )
     }
 
-    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
+    Box(modifier = modifier
+        .fillMaxSize()
+        .statusBarsPadding()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -206,7 +208,8 @@ fun AccountFormBody(
                         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                     ) {
                         state.allowedCurrencies.forEach { currencyCode ->
-                            val displayBalance = state.systemClosingBalances[currencyCode] ?: BigDecimal.ZERO
+                            val displayBalance =
+                                state.systemClosingBalances[currencyCode] ?: BigDecimal.ZERO
                             val isNegative = displayBalance.signum() < 0
 
                             Surface(
@@ -227,7 +230,8 @@ fun AccountFormBody(
                                             color = AppColors.contentSecondary
                                         )
                                         Text(
-                                            text = displayBalance.abs().stripTrailingZeros().toPlainString(),
+                                            text = displayBalance.abs().stripTrailingZeros()
+                                                .toPlainString(),
                                             style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
                                             color = if (isNegative) AppColors.negative else accentColor
                                         )
@@ -269,7 +273,10 @@ fun AccountFormBody(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Delete Account", style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                "Delete Account",
+                                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
                     }
                 }

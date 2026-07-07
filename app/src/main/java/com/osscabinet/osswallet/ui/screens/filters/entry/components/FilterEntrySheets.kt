@@ -152,7 +152,8 @@ fun FilterEntrySheets(
             selectedCurrencies = state.selectedCurrencies.ifEmpty { shortlisted.toSet() },
             onSelectionChange = { ids ->
                 // Collapse back to empty when the user selects all shortlisted currencies (or nothing)
-                val effectiveIds = if (ids == shortlisted.toSet() || ids.isEmpty()) emptySet() else ids
+                val effectiveIds =
+                    if (ids == shortlisted.toSet() || ids.isEmpty()) emptySet() else ids
                 onEvent(FilterEntryEvent.SetCurrencies(effectiveIds))
             },
             onDismiss = { onEvent(FilterEntryEvent.ShowCurrencySheet(false)) },

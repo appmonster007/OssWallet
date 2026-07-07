@@ -88,7 +88,8 @@ fun CalculatorDialog(
                                     else -> {
                                         val combined = expression + button
                                         expression = if (combined.endsWith(".")) combined
-                                        else combined.toBigDecimalOrNull()?.toPlainString() ?: combined
+                                        else combined.toBigDecimalOrNull()?.toPlainString()
+                                            ?: combined
                                     }
                                 }
                             },

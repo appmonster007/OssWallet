@@ -83,7 +83,8 @@ fun AeonFilterSelection(
                     placeholder = "Search filters..."
                 )
 
-                val config = GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
+                val config =
+                    GlassTokens.configForVariant(com.osscabinet.ossWallet.ui.theme.GlassVariant.Card)
 
                 if (showCreateNew) {
                     Spacer(modifier = Modifier.height(dims.spacingLg))

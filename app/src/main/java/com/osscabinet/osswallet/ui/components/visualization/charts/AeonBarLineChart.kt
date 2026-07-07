@@ -5,12 +5,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,27 +43,26 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.toArgb
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
-import com.osscabinet.ossWallet.ui.theme.ChartGridColor
 import com.osscabinet.ossWallet.ui.theme.ChartZeroLineColor
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.OssWalletPreviewTheme
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import java.math.BigDecimal
 import java.math.RoundingMode
 import android.graphics.Paint as AndroidPaint
@@ -143,7 +139,8 @@ fun AeonBarLineChart(
         val leftPadding = with(density) { 48.dp.toPx() }
         val topPadding = with(density) { dims.spacingLg.toPx() }
         val rightPadding = with(density) { dims.spacingMd.toPx() }
-        val bottomPadding = with(density) { dims.spacingXl.toPx() } + with(density) { (if (showXAxisLabels) 16.dp else 0.dp).toPx() }
+        val bottomPadding =
+            with(density) { dims.spacingXl.toPx() } + with(density) { (if (showXAxisLabels) 16.dp else 0.dp).toPx() }
         val chartWidth = widthPx - leftPadding - rightPadding
 
         val allValues = if (dualBarMode) {
@@ -198,8 +195,14 @@ fun AeonBarLineChart(
         }
 
         val zeroY = valueToY(BigDecimal.ZERO)
-        val chartSpec = remember(precision) { CurrencyDisplaySpec(precision = precision, shortenThreshold = 10) }
-        val currencyFormatter = remember { com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter() }
+        val chartSpec = remember(precision) {
+            CurrencyDisplaySpec(
+                precision = precision,
+                shortenThreshold = 10
+            )
+        }
+        val currencyFormatter =
+            remember { com.osscabinet.ossWallet.ui.util.CurrencyReprUi.CurrencyNumberFormatter() }
 
         val isDark = LocalThemeMode.current.isDarkTheme
         val gridLineColor = AppColors.outlineVariant.copy(alpha = if (isDark) 0.15f else 0.4f)
@@ -261,7 +264,11 @@ fun AeonBarLineChart(
                             pathEffect = dashEffect
                         )
                         drawContext.canvas.nativeCanvas.drawText(
-                            currencyFormatter.format(amount = tick, currencyCode = currency, spec = chartSpec),
+                            currencyFormatter.format(
+                                amount = tick,
+                                currencyCode = currency,
+                                spec = chartSpec
+                            ),
                             leftPadding - dims.spacingSm.toPx(),
                             yPos + 3.dp.toPx(),
                             labelPaint
@@ -325,7 +332,8 @@ fun AeonBarLineChart(
                     val animatedExpenseY = zeroY + (expenseY - zeroY) * animationProgress.value
 
                     val expenseTop = if (expenseVal >= BigDecimal.ZERO) animatedExpenseY else zeroY
-                    val expenseBottom = if (expenseVal >= BigDecimal.ZERO) zeroY else animatedExpenseY
+                    val expenseBottom =
+                        if (expenseVal >= BigDecimal.ZERO) zeroY else animatedExpenseY
 
                     drawRoundRect(
                         color = barColorNegative.copy(alpha = 0.8f),
@@ -466,7 +474,7 @@ fun AeonBarLineChart(
             // 5. Draw X-Axis Labels
             if (showXAxisLabels && xLabels.isNotEmpty()) {
                 val total = xLabels.size
-                
+
                 val firstValidIdx = xLabels.indexOfFirst { it != null }
                 val lastValidIdx = xLabels.indexOfLast { it != null }
 
@@ -545,21 +553,33 @@ fun AeonBarLineChart(
                     if (incomeVal != null) {
                         AeonTooltipEntry(
                             label = "Income",
-                            value = formatCurrency(incomeVal, currency, CurrencyDisplaySpec(precision = precision)),
+                            value = formatCurrency(
+                                incomeVal,
+                                currency,
+                                CurrencyDisplaySpec(precision = precision)
+                            ),
                             color = barColorPositive
                         )
                     }
                     if (expenseVal != null) {
                         AeonTooltipEntry(
                             label = "Expense",
-                            value = formatCurrency(expenseVal, currency, CurrencyDisplaySpec(precision = precision)),
+                            value = formatCurrency(
+                                expenseVal,
+                                currency,
+                                CurrencyDisplaySpec(precision = precision)
+                            ),
                             color = barColorNegative
                         )
                     }
                 } else if (barVal != null) {
                     AeonTooltipEntry(
                         label = "Flow",
-                        value = formatCurrency(barVal, currency, CurrencyDisplaySpec(precision = precision)),
+                        value = formatCurrency(
+                            barVal,
+                            currency,
+                            CurrencyDisplaySpec(precision = precision)
+                        ),
                         color = if (barVal >= BigDecimal.ZERO) barColorPositive else barColorNegative
                     )
                 }
@@ -567,7 +587,11 @@ fun AeonBarLineChart(
                 if (lineVal != null) {
                     AeonTooltipEntry(
                         label = "Net",
-                        value = formatCurrency(lineVal, currency, CurrencyDisplaySpec(precision = precision)),
+                        value = formatCurrency(
+                            lineVal,
+                            currency,
+                            CurrencyDisplaySpec(precision = precision)
+                        ),
                         color = lineColor
                     )
                 }
@@ -578,7 +602,10 @@ fun AeonBarLineChart(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(dims.spacing2xl),
-                        contentPadding = PaddingValues(horizontal = dims.spacingMd, vertical = 0.dp),
+                        contentPadding = PaddingValues(
+                            horizontal = dims.spacingMd,
+                            vertical = 0.dp
+                        ),
                         shape = RoundedCornerShape(dims.spacingSm),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = lineColor.copy(alpha = 0.1f),

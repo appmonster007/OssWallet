@@ -5,13 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
@@ -28,45 +27,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import com.osscabinet.ossWallet.domain.card.CardInput
+import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
-import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
-import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
+import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
+import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
-import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
-import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ThemePreviews
-import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.card.CardRenderData
-import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
-import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
-import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -154,7 +152,8 @@ fun NetWorthCard(
 
                 // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
                 if (config.showComparison && previousPeriodMetrics != null) {
-                    val change = currentPeriodMetrics.netWorth.subtract(previousPeriodMetrics.netWorth)
+                    val change =
+                        currentPeriodMetrics.netWorth.subtract(previousPeriodMetrics.netWorth)
                     if (change.signum() != 0 && previousPeriodMetrics.netWorth.signum() != 0) {
                         val percentage = change.multiply(BigDecimal("100"))
                             .divide(previousPeriodMetrics.netWorth.abs(), 1, RoundingMode.HALF_UP)
@@ -204,7 +203,11 @@ fun NetWorthCard(
                                     .weight(1f)
                                     .clickable {
                                         callbacks.onClickIncome?.invoke(
-                                            config.filter.copy(transactionTypes = setOf(TransactionType.INCOME))
+                                            config.filter.copy(
+                                                transactionTypes = setOf(
+                                                    TransactionType.INCOME
+                                                )
+                                            )
                                         )
                                     },
                                 previousAmount = if (config.showComparison) prevCf?.totalIncomeInBase else null
@@ -221,7 +224,11 @@ fun NetWorthCard(
                                     .weight(1f)
                                     .clickable {
                                         callbacks.onClickExpense?.invoke(
-                                            config.filter.copy(transactionTypes = setOf(TransactionType.EXPENSE))
+                                            config.filter.copy(
+                                                transactionTypes = setOf(
+                                                    TransactionType.EXPENSE
+                                                )
+                                            )
                                         )
                                     },
                                 previousAmount = if (config.showComparison) prevCf?.totalExpensesInBase else null
@@ -248,8 +255,10 @@ fun NetWorthCard(
                     }
 
                     is AccountingPerspective.CashFlow -> {
-                        val inflow = (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
-                        val outflow = (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
+                        val inflow =
+                            (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
+                        val outflow =
+                            (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
 
                         val prevInflow = if (prevCf != null) {
                             (if (showIncome) prevCf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) prevCf.totalTransferInInBase else BigDecimal.ZERO)
@@ -347,7 +356,7 @@ private fun NetWorthFlowColumn(
                     val percentage = change.multiply(BigDecimal("100"))
                         .divide(previousAmount.abs(), 1, RoundingMode.HALF_UP)
                     val up = change.signum() > 0
-                    
+
                     // Compact trend for huge percentages
                     val displayPercentage = if (percentage.abs() > BigDecimal("999")) {
                         "${if (percentage.signum() > 0) ">999" else "<-999"}%"
@@ -372,7 +381,7 @@ private fun NetWorthFlowColumn(
                 amount = amount,
                 currencyCode = currency,
                 spec = CurrencyDisplaySpec(
-                    useSemanticColor = false, 
+                    useSemanticColor = false,
                     forceShowPlus = forceShowPlus,
                     shortenThreshold = 11
                 )
@@ -435,7 +444,12 @@ private fun NetWorthSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onExcludeInternalTransfersChange(config.cardId, it) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(
+                    config.cardId,
+                    it
+                )
+            }
         )
     }
 }
@@ -582,12 +596,44 @@ fun mapNetWorth(
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onFilterChange = updateHandler::updateCardNetWorthFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickExpense = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onClickTransfer = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
         onDelete = { onDelete(config.cardId) },
         onSaveFilterClick = callbacks.filterActions.onSaveClick

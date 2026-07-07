@@ -2,6 +2,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,26 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.RippleConfiguration
-import androidx.compose.material3.ripple
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -46,13 +36,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.Account
-import java.math.RoundingMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
@@ -169,13 +163,15 @@ fun QuickAddAmountStep(
                 modifier = Modifier.fillMaxWidth(),
                 header = { state, _, _ ->
                     // LIVE EVALUATION: Use ghostResult if present (during expression typing)
-                    val liveValueString = if (state.ghostResult.isNotEmpty()) state.ghostResult else state.display
+                    val liveValueString =
+                        if (state.ghostResult.isNotEmpty()) state.ghostResult else state.display
                     val liveAmount = liveValueString.toBigDecimalOrNull() ?: BigDecimal.ZERO
 
                     val sync = if (entryMode == EntryMode.TRANSFER) {
                         TransactionEntryService.syncTransferState(
                             sourceAmount = if (activeAmountSide == AmountEditingSide.SOURCE) liveAmount else amount,
-                            targetAmount = if (activeAmountSide == AmountEditingSide.TARGET) liveAmount else (amountOverride ?: BigDecimal.ZERO),
+                            targetAmount = if (activeAmountSide == AmountEditingSide.TARGET) liveAmount else (amountOverride
+                                ?: BigDecimal.ZERO),
                             sourceCurrency = selectedCurrency,
                             targetCurrency = selectedToCurrency,
                             isFixed = isAmountOverridden,
@@ -183,7 +179,11 @@ fun QuickAddAmountStep(
                             exchangeRates = exchangeRates
                         )
                     } else {
-                        TransactionEntryService.TransferSyncResult(liveAmount, BigDecimal.ZERO, BigDecimal.ONE)
+                        TransactionEntryService.TransferSyncResult(
+                            liveAmount,
+                            BigDecimal.ZERO,
+                            BigDecimal.ONE
+                        )
                     }
 
                     AmountHeroPanel(
@@ -196,7 +196,9 @@ fun QuickAddAmountStep(
                         onToggleOverriding = onToggleAmountOverride,
                         onSetFocus = onSetAmountFocus,
                         currency = selectedCurrency.ifBlank { currencies.firstOrNull() ?: "USD" },
-                        toCurrency = selectedToCurrency.ifBlank { toCurrencies.firstOrNull() ?: "" },
+                        toCurrency = selectedToCurrency.ifBlank {
+                            toCurrencies.firstOrNull() ?: ""
+                        },
                         currencies = currencies,
                         toCurrencies = toCurrencies,
                         onCurrencyChange = { onCurrencySelected(it, true) },
@@ -353,11 +355,13 @@ private fun EditorialContextStrip(
                         modifier = Modifier.weight(1f)
                     )
                 }
+
                 EntryMode.INCOME -> {
                     mainCategorySummary(false)
                     pivotIcon()
                     primaryAccountSummary(true)
                 }
+
                 EntryMode.EXPENSE -> {
                     primaryAccountSummary(false)
                     pivotIcon()
@@ -523,7 +527,10 @@ private fun AccountSummary(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = if (currency.isBlank()) "EXTERNAL" else formatCurrency(balance, currency),
+                        text = if (currency.isBlank()) "EXTERNAL" else formatCurrency(
+                            balance,
+                            currency
+                        ),
                         style = AppTextStyles.caption.copy(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -585,7 +592,9 @@ private fun AccountSummary(
                         },
                         leadingIcon = {
                             val accColor = remember(account.colorHex) {
-                                runCatching { Color(android.graphics.Color.parseColor(account.colorHex)) }.getOrDefault(secondaryColor)
+                                runCatching { Color(android.graphics.Color.parseColor(account.colorHex)) }.getOrDefault(
+                                    secondaryColor
+                                )
                             }
                             Icon(
                                 imageVector = getAccountIconByName(account.icon),
@@ -842,9 +851,23 @@ private fun AmountHeroPanel(
             ) {
                 if (entryMode == EntryMode.TRANSFER) {
                     ClosingBalanceLabel("From: ${formatCurrency(closingBalance, accountCurrency)}")
-                    ClosingBalanceLabel("To: ${formatCurrency(toClosingBalance, toAccountCurrency)}")
+                    ClosingBalanceLabel(
+                        "To: ${
+                            formatCurrency(
+                                toClosingBalance,
+                                toAccountCurrency
+                            )
+                        }"
+                    )
                 } else {
-                    ClosingBalanceLabel("Closing: ${formatCurrency(closingBalance, accountCurrency)}")
+                    ClosingBalanceLabel(
+                        "Closing: ${
+                            formatCurrency(
+                                closingBalance,
+                                accountCurrency
+                            )
+                        }"
+                    )
                 }
             }
         }
@@ -870,7 +893,10 @@ private fun TransferLegRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
                 text = label,
                 style = AppTextStyles.sectionOverline.copy(fontSize = 7.sp),
@@ -896,7 +922,9 @@ private fun TransferLegRow(
                 fontSize = 18.sp,
                 lineHeight = 18.sp
             ),
-            color = if (isActive) AppColors.contentPrimary else AppColors.contentSecondary.copy(alpha = 0.4f)
+            color = if (isActive) AppColors.contentPrimary else AppColors.contentSecondary.copy(
+                alpha = 0.4f
+            )
         )
     }
 }

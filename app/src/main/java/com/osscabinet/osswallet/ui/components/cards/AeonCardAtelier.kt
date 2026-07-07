@@ -428,9 +428,11 @@ fun CardType.toIcon(): ImageVector = when (this) {
 @Composable
 fun PreviewAeonCardAtelier_Dashboard() {
     OssWalletTheme {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Gray)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Gray)
+        ) {
             AeonCardAtelier(
                 screenContext = ScreenContext.DASHBOARD,
                 onDismiss = {},

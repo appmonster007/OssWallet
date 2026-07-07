@@ -130,9 +130,9 @@ import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.GroupAdd
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Handyman
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Healing
 import androidx.compose.material.icons.rounded.HealthAndSafety
-import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.HeatPump
 import androidx.compose.material.icons.rounded.Hiking
 import androidx.compose.material.icons.rounded.HistoryEdu
@@ -175,12 +175,12 @@ import androidx.compose.material.icons.rounded.LocalPizza
 import androidx.compose.material.icons.rounded.LocalTaxi
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Loyalty
-import androidx.compose.material.icons.rounded.LunchDining
 import androidx.compose.material.icons.rounded.Luggage
+import androidx.compose.material.icons.rounded.LunchDining
 import androidx.compose.material.icons.rounded.ManageAccounts
 import androidx.compose.material.icons.rounded.Map
-import androidx.compose.material.icons.rounded.Medication
 import androidx.compose.material.icons.rounded.MedicalServices
+import androidx.compose.material.icons.rounded.Medication
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MicNone
 import androidx.compose.material.icons.rounded.MonetizationOn
@@ -235,8 +235,8 @@ import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.Spa
 import androidx.compose.material.icons.rounded.Sports
 import androidx.compose.material.icons.rounded.SportsBasketball
-import androidx.compose.material.icons.rounded.SportsSoccer
 import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material.icons.rounded.SportsSoccer
 import androidx.compose.material.icons.rounded.SportsTennis
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Stars
@@ -248,8 +248,8 @@ import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material.icons.rounded.Terminal
-import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.TheaterComedy
+import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.Train

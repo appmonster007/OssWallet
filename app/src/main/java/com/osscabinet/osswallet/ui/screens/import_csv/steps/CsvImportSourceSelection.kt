@@ -1,7 +1,15 @@
 package com.osscabinet.ossWallet.ui.screens.import_csv.steps
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +21,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -25,8 +37,8 @@ import com.osscabinet.ossWallet.ui.components.AeonHeroHeader
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
 
 @Composable
 fun SourceSelectionStep(
@@ -48,7 +60,11 @@ fun SourceSelectionStep(
         if (session == null) {
             FileNotLoadedContent(fileLoadError, onLoadFile)
         } else {
-            SourceAppSelectionContent(session, selected, onConfirm = { selected = it }, onContinue = { onConfirm(selected) })
+            SourceAppSelectionContent(
+                session,
+                selected,
+                onConfirm = { selected = it },
+                onContinue = { onConfirm(selected) })
         }
     }
 }
@@ -92,7 +108,7 @@ private fun FileNotLoadedContent(fileLoadError: String?, onLoadFile: () -> Unit)
             )
             SupportedAppsChips()
         }
-        
+
         AeonDashedButton(
             onClick = onLoadFile,
             text = if (fileLoadError != null) "Try Another File" else "Choose CSV File",
@@ -219,9 +235,9 @@ private fun SourceAppItem(
                 Text(
                     when (app) {
                         ImportSourceApp.BUDGET_BAKERS -> "Wallet by BudgetBakers — semicolon-delimited"
-                        ImportSourceApp.CASHEW        -> "Cashew — comma-delimited with subcategories"
+                        ImportSourceApp.CASHEW -> "Cashew — comma-delimited with subcategories"
                         ImportSourceApp.MONEY_MANAGER -> "Money Manager — standard CSV"
-                        ImportSourceApp.GENERIC       -> "Any other CSV with a header row"
+                        ImportSourceApp.GENERIC -> "Any other CSV with a header row"
                     },
                     style = AppTextStyles.caption,
                     color = AppColors.contentSecondary

@@ -192,7 +192,10 @@ fun AccountHeroCard(
                         text = CurrencyReprUi.formatCurrencyAnnotated(
                             amount = balanceInBase,
                             currencyCode = baseCurrency,
-                            spec = CurrencyDisplaySpec(isApproximate = true, useSemanticColor = false)
+                            spec = CurrencyDisplaySpec(
+                                isApproximate = true,
+                                useSemanticColor = false
+                            )
                         ),
                         style = AppTextStyles.transactionTitle.copy(
                             fontWeight = FontWeight.Medium,
@@ -430,10 +433,16 @@ private fun AccountHeroSettingsSheet(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
             excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { callbacks.onExcludeInternalTransfersChange(config.cardId, it) }
+            onExcludeInternalTransfersChange = {
+                callbacks.onExcludeInternalTransfersChange(
+                    config.cardId,
+                    it
+                )
+            }
         )
     }
 }
+
 // Badges sit directly on the full-bleed account color surface, so we use semi-transparent
 // contentColor overlays — they lighten/darken the background just enough to read as a distinct chip.
 @Composable
@@ -548,12 +557,44 @@ fun mapAccountHero(
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onFilterChange = updateHandler::updateCardHeroFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickExpense = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onClickTransfer = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickCurrency = { currency ->
             val drillDown = TransactionFilter(currencies = setOf(currency))
             onRecordsClick(resolveDrillDown(input, config, drillDown))

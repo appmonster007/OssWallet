@@ -2,25 +2,17 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
-import com.osscabinet.ossWallet.domain.model.isTransfer
-import com.osscabinet.ossWallet.domain.model.AccountRef
-import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.TransactionSide
-import com.osscabinet.ossWallet.domain.model.toDbTransferSide
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.domain.model.isOutside
 import com.osscabinet.ossWallet.domain.model.isPicked
-import com.osscabinet.ossWallet.domain.model.resolve
-import com.osscabinet.ossWallet.domain.model.Template
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import java.util.concurrent.TimeUnit
-import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
+import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
@@ -34,17 +26,20 @@ import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
 
 sealed interface QuickAddResult {
     data class TemplateItem(
@@ -52,6 +47,7 @@ sealed interface QuickAddResult {
         val iconName: String?,
         val colorHex: Int
     ) : QuickAddResult
+
     data class CategoryItem(val category: Category) : QuickAddResult
     data class SuggestionItem(
         val label: String,
@@ -100,12 +96,20 @@ data class QuickAddState(
     val baseCurrency: String = "USD",
     val isSaving: Boolean = false
 ) {
-    val selectedAccountId: String? get() = (selectedAccount as? AccountRef.Wallet)?.id ?: if (selectedAccount.isOutside) "" else null
-    val selectedToAccountId: String? get() = (selectedToAccount as? AccountRef.Wallet)?.id ?: if (selectedToAccount.isOutside) "" else null
+    val selectedAccountId: String?
+        get() = (selectedAccount as? AccountRef.Wallet)?.id
+            ?: if (selectedAccount.isOutside) "" else null
+    val selectedToAccountId: String?
+        get() = (selectedToAccount as? AccountRef.Wallet)?.id
+            ?: if (selectedToAccount.isOutside) "" else null
 
     val effectiveTargetAmount: BigDecimal
         get() = amountOverride ?: if (entryMode == EntryMode.TRANSFER) {
-            val rate = TransactionEntryService.getMarketRate(selectedCurrency, selectedToCurrency, exchangeRates)
+            val rate = TransactionEntryService.getMarketRate(
+                selectedCurrency,
+                selectedToCurrency,
+                exchangeRates
+            )
             TransactionEntryService.calculateTargetAmountValue(amount, rate)
         } else BigDecimal.ZERO
 
@@ -180,7 +184,7 @@ class QuickAddViewModel @Inject constructor(
                     it.name.contains(query, ignoreCase = true) ||
                             it.note?.contains(query, ignoreCase = true) == true
                 }.sortedByDescending { it.isStarred }
-                
+
                 if (matchedTemplates.isNotEmpty()) {
                     sections.add(
                         QuickAddSection(
@@ -221,21 +225,23 @@ class QuickAddViewModel @Inject constructor(
                         .map { (label, pairs) ->
                             val latest = pairs.maxBy { it.first.timestamp }.first
                             val cat = allCategories.find { it.id == latest.categoryId }
-                            
+
                             if (latest.transactionType.isTransfer) {
                                 // Try to find counterpart
-                                val counterpart = allTransactions.find { 
-                                    it.id != latest.id && 
-                                    it.transactionType.isTransfer && 
-                                    it.transactionType != latest.transactionType &&
-                                    Math.abs(it.timestamp - latest.timestamp) < 5000 &&
-                                    it.amount.abs().compareTo(latest.amount.abs()) == 0
+                                val counterpart = allTransactions.find {
+                                    it.id != latest.id &&
+                                            it.transactionType.isTransfer &&
+                                            it.transactionType != latest.transactionType &&
+                                            Math.abs(it.timestamp - latest.timestamp) < 5000 &&
+                                            it.amount.abs().compareTo(latest.amount.abs()) == 0
                                 }
-                                
+
                                 // Source should be the one with OUTFLOW or negative amount
-                                val sourceLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
-                                val targetLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
-                                
+                                val sourceLeg =
+                                    if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
+                                val targetLeg =
+                                    if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
+
                                 QuickAddResult.SuggestionItem(
                                     label = label,
                                     categoryId = latest.categoryId,
@@ -316,7 +322,7 @@ class QuickAddViewModel @Inject constructor(
                 } else {
                     baseAccounts
                 }
-                
+
                 // Sort accounts: preselected first (from template/suggestion), then by name
                 val sortedAccounts = activeAccounts.sortedWith(
                     compareByDescending<Account> { AccountRef.fromStored(it.id) == uiState.selectedAccount }
@@ -452,7 +458,11 @@ class QuickAddViewModel @Inject constructor(
         ),
         entryMode = s.entryMode,
         exchangeRate = if (s.entryMode == EntryMode.TRANSFER) {
-            TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+            TransactionEntryService.getMarketRate(
+                s.selectedCurrency,
+                s.selectedToCurrency,
+                s.exchangeRates
+            )
         } else BigDecimal.ONE,
         isRateFixed = s.isAmountOverridden
     )
@@ -460,17 +470,18 @@ class QuickAddViewModel @Inject constructor(
     /**
      * Update from unified logic result.
      */
-    private fun applyUpdate(s: QuickAddState, result: TransactionEntryService.StateUpdateResult) = s.copy(
-        selectedAccount = result.source.account,
-        selectedToAccount = result.destination.account,
-        selectedCurrency = result.source.currency,
-        selectedToCurrency = result.destination.currency,
-        amount = result.source.amountValue,
-        amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
-        selectedCategoryId = result.source.categoryId,
-        entryMode = result.entryMode,
-        isAmountOverridden = result.isRateFixed
-    )
+    private fun applyUpdate(s: QuickAddState, result: TransactionEntryService.StateUpdateResult) =
+        s.copy(
+            selectedAccount = result.source.account,
+            selectedToAccount = result.destination.account,
+            selectedCurrency = result.source.currency,
+            selectedToCurrency = result.destination.currency,
+            amount = result.source.amountValue,
+            amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+            selectedCategoryId = result.source.categoryId,
+            entryMode = result.entryMode,
+            isAmountOverridden = result.isRateFixed
+        )
 
     fun onAmountChanged(amount: BigDecimal) {
         _uiState.update { s ->
@@ -498,12 +509,16 @@ class QuickAddViewModel @Inject constructor(
             // If switching to Source, we keep the existing override mode.
             // If switching to Target, we MUST be in manual mode to edit it.
             val isManual = if (side == AmountEditingSide.TARGET) true else s.isAmountOverridden
-            
+
             s.copy(
                 activeAmountSide = side,
                 isAmountOverridden = isManual,
                 amountOverride = if (isManual && s.amountOverride == null) {
-                    val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                    val rate = TransactionEntryService.getMarketRate(
+                        s.selectedCurrency,
+                        s.selectedToCurrency,
+                        s.exchangeRates
+                    )
                     TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
                 } else s.amountOverride
             )
@@ -517,7 +532,11 @@ class QuickAddViewModel @Inject constructor(
                 isAmountOverridden = next,
                 activeAmountSide = if (!next) AmountEditingSide.SOURCE else s.activeAmountSide,
                 amountOverride = if (next && s.amountOverride == null) {
-                    val rate = TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                    val rate = TransactionEntryService.getMarketRate(
+                        s.selectedCurrency,
+                        s.selectedToCurrency,
+                        s.exchangeRates
+                    )
                     if (rate.signum() != 0) {
                         TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
                     } else BigDecimal.ZERO
@@ -529,7 +548,7 @@ class QuickAddViewModel @Inject constructor(
     fun onSwapAccounts() {
         _uiState.update { s ->
             if (s.entryMode != EntryMode.TRANSFER) return@update s
-            
+
             val (newSrc, newDst, _) = TransactionEntryService.swapAccounts(
                 source = TransactionSide(
                     account = s.selectedAccount,
@@ -545,7 +564,11 @@ class QuickAddViewModel @Inject constructor(
                 ),
                 transferRate = if (s.amount.signum() != 0 && s.amountOverride != null) {
                     s.amountOverride.divide(s.amount, 8, java.math.RoundingMode.HALF_UP)
-                } else TransactionEntryService.getMarketRate(s.selectedCurrency, s.selectedToCurrency, s.exchangeRates)
+                } else TransactionEntryService.getMarketRate(
+                    s.selectedCurrency,
+                    s.selectedToCurrency,
+                    s.exchangeRates
+                )
             )
 
             applyFocusGuard(
@@ -592,14 +615,16 @@ class QuickAddViewModel @Inject constructor(
     fun onCurrencySelected(currency: String, isFrom: Boolean = true) {
         _uiState.update { s ->
             if (isFrom) {
-                val nextTo = if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccount.isOutside) {
-                    currency
-                } else s.selectedToCurrency
+                val nextTo =
+                    if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccount.isOutside) {
+                        currency
+                    } else s.selectedToCurrency
                 s.copy(selectedCurrency = currency, selectedToCurrency = nextTo)
             } else {
-                val nextFrom = if (s.entryMode == EntryMode.TRANSFER && s.selectedAccount.isOutside) {
-                    currency
-                } else s.selectedCurrency
+                val nextFrom =
+                    if (s.entryMode == EntryMode.TRANSFER && s.selectedAccount.isOutside) {
+                        currency
+                    } else s.selectedCurrency
                 s.copy(selectedToCurrency = currency, selectedCurrency = nextFrom)
             }
         }
@@ -611,7 +636,7 @@ class QuickAddViewModel @Inject constructor(
                 EntryMode.EXPENSE -> EntryMode.INCOME
                 else -> EntryMode.EXPENSE
             }
-            
+
             val result = TransactionEntryService.transitionType(
                 oldMode = s.entryMode,
                 newMode = nextMode,
@@ -631,21 +656,24 @@ class QuickAddViewModel @Inject constructor(
             )
 
             applyFocusGuard(
-                applyUpdate(s, TransactionEntryService.StateUpdateResult(
-                    source = result.source,
-                    destination = result.destination,
-                    entryMode = result.newMode,
-                    exchangeRate = BigDecimal.ONE, // Placeholder as we'll recalc
-                    isRateFixed = false
-                ))
+                applyUpdate(
+                    s, TransactionEntryService.StateUpdateResult(
+                        source = result.source,
+                        destination = result.destination,
+                        entryMode = result.newMode,
+                        exchangeRate = BigDecimal.ONE, // Placeholder as we'll recalc
+                        isRateFixed = false
+                    )
+                )
             )
         }
     }
 
     fun toggleTransferMode() {
         _uiState.update { s ->
-            val nextMode = if (s.entryMode == EntryMode.TRANSFER) EntryMode.EXPENSE else EntryMode.TRANSFER
-            
+            val nextMode =
+                if (s.entryMode == EntryMode.TRANSFER) EntryMode.EXPENSE else EntryMode.TRANSFER
+
             val result = TransactionEntryService.transitionType(
                 oldMode = s.entryMode,
                 newMode = nextMode,
@@ -665,25 +693,29 @@ class QuickAddViewModel @Inject constructor(
             )
 
             applyFocusGuard(
-                applyUpdate(s, TransactionEntryService.StateUpdateResult(
-                    source = result.source,
-                    destination = result.destination,
-                    entryMode = result.newMode,
-                    exchangeRate = BigDecimal.ONE,
-                    isRateFixed = false
-                ))
+                applyUpdate(
+                    s, TransactionEntryService.StateUpdateResult(
+                        source = result.source,
+                        destination = result.destination,
+                        entryMode = result.newMode,
+                        exchangeRate = BigDecimal.ONE,
+                        isRateFixed = false
+                    )
+                )
             )
         }
     }
 
     private fun applyFocusGuard(s: QuickAddState): QuickAddState {
         if (s.entryMode != EntryMode.TRANSFER) return s.copy(activeAmountSide = AmountEditingSide.SOURCE)
-        
+
         return when {
-            s.activeAmountSide == AmountEditingSide.SOURCE && s.selectedAccount.isOutside -> 
+            s.activeAmountSide == AmountEditingSide.SOURCE && s.selectedAccount.isOutside ->
                 s.copy(activeAmountSide = AmountEditingSide.TARGET)
-            s.activeAmountSide == AmountEditingSide.TARGET && s.selectedToAccount.isOutside -> 
+
+            s.activeAmountSide == AmountEditingSide.TARGET && s.selectedToAccount.isOutside ->
                 s.copy(activeAmountSide = AmountEditingSide.SOURCE)
+
             else -> s
         }
     }
@@ -695,12 +727,16 @@ class QuickAddViewModel @Inject constructor(
     fun updateAccount(accountId: String, isFrom: Boolean) {
         val allAccounts = state.value.accounts
         val account = allAccounts.find { it.id == accountId }
-        val newRef = if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(accountId)
+        val newRef =
+            if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(
+                accountId
+            )
         _uiState.update { s ->
             val next = if (isFrom) {
-                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
-                    s.selectedToCurrency
-                } else s.selectedCurrency
+                val fallbackCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
+                        s.selectedToCurrency
+                    } else s.selectedCurrency
 
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
@@ -710,9 +746,10 @@ class QuickAddViewModel @Inject constructor(
                 )
 
                 // Enforce: if NEW source is a Wallet and target is Outside, target MUST match new source currency
-                val finalToCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
-                    newCurrency
-                } else s.selectedToCurrency
+                val finalToCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
+                        newCurrency
+                    } else s.selectedToCurrency
 
                 s.copy(
                     selectedAccount = newRef,
@@ -720,9 +757,10 @@ class QuickAddViewModel @Inject constructor(
                     selectedToCurrency = finalToCurrency
                 )
             } else {
-                val fallbackCurrency = if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
-                    s.selectedCurrency
-                } else s.selectedToCurrency
+                val fallbackCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
+                        s.selectedCurrency
+                    } else s.selectedToCurrency
 
                 val newCurrency = TransactionEntryService.resolveSideCurrency(
                     account = newRef,
@@ -732,9 +770,10 @@ class QuickAddViewModel @Inject constructor(
                 )
 
                 // Enforce: if NEW target is a Wallet and source is Outside, source MUST match new target currency
-                val finalFromCurrency = if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
-                    newCurrency
-                } else s.selectedCurrency
+                val finalFromCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
+                        newCurrency
+                    } else s.selectedCurrency
 
                 s.copy(
                     selectedToAccount = newRef,
@@ -752,7 +791,7 @@ class QuickAddViewModel @Inject constructor(
         if (!canSave) return
         val amount = s.amount
         if (amount <= BigDecimal.ZERO) return
-        
+
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
         val name = s.selectedTemplate?.name
             ?: categories.value.find { it.id == categoryId }?.name

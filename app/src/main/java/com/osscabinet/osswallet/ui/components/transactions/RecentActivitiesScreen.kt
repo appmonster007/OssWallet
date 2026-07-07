@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
+import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.AeonSize
 
 @Composable
 fun RecentActivitiesScreen(

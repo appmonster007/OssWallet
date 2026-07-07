@@ -25,10 +25,19 @@ sealed class AccountEntryEvent {
     data class ShowCurrencySheet(val show: Boolean) : AccountEntryEvent()
     data class OpenCalculator(val currency: String) : AccountEntryEvent()
     data object CloseCalculator : AccountEntryEvent()
-    data class ShowAdjustmentDialog(val currency: String, val newValue: String) : AccountEntryEvent()
+    data class ShowAdjustmentDialog(val currency: String, val newValue: String) :
+        AccountEntryEvent()
+
     data object DismissAdjustmentDialog : AccountEntryEvent()
-    data class ConfirmAsNewTransaction(val currency: String, val originalValue: String, val newValue: String) : AccountEntryEvent()
-    data class ConfirmAsInitialBalanceUpdate(val currency: String, val newValue: String) : AccountEntryEvent()
+    data class ConfirmAsNewTransaction(
+        val currency: String,
+        val originalValue: String,
+        val newValue: String
+    ) : AccountEntryEvent()
+
+    data class ConfirmAsInitialBalanceUpdate(val currency: String, val newValue: String) :
+        AccountEntryEvent()
+
     data object TriggerNavigation : AccountEntryEvent()
     data object DeleteAccount : AccountEntryEvent()
 }

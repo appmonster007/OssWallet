@@ -1,290 +1,290 @@
 <?xml version="1.0" encoding="utf-8"?><!-- Preview at 3x2 default size (~180×110dp). Layout mirrors the live Glance
      widget at scale=1.0 — header with totals, column labels, currency rows. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/widget_surface"
-    android:orientation="vertical"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/widget_surface"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp">
 
     <!-- Header: CASH FLOW + period (left) · income + expense totals (right) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
         <!-- Left: label + period stacked -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CASH FLOW"
-                android:textColor="@color/widget_subtle"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="This Month"
-                android:textColor="@color/widget_subtle"
-                android:textSize="8sp" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CASH FLOW"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="This Month"
+                    android:textColor="@color/widget_subtle"
+                    android:textSize="8sp" />
 
         </LinearLayout>
 
         <!-- Spacer pushes totals to the right -->
         <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
 
         <!-- Right: income + expense totals stacked -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="6,720.00 $"
-                android:textColor="@color/widget_income_color"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="4,628.00 $"
-                android:textColor="@color/widget_expense_color"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6,720.00 $"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="4,628.00 $"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
 
         </LinearLayout>
 
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="5dp" />
+            android:layout_width="match_parent"
+            android:layout_height="5dp" />
 
     <!-- Column headers: 36dp gap | INCOME (right) | EXPENSE (right) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <FrameLayout
-            android:layout_width="36dp"
-            android:layout_height="1dp" />
-
-        <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
-            <FrameLayout
+        <FrameLayout
+                android:layout_width="36dp"
+                android:layout_height="1dp" />
+
+        <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+            <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="INCOME"
-                android:textColor="@color/widget_income_label"
-                android:textSize="8sp"
-                android:textStyle="bold" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="INCOME"
+                    android:textColor="@color/widget_income_label"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
 
             <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="EXPENSE"
-                android:textColor="@color/widget_expense_label"
-                android:textSize="8sp"
-                android:textStyle="bold" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="EXPENSE"
+                    android:textColor="@color/widget_expense_label"
+                    android:textSize="8sp"
+                    android:textStyle="bold" />
 
         </LinearLayout>
 
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="3dp" />
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
 
     <!-- Divider — use FrameLayout: bare <View> is blocked by the Android 12+
          RemoteViews class allowlist and silently breaks previewLayout inflation -->
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/widget_subtle" />
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/widget_subtle" />
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="2dp" />
+            android:layout_width="match_parent"
+            android:layout_height="2dp" />
 
     <!-- Currency row: USD -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="36dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="USD"
-            android:textColor="@color/widget_subtle"
-            android:textSize="8sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
-            <FrameLayout
+        <TextView
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="USD"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+
+        <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+            <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="5,000.00 $"
-                android:textColor="@color/widget_income_color"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5,000.00 $"
+                    android:textColor="@color/widget_income_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
 
             <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="3,500.00 $"
-                android:textColor="@color/widget_expense_color"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3,500.00 $"
+                    android:textColor="@color/widget_expense_color"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
 
         </LinearLayout>
 
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="3dp" />
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
 
     <!-- Currency row: EUR (with base conversion) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="36dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="EUR"
-            android:textColor="@color/widget_subtle"
-            android:textSize="8sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
-            <FrameLayout
+        <TextView
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="EUR"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+
+        <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+            <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1,000.00 €"
-                    android:textColor="@color/widget_income_color"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="≈ 1,100.00 $"
-                    android:textColor="@color/widget_income_comparison"
-                    android:textSize="8sp" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1,000.00 €"
+                        android:textColor="@color/widget_income_color"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="≈ 1,100.00 $"
+                        android:textColor="@color/widget_income_comparison"
+                        android:textSize="8sp" />
 
             </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
 
             <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="800.00 €"
-                    android:textColor="@color/widget_expense_color"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="≈ 880.00 $"
-                    android:textColor="@color/widget_expense_comparison"
-                    android:textSize="8sp" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="800.00 €"
+                        android:textColor="@color/widget_expense_color"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="≈ 880.00 $"
+                        android:textColor="@color/widget_expense_comparison"
+                        android:textSize="8sp" />
 
             </LinearLayout>
 
@@ -293,88 +293,88 @@
     </LinearLayout>
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="3dp" />
+            android:layout_width="match_parent"
+            android:layout_height="3dp" />
 
     <!-- Currency row: GBP (with base conversion) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="36dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="GBP"
-            android:textColor="@color/widget_subtle"
-            android:textSize="8sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="horizontal">
 
-            <FrameLayout
+        <TextView
+                android:layout_width="36dp"
+                android:layout_height="wrap_content"
+                android:text="GBP"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+
+        <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+            <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="500.00 £"
-                    android:textColor="@color/widget_income_color"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="≈ 620.00 $"
-                    android:textColor="@color/widget_income_comparison"
-                    android:textSize="8sp" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="500.00 £"
+                        android:textColor="@color/widget_income_color"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="≈ 620.00 $"
+                        android:textColor="@color/widget_income_comparison"
+                        android:textSize="8sp" />
 
             </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
 
             <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1" />
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="200.00 £"
-                    android:textColor="@color/widget_expense_color"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="≈ 248.00 $"
-                    android:textColor="@color/widget_expense_comparison"
-                    android:textSize="8sp" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="200.00 £"
+                        android:textColor="@color/widget_expense_color"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="≈ 248.00 $"
+                        android:textColor="@color/widget_expense_comparison"
+                        android:textSize="8sp" />
 
             </LinearLayout>
 

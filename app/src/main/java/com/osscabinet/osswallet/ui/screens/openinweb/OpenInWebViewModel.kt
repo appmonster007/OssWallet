@@ -10,13 +10,13 @@ import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.service.WebServerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import jakarta.inject.Inject
 
 data class OpenInWebUiState(
     val serverState: WebServerState = WebServerState.Stopped,

@@ -1,13 +1,11 @@
 package com.osscabinet.ossWallet.ui.screens.plannedpayments
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.OccurrenceStatus
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentOccurrence
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentStatus
-import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.UpcomingPaymentItem
 import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
@@ -18,6 +16,7 @@ import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +27,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import jakarta.inject.Inject
 
 data class PlannedPaymentListUiState(
     val overdue: List<PlannedPayment> = emptyList(),
@@ -87,14 +85,15 @@ class PlannedPaymentViewModel @Inject constructor(
                 fromDate = now,
                 daysAhead = 30
             )
-            val upcomingNonOverdue = upcoming.filter { !it.isOverdue }.distinctBy { it.plannedPayment.id }
+            val upcomingNonOverdue =
+                upcoming.filter { !it.isOverdue }.distinctBy { it.plannedPayment.id }
             val upcomingIds = upcomingNonOverdue.map { it.plannedPayment.id }.toHashSet()
             val overdueIds = overdue.map { it.id }.toHashSet()
             val scheduled = payments.filter { p ->
                 p.status == PlannedPaymentStatus.ACTIVE &&
-                    p.schedule.nextDueDate > windowEnd &&
-                    p.id !in upcomingIds &&
-                    p.id !in overdueIds
+                        p.schedule.nextDueDate > windowEnd &&
+                        p.id !in upcomingIds &&
+                        p.id !in overdueIds
             }
             val paused = payments.filter { it.status == PlannedPaymentStatus.PAUSED }
             PlannedPaymentListUiState(
@@ -191,21 +190,22 @@ class PlannedPaymentViewModel @Inject constructor(
     private suspend fun buildTransactionRequest(payment: PlannedPayment): TransactionRequest? {
         val template = payment.templateId?.let { templateRepository.getTemplateById(it) }
 
-        val amount          = template?.amount          ?: payment.amount
-        val entryMode       = template?.entryMode       ?: payment.entryMode
-        val accountId       = (template?.accountId     ?: payment.accountId).takeIf { !it.isNullOrBlank() } ?: return null
-        val currency        = template?.currency        ?: payment.currency
-        val categoryId      = template?.categoryId      ?: payment.categoryId
-        val tags            = template?.tags            ?: payment.tags
-        val paymentMethod   = template?.paymentMethod   ?: payment.paymentMethod ?: PaymentMethod.CASH
-        val payee           = template?.payee           ?: payment.payee ?: ""
-        val note            = template?.note            ?: payment.note ?: ""
-        val gpsLocation     = template?.gpsLocation     ?: payment.gpsLocation
-        val warrantyExp     = template?.warrantyExpiration ?: payment.warrantyExpiration
-        val status          = template?.transactionStatus ?: payment.transactionStatus
+        val amount = template?.amount ?: payment.amount
+        val entryMode = template?.entryMode ?: payment.entryMode
+        val accountId =
+            (template?.accountId ?: payment.accountId).takeIf { !it.isNullOrBlank() } ?: return null
+        val currency = template?.currency ?: payment.currency
+        val categoryId = template?.categoryId ?: payment.categoryId
+        val tags = template?.tags ?: payment.tags
+        val paymentMethod = template?.paymentMethod ?: payment.paymentMethod ?: PaymentMethod.CASH
+        val payee = template?.payee ?: payment.payee ?: ""
+        val note = template?.note ?: payment.note ?: ""
+        val gpsLocation = template?.gpsLocation ?: payment.gpsLocation
+        val warrantyExp = template?.warrantyExpiration ?: payment.warrantyExpiration
+        val status = template?.transactionStatus ?: payment.transactionStatus
         val targetAccountId = template?.targetAccountId ?: payment.targetAccountId
-        val targetCurrency  = template?.targetCurrency  ?: payment.targetCurrency
-        val transferRate    = template?.transferRate     ?: payment.transferRate
+        val targetCurrency = template?.targetCurrency ?: payment.targetCurrency
+        val transferRate = template?.transferRate ?: payment.transferRate
 
         val categoryName = categoryRepository.getAllCategoriesSync()
             .find { it.id == categoryId }?.name ?: "Planned Payment"
@@ -239,7 +239,10 @@ class PlannedPaymentViewModel @Inject constructor(
     /** Skip a payment for a specific scheduledDate (used when the occurrence date differs from nextDueDate). */
     fun quickSkipDate(payment: PlannedPayment, scheduledDate: Long) {
         viewModelScope.launch {
-            transactionManager.skipPlannedPayment(paymentId = payment.id, scheduledDate = scheduledDate)
+            transactionManager.skipPlannedPayment(
+                paymentId = payment.id,
+                scheduledDate = scheduledDate
+            )
             _lastUndoAction.value = UndoAction.SkipUndo(
                 paymentId = payment.id,
                 scheduledDate = scheduledDate,
@@ -254,9 +257,16 @@ class PlannedPaymentViewModel @Inject constructor(
         viewModelScope.launch {
             when (action) {
                 is UndoAction.SkipUndo -> {
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
-                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.paymentId,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
+                    val payment =
+                        plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
                         payment.copy(
                             schedule = payment.schedule.copy(
@@ -266,13 +276,21 @@ class PlannedPaymentViewModel @Inject constructor(
                         )
                     )
                 }
+
                 is UndoAction.ConfirmUndo -> {
                     withProfile { profileId ->
                         transactionManager.deleteTransaction(action.transactionId, profileId)
                     }
-                    val occ = plannedPaymentRepository.getOccurrenceForDate(action.paymentId, action.scheduledDate)
-                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(occ.id, OccurrenceStatus.PENDING)
-                    val payment = plannedPaymentRepository.getById(action.paymentId) ?: return@launch
+                    val occ = plannedPaymentRepository.getOccurrenceForDate(
+                        action.paymentId,
+                        action.scheduledDate
+                    )
+                    if (occ != null) plannedPaymentRepository.updateOccurrenceStatus(
+                        occ.id,
+                        OccurrenceStatus.PENDING
+                    )
+                    val payment =
+                        plannedPaymentRepository.getById(action.paymentId) ?: return@launch
                     plannedPaymentRepository.update(
                         payment.copy(
                             schedule = payment.schedule.copy(

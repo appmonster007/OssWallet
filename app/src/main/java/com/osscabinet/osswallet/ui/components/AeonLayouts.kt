@@ -165,9 +165,11 @@ fun DetailDrawer(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
                         content()
                     }
                 }

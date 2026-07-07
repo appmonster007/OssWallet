@@ -47,6 +47,7 @@ fun DisplaySettingsScreen(
                     onNavigateToDesignLab = { currentScreen = DisplaySubScreen.DESIGN_LAB }
                 )
             }
+
             DisplaySubScreen.DESIGN_LAB -> {
                 BackHandler { currentScreen = DisplaySubScreen.MAIN }
                 DesignLabScreen(

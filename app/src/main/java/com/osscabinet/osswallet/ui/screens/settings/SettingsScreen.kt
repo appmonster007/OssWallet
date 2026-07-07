@@ -61,7 +61,8 @@ fun SettingsScreen(
     val currencyProviderId by viewModel.currencyProvider.collectAsStateWithLifecycle()
     val availableProviders = viewModel.availableProviders
     val providerName = availableProviders.find { it.id == currencyProviderId }?.name ?: "Provider"
-    val providerAttribution = availableProviders.find { it.id == currencyProviderId }?.attribution ?: "Exchangerate.host"
+    val providerAttribution =
+        availableProviders.find { it.id == currencyProviderId }?.attribution ?: "Exchangerate.host"
 
     val scrollState = rememberScrollState()
 

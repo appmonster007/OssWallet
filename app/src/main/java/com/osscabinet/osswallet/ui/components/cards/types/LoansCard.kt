@@ -255,7 +255,7 @@ fun mapLoans(
     renderData: CardRenderData.Loans,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.Loans(
@@ -265,7 +265,7 @@ fun mapLoans(
         onFilterChange = updateHandler::updateCardLoansFilter,
         onLoanClick = callbacks.loanActions.onClick,
         onSeeAll = callbacks.loanActions.onSeeAll,
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

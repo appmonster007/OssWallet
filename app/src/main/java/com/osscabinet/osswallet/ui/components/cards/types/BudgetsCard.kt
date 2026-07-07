@@ -206,7 +206,7 @@ fun mapBudgets(
     renderData: CardRenderData.Budgets,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.Budgets(
@@ -216,7 +216,7 @@ fun mapBudgets(
         onFilterChange = updateHandler::updateCardBudgetsFilter,
         onBudgetClick = callbacks.budgetActions.onClick,
         onSeeAll = callbacks.budgetActions.onSeeAll,
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,

@@ -119,6 +119,17 @@ enum class CardType(
         screen in availableOnScreens && !alwaysPresent
 }
 
+/**
+ * Maps a CardType to its corresponding tab in the Card Studio (Atelier).
+ */
+fun CardType.getAtelierTab(): String = when (this) {
+    CardType.NET_WORTH, CardType.CASH_FLOW, CardType.RECENT_ACTIVITIES -> "STATUS"
+    CardType.ACCOUNTS, CardType.CURRENCY_BALANCES, CardType.ACCOUNT_HERO -> "WALLET"
+    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS -> "TRACK"
+    CardType.CATEGORY_PIE_CHART, CardType.CATEGORY_TREEMAP, CardType.CASHFLOW_COMPARISON,
+    CardType.INCOME_EXPENSE_BAR, CardType.CATEGORY_SPENDING_TREND, CardType.TAG_UPSET_PLOT -> "TRENDS"
+}
+
 enum class CardCategory(val displayName: String, val order: Int) {
     SUMMARY("Summary & Balances", 0),
     TRACKING("Planning & Tracking", 1),

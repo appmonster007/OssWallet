@@ -66,7 +66,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 fun CardSettingsSheet(
     title: String,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit
@@ -104,7 +104,7 @@ fun CardSettingsSheet(
 private fun SheetBody(
     title: String,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val navPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()

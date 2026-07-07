@@ -64,7 +64,7 @@ fun mapCashFlowComparison(
     renderData: CardRenderData.CashFlowComparison,
     input: CardInput,
     updateHandler: CardUpdateHandler,
-    onDelete: (String) -> Unit,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -77,7 +77,7 @@ fun mapCashFlowComparison(
                 newConfig
             )
         },
-        onDelete = { onDelete(config.cardId) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onRecordsClick = { drillDown ->
             onRecordsClick(
                 resolveDrillDown(

@@ -550,7 +550,7 @@ fun AeonCardFilterButton(
 fun AeonExpressiveCardConfig(
     title: String,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -595,20 +595,22 @@ fun AeonExpressiveCardConfig(
                 )
             }
 
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .clickable(onClick = { onDelete(); onDismiss() }),
-                shape = CircleShape,
-                color = AppColors.error.copy(alpha = 0.10f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete card",
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = AppColors.error,
-                    )
+            if (onDelete != null) {
+                Surface(
+                    modifier = Modifier
+                        .size(AeonTheme.dimensions.iconSizeLg)
+                        .clickable(onClick = { onDelete(); onDismiss() }),
+                    shape = CircleShape,
+                    color = AppColors.error.copy(alpha = 0.10f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Delete card",
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                            tint = AppColors.error,
+                        )
+                    }
                 }
             }
         }

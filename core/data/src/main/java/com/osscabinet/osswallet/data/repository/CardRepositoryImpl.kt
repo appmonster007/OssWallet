@@ -3,10 +3,16 @@ package com.osscabinet.ossWallet.data.repository
 import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryPieChartCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.CategoryTreemapCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
+import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.settings.withClearedFilter
 import com.osscabinet.ossWallet.domain.model.settings.withOrder
@@ -49,10 +55,45 @@ class CardRepositoryImpl @Inject constructor(
 
     private fun defaultAnalyticsConfig(): DashboardCardsConfig = DashboardCardsConfig(
         cards = listOf(
+            // STATUS
+            NetWorthCardConfig(
+                cardId = "analytics_net_worth",
+                order = 0,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            CashFlowCardConfig(
+                cardId = "analytics_cash_flow",
+                order = 1,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            // WALLET
+            AccountsCardConfig(
+                cardId = "analytics_accounts",
+                order = 2,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            CurrencyBalancesCardConfig(
+                cardId = "analytics_currency_balances",
+                order = 3,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            // TRACK
+            BudgetsCardConfig(
+                cardId = "analytics_budgets",
+                order = 4,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            LoansCardConfig(
+                cardId = "analytics_loans",
+                order = 5,
+                screenContext = ScreenContext.ANALYTICS
+            ),
+            // TRENDS
             CategoryPieChartCardConfig(
                 cardId = "analytics_category_breakdown",
-                order = 0,
+                order = 6,
                 title = "CATEGORY PIE CHART",
+                screenContext = ScreenContext.ANALYTICS,
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
                 ),
@@ -61,12 +102,18 @@ class CardRepositoryImpl @Inject constructor(
             ),
             CategoryTreemapCardConfig(
                 cardId = "analytics_category_expense_treemap",
-                order = 1,
+                order = 7,
                 title = "CATEGORY TREEMAP",
+                screenContext = ScreenContext.ANALYTICS,
                 filter = TransactionFilter(
                     timelineRange = TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS)
                 ),
                 showLabels = true
+            ),
+            IncomeExpenseBarCardConfig(
+                cardId = "analytics_income_expense_bar",
+                order = 8,
+                screenContext = ScreenContext.ANALYTICS
             )
         )
     )

@@ -67,6 +67,7 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -211,11 +212,15 @@ fun TransactionFilterPill(
             countActiveFilters(filter, baseFilter) > 0
         }
 
+        val glassEnabled = LocalGlassmorphismEnabled.current
+
         val surfaceH = lerp(pillH, with(density) { expandedHPx.toDp() }, f)
         val horizMargin = lerp(pillHorizMargin, 8.dp, f)
         val corner = lerp(28.dp, 20.dp, f)
         val elevation = lerp(AeonSize.D8.value, 12.dp, f)
-        val surfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
+
+        val baseSurfaceColor = lerp(AppColors.componentOnCard, AppColors.cardSurfaceProminent, f)
+        val surfaceColor = if (glassEnabled) baseSurfaceColor.copy(alpha = 0.6f) else baseSurfaceColor
 
         val collapsedSelectorBg = if (isActive) AppColors.accent else AppColors.primaryContainer
         val expandedSelectorBg = if (isActive) AppColors.accent else AppColors.sheetSurface
@@ -288,6 +293,7 @@ fun TransactionFilterPill(
                                 .fillMaxWidth()
                                 .padding(horizontal = 6.dp),
                             isFlush = true,
+                            isActive = isActive,
                             containerColor = selectorBg,
                             contentColor = contentColor,
                             inactiveContentColor = inactiveColor,

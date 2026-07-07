@@ -151,11 +151,11 @@ fun FilterSheetContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .background(backgroundColor)
             .padding(horizontal = AeonTheme.dimensions.screenPadding)
             .padding(top = if (hasHeroHeader) AeonTheme.dimensions.spacingLg else AeonTheme.dimensions.spacingMd)
-            .imePadding()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { focusManager.clearFocus() })
             },

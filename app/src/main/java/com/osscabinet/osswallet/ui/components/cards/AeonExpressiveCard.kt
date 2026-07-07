@@ -137,26 +137,39 @@ fun AeonExpressiveCard(
     val periodTappable = filterEnabled && filter != null && onFilterChange != null
     val hasSettings = displaySettings != null
 
-    val editingCardId = LocalEditingCardId.current
+    val editingCardSession = LocalEditingCardId.current
     val cardId = LocalCardId.current
-    val onEditCard = LocalOnEditCard.current
+    val onEditSession = LocalOnEditCard.current
 
     var internalShowFilterSheet by remember { mutableStateOf(false) }
-    val showFilterSheet = if (editingCardId != null && cardId != null) {
-        editingCardId == cardId
+    val showFilterSheet = if (editingCardSession != null && cardId != null) {
+        editingCardSession == "filter:$cardId"
     } else {
         internalShowFilterSheet
     }
 
     val setShowFilterSheet: (Boolean) -> Unit = { visible ->
-        if (onEditCard != null && cardId != null) {
-            if (visible) onEditCard(cardId) else onEditCard(null)
+        if (onEditSession != null && cardId != null) {
+            onEditSession(if (visible) "filter:$cardId" else null)
         } else {
             internalShowFilterSheet = visible
         }
     }
 
-    var isFlipped by remember { mutableStateOf(false) }
+    var internalIsFlipped by remember { mutableStateOf(false) }
+    val isFlipped = if (editingCardSession != null && cardId != null) {
+        editingCardSession == "settings:$cardId"
+    } else {
+        internalIsFlipped
+    }
+
+    val setIsFlipped: (Boolean) -> Unit = { flipped ->
+        if (onEditSession != null && cardId != null) {
+            onEditSession(if (flipped) "settings:$cardId" else null)
+        } else {
+            internalIsFlipped = flipped
+        }
+    }
 
     val rotation by animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
@@ -197,7 +210,7 @@ fun AeonExpressiveCard(
             onClick = {},
             onLongClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                isFlipped = true
+                setIsFlipped(true)
             },
         )
     } else Modifier
@@ -348,7 +361,7 @@ fun AeonExpressiveCard(
                 ) {
                     displaySettings?.invoke {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        isFlipped = false
+                        setIsFlipped(false)
                     }
                 }
             }

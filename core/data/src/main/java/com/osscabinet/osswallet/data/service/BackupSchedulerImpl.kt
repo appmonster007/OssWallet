@@ -19,5 +19,6 @@ class BackupSchedulerImpl @Inject constructor(
             cancel()
         }
     }
+
     override fun cancel() = AutoBackupWorker.cancel(context)
 }

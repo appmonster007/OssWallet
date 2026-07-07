@@ -19,6 +19,7 @@ class Converters {
         // Tolerate fields removed across schema migrations (e.g. legacy flowDirection).
         ignoreUnknownKeys = true
     }
+
     @TypeConverter
     fun fromBigDecimal(value: BigDecimal?): String? {
         return value?.toString()

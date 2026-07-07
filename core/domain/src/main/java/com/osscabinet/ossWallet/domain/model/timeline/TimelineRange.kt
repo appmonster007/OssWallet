@@ -33,12 +33,27 @@ sealed class TimelineRange {
 
     @Serializable
     data class AllTime(override val excludeFuture: Boolean = true) : TimelineRange()
+
     @Serializable
-    data class ThisPeriod(val period: ThisPeriodType, val offset: Int = 0, override val excludeFuture: Boolean = false) : TimelineRange()
+    data class ThisPeriod(
+        val period: ThisPeriodType,
+        val offset: Int = 0,
+        override val excludeFuture: Boolean = false
+    ) : TimelineRange()
+
     @Serializable
-    data class LastPeriod(val period: LastPeriodType, val offset: Int = 0, override val excludeFuture: Boolean = false) : TimelineRange()
+    data class LastPeriod(
+        val period: LastPeriodType,
+        val offset: Int = 0,
+        override val excludeFuture: Boolean = false
+    ) : TimelineRange()
+
     @Serializable
-    data class CustomRange(val start: Long? = null, val end: Long? = null, override val excludeFuture: Boolean = false) : TimelineRange()
+    data class CustomRange(
+        val start: Long? = null,
+        val end: Long? = null,
+        override val excludeFuture: Boolean = false
+    ) : TimelineRange()
 
     fun toDisplayString(): String = when (this) {
         is AllTime -> "All Time"
@@ -46,9 +61,16 @@ sealed class TimelineRange {
         is LastPeriod -> "Last ${period.label}"
         is CustomRange -> {
             if (start != null && end != null) {
-                val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd", java.util.Locale.getDefault())
+                val formatter = java.time.format.DateTimeFormatter.ofPattern(
+                    "MMM dd",
+                    java.util.Locale.getDefault()
+                )
                 val zone = java.time.ZoneId.systemDefault()
-                val fmt = { ms: Long -> formatter.format(java.time.Instant.ofEpochMilli(ms).atZone(zone)) }
+                val fmt = { ms: Long ->
+                    formatter.format(
+                        java.time.Instant.ofEpochMilli(ms).atZone(zone)
+                    )
+                }
                 "${fmt(start)} - ${fmt(end)}"
             } else "Custom"
         }

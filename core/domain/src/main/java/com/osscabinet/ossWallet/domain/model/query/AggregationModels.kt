@@ -62,7 +62,7 @@ data class MetricConfig(
         NEGATIVE_ONLY,  // amount < 0
         NONE
     }
-    
+
     enum class MetricTransform { ABS, NEGATE, NONE }
 }
 

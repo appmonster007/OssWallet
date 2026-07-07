@@ -58,7 +58,12 @@ class DatabaseQueryServiceImpl(
 
         return try {
             val plan = planner.plan(dimensions, metrics, timeGranularity, useCase)
-            val query = queryBuilder.buildAggregationQuery(profileId, filter, plan, excludeInternalTransfers)
+            val query = queryBuilder.buildAggregationQuery(
+                profileId,
+                filter,
+                plan,
+                excludeInternalTransfers
+            )
 
             val rawResults = transactionDao.aggregateTransactionsSync(query)
             val processed = processResults(rawResults, plan)
@@ -182,8 +187,8 @@ class DatabaseQueryServiceImpl(
                 tags.forEach { tag ->
                     expanded.add(
                         row.copy(
-                        dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }
-                    ))
+                            dimensions = row.dimensions.toMutableMap().apply { put(target, tag) }
+                        ))
                 }
             }
         }

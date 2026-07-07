@@ -1,7 +1,5 @@
 package com.osscabinet.ossWallet.domain.util
 
-import kotlin.text.RegexOption
-
 /**
  * Parses a string into a Regex, supporting literal format: /pattern/flags
  * Flags supported:

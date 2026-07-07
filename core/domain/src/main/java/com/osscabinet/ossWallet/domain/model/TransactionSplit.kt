@@ -17,10 +17,10 @@ sealed class SplitStatus {
     companion object {
         fun compute(total: BigDecimal, splits: List<TransactionSplit>): SplitStatus {
             if (splits.isEmpty()) return Drafting
-            
+
             val currentSum = splits.sumOf { it.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO }
             val diff = total - currentSum
-            
+
             return when {
                 diff.signum() == 0 -> Balanced
                 diff.signum() < 0 -> OverAllocated(diff.abs())

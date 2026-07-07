@@ -67,7 +67,8 @@ data class CardFilterRules(
      */
     fun normalize(candidate: TransactionFilter): TransactionFilter {
         val normalizedTimeline = timelineRule.apply(candidate.timelineRange)
-        val finalTimeline = normalizedTimeline.withExcludeFuture(futureToggleRule.apply(candidate.timelineRange.excludeFuture))
+        val finalTimeline =
+            normalizedTimeline.withExcludeFuture(futureToggleRule.apply(candidate.timelineRange.excludeFuture))
 
         return candidate.copy(
             transactionTypes = typeRule.apply(candidate.transactionTypes),
@@ -161,6 +162,7 @@ sealed class CategoricalRule<T> {
             is Locked -> Locked(other.forced.minus(forbidden))
             is Disabled -> other
         }
+
         override val isLocked: Boolean = false
         override val lockedValues: Set<T> = emptySet()
     }
@@ -170,6 +172,7 @@ sealed class CategoricalRule<T> {
         override fun apply(current: Set<T>): Set<T> {
             return if (current.isEmpty()) allowed else current.intersect(allowed)
         }
+
         override fun merge(other: CategoricalRule<T>): CategoricalRule<T> = when (other) {
             is Open -> this
             is Filtered -> Limited(allowed.minus(other.forbidden))
@@ -177,6 +180,7 @@ sealed class CategoricalRule<T> {
             is Locked -> Locked(other.forced.intersect(allowed))
             is Disabled -> other
         }
+
         override val isLocked: Boolean = false
         override val lockedValues: Set<T> = emptySet()
     }
@@ -189,6 +193,7 @@ sealed class CategoricalRule<T> {
             is Disabled -> other
             else -> this
         }
+
         override val isLocked: Boolean = true
         override val lockedValues: Set<T> = forced
     }
@@ -224,7 +229,8 @@ sealed class RangeRule<T : Comparable<T>> {
     }
 
     /** Ensures the range stays within [minBoundary] and [maxBoundary]. */
-    data class Clamped<T : Comparable<T>>(val minBoundary: T?, val maxBoundary: T?) : RangeRule<T>() {
+    data class Clamped<T : Comparable<T>>(val minBoundary: T?, val maxBoundary: T?) :
+        RangeRule<T>() {
         override fun applyMin(current: T?): T? {
             return when {
                 minBoundary == null -> current
@@ -247,6 +253,7 @@ sealed class RangeRule<T : Comparable<T>> {
                 minBoundary = mergeMin(minBoundary, other.minBoundary),
                 maxBoundary = mergeMax(maxBoundary, other.maxBoundary)
             )
+
             is Fixed -> other.merge(this)
             is Disabled -> other
         }
@@ -270,10 +277,11 @@ sealed class RangeRule<T : Comparable<T>> {
     data class Fixed<T : Comparable<T>>(val min: T?, val max: T?) : RangeRule<T>() {
         override fun applyMin(current: T?) = min
         override fun applyMax(current: T?) = max
-        override fun merge(other: RangeRule<T>) = when(other) {
+        override fun merge(other: RangeRule<T>) = when (other) {
             is Disabled -> other
             else -> this
         }
+
         override val isLocked: Boolean = true
     }
 
@@ -307,10 +315,11 @@ sealed class ToggleRule {
 
     data class Forced(val value: Boolean) : ToggleRule() {
         override fun apply(current: Boolean) = value
-        override fun merge(other: ToggleRule) = when(other) {
+        override fun merge(other: ToggleRule) = when (other) {
             is Disabled -> other
             else -> this
         }
+
         override val isLocked: Boolean = true
     }
 
@@ -342,10 +351,11 @@ sealed class ScalarRule<T> {
 
     data class Locked<T>(val forced: T) : ScalarRule<T>() {
         override fun apply(current: T) = forced
-        override fun merge(other: ScalarRule<T>) = when(other) {
+        override fun merge(other: ScalarRule<T>) = when (other) {
             is Disabled -> other
             else -> this
         }
+
         override val isLocked: Boolean = true
     }
 

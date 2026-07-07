@@ -13,12 +13,12 @@ import com.osscabinet.ossWallet.domain.model.settings.withOrder
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.CardRepository
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 @Singleton
 class CardRepositoryImpl @Inject constructor(

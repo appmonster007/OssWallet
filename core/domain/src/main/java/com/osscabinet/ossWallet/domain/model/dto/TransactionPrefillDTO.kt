@@ -1,14 +1,13 @@
 package com.osscabinet.ossWallet.domain.model.dto
 
-import com.osscabinet.ossWallet.domain.model.toEntryMode
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.toEntryMode
 import kotlinx.serialization.Serializable
-import java.math.BigDecimal
 
 /**
  * DTO for prefilling transaction entry screen with existing transaction data.

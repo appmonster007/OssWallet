@@ -46,14 +46,17 @@ class AggregationPlanner {
             it.function != AggregationFunction.COUNT && it.column == "amount"
         }
 
-        val enrichedDimensions = if (needsCurrency && !dimensions.contains(AggregationDimension.CURRENCY)) {
-            // Determine optimal insertion point for Currency based on target depth
-            // We aim to keep Currency at a level that fits within the SQL group.
-            val insertionIndex = (useCase.sqlLevels - 1).coerceAtMost(dimensions.size).coerceAtLeast(0)
-            dimensions.toMutableList().apply { add(insertionIndex, AggregationDimension.CURRENCY) }
-        } else {
-            dimensions
-        }
+        val enrichedDimensions =
+            if (needsCurrency && !dimensions.contains(AggregationDimension.CURRENCY)) {
+                // Determine optimal insertion point for Currency based on target depth
+                // We aim to keep Currency at a level that fits within the SQL group.
+                val insertionIndex =
+                    (useCase.sqlLevels - 1).coerceAtMost(dimensions.size).coerceAtLeast(0)
+                dimensions.toMutableList()
+                    .apply { add(insertionIndex, AggregationDimension.CURRENCY) }
+            } else {
+                dimensions
+            }
 
         // 2. Split between SQL and Kotlin
         // Dimensions beyond MAX_SQL_LEVELS or specifically handled ones move to Kotlin

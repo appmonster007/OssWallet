@@ -8,13 +8,13 @@ import com.osscabinet.ossWallet.domain.repository.CurrencyRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.currency.provider.ExchangeRateProviderRegistry
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 @Singleton
 class CurrencyRepositoryImpl @Inject constructor(
@@ -34,7 +34,11 @@ class CurrencyRepositoryImpl @Inject constructor(
 
     @Suppress("OVERRIDE_DEPRECATION")
     override val ratesFlow: Flow<Map<String, BigDecimal>> =
-        dao.observeRatesForBase("").map { it.associate { row -> row.currencyCode to row.rate.toBigDecimalOrNull().orZero() } }
+        dao.observeRatesForBase("").map {
+            it.associate { row ->
+                row.currencyCode to row.rate.toBigDecimalOrNull().orZero()
+            }
+        }
 
     private fun BigDecimal?.orZero(): BigDecimal = this ?: BigDecimal.ZERO
 

@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.domain.repository
 
 import com.osscabinet.ossWallet.domain.model.settings.GlassSettings
 import com.osscabinet.ossWallet.domain.model.settings.TransactionSectionSettings
-import com.osscabinet.ossWallet.domain.repository.AutoBackupConfig
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {

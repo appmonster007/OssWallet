@@ -43,46 +43,60 @@ object DatabaseModule {
         return AppDatabase.getDatabase(context, securePassphraseManager.getOrGeneratePassphrase())
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideAccountDao(db: AppDatabase): AccountDao = db.accountDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideTransactionDao(db: AppDatabase): TransactionDao = db.transactionDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideTagDao(db: AppDatabase): TagDao = db.tagDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideTemplateDao(db: AppDatabase): TemplateDao = db.templateDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideTransactionLinkDao(db: AppDatabase): TransactionLinkDao = db.transactionLinkDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideBudgetDao(db: AppDatabase): BudgetDao = db.budgetDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideLoanDao(db: AppDatabase): LoanDao = db.loanDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideLoanPaymentDao(db: AppDatabase): LoanPaymentDao = db.loanPaymentDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun providePlannedPaymentDao(db: AppDatabase): PlannedPaymentDao = db.plannedPaymentDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun providePlannedPaymentOccurrenceDao(db: AppDatabase): PlannedPaymentOccurrenceDao =
         db.plannedPaymentOccurrenceDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideFilterDao(db: AppDatabase): FilterDao = db.filterDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideCurrencyDao(db: AppDatabase): CurrencyDao = db.currencyDao()
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
 }

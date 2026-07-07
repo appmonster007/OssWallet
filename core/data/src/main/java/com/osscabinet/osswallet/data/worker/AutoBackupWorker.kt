@@ -20,10 +20,10 @@ import com.osscabinet.ossWallet.domain.repository.BackupRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
-import java.util.concurrent.TimeUnit
 import okio.buffer
-import okio.source
 import okio.sink
+import okio.source
+import java.util.concurrent.TimeUnit
 
 @HiltWorker
 class AutoBackupWorker @AssistedInject constructor(
@@ -40,10 +40,16 @@ class AutoBackupWorker @AssistedInject constructor(
         if (result.isSuccess) {
             backupRepo.pruneOldBackups(config.maxRetained)
             if (config.notifyMode == AutoBackupConfig.NotifyMode.ALWAYS) {
-                notify(appContext, "Backup completed", "Your data has been backed up successfully.", false)
+                notify(
+                    appContext,
+                    "Backup completed",
+                    "Your data has been backed up successfully.",
+                    false
+                )
             }
             if (config.storageMode == AutoBackupConfig.StorageMode.CUSTOM_FOLDER ||
-                config.storageMode == AutoBackupConfig.StorageMode.BOTH) {
+                config.storageMode == AutoBackupConfig.StorageMode.BOTH
+            ) {
                 config.customFolderUri?.let { folderUri ->
                     try {
                         val docFolder = androidx.documentfile.provider.DocumentFile.fromTreeUri(
@@ -66,13 +72,22 @@ class AutoBackupWorker @AssistedInject constructor(
                             }
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("AutoBackupWorker", "Failed to write to custom folder", e)
+                        android.util.Log.e(
+                            "AutoBackupWorker",
+                            "Failed to write to custom folder",
+                            e
+                        )
                     }
                 }
             }
         } else {
             if (config.notifyMode != AutoBackupConfig.NotifyMode.NEVER) {
-                notify(appContext, "Backup failed", result.exceptionOrNull()?.message ?: "Unknown error", true)
+                notify(
+                    appContext,
+                    "Backup failed",
+                    result.exceptionOrNull()?.message ?: "Unknown error",
+                    true
+                )
             }
         }
         return if (result.isSuccess) Result.success() else Result.retry()
@@ -82,10 +97,11 @@ class AutoBackupWorker @AssistedInject constructor(
         val channelId = "auto_backup"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val ch = NotificationChannel(channelId, "Auto Backup", NotificationManager.IMPORTANCE_LOW)
+            val ch =
+                NotificationChannel(channelId, "Auto Backup", NotificationManager.IMPORTANCE_LOW)
             nm.createNotificationChannel(ch)
         }
-        
+
         val notif = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_menu_save)
             .setContentTitle(title)
@@ -93,7 +109,7 @@ class AutoBackupWorker @AssistedInject constructor(
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(true)
             .build()
-            
+
         try {
             NotificationManagerCompat.from(context).notify(if (isError) 2002 else 2001, notif)
         } catch (e: SecurityException) {

@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.currency
 
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService.activeSystem
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -142,7 +143,8 @@ object CurrencyService {
         if (fromCurrency == toCurrency) return amount.setScale(precision, RoundingMode.HALF_UP)
 
         val anchor = exchangeRates.anchor
-        val fromRate = if (fromCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[fromCurrency]
+        val fromRate =
+            if (fromCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[fromCurrency]
         val toRate = if (toCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[toCurrency]
 
         if (fromRate == null || toRate == null || fromRate.signum() == 0) {
@@ -172,14 +174,62 @@ object CurrencyService {
         precision: Int = 10
     ): FinancialSummary {
         return FinancialSummary(
-            totalAmount = convertAmount(summary.totalAmount, fromCurrency, toCurrency, exchangeRates, precision),
-            income = convertAmount(summary.income, fromCurrency, toCurrency, exchangeRates, precision),
-            expense = convertAmount(summary.expense, fromCurrency, toCurrency, exchangeRates, precision),
-            transfer = convertAmount(summary.transfer, fromCurrency, toCurrency, exchangeRates, precision),
-            transferIn = convertAmount(summary.transferIn, fromCurrency, toCurrency, exchangeRates, precision),
-            transferOut = convertAmount(summary.transferOut, fromCurrency, toCurrency, exchangeRates, precision),
-            crossCcyTransferIn = convertAmount(summary.crossCcyTransferIn, fromCurrency, toCurrency, exchangeRates, precision),
-            crossCcyTransferOut = convertAmount(summary.crossCcyTransferOut, fromCurrency, toCurrency, exchangeRates, precision),
+            totalAmount = convertAmount(
+                summary.totalAmount,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            income = convertAmount(
+                summary.income,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            expense = convertAmount(
+                summary.expense,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            transfer = convertAmount(
+                summary.transfer,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            transferIn = convertAmount(
+                summary.transferIn,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            transferOut = convertAmount(
+                summary.transferOut,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            crossCcyTransferIn = convertAmount(
+                summary.crossCcyTransferIn,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
+            crossCcyTransferOut = convertAmount(
+                summary.crossCcyTransferOut,
+                fromCurrency,
+                toCurrency,
+                exchangeRates,
+                precision
+            ),
             transactionCount = summary.transactionCount
         )
     }
@@ -213,7 +263,8 @@ object CurrencyService {
         fromCurrency: String,
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot
-    ): FinancialSummary = convertFinancialSummary(summary, fromCurrency, baseCurrency, exchangeRates)
+    ): FinancialSummary =
+        convertFinancialSummary(summary, fromCurrency, baseCurrency, exchangeRates)
 
     fun calculateTotalInBaseCurrency(
         summaries: Map<String, FinancialSummary>,

@@ -23,12 +23,14 @@ interface LoanPaymentDao {
     @Query("SELECT * FROM loan_payments ORDER BY date DESC")
     fun getAllPayments(): Flow<List<LoanPaymentEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT lp.* FROM loan_payments lp
         INNER JOIN loans l ON lp.loanId = l.id
         WHERE l.profileId = :profileId
         ORDER BY lp.date DESC
-    """)
+    """
+    )
     fun getAllPaymentsByProfile(profileId: Int): Flow<List<LoanPaymentEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -9,5 +9,6 @@ sealed class WebServerState {
         val accessCode: String,
         val accessUrl: String = "http://$ip:$port"
     ) : WebServerState()
+
     data class Error(val message: String) : WebServerState()
 }

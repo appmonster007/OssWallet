@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.domain.model
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import java.math.BigDecimal
 
 data class Template(

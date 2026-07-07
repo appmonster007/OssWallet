@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.domain.model
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.math.BigDecimal
 
 /**
  * Lightweight filter manager that maintains multiple independent filters
@@ -17,15 +16,15 @@ import java.math.BigDecimal
  */
 class FilterManager {
     private val activeFilters = mutableMapOf<String, TransactionFilter>()
-    
+
     private val _mergedFilter = MutableStateFlow(mergeFilters(emptyList()))
-    
+
     /**
      * The merged filter combining all active filters with AND logic.
      * This is automatically recomputed whenever filters are added or removed.
      */
     val mergedFilter: StateFlow<TransactionFilter> = _mergedFilter
-    
+
     /**
      * Add or update a filter with a unique key.
      * If a filter with the same key already exists, it will be replaced.
@@ -37,7 +36,7 @@ class FilterManager {
         activeFilters[key] = filter
         _mergedFilter.value = mergeFilters(activeFilters.values.toList())
     }
-    
+
     /**
      * Remove a filter by key.
      * 
@@ -47,7 +46,7 @@ class FilterManager {
         activeFilters.remove(key)
         _mergedFilter.value = mergeFilters(activeFilters.values.toList())
     }
-    
+
     /**
      * Check if a filter exists.
      * 
@@ -55,7 +54,7 @@ class FilterManager {
      * @return true if the filter exists, false otherwise
      */
     fun hasFilter(key: String): Boolean = activeFilters.containsKey(key)
-    
+
     /**
      * Get a specific filter.
      * 
@@ -63,7 +62,7 @@ class FilterManager {
      * @return The filter if it exists, null otherwise
      */
     fun getFilter(key: String): TransactionFilter? = activeFilters[key]
-    
+
     /**
      * Clear all filters.
      */
@@ -71,21 +70,21 @@ class FilterManager {
         activeFilters.clear()
         _mergedFilter.value = mergeFilters(emptyList())
     }
-    
+
     /**
      * Get all active filter keys.
      * 
      * @return Set of all active filter keys
      */
     fun getFilterKeys(): Set<String> = activeFilters.keys
-    
+
     /**
      * Get the number of active filters.
      * 
      * @return Number of active filters
      */
     fun getFilterCount(): Int = activeFilters.size
-    
+
     /**
      * Merge multiple TransactionFilters using AND logic.
      * 
@@ -100,14 +99,20 @@ class FilterManager {
      * @return Merged TransactionFilter
      */
     private fun mergeFilters(filters: List<TransactionFilter>): TransactionFilter {
-        if (filters.isEmpty()) return TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
-        
+        if (filters.isEmpty()) return TransactionFilter(
+            timelineRange = TimelineRange.AllTime(
+                excludeFuture = true
+            )
+        )
+
         return TransactionFilter(
-            timelineRange = filters.map { it.timelineRange }.lastOrNull() 
+            timelineRange = filters.map { it.timelineRange }.lastOrNull()
                 ?: TimelineRange.AllTime(excludeFuture = true),
-            queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
+            queryNote = filters.mapNotNull { it.queryNote }.filter { it.isNotBlank() }
+                .joinToString(" ").takeIf { it.isNotBlank() },
             isNoteRegex = filters.any { it.isNoteRegex },
-            queryPayee = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() },
+            queryPayee = filters.mapNotNull { it.queryPayee }.filter { it.isNotBlank() }
+                .joinToString(" ").takeIf { it.isNotBlank() },
             isPayeeRegex = filters.any { it.isPayeeRegex },
             categoryIds = filters.flatMap { it.categoryIds }.toSet(),
             accountIds = filters.flatMap { it.accountIds }.toSet(),

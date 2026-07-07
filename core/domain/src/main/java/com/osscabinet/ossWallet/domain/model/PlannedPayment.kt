@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.domain.model
 
-import com.osscabinet.ossWallet.domain.model.EntryMode
 import java.math.BigDecimal
 
 enum class RecurrenceType {
@@ -27,15 +26,15 @@ enum class PlannedPaymentStatus(
 
     companion object {
         fun fromString(value: String): PlannedPaymentStatus {
-            return entries.find { 
-                it.name.equals(value, ignoreCase = true) || 
-                it.displayName.equals(value, ignoreCase = true) 
+            return entries.find {
+                it.name.equals(value, ignoreCase = true) ||
+                        it.displayName.equals(value, ignoreCase = true)
             } ?: ACTIVE
         }
     }
 }
 
-enum class OccurrenceStatus { 
+enum class OccurrenceStatus {
     PENDING, CONFIRMED, SKIPPED;
 
     companion object {

@@ -2,13 +2,17 @@ package com.osscabinet.ossWallet.data.service
 
 import android.content.Context
 import android.util.Log
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class MappedCategory(
     val name: String,
-    val parentName: String?
+    val parentName: String? = null
 )
 
 @Singleton
@@ -20,16 +24,21 @@ class BudgetBakersAssetLoader @Inject constructor(
 
     private fun loadEnvelopeMap(): Map<Int, MappedCategory> {
         return try {
-            val map = mutableMapOf<Int, MappedCategory>()
-            context.assets.open("wallet-budgetbakers/envelope_map.csv").bufferedReader().forEachLine { line ->
-                if (line.startsWith("envelope_id") || line.isBlank()) return@forEachLine
-                val cols = line.split(",")
-                val id = cols.getOrNull(0)?.trim()?.toIntOrNull() ?: return@forEachLine
-                val ossName = cols.getOrNull(2)?.trim() ?: return@forEachLine
-                val parentName = cols.getOrNull(3)?.trim()?.takeIf { it.isNotEmpty() }
-                map[id] = MappedCategory(ossName, parentName)
+            val format = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setIgnoreEmptyLines(true)
+                .setTrim(true)
+                .build()
+            
+            context.assets.open("wallet-budgetbakers/envelope_map.csv").bufferedReader().use { reader ->
+                CSVParser.parse(reader, format).associate { record ->
+                    val id = record.get("envelope_id").trim().toInt()
+                    val ossName = record.get("osswallet_category_name").trim()
+                    val parentName = record.get("parent_category_name").trim().takeIf { it.isNotEmpty() }
+                    id to MappedCategory(ossName, parentName)
+                }
             }
-            map
         } catch (e: Exception) {
             Log.e("BudgetBakersAssets", "Failed to load envelope map", e)
             emptyMap()
@@ -38,15 +47,18 @@ class BudgetBakersAssetLoader @Inject constructor(
 
     private fun loadPaymentTypeMap(): Map<String, String> {
         return try {
-            val map = mutableMapOf<String, String>()
-            context.assets.open("wallet-budgetbakers/payment_type_map.csv").bufferedReader().forEachLine { line ->
-                if (line.startsWith("bb_") || line.isBlank()) return@forEachLine
-                val cols = line.split(",")
-                val bb = cols.getOrNull(0)?.trim() ?: return@forEachLine
-                val oss = cols.getOrNull(1)?.trim() ?: return@forEachLine
-                map[bb] = oss
+            val format = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setIgnoreEmptyLines(true)
+                .setTrim(true)
+                .build()
+
+            context.assets.open("wallet-budgetbakers/payment_type_map.csv").bufferedReader().use { reader ->
+                CSVParser.parse(reader, format).associate { record ->
+                    record.get("bb_payment_type").trim() to record.get("osswallet_payment_method").trim()
+                }
             }
-            map
         } catch (e: Exception) {
             Log.e("BudgetBakersAssets", "Failed to load payment type map", e)
             emptyMap()

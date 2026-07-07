@@ -17,6 +17,8 @@ import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
 import dagger.hilt.android.HiltAndroidApp
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,7 +31,15 @@ import kotlinx.coroutines.launch
 import jakarta.inject.Inject
 
 @HiltAndroidApp
-class OssWalletApp : Application() {
+class OssWalletApp : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     @Inject
     lateinit var db: AppDatabase

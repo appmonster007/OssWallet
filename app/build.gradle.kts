@@ -123,11 +123,14 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     // CSV and document file (web routes, backup UI in :app)
     implementation(libs.commons.csv)
+    implementation(libs.univocity.parsers)
     implementation(libs.androidx.documentfile)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.oss.hilt.work)
+    ksp(libs.oss.hilt.work.compiler)
     implementation(libs.hilt.navigation.compose)
 
     testImplementation(libs.junit)

@@ -81,7 +81,7 @@ import kotlinx.coroutines.launch
  * A Value Object representing a valid configuration for the Analytics screen.
  */
 data class AnalyticsConfig(
-    val isTopLevel: Boolean = false
+    val isTopLevel: Boolean = false,
 )
 
 /**
@@ -130,11 +130,11 @@ fun AnalyticsScreen(
         initialValue = true
     )
 
-    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(value = false) }
     var editingCardId by remember { mutableStateOf<String?>(null) }
 
     val tabs = remember { AtelierTab.entries.map { it.displayName } }
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val pagerState = rememberPagerState { tabs.size }
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = pagerState.currentPage > 0) {

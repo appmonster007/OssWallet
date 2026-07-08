@@ -134,14 +134,14 @@ class TransactionEntryViewModelTest {
         advanceUntilIdle()
 
         // 1. Source (EUR) -> Outside (should be EUR)
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockToAccount)) // acc2 is EUR
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockToAccount.id)) // acc2 is EUR
         advanceUntilIdle()
 
         val state1 = awaitState { it.destination.account.isOutside && it.destination.currency == "EUR" }
         assertEquals("EUR", state1.destination.currency)
 
         // 2. Change Source to USD -> Target (Outside) should follow to USD
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // acc1 is USD
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id)) // acc1 is USD
         advanceUntilIdle()
 
         val state2 = awaitState { state -> (state.source.account as? AccountRef.Wallet)?.id == "acc1" && state.source.currency == "USD" }
@@ -164,7 +164,7 @@ class TransactionEntryViewModelTest {
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
         advanceUntilIdle()
 
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount))
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id))
         advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
@@ -190,8 +190,8 @@ class TransactionEntryViewModelTest {
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
         advanceUntilIdle()
 
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
-        viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id)) // USD
+        viewModel.onEvent(TransactionEntryEvent.SetTargetAccountId(mockToAccount.id)) // EUR (0.85)
         advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
@@ -221,8 +221,8 @@ class TransactionEntryViewModelTest {
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
         advanceUntilIdle()
 
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
-        viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id)) // USD
+        viewModel.onEvent(TransactionEntryEvent.SetTargetAccountId(mockToAccount.id)) // EUR (0.85)
         advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
@@ -246,8 +246,8 @@ class TransactionEntryViewModelTest {
         advanceUntilIdle()
 
         viewModel.onEvent(TransactionEntryEvent.SetTransactionType(EntryMode.TRANSFER))
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount)) // USD
-        viewModel.onEvent(TransactionEntryEvent.SetTargetAccount(mockToAccount)) // EUR (0.85)
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id)) // USD
+        viewModel.onEvent(TransactionEntryEvent.SetTargetAccountId(mockToAccount.id)) // EUR (0.85)
         viewModel.onEvent(TransactionEntryEvent.SetAmount("100"))
         advanceUntilIdle()
 
@@ -311,7 +311,7 @@ class TransactionEntryViewModelTest {
         }
 
         // Put VM in a saveable state
-        viewModel.onEvent(TransactionEntryEvent.SetAccount(mockAccount))
+        viewModel.onEvent(TransactionEntryEvent.SetAccountId(mockAccount.id))
         viewModel.onEvent(TransactionEntryEvent.SetAmount("10"))
         advanceUntilIdle()
 

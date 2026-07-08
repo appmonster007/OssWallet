@@ -18,7 +18,7 @@ enum class CardType(
     val description: String = "",
     val availableOnScreens: Set<ScreenContext> = ALL_SCREENS,
     val alwaysPresent: Boolean = false,
-    val category: CardCategory = CardCategory.OTHER
+    val category: CardCategory = CardCategory.OTHER,
 ) {
     NET_WORTH(
         "net_worth",
@@ -116,7 +116,7 @@ enum class CardType(
 
     /** Returns true when this card type can be added by the user on [screen]. */
     fun isUserAddableOn(screen: ScreenContext): Boolean =
-        screen in availableOnScreens && !alwaysPresent
+        (screen in availableOnScreens) && !alwaysPresent
 }
 
 /**

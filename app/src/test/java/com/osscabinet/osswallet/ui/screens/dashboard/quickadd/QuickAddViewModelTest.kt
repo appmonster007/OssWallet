@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountRef
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -348,13 +349,19 @@ class QuickAddViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         awaitState { it.accounts.isNotEmpty() }
 
-        // 1. Standard - No amount, no account -> Invalid
+        // Select a category to satisfy validation
+        viewModel.onCategorySelected(Category(1, "Test", "Icon", 0, false, null))
+
+        // 1. Standard - No category -> Invalid
         viewModel.onAmountChanged(BigDecimal.ZERO)
         assertFalse(viewModel.state.value.canSave)
 
-        // 1b. Standard - Zero amount WITH valid account -> Invalid (amount guard, not account guard)
+        // Select a category to satisfy validation
+        viewModel.onCategorySelected(Category(1, "Test", "Icon", 0, false, null))
+
+        // 1b. Standard - Zero amount WITH valid account and category -> Valid
         viewModel.onAccountTapped("acc1", isFrom = true)
-        assertFalse(awaitState { it.selectedAccount is AccountRef.Wallet }.canSave)
+        assertTrue(awaitState { it.selectedAccount is AccountRef.Wallet }.canSave)
 
         // 2. Standard - Valid account and amount -> Valid
         viewModel.onAmountChanged(BigDecimal("10"))

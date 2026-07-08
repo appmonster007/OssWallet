@@ -58,7 +58,7 @@ internal fun Transaction.toDto(
     payee = payee.takeIf { it.isNotBlank() },
     tags = tags.toList(),
     status = status.name,
-    paymentMethod = paymentMethod?.name,
+    paymentMethod = paymentMethod.name,
     warrantyExpiration = warrantyExpiration,
     location = location,
     linkedTransactionIds = emptyList() // Links are typically fetched separately or hydrated if needed

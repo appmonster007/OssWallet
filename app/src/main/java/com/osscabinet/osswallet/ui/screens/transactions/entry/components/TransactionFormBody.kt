@@ -40,6 +40,7 @@ import com.osscabinet.ossWallet.ui.components.entry.AeonEntryMetadataSection
 import com.osscabinet.ossWallet.ui.components.entry.AeonImpactHeaderCard
 import com.osscabinet.ossWallet.ui.components.entry.AeonMetadataState
 import com.osscabinet.ossWallet.ui.components.entry.AeonSelectorState
+import com.osscabinet.ossWallet.ui.components.entry.AeonTextFieldState
 import com.osscabinet.ossWallet.ui.components.entry.AeonTransactionSplitSheet
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionCard
 import com.osscabinet.ossWallet.ui.components.entry.EntryActionRow
@@ -88,16 +89,12 @@ fun TransactionFormBody(
     val accounts = state.accounts
     val onAccountChange = remember(accounts) {
         { accId: String? ->
-            val account =
-                if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else accounts.find { it.id == accId }
-            onEvent(TransactionEntryEvent.SetAccount(account))
+            onEvent(TransactionEntryEvent.SetAccountId(accId))
         }
     }
     val onTargetAccountChange = remember(accounts) {
         { accId: String? ->
-            val account =
-                if (accId.isNullOrBlank()) Account.OUTSIDE_WALLET else accounts.find { it.id == accId }
-            onEvent(TransactionEntryEvent.SetTargetAccount(account))
+            onEvent(TransactionEntryEvent.SetTargetAccountId(accId))
         }
     }
 
@@ -169,6 +166,11 @@ fun TransactionFormBody(
                     isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
                 ),
                 categoryId = state.selectedCategoryId,
+                nameState = AeonTextFieldState(
+                    value = state.name,
+                    onValueChange = { onEvent(TransactionEntryEvent.SetName(it)) },
+                    label = "TRANSACTION NAME"
+                ),
                 showAmount = true,
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,
@@ -264,7 +266,7 @@ fun TransactionFormBody(
                     AeonEntryMetadataSection(
                         state = AeonMetadataState(
                             paymentMethod = state.paymentMethod,
-                            status = state.status,
+                            status = state.transactionStatus,
                             isWarrantyEnabled = state.isWarrantyEnabled,
                             warrantyExpiration = state.warrantyExpirationMillis,
                             gpsLocation = state.gpsLocation,
@@ -289,7 +291,7 @@ fun TransactionFormBody(
                                 )
                             )
                         },
-                        onStatusClick = { onEvent(TransactionEntryEvent.SetStatus(it)) },
+                        onStatusClick = { onEvent(TransactionEntryEvent.SetTransactionStatus(it)) },
                         onWarrantyToggle = { onEvent(TransactionEntryEvent.SetWarrantyEnabled(it)) },
                         onWarrantyDateClick = {
                             onEvent(
@@ -321,7 +323,7 @@ fun TransactionFormBody(
             onAmountChange = onAmountChange,
             onAccountChange = onAccountChange,
             onTargetAccountChange = onTargetAccountChange,
-            onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategory(catId)) },
+            onCategoryChange = { catId -> onEvent(TransactionEntryEvent.SetCategoryId(catId)) },
             onCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetCurrency(curr)) },
             onTargetCurrencyChange = { curr -> onEvent(TransactionEntryEvent.SetTargetCurrency(curr)) },
             onExchangeRateChange = { rate -> onEvent(TransactionEntryEvent.SetExchangeRate(rate)) },
@@ -389,8 +391,8 @@ fun TransactionFormBody(
                     )
                 )
             },
-            transactionStatus = state.status,
-            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetStatus(status)) },
+            transactionStatus = state.transactionStatus,
+            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetTransactionStatus(status)) },
             currentTransactionId = state.transactionId
         )
 

@@ -89,7 +89,7 @@ class TemplateEntryViewModel @Inject constructor(
                         fullProviderCurrencies = snapshot.fullProviderCurrencies,
                         exchangeRates = snapshot.exchangeRates,
                         source = defaultSource,
-                        selectedCategory = snapshot.categories.find { it.id == current.categoryId }
+                        selectedCategory = snapshot.categories.find { it.id == current.selectedCategoryId }
                     )
                 }
             }
@@ -130,7 +130,7 @@ class TemplateEntryViewModel @Inject constructor(
                         isWarrantyEnabled = prefill.warrantyExpiration != null,
                         transactionStatus = prefill.status,
                         paymentMethod = prefill.paymentMethod ?: PaymentMethod.CASH,
-                        tags = prefill.tags
+                        selectedTags = prefill.tags
                     )
                 }
                 updateCategoryName()
@@ -205,7 +205,7 @@ class TemplateEntryViewModel @Inject constructor(
                         isWarrantyEnabled = template.warrantyExpiration != null,
                         transactionStatus = template.transactionStatus,
                         paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
-                        tags = template.tags
+                        selectedTags = template.tags
                     )
                 }
                 updateCategoryName()
@@ -215,7 +215,17 @@ class TemplateEntryViewModel @Inject constructor(
 
     fun onEvent(event: TemplateEntryEvent) {
         when (event) {
-            is TemplateEntryEvent.SetName -> _state.update { it.copy(name = event.name) }
+            is TemplateEntryEvent.SetName -> _state.update { state ->
+                val newNote = when {
+                    state.note.isEmpty() -> "${event.name} - "
+                    state.name.isNotEmpty() && state.note.startsWith("${state.name} - ") -> {
+                        state.note.replaceFirst("${state.name} - ", "${event.name} - ")
+                    }
+
+                    else -> state.note
+                }
+                state.copy(name = event.name, note = newNote)
+            }
             is TemplateEntryEvent.SetAmount -> {
                 _state.update { s ->
                     s.applyUpdate(
@@ -263,17 +273,17 @@ class TemplateEntryViewModel @Inject constructor(
                 }
             }
 
-            is TemplateEntryEvent.SetCategory -> {
-                if (!Category.isInitialBalance(event.categoryId)) {
-                    _state.update { it.copy(source = it.source.copy(categoryId = event.categoryId)) }
+            is TemplateEntryEvent.SetCategoryId -> {
+                if (!Category.isInitialBalance(event.id)) {
+                    _state.update { it.copy(source = it.source.copy(categoryId = event.id)) }
                     updateCategoryName()
                 }
             }
 
-            is TemplateEntryEvent.SetAccount -> {
+            is TemplateEntryEvent.SetAccountId -> {
                 _state.update { s ->
                     val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.accountId,
+                        accountId = event.id,
                         isSource = true,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
@@ -284,10 +294,10 @@ class TemplateEntryViewModel @Inject constructor(
                 if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
-            is TemplateEntryEvent.SetTargetAccount -> {
+            is TemplateEntryEvent.SetTargetAccountId -> {
                 _state.update { s ->
                     val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.accountId,
+                        accountId = event.id,
                         isSource = false,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
@@ -365,14 +375,19 @@ class TemplateEntryViewModel @Inject constructor(
 
             is TemplateEntryEvent.SetTransactionStatus -> _state.update { it.copy(transactionStatus = event.status) }
             is TemplateEntryEvent.SetPaymentMethod -> _state.update { it.copy(paymentMethod = event.method) }
-            is TemplateEntryEvent.SetTags -> _state.update { it.copy(tags = event.tags) }
+            is TemplateEntryEvent.SetTags -> _state.update { it.copy(selectedTags = event.tags) }
             is TemplateEntryEvent.SetLinkedTransactionIds -> {
                 viewModelScope.launch {
                     withProfile { profileId ->
                         val transactions = event.ids.mapNotNull { id ->
                             transactionUseCases.getTransactionById(id, profileId)
                         }
-                        _state.update { it.copy(displayLinkedTxs = transactions) }
+                        _state.update {
+                            it.copy(
+                                displayLinkedTxs = transactions,
+                                linkedTransactionIds = event.ids
+                            )
+                        }
                     }
                 }
             }
@@ -380,7 +395,10 @@ class TemplateEntryViewModel @Inject constructor(
             is TemplateEntryEvent.RemoveLinkedTransaction -> {
                 _state.update { state ->
                     val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
-                    state.copy(displayLinkedTxs = newList)
+                    state.copy(
+                        displayLinkedTxs = newList,
+                        linkedTransactionIds = state.linkedTransactionIds.filter { it != event.targetId }
+                    )
                 }
             }
 
@@ -502,7 +520,7 @@ class TemplateEntryViewModel @Inject constructor(
     }
 
     private fun updateCategoryName() {
-        val categoryId = _state.value.categoryId
+        val categoryId = _state.value.selectedCategoryId
         val category = _state.value.categories.find { it.id == categoryId }
         _state.update {
             it.copy(
@@ -517,34 +535,53 @@ class TemplateEntryViewModel @Inject constructor(
         if (!s.canSave) return
 
         viewModelScope.launch {
-            val amountValue = if (s.isIncome) s.amountValue.abs()
-            else s.amountValue.abs().negate() // Expense and Transfer normalized to negative
+            val profileId = settingsRepository.currentProfileId.first()
+            val baseCurrency = settingsRepository.currency.first()
 
             val templateCategoryId = if (s.isTransfer) {
-                if (Category.isInitialBalance(s.categoryId)) Category.SYSTEM_INITIAL_BALANCE
+                if (Category.isInitialBalance(s.selectedCategoryId)) Category.SYSTEM_INITIAL_BALANCE
                 else Category.SYSTEM_TRANSFER
-            } else s.categoryId
+            } else s.selectedCategoryId
+
+            val request = TransactionEntryService.createRequest(
+                name = s.name,
+                amount = s.amountValue,
+                entryMode = s.entryMode,
+                sourceAccount = s.source.account,
+                sourceCurrency = s.currency,
+                targetAccount = s.destination.account,
+                targetCurrency = s.targetCurrency,
+                categoryId = templateCategoryId,
+                note = s.note,
+                payee = s.payee,
+                tags = s.selectedTags,
+                status = s.transactionStatus,
+                targetAmountOverride = if (s.isTransfer) s.destination.amountValue else null,
+                exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates),
+                accounts = s.accounts,
+                baseCurrency = baseCurrency
+            )
 
             val template = Template(
                 id = s.templateId ?: 0,
-                name = s.name,
-                categoryId = templateCategoryId,
-                amount = amountValue,
-                entryMode = s.entryMode,
-                accountId = s.accountId,
-                targetAccountId = s.targetAccountId,
-                targetCurrency = s.targetCurrency,
-                transferRate = s.exchangeRate,
-                note = s.note.ifBlank { null },
-                payee = s.payee.ifBlank { null },
+                name = request.name,
+                categoryId = request.categoryId,
+                amount = request.amount,
+                entryMode = request.entryMode,
+                accountId = request.accountId,
+                targetAccountId = request.targetAccountId,
+                targetCurrency = request.targetCurrency,
+                transferRate = request.transferRate,
+                note = request.note.ifBlank { null },
+                payee = request.payee.ifBlank { null },
                 location = s.location.ifBlank { null },
                 gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
-                transactionStatus = s.transactionStatus,
+                transactionStatus = request.status,
                 paymentMethod = s.paymentMethod,
-                currency = s.currency.ifBlank { "USD" },
-                tags = s.tags,
-                profileId = settingsRepository.currentProfileId.first()
+                currency = request.currency,
+                tags = request.tags,
+                profileId = profileId
             )
 
             if (s.isEditMode) {

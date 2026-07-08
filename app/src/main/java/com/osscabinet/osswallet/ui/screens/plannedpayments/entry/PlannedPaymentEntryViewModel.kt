@@ -127,7 +127,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             plannedPaymentId = null,
                             linkedTemplate = null,
                             name = template.name,
-                            showNumpad = false,
+                            isNumpadVisible = false,
                             source = TransactionSide(
                                 account = if (isTemplateTransfer) AccountRef.fromTransferSide(
                                     template.accountId
@@ -169,7 +169,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             transactionStatus = template.transactionStatus,
                             paymentMethod = template.paymentMethod ?: PaymentMethod.CASH,
                             selectedTags = template.tags,
-                            status = PlannedPaymentStatus.ACTIVE
+                            plannedPaymentStatus = PlannedPaymentStatus.ACTIVE
                         )
                     }
                 } else {
@@ -191,7 +191,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                             plannedPaymentId = null,
                             startDateMillis = now,
                             endDateMillis = now,
-                            showNumpad = isFirstInit, // Auto-open only on fresh mount of new entry
+                            isNumpadVisible = isFirstInit, // Auto-open only on fresh mount of new entry
                             source = current.source.copy(
                                 account = firstAccount?.id?.let { AccountRef.fromStored(it) }
                                     ?: AccountRef.Unselected,
@@ -279,9 +279,9 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                         transactionStatus = existing.transactionStatus,
                         paymentMethod = existing.paymentMethod ?: PaymentMethod.CASH,
                         selectedTags = existing.tags,
-                        status = existing.status,
+                        plannedPaymentStatus = existing.status,
                         exchangeRate = existing.transferRate,
-                        showNumpad = false // Never auto-open in edit mode
+                        isNumpadVisible = false // Never auto-open in edit mode
                     )
                 }
             }
@@ -486,18 +486,26 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     val transactions = event.ids.mapNotNull { id ->
                         transactionUseCases.getTransactionById(id, profileId)
                     }
-                    _state.update { it.copy(displayLinkedTxs = transactions) }
+                    _state.update {
+                        it.copy(
+                            displayLinkedTxs = transactions,
+                            linkedTransactionIds = event.ids
+                        )
+                    }
                 }
             }
 
             is PlannedPaymentEntryEvent.RemoveLinkedTransaction -> {
                 _state.update { state ->
                     val newList = state.displayLinkedTxs.filter { it.id != event.targetId }
-                    state.copy(displayLinkedTxs = newList)
+                    state.copy(
+                        displayLinkedTxs = newList,
+                        linkedTransactionIds = state.linkedTransactionIds.filter { it != event.targetId }
+                    )
                 }
             }
 
-            is PlannedPaymentEntryEvent.SetStatus -> _state.update { it.copy(status = event.status) }
+            is PlannedPaymentEntryEvent.SetPlannedPaymentStatus -> _state.update { it.copy(plannedPaymentStatus = event.status) }
             is PlannedPaymentEntryEvent.SetLinkedTemplate -> {
                 _state.update { state ->
                     if (event.template != null) {
@@ -594,7 +602,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             is PlannedPaymentEntryEvent.ShowNumpad -> _state.update {
                 it.copy(
-                    showNumpad = event.show,
+                    isNumpadVisible = event.show,
                     activeAmountSide = event.side
                 )
             }
@@ -687,45 +695,52 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
         viewModelScope.launch {
             val profileId = settingsRepository.currentProfileId.first()
-            val amountValue = if (s.isIncome) s.amountValue.abs()
-            else s.amountValue.abs().negate() // Expense and Transfer normalized to negative
-
-            val rule = RecurrenceRule(
-                type = s.recurrenceType,
-                interval = s.recurrenceInterval.coerceAtLeast(1),
-                dayOfWeek = s.dayOfWeek,
-                dayOfMonth = s.dayOfMonth,
-                cronExpression = s.cronExpression
-            )
-
-            val reqAccountId = s.selectedAccountId
-            val reqTargetAccountId = s.targetAccountId
+            val baseCurrency = settingsRepository.currency.first()
 
             val templateCategoryId = if (s.isTransfer) {
                 if (Category.isInitialBalance(s.selectedCategoryId)) Category.SYSTEM_INITIAL_BALANCE
                 else Category.SYSTEM_TRANSFER
             } else s.selectedCategoryId
 
+            val request = TransactionEntryService.createRequest(
+                name = s.name,
+                amount = s.amountValue,
+                entryMode = s.entryMode,
+                sourceAccount = s.source.account,
+                sourceCurrency = s.currency,
+                targetAccount = s.destination.account,
+                targetCurrency = s.targetCurrency,
+                categoryId = templateCategoryId,
+                note = s.note,
+                payee = s.payee,
+                tags = s.selectedTags + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
+                status = s.transactionStatus,
+                targetAmountOverride = if (s.isTransfer) s.destination.amountValue else null,
+                exchangeRates = ExchangeRateSnapshot(s.currency, s.exchangeRates),
+                accounts = s.accounts,
+                baseCurrency = baseCurrency
+            )
+
             // 1. Create or Update Template
             val template = Template(
                 id = s.linkedTemplate?.id ?: 0L,
-                name = s.name,
-                categoryId = templateCategoryId,
-                amount = amountValue,
-                entryMode = s.entryMode,
-                accountId = reqAccountId,
-                targetAccountId = reqTargetAccountId,
-                targetCurrency = s.targetCurrency,
-                transferRate = s.exchangeRate,
-                currency = s.currency,
-                payee = s.payee,
-                note = s.note,
+                name = request.name,
+                categoryId = request.categoryId,
+                amount = request.amount,
+                entryMode = request.entryMode,
+                accountId = request.accountId,
+                targetAccountId = request.targetAccountId,
+                targetCurrency = request.targetCurrency,
+                transferRate = request.transferRate,
+                currency = request.currency,
+                payee = request.payee,
+                note = request.note,
                 location = s.location.ifBlank { null },
                 gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
-                transactionStatus = s.transactionStatus,
+                transactionStatus = request.status,
                 paymentMethod = s.paymentMethod,
-                tags = s.selectedTags + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
+                tags = request.tags,
                 profileId = profileId
             )
 
@@ -737,6 +752,14 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             }
 
             // 2. Create or Update Planned Payment
+            val rule = RecurrenceRule(
+                type = s.recurrenceType,
+                interval = s.recurrenceInterval.coerceAtLeast(1),
+                dayOfWeek = s.dayOfWeek,
+                dayOfMonth = s.dayOfMonth,
+                cronExpression = s.cronExpression
+            )
+
             val scheduleChanged = s.originalStartDate == null ||
                     s.originalStartDate != s.startDateMillis ||
                     s.originalRecurrenceRule?.type != s.recurrenceType ||
@@ -749,23 +772,23 @@ class PlannedPaymentEntryViewModel @Inject constructor(
 
             val payment = PlannedPayment(
                 id = s.plannedPaymentId ?: 0L,
-                name = s.name,
-                categoryId = templateCategoryId,
-                amount = amountValue,
-                entryMode = s.entryMode,
-                accountId = reqAccountId,
-                targetAccountId = reqTargetAccountId,
-                targetCurrency = s.targetCurrency,
-                transferRate = s.exchangeRate,
-                currency = s.currency,
-                payee = s.payee,
-                note = s.note,
+                name = request.name,
+                categoryId = request.categoryId,
+                amount = request.amount,
+                entryMode = request.entryMode,
+                accountId = request.accountId,
+                targetAccountId = request.targetAccountId,
+                targetCurrency = request.targetCurrency,
+                transferRate = request.transferRate,
+                currency = request.currency,
+                payee = request.payee,
+                note = request.note,
                 location = s.location.ifBlank { null },
                 gpsLocation = s.gpsLocation,
                 warrantyExpiration = if (s.isWarrantyEnabled) s.warrantyExpirationMillis else null,
-                transactionStatus = s.transactionStatus,
+                transactionStatus = request.status,
                 paymentMethod = s.paymentMethod,
-                tags = s.selectedTags + com.osscabinet.ossWallet.domain.model.Tag.SYSTEM_PLANNED,
+                tags = request.tags,
                 schedule = PaymentSchedule(
                     recurrenceRule = rule,
                     startDate = s.startDateMillis,
@@ -774,7 +797,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                     lastTriggeredDate = s.originalLastTriggeredDate
                 ),
                 autoConfirm = s.autoConfirm,
-                status = s.status,
+                status = s.plannedPaymentStatus,
                 profileId = profileId,
                 templateId = templateId
             )

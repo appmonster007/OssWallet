@@ -27,9 +27,10 @@ data class TransactionEntryState(
     val source: TransactionSide = TransactionSide(),
     val destination: TransactionSide = TransactionSide(),
     val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
+    val name: String = "",
     val selectedTags: Set<String> = emptySet(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val status: TransactionStatus = TransactionStatus.CLEARED,
+    val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val entryMode: EntryMode = EntryMode.EXPENSE,
     val selectedDateMillis: Long = System.currentTimeMillis(),
     val payee: String = "",
@@ -155,6 +156,9 @@ data class TransactionEntryState(
             )
             if (!accountResult.isSourceValid) add(EntryField.ACCOUNT)
             if (!accountResult.isTargetValid) add(EntryField.TARGET_ACCOUNT)
+
+            // Category validation
+            if (!isSplitMode && selectedCategoryId <= 0) add(EntryField.CATEGORY)
 
             // Split validation
             if (isSplitMode) {

@@ -38,7 +38,7 @@ data class TemplateEntryState(
     val warrantyExpirationMillis: Long = System.currentTimeMillis() + 31536000000L,
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val tags: Set<String> = emptySet(),
+    val selectedTags: Set<String> = emptySet(),
 
     // UI State
     val showAccountSheet: Boolean = false,
@@ -72,6 +72,7 @@ data class TemplateEntryState(
     val isEditMode: Boolean = false,
     val navTriggered: Boolean = false,
     val prefillDto: TransactionPrefillDTO? = null,
+    val linkedTransactionIds: List<Long> = emptyList(),
     val displayLinkedTxs: List<Transaction> = emptyList(),
     val selectedCategory: Category? = null,
 ) {
@@ -94,17 +95,17 @@ data class TemplateEntryState(
         )
 
     // Legacy mapping
-    val accountId: String? get() = source.account.toStored()
+    val selectedAccountId: String? get() = source.account.toStored()
     val targetAccountId: String? get() = destination.account.toStored()
     val amount: String get() = source.amount
     val targetAmount: String get() = destination.amount
-    val categoryId: Long get() = source.categoryId
+    val selectedCategoryId: Long get() = source.categoryId
     val currency: String get() = source.currency
     val targetCurrency: String get() = destination.currency
 
     val selectedAccount: Account? get() = source.account.resolve(accounts)
     val selectedTargetAccount: Account? get() = destination.account.resolve(accounts)
-    val linkedTransactionIdSet: Set<Long> get() = displayLinkedTxs.map { it.id }.toHashSet()
+    val linkedTransactionIdSet: Set<Long> get() = linkedTransactionIds.toHashSet()
 
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME
     val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
@@ -116,7 +117,19 @@ data class TemplateEntryState(
     val errors: Set<EntryField>
         get() = buildSet {
             if (name.isBlank()) add(EntryField.NAME)
-            // Templates can have empty amounts or categories as they are partially filled
+            if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
+
+            if (isLinkedToPlannedPayment) {
+                if (selectedCategoryId <= 0) add(EntryField.CATEGORY)
+
+                val accountResult = TransactionEntryService.validateAccountSelection(
+                    entryMode = entryMode,
+                    source = source.account,
+                    target = destination.account
+                )
+                if (!accountResult.isSourceValid) add(EntryField.ACCOUNT)
+                if (!accountResult.isTargetValid) add(EntryField.TARGET_ACCOUNT)
+            }
         }
 
     val hasError: Boolean get() = errors.isNotEmpty()
@@ -145,4 +158,6 @@ data class TemplateEntryState(
         exchangeRate = result.exchangeRate,
         isRateFixed = result.isRateFixed
     )
+
+    fun hasError(field: EntryField) = errors.contains(field)
 }

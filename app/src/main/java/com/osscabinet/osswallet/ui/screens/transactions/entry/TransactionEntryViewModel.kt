@@ -108,6 +108,7 @@ class TransactionEntryViewModel @Inject constructor(
         val params = listOf(transactionId, accountId, initialType, initialTemplateId, prefillDto)
         if (lastInitParams == params) return
         if (prefillDto == null && (lastInitParams as? List<*>)?.get(4) != null) return
+        val isFirstInit = lastInitParams == null
         lastInitParams = params
 
         viewModelScope.launch {
@@ -161,7 +162,8 @@ class TransactionEntryViewModel @Inject constructor(
                         selectedTemplateName = null,
                         selectedDateMillis = initialTimestamp,
                         shortlistedCurrencies = effectiveShortlistedCurrencies.value,
-                        fullProviderCurrencies = CurrencyService.getAllCurrencies()
+                        fullProviderCurrencies = CurrencyService.getAllCurrencies(),
+                        isNumpadVisible = isFirstInit && !isEditMode && prefillDto == null && initialTemplateId == null
                     )
                 }
 
@@ -273,7 +275,7 @@ class TransactionEntryViewModel @Inject constructor(
                 ),
                 selectedTags = transaction.tags,
                 paymentMethod = transaction.paymentMethod,
-                status = transaction.status,
+                transactionStatus = transaction.status,
                 entryMode = txType,
                 selectedDateMillis = transaction.timestamp,
                 payee = transaction.payee,
@@ -376,7 +378,7 @@ class TransactionEntryViewModel @Inject constructor(
                 ),
                 selectedTags = prefill.tags,
                 paymentMethod = prefill.paymentMethod,
-                status = prefill.status,
+                transactionStatus = prefill.status,
                 entryMode = txType,
                 payee = prefill.payee,
                 note = prefill.note,
@@ -409,6 +411,8 @@ class TransactionEntryViewModel @Inject constructor(
      */
     fun onEvent(event: TransactionEntryEvent) {
         when (event) {
+            is TransactionEntryEvent.SetName -> update { it.copy(name = event.name) }
+
             is TransactionEntryEvent.SetAmount -> update { s ->
                 s.applyUpdate(
                     TransactionEntryService.handleAmountChange(
@@ -436,9 +440,9 @@ class TransactionEntryViewModel @Inject constructor(
                 )
             }
 
-            is TransactionEntryEvent.SetCategory -> {
-                if (!Category.isInitialBalance(event.categoryId)) update {
-                    it.copy(source = it.source.copy(categoryId = event.categoryId))
+            is TransactionEntryEvent.SetCategoryId -> {
+                if (!Category.isInitialBalance(event.id)) update {
+                    it.copy(source = it.source.copy(categoryId = event.id))
                 }
             }
 
@@ -465,7 +469,7 @@ class TransactionEntryViewModel @Inject constructor(
                 it.copy(paymentMethod = event.method)
             }
 
-            is TransactionEntryEvent.SetStatus -> update { it.copy(status = event.status) }
+            is TransactionEntryEvent.SetTransactionStatus -> update { it.copy(transactionStatus = event.status) }
             is TransactionEntryEvent.SetTransactionType -> {
                 val oldMode = _state.value.entryMode
                 val newMode = event.type
@@ -498,7 +502,9 @@ class TransactionEntryViewModel @Inject constructor(
 
             is TransactionEntryEvent.SetDate -> update { it.copy(selectedDateMillis = event.millis) }
             is TransactionEntryEvent.SetPayee -> update { it.copy(payee = event.payee) }
-            is TransactionEntryEvent.SetNote -> update { it.copy(note = event.note) }
+            is TransactionEntryEvent.SetNote -> {
+                update { it.copy(note = event.note) }
+            }
             is TransactionEntryEvent.SetWarrantyEnabled -> update {
                 it.copy(isWarrantyEnabled = event.enabled)
             }
@@ -554,10 +560,10 @@ class TransactionEntryViewModel @Inject constructor(
                 }
             }
 
-            is TransactionEntryEvent.SetAccount -> {
+            is TransactionEntryEvent.SetAccountId -> {
                 update { s ->
                     val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.account?.id,
+                        accountId = event.id,
                         isSource = true,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
@@ -582,10 +588,10 @@ class TransactionEntryViewModel @Inject constructor(
                 if (!_state.value.isRateFixed) recalculateExchangeRate()
             }
 
-            is TransactionEntryEvent.SetTargetAccount -> {
+            is TransactionEntryEvent.SetTargetAccountId -> {
                 update { s ->
                     val result = TransactionEntryService.handleAccountSelection(
-                        accountId = event.account?.id,
+                        accountId = event.id,
                         isSource = false,
                         currentState = s.toUpdateResult(),
                         accounts = s.accounts,
@@ -805,7 +811,7 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionEntryService.createRequest(
-            name = currentState.selectedCategory?.name ?: "Transaction",
+            name = currentState.name.ifBlank { currentState.selectedCategory?.name ?: "Transaction" },
             amount = currentState.amountValue,
             entryMode = currentState.entryMode,
             sourceAccount = currentState.source.account,
@@ -816,7 +822,7 @@ class TransactionEntryViewModel @Inject constructor(
             note = currentState.note,
             payee = currentState.payee,
             tags = currentState.selectedTags,
-            status = currentState.status,
+            status = currentState.transactionStatus,
             targetAmountOverride = if (currentState.isTransfer) currentState.destination.amountValue else null,
             exchangeRates = ExchangeRateSnapshot(
                 anchor = "USD",
@@ -865,7 +871,7 @@ class TransactionEntryViewModel @Inject constructor(
                     )
                     onSuccess(id)
                 } else {
-                    val request = buildTransactionRequest() ?: return@launch
+            val request = buildTransactionRequest() ?: return@launch
                     val id = transactionManager.handleSaveTransaction(
                         existingTransaction = if (currentState.isEditMode) currentState.existingTransaction else null,
                         request = request,
@@ -895,7 +901,7 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionRequest(
-            name = currentState.selectedCategory?.name ?: "Transaction",
+            name = currentState.name.ifBlank { currentState.selectedCategory?.name ?: "Transaction" },
             amount = BigDecimal.ZERO, // To be set by caller
             entryMode = when {
                 currentState.isIncome -> EntryMode.INCOME
@@ -915,7 +921,7 @@ class TransactionEntryViewModel @Inject constructor(
             warrantyExpiration = if (currentState.isWarrantyEnabled) {
                 currentState.warrantyExpirationMillis
             } else null,
-            status = currentState.status,
+            status = currentState.transactionStatus,
             sourcePlannedPaymentId = currentState.prefillDto?.sourcePlannedPaymentId,
             targetAccountId = currentState.destination.account.toDbTransferSide(),
             targetCurrency = currentState.targetCurrency,

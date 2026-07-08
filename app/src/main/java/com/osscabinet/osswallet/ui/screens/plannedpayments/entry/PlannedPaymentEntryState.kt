@@ -46,7 +46,7 @@ data class PlannedPaymentEntryState(
     val transactionStatus: TransactionStatus = TransactionStatus.CLEARED,
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val selectedTags: Set<String> = emptySet(),
-    val status: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
+    val plannedPaymentStatus: PlannedPaymentStatus = PlannedPaymentStatus.ACTIVE,
     val linkedTemplate: Template? = null,
     val templateUsageCount: Int = 0,
 
@@ -63,7 +63,7 @@ data class PlannedPaymentEntryState(
     val showWarrantyDatePicker: Boolean = false,
     val showLocationSheet: Boolean = false,
     val showLinkedTransactionSheet: Boolean = false,
-    val showNumpad: Boolean = false,
+    val isNumpadVisible: Boolean = false,
     val showCurrencySheet: Boolean = false,
     val showTargetCurrencySheet: Boolean = false,
     val showTemplateSheet: Boolean = false,
@@ -74,6 +74,7 @@ data class PlannedPaymentEntryState(
     val isEditMode: Boolean = false,
     val plannedPaymentId: Long? = null,
     val navTriggered: Boolean = false,
+    val linkedTransactionIds: List<Long> = emptyList(),
 
     // External data
     val accounts: List<Account> = emptyList(),
@@ -106,7 +107,7 @@ data class PlannedPaymentEntryState(
             showWarrantyDate = showWarrantyDatePicker,
             showLocation = showLocationSheet,
             showLinkedTransaction = showLinkedTransactionSheet,
-            isNumpadVisible = showNumpad,
+            isNumpadVisible = isNumpadVisible,
             activeAmountSide = activeAmountSide
         )
 
@@ -121,6 +122,7 @@ data class PlannedPaymentEntryState(
 
     val selectedAccount: Account? get() = source.account.resolve(accounts)
     val targetAccount: Account? get() = destination.account.resolve(accounts)
+    val linkedTransactionIdSet: Set<Long> get() = linkedTransactionIds.toHashSet()
 
     val isIncome: Boolean get() = entryMode == EntryMode.INCOME
     val isExpense: Boolean get() = entryMode == EntryMode.EXPENSE
@@ -138,7 +140,7 @@ data class PlannedPaymentEntryState(
     val errors: Set<EntryField>
         get() = buildSet {
             if (name.isBlank()) add(EntryField.NAME)
-            if (amountValue <= BigDecimal.ZERO) add(EntryField.AMOUNT)
+            if (amountValue < BigDecimal.ZERO) add(EntryField.AMOUNT)
             if (selectedCategoryId <= 0) add(EntryField.CATEGORY)
 
             val accountResult = TransactionEntryService.validateAccountSelection(

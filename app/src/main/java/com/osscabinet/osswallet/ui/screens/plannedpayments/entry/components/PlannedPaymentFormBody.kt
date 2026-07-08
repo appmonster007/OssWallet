@@ -297,14 +297,14 @@ fun PlannedPaymentFormBody(
             ) {
                 // 1. Planned Payment Status Row
                 val ppStatusColor =
-                    Color(android.graphics.Color.parseColor(state.status.colorHex))
+                    Color(android.graphics.Color.parseColor(state.plannedPaymentStatus.colorHex))
                 val ppStatusIcon =
-                    com.osscabinet.ossWallet.ui.components.AppIconMap[state.status.iconName]
+                    com.osscabinet.ossWallet.ui.components.AppIconMap[state.plannedPaymentStatus.iconName]
                         ?: Icons.Rounded.CheckCircle
 
                 EntryActionChip(
                     icon = ppStatusIcon,
-                    label = "Payment Status: ${state.status.displayName}",
+                    label = "Payment Status: ${state.plannedPaymentStatus.displayName}",
                     onClick = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(true)) },
                     modifier = Modifier.fillMaxWidth(),
                     iconTint = ppStatusColor,
@@ -405,9 +405,9 @@ private fun PlannedPaymentSheetOrchestrator(
 
     if (state.showStatusSheet) {
         AeonPlannedPaymentStatusSelection(
-            selectedStatus = state.status,
+            selectedStatus = state.plannedPaymentStatus,
             onStatusSelected = { status ->
-                onEvent(PlannedPaymentEntryEvent.SetStatus(status))
+                onEvent(PlannedPaymentEntryEvent.SetPlannedPaymentStatus(status))
                 onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false))
             },
             onDismiss = { onEvent(PlannedPaymentEntryEvent.ShowStatusSheet(false)) }

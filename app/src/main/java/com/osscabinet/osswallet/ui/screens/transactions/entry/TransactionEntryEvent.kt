@@ -14,15 +14,16 @@ import java.math.BigDecimal
  * Sealed class representing events that can modify the transaction entry state.
  */
 sealed class TransactionEntryEvent {
+    data class SetName(val name: String) : TransactionEntryEvent()
     data class SetAmount(val amount: String) : TransactionEntryEvent()
     data class SetTargetAmount(val amount: String) : TransactionEntryEvent()
-    data class SetCategory(val categoryId: Long) : TransactionEntryEvent()
+    data class SetCategoryId(val id: Long) : TransactionEntryEvent()
     data class SetTags(val tags: Set<String>) : TransactionEntryEvent()
     data class AddTag(val tag: String, val color: Int? = null) : TransactionEntryEvent()
     data class DeleteTag(val tag: Tag) : TransactionEntryEvent()
     data class RemoveTag(val tag: String) : TransactionEntryEvent()
     data class SetPaymentMethod(val method: PaymentMethod) : TransactionEntryEvent()
-    data class SetStatus(val status: TransactionStatus) : TransactionEntryEvent()
+    data class SetTransactionStatus(val status: TransactionStatus) : TransactionEntryEvent()
     data class SetTransactionType(val type: EntryMode) : TransactionEntryEvent()
     data class SetDate(val millis: Long) : TransactionEntryEvent()
     data class SetPayee(val payee: String) : TransactionEntryEvent()
@@ -37,9 +38,9 @@ sealed class TransactionEntryEvent {
         TransactionEntryEvent()
 
     data class SetLinkedTransactionIds(val ids: List<Long>) : TransactionEntryEvent()
-    data class SetAccount(val account: Account?) : TransactionEntryEvent()
+    data class SetAccountId(val id: String?) : TransactionEntryEvent()
     data class SetCurrency(val currency: String) : TransactionEntryEvent()
-    data class SetTargetAccount(val account: Account?) : TransactionEntryEvent()
+    data class SetTargetAccountId(val id: String?) : TransactionEntryEvent()
     data class SetTargetCurrency(val currency: String) : TransactionEntryEvent()
     data class SetExchangeRate(val rate: BigDecimal) : TransactionEntryEvent()
     data class SetTemplate(val templateName: String?) : TransactionEntryEvent()

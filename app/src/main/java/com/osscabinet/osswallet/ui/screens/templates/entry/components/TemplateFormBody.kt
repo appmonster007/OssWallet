@@ -60,8 +60,8 @@ fun TemplateFormBody(
     contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
-    val sourceCurrencies = remember(state.accountId, state.accounts, state.shortlistedCurrencies) {
-        state.accounts.find { it.id == state.accountId }
+    val sourceCurrencies = remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
+        state.accounts.find { it.id == state.selectedAccountId }
             ?.allowedCurrencies?.toList()?.ifEmpty { null }
             ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
     }
@@ -126,7 +126,7 @@ fun TemplateFormBody(
                     label = "DESTINATION AMOUNT",
                     supportedCurrencies = targetCurrencies
                 ),
-                categoryId = state.categoryId,
+                categoryId = state.selectedCategoryId,
                 nameState = AeonTextFieldState(
                     value = state.name,
                     onValueChange = { onEvent(TemplateEntryEvent.SetName(it)) },
@@ -139,10 +139,10 @@ fun TemplateFormBody(
                 onToggleRateMode = { onEvent(TemplateEntryEvent.ToggleRateMode) },
                 onExchangeRateClick = { onEvent(TemplateEntryEvent.ShowExchangeRateDialog(true)) },
                 onSwapClick = if (state.isTransfer &&
-                    (state.accountId != null || state.targetAccountId != null)
+                    (state.selectedAccountId != null || state.targetAccountId != null)
                 )
                     ({ onEvent(TemplateEntryEvent.SwapAccounts) }) else null,
-                accountId = state.accountId,
+                accountId = state.selectedAccountId,
                 errors = state.errors
             )
 
@@ -200,10 +200,10 @@ fun TemplateFormBody(
                 onNoteChange = { onEvent(TemplateEntryEvent.SetNote(it)) },
                 payee = state.payee,
                 onPayeeChange = { onEvent(TemplateEntryEvent.SetPayee(it)) },
-                selectedNames = state.tags,
+                selectedNames = state.selectedTags,
                 allAvailableTags = state.allTags,
                 onTagClick = { onEvent(TemplateEntryEvent.ShowTagSheet(true)) },
-                onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.tags - tag)) },
+                onRemoveTag = { tag -> onEvent(TemplateEntryEvent.SetTags(state.selectedTags - tag)) },
                 onTagsSelected = { onEvent(TemplateEntryEvent.SetTags(it)) },
                 onAddTag = { name, color -> onEvent(TemplateEntryEvent.AddTag(name, color)) },
                 noteSuggestions = state.allNotes,
@@ -279,7 +279,7 @@ private fun TemplateSheetOrchestrator(
         accounts = state.accounts,
         categories = state.categories,
         allTags = state.allTags,
-        selectedTags = state.tags,
+        selectedTags = state.selectedTags,
         currentAmount = if (state.activeAmountSide == AmountEditingSide.SOURCE) state.amount else state.targetAmount,
         currentExchangeRate = state.exchangeRate,
         shortlistedCurrencies = state.shortlistedCurrencies,
@@ -292,9 +292,9 @@ private fun TemplateSheetOrchestrator(
                 onEvent(TemplateEntryEvent.SetTargetAmount(amt))
             }
         },
-        onAccountChange = { accId -> onEvent(TemplateEntryEvent.SetAccount(accId)) },
-        onTargetAccountChange = { accId -> onEvent(TemplateEntryEvent.SetTargetAccount(accId)) },
-        onCategoryChange = { catId -> onEvent(TemplateEntryEvent.SetCategory(catId)) },
+        onAccountChange = { accId -> onEvent(TemplateEntryEvent.SetAccountId(accId)) },
+        onTargetAccountChange = { accId -> onEvent(TemplateEntryEvent.SetTargetAccountId(accId)) },
+        onCategoryChange = { catId -> onEvent(TemplateEntryEvent.SetCategoryId(catId)) },
         onCurrencyChange = { curr -> onEvent(TemplateEntryEvent.SetCurrency(curr)) },
         onTargetCurrencyChange = { curr -> onEvent(TemplateEntryEvent.SetTargetCurrency(curr)) },
         onExchangeRateChange = { rate -> onEvent(TemplateEntryEvent.SetExchangeRate(rate)) },
@@ -318,9 +318,9 @@ private fun TemplateSheetOrchestrator(
                 )
             )
         },
-        selectedAccountId = state.accountId,
+        selectedAccountId = state.selectedAccountId,
         selectedTargetAccountId = state.targetAccountId,
-        selectedCategoryId = state.categoryId,
+        selectedCategoryId = state.selectedCategoryId,
         selectedCurrency = state.currency,
         selectedTargetCurrency = state.targetCurrency,
         warrantyDateMillis = state.warrantyExpirationMillis,

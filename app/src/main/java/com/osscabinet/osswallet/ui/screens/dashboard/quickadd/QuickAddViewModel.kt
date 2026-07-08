@@ -115,7 +115,8 @@ data class QuickAddState(
 
     val canSave: Boolean
         get() {
-            if (amount <= BigDecimal.ZERO) return false
+            if (amount < BigDecimal.ZERO) return false
+            if ((selectedCategoryId ?: 0L) <= 0L) return false
             return TransactionEntryService.validateAccountSelection(
                 entryMode = entryMode,
                 source = selectedAccount,
@@ -790,7 +791,6 @@ class QuickAddViewModel @Inject constructor(
         val s = state.value
         if (!canSave) return
         val amount = s.amount
-        if (amount <= BigDecimal.ZERO) return
 
         val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
         val name = s.selectedTemplate?.name

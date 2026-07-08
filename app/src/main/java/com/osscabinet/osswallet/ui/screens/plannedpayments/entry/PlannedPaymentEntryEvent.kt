@@ -42,7 +42,7 @@ sealed class PlannedPaymentEntryEvent {
     data class SetTransactionStatus(val status: TransactionStatus) : PlannedPaymentEntryEvent()
     data class SetPaymentMethod(val method: PaymentMethod) : PlannedPaymentEntryEvent()
     data class SetTags(val tags: Set<String>) : PlannedPaymentEntryEvent()
-    data class SetStatus(val status: PlannedPaymentStatus) : PlannedPaymentEntryEvent()
+    data class SetPlannedPaymentStatus(val status: PlannedPaymentStatus) : PlannedPaymentEntryEvent()
     data class SetLinkedTemplate(val template: Template?) : PlannedPaymentEntryEvent()
     data class SetDeleteTemplateWithPayment(val delete: Boolean) : PlannedPaymentEntryEvent()
     data class SetLinkedTransactionIds(val ids: List<Long>) : PlannedPaymentEntryEvent()

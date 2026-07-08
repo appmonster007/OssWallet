@@ -273,9 +273,14 @@ private fun EditorialContextStrip(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             val pivotIcon = @Composable {
+                val a11yLabel = when (entryMode) {
+                    EntryMode.EXPENSE -> "Expense, tap to switch to Income, hold for Transfer"
+                    EntryMode.INCOME -> "Income, tap to switch to Expense, hold for Transfer"
+                    EntryMode.TRANSFER -> "Transfer, tap to swap accounts, hold to exit"
+                }
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                    contentDescription = if (entryMode == EntryMode.TRANSFER) "Swap accounts" else "Toggle mode",
+                    contentDescription = a11yLabel,
                     tint = AppColors.accent,
                     modifier = Modifier
                         .size(24.dp)

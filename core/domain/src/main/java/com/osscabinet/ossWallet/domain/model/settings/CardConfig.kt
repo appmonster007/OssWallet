@@ -238,7 +238,7 @@ data class AccountsCardConfig(
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val layout: String = "grid",
     val gridColumns: Int = 2,
-    val showAddAccountCard: Boolean = true,
+    val showAddAccountCard: Boolean = false,
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,

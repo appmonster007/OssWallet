@@ -210,7 +210,11 @@ fun AnalyticsScreen(
                                             cardDataMap = cardDataMap,
                                             cardInput = CardInput(
                                                 profileId = state.profileId,
-                                                transactions = state.allTransactions,
+                                                transactions = remember(state.allTransactions, nonArchivedAccounts) {
+                                                    val activeIds = nonArchivedAccounts.map { it.id }.toSet()
+                                                    state.allTransactions.filter { it.accountId in activeIds }
+                                                },
+                                                allProfileTransactions = state.allTransactions,
                                                 accounts = state.accounts,
                                                 categories = state.allCategories,
                                                 exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
@@ -228,18 +232,7 @@ fun AnalyticsScreen(
                                             ),
                                             cardUpdateHandler = viewModel,
                                             onReorder = { reordered ->
-                                                val fullList = cardsConfig.cards
-                                                val filteredIds =
-                                                    reordered.map { it.cardId }.toSet()
-                                                val originalIndices =
-                                                    fullList.mapIndexedNotNull { index, card ->
-                                                        if (card.cardId in filteredIds) index else null
-                                                    }
-                                                val newFullList = fullList.toMutableList()
-                                                reordered.forEachIndexed { index, card ->
-                                                    newFullList[originalIndices[index]] = card
-                                                }
-                                                viewModel.reorderCards(newFullList)
+                                                viewModel.reorderCardsInTab(currentTab, reordered)
                                             },
                                             onDelete = { /* Deletion disabled on Analytics */ },
                                             onRecordsClick = actions.onRecordsClick,

@@ -2,11 +2,13 @@ package com.osscabinet.ossWallet.ui.screens.analytics
 
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
+import com.osscabinet.ossWallet.domain.card.AtelierTab
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.card.getAtelierTab
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Category
@@ -15,6 +17,7 @@ import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Tag
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -43,6 +46,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -91,6 +95,41 @@ class AnalyticsViewModel @Inject constructor(
             if (enabled) {
                 cardRepository.resetAllCardFilters(cardScreenContext)
             }
+        }
+    }
+
+    /**
+     * Reorders cards within a specific tab. This implementation isolates the reordering
+     * logic to the specified tab, ensuring that changes do not affect the relative order
+     * of cards in other tabs. It also handles edge cases like concurrent deletions.
+     */
+    fun reorderCardsInTab(tabName: String, reorderedSubset: List<CardConfig>) {
+        viewModelScope.launch {
+            // Use the latest repository state to avoid race conditions
+            val currentCards = cardRepository.getCardsConfig(cardScreenContext).first().cards
+            val groups = currentCards.groupBy { it.cardType.getAtelierTab().displayName }
+            val updatedGroups = groups.toMutableMap()
+
+            val existingTabCards = groups[tabName] ?: emptyList()
+            val existingIds = existingTabCards.map { it.cardId }.toSet()
+
+            // 1. Only keep cards that actually belong to this tab in the current DB state
+            val validReordered = reorderedSubset.filter { it.cardId in existingIds }
+
+            // 2. Identify cards that were in the tab but missing from the UI subset (safety)
+            val reorderedIds = validReordered.map { it.cardId }.toSet()
+            val missing = existingTabCards.filter { it.cardId !in reorderedIds }
+
+            // 3. Update the specific tab group
+            updatedGroups[tabName] = validReordered + missing
+
+            // 4. Flatten back into a global list using deterministic Tab order.
+            // This groups all cards by tab in the database, isolating their relative order.
+            val newFullList = AtelierTab.entries.flatMap { tab ->
+                updatedGroups[tab.displayName] ?: emptyList()
+            }
+
+            cardRepository.reorderCards(cardScreenContext, newFullList)
         }
     }
 

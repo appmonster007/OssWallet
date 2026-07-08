@@ -59,6 +59,7 @@ import com.univocity.parsers.csv.CsvWriterSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -93,7 +94,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val settingsDataStore: SettingsDataStore,
     private val dispatcherProvider: DispatcherProvider,
     private val json: Json,
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
 ) : BackupRepository {
 
     companion object {
@@ -147,8 +148,9 @@ class BackupRepositoryImpl @Inject constructor(
             "is_transfer"
         )
 
-        val settings = CsvWriterSettings()
-        settings.headers = headers
+        val settings = CsvWriterSettings().apply {
+            setHeaders(*headers)
+        }
         val writer = CsvWriter(OutputStreamWriter(outputStream, Charsets.UTF_8), settings)
         writer.writeHeaders()
 
@@ -240,7 +242,7 @@ class BackupRepositoryImpl @Inject constructor(
         val allTransactions = transactionDao.getAllTransactionsSync()
         val transactions = if (scope == BackupScope.SINGLE_PROFILE)
             allTransactions.filter { it.profileId == currentProfileId } else allTransactions
-        val transactionIds = transactions.map { it.id }.toSet()
+        val transactionIds = transactions.asSequence().map { it.id }.toSet()
         writeCsvToZip(
             zos,
             "transactions.csv",
@@ -590,7 +592,9 @@ class BackupRepositoryImpl @Inject constructor(
                 )
             })
 
-        zos.close()
+        withContext(Dispatchers.IO) {
+            zos.close()
+        }
     }
 
     private fun writeCsvToZip(
@@ -600,8 +604,9 @@ class BackupRepositoryImpl @Inject constructor(
         rows: List<Array<Any?>>
     ) {
         zos.putNextEntry(java.util.zip.ZipEntry(fileName))
-        val settings = CsvWriterSettings()
-        settings.headers = headers
+        val settings = CsvWriterSettings().apply {
+            setHeaders(*headers)
+        }
         val writer = CsvWriter(OutputStreamWriter(zos, Charsets.UTF_8), settings)
         writer.writeHeaders()
         rows.forEach { writer.writeRow(*it) }

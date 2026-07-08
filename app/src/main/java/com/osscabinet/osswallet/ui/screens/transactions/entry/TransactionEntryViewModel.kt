@@ -122,11 +122,11 @@ class TransactionEntryViewModel @Inject constructor(
 
                 val isEditMode = transactionId != null && transactionId != -1L
                 val existingTransaction = if (isEditMode) {
-                    transactionUseCases.getTransactionById(transactionId!!, profileId)
+                    transactionUseCases.getTransactionById(transactionId, profileId)
                 } else null
 
                 val linkedTxs = if (isEditMode) {
-                    transactionUseCases.getLinkedTransactions(transactionId!!).first()
+                    transactionUseCases.getLinkedTransactions(transactionId).first()
                 } else emptyList()
 
                 val selectedAccount = accountId?.let { id -> data.accounts.find { it.id == id } }
@@ -476,7 +476,7 @@ class TransactionEntryViewModel @Inject constructor(
 
                 _state.update { state ->
                     val result =
-                        com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                        TransactionEntryService.transitionType(
                             oldMode = oldMode,
                             newMode = newMode,
                             currentSource = state.source,
@@ -505,6 +505,7 @@ class TransactionEntryViewModel @Inject constructor(
             is TransactionEntryEvent.SetNote -> {
                 update { it.copy(note = event.note) }
             }
+
             is TransactionEntryEvent.SetWarrantyEnabled -> update {
                 it.copy(isWarrantyEnabled = event.enabled)
             }
@@ -627,7 +628,7 @@ class TransactionEntryViewModel @Inject constructor(
                     targetCurrency = it.destination.currency,
                     isFixed = true, // Manually setting rate always fixes it
                     activeSide = AmountEditingSide.SOURCE,
-                    exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
+                    exchangeRates = ExchangeRateSnapshot(
                         it.source.currency,
                         it.exchangeRates
                     )
@@ -811,7 +812,9 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionEntryService.createRequest(
-            name = currentState.name.ifBlank { currentState.selectedCategory?.name ?: "Transaction" },
+            name = currentState.name.ifBlank {
+                currentState.selectedCategory?.name ?: "Transaction"
+            },
             amount = currentState.amountValue,
             entryMode = currentState.entryMode,
             sourceAccount = currentState.source.account,
@@ -871,7 +874,7 @@ class TransactionEntryViewModel @Inject constructor(
                     )
                     onSuccess(id)
                 } else {
-            val request = buildTransactionRequest() ?: return@launch
+                    val request = buildTransactionRequest() ?: return@launch
                     val id = transactionManager.handleSaveTransaction(
                         existingTransaction = if (currentState.isEditMode) currentState.existingTransaction else null,
                         request = request,
@@ -901,7 +904,9 @@ class TransactionEntryViewModel @Inject constructor(
         }
 
         return TransactionRequest(
-            name = currentState.name.ifBlank { currentState.selectedCategory?.name ?: "Transaction" },
+            name = currentState.name.ifBlank {
+                currentState.selectedCategory?.name ?: "Transaction"
+            },
             amount = BigDecimal.ZERO, // To be set by caller
             entryMode = when {
                 currentState.isIncome -> EntryMode.INCOME

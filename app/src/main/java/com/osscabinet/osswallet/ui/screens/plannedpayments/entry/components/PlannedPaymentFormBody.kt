@@ -84,10 +84,12 @@ fun PlannedPaymentFormBody(
                 ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
         }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .statusBarsPadding()
-        .imePadding()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .imePadding()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -123,8 +125,8 @@ fun PlannedPaymentFormBody(
                     isError = state.hasError(EntryField.AMOUNT)
                 ),
                 target = AeonAmountData(
-                    value = state.targetAmount ?: "",
-                    currency = state.targetCurrency ?: state.currency,
+                    value = state.targetAmount,
+                    currency = state.targetCurrency,
                     onValueClick = {
                         onEvent(
                             PlannedPaymentEntryEvent.ShowNumpad(

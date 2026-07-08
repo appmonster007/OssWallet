@@ -334,7 +334,7 @@ private fun EditorialContextStrip(
 
                     // From Account
                     AccountSummary(
-                        name = if (isFromOutside) "Outside" else account?.name ?: "From",
+                        name = if (isFromOutside) "Outside" else account.name,
                         balance = accountBalance,
                         currency = accountCurrency,
                         color = if (isFromOutside) AppColors.contentSecondary else accountColor,
@@ -349,7 +349,7 @@ private fun EditorialContextStrip(
 
                     // To Account
                     AccountSummary(
-                        name = if (isToOutside) "Outside" else toAccount?.name ?: "To",
+                        name = if (isToOutside) "Outside" else toAccount.name,
                         balance = toAccountBalance,
                         currency = toAccountCurrency,
                         color = if (isToOutside) AppColors.contentSecondary else toAccountColor,
@@ -379,6 +379,7 @@ private fun EditorialContextStrip(
 
 @Composable
 private fun CategorySummary(
+    modifier: Modifier = Modifier,
     title: String,
     name: String,
     color: Color,
@@ -386,7 +387,6 @@ private fun CategorySummary(
     isEnd: Boolean,
     categories: List<Category> = emptyList(),
     onCategorySelected: (Category) -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -489,6 +489,7 @@ private fun SummaryIcon(icon: ImageVector, color: Color) {
 
 @Composable
 private fun AccountSummary(
+    modifier: Modifier = Modifier,
     name: String,
     balance: BigDecimal,
     currency: String,
@@ -497,7 +498,6 @@ private fun AccountSummary(
     isEnd: Boolean,
     accounts: List<Account> = emptyList(),
     onAccountSelected: (String) -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 

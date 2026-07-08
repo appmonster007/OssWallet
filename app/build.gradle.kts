@@ -15,12 +15,12 @@ val localProps = Properties().also { props ->
 
 android {
     namespace = "com.osscabinet.ossWallet"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.osscabinet.ossWallet"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -61,7 +61,6 @@ android {
 dependencies {
     // Data layer (transitively provides :core:domain via api())
     implementation(project(":core:data"))
-    implementation(project(":feature:dashboard"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

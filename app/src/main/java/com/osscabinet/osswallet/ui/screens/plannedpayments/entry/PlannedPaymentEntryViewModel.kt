@@ -333,7 +333,7 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 val newMode = event.type
                 _state.update { state ->
                     val result =
-                        com.osscabinet.ossWallet.domain.service.management.TransactionEntryService.transitionType(
+                        TransactionEntryService.transitionType(
                             oldMode = oldMode,
                             newMode = newMode,
                             currentSource = state.source,
@@ -505,7 +505,12 @@ class PlannedPaymentEntryViewModel @Inject constructor(
                 }
             }
 
-            is PlannedPaymentEntryEvent.SetPlannedPaymentStatus -> _state.update { it.copy(plannedPaymentStatus = event.status) }
+            is PlannedPaymentEntryEvent.SetPlannedPaymentStatus -> _state.update {
+                it.copy(
+                    plannedPaymentStatus = event.status
+                )
+            }
+
             is PlannedPaymentEntryEvent.SetLinkedTemplate -> {
                 _state.update { state ->
                     if (event.template != null) {
@@ -763,10 +768,10 @@ class PlannedPaymentEntryViewModel @Inject constructor(
             val scheduleChanged = s.originalStartDate == null ||
                     s.originalStartDate != s.startDateMillis ||
                     s.originalRecurrenceRule?.type != s.recurrenceType ||
-                    s.originalRecurrenceRule?.interval != s.recurrenceInterval ||
-                    s.originalRecurrenceRule?.dayOfMonth != s.dayOfMonth ||
-                    s.originalRecurrenceRule?.dayOfWeek != s.dayOfWeek ||
-                    s.originalRecurrenceRule?.cronExpression != s.cronExpression
+                    s.originalRecurrenceRule.interval != s.recurrenceInterval ||
+                    s.originalRecurrenceRule.dayOfMonth != s.dayOfMonth ||
+                    s.originalRecurrenceRule.dayOfWeek != s.dayOfWeek ||
+                    s.originalRecurrenceRule.cronExpression != s.cronExpression
             val nextDueDate = if (scheduleChanged) s.startDateMillis
             else s.originalNextDueDate ?: s.startDateMillis
 

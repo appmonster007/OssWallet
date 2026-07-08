@@ -20,6 +20,10 @@ class TransactionUseCases(
         return repository.getAllTransactions(profileId)
     }
 
+    fun getLatestTransactionVersion(profileId: Int): Flow<Long?> {
+        return repository.getLatestTransactionVersion(profileId)
+    }
+
     fun getFilteredTransactions(
         profileId: Int,
         filter: TransactionFilter

@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.domain.card
 
 import com.osscabinet.ossWallet.domain.model.Account
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Budget
 import com.osscabinet.ossWallet.domain.model.Loan
@@ -15,16 +14,13 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 /**
  * The ONE shared input for all card computations.
  * Wraps all raw financial data needed for any card.
- * 
+ *
  * [filter] represents the BASE scope of the card (e.g. fixed to an account).
  * This filter is applied BEFORE the card-specific user-adjustable filter.
  */
 data class CardInput(
     val profileId: Int = 0,
-    val transactions: List<Transaction> = emptyList(),
-    // Full unfiltered profile transaction list. When non-empty, used by service calls that need
-    // all profile transactions (e.g. LoanService, BudgetService) rather than the scoped list.
-    val allProfileTransactions: List<Transaction> = emptyList(),
+    val transactionsVersion: Long = 0L,
     val accounts: List<Account>,
     val categories: List<Category>,
     val tags: List<com.osscabinet.ossWallet.domain.model.Tag> = emptyList(),
@@ -51,21 +47,4 @@ data class CardInput(
     val effectiveAccounts: List<Account> = accounts.filter { !it.isArchived }
 
     val effectiveAccountIds: Set<String> = effectiveAccounts.mapTo(HashSet()) { it.id }
-
-    /**
-     * Returns the correct transaction source for a given filter.
-     *
-     * When the filter explicitly includes archived account IDs, we need the full unfiltered
-     * transaction list (allProfileTransactions) so archived transactions are present.
-     * Otherwise, the pre-filtered active-account list (transactions) is used.
-     */
-    fun transactionsFor(filter: TransactionFilter): List<Transaction> {
-        if (filter.accountIds.isEmpty()) return transactions
-        val archivedIds = accounts.filter { it.isArchived }.map { it.id }.toSet()
-        return if (filter.accountIds.any { it in archivedIds }) {
-            allProfileTransactions.ifEmpty { transactions }
-        } else {
-            transactions
-        }
-    }
 }

@@ -59,7 +59,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LoanEntity::class,
         LoanPaymentEntity::class
     ],
-    version = 28,
+    version = 29,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -82,6 +82,14 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN lastUpdated INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE transactions SET lastUpdated = " + System.currentTimeMillis())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transactions_profileId_lastUpdated` ON `transactions` (`profileId`, `lastUpdated`)")
+            }
         }
 
         val MIGRATION_27_28 = object : Migration(27, 28) {
@@ -800,7 +808,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_24_25,
                         MIGRATION_25_26,
                         MIGRATION_26_27,
-                        MIGRATION_27_28
+                        MIGRATION_27_28,
+                        MIGRATION_28_29
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

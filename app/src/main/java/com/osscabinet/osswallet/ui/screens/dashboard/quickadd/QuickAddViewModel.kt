@@ -19,8 +19,10 @@ import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
@@ -33,7 +35,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -133,6 +137,7 @@ class QuickAddViewModel @Inject constructor(
     private val transactionManager: TransactionManager,
     private val transactionRepository: TransactionRepository,
     private val computationRepository: ComputationRepository,
+    private val queryService: DatabaseQueryService,
     templateRepository: TemplateRepository,
     categoryRepository: CategoryRepository,
 ) : BaseViewModel(settingsRepository) {
@@ -141,23 +146,25 @@ class QuickAddViewModel @Inject constructor(
 
     val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Template>())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList<Template>())
 
     val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Category>())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList<Category>())
 
     private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
 
     init {
         // Initialize _uiState with base data from repositories
         viewModelScope.launch {
-            settingsRepository.currentProfileId.flatMapLatest {
-                combine(
-                    settingsRepository.currency,
-                    computationRepository.exchangeRatesSnapshot
-                ) { currency, rates -> currency to rates }
-            }.collect { (currency, rates) ->
+            try {
+                val (currency, rates) = settingsRepository.currentProfileId.flatMapLatest {
+                    combine(
+                        settingsRepository.currency,
+                        computationRepository.exchangeRatesSnapshot
+                    ) { c, r -> c to r }
+                }.first()
+
                 _uiState.update { s ->
                     s.copy(
                         baseCurrency = currency,
@@ -166,6 +173,9 @@ class QuickAddViewModel @Inject constructor(
                         selectedToCurrency = if (s.selectedToCurrency.isBlank() && s.entryMode == EntryMode.TRANSFER) currency else s.selectedToCurrency
                     )
                 }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // Ignore other errors during initialization
             }
         }
     }
@@ -175,19 +185,17 @@ class QuickAddViewModel @Inject constructor(
             combine(
                 _uiState.map { it.searchQuery }.distinctUntilChanged(),
                 templates,
-                categories,
-                transactionRepository.getAllTransactions(profileId)
-            ) { query, allTemplates, allCategories, allTransactions ->
-                val sections = mutableListOf<QuickAddSection>()
+                categories
+            ) { query, allTemplates, allCategories ->
+                Triple(query, allTemplates, allCategories)
+            }.flatMapLatest { (query, allTemplates, allCategories) ->
+                val templateSection = run {
+                    val matchedTemplates = allTemplates.filter {
+                        it.name.contains(query, ignoreCase = true) ||
+                                it.note?.contains(query, ignoreCase = true) == true
+                    }.sortedByDescending { it.isStarred }
 
-                // 1. Templates Section
-                val matchedTemplates = allTemplates.filter {
-                    it.name.contains(query, ignoreCase = true) ||
-                            it.note?.contains(query, ignoreCase = true) == true
-                }.sortedByDescending { it.isStarred }
-
-                if (matchedTemplates.isNotEmpty()) {
-                    sections.add(
+                    if (matchedTemplates.isNotEmpty()) {
                         QuickAddSection(
                             title = "TEMPLATES",
                             items = matchedTemplates.map { t ->
@@ -201,122 +209,102 @@ class QuickAddViewModel @Inject constructor(
                                 )
                             }
                         )
-                    )
+                    } else null
                 }
 
-                // 2. Suggestions Section (Only when searching)
-                if (query.isNotBlank()) {
-                    val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(367)
-                    val suggestions = allTransactions
-                        .filter { it.timestamp >= cutoff }
-                        .filter {
-                            it.note.contains(query, ignoreCase = true) ||
-                                    it.payee.contains(query, ignoreCase = true)
-                        }
-                        .mapNotNull { tx ->
-                            val label = when {
-                                tx.note.isNotBlank() && tx.payee.isNotBlank() -> "${tx.note}: ${tx.payee}"
-                                tx.note.isNotBlank() -> tx.note
-                                tx.payee.isNotBlank() -> tx.payee
-                                else -> null
-                            }
-                            label?.let { l -> tx to l }
-                        }
-                        .groupBy { it.second } // Group by label
-                        .map { (label, pairs) ->
-                            val latest = pairs.maxBy { it.first.timestamp }.first
-                            val cat = allCategories.find { it.id == latest.categoryId }
+                val categorySection = run {
+                    val matchedCategories = allCategories
+                        .filter { !Category.isSystemCategory(it.id) }
+                        .filter { it.name.contains(query, ignoreCase = true) }
+                        .sortedBy { it.name }
 
-                            if (latest.transactionType.isTransfer) {
-                                // Try to find counterpart
-                                val counterpart = allTransactions.find {
-                                    it.id != latest.id &&
-                                            it.transactionType.isTransfer &&
-                                            it.transactionType != latest.transactionType &&
-                                            Math.abs(it.timestamp - latest.timestamp) < 5000 &&
-                                            it.amount.abs().compareTo(latest.amount.abs()) == 0
-                                }
-
-                                // Source should be the one with OUTFLOW or negative amount
-                                val sourceLeg =
-                                    if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
-                                val targetLeg =
-                                    if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
-
-                                QuickAddResult.SuggestionItem(
-                                    label = label,
-                                    categoryId = latest.categoryId,
-                                    iconName = cat?.iconName,
-                                    colorHex = cat?.colorHex ?: -1,
-                                    accountId = sourceLeg?.accountId ?: "",
-                                    targetAccountId = targetLeg?.accountId ?: "",
-                                    amount = sourceLeg?.amount?.abs() ?: latest.amount.abs(),
-                                    currency = sourceLeg?.currency ?: latest.currency,
-                                    targetCurrency = targetLeg?.currency,
-                                    entryMode = EntryMode.TRANSFER,
-                                    note = latest.note,
-                                    payee = latest.payee,
-                                    tags = latest.tags
-                                )
-                            } else {
-                                QuickAddResult.SuggestionItem(
-                                    label = label,
-                                    categoryId = latest.categoryId,
-                                    iconName = cat?.iconName,
-                                    colorHex = cat?.colorHex ?: -1,
-                                    accountId = latest.accountId,
-                                    targetAccountId = null,
-                                    amount = latest.amount.abs(),
-                                    currency = latest.currency,
-                                    targetCurrency = null,
-                                    entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
-                                    note = latest.note,
-                                    payee = latest.payee,
-                                    tags = latest.tags
-                                )
-                            }
-                        }
-                        .sortedByDescending { it.label } // Or some other relevance
-                        .take(5)
-
-                    if (suggestions.isNotEmpty()) {
-                        sections.add(
-                            QuickAddSection(
-                                title = "SUGGESTIONS",
-                                items = suggestions
-                            )
-                        )
-                    }
-                }
-
-                // 3. Categories Section
-                val matchedCategories = allCategories
-                    .filter { !Category.isSystemCategory(it.id) }
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                    .sortedBy { it.name }
-
-                if (matchedCategories.isNotEmpty()) {
-                    sections.add(
+                    if (matchedCategories.isNotEmpty()) {
                         QuickAddSection(
                             title = "CATEGORIES",
                             items = matchedCategories.map { QuickAddResult.CategoryItem(it) }
                         )
-                    )
+                    } else null
                 }
 
-                sections
+                if (query.isNotBlank()) {
+                    transactionRepository.searchTransactions(profileId, query).map { allTransactions ->
+                        val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(367)
+                        val suggestions = allTransactions
+                            .filter { it.timestamp >= cutoff }
+                            .filter {
+                                it.note.contains(query, ignoreCase = true) ||
+                                        it.payee.contains(query, ignoreCase = true)
+                            }
+                            .mapNotNull { tx ->
+                                val label = when {
+                                    tx.note.isNotBlank() && tx.payee.isNotBlank() -> "${tx.note}: ${tx.payee}"
+                                    tx.note.isNotBlank() -> tx.note
+                                    tx.payee.isNotBlank() -> tx.payee
+                                    else -> null
+                                }
+                                label?.let { l -> tx to l }
+                            }
+                            .groupBy { it.second }
+                            .map { (label, pairs) ->
+                                val latest = pairs.maxBy { it.first.timestamp }.first
+                                val cat = allCategories.find { it.id == latest.categoryId }
+
+                                if (latest.transactionType.isTransfer) {
+                                    val counterpart = allTransactions.find {
+                                        it.id != latest.id &&
+                                                it.transactionType.isTransfer &&
+                                                it.transactionType != latest.transactionType &&
+                                                Math.abs(it.timestamp - latest.timestamp) < 5000 &&
+                                                it.amount.abs().compareTo(latest.amount.abs()) == 0
+                                    }
+                                    val sourceLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
+                                    val targetLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
+
+                                    QuickAddResult.SuggestionItem(
+                                        label = label, categoryId = latest.categoryId,
+                                        iconName = cat?.iconName, colorHex = cat?.colorHex ?: -1,
+                                        accountId = sourceLeg?.accountId ?: "", targetAccountId = targetLeg?.accountId ?: "",
+                                        amount = sourceLeg?.amount?.abs() ?: latest.amount.abs(),
+                                        currency = sourceLeg?.currency ?: latest.currency,
+                                        targetCurrency = targetLeg?.currency, entryMode = EntryMode.TRANSFER,
+                                        note = latest.note, payee = latest.payee, tags = latest.tags
+                                    )
+                                } else {
+                                    QuickAddResult.SuggestionItem(
+                                        label = label, categoryId = latest.categoryId,
+                                        iconName = cat?.iconName, colorHex = cat?.colorHex ?: -1,
+                                        accountId = latest.accountId, targetAccountId = null,
+                                        amount = latest.amount.abs(), currency = latest.currency,
+                                        targetCurrency = null,
+                                        entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
+                                        note = latest.note, payee = latest.payee, tags = latest.tags
+                                    )
+                                }
+                            }
+                            .sortedByDescending { it.label }
+                            .take(5)
+
+                        listOfNotNull(
+                            templateSection,
+                            if (suggestions.isNotEmpty()) QuickAddSection("SUGGESTIONS", suggestions) else null,
+                            categorySection
+                        )
+                    }
+                } else {
+                    flowOf(listOfNotNull(templateSection, categorySection))
+                }
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     val state: StateFlow<QuickAddState> = settingsRepository.currentProfileId
         .flatMapLatest { profileId ->
             combine(
                 _uiState,
                 accountRepository.getAllAccounts(profileId),
-                transactionRepository.getAllTransactions(profileId),
+                transactionRepository.getLatestTransactionVersion(profileId),
                 settingsRepository.currency,
                 computationRepository.exchangeRatesSnapshot
-            ) { uiState, allAccounts, transactions, baseCurrency, rates ->
+            ) { uiState, allAccounts, _, baseCurrency, rates ->
                 val baseAccounts = allAccounts.filter { !it.isArchived && it.id.isNotBlank() }
                 val activeAccounts = if (uiState.entryMode == EntryMode.TRANSFER) {
                     listOf(Account.OUTSIDE_WALLET) + baseAccounts
@@ -324,7 +312,6 @@ class QuickAddViewModel @Inject constructor(
                     baseAccounts
                 }
 
-                // Sort accounts: preselected first (from template/suggestion), then by name
                 val sortedAccounts = activeAccounts.sortedWith(
                     compareByDescending<Account> { AccountRef.fromStored(it.id) == uiState.selectedAccount }
                         .thenBy { it.name }
@@ -334,13 +321,18 @@ class QuickAddViewModel @Inject constructor(
                     .distinct()
                     .sortedBy { it.displayName }
 
+                val summaries = TransactionAggregationService.getSummaryByAccountAndCurrency(
+                    queryService,
+                    profileId
+                ).getOrDefault(emptyMap())
+
                 val balances = baseAccounts.associate { acc ->
-                    acc.id to AggregationService.calculateAccountBalance(
-                        acc.id,
-                        transactions,
-                        baseCurrency,
+                    val accSummaries = summaries[acc.id] ?: emptyMap()
+                    acc.id to CurrencyService.calculateTotalFinancialSummary(
+                        accSummaries,
+                        acc.currencyCode,
                         rates
-                    )
+                    ).totalAmount
                 }
 
                 uiState.copy(
@@ -353,7 +345,7 @@ class QuickAddViewModel @Inject constructor(
             }
         }.stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
+            SharingStarted.WhileSubscribed(),
             QuickAddState(entryMode = initialType)
         )
 

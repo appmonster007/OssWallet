@@ -1010,7 +1010,6 @@ fun DashboardGlanceTab(
 
         val sharedCardInput = remember(
             state.profileId,
-            state.allTransactions,
             state.allAccounts,
             state.allCategories,
             state.allTags,
@@ -1023,7 +1022,7 @@ fun DashboardGlanceTab(
         ) {
             CardInput(
                 profileId = state.profileId,
-                transactions = state.allTransactions,
+                transactionsVersion = state.cardInput?.transactionsVersion ?: 0L,
                 accounts = state.allAccounts.ifEmpty { state.accounts },
                 categories = state.allCategories,
                 tags = state.allTags,

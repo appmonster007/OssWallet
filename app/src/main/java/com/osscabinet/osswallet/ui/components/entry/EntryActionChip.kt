@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.Icon
@@ -153,7 +154,7 @@ fun EntryActionChipPreview() {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             EntryActionChip(
-                icon = Icons.Default.Label,
+                icon = Icons.AutoMirrored.Filled.Label,
                 label = "Unselected",
                 onClick = {},
                 isSelected = false

@@ -15,7 +15,6 @@ import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Loan
 import com.osscabinet.ossWallet.domain.model.PlannedPayment
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
@@ -81,7 +80,7 @@ class AnalyticsViewModel @Inject constructor(
     val commonFilterEnabled: StateFlow<Boolean> = settingsRepository.analyticsCommonFilterEnabled
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.WhileSubscribed(),
             initialValue = true,
         )
 
@@ -135,10 +134,10 @@ class AnalyticsViewModel @Inject constructor(
 
     val cardsConfig: StateFlow<DashboardCardsConfig> =
         cardRepository.getCardsConfig(cardScreenContext)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DashboardCardsConfig())
 
     private data class DomainSnapshot(
-        val transactions: List<Transaction>,
+        val version: Long,
         val accounts: List<Account>,
         val categories: List<Category>,
         val tags: List<Tag>
@@ -160,13 +159,13 @@ class AnalyticsViewModel @Inject constructor(
         .flatMapLatest { profileId ->
             combine(
                 combine(
-                    transactionUseCases.getTransactions(profileId),
+                    transactionUseCases.getLatestTransactionVersion(profileId),
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags()
-                ) { tx, acc, cat, tags ->
+                ) { version, acc, cat, tags ->
                     DomainSnapshot(
-                        tx,
+                        version ?: 0L,
                         acc,
                         cat,
                         tags
@@ -195,7 +194,6 @@ class AnalyticsViewModel @Inject constructor(
 
                 AnalyticsUiState.Success(
                     profileId = profileId,
-                    allTransactions = domain.transactions,
                     accounts = domain.accounts,
                     allCategories = domain.categories,
                     allTags = domain.tags,
@@ -203,13 +201,14 @@ class AnalyticsViewModel @Inject constructor(
                     selectedCurrency = config.baseCurrency,
                     plannedPayments = planning.plannedPayments,
                     budgets = planning.budgets,
-                    loans = planning.loans
+                    loans = planning.loans,
+                    version = domain.version
                 )
             }
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.WhileSubscribed(),
             initialValue = AnalyticsUiState.Loading
         )
 
@@ -253,14 +252,9 @@ class AnalyticsViewModel @Inject constructor(
 
                 // AC7: Build inputs on Default — build hierarchy once per round
                 val input = kotlinx.coroutines.withContext(dispatchers.default) {
-                    val activeAccountIds =
-                        state.accounts.filter { !it.isArchived }.map { it.id }.toSet()
-                    val activeTransactions =
-                        state.allTransactions.filter { it.accountId in activeAccountIds }
                     CardInput(
                         profileId = state.profileId,
-                        transactions = activeTransactions,
-                        allProfileTransactions = state.allTransactions,
+                        transactionsVersion = state.version,
                         accounts = state.accounts,
                         categories = state.allCategories,
                         exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
@@ -322,7 +316,6 @@ sealed class AnalyticsUiState {
     object Loading : AnalyticsUiState()
     data class Success(
         val profileId: Int = 0,
-        val allTransactions: List<Transaction> = emptyList(),
         val accounts: List<Account> = emptyList(),
         val allCategories: List<Category> = emptyList(),
         val allTags: List<Tag> = emptyList(),
@@ -330,7 +323,8 @@ sealed class AnalyticsUiState {
         val exchangeRates: Map<String, BigDecimal> = emptyMap(),
         val plannedPayments: List<PlannedPayment> = emptyList(),
         val budgets: List<Budget> = emptyList(),
-        val loans: List<Loan> = emptyList()
+        val loans: List<Loan> = emptyList(),
+        val version: Long = 0L
     ) : AnalyticsUiState()
 
     data class Error(val message: String) : AnalyticsUiState()

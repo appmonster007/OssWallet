@@ -56,6 +56,7 @@ fun Transaction.toEntity(profileId: Int): TransactionEntity {
         status = status,
         targetAccountId = targetAccountId,
         targetCurrency = targetCurrency,
-        transferRate = transferRate
+        transferRate = transferRate,
+        lastUpdated = System.currentTimeMillis()
     )
 }

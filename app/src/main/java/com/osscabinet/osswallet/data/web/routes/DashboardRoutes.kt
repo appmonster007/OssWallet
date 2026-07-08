@@ -45,7 +45,7 @@ fun Route.dashboardRoutes(
                 val baseCurrency = settingsRepository.currency.first()
                 val now = System.currentTimeMillis()
 
-                val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
+                val version = transactionRepository.getLatestTransactionVersion(profileId).first() ?: 0L
                 val accounts = accountRepository.getAllAccountsSync(profileId)
                 val categories = categoryRepository.getAllCategoriesSync()
                 val categoryMap = categories.associateBy { it.id }
@@ -64,7 +64,7 @@ fun Route.dashboardRoutes(
 
                 val baseInput = CardInput(
                     profileId = profileId,
-                    transactions = allTransactions,
+                    transactionsVersion = version,
                     accounts = accounts,
                     categories = categories,
                     tags = allTags,

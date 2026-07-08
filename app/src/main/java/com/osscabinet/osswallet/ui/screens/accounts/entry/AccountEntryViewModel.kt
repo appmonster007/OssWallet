@@ -8,7 +8,10 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +35,7 @@ class AccountEntryViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val computationRepository: ComputationRepository,
+    private val queryService: DatabaseQueryService,
     settingsRepository: SettingsRepository
 ) : BaseViewModel(settingsRepository) {
 
@@ -58,12 +62,13 @@ class AccountEntryViewModel @Inject constructor(
             combine(
                 settingsRepository.currency,
                 settingsRepository.currentProfileId.flatMapLatest { profileId ->
-                    transactionRepository.getAllTransactions(profileId)
+                    transactionRepository.getLatestTransactionVersion(profileId)
                 },
                 computationRepository.exchangeRates,
                 _state
-            ) { defaultCurrency, transactions, exchangeRates, state ->
+            ) { defaultCurrency, _, exchangeRates, state ->
                 val accountId = state.accountId
+                val profileId = settingsRepository.currentProfileId.first()
                 val now = System.currentTimeMillis()
 
                 if (accountId == null) {
@@ -76,20 +81,30 @@ class AccountEntryViewModel @Inject constructor(
                     return@combine
                 }
 
-                // 1. Get all transactions for this account up to now
-                val accountTransactions =
-                    transactions.filter { it.accountId == accountId && it.timestamp <= now }
+                // 1. Calculate current database state using SQL aggregation
+                val accountFilter = TransactionFilter(
+                    accountIds = setOf(accountId),
+                    timelineRange = TimelineRange.CustomRange(end = now)
+                )
 
-                // 2. Calculate current database state using reusable domain service
-                val dbSummaries = AggregationService.calculateSummaryByCurrency(accountTransactions)
+                val dbSummaries = TransactionAggregationService.getSummaryByCurrency(
+                    queryService,
+                    profileId,
+                    accountFilter
+                ).getOrDefault(emptyMap())
 
-                // 3. Identify the database's "Initial Balance" components
-                val dbInitialBalances = accountTransactions
-                    .filter { Category.isInitialBalance(it.categoryId) }
-                    .groupBy { it.currency }
-                    .mapValues { entry -> entry.value.sumOf { it.amount } }
+                // 2. Identify the database's "Initial Balance" components
+                val initialBalanceFilter = accountFilter.copy(
+                    categoryIds = setOf(Category.SYSTEM_INITIAL_BALANCE)
+                )
+                val dbInitialBalancesSummaries = TransactionAggregationService.getSummaryByCurrency(
+                    queryService,
+                    profileId,
+                    initialBalanceFilter
+                ).getOrDefault(emptyMap())
+                val dbInitialBalances = dbInitialBalancesSummaries.mapValues { it.value.totalAmount }
 
-                // 4. Compute projected closing balances for all relevant currencies
+                // 3. Compute projected closing balances for all relevant currencies
                 // Projected = (DB Total) - (DB Initial) + (UI Initial) + (UI Pending Deltas)
                 val allRelevantCurrencies =
                     (dbSummaries.keys + state.initialBalances.keys + state.pendingAdjustmentDeltas.keys).toSet()
@@ -112,9 +127,7 @@ class AccountEntryViewModel @Inject constructor(
                         exchangeRates
                     )
 
-                val currencyUsageMap = accountTransactions
-                    .groupBy { it.currency }
-                    .mapValues { it.value.isNotEmpty() }
+                val currencyUsageMap = dbSummaries.mapValues { it.value.transactionCount > 0 }
 
                 _state.update {
                     it.copy(

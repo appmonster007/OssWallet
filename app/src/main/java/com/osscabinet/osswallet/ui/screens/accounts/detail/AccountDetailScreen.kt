@@ -719,8 +719,7 @@ fun DynamicAccountDetailCards(
     val sharedCardInput = remember(state, state.currentFilter) {
         CardInput(
             profileId = state.profileId,
-            transactions = state.allAccountTransactions,
-            allProfileTransactions = state.allProfileTransactions,
+            transactionsVersion = state.version,
             accounts = listOf(state.account),
             categories = state.allCategories,
             tags = state.allTags,

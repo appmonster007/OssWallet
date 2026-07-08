@@ -85,16 +85,18 @@ fun AeonCardAtelier(
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf("ALL") }
 
-    val tabs = listOf("ALL", "STATUS", "WALLET", "TRACK", "TRENDS")
-
     val allOptions = remember(screenContext) {
         CardType.entries.filter { it.isUserAddableOn(screenContext) && additionalFilter(it) }
+    }
+
+    val tabs = remember(allOptions) {
+        listOf("ALL") + allOptions.map { it.getAtelierTab().name }.distinct()
     }
 
     val filteredOptions = remember(searchQuery, selectedTab, allOptions) {
         allOptions.filter { type ->
             val matchesSearch = type.displayName.contains(searchQuery, ignoreCase = true)
-            val matchesTab = selectedTab == "ALL" || type.getAtelierTab() == selectedTab
+            val matchesTab = selectedTab == "ALL" || type.getAtelierTab().name == selectedTab
             matchesSearch && matchesTab
         }
     }

@@ -120,14 +120,25 @@ enum class CardType(
 }
 
 /**
+ * Tabs available in the Card Studio (Atelier).
+ */
+enum class AtelierTab(val displayName: String) {
+    STATUS("Status"),
+    WALLET("Wallet"),
+    TRACK("Track"),
+    CHARTS("Charts"),
+    GRAPHS("Graphs")
+}
+
+/**
  * Maps a CardType to its corresponding tab in the Card Studio (Atelier).
  */
-fun CardType.getAtelierTab(): String = when (this) {
-    CardType.NET_WORTH, CardType.CASH_FLOW, CardType.RECENT_ACTIVITIES -> "STATUS"
-    CardType.ACCOUNTS, CardType.CURRENCY_BALANCES, CardType.ACCOUNT_HERO -> "WALLET"
-    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS -> "TRACK"
-    CardType.CATEGORY_PIE_CHART, CardType.CATEGORY_TREEMAP, CardType.CASHFLOW_COMPARISON,
-    CardType.INCOME_EXPENSE_BAR, CardType.CATEGORY_SPENDING_TREND, CardType.TAG_UPSET_PLOT -> "TRENDS"
+fun CardType.getAtelierTab(): AtelierTab = when (this) {
+    CardType.NET_WORTH, CardType.CASH_FLOW, CardType.RECENT_ACTIVITIES -> AtelierTab.STATUS
+    CardType.ACCOUNTS, CardType.CURRENCY_BALANCES, CardType.ACCOUNT_HERO -> AtelierTab.WALLET
+    CardType.BUDGETS, CardType.PLANNED_PAYMENTS, CardType.LOANS -> AtelierTab.TRACK
+    CardType.CATEGORY_PIE_CHART, CardType.CATEGORY_TREEMAP, CardType.TAG_UPSET_PLOT -> AtelierTab.CHARTS
+    CardType.CASHFLOW_COMPARISON, CardType.INCOME_EXPENSE_BAR, CardType.CATEGORY_SPENDING_TREND -> AtelierTab.GRAPHS
 }
 
 enum class CardCategory(val displayName: String, val order: Int) {

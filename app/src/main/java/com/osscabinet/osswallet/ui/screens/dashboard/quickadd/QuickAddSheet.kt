@@ -516,6 +516,7 @@ private fun QuickAddSheetContent(
                         isStepActive = state.currentStep == STEP_ACCOUNT,
                         onAccountTapped = onAccountTapped,
                         onToggleType = { onToggleType() },
+                        onToggleTransfer = { onToggleTransfer() },
                         onSetFocus = onSetAccountFocus,
                         onSwapAccounts = onSwapAccounts
                     )

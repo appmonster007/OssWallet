@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.steps
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -75,6 +77,7 @@ fun QuickAddAccountStep(
     isStepActive: Boolean = false,
     onAccountTapped: (String, Boolean) -> Unit,
     onToggleType: () -> Unit,
+    onToggleTransfer: () -> Unit = {},
     onSetFocus: (AmountEditingSide) -> Unit = {},
     onSwapAccounts: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -206,7 +209,11 @@ fun QuickAddAccountStep(
             ) {
                 AtelierTypeToggle(
                     entryMode = entryMode,
-                    onClick = onToggleType,
+                    onClick = {
+                        if (entryMode == EntryMode.TRANSFER) onSwapAccounts()
+                        else onToggleType()
+                    },
+                    onLongClick = onToggleTransfer,
                     activeColor = typeColor
                 )
 
@@ -313,8 +320,10 @@ private fun AtelierChip(
 private fun AtelierTypeToggle(
     entryMode: EntryMode,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     activeColor: Color,
 ) {
+    val haptic = LocalHapticFeedback.current
     val shape = RoundedCornerShape(12.dp)
     val icon = when (entryMode) {
         EntryMode.EXPENSE -> Icons.AutoMirrored.Rounded.TrendingDown
@@ -322,31 +331,39 @@ private fun AtelierTypeToggle(
         EntryMode.TRANSFER -> Icons.Rounded.SwapHoriz
     }
     val a11yLabel = when (entryMode) {
-        EntryMode.EXPENSE -> "Expense, tap to switch to Income"
-        EntryMode.INCOME -> "Income, tap to switch to Transfer"
-        EntryMode.TRANSFER -> "Transfer, tap to switch to Expense"
+        EntryMode.EXPENSE -> "Expense, tap to switch to Income, hold for Transfer"
+        EntryMode.INCOME -> "Income, tap to switch to Expense, hold for Transfer"
+        EntryMode.TRANSFER -> "Transfer, tap to swap accounts, hold to exit"
     }
 
-    Surface(
-        onClick = onClick,
-        shape = shape,
-        color = activeColor.copy(alpha = 0.10f),
+    Box(
         modifier = Modifier
             .size(width = 56.dp, height = 48.dp)
+            .clip(shape)
+            .background(activeColor.copy(alpha = 0.10f))
             .aeonHairlineBorder(shape, accent = activeColor)
+            .combinedClickable(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onClick()
+                },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                }
+            )
             .semantics {
                 role = Role.Button
                 contentDescription = a11yLabel
-            }
+            },
+        contentAlignment = Alignment.Center
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = activeColor,
-                modifier = Modifier.size(22.dp)
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = activeColor,
+            modifier = Modifier.size(22.dp)
+        )
     }
 }
 

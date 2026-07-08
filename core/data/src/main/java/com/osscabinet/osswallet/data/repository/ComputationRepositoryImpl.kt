@@ -25,7 +25,7 @@ import java.math.BigDecimal
 class ComputationRepositoryImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val currencyRepository: CurrencyRepository,
-    @ApplicationScope private val applicationScope: CoroutineScope
+    @param:ApplicationScope private val applicationScope: CoroutineScope
 ) : ComputationRepository {
 
     override val selectedCurrency: Flow<String> = settingsRepository.currency

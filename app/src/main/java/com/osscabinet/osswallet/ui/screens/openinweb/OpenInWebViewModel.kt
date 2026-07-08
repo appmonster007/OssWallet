@@ -27,7 +27,7 @@ data class OpenInWebUiState(
 @HiltViewModel
 class OpenInWebViewModel @Inject constructor(
     private val webServerRepository: WebServerRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OpenInWebUiState())

@@ -10,7 +10,7 @@ import jakarta.inject.Singleton
 
 @Singleton
 class BackupSchedulerImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : BackupScheduler {
     override fun schedule(config: AutoBackupConfig) {
         if (config.enabled) {

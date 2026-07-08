@@ -3,15 +3,16 @@ package com.osscabinet.ossWallet.ui.screens.accounts.entry
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -64,9 +65,9 @@ class AccountEntryViewModel @Inject constructor(
                 settingsRepository.currentProfileId.flatMapLatest { profileId ->
                     transactionRepository.getLatestTransactionVersion(profileId)
                 },
-                computationRepository.exchangeRates,
+                computationRepository.exchangeRatesSnapshot,
                 _state
-            ) { defaultCurrency, _, exchangeRates, state ->
+            ) { defaultCurrency, _, exchangeRatesSnapshot, state ->
                 val accountId = state.accountId
                 val profileId = settingsRepository.currentProfileId.first()
                 val now = System.currentTimeMillis()
@@ -75,7 +76,7 @@ class AccountEntryViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             defaultCurrency = defaultCurrency,
-                            exchangeRates = exchangeRates
+                            exchangeRates = exchangeRatesSnapshot.rates
                         )
                     }
                     return@combine
@@ -102,7 +103,8 @@ class AccountEntryViewModel @Inject constructor(
                     profileId,
                     initialBalanceFilter
                 ).getOrDefault(emptyMap())
-                val dbInitialBalances = dbInitialBalancesSummaries.mapValues { it.value.totalAmount }
+                val dbInitialBalances =
+                    dbInitialBalancesSummaries.mapValues { it.value.totalAmount }
 
                 // 3. Compute projected closing balances for all relevant currencies
                 // Projected = (DB Total) - (DB Initial) + (UI Initial) + (UI Pending Deltas)
@@ -121,10 +123,10 @@ class AccountEntryViewModel @Inject constructor(
 
                 // 5. Calculate account-level net balance in primary currency
                 val currentBalance =
-                    com.osscabinet.ossWallet.domain.service.currency.CurrencyService.calculateTotalInCurrency(
+                    CurrencyService.calculateTotalInCurrency(
                         projectedClosingBalances,
                         state.primaryCurrency,
-                        exchangeRates
+                        exchangeRatesSnapshot
                     )
 
                 val currencyUsageMap = dbSummaries.mapValues { it.value.transactionCount > 0 }
@@ -132,7 +134,7 @@ class AccountEntryViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         defaultCurrency = defaultCurrency,
-                        exchangeRates = exchangeRates,
+                        exchangeRates = exchangeRatesSnapshot.rates,
                         currentBalance = currentBalance,
                         currencyUsageMap = currencyUsageMap,
                         systemClosingBalances = projectedClosingBalances

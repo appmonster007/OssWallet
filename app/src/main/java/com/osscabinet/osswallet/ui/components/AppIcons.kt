@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.DirectionsBike
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
 import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.automirrored.rounded.Help
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.ReceiptLong
@@ -151,7 +152,6 @@ import androidx.compose.material.icons.rounded.KebabDining
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.KingBed
 import androidx.compose.material.icons.rounded.Kitchen
-import androidx.compose.material.icons.rounded.Label
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Laptop
 import androidx.compose.material.icons.rounded.Lightbulb
@@ -537,7 +537,7 @@ val AppIconMap: Map<String, ImageVector> by lazy {
         "Info" to Icons.Rounded.Info,
         "Inventory" to Icons.Rounded.Inventory,
         "Key" to Icons.Rounded.Key,
-        "Label" to Icons.Rounded.Label,
+        "Label" to Icons.AutoMirrored.Rounded.Label,
         "ListAlt" to Icons.AutoMirrored.Rounded.ListAlt,
         "Lock" to Icons.Rounded.Lock,
         "Menu" to Icons.Rounded.Menu,

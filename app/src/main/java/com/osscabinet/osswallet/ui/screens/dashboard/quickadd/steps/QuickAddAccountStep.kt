@@ -68,6 +68,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun QuickAddAccountStep(
+    modifier: Modifier = Modifier,
     accounts: List<Account>,
     structureTypes: List<AccountStructureType>,
     selectedAccountId: String?,
@@ -80,7 +81,6 @@ fun QuickAddAccountStep(
     onToggleTransfer: () -> Unit = {},
     onSetFocus: (AmountEditingSide) -> Unit = {},
     onSwapAccounts: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var structureFilter by remember { mutableStateOf<AccountStructureType?>(null) }
@@ -92,7 +92,7 @@ fun QuickAddAccountStep(
 
     val filtered = remember(accounts, searchQuery, structureFilter) {
         accounts.filter { acc ->
-            (acc.id.isBlank() || structureFilter == null || acc.structureType == structureFilter) &&
+            ((acc.id.isBlank() || structureFilter == null) || (acc.structureType == structureFilter)) &&
                     (searchQuery.isBlank() || acc.name.contains(searchQuery, ignoreCase = true))
         }
     }
@@ -246,8 +246,7 @@ private fun StructureChipRail(
             label = "ALL",
             isSelected = selected == null,
             activeColor = activeColor,
-            onClick = { onSelect(null) }
-        )
+        ) { onSelect(null) }
         structures.forEach { type ->
             AtelierChip(
                 label = type.displayName.uppercase(),

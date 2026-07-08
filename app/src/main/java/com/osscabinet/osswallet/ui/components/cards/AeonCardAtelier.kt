@@ -80,7 +80,7 @@ fun AeonCardAtelier(
     onDismiss: () -> Unit,
     onCardTypeSelected: (CardType) -> Unit,
     modifier: Modifier = Modifier,
-    additionalFilter: (CardType) -> Boolean = { true }
+    additionalFilter: (CardType) -> Boolean = { true },
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf("ALL") }
@@ -90,13 +90,13 @@ fun AeonCardAtelier(
     }
 
     val tabs = remember(allOptions) {
-        listOf("ALL") + allOptions.map { it.getAtelierTab().name }.distinct()
+        listOf("ALL") + allOptions.asSequence().map { it.getAtelierTab().name }.distinct().toList()
     }
 
     val filteredOptions = remember(searchQuery, selectedTab, allOptions) {
         allOptions.filter { type ->
             val matchesSearch = type.displayName.contains(searchQuery, ignoreCase = true)
-            val matchesTab = selectedTab == "ALL" || type.getAtelierTab().name == selectedTab
+            val matchesTab = (selectedTab == "ALL") || (type.getAtelierTab().name == selectedTab)
             matchesSearch && matchesTab
         }
     }
@@ -112,9 +112,8 @@ fun AeonCardAtelier(
 
             // 2. Search Bar
             AtelierSearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it }
-            )
+                query = searchQuery
+            ) { searchQuery = it }
 
             // 3. Granular Tabs
             AtelierTabs(

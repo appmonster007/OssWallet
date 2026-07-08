@@ -22,8 +22,8 @@ import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.install
 import io.ktor.server.application.createApplicationPlugin
+import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
@@ -33,6 +33,8 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,12 +47,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 @Singleton
 class WebServerManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
@@ -168,7 +168,7 @@ class WebServerManager @Inject constructor(
                 while (isActive) {
                     delay(5 * 60 * 1000L) // Check every 5 minutes
                     authSessionManager.purgeExpiredSessions()
-                    
+
                     // Auto-stop if idle for more than IDLE_TIMEOUT
                     if (System.currentTimeMillis() - lastActivityTime > IDLE_TIMEOUT_MS) {
                         stop()
@@ -194,7 +194,7 @@ class WebServerManager @Inject constructor(
         serverScope?.cancel()
         serverScope = null
         _serverState.value = WebServerState.Stopped
-        
+
         // Also ensure preference is updated to reflect stopped state
         webServerPreferences.setEnabled(false)
     }

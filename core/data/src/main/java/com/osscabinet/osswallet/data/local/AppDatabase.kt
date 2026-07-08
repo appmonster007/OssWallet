@@ -837,7 +837,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 // Using REPLACE to override user changes to system categories
                                 db.execSQL(
                                     "INSERT OR IGNORE INTO categories (id, name, iconName, colorHex, isDefault, parentId, nature) VALUES (?, ?, ?, ?, 1, ?, ?)",
-                                    arrayOf(
+                                    arrayOf<Any?>(
                                         sc.id,
                                         sc.displayName,
                                         sc.iconName,
@@ -854,7 +854,7 @@ abstract class AppDatabase : RoomDatabase() {
                                 // For tags, name is unique.
                                 db.execSQL(
                                     "INSERT OR IGNORE INTO tags (id, name, colorHex) VALUES (?, ?, ?)",
-                                    arrayOf(st.id, st.tagName, st.colorHex)
+                                    arrayOf<Any?>(st.id, st.tagName, st.colorHex)
                                 )
                             }
                         }

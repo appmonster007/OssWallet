@@ -12,7 +12,7 @@ import org.apache.commons.csv.CSVParser
 @Serializable
 data class MappedCategory(
     val name: String,
-    val parentName: String? = null
+    val parentName: String? = null,
 )
 
 @Singleton
@@ -24,20 +24,20 @@ class BudgetBakersAssetLoader @Inject constructor(
 
     private fun loadEnvelopeMap(): Map<Int, MappedCategory> {
         return try {
-            val format = CSVFormat.DEFAULT.builder()
+            val format = CSVFormat.Builder.create()
                 .setHeader()
                 .setSkipHeaderRecord(true)
                 .setIgnoreEmptyLines(true)
                 .setTrim(true)
-                .build()
+                .get()
 
             context.assets.open("wallet-budgetbakers/envelope_map.csv").bufferedReader()
                 .use { reader ->
                     CSVParser.parse(reader, format).associate { record ->
-                        val id = record.get("envelope_id").trim().toInt()
-                        val ossName = record.get("osswallet_category_name").trim()
+                        val id = record["envelope_id"].trim().toInt()
+                        val ossName = record["osswallet_category_name"].trim()
                         val parentName =
-                            record.get("parent_category_name").trim().takeIf { it.isNotEmpty() }
+                            record["parent_category_name"].trim().takeIf { it.isNotEmpty() }
                         id to MappedCategory(ossName, parentName)
                     }
                 }
@@ -49,18 +49,18 @@ class BudgetBakersAssetLoader @Inject constructor(
 
     private fun loadPaymentTypeMap(): Map<String, String> {
         return try {
-            val format = CSVFormat.DEFAULT.builder()
+            val format = CSVFormat.Builder.create()
                 .setHeader()
                 .setSkipHeaderRecord(true)
                 .setIgnoreEmptyLines(true)
                 .setTrim(true)
-                .build()
+                .get()
 
             context.assets.open("wallet-budgetbakers/payment_type_map.csv").bufferedReader()
                 .use { reader ->
                     CSVParser.parse(reader, format).associate { record ->
-                        record.get("bb_payment_type")
-                            .trim() to record.get("osswallet_payment_method").trim()
+                        record["bb_payment_type"]
+                            .trim() to record["osswallet_payment_method"].trim()
                     }
                 }
         } catch (e: Exception) {

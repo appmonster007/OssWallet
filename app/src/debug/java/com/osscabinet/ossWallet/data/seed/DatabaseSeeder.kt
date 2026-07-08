@@ -72,7 +72,7 @@ class DatabaseSeeder @Inject constructor(
     private val tagDao: TagDao,
     private val context: Context,
     private val settingsDataStore: SettingsDataStore,
-    private val database: com.osscabinet.ossWallet.data.local.AppDatabase
+    private val database: com.osscabinet.ossWallet.data.local.AppDatabase,
 ) {
     suspend fun seed() {
         if (settingsDataStore.isDatabaseSeeded.first()) {
@@ -103,7 +103,8 @@ class DatabaseSeeder @Inject constructor(
         profiles.forEach { profileDao.insertProfile(it) }
 
         // 2. Categories (resolved from DB populated by default_data.sql)
-        val categoryNameToId = categoryDao.getAllCategoriesSync().associate { it.name to it.id }
+        val categoryNameToId =
+            categoryDao.getAllCategoriesSync().associateBy({ it.name }, { it.id })
         android.util.Log.d("DatabaseSeeder", "Resolved ${categoryNameToId.size} categories from DB")
 
         // 3. Accounts
@@ -136,9 +137,7 @@ class DatabaseSeeder @Inject constructor(
                     categoryNameToId[tx.category] ?: tx.categoryId ?: Category.SYSTEM_UNKNOWN
                 val entity = tx.copy(categoryId = catId).toTransactionEntity()
                 val dbId = transactionDao._insertTransaction(entity)
-                if (tx.seedId != null) {
-                    transactionSeedIdToDbId[tx.seedId] = dbId
-                }
+                tx.seedId?.let { transactionSeedIdToDbId[it] = dbId }
                 ok++
             } catch (e: Exception) {
                 android.util.Log.e(
@@ -207,7 +206,7 @@ class DatabaseSeeder @Inject constructor(
         for (tagRow in csvTags) {
             tagDao.insertTag(tagRow.toTagEntity())
         }
-        val existingTagNames = csvTags.map { it.name }.toSet()
+        val existingTagNames = csvTags.mapTo(mutableSetOf()) { it.name }
         val allTxTags =
             transactions.flatMap { it.tags.split(",").filter { t -> t.isNotBlank() } }.toSet()
         val missingTags = allTxTags - existingTagNames

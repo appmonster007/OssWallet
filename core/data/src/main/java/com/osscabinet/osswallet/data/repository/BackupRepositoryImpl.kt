@@ -148,7 +148,7 @@ class BackupRepositoryImpl @Inject constructor(
         )
 
         val settings = CsvWriterSettings()
-        settings.setHeaders(*headers)
+        settings.headers = headers
         val writer = CsvWriter(OutputStreamWriter(outputStream, Charsets.UTF_8), settings)
         writer.writeHeaders()
 
@@ -164,7 +164,7 @@ class BackupRepositoryImpl @Inject constructor(
                 tx.amount.toPlainString(),
                 tx.currency,
                 tx.payee,
-                tx.note ?: "",
+                tx.note,
                 tx.paymentMethod.name,
                 warrantyMonths.toString(),
                 tx.tags.joinToString("|"),
@@ -601,7 +601,7 @@ class BackupRepositoryImpl @Inject constructor(
     ) {
         zos.putNextEntry(java.util.zip.ZipEntry(fileName))
         val settings = CsvWriterSettings()
-        settings.setHeaders(*headers)
+        settings.headers = headers
         val writer = CsvWriter(OutputStreamWriter(zos, Charsets.UTF_8), settings)
         writer.writeHeaders()
         rows.forEach { writer.writeRow(*it) }
@@ -735,10 +735,10 @@ class BackupRepositoryImpl @Inject constructor(
     private suspend fun parseCsv(file: File, action: suspend (Map<String, String>) -> Unit) {
         if (!file.exists()) return
         val settings = CsvParserSettings()
-        settings.format.setDelimiter(',')
-        settings.setHeaderExtractionEnabled(true)
-        settings.setIgnoreLeadingWhitespaces(true)
-        settings.setIgnoreTrailingWhitespaces(true)
+        settings.format.delimiter = ','
+        settings.isHeaderExtractionEnabled = true
+        settings.ignoreLeadingWhitespaces = true
+        settings.ignoreTrailingWhitespaces = true
         val parser = CsvParser(settings)
         file.reader(Charsets.UTF_8).use { reader ->
             val records = parser.parseAllRecords(reader)

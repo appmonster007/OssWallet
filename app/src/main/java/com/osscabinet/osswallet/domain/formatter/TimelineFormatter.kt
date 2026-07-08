@@ -1,9 +1,9 @@
 package com.osscabinet.ossWallet.domain.formatter
 
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /**
  * Pure domain function for timeline formatting
@@ -11,8 +11,7 @@ import kotlinx.datetime.toLocalDateTime
  * Can be tested independently
  */
 object TimelineFormatter {
-    private val clock = Clock.System
-    
+
     fun format(range: TimelineRange): String = when (range) {
         is TimelineRange.AllTime -> "All Time"
         is TimelineRange.ThisPeriod -> range.period.label
@@ -23,14 +22,12 @@ object TimelineFormatter {
             "$start - $end"
         }
     }
-    
+
     private fun formatDate(timestamp: Long): String {
-        // Pure Kotlin date formatting without Android dependencies
-        // Using kotlinx-datetime library
-        val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(timestamp)
+        val instant = Instant.fromEpochMilliseconds(timestamp)
         val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
         val month = dateTime.month.name.take(3)
-        val day = dateTime.dayOfMonth
+        val day = dateTime.day
         val year = dateTime.year
         return "$month $day, $year"
     }

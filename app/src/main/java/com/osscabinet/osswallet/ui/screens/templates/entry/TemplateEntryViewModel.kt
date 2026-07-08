@@ -158,7 +158,7 @@ class TemplateEntryViewModel @Inject constructor(
 
                 val sourceAccId = template.accountId
                 val targetAccId = template.targetAccountId
-                val sourceCurrency = template.currency ?: "USD"
+                val sourceCurrency = template.currency
                 val targetCurr = template.targetCurrency ?: ""
                 val sourceAmtStr = template.amount.abs().stripTrailingZeros().toPlainString()
                 val targetAmtStr = template.amount.abs().multiply(template.transferRate)
@@ -226,6 +226,7 @@ class TemplateEntryViewModel @Inject constructor(
                 }
                 state.copy(name = event.name, note = newNote)
             }
+
             is TemplateEntryEvent.SetAmount -> {
                 _state.update { s ->
                     s.applyUpdate(

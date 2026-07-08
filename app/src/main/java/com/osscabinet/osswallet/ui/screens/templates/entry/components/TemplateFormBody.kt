@@ -60,11 +60,12 @@ fun TemplateFormBody(
     contentPadding: PaddingValues = PaddingValues(),
     modifier: Modifier = Modifier
 ) {
-    val sourceCurrencies = remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
-        state.accounts.find { it.id == state.selectedAccountId }
-            ?.allowedCurrencies?.toList()?.ifEmpty { null }
-            ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
-    }
+    val sourceCurrencies =
+        remember(state.selectedAccountId, state.accounts, state.shortlistedCurrencies) {
+            state.accounts.find { it.id == state.selectedAccountId }
+                ?.allowedCurrencies?.toList()?.ifEmpty { null }
+                ?: state.shortlistedCurrencies.ifEmpty { CurrencyService.getAllCurrencies() }
+        }
 
     val targetCurrencies =
         remember(state.targetAccountId, state.accounts, state.shortlistedCurrencies) {
@@ -112,8 +113,8 @@ fun TemplateFormBody(
                     supportedCurrencies = sourceCurrencies
                 ),
                 target = AeonAmountData(
-                    value = state.targetAmount ?: "",
-                    currency = state.targetCurrency ?: state.currency,
+                    value = state.targetAmount,
+                    currency = state.targetCurrency,
                     onValueClick = {
                         onEvent(
                             TemplateEntryEvent.ShowNumpad(

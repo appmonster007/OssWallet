@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AmountEditingSide
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.TransactionSide
@@ -150,8 +149,8 @@ fun TransactionFormBody(
                     isError = state.hasError(EntryField.AMOUNT)
                 ),
                 target = AeonAmountData(
-                    value = state.targetAmount ?: "",
-                    currency = state.targetCurrency ?: state.selectedCurrency,
+                    value = state.targetAmount,
+                    currency = state.targetCurrency,
                     onValueClick = {
                         onEvent(
                             TransactionEntryEvent.ShowNumpad(
@@ -392,7 +391,13 @@ fun TransactionFormBody(
                 )
             },
             transactionStatus = state.transactionStatus,
-            onTransactionStatusChange = { status -> onEvent(TransactionEntryEvent.SetTransactionStatus(status)) },
+            onTransactionStatusChange = { status ->
+                onEvent(
+                    TransactionEntryEvent.SetTransactionStatus(
+                        status
+                    )
+                )
+            },
             currentTransactionId = state.transactionId
         )
 

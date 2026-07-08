@@ -31,6 +31,9 @@ abstract class TransactionDao {
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
     abstract fun getAllTransactions(profileId: Int): Flow<List<TransactionEntity>>
 
+    @Query("SELECT MAX(lastUpdated) FROM transactions WHERE profileId = :profileId")
+    abstract fun getLatestTransactionVersion(profileId: Int): Flow<Long?>
+
     @Transaction
     @Query("SELECT * FROM transactions WHERE profileId = :profileId ORDER BY timestamp DESC")
     abstract fun getAllTransactionsWithTags(profileId: Int): Flow<List<com.osscabinet.ossWallet.data.local.entity.TransactionWithTags>>

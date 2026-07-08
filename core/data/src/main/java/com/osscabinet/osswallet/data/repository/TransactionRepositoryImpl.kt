@@ -39,6 +39,10 @@ class TransactionRepositoryImpl @Inject constructor(
         return transactionDao.getAllTransactions(profileId).mapToDomain { it.toDomain() }
     }
 
+    override fun getLatestTransactionVersion(profileId: Int): Flow<Long?> {
+        return transactionDao.getLatestTransactionVersion(profileId)
+    }
+
     override suspend fun getAllTransactionsSync(profileId: Int): List<Transaction> {
         return transactionDao.getAllTransactionsSync(profileId).mapToDomain { it.toDomain() }
     }
@@ -191,8 +195,9 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction, profileId: Int): Long {
         return database.withTransaction {
+            val entity = transaction.toEntity(profileId)
             val id = transactionDao.insertTransactionWithBalanceUpdate(
-                transaction.toEntity(profileId),
+                entity,
                 accountDao
             )
             syncTransactionTags(id, transaction.tags)

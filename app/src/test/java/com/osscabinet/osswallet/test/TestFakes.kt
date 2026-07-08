@@ -151,6 +151,7 @@ class FakeTransactionRepository : TransactionRepository {
     private val txFlow = MutableStateFlow<List<Transaction>>(emptyList())
 
     override fun getAllTransactions(profileId: Int): Flow<List<Transaction>> = txFlow
+    override fun getLatestTransactionVersion(profileId: Int): Flow<Long?> = flowOf(0L)
     override suspend fun getAllTransactionsSync(profileId: Int): List<Transaction> = txFlow.value
     override fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>> = txFlow
     override suspend fun getFilteredTransactionsSync(profileId: Int, filter: TransactionFilter): List<Transaction> = emptyList()

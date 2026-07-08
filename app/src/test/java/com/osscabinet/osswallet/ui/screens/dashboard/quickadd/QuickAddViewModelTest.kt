@@ -10,6 +10,8 @@ import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.test.FakeAccountRepository
 import com.osscabinet.ossWallet.test.FakeCategoryRepository
 import com.osscabinet.ossWallet.test.FakeComputationRepository
@@ -67,12 +69,20 @@ class QuickAddViewModelTest {
 
         fakeAccounts = FakeAccountRepository(listOf(mockAccount, mockToAccount))
 
+        val mockQueryService = mockk<DatabaseQueryService>(relaxed = true)
+        io.mockk.coEvery {
+            mockQueryService.aggregate(
+                any(), any(), any(), any(), any(), any(), any()
+            )
+        } returns Result.success(emptyList())
+
         viewModel = QuickAddViewModel(
             settingsRepository = FakeSettingsRepository(initialProfileId = 1, initialCurrency = "USD"),
             accountRepository = fakeAccounts,
             transactionManager = mockk(relaxed = true),
             transactionRepository = FakeTransactionRepository(),
             computationRepository = FakeComputationRepository(),
+            queryService = mockQueryService,
             templateRepository = FakeTemplateRepository(),
             categoryRepository = FakeCategoryRepository()
         )

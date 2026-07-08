@@ -7,8 +7,10 @@ import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.ComputationRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
-import com.osscabinet.ossWallet.domain.service.aggregation.AggregationService
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -31,16 +33,17 @@ class AccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val computationRepository: ComputationRepository,
+    private val queryService: DatabaseQueryService,
     settingsRepository: SettingsRepository,
 ) : BaseViewModel(settingsRepository) {
 
     val accounts: StateFlow<List<Account>> = settingsRepository.currentProfileId
         .flatMapLatest { profileId -> accountRepository.getAllAccounts(profileId) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     private data class AccountFinancialSnapshot(
         val accounts: List<Account>,
-        val transactions: List<Transaction>,
+        val version: Long,
         val rates: ExchangeRateSnapshot
     )
 
@@ -48,22 +51,27 @@ class AccountViewModel @Inject constructor(
         .flatMapLatest { profileId ->
             combine(
                 accountRepository.getAllAccounts(profileId),
-                transactionRepository.getAllTransactions(profileId),
+                transactionRepository.getLatestTransactionVersion(profileId),
                 computationRepository.exchangeRatesSnapshot
-            ) { accounts, transactions, rates ->
-                AccountFinancialSnapshot(accounts, transactions, rates)
+            ) { accounts, version, rates ->
+                AccountFinancialSnapshot(accounts, version ?: 0L, rates)
             }.distinctUntilChanged()
                 .map { snapshot ->
+                    val summaries = TransactionAggregationService.getSummaryByAccountAndCurrency(
+                        queryService,
+                        profileId
+                    ).getOrDefault(emptyMap())
+
                     snapshot.accounts.associate { account ->
-                        account.id to AggregationService.calculateAccountBalance(
-                            accountId = account.id,
-                            allTransactions = snapshot.transactions,
-                            accountCurrency = account.currencyCode,
-                            exchangeRates = snapshot.rates
-                        )
+                        val accountSummaries = summaries[account.id] ?: emptyMap()
+                        account.id to CurrencyService.calculateTotalFinancialSummary(
+                            accountSummaries,
+                            account.currencyCode,
+                            snapshot.rates
+                        ).totalAmount
                     }
                 }.flowOn(Dispatchers.Default)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
 
     fun deleteAccount(accountId: String) {
         viewModelScope.launch {

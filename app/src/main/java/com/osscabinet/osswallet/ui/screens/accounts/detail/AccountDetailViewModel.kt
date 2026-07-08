@@ -12,7 +12,6 @@ import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
 import com.osscabinet.ossWallet.domain.model.Tag
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionListState
 import com.osscabinet.ossWallet.domain.model.settings.DashboardCardsConfig
@@ -85,7 +84,7 @@ class AccountDetailViewModel @Inject constructor(
 
     val cardsConfig: StateFlow<DashboardCardsConfig> =
         cardRepository.getCardsConfig(cardScreenContext)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DashboardCardsConfig())
 
     fun updateFilter(newFilter: TransactionFilter) {
         // Enforce the locked account ID
@@ -122,7 +121,7 @@ class AccountDetailViewModel @Inject constructor(
 
     private data class DomainSnapshot(
         val accounts: List<Account>,
-        val allTransactions: List<Transaction>,
+        val version: Long,
         val categories: List<Category>,
         val tags: List<Tag>,
         val links: Map<Long, List<Long>>
@@ -143,12 +142,12 @@ class AccountDetailViewModel @Inject constructor(
             combine(
                 combine(
                     accountRepository.getAllAccounts(profileId),
-                    transactionUseCases.getTransactions(profileId),
+                    transactionUseCases.getLatestTransactionVersion(profileId),
                     categoryRepository.getAllCategories(profileId),
                     tagRepository.getAllTags(),
                     transactionUseCases.getAllTransactionLinks()
-                ) { acc, tx, cat, tags, links ->
-                    DomainSnapshot(acc, tx, cat, tags, links)
+                ) { acc, version, cat, tags, links ->
+                    DomainSnapshot(acc, version ?: 0L, cat, tags, links)
                 }.distinctUntilChanged(),
                 combine(
                     computationRepository.exchangeRatesSnapshot,
@@ -210,8 +209,6 @@ class AccountDetailViewModel @Inject constructor(
                             AccountDetailUiState.Success(
                                 profileId = profileId,
                                 account = account,
-                                allAccountTransactions = domain.allTransactions.filter { it.accountId == accountId },
-                                allProfileTransactions = domain.allTransactions,
                                 listState = listState,
                                 allCategories = domain.categories,
                                 allTags = domain.tags,
@@ -219,7 +216,8 @@ class AccountDetailViewModel @Inject constructor(
                                 exchangeRates = config.rates,
                                 showPlannedPayments = config.settings.showPlannedPayments,
                                 useNoteAsHeader = config.settings.useNoteAsHeader,
-                                currentFilter = config.filter
+                                currentFilter = config.filter,
+                                version = domain.version
                             )
                         }.flowOn(kotlinx.coroutines.Dispatchers.Default)
                     }
@@ -228,7 +226,7 @@ class AccountDetailViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.WhileSubscribed(),
             initialValue = AccountDetailUiState.Loading
         )
 
@@ -265,8 +263,7 @@ class AccountDetailViewModel @Inject constructor(
                     val input = kotlinx.coroutines.withContext(dispatchers.default) {
                         CardInput(
                             profileId = state.profileId,
-                            transactions = state.allAccountTransactions,
-                            allProfileTransactions = state.allProfileTransactions,
+                            transactionsVersion = state.version,
                             accounts = listOf(state.account),
                             categories = state.allCategories,
                             tags = state.allTags,
@@ -319,8 +316,6 @@ sealed class AccountDetailUiState {
     data class Success(
         val profileId: Int,
         val account: Account,
-        val allAccountTransactions: List<Transaction>,
-        val allProfileTransactions: List<Transaction> = emptyList(),
         val listState: TransactionListState,
         val allCategories: List<Category> = emptyList(),
         val allTags: List<Tag> = emptyList(),
@@ -328,7 +323,8 @@ sealed class AccountDetailUiState {
         val exchangeRates: ExchangeRateSnapshot,
         val showPlannedPayments: Boolean = false,
         val useNoteAsHeader: Boolean = false,
-        val currentFilter: TransactionFilter = TransactionFilter()
+        val currentFilter: TransactionFilter = TransactionFilter(),
+        val version: Long = 0L
     ) : AccountDetailUiState()
 
     data class Error(val message: String) : AccountDetailUiState()

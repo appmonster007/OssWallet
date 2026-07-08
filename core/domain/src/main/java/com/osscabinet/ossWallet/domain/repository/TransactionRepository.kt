@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
     fun getAllTransactions(profileId: Int): Flow<List<Transaction>>
+
+    fun getLatestTransactionVersion(profileId: Int): Flow<Long?>
+
     suspend fun getAllTransactionsSync(profileId: Int): List<Transaction>
     fun getFilteredTransactions(profileId: Int, filter: TransactionFilter): Flow<List<Transaction>>
     suspend fun getFilteredTransactionsSync(

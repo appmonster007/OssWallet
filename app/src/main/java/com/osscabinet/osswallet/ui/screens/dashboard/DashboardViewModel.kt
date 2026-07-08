@@ -119,7 +119,7 @@ class DashboardViewModel @Inject constructor(
 
     val cardsConfig: StateFlow<DashboardCardsConfig> =
         cardRepository.getCardsConfig(cardScreenContext)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DashboardCardsConfig())
 
     private val _initialViewContext =
         MutableStateFlow<DashboardViewContext>(DashboardViewContext.None)
@@ -289,7 +289,7 @@ class DashboardViewModel @Inject constructor(
      */
     private data class AccountingSnapshot(
         val accounts: List<Account>,
-        val transactions: List<Transaction>,
+        val version: Long,
         val categories: List<Category>,
         val links: Map<Long, List<Long>>,
         val currency: CurrencySnapshot
@@ -307,7 +307,8 @@ class DashboardViewModel @Inject constructor(
     private data class StructuralState(
         val snapshot: AccountingSnapshot,
         val hierarchy: CategoryHierarchyCache,
-        val visibleGroups: List<com.osscabinet.ossWallet.domain.model.TransactionGroup>
+        val visibleGroups: List<com.osscabinet.ossWallet.domain.model.TransactionGroup>,
+        val history: List<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>
     )
 
     /**
@@ -339,7 +340,7 @@ class DashboardViewModel @Inject constructor(
             // 1. Accounting Pipeline
             val structuralStateFlow = combine(
                 accountRepository.getAllAccounts(profileId),
-                transactionUseCases.getTransactions(profileId),
+                transactionUseCases.getLatestTransactionVersion(profileId),
                 categoryRepository.getAllCategories(profileId),
                 transactionManager.getAllTransactionLinks(),
                 combine(
@@ -347,8 +348,8 @@ class DashboardViewModel @Inject constructor(
                     computationRepository.exchangeRatesSnapshot,
                     computationRepository.hasLoadedExchangeRates
                 ) { code, rates, loaded -> CurrencySnapshot(code, rates, loaded) }
-            ) { acc, tx, cat, links, curr ->
-                AccountingSnapshot(acc, tx, cat, links, curr)
+            ) { acc, version, cat, links, curr ->
+                AccountingSnapshot(acc, version ?: 0L, cat, links, curr)
             }.distinctUntilChanged().flatMapLatest { snapshot ->
                 if (!snapshot.currency.hasLoaded) {
                     kotlinx.coroutines.flow.flowOf<StructuralState?>(null)
@@ -378,7 +379,8 @@ class DashboardViewModel @Inject constructor(
                             StructuralState(
                                 snapshot,
                                 CategoryHierarchyCache.build(snapshot.categories),
-                                visibleGroups
+                                visibleGroups,
+                                transactionsWithBalance
                             )
                         }.flowOn(dispatchers.default)
                 }
@@ -441,8 +443,7 @@ class DashboardViewModel @Inject constructor(
 
                 val cardInput = CardInput(
                     profileId = profileId,
-                    transactions = snapshot.transactions,
-                    allProfileTransactions = snapshot.transactions,
+                    transactionsVersion = snapshot.version,
                     accounts = snapshot.accounts,
                     categories = snapshot.categories,
                     tags = m.tags,
@@ -463,7 +464,7 @@ class DashboardViewModel @Inject constructor(
                     accounts = snapshot.accounts.filter { !it.isArchived }.toImmutableList(),
                     allAccounts = snapshot.accounts.toImmutableList(),
                     cardDataMap = persistentMapOf(),
-                    allTransactions = snapshot.transactions.toImmutableList(),
+                    allTransactions = s.history.map { it.transaction }.toImmutableList(),
                     recentActivitiesState = TransactionUiMapper.mapToUiState(
                         domainState = TransactionListState(
                             s.visibleGroups,

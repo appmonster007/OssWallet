@@ -210,11 +210,7 @@ fun AnalyticsScreen(
                                             cardDataMap = cardDataMap,
                                             cardInput = CardInput(
                                                 profileId = state.profileId,
-                                                transactions = remember(state.allTransactions, nonArchivedAccounts) {
-                                                    val activeIds = nonArchivedAccounts.map { it.id }.toSet()
-                                                    state.allTransactions.filter { it.accountId in activeIds }
-                                                },
-                                                allProfileTransactions = state.allTransactions,
+                                                transactionsVersion = state.version,
                                                 accounts = state.accounts,
                                                 categories = state.allCategories,
                                                 exchangeRates = com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(

@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
+import kotlinx.serialization.Serializable
+
 enum class SystemTag(
     val id: Long,
     val tagName: String,
@@ -8,6 +10,7 @@ enum class SystemTag(
     PLANNED(10000L, "Planned", -7829368);
 }
 
+@Serializable
 data class Tag(
     val id: Long = 0,
     val name: String,

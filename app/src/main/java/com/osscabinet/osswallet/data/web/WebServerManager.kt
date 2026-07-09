@@ -135,16 +135,17 @@ class WebServerManager @Inject constructor(
             val serverJson = Json {
                 ignoreUnknownKeys = true
                 encodeDefaults = true
+                allowSpecialFloatingPointValues = true
             }
             engine = embeddedServer(CIO, host = ip, port = SERVER_PORT) {
                 install(ContentNegotiation) { json(serverJson) }
                 install(Compression) { gzip() }
                 install(activityTrackerPlugin)
                 install(StatusPages) {
-                    exception<Throwable> { call, _ ->
+                    exception<Throwable> { call, cause ->
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            mapOf("success" to false, "error" to "Internal server error")
+                            mapOf("success" to false, "error" to "Internal server error: ${cause.message ?: cause.toString()}")
                         )
                     }
                 }

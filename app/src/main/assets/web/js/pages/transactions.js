@@ -217,9 +217,12 @@ window.openPlannedActionModal = function(id, date, title) {
 window.confirmPlannedOccurrence = async function(id, date) {
   try {
     const res = await apiWrite('POST', `/api/planned-payments/${id}/confirm-occurrence?date=${date}`);
-    if (res.success) { showToast('Occurrence confirmed!'); renderRecords(); }
+    if (res.success) {
+      showToast('Occurrence confirmed!');
+      refreshCurrentView();
+    }
     else { showToast('Failed to confirm: ' + (res.error || ''), 'error'); }
-  } catch(e) { if (e.message !== 'Session expired') showError('Error confirming occurrence.'); }
+  } catch(e) { if (e.message !== 'Session expired') showToast('Error confirming occurrence.', 'error'); }
 };
 
 window.skipPlannedOccurrence = async function(id, date) {
@@ -227,11 +230,22 @@ window.skipPlannedOccurrence = async function(id, date) {
     try {
       const res = await apiWrite('POST', `/api/planned-payments/${id}/skip-occurrence?date=${date}`);
       closeModal();
-      if (res.success) { showToast('Occurrence skipped.'); renderRecords(); }
+      if (res.success) {
+        showToast('Occurrence skipped.');
+        refreshCurrentView();
+      }
       else { showToast('Failed to skip: ' + (res.error || ''), 'error'); }
-    } catch(e) { if (e.message !== 'Session expired') showError('Error skipping occurrence.'); }
+    } catch(e) { if (e.message !== 'Session expired') showToast('Error skipping occurrence.', 'error'); }
   });
 };
+
+function refreshCurrentView() {
+  const hash = location.hash || '#/dashboard';
+  if      (hash.startsWith('#/dashboard'))        renderDashboard();
+  else if (hash.startsWith('#/records'))          renderRecords();
+  else if (hash.startsWith('#/analytics'))        renderAnalytics();
+  else if (hash.startsWith('#/planned-payments')) renderPlannedPayments();
+}
 
 function groupTransactions(items, groupBy) {
   const map = new Map();

@@ -40,6 +40,7 @@ fun Route.dashboardRoutes(
     route("/dashboard") {
         get {
             if (!authenticate(authSessionManager)) return@get
+            println("WEB_API: Received GET /dashboard")
             try {
                 val profileId = settingsRepository.currentProfileId.first()
                 val baseCurrency = settingsRepository.currency.first()
@@ -118,7 +119,7 @@ fun Route.dashboardRoutes(
                     HttpStatusCode.InternalServerError,
                     ApiResponse<Unit>(
                         success = false,
-                        error = "Internal error"
+                        error = "Internal error: ${e.message ?: e.toString()}"
                     )
                 )
             }
@@ -144,7 +145,7 @@ fun Route.dashboardRoutes(
                     HttpStatusCode.InternalServerError,
                     ApiResponse<Unit>(
                         success = false,
-                        error = "Internal error"
+                        error = "Internal error: ${e.message ?: e.toString()}"
                     )
                 )
             }
@@ -165,7 +166,7 @@ fun Route.dashboardRoutes(
                     HttpStatusCode.InternalServerError,
                     ApiResponse<Unit>(
                         success = false,
-                        error = "Internal error"
+                        error = "Internal error: ${e.message ?: e.toString()}"
                     )
                 )
             }
@@ -194,7 +195,7 @@ fun Route.dashboardRoutes(
                     HttpStatusCode.InternalServerError,
                     ApiResponse<Unit>(
                         success = false,
-                        error = "Internal error"
+                        error = "Internal error: ${e.message ?: e.toString()}"
                     )
                 )
             }
@@ -219,7 +220,7 @@ fun Route.dashboardRoutes(
                     HttpStatusCode.InternalServerError,
                     ApiResponse<Unit>(
                         success = false,
-                        error = "Internal error"
+                        error = "Internal error: ${e.message ?: e.toString()}"
                     )
                 )
             }

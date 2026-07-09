@@ -4,12 +4,15 @@ import com.osscabinet.ossWallet.data.web.dto.*
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.model.*
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -139,6 +142,30 @@ internal fun TransactionFilter.toFilterSummaryDto(): FilterSummaryDto {
     )
 }
 
+internal fun CategoryTreeMetrics.toCategoryBreakdownDto(total: Double, metric: ChartMetric): CategoryBreakdownDto {
+    val amountVal = when (metric) {
+        ChartMetric.INCOME -> income.toDouble()
+        ChartMetric.EXPENSE -> expense.abs().toDouble()
+        else -> netBalance.abs().toDouble()
+    }
+    val percentageVal = if (total > 0.0 && amountVal.isFinite() && total.isFinite()) {
+        runCatching {
+            (amountVal / total * 100.0).toBigDecimal()
+                .setScale(2, RoundingMode.HALF_UP).toDouble()
+        }.getOrDefault(0.0)
+    } else 0.0
+
+    return CategoryBreakdownDto(
+        categoryId = categoryId ?: 0L,
+        categoryName = category,
+        amount = if (amountVal.isFinite()) amountVal else 0.0,
+        percentage = percentageVal,
+        transactionCount = 0,
+        colorHex = "#${(colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}",
+        subcategories = subcategoryData.map { it.toCategoryBreakdownDto(total, metric) }
+    )
+}
+
 internal fun CardRenderData.toPayloadDto(
     now: Long,
     categoryMap: Map<Long, Category>,
@@ -148,10 +175,19 @@ internal fun CardRenderData.toPayloadDto(
         netWorth = currentPeriodMetrics.netWorth.toDouble(),
         income = currentPeriodMetrics.cashFlow.totalIncomeInBase.toDouble(),
         expense = currentPeriodMetrics.cashFlow.totalExpensesInBase.toDouble(),
-        transfer = currentPeriodMetrics.cashFlow.totalTransfersInBase.toDouble(),
+        transfer = currentPeriodMetrics.cashFlow.totalNetTransferInBase.toDouble(),
         cashFlow = currentPeriodMetrics.cashFlow.netInBase.toDouble(),
         previousNetWorth = previousPeriodMetrics?.netWorth?.toDouble(),
-        currency = this.currency
+        previousIncome = previousPeriodMetrics?.cashFlow?.totalIncomeInBase?.toDouble(),
+        previousExpense = previousPeriodMetrics?.cashFlow?.totalExpensesInBase?.toDouble(),
+        previousTransfer = previousPeriodMetrics?.cashFlow?.totalNetTransferInBase?.toDouble(),
+        currency = this.currency,
+        fontSize = config.fontSize,
+        perspective = when (config.perspective) {
+            is AccountingPerspective.Accounting -> "Accounting"
+            is AccountingPerspective.CashFlow -> "CashFlow"
+        },
+        showComparison = config.showComparison
     )
 
     is CardRenderData.CashFlow -> CardPayloadDto.CashFlow(
@@ -159,7 +195,28 @@ internal fun CardRenderData.toPayloadDto(
         expense = result.totalExpensesInBase.toDouble(),
         transfer = result.totalTransfersInBase.toDouble(),
         net = result.netInBase.toDouble(),
-        currency = this.currency
+        currency = this.currency,
+        perspective = when (config.perspective) {
+            is AccountingPerspective.Accounting -> "Accounting"
+            is AccountingPerspective.CashFlow -> "CashFlow"
+        },
+        showNetColumn = config.showNetColumn,
+        showBaseConversion = config.showBaseConversion,
+        breakdown = result.breakdown.map { item ->
+            CardPayloadDto.CashFlowBreakdownItemDto(
+                currency = item.currency,
+                income = item.income.toDouble(),
+                incomeInBase = item.incomeInBase.toDouble(),
+                expense = item.expense.toDouble(),
+                expenseInBase = item.expenseInBase.toDouble(),
+                transfer = item.transfer.toDouble(),
+                transferInBase = item.transferInBase.toDouble(),
+                transferIn = item.transferIn.toDouble(),
+                transferInInBase = item.transferInInBase.toDouble(),
+                transferOut = item.transferOut.toDouble(),
+                transferOutInBase = item.transferOutInBase.toDouble()
+            )
+        }
     )
 
     is CardRenderData.CurrencyBalances -> CardPayloadDto.CurrencyBalances(
@@ -170,7 +227,10 @@ internal fun CardRenderData.toPayloadDto(
                 balanceInBase = item.amountInBase.toDouble()
             )
         },
-        baseCurrency = this.currency
+        baseCurrency = this.currency,
+        layout = config.layout,
+        gridColumns = config.gridColumns,
+        showBaseConversion = config.showBaseConversion
     )
 
     is CardRenderData.Accounts -> CardPayloadDto.Accounts(
@@ -185,7 +245,15 @@ internal fun CardRenderData.toPayloadDto(
                 transfer = stats.currentPeriodFlow.netTransfer.toDouble(),
                 balanceInBase = stats.balanceInBase.toDouble()
             )
-        }
+        },
+        layout = config.layout,
+        gridColumns = config.gridColumns,
+        showAddAccountCard = config.showAddAccountCard,
+        perspective = when (config.perspective) {
+            is AccountingPerspective.Accounting -> "Accounting"
+            is AccountingPerspective.CashFlow -> "CashFlow"
+        },
+        excludeInternalTransfers = config.excludeInternalTransfers
     )
 
     is CardRenderData.Budgets -> CardPayloadDto.Budgets(
@@ -205,12 +273,16 @@ internal fun CardRenderData.toPayloadDto(
                 period = periodLabel,
                 isArchived = progress.budget.isArchived
             )
-        }
+        },
+        showArchived = config.showArchived,
+        maxItems = config.maxItems
     )
 
     is CardRenderData.PlannedPayments -> CardPayloadDto.PlannedPayments(
         upcoming = items.filter { !it.isOverdue }.map { it.toDto() },
-        overdue = items.filter { it.isOverdue }.map { it.toDto() }
+        overdue = items.filter { it.isOverdue }.map { it.toDto() },
+        viewMode = config.viewMode.name,
+        maxItems = config.maxItems
     )
 
     is CardRenderData.Loans -> CardPayloadDto.Loans(
@@ -228,71 +300,80 @@ internal fun CardRenderData.toPayloadDto(
                 startDate = summary.loan.startDate,
                 expectedSettlementDate = summary.loan.expectedSettlementDate
             )
-        }
+        },
+        showType = config.showType,
+        maxItems = config.maxItems
     )
 
     is CardRenderData.RecentActivities -> {
-        val txList = listState.groups.flatMap { it.transactions }
         CardPayloadDto.RecentActivities(
-            transactions = txList.take(20).mapNotNull { uiModel ->
-                if (uiModel is ConfirmedTransactionUiModel) {
-                    uiModel.item.transaction.toDto(categoryMap, accountMap)
-                } else if (uiModel is PlannedPaymentUiModel) {
-                    // Map planned to transaction DTO
-                    TransactionDto(
-                        id = 0,
-                        title = uiModel.categoryName, // or some other name if available
-                        amount = uiModel.amount.toDouble(),
-                        currency = uiModel.currency,
-                        type = "EXPENSE", // Default for planned
-                        categoryId = null,
-                        categoryName = uiModel.categoryName,
-                        accountId = null,
-                        accountName = uiModel.accountName,
-                        date = uiModel.timestamp,
-                        note = uiModel.note,
-                        isPlanned = true,
-                        isOverdue = uiModel.isOverdue,
-                        paymentId = uiModel.paymentId
-                    )
-                } else null
+            transactions = emptyList(), // We'll use groups
+            total = listState.groups.sumOf { it.transactions.size },
+            groups = listState.groups.map { group ->
+                CardPayloadDto.TransactionGroupDto(
+                    label = group.headerData.title,
+                    transactions = group.transactions.mapNotNull { uiModel ->
+                        if (uiModel is ConfirmedTransactionUiModel) {
+                            uiModel.item.transaction.toDto(categoryMap, accountMap)
+                        } else if (uiModel is PlannedPaymentUiModel) {
+                            TransactionDto(
+                                id = 0,
+                                title = uiModel.categoryName ?: "Planned Payment",
+                                amount = uiModel.amount.toDouble(),
+                                currency = uiModel.currency,
+                                type = "EXPENSE",
+                                categoryId = null,
+                                categoryName = uiModel.categoryName,
+                                accountId = null,
+                                accountName = uiModel.accountName,
+                                date = uiModel.timestamp,
+                                note = uiModel.note,
+                                isPlanned = true,
+                                isOverdue = uiModel.isOverdue,
+                                paymentId = uiModel.paymentId
+                            )
+                        } else null
+                    }
+                )
             },
-            total = listState.groups.sumOf { it.transactions.size }
+            groupBy = config.groupBy.name,
+            showAccount = config.showAccount,
+            showCategory = config.showCategory,
+            showNote = config.showNote,
+            showTags = config.showTags,
+            showTimestamp = config.showTimestamp,
+            showIcon = config.showIcon,
+            showOpeningBalance = config.showOpeningBalance,
+            showClosingBalance = config.showClosingBalance
         )
     }
 
     is CardRenderData.CategoryPieChart -> {
-        val total = items.sumOf { it.expense.toDouble() }
+        val metric = config.selectedMetric
+        val total = items.sumOf {
+            when (metric) {
+                ChartMetric.INCOME -> it.income.toDouble()
+                ChartMetric.EXPENSE -> it.expense.abs().toDouble()
+                else -> it.netBalance.abs().toDouble()
+            }
+        }
         CardPayloadDto.CategoryBreakdown(
-            items = items.map { metrics ->
-                CategoryBreakdownDto(
-                    categoryId = metrics.categoryId ?: 0L,
-                    categoryName = metrics.category,
-                    amount = metrics.expense.toDouble(),
-                    percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
-                        .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
-                    transactionCount = 0,
-                    colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
-                )
-            },
+            items = items.map { it.toCategoryBreakdownDto(total, metric) },
             displayCurrency = currency
         )
     }
 
     is CardRenderData.CategoryTreemap -> {
-        val total = items.sumOf { it.expense.toDouble() }
+        val metric = config.selectedMetric
+        val total = items.sumOf {
+            when (metric) {
+                ChartMetric.INCOME -> it.income.toDouble()
+                ChartMetric.EXPENSE -> it.expense.abs().toDouble()
+                else -> it.netBalance.abs().toDouble()
+            }
+        }
         CardPayloadDto.CategoryBreakdown(
-            items = items.map { metrics ->
-                CategoryBreakdownDto(
-                    categoryId = metrics.categoryId ?: 0L,
-                    categoryName = metrics.category,
-                    amount = metrics.expense.toDouble(),
-                    percentage = if (total > 0.0) (metrics.expense.toDouble() / total * 100.0).toBigDecimal()
-                        .setScale(2, RoundingMode.HALF_UP).toDouble() else 0.0,
-                    transactionCount = 0,
-                    colorHex = "#${(metrics.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
-                )
-            },
+            items = items.map { it.toCategoryBreakdownDto(total, metric) },
             displayCurrency = currency
         )
     }
@@ -326,7 +407,13 @@ internal fun CardRenderData.toPayloadDto(
             )
         },
         granularity = granularity.name,
-        baseCurrency = this.currency
+        baseCurrency = this.currency,
+        isCumulative = config.isCumulative,
+        showGridLines = config.showGridLines,
+        showCurrent = config.showCurrentPeriod,
+        showPrevious = config.showPreviousPeriod,
+        showLastYear = config.showSamePeriodLastYear,
+        selectedMetric = config.selectedMetric.name
     )
 
     is CardRenderData.IncomeExpenseBar -> CardPayloadDto.IncomeExpenseBar(
@@ -341,7 +428,9 @@ internal fun CardRenderData.toPayloadDto(
         },
         granularity = granularity.name,
         baseCurrency = this.currency,
-        todayBucketIndex = todayBucketIndex
+        todayBucketIndex = todayBucketIndex,
+        isCumulative = config.isCumulative,
+        showGridLines = config.showGridLines
     )
 
     is CardRenderData.CategorySpendingTrend -> CardPayloadDto.CategorySpendingTrend(
@@ -360,7 +449,21 @@ internal fun CardRenderData.toPayloadDto(
             )
         },
         granularity = granularity.name,
-        baseCurrency = this.currency
+        baseCurrency = this.currency,
+        isCumulative = config.isCumulative,
+        showGridLines = config.showGridLines,
+        selectedMetric = config.selectedMetric.name,
+        selectedNatures = config.selectedNatures.map { it.name },
+        activeCategories = activeCategories.map { summary ->
+            CategoryBreakdownDto(
+                categoryId = summary.categoryId,
+                categoryName = summary.name,
+                amount = summary.totalAmount.toDouble(),
+                percentage = 0.0,
+                transactionCount = 0,
+                colorHex = "#${(summary.colorHex and 0xFFFFFF).toString(16).padStart(6, '0')}"
+            )
+        }
     )
 
     is CardRenderData.TagUpSetPlot -> CardPayloadDto.TagUpSetPlot(
@@ -379,17 +482,32 @@ internal fun CardRenderData.toPayloadDto(
                 transactionCount = i.transactionCount
             )
         },
-        baseCurrency = this.currency
+        baseCurrency = this.currency,
+        selectedMetric = config.selectedMetric.name,
+        maxTags = config.maxTags,
+        maxIntersections = config.maxIntersections
     )
 
-    is CardRenderData.AccountHero -> CardPayloadDto.NetWorth(
-        netWorth = summary.balance.toDouble(),
+    is CardRenderData.AccountHero -> CardPayloadDto.AccountHero(
+        accountId = summary.account.id,
+        accountName = summary.account.name,
+        currency = summary.account.currencyCode,
+        balance = summary.balance.toDouble(),
+        balanceInBase = summary.balanceInBase.toDouble(),
+        colorHex = summary.account.colorHex,
+        iconName = summary.account.icon,
+        structureType = summary.account.structureType.name,
         income = summary.currentPeriodFlow.income.toDouble(),
         expense = summary.currentPeriodFlow.expense.toDouble(),
-        transfer = 0.0,
-        cashFlow = (summary.currentPeriodFlow.income - summary.currentPeriodFlow.expense).toDouble(),
-        previousNetWorth = null,
-        currency = summary.account.currencyCode
+        transferIn = summary.currentPeriodFlow.transferIn.toDouble(),
+        transferOut = summary.currentPeriodFlow.transferOut.toDouble(),
+        distribution = summary.currencyBalances.mapValues { it.value.toDouble() },
+        showCurrencyBadges = config.showCurrencyBadges,
+        showComparison = config.showComparison,
+        perspective = when (config.perspective) {
+            is AccountingPerspective.Accounting -> "Accounting"
+            is AccountingPerspective.CashFlow -> "CashFlow"
+        }
     )
 
     is CardRenderData.Error -> null

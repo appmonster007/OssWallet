@@ -87,7 +87,7 @@ async function renderPlannedPayments() {
 window.confirmPlanned = async function (id) {
   try {
     const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/confirm`);
-    if (res.success) { renderPlannedPayments(); showToast('Payment confirmed!'); }
+    if (res.success) { showToast('Payment confirmed!'); refreshCurrentView(); }
     else { showToast('Failed to confirm payment.', 'error'); }
   } catch (e) { if (e.message !== 'Session expired') showToast('Error confirming payment.', 'error'); }
 };
@@ -95,7 +95,7 @@ window.confirmPlanned = async function (id) {
 window.skipPlanned = async function (id) {
   try {
     const res = await apiWrite('POST', `/api/planned-payments/${encodeURIComponent(id)}/skip`);
-    if (res.success) { renderPlannedPayments(); showToast('Payment skipped.'); }
+    if (res.success) { showToast('Payment skipped.'); refreshCurrentView(); }
     else { showToast('Failed to skip payment.', 'error'); }
   } catch (e) { if (e.message !== 'Session expired') showToast('Error skipping payment.', 'error'); }
 };

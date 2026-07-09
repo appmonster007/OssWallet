@@ -9,5 +9,6 @@ data class CategoryBreakdownDto(
     val amount: Double,
     val percentage: Double,
     val transactionCount: Int,
-    val colorHex: String? = null
+    val colorHex: String? = null,
+    val subcategories: List<CategoryBreakdownDto> = emptyList()
 )

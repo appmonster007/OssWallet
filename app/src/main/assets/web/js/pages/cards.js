@@ -1,26 +1,39 @@
 /* DASHBOARD: Card filter sheet + card management */
 
 const CARD_FILTER_CAPS = {
-  NetWorth:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
-  CashFlow:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+  NetWorth:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true, perspective:true, excludeInternalTransfers:true },
+  CashFlow:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true, perspective:true, excludeInternalTransfers:true },
   CurrencyBalances:      { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
-  Accounts:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+  Accounts:              { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true, perspective:true, excludeInternalTransfers:true },
   Budgets:               { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
   PlannedPayments:       { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
   Loans:                 { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
   RecentActivities:      { timeline:true,  txTypeMode:'none',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
-  CategoryBreakdown:     { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
-  CashFlowComparison:    { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
-  IncomeExpenseBar:      { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true },
-  CategorySpendingTrend: { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  nature:true,  refetch:true },
-  TagUpSetPlot:          { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true },
+  CategoryBreakdown:     { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true, perspective:true, excludeInternalTransfers:true },
+  CashFlowComparison:    { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true, perspective:true, excludeInternalTransfers:true, isCumulative:true },
+  IncomeExpenseBar:      { timeline:true,  txTypeMode:'both',   accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:false, refetch:true, perspective:true, excludeInternalTransfers:true, isCumulative:true },
+  CategorySpendingTrend: { timeline:true,  txTypeMode:'single', accounts:true,  categories:false, currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  nature:true,  refetch:true, perspective:true, excludeInternalTransfers:true, isCumulative:true },
+  TagUpSetPlot:          { timeline:true,  txTypeMode:'single', accounts:true,  categories:true,  currencies:true,  tags:true,  statuses:true,  methods:true,  amount:true,  search:true,  future:true,  refetch:true, perspective:true, excludeInternalTransfers:true },
 };
 
 window.openCardFilterSheet = function (cardId, payloadType, cardType) {
   const caps = CARD_FILTER_CAPS[payloadType] || {};
   const fs   = cardOverrides[cardId] || {};
 
+  // Fetch full card config to get non-filter settings if possible
+  const card = (window.lastDashboardData || window.lastAnalyticsResponse?.cards || []).find(c => c.cardId === cardId);
+  const config = card?.config || {};
+
   let body = `<div style="display:flex;flex-direction:column;gap:14px">`;
+
+  if (caps.perspective) {
+    const curP = fs.perspective || config.perspective || 'ACCOUNTING';
+    body += `<div class="form-field"><label>Accounting Perspective</label>
+      <div class="chip-group">
+        <label class="chip-check ${curP==='ACCOUNTING'?'active':''}"><input type="radio" name="cf-perspective" value="ACCOUNTING" ${curP==='ACCOUNTING'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Accounting</span></label>
+        <label class="chip-check ${curP==='CASH_FLOW'?'active':''}"><input type="radio" name="cf-perspective" value="CASH_FLOW" ${curP==='CASH_FLOW'?'checked':''} onchange="this.closest('.chip-group').querySelectorAll('.chip-check').forEach(l=>l.classList.remove('active'));this.closest('label').classList.add('active')"><span>Cash Flow</span></label>
+      </div></div>`;
+  }
 
   if (caps.timeline) {
     const tl = fs.timelineType || 'ALL_TIME';
@@ -42,7 +55,7 @@ window.openCardFilterSheet = function (cardId, payloadType, cardType) {
   }
 
   if (caps.nature) {
-    const selNature = fs.natures || [];
+    const selNature = fs.natures || config.selectedNatures || [];
     body += `<div class="form-field"><label>Spending Nature</label>` +
       chipCheckboxes('cf-nature', [{value:'MUST',label:'Must'},{value:'NEED',label:'Need'},{value:'WANT',label:'Want'}], selNature) +
       `</div>`;
@@ -111,6 +124,18 @@ window.openCardFilterSheet = function (cardId, payloadType, cardType) {
     );
   }
 
+  if (caps.excludeInternalTransfers) {
+    const excl = fs.excludeInternalTransfers !== false && config.excludeInternalTransfers !== false;
+    body += `<div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
+      <input type="checkbox" id="cf-exclude-internal" ${excl?'checked':''}><label for="cf-exclude-internal" style="margin-bottom:0;cursor:pointer">Exclude Internal Transfers</label></div>`;
+  }
+
+  if (caps.isCumulative) {
+    const cum = fs.isCumulative || config.isCumulative || false;
+    body += `<div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
+      <input type="checkbox" id="cf-cumulative" ${cum?'checked':''}><label for="cf-cumulative" style="margin-bottom:0;cursor:pointer">Cumulative Chart</label></div>`;
+  }
+
   if (caps.future) {
     const excl = fs.excludeFuture !== false;
     body += `<div class="form-field" style="flex-direction:row;align-items:center;gap:10px">
@@ -140,6 +165,7 @@ window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
   const getRadio = name => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
 
   const fs = {};
+  if (caps.perspective) fs.perspective = getRadio('cf-perspective');
   if (caps.timeline) {
     fs.timelineType = get('cf-timeline');
     if (fs.timelineType === 'CUSTOM') { fs.customFrom = get('cf-from'); fs.customTo = get('cf-to'); }
@@ -165,6 +191,8 @@ window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
   }
   if (caps.search)      { const n=get('cf-note'); const p=get('cf-payee'); if(n) fs.queryNote=n; if(p) fs.queryPayee=p; }
   if (caps.amount)      { const mn=get('cf-min'); const mx=get('cf-max'); if(mn) fs.minAmount=parseFloat(mn); if(mx) fs.maxAmount=parseFloat(mx); }
+  if (caps.excludeInternalTransfers) fs.excludeInternalTransfers = document.getElementById('cf-exclude-internal')?.checked !== false;
+  if (caps.isCumulative) fs.isCumulative = document.getElementById('cf-cumulative')?.checked === true;
   if (caps.future)      { fs.excludeFuture = document.getElementById('cf-future')?.checked !== false; }
 
   const isEmpty = Object.keys(fs).length === 0 || (Object.keys(fs).length === 1 && fs.timelineType === 'ALL_TIME' && !fs.customFrom);
@@ -173,6 +201,10 @@ window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
 
   if (!isEmpty) {
     const body = {
+      perspective:    fs.perspective,
+      excludeInternalTransfers: fs.excludeInternalTransfers,
+      isCumulative:   fs.isCumulative,
+      selectedNatures: fs.natures,
       timelineType: fs.timelineType || 'ALL_TIME',
       dateFrom: fs.customFrom ? new Date(fs.customFrom).getTime() : null,
       dateTo:   fs.customTo   ? new Date(fs.customTo).getTime()   : null,

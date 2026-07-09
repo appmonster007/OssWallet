@@ -1,5 +1,7 @@
 /* Formatters and chart primitives */
 
+const CHART_COLORS = ['#2979FF', '#00C853', '#B3261E', '#FF5722', '#6a1b9a', '#00838f', '#ad1457', '#4e342e', '#37474f', '#558b2f'];
+
 function fmt(amount, currency) {
   try { return new Intl.NumberFormat(navigator.language, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
   catch { return Number(amount).toFixed(2) + ' ' + (currency || ''); }
@@ -38,6 +40,19 @@ function prettyEnum(val) {
   return ENUM_LABELS[val] || val.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function fmtTrendPct(current, previous) {
+  if (previous == null || previous === 0) return '';
+  const delta = current - previous;
+  const pct = (delta / Math.abs(previous)) * 100;
+  const up = delta > 0;
+  const color = up ? 'amount-income' : 'amount-expense';
+
+  let label = pct.toFixed(1) + '%';
+  if (Math.abs(pct) > 999) label = (pct > 0 ? '>999' : '<-999') + '%';
+
+  return `<span class="${color}" style="font-weight:700">${up ? '▲' : '▼'} ${up ? '+' : ''}${label}</span>`;
+}
+
 function progressBar(pct, color) {
   const cls = color || (pct < 80 ? 'progress-green' : pct < 100 ? 'progress-orange' : 'progress-red');
   const w   = Math.min(100, Math.max(0, pct));
@@ -46,23 +61,23 @@ function progressBar(pct, color) {
 
 /* ── Chart helpers ── */
 
-const CHART_COLORS = ['#1976D2','#2e7d32','#c62828','#f57f17','#6a1b9a','#00838f','#ad1457','#4e342e','#37474f','#558b2f'];
-
 function svgDonut(slices, size) {
   size = size || 180;
   if (!slices || !slices.length) return '<p class="empty-state">No data</p>';
-  const total = slices.reduce((s, x) => s + (x.value || 0), 0);
-  if (total === 0) return '<p class="empty-state">No data</p>';
+  const totalMagnitude = slices.reduce((s, x) => s + Math.abs(x.value || 0), 0);
+  if (totalMagnitude === 0) return '<p class="empty-state">No data</p>';
   const r = 60, cx = size / 2, cy = size / 2, stroke = 28;
   const circ = 2 * Math.PI * r;
   let offset = 0, paths = '';
   slices.forEach((s, i) => {
-    const pct  = s.value / total;
+    const rawVal = s.value || 0;
+    const magVal = Math.abs(rawVal);
+    const pct  = magVal / totalMagnitude;
     const dash = pct * circ;
     const col  = s.color || CHART_COLORS[i % CHART_COLORS.length];
     paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${esc(col)}"
       stroke-width="${stroke}" stroke-dasharray="${dash.toFixed(2)} ${(circ - dash).toFixed(2)}"
-      stroke-dashoffset="${(circ * 0.25 - offset).toFixed(2)}"><title>${esc(s.label)}</title></circle>`;
+      stroke-dashoffset="${(circ * 0.25 - offset).toFixed(2)}"><title>${esc(s.label)}: ${fmtRaw(rawVal)}</title></circle>`;
     offset += dash;
   });
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block">${paths}</svg>`;
@@ -72,41 +87,60 @@ function svgBars(points, width, height, showNetLine, todayIdx) {
   width  = width  || 560;
   height = height || 140;
   if (!points || !points.length) return '<p class="empty-state">No data</p>';
-  const maxVal  = Math.max(...points.flatMap(p => [p.income || 0, p.expense || 0])) || 1;
-  const count   = points.length;
-  const pl = 40, pb = 24;
+
+  const pl = 40, pb = 24, pt = 10;
   const usableW = width - pl;
-  const slotW   = Math.floor(usableW / count);
-  const barW    = Math.max(4, Math.floor(slotW / 2) - 3);
-  const chartH  = height - pb;
+  const slotW = Math.floor(usableW / points.length);
+  const barW = Math.max(4, Math.floor(slotW / 2) - 3);
+
+  const data = points.map((p, i) => ({
+    x: pl + i * slotW + barW,
+    inc: p.income || 0,
+    exp: p.expense || 0,
+    net: (p.income || 0) + (p.expense || 0),
+    label: p.label
+  }));
+
+  const allVals = data.flatMap(d => [d.inc, d.exp, d.net]);
+  let minVal = Math.min(0, ...allVals);
+  let maxVal = Math.max(0, ...allVals);
+  if (minVal === 0 && maxVal === 0) maxVal = 1;
+  const range = maxVal - minVal;
+
+  const getY = (val) => pt + (height - pb - pt) * (1 - (val - minVal) / range);
+  const zeroY = getY(0);
+
   let svg = '';
-  for (let gi = 0; gi <= 4; gi++) {
-    const gy = (chartH * gi / 4).toFixed(1);
-    const val = maxVal * (4 - gi) / 4;
-    svg += `<line x1="${pl}" y1="${gy}" x2="${width}" y2="${gy}" stroke="var(--border)" stroke-width="1"/>`;
+  for (let i = 0; i <= 4; i++) {
+    const val = minVal + (range * i / 4);
+    const gy = getY(val);
+    svg += `<line x1="${pl}" y1="${gy}" x2="${width}" y2="${gy}" stroke="var(--border)" stroke-width="1" opacity="0.3"/>`;
     svg += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(val,0)}</text>`;
   }
-  const barCenters = [];
-  points.forEach((p, i) => {
-    const x  = pl + i * slotW;
-    const ih = Math.round(((p.income  || 0) / maxVal) * chartH);
-    const eh = Math.round(((p.expense || 0) / maxVal) * chartH);
-    const cx = x + barW;
-    barCenters.push({ x: cx, net: (p.income||0) - (p.expense||0) });
-    if (i === todayIdx) svg += `<rect x="${x}" y="0" width="${slotW}" height="${chartH}" fill="var(--primary)" opacity="0.06"/>`;
-    svg += `<rect x="${x}" y="${chartH - ih}" width="${barW}" height="${Math.max(1,ih)}" fill="var(--success)" opacity="0.85"><title>Income: ${p.income}</title></rect>`;
-    svg += `<rect x="${x + barW + 2}" y="${chartH - eh}" width="${barW}" height="${Math.max(1,eh)}" fill="var(--danger)" opacity="0.85"><title>Expense: ${p.expense}</title></rect>`;
+
+  data.forEach((p, i) => {
+    const x = pl + i * slotW;
+    const incY = getY(p.inc);
+    const expY = getY(p.exp);
+    const cx = p.x;
+
+    if (i === todayIdx) svg += `<rect x="${x}" y="${pt}" width="${slotW}" height="${height-pb-pt}" fill="var(--accent)" opacity="0.08"/>`;
+
+    const incH = Math.abs(zeroY - incY);
+    if (incH > 0.5) svg += `<rect x="${x}" y="${Math.min(zeroY, incY)}" width="${barW}" height="${incH}" fill="#00C853" opacity="0.85" rx="1"><title>Income: ${fmtRaw(p.inc)}</title></rect>`;
+
+    const expH = Math.abs(zeroY - expY);
+    if (expH > 0.5) svg += `<rect x="${x + barW + 2}" y="${Math.min(zeroY, expY)}" width="${barW}" height="${expH}" fill="#B3261E" opacity="0.85" rx="1"><title>Expense: ${fmtRaw(p.exp)}</title></rect>`;
+
     svg += `<text x="${cx}" y="${height - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(p.label).slice(0, 6))}</text>`;
   });
-  if (showNetLine && barCenters.length > 1) {
-    const maxNet = Math.max(...barCenters.map(c=>Math.abs(c.net)), 1);
-    const netPts = barCenters.map(c => {
-      const py = (chartH / 2) - (c.net / maxNet) * (chartH / 2);
-      return `${c.x.toFixed(1)},${Math.max(0, Math.min(chartH, py)).toFixed(1)}`;
-    }).join(' ');
-    svg += `<polyline points="${netPts}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round"/>`;
+
+  if (showNetLine && data.length > 1) {
+    const netPts = data.slice(0, (todayIdx != null ? todayIdx + 1 : data.length)).map(c => `${c.x.toFixed(1)},${getY(c.net).toFixed(1)}`).join(' ');
+    svg += `<polyline points="${netPts}" fill="none" stroke="#2979FF" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round" stroke-linejoin="round"/>`;
   }
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible;display:block">${svg}</svg>`;
+
+  return `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;display:block">${svg}</svg>`;
 }
 
 function svgLineChart(seriesList, w, h) {
@@ -116,29 +150,31 @@ function svgLineChart(seriesList, w, h) {
   if (!first || !first.points.length) return '<p class="empty-state">No data</p>';
   const n = first.points.length;
   const allVals = seriesList.flatMap(s => (s.points||[]).filter(v=>v!=null));
-  const minVal = Math.min(0, ...allVals);
-  const maxVal = Math.max(...allVals, 1);
+  let minVal = Math.min(0, ...allVals);
+  let maxVal = Math.max(...allVals, 1);
+  if (minVal === maxVal) { minVal -= 1; maxVal += 1; }
   const range = maxVal - minVal || 1;
   const pl = 44, pr = 10, pt = 10, pb = 22;
   const cw = w - pl - pr, ch = h - pt - pb;
+  const getY = (v) => pt + ch - ((v - minVal) / range) * ch;
+
   let svg = '';
   for (let gi = 0; gi <= 4; gi++) {
-    const gy = (pt + ch * gi / 4).toFixed(1);
-    const val = minVal + range * (4 - gi) / 4;
-    svg += `<line x1="${pl}" y1="${gy}" x2="${w - pr}" y2="${gy}" stroke="var(--border)" stroke-width="1"/>`;
-    svg += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(val,0)}</text>`;
+    const gy = getY(minVal + range * gi / 4);
+    svg += `<line x1="${pl}" y1="${gy}" x2="${w - pr}" y2="${gy}" stroke="var(--border)" stroke-width="1" opacity="0.3"/>`;
+    svg += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(minVal + range * gi / 4,0)}</text>`;
   }
   seriesList.forEach(s => {
     if (!s.points || !s.points.length) return;
     let segment = [];
     const flushSegment = () => {
-      if (segment.length > 1) svg += `<polyline points="${segment.join(' ')}" fill="none" stroke="${esc(s.color||'#1976D2')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="${s.opacity!=null?s.opacity:1}"/>`;
+      if (segment.length > 1) svg += `<polyline points="${segment.join(' ')}" fill="none" stroke="${esc(s.color||'#2979FF')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity="${s.opacity!=null?s.opacity:1}" ${s.isDashed ? 'stroke-dasharray="4 2"' : ''}/>`;
       segment = [];
     };
     s.points.forEach((v, i) => {
       if (v == null) { flushSegment(); return; }
       const px = pl + (n <= 1 ? cw / 2 : i * cw / (n - 1));
-      const py = pt + ch - ((v - minVal) / range) * ch;
+      const py = getY(v);
       segment.push(`${px.toFixed(1)},${py.toFixed(1)}`);
     });
     flushSegment();
@@ -157,44 +193,78 @@ function svgLineChart(seriesList, w, h) {
 function svgStackedBarsChart(buckets, colorMap, w, h) {
   w = w || 560; h = h || 140;
   if (!buckets || !buckets.length) return '<p class="empty-state">No data</p>';
-  const maxTotal = Math.max(...buckets.map(b => (b.categories||[]).reduce((s,c)=>s+Math.abs(c.amount||0),0)), 1);
-  const count = buckets.length;
-  const usableW = w - 40;
-  const slotW = Math.floor(usableW / count);
+
+  let minTotal = 0, maxTotal = 0;
+  buckets.forEach(b => {
+    let pos = 0, neg = 0;
+    (b.categories || []).forEach(c => {
+      const val = c.amount || 0;
+      if (val > 0) pos += val; else neg += val;
+    });
+    minTotal = Math.min(minTotal, neg);
+    maxTotal = Math.max(maxTotal, pos);
+  });
+  if (minTotal === 0 && maxTotal === 0) maxTotal = 1;
+  const range = maxTotal - minTotal;
+
+  const pl = 40, pb = 24, pt = 10;
+  const chartH = h - pb - pt;
+  const slotW = Math.floor((w - pl) / buckets.length);
   const barW = Math.max(4, slotW - 4);
-  const chartH = h - 24;
+
+  const getY = (val) => pt + chartH * (1 - (val - minTotal) / range);
+  const zeroY = getY(0);
+
   let rects = '';
+  for (let i = 0; i <= 4; i++) {
+    const val = minTotal + (range * i / 4);
+    const gy = getY(val);
+    rects += `<line x1="${pl}" y1="${gy}" x2="${w}" y2="${gy}" stroke="var(--border)" stroke-width="1" opacity="0.3"/>`;
+    rects += `<text x="${pl-4}" y="${gy}" text-anchor="end" dominant-baseline="middle" font-size="9" fill="var(--text-muted)">${fmtRaw(val,0)}</text>`;
+  }
+
   buckets.forEach((b, i) => {
-    const x = 40 + i * slotW;
-    let y = chartH;
-    (b.categories||[]).forEach((cat, ci) => {
-      const bh = Math.round((Math.abs(cat.amount||0) / maxTotal) * chartH);
-      if (bh > 0) {
-        const color = colorMap[cat.categoryName] || CHART_COLORS[ci % CHART_COLORS.length];
-        y -= bh;
-        rects += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${esc(color)}" opacity="0.85"><title>${esc(cat.categoryName)}: ${fmtRaw(Math.abs(cat.amount||0))}</title></rect>`;
+    const x = pl + i * slotW + 2;
+    let posAcc = 0, negAcc = 0;
+
+    (b.categories || []).forEach((cat, ci) => {
+      const val = cat.amount || 0;
+      if (val === 0) return;
+
+      const bh = Math.abs(getY(val) - zeroY);
+      const color = colorMap[cat.categoryName] || CHART_COLORS[ci % CHART_COLORS.length];
+
+      if (val > 0) {
+        const y = getY(posAcc + val);
+        rects += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${esc(color)}" opacity="0.85" rx="1"><title>${esc(cat.categoryName)}: ${fmtRaw(val)}</title></rect>`;
+        posAcc += val;
+      } else {
+        const y = getY(negAcc);
+        rects += `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${esc(color)}" opacity="0.85" rx="1"><title>${esc(cat.categoryName)}: ${fmtRaw(val)}</title></rect>`;
+        negAcc += val;
       }
     });
-    rects += `<text x="${(x+barW/2).toFixed(1)}" y="${h-4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(b.label||'').slice(0,6))}</text>`;
+    rects += `<text x="${(x + barW / 2).toFixed(1)}" y="${h - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(b.label || '').slice(0, 6))}</text>`;
   });
+
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" style="overflow:visible;display:block" preserveAspectRatio="none">${rects}</svg>`;
 }
 
 function svgTreemapChart(items, w, h) {
   w = w || 560; h = h || 180;
   if (!items || !items.length) return '<p class="empty-state">No data</p>';
-  const sorted = [...items].filter(x=>(x.amount||0)>0).sort((a,b)=>(b.amount||0)-(a.amount||0));
+  const sorted = [...items].filter(x=>Math.abs(x.amount||0)>0).sort((a,b)=>Math.abs(b.amount||0)-Math.abs(a.amount||0));
   if (!sorted.length) return '<p class="empty-state">No data</p>';
-  const total = sorted.reduce((s,x)=>s+(x.amount||0),0);
+  const total = sorted.reduce((s,x)=>s+Math.abs(x.amount||0),0);
   let rects='', texts='', x=0;
   sorted.forEach((item, i) => {
-    const pct = (item.amount||0) / total;
+    const pct = Math.abs(item.amount||0) / total;
     const iw = Math.round(pct * w);
     if (iw < 1) return;
     const color = item.colorHex || CHART_COLORS[i % CHART_COLORS.length];
-    rects += `<rect x="${x}" y="0" width="${iw}" height="${h}" fill="${esc(color)}" opacity="0.82" rx="2"><title>${esc(item.categoryName)}: ${fmtRaw(item.amount||0)} (${fmtRaw(item.percentage||pct*100,1)}%)</title></rect>`;
-    if (iw > 44) {
-      const maxChars = Math.max(1, Math.floor(iw/7));
+    rects += `<rect x="${x}" y="0" width="${iw-1}" height="${h}" fill="${esc(color)}" opacity="0.82" rx="2"><title>${esc(item.categoryName)}: ${fmtRaw(item.amount||0)} (${fmtRaw(item.percentage||pct*100,1)}%)</title></rect>`;
+    if (iw > 50) {
+      const maxChars = Math.max(1, Math.floor(iw/8));
       const label = item.categoryName.length > maxChars ? item.categoryName.slice(0,maxChars)+'…' : item.categoryName;
       texts += `<text x="${(x+iw/2).toFixed(1)}" y="${(h/2-5).toFixed(1)}" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">${esc(label)}</text>`;
       texts += `<text x="${(x+iw/2).toFixed(1)}" y="${(h/2+11).toFixed(1)}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.88)">${fmtRaw(item.percentage||pct*100,1)}%</text>`;
@@ -266,20 +336,101 @@ function dispatchCardRender(card, d, payloadType) {
 
 function dispatchCardBody(card, d, payloadType) {
   switch (payloadType) {
-    case 'NetWorth':              return renderNetWorthBody(d);
-    case 'CashFlow':              return renderCashFlowBody(d);
-    case 'CurrencyBalances':      return renderCurrencyBalancesBody(d);
-    case 'Accounts':              return renderAccountsBody(d, d.baseCurrency||'');
-    case 'Budgets':               return renderBudgetBody(d);
-    case 'PlannedPayments':       return renderPlannedPaymentsBody(d);
-    case 'Loans':                 return renderLoansBody(d);
-    case 'RecentActivities':      return renderRecentActivitiesBody(d.transactions||[], d.total||0);
-    case 'CategoryBreakdown':     return card.cardType==='CATEGORY_TREEMAP' ? renderCategoryTreemapBody(d.items||[], d.displayCurrency||'') : renderCategoryPieBody(d.items||[], d.displayCurrency||'');
-    case 'CashFlowComparison':    { if (!window.cachedCfcData) window.cachedCfcData={}; window.cachedCfcData[card.cardId]=d; return renderCashFlowComparisonBody(d, card.cardId); }
-    case 'IncomeExpenseBar':      return renderIncomeExpenseBody(d.buckets||[], d.granularity||'MONTH', d.baseCurrency, d.todayBucketIndex);
-    case 'CategorySpendingTrend': return renderCategorySpendingTrendBody(d);
-    case 'TagUpSetPlot':          return renderTagUpSetPlotBody(d, d.baseCurrency||'');
+    case 'NetWorth':              return renderNetWorthCard(d);
+    case 'CashFlow':              return renderCashFlowCard(d);
+    case 'CurrencyBalances':      return renderCurrencyBalancesCard(d);
+    case 'Accounts':              return renderAccountsCard(d, d.baseCurrency||'');
+    case 'Budgets':               return renderBudgetsCard(d);
+    case 'PlannedPayments':       return renderPlannedPaymentsCard(d);
+    case 'Loans':                 return renderLoansCard(d);
+    case 'RecentActivities':      return renderRecentActivitiesCard(d);
+    case 'AccountHero':           return renderAccountHeroCard(d);
+    case 'CategoryBreakdown':     return renderCategoryBreakdownCard(card, d, card.cardType==='CATEGORY_TREEMAP');
+    case 'CashFlowComparison':    { if (!window.cachedCfcData) window.cachedCfcData={}; window.cachedCfcData[card.cardId]=d; return renderCashFlowComparisonCard(d, card.cardId); }
+    case 'IncomeExpenseBar':      return renderIncomeExpenseBarCard(d);
+    case 'CategorySpendingTrend': return renderCategorySpendingTrendCard(d);
+    case 'TagUpSetPlot':          return renderTagUpSetPlotCard(d, d.baseCurrency||'');
     case 'Error':                 return `<div class="alert alert-error">${esc(d.message||'Error loading card.')}</div>`;
     default:                      return `<p class="empty-state">Unknown card type: ${esc(d.type||card.cardType||'')}</p>`;
   }
+}
+
+function refreshCardUI(cardId) {
+  const el = document.getElementById('card-body-' + cardId);
+  if (!el) return;
+  const dataSrc = window.lastDashboardData || (window.lastAnalyticsResponse ? window.lastAnalyticsResponse.cards : null);
+  if (dataSrc) {
+    const card = dataSrc.find(c => c.cardId === cardId);
+    if (card) {
+      const d = card.data;
+      const pt = d.type ? d.type.split('.').pop() : '';
+      el.innerHTML = dispatchCardBody(card, d, pt);
+    }
+  }
+}
+
+async function refreshCardContent(cardId, payloadType, cardType) {
+  try {
+    const res = await apiFetch(`/api/dashboard/cards/${cardId}`);
+    if (res.success) {
+      const card = res.data;
+      const d = card.data || {};
+      const el = document.getElementById('card-body-' + cardId);
+      if (el) el.innerHTML = dispatchCardBody(card, d, payloadType || d.type?.split('.').pop());
+
+      // Update filter badge if any
+      const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
+      const newBadge = filterBadge(card.filterSummary);
+      if (badgeEl) { badgeEl.outerHTML = newBadge || ''; }
+      else if (newBadge) {
+        const titleEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`);
+        if (titleEl) titleEl.insertAdjacentHTML('afterend', newBadge);
+      }
+    }
+  } catch (e) { console.error('Failed to refresh card', cardId, e); }
+}
+
+async function updateCardSetting(cardId, settings, payloadType) {
+  try {
+    const res = await apiWrite('PUT', `/api/dashboard/cards/${cardId}`, settings);
+    if (res.success) {
+      await refreshCardContent(cardId, payloadType);
+    } else {
+      showToast('Failed to update card: ' + (res.error || ''), 'error');
+    }
+  } catch (e) { console.error('Failed to update card setting', cardId, settings, e); }
+}
+
+function navigateWithFilter(cardId, drillDown = {}) {
+  const fs = cardOverrides[cardId] || {};
+  const p = new URLSearchParams();
+
+  // Base timeline from card
+  if (fs.customFrom) p.set('dateFrom', fs.customFrom);
+  if (fs.customTo) p.set('dateTo', fs.customTo);
+
+  // Drill down overrides or card defaults
+  const types = drillDown.transactionTypes || (fs.txType ? [fs.txType] : []);
+  if (types.length === 1) p.set('type', types[0]);
+  else if (types.length > 1) {
+    // Records page currently only supports single type in URL params easily
+    // but we can pass the first one for now or enhance records page later
+    p.set('type', types[0]);
+  }
+
+  const accts = drillDown.accountIds || fs.accountIds || [];
+  if (accts.length === 1) p.set('accountId', accts[0]);
+
+  const cats = drillDown.categoryIds || fs.categoryIds || [];
+  if (cats.length === 1) p.set('categoryId', cats[0]);
+
+  if (fs.tags && fs.tags.length === 1) p.set('tag', fs.tags[0]);
+  if (fs.currencies && fs.currencies.length === 1) p.set('currency', fs.currencies[0]);
+  if (fs.minAmount != null) p.set('minAmount', fs.minAmount);
+  if (fs.maxAmount != null) p.set('maxAmount', fs.maxAmount);
+  if (fs.queryNote) p.set('search', fs.queryNote);
+
+  p.set('excludeFuture', fs.excludeFuture === false ? '0' : '1');
+
+  location.hash = '#/records?' + p.toString();
 }

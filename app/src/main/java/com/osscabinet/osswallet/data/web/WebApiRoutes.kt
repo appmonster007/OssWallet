@@ -155,7 +155,15 @@ class WebApiRoutes(
                     authSessionManager,
                     transactionRepository,
                     categoryRepository,
-                    settingsRepository
+                    accountRepository,
+                    tagRepository,
+                    plannedPaymentRepository,
+                    budgetRepository,
+                    loanRepository,
+                    currencyRepository,
+                    settingsRepository,
+                    cardRepository,
+                    cardComputerRegistry
                 )
                 dashboardRoutes(
                     authSessionManager,

@@ -60,7 +60,8 @@ fun TransactionHeader(
     showClosingBalance: Boolean = true,
     showOnlyActiveCurrencies: Boolean = false,
     showCurrencyBreakdown: Boolean = true,
-    initiallyExpanded: Boolean = false
+    initiallyExpanded: Boolean = false,
+    hazeLayer: Int = HazeLayer.Surface
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
 
@@ -86,7 +87,7 @@ fun TransactionHeader(
             .fillMaxWidth()
             .padding(horizontal = AeonSize.D16.value, vertical = AeonSize.D8.value),
         shape = glassShape,
-        hazeLayer = HazeLayer.Surface,
+        hazeLayer = hazeLayer,
         hazeStyle = glassStyle,
         glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Standard,
         fallbackColor = AppColors.cardSurfaceProminent,

@@ -33,9 +33,13 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.PlannedPaymentUiModel
 import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.getIconByName
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import my.nanihadesuka.compose.ScrollbarLayoutSide
 import my.nanihadesuka.compose.ScrollbarSettings
@@ -69,6 +73,7 @@ fun AeonTransactionList(
     onScrollComplete: () -> Unit = {},
     hasStickyHeader: Boolean = true,
     fastScrollSide: FastScrollSide = FastScrollSide.RIGHT,
+    hazeLayers: AeonHazeLayers? = LocalAeonHaze.current,
 ) {
     val scrollIndex = remember(listState, scrollToId) {
         if (scrollToId == null) return@remember -1
@@ -134,13 +139,18 @@ fun AeonTransactionList(
                         showOpeningBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderOpeningBalance,
                         showClosingBalance = if (showCurrencyBreakdown && !allTxnBreakdown) false else showHeaderClosingBalance,
                         showOnlyActiveCurrencies = !allTxnBreakdown || showOnlyActiveCurrencies,
-                        showCurrencyBreakdown = showCurrencyBreakdown
+                        showCurrencyBreakdown = showCurrencyBreakdown,
+                        hazeLayer = HazeLayer.Surface
                     )
                 }
 
                 val headerKey = "header_${group.key}"
                 if (hasStickyHeader) {
-                    stickyHeader(key = headerKey, contentType = "header") { headerContent() }
+                    stickyHeader(key = headerKey, contentType = "header") {
+                        Box(modifier = Modifier.aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Overlay))) {
+                            headerContent()
+                        }
+                    }
                 } else {
                     item(key = headerKey, contentType = "header") { headerContent() }
                 }
@@ -154,7 +164,12 @@ fun AeonTransactionList(
                     val icon = getIconByName(record.categoryIcon)
                     val iconBg = Color(record.categoryColor)
 
-                    Box(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Surface))
+                            .aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Overlay))
+                    ) {
                         val isHighlighted = record.id == highlightedId
                         val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
 

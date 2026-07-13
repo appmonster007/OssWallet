@@ -25,9 +25,11 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.FastScrollSide
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
+import com.osscabinet.ossWallet.ui.theme.AeonHazeLayers
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 
 @Composable
 fun RecentActivitiesScreen(
@@ -60,7 +62,8 @@ fun RecentActivitiesScreen(
     scrollToId: String? = null,
     highlightedId: String? = null,
     onScrollComplete: () -> Unit = {},
-    fastScrollSide: FastScrollSide = FastScrollSide.RIGHT
+    fastScrollSide: FastScrollSide = FastScrollSide.RIGHT,
+    hazeLayers: AeonHazeLayers? = LocalAeonHaze.current
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -137,7 +140,8 @@ fun RecentActivitiesScreen(
                 scrollToId = scrollToId,
                 onScrollComplete = onScrollComplete,
                 hasStickyHeader = hasStickyHeader,
-                fastScrollSide = fastScrollSide
+                fastScrollSide = fastScrollSide,
+                hazeLayers = hazeLayers
             )
         }
     }

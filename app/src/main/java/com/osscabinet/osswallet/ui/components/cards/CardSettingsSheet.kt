@@ -6,32 +6,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,86 +36,30 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.ui.components.AeonGlassSheet
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * Shared scaffold for all card settings.
- * If used within an AeonExpressiveCard "Flip", it renders as an inline panel.
- * Otherwise, it defaults to a BottomSheet.
+ * Renders exclusively as an inline panel on the card's back side via the flip mechanism.
+ * The bottom sheet implementation has been removed in favor of the backside flip.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CardSettingsSheet(
     title: String,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val isInline = !LocalGlassmorphismEnabled.current
-
-    if (isInline) {
-        AeonExpressiveCardConfig(title, onDismiss, onDelete, modifier, content)
-    } else {
-        val glassEnabled = LocalGlassmorphismEnabled.current
-        if (glassEnabled) {
-            AeonGlassSheet(
-                onDismiss = onDismiss,
-                modifier = modifier
-            ) {
-                SheetBody(title, onDismiss, onDelete, content)
-            }
-        } else {
-            ModalBottomSheet(
-                onDismissRequest = onDismiss,
-                sheetState = sheetState,
-                containerColor = AppColors.cardSurfaceProminent,
-                dragHandle = { BottomSheetDefaults.DragHandle() },
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                contentWindowInsets = { WindowInsets.navigationBars },
-                modifier = modifier.statusBarsPadding()
-            ) {
-                SheetBody(title, onDismiss, onDelete, content)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SheetBody(
-    title: String,
-    onDismiss: () -> Unit,
-    onDelete: (() -> Unit)?,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val navPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(top = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)
-    ) {
-        AeonExpressiveCardConfig(
-            title = title,
-            onDismiss = onDismiss,
-            onDelete = onDelete,
-        ) {
-            content()
-        }
-
-        Spacer(modifier = Modifier.height(navPadding + 16.dp))
-    }
+    AeonExpressiveCardConfig(title, onDismiss, onDelete, modifier, content)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,11 +196,12 @@ fun CardSettingsSection(
     }
 
     if (showBackground) {
-        Surface(
-            color = AppColors.surfaceContainerLow.copy(alpha = 0.7f),
+        GlassSurface(
             shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
+            hazeStyle = GlassTokens.itemStyle(),
             modifier = modifier.fillMaxWidth(),
-            border = BorderStroke(0.5.dp, AppColors.outlineVariant.copy(alpha = 0.3f))
+            borderColor = AppColors.outlineVariant.copy(alpha = 0.3f),
+            borderWidth = 0.5.dp
         ) {
             sectionContent()
         }

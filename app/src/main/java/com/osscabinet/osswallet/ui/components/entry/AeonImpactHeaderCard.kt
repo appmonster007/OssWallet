@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -373,8 +376,7 @@ fun <T> AeonImpactHeaderCard(
                     onValueChange = nameState.onValueChange,
                     label = nameState.label ?: "",
                     icon = nameIcon,
-                    isError = nameState.isError,
-                    isFlush = true
+                    isError = nameState.isError
                 )
             }
         }
@@ -440,6 +442,68 @@ fun AeonImpactHeaderCardPreview() {
                     label = "BUDGET NAME"
                 )
             )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Glass – Light")
+@Composable
+fun AeonImpactHeaderCardGlassLightPreview() {
+    OssWalletTheme(theme = "Light") {
+        CompositionLocalProvider(LocalGlassmorphismEnabled provides true) {
+            AeonHazeProvider {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AeonTheme.dimensions.spacingMd),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AeonImpactHeaderCard(
+                        transactionType = EntryMode.EXPENSE,
+                        onTypeSelected = {},
+                        source = AeonAmountData(
+                            value = "1,250.00",
+                            currency = "USD"
+                        ),
+                        nameState = AeonTextFieldState(
+                            value = "Monthly Rent",
+                            onValueChange = {},
+                            label = "BUDGET NAME"
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Glass – Dark")
+@Composable
+fun AeonImpactHeaderCardGlassDarkPreview() {
+    OssWalletTheme(theme = "Dark") {
+        CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
+            AeonHazeProvider {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AeonTheme.dimensions.spacingMd),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AeonImpactHeaderCard(
+                        transactionType = EntryMode.EXPENSE,
+                        onTypeSelected = {},
+                        source = AeonAmountData(
+                            value = "1,250.00",
+                            currency = "USD"
+                        ),
+                        nameState = AeonTextFieldState(
+                            value = "Monthly Rent",
+                            onValueChange = {},
+                            label = "BUDGET NAME"
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -143,6 +143,7 @@ fun TransactionListContent(
                         onScrollComplete = onScrollComplete,
                         hasStickyHeader = recordsSettings.stickyHeaders,
                         fastScrollSide = recordsSettings.fastScrollSide,
+                        hazeLayers = hazeLayers
                     )
                 }
             }

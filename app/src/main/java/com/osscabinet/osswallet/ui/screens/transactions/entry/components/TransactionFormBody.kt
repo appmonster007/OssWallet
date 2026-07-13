@@ -165,11 +165,6 @@ fun TransactionFormBody(
                     isError = state.isTransfer && state.hasError(EntryField.AMOUNT)
                 ),
                 categoryId = state.selectedCategoryId,
-                nameState = AeonTextFieldState(
-                    value = state.name,
-                    onValueChange = { onEvent(TransactionEntryEvent.SetName(it)) },
-                    label = "TRANSACTION NAME"
-                ),
                 showAmount = true,
                 targetAccountId = state.targetAccount?.id,
                 transferRate = state.exchangeRate,

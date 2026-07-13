@@ -65,8 +65,10 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.ui.components.AeonGlassHost
 import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
+import com.osscabinet.ossWallet.ui.components.GlassSurface
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
 import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
@@ -74,15 +76,21 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.DeepTealGreen
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.HazeLayer
+import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
+import com.osscabinet.ossWallet.ui.theme.LocalParentGlassHaze
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.copyStyle
+import dev.chrisbanes.haze.hazeEffect
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 /**
- * Core card shell for the Aeon design system — a solid hairline panel (Editorial Instrument).
+ * Core card shell for the Aeon design system — an Editorial Instrument.
  *
  * Self-contained header: title + an in-body period readout, no filter/config icon buttons.
  * - Auto-computes the period readout from [filter.timelineRange]
@@ -91,8 +99,8 @@ import java.util.Locale
  * - When [displaySettings] is provided, long-pressing the header opens it; it is the only
  *   place a card should expose a delete action
  *
- * Cards are opaque panels — glassmorphism is reserved for floating chrome (nav pill, filter
- * pill, sheets). Glass is disabled for all nested card content via [LocalGlassmorphismEnabled].
+ * Cards are glassmorphic panels that blur the screen background via [HazeLayer.Surface].
+ * Glass is disabled for nested card content via [LocalGlassmorphismEnabled] to maintain readability.
  */
 @Composable
 fun AeonExpressiveCard(
@@ -128,6 +136,9 @@ fun AeonExpressiveCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
+    val hazeLayers = LocalAeonHaze.current
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
     val interactionSource = if (onClick != null) remember { MutableInteractionSource() } else null
     val isPressed = interactionSource?.collectIsPressedAsState()?.value ?: false
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
@@ -179,6 +190,14 @@ fun AeonExpressiveCard(
 
     val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
 
+    val cardStyle = GlassTokens.cardStyle(isDark)
+    val glassStyle = remember(containerColor, isDark, cardStyle) {
+        cardStyle.copyStyle(
+            bgColor = containerColor,
+            isDark = isDark
+        )
+    }
+
     // Discoverability & Intent Feedback
     // Guard skips the first composition to avoid a spurious haptic if the card enters
     // with a non-zero, non-180 rotation (e.g., restored from saved state).
@@ -215,138 +234,150 @@ fun AeonExpressiveCard(
         )
     } else Modifier
 
-    CompositionLocalProvider(LocalGlassmorphismEnabled provides false) {
-        Box(
-            modifier = modifier
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    rotationY = rotation
-                    cameraDistance =
-                        20f * density // Higher distance for a more premium, flat-instrument look
+    val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
+    val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
 
-                    // Peak elevation at 90 degrees for a "leap" effect
-                    val elevationProgress =
-                        if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
-                    shadowElevation = (2.dp + (8.dp * elevationProgress)).toPx()
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationY = rotation
+                cameraDistance =
+                    20f * density // Higher distance for a more premium, flat-instrument look
 
-                    // Subtle darkening as it rotates away from the viewer
-                    alpha = 1f - (elevationProgress * 0.15f)
+                // Peak elevation at 90 degrees for a "leap" effect
+                val elevationProgress =
+                    if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
+                shadowElevation = (2.dp + (8.dp * elevationProgress)).toPx()
 
-                    clip = true
-                    shape = cardShape
-                }
-                .background(
-                    // Snap the surface prominent color at 90 degrees for clear mode switching
-                    if (isFrontVisible) containerColor else AppColors.cardSurfaceProminent,
-                    cardShape
-                )
-                .then(borderModifier)
-                .then(
-                    if (rotation < 0.01f || rotation > 179.99f) {
-                        Modifier.animateContentSize(
-                            animationSpec = tween(
-                                durationMillis = 400,
-                                easing = FastOutSlowInEasing
-                            )
+                // Subtle darkening as it rotates away from the viewer
+                alpha = 1f - (elevationProgress * 0.15f)
+
+                clip = true
+                shape = cardShape
+            }
+            .then(borderModifier)
+            .then(
+                if (rotation < 0.01f || rotation > 179.99f) {
+                    Modifier.animateContentSize(
+                        animationSpec = tween(
+                            durationMillis = 400,
+                            easing = FastOutSlowInEasing
                         )
-                    } else Modifier
-                )
-                .then(
-                    if (onClick != null && interactionSource != null && !isFlipped) Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = LocalIndication.current,
-                        onClick = onClick,
-                    ) else Modifier,
-                ),
+                    )
+                } else Modifier
+            )
+            .then(
+                if (onClick != null && interactionSource != null && !isFlipped) Modifier.clickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    onClick = onClick,
+                ) else Modifier,
+            ),
+    ) {
+        CompositionLocalProvider(
+            LocalGlassmorphismEnabled provides true,
+            LocalParentGlassHaze provides surfaceHazeState
         ) {
-            // Single-layer approach for halved layout cost per frame
             if (isFrontVisible) {
                 // Front Side
-                AeonGlassHost(modifier = Modifier.fillMaxWidth()) {
-                    if (backgroundIcon != null) {
-                        Icon(
-                            imageVector = backgroundIcon,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .offset(x = 24.dp, y = 24.dp)
-                                .size(180.dp)
-                                .graphicsLayer { alpha = 0.08f },
-                            tint = contentColor,
-                        )
-                    }
-                    Column(
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = cardShape,
+                    hazeState = surfaceHazeState,
+                    hazeStyle = glassStyle,
+                    fallbackColor = containerColor,
+                ) {
+                    AeonGlassHost(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(AeonTheme.dimensions.cardPadding),
+                            .aeonHazeSource(overlayHazeState)
                     ) {
-                        Row(
+                        if (backgroundIcon != null) {
+                            Icon(
+                                imageVector = backgroundIcon,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .offset(x = 24.dp, y = 24.dp)
+                                    .size(180.dp)
+                                    .graphicsLayer { alpha = 0.08f },
+                                tint = contentColor,
+                            )
+                        }
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .then(headerLongPress),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+                                .padding(AeonTheme.dimensions.cardPadding),
                         ) {
-                            if (icon != null) {
-                                Surface(
-                                    modifier = Modifier
-                                        .size(AeonTheme.dimensions.iconSizeLg)
-                                        .then(headerModifier),
-                                    shape = CircleShape,
-                                    color = contentColor.copy(alpha = 0.15f),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = icon,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                                            tint = contentColor,
-                                        )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(headerLongPress),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+                            ) {
+                                if (icon != null) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .size(AeonTheme.dimensions.iconSizeLg)
+                                            .then(headerModifier),
+                                        shape = CircleShape,
+                                        color = contentColor.copy(alpha = 0.15f),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                                                tint = contentColor,
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = title,
+                                        style = AppTextStyles.cardSectionTitle,
+                                        color = contentColor,
+                                    )
+                                    if (effectiveSubtitle != null) {
+                                        if (periodTappable) {
+                                            Text(
+                                                text = effectiveSubtitle,
+                                                style = AppTextStyles.cardPeriodReadout,
+                                                color = subtitleColor,
+                                                modifier = Modifier
+                                                    .clickable { setShowFilterSheet(true) }
+                                                    .aeonDottedUnderline(),
+                                            )
+                                        } else {
+                                            Text(
+                                                text = effectiveSubtitle,
+                                                style = AppTextStyles.cardPeriodReadout,
+                                                color = subtitleColor,
+                                            )
+                                        }
                                     }
                                 }
                             }
 
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = title,
-                                    style = AppTextStyles.cardSectionTitle,
-                                    color = contentColor,
-                                )
-                                if (effectiveSubtitle != null) {
-                                    if (periodTappable) {
-                                        Text(
-                                            text = effectiveSubtitle,
-                                            style = AppTextStyles.cardPeriodReadout,
-                                            color = subtitleColor,
-                                            modifier = Modifier
-                                                .clickable { setShowFilterSheet(true) }
-                                                .aeonDottedUnderline(),
-                                        )
-                                    } else {
-                                        Text(
-                                            text = effectiveSubtitle,
-                                            style = AppTextStyles.cardPeriodReadout,
-                                            color = subtitleColor,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-
-                        if (timelineMode && filter != null && onFilterChange != null) {
-                            AeonTimelinePeriodSelector(
-                                currentRange = filter.timelineRange,
-                                onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
-                                modifier = Modifier.fillMaxWidth(),
-                                isFlush = true
-                            )
                             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
-                        }
 
-                        content()
+                            if (timelineMode && filter != null && onFilterChange != null) {
+                                AeonTimelinePeriodSelector(
+                                    currentRange = filter.timelineRange,
+                                    onRangeSelected = { onFilterChange(filter.copy(timelineRange = it)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isFlush = true
+                                )
+                                Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
+                            }
+
+                            content()
+                        }
                     }
                 }
             } else {
@@ -357,11 +388,24 @@ fun AeonExpressiveCard(
                         .graphicsLayer {
                             rotationY = 180f
                         }
-                        .background(AppColors.cardSurfaceProminent)
                 ) {
-                    displaySettings?.invoke {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        setIsFlipped(false)
+                    GlassSurface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = cardShape,
+                        hazeState = surfaceHazeState,
+                        hazeStyle = glassStyle,
+                        fallbackColor = containerColor,
+                    ) {
+                        AeonGlassHost(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aeonHazeSource(overlayHazeState)
+                        ) {
+                            displaySettings?.invoke {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                setIsFlipped(false)
+                            }
+                        }
                     }
                 }
             }

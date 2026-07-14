@@ -191,8 +191,8 @@ fun NetWorthCard(
                 val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
                 val showTransfer = types.isEmpty() || types.any { it.isTransfer }
 
-                when (config.perspective) {
-                    is AccountingPerspective.Accounting -> {
+                when {
+                    config.perspective is AccountingPerspective.Accounting -> {
                         if (showIncome) {
                             NetWorthFlowColumn(
                                 label = "INC",
@@ -254,7 +254,7 @@ fun NetWorthCard(
                         }
                     }
 
-                    is AccountingPerspective.CashFlow -> {
+                    config.perspective is AccountingPerspective.CashFlow -> {
                         val inflow =
                             (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
                         val outflow =

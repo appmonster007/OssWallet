@@ -72,6 +72,8 @@ fun AeonTransactionList(
     scrollToId: String? = null,
     onScrollComplete: () -> Unit = {},
     hasStickyHeader: Boolean = true,
+    actionEnabled: Boolean = true,
+    isSwipeActionEnabled: Boolean = false,
     fastScrollSide: FastScrollSide = FastScrollSide.RIGHT,
     hazeLayers: AeonHazeLayers? = LocalAeonHaze.current,
 ) {
@@ -183,10 +185,12 @@ fun AeonTransactionList(
                             }
                         }
 
-                        SwipeableTransactionItem(
+                        ActionableTransactionItem(
                             record = record,
                             isRevealed = revealedCardIds.contains(record.id),
                             onEvent = onTransactionEvent,
+                            actionEnabled = actionEnabled,
+                            isSwipeActionEnabled = isSwipeActionEnabled,
                             modifier = Modifier.background(AppColors.primary.copy(alpha = blinkAlpha.value))
                         ) {
                             AeonTransactionItem(
@@ -214,8 +218,9 @@ fun AeonTransactionList(
                                 showTimestamp = showTimestamp,
                                 showIcon = showIcon,
                                 showDividers = index < group.items.size - 1,
-                                isPlanned = record is PlannedPaymentUiModel
-                            ) { onTransactionEvent(TransactionItemEvent.Click(record.id)) }
+                                isPlanned = record is PlannedPaymentUiModel,
+                                onClick = null
+                            )
                         }
                     }
                 }

@@ -142,6 +142,8 @@ fun TransactionListContent(
                         scrollToId = scrollToId,
                         onScrollComplete = onScrollComplete,
                         hasStickyHeader = recordsSettings.stickyHeaders,
+                        actionEnabled = true,
+                        isSwipeActionEnabled = true,
                         fastScrollSide = recordsSettings.fastScrollSide,
                         hazeLayers = hazeLayers
                     )

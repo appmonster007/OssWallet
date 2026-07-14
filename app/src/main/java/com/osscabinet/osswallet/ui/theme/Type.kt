@@ -492,6 +492,11 @@ object AppTextStyles {
         @Composable @ReadOnlyComposable get() =
             MaterialTheme.typography.bodyLarge
 
+    // Primary label of a generic list row.
+    val listItem: TextStyle
+        @Composable @ReadOnlyComposable get() =
+            MaterialTheme.typography.bodyMedium
+
     // Secondary / supporting text of a generic list row.
     val listItemSubtitle: TextStyle
         @Composable @ReadOnlyComposable get() =

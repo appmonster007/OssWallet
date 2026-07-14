@@ -140,6 +140,8 @@ fun RecentActivitiesScreen(
                 scrollToId = scrollToId,
                 onScrollComplete = onScrollComplete,
                 hasStickyHeader = hasStickyHeader,
+                actionEnabled = true,
+                isSwipeActionEnabled = false,
                 fastScrollSide = fastScrollSide,
                 hazeLayers = hazeLayers
             )

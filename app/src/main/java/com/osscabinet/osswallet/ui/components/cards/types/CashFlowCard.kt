@@ -145,8 +145,8 @@ private fun CashFlowTable(
         negativeColor.value,
         accentColor.value
     ) {
-        when (config.perspective) {
-            is AccountingPerspective.Accounting -> buildList {
+        when {
+            config.perspective is AccountingPerspective.Accounting -> buildList {
                 if (showIncome) add(
                     TableColumn(
                         label = "INCOME", key = "inc", color = positiveColor,
@@ -196,7 +196,7 @@ private fun CashFlowTable(
                 )
             }
 
-            is AccountingPerspective.CashFlow -> {
+            config.perspective is AccountingPerspective.CashFlow -> {
                 val inflowTypes = buildSet {
                     if (showIncome) add(TransactionType.INCOME)
                     if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
@@ -250,6 +250,7 @@ private fun CashFlowTable(
                     ),
                 )
             }
+            else -> emptyList()
         }
     }
 

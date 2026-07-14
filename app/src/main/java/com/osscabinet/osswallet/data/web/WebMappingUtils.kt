@@ -183,9 +183,10 @@ internal fun CardRenderData.toPayloadDto(
         previousTransfer = previousPeriodMetrics?.cashFlow?.totalNetTransferInBase?.toDouble(),
         currency = this.currency,
         fontSize = config.fontSize,
-        perspective = when (config.perspective) {
-            is AccountingPerspective.Accounting -> "Accounting"
-            is AccountingPerspective.CashFlow -> "CashFlow"
+        perspective = when {
+            config.perspective is AccountingPerspective.Accounting -> "Accounting"
+            config.perspective is AccountingPerspective.CashFlow -> "CashFlow"
+            else -> "Accounting"
         },
         showComparison = config.showComparison
     )
@@ -196,9 +197,10 @@ internal fun CardRenderData.toPayloadDto(
         transfer = result.totalTransfersInBase.toDouble(),
         net = result.netInBase.toDouble(),
         currency = this.currency,
-        perspective = when (config.perspective) {
-            is AccountingPerspective.Accounting -> "Accounting"
-            is AccountingPerspective.CashFlow -> "CashFlow"
+        perspective = when {
+            config.perspective is AccountingPerspective.Accounting -> "Accounting"
+            config.perspective is AccountingPerspective.CashFlow -> "CashFlow"
+            else -> "Accounting"
         },
         showNetColumn = config.showNetColumn,
         showBaseConversion = config.showBaseConversion,
@@ -249,9 +251,10 @@ internal fun CardRenderData.toPayloadDto(
         layout = config.layout,
         gridColumns = config.gridColumns,
         showAddAccountCard = config.showAddAccountCard,
-        perspective = when (config.perspective) {
-            is AccountingPerspective.Accounting -> "Accounting"
-            is AccountingPerspective.CashFlow -> "CashFlow"
+        perspective = when {
+            config.perspective is AccountingPerspective.Accounting -> "Accounting"
+            config.perspective is AccountingPerspective.CashFlow -> "CashFlow"
+            else -> "Accounting"
         },
         excludeInternalTransfers = config.excludeInternalTransfers
     )
@@ -504,9 +507,10 @@ internal fun CardRenderData.toPayloadDto(
         distribution = summary.currencyBalances.mapValues { it.value.toDouble() },
         showCurrencyBadges = config.showCurrencyBadges,
         showComparison = config.showComparison,
-        perspective = when (config.perspective) {
-            is AccountingPerspective.Accounting -> "Accounting"
-            is AccountingPerspective.CashFlow -> "CashFlow"
+        perspective = when {
+            config.perspective is AccountingPerspective.Accounting -> "Accounting"
+            config.perspective is AccountingPerspective.CashFlow -> "CashFlow"
+            else -> "Accounting"
         }
     )
 

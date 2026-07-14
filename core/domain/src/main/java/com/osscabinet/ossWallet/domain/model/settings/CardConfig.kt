@@ -484,17 +484,23 @@ sealed class AccountingPerspective {
 
     companion object {
         fun labelsFor(perspective: AccountingPerspective): Map<ChartMetric, String> =
-            when (perspective) {
-                is Accounting -> mapOf(
+            when {
+                perspective is Accounting -> mapOf(
                     ChartMetric.INCOME to "INC",
                     ChartMetric.EXPENSE to "EXP",
                     ChartMetric.TRANSFER to "TRF",
                     ChartMetric.NET to "NET"
                 )
 
-                is CashFlow -> mapOf(
+                perspective is CashFlow -> mapOf(
                     ChartMetric.INCOME to "IN",
                     ChartMetric.EXPENSE to "OUT",
+                    ChartMetric.NET to "NET"
+                )
+
+                else -> mapOf(
+                    ChartMetric.INCOME to "INC",
+                    ChartMetric.EXPENSE to "EXP",
                     ChartMetric.NET to "NET"
                 )
             }

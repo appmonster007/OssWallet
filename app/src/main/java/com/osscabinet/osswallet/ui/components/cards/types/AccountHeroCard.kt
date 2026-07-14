@@ -51,6 +51,7 @@ import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
@@ -429,7 +430,7 @@ private fun AccountHeroSettingsSheet(
                 onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
             )
         }
-        com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings(
+        CardPerspectiveSettings(
             perspective = config.perspective,
             onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
             excludeInternalTransfers = config.excludeInternalTransfers,

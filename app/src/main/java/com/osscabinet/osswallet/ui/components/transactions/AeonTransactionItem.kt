@@ -84,7 +84,7 @@ fun AeonTransactionItem(
     showIcon: Boolean = true,
     containerColor: Color = AppColors.screenBackground,
     isPlanned: Boolean = false,
-    onClick: () -> Unit
+    onClick: (() -> Unit)? = null
 ) {
     val uiScale = AeonTheme.uiScale
     val isNoteHeader = useNoteAsHeader && !note.isNullOrBlank()
@@ -123,7 +123,9 @@ fun AeonTransactionItem(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .then(
+                if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+            ),
         color = containerColor,
         shape = RectangleShape
     ) {

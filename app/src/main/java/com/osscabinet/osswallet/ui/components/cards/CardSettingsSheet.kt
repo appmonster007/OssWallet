@@ -83,11 +83,9 @@ fun CardPerspectiveSettings(
                     ),
                     label = {
                         Text(
-                            text = @Suppress("REDUNDANT_ELSE_IN_WHEN")
-                            when (mode) {
+                            text = when (mode) {
                                 is AccountingPerspective.Accounting -> "Accounting"
                                 is AccountingPerspective.CashFlow -> "Cash Flow"
-                                else -> "Accounting"
                             },
                             style = AppTextStyles.caption.copy(
                                 fontSize = 11.sp,

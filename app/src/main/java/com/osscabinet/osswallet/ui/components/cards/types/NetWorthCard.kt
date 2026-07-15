@@ -32,7 +32,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -43,7 +42,6 @@ import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDashedTopRule
@@ -52,9 +50,8 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -76,35 +73,26 @@ fun NetWorthCard(
     config: NetWorthCardConfig,
     previousPeriodMetrics: NetWorthMetrics? = null,
     callbacks: CardCallbacks.NetWorth = CardCallbacks.NetWorth(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.AccountBalance,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            NetWorthSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            NetWorthSettingsContent(config = config, callbacks = callbacks)
         }
     ) {
         Column(
@@ -151,7 +139,7 @@ fun NetWorthCard(
                 )
 
                 // Mono trend readout — "▲ +8.2%  VS PRIOR PERIOD"
-                if (config.showComparison && previousPeriodMetrics != null) {
+                if (config.showComparison && (previousPeriodMetrics != null)) {
                     val change =
                         currentPeriodMetrics.netWorth.subtract(previousPeriodMetrics.netWorth)
                     if (change.signum() != 0 && previousPeriodMetrics.netWorth.signum() != 0) {
@@ -191,8 +179,8 @@ fun NetWorthCard(
                 val showExpense = types.isEmpty() || TransactionType.EXPENSE in types
                 val showTransfer = types.isEmpty() || types.any { it.isTransfer }
 
-                when {
-                    config.perspective is AccountingPerspective.Accounting -> {
+                when (config.perspective) {
+                    is AccountingPerspective.Accounting -> {
                         if (showIncome) {
                             NetWorthFlowColumn(
                                 label = "INC",
@@ -254,18 +242,18 @@ fun NetWorthCard(
                         }
                     }
 
-                    config.perspective is AccountingPerspective.CashFlow -> {
+                    is AccountingPerspective.CashFlow -> {
                         val inflow =
                             (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
                         val outflow =
                             (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
 
-                        val prevInflow = if (prevCf != null) {
-                            (if (showIncome) prevCf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) prevCf.totalTransferInInBase else BigDecimal.ZERO)
-                        } else null
-                        val prevOutflow = if (prevCf != null) {
-                            (if (showExpense) prevCf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) prevCf.totalTransferOutInBase else BigDecimal.ZERO)
-                        } else null
+                        val prevInflow = prevCf?.let {
+                            (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
+                        }
+                        val prevOutflow = prevCf?.let {
+                            (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
+                        }
 
                         NetWorthFlowColumn(
                             label = "IN",
@@ -400,58 +388,55 @@ private fun NetWorthFlowColumn(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NetWorthSettingsSheet(
+private fun NetWorthSettingsContent(
     config: NetWorthCardConfig,
-    callbacks: CardCallbacks.NetWorth,
-    onDismiss: () -> Unit
+    callbacks: CardCallbacks.NetWorth
 ) {
-    CardSettingsSheet(title = "Net Worth", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Font Size") {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
-                    SegmentedButton(
-                        selected = config.fontSize == size,
-                        onClick = { callbacks.onFontSizeChange(config.cardId, size) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
-                        label = {
-                            Text(
-                                when (size) {
-                                    "Small" -> "S"
-                                    "Medium" -> "M"
-                                    "Large" -> "L"
-                                    else -> "XL"
-                                }
-                            )
-                        }
-                    )
-                }
-            }
-        }
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Show Comparison",
-                description = "Show change from previous period",
-                checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
-                showBackground = false
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(
-                    config.cardId,
-                    it
+    CardSettingsSection("Font Size") {
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
+                SegmentedButton(
+                    selected = config.fontSize == size,
+                    onClick = { callbacks.onFontSizeChange(config.cardId, size) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
+                    label = {
+                        Text(
+                            when (size) {
+                                "Small" -> "S"
+                                "Medium" -> "M"
+                                "Large" -> "L"
+                                else -> "XL"
+                            }
+                        )
+                    }
                 )
             }
+        }
+    }
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
         )
     }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onExcludeInternalTransfersChange(
+                config.cardId,
+                it
+            )
+        }
+    )
 }
 
 @ThemePreviews
@@ -504,7 +489,7 @@ fun NetWorthCardGlassPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(name = "Light Mode", showBackground = true)
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
 fun NetWorthCardLightPreview() {
     OssWalletTheme(theme = "Light") {
@@ -512,7 +497,7 @@ fun NetWorthCardLightPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(
+@Preview(
     name = "Dark Mode",
     showBackground = true,
     uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -524,7 +509,7 @@ fun NetWorthCardDarkPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview(
+@Preview(
     name = "Amoled Mode",
     showBackground = true,
     uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -591,7 +576,7 @@ fun mapNetWorth(
     renderData = renderData,
     callbacks = CardCallbacks.NetWorth(
         onFontSizeChange = updateHandler::updateCardNetWorthFontSize,
-        onShowComparisonChange = updateHandler::updateCardNetWorthShowComparison,
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onFilterChange = updateHandler::updateCardNetWorthFilter,

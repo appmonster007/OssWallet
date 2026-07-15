@@ -79,7 +79,7 @@ fun AeonCardList(
     state: LazyListState = rememberLazyListState(),
     scrollToId: String? = null,
     highlightedId: String? = null,
-    onScrollComplete: () -> Unit = {}
+    onScrollComplete: () -> Unit = {},
 ) {
     val sortedCards = remember(cards) { cards.sortedBy { it.order } }
     val sortedCardsRef by rememberUpdatedState(sortedCards)
@@ -90,16 +90,15 @@ fun AeonCardList(
     val reorderState = rememberReorderableLazyListState(
         lazyListState = state,
         swapTravelRatio = 0.45f,
-        onMove = { fromLazy, toLazy ->
-            val from = fromLazy - headerOffset
-            val to = toLazy - headerOffset
-            val current = sortedCardsRef
-            if (from in current.indices && to in current.indices) {
-                val newList = current.toMutableList().apply { add(to, removeAt(from)) }
-                onReorderRef(newList)
-            }
+    ) { fromLazy, toLazy ->
+        val from = fromLazy - headerOffset
+        val to = toLazy - headerOffset
+        val current = sortedCardsRef
+        if ((from in current.indices) && (to in current.indices)) {
+            val newList = current.toMutableList().apply { add(to, removeAt(from)) }
+            onReorderRef(newList)
         }
-    )
+    }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val trackPad = maxHeight * 0.10f
@@ -140,6 +139,7 @@ fun AeonCardList(
                     }
 
                     CardItem(
+                        modifier = dragHandleModifier,
                         cardConfig = cardConfig,
                         cardState = cardState,
                         cardInput = cardInput,
@@ -151,7 +151,6 @@ fun AeonCardList(
                         screenRules = screenRules,
                         filterContext = filterContext,
                         disableFilterSheet = disableFilterSheet,
-                        dragHandleModifier = dragHandleModifier,
                         animateCards = animateCards,
                         scrollToId = scrollToId,
                         highlightedId = highlightedId,
@@ -182,6 +181,7 @@ fun AeonCardList(
 
 @Composable
 private fun CardItem(
+    modifier: Modifier,
     cardConfig: CardConfig,
     cardState: CardComputeState?,
     cardInput: CardInput,
@@ -193,7 +193,6 @@ private fun CardItem(
     screenRules: CardFilterRules,
     filterContext: FilterSelectionContext,
     disableFilterSheet: Boolean,
-    dragHandleModifier: Modifier,
     animateCards: Boolean,
     scrollToId: String?,
     highlightedId: String?,
@@ -220,15 +219,17 @@ private fun CardItem(
 
     UnifiedCardRenderer(
         cardWithCallbacks = effectiveCard,
-        modifier = Modifier.fillMaxWidth(),
-        headerModifier = dragHandleModifier,
-        filterContext = filterContext,
-        inheritedFilter = cardInput.filter,
-        screenOwnsTimeline = cardInput.screenOwnsTimeline,
-        animate = animateCards,
-        scrollToId = scrollToId,
-        highlightedId = highlightedId,
-        onScrollComplete = onScrollComplete
+        props = CardLayoutProps(
+            modifier = Modifier.fillMaxWidth(),
+            headerModifier = modifier,
+            filterContext = filterContext,
+            inheritedFilter = cardInput.filter,
+            screenOwnsTimeline = cardInput.screenOwnsTimeline,
+            animate = animateCards,
+            scrollToId = scrollToId,
+            highlightedId = highlightedId,
+            onScrollComplete = onScrollComplete
+        )
     )
 }
 
@@ -304,17 +305,6 @@ fun CardContentShimmer() {
                 .background(brush, RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
         )
     }
-}
-
-@Composable
-fun CardShimmerPlaceholder() {
-    val brush = rememberShimmerBrush(horizontal = true, label = "card_shimmer")
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .background(brush, RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius))
-    )
 }
 
 @Preview(showBackground = true)

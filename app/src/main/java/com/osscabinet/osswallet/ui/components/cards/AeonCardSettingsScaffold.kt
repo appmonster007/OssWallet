@@ -1,18 +1,23 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,6 +33,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -47,19 +53,84 @@ import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
- * Shared scaffold for all card settings.
- * Renders exclusively as an inline panel on the card's back side via the flip mechanism.
- * The bottom sheet implementation has been removed in favor of the backside flip.
+ * The unified scaffold for card configuration — renders on the back side of a flipped card.
+ * Header structure mirrors the front side exactly: same icon circle sizing, spacing tokens,
+ * and text styles.
  */
 @Composable
-fun CardSettingsSheet(
+fun AeonCardSettingsScaffold(
     title: String,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    AeonExpressiveCardConfig(title, onDismiss, onDelete, modifier, content)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(AeonTheme.dimensions.cardPadding),
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .clickable(onClick = onDismiss),
+                shape = CircleShape,
+                color = AppColors.contentPrimary.copy(alpha = 0.15f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronLeft,
+                        contentDescription = "Back",
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = AppColors.contentPrimary,
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = AppTextStyles.cardSectionTitle,
+                    color = AppColors.contentPrimary,
+                )
+                Text(
+                    text = "CONFIGURATION",
+                    style = AppTextStyles.cardPeriodReadout,
+                    color = AppColors.contentSecondary,
+                )
+            }
+
+            if (onDelete != null) {
+                Surface(
+                    modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .clickable {
+                        onDelete()
+                        onDismiss()
+                    },
+                shape = CircleShape,
+                    color = AppColors.error.copy(alpha = 0.10f),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Delete card",
+                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                            tint = AppColors.error,
+                        )
+                    }
+                }
+            }
+        }
+
+        content()
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -223,7 +294,7 @@ fun CardSettingsStandardizationLab() {
         Surface(
             color = AppColors.background,
         ) {
-            AeonExpressiveCardConfig(
+            AeonCardSettingsScaffold(
                 title = "Standardization Lab",
                 onDismiss = {},
                 onDelete = {},

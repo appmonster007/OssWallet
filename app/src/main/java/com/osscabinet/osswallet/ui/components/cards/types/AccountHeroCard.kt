@@ -18,7 +18,6 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingDown
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -46,16 +44,16 @@ import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountHeroCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.AppIconMap
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -68,6 +66,7 @@ import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.LocalUiIdentity
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountColor
 import com.osscabinet.ossWallet.ui.theme.NegativeAmountDark
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountColor
 import com.osscabinet.ossWallet.ui.theme.PositiveAmountDark
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
@@ -82,17 +81,8 @@ fun AccountHeroCard(
     summary: AccountSummaryItem,
     baseCurrency: String,
     config: AccountHeroCardConfig,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    filterRules: CardFilterRules? = null,
-    baseFilter: TransactionFilter = TransactionFilter(),
-    onFilterChange: (TransactionFilter) -> Unit = {},
-    onSaveFilterClick: (TransactionFilter) -> Unit = {},
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero()
+    callbacks: CardCallbacks.AccountHero = CardCallbacks.AccountHero(),
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val account = summary.account
     val accountColor = try {
@@ -125,6 +115,8 @@ fun AccountHeroCard(
 
     val balanceInBase = summary.balanceInBase
 
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+
     AeonExpressiveCard(
         title = account.name,
         subtitle = account.structureType.displayName,
@@ -134,17 +126,21 @@ fun AccountHeroCard(
         containerColor = containerColor,
         contentColor = contentColor,
         backgroundIcon = icon,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
-        filter = config.filter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        onFilterChange = { onFilterChange(it) },
-        onSaveFilterClick = onSaveFilterClick,
-        filterContext = filterContext,
-        displaySettings = { onDismiss ->
-            AccountHeroSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
+        filter = displayFilter,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
+        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onSaveFilterClick = callbacks.onSaveFilterClick,
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            AccountHeroSettingsContent(
+                config = config,
+                callbacks = callbacks,
+            )
         }
     ) {
         Column(
@@ -359,7 +355,7 @@ fun AccountHeroCard(
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        currencyBalances.toList().sortedBy { it.first }.forEach { (curr, bal) ->
+                        currencyBalances.entries.sortedBy { it.key }.forEach { (curr, bal) ->
                             Surface(
                                 color = contentColor.copy(alpha = 0.14f),
                                 shape = RoundedCornerShape(16.dp),
@@ -408,40 +404,38 @@ fun AccountHeroCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountHeroSettingsSheet(
+private fun AccountHeroSettingsContent(
     config: AccountHeroCardConfig,
     callbacks: CardCallbacks.AccountHero,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Account Hero", onDismiss = onDismiss, onDelete = {}) {
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Show Currency Badges",
-                description = "Show breakdown of multi-currency balances",
-                checked = config.showCurrencyBadges,
-                onCheckedChange = { callbacks.onShowCurrencyBadgesChange(config.cardId, it) }
-            )
-            AeonSettingsToggle(
-                label = "Show Comparison",
-                description = "Show change from previous period",
-                checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) }
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(
-                    config.cardId,
-                    it
-                )
-            }
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Show Currency Badges",
+            description = "Show breakdown of multi-currency balances",
+            checked = config.showCurrencyBadges,
+            onCheckedChange = { callbacks.onShowCurrencyBadgesChange(config.cardId, it) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
         )
     }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onExcludeInternalTransfersChange(
+                config.cardId,
+                it
+            )
+        }
+    )
 }
 
 // Badges sit directly on the full-bleed account color surface, so we use semi-transparent
@@ -547,6 +541,7 @@ fun mapAccountHero(
     renderData: CardRenderData.AccountHero,
     input: CardInput,
     updateHandler: CardUpdateHandler,
+    onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
@@ -554,54 +549,24 @@ fun mapAccountHero(
     renderData = renderData,
     callbacks = CardCallbacks.AccountHero(
         onShowCurrencyBadgesChange = updateHandler::updateCardHeroShowCurrencyBadges,
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
         onFilterChange = updateHandler::updateCardHeroFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickExpense = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
-        onClickTransfer = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
+        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickOutflow = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
+        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickNetFlow = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
+        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickCurrency = { currency ->
             val drillDown = TransactionFilter(currencies = setOf(currency))
             onRecordsClick(resolveDrillDown(input, config, drillDown))
         },
         onSeeAll = { onRecordsClick(resolveSeeAll(input, config)) },
         onClick = { callbacks.accountActions.onClick(renderData.summary.account.id) },
+        onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),
     filterRules = config.filterRules,
@@ -652,7 +617,7 @@ private fun AccountHeroCardPreviewContent(theme: String) {
             expense = BigDecimal("4200.00")
         )
     )
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme(theme = theme) {
+    OssWalletTheme(theme = theme) {
         Box(
             modifier = Modifier
                 .background(AppColors.background)

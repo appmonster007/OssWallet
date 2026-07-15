@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -37,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -54,97 +52,51 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.InfoColor
-import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import java.math.BigDecimal
 import com.osscabinet.ossWallet.ui.util.formatCurrency as formatCurrencyUtil
-
-fun mapCategorySpendingTrend(
-    config: CategorySpendingTrendCardConfig,
-    renderData: CardRenderData.CategorySpendingTrend,
-    input: CardInput,
-    updateHandler: CardUpdateHandler,
-    onDelete: ((String) -> Unit)?,
-    onRecordsClick: (TransactionFilter) -> Unit,
-    callbacks: AeonInteractionCallbacks,
-    filterSheetEnabled: Boolean
-) = CardWithCallbacks.CategorySpendingTrend(
-    renderData = renderData,
-    callbacks = CardCallbacks.CategorySpendingTrend(
-        onUpdate = { newConfig ->
-            updateHandler.updateCategorySpendingTrendConfig(
-                config.cardId,
-                newConfig
-            )
-        },
-        onDelete = onDelete?.let { { it(config.cardId) } },
-        onRecordsClick = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
-        onSaveFilterClick = callbacks.filterActions.onSaveClick
-    ),
-    filterRules = config.filterRules,
-    baseFilter = input.filter,
-    filterSheetEnabled = filterSheetEnabled
-)
 
 @Composable
 fun CategorySpendingTrendCard(
     renderData: CardRenderData.CategorySpendingTrend,
     callbacks: CardCallbacks.CategorySpendingTrend = CardCallbacks.CategorySpendingTrend(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    animate: Boolean = false,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
-    var categoriesExpanded by rememberSaveable { mutableStateOf(false) }
+    var categoriesExpanded by rememberSaveable { mutableStateOf(value = false) }
 
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Default.BarChart,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CategorySpendingSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CategorySpendingSettingsContent(
                 config = config,
                 callbacks = callbacks,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -173,7 +125,7 @@ fun CategorySpendingTrendCard(
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
                     roundedBars = false,
-                    animate = animate
+                    animate = layoutProps.animate
                 )
             }
 
@@ -350,44 +302,74 @@ private fun NatureChip(nature: CategoryNature) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategorySpendingSettingsSheet(
+private fun CategorySpendingSettingsContent(
     config: CategorySpendingTrendCardConfig,
     callbacks: CardCallbacks.CategorySpendingTrend,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(
-        title = "Category Spending",
-        onDismiss = onDismiss,
-        onDelete = callbacks.onDelete
-    ) {
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Cumulative",
-                checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
-            )
-            AeonSettingsToggle(
-                label = "Show Grid Lines",
-                checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onUpdate(
-                    config.copy(
-                        excludeInternalTransfers = it
-                    )
-                )
-            }
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Cumulative",
+            checked = config.isCumulative,
+            onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+        )
+        AeonSettingsToggle(
+            label = "Show Grid Lines",
+            checked = config.showGridLines,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
         )
     }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onUpdate(
+                config.copy(
+                    excludeInternalTransfers = it
+                )
+            )
+        }
+    )
 }
+
+/**
+ * Maps [CategorySpendingTrendCardConfig] + [CardRenderData.CategorySpendingTrend] to [CardWithCallbacks.CategorySpendingTrend].
+ */
+fun mapCategorySpendingTrend(
+    config: CategorySpendingTrendCardConfig,
+    renderData: CardRenderData.CategorySpendingTrend,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: ((String) -> Unit)?,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.CategorySpendingTrend(
+    renderData = renderData,
+    callbacks = CardCallbacks.CategorySpendingTrend(
+        onUpdate = { newConfig ->
+            updateHandler.updateCategorySpendingTrendConfig(
+                config.cardId,
+                newConfig
+            )
+        },
+        onDelete = onDelete?.let { { it(config.cardId) } },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
@@ -452,21 +434,21 @@ fun CategorySpendingTrendCardPreview() {
         ),
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
         activeCategories = listOf(
-            CategorySummary(
+            com.osscabinet.ossWallet.domain.card.CategorySummary(
                 1L,
                 "Rent",
                 0xFFE57373.toInt(),
                 CategoryNature.MUST,
                 BigDecimal("-2400.00")
             ),
-            CategorySummary(
+            com.osscabinet.ossWallet.domain.card.CategorySummary(
                 2L,
                 "Groceries",
                 0xFFFFB74D.toInt(),
                 CategoryNature.NEED,
                 BigDecimal("-750.00")
             ),
-            CategorySummary(
+            com.osscabinet.ossWallet.domain.card.CategorySummary(
                 3L,
                 "Wants (Net)",
                 0xFF81C784.toInt(),
@@ -497,7 +479,7 @@ private fun buildChartGroups(
         val finalBars = mutableListOf<AeonBarChartBar>()
 
         CategoryNature.entries.forEach { nature ->
-            val currentAmount = bucket.categoryAmounts
+            val currentAmount = bucket.categoryAmounts.asSequence()
                 .filter { it.nature == nature }
                 .map { it.amount }
                 .fold(BigDecimal.ZERO, BigDecimal::add)

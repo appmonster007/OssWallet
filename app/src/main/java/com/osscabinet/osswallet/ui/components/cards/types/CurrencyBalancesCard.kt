@@ -15,20 +15,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.analytics.CurrencyAggregationItem
 import com.osscabinet.ossWallet.domain.model.settings.CurrencyBalancesCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
@@ -36,13 +35,13 @@ import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonLazyRow
 import com.osscabinet.ossWallet.ui.components.NativeWithConvertedSubtext
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
@@ -58,46 +57,35 @@ import java.math.BigDecimal
 fun CurrencyBalancesCard(
     currencyTotals: List<CurrencyAggregationItem>,
     baseCurrency: String,
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-            anchor = baseCurrency,
-            rates = emptyMap()
-        ),
+    exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(
+        anchor = baseCurrency,
+        rates = emptyMap(),
+    ),
     config: CurrencyBalancesCardConfig,
     callbacks: CardCallbacks.CurrencyBalances = CardCallbacks.CurrencyBalances(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Payments,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CurrencyBalancesSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CurrencyBalancesSettingsContent(
                 config = config,
                 baseCurrency = baseCurrency,
                 callbacks = callbacks,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -136,7 +124,7 @@ fun CurrencyBalancesCard(
                     )
                 }
 
-                if (config.gridColumns > 1 && currencyTotals.size % config.gridColumns != 0) {
+                if (config.gridColumns > 1 && (currencyTotals.size % config.gridColumns != 0)) {
                     repeat(config.gridColumns - (currencyTotals.size % config.gridColumns)) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -167,49 +155,42 @@ fun CurrencyBalancesCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CurrencyBalancesSettingsSheet(
+private fun CurrencyBalancesSettingsContent(
     config: CurrencyBalancesCardConfig,
     baseCurrency: String,
     callbacks: CardCallbacks.CurrencyBalances,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(
-        title = "Currency Balances",
-        onDismiss = onDismiss,
-        onDelete = callbacks.onDelete
-    ) {
-        CardSettingsSection("Display") {
-            AeonLayoutToggle(
-                layout = config.layout,
-                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
-                showBackground = false
-            )
-            if (config.layout == "grid") {
-                AeonGridColumnsSettings(
-                    gridColumns = config.gridColumns,
-                    onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
-                    showBackground = false
-                )
-            }
-            AeonBaseConversionToggle(
-                baseCurrency = baseCurrency,
-                showBaseConversion = config.showBaseConversion,
-                onShowBaseConversionChange = {
-                    callbacks.onShowBaseConversionChange(
-                        config.cardId,
-                        it
-                    )
-                },
+    CardSettingsSection("Display") {
+        AeonLayoutToggle(
+            layout = config.layout,
+            onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+            showBackground = false
+        )
+        if (config.layout == "grid") {
+            AeonGridColumnsSettings(
+                gridColumns = config.gridColumns,
+                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
                 showBackground = false
             )
         }
+        AeonBaseConversionToggle(
+            baseCurrency = baseCurrency,
+            showBaseConversion = config.showBaseConversion,
+            onShowBaseConversionChange = {
+                callbacks.onShowBaseConversionChange(
+                    config.cardId,
+                    it
+                )
+            },
+            showBackground = false
+        )
     }
 }
 
 @Composable
 fun CurrencyBalanceItem(
+    modifier: Modifier = Modifier,
     curr: String,
     amount: BigDecimal,
     targetCurrency: String,
@@ -217,7 +198,6 @@ fun CurrencyBalanceItem(
     showBaseConversion: Boolean = true,
     isLarge: Boolean = false,
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     val style = if (isLarge) AppTextStyles.heroAmount else AppTextStyles.cardSecondaryAmount
     val verticalPadding = if (isLarge) 16.dp else 14.dp

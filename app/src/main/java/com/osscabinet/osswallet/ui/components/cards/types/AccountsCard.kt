@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -35,6 +34,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonLazyRow
@@ -47,9 +47,9 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -63,36 +63,28 @@ fun AccountsCard(
     accountSummaries: Map<String, AccountSummaryItem>,
     baseCurrency: String,
     config: AccountsCardConfig,
+    previousSummaries: Map<String, AccountSummaryItem>? = null,
     callbacks: CardCallbacks.Accounts = CardCallbacks.Accounts(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.AccountBalanceWallet,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier.fillMaxWidth(),
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            AccountsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            AccountsSettingsContent(config = config, callbacks = callbacks)
         }
     ) {
         if (accounts.isEmpty()) {
@@ -113,6 +105,7 @@ fun AccountsCard(
                     AccountItemWrapper(
                         account = account,
                         accountSummaries = accountSummaries,
+                        previousSummaries = if (config.showComparison) previousSummaries else null,
                         baseCurrency = baseCurrency,
                         config = config,
                         onAccountClick = callbacks.onAccountClick,
@@ -152,6 +145,7 @@ fun AccountsCard(
                     AccountItemWrapper(
                         account = account,
                         accountSummaries = accountSummaries,
+                        previousSummaries = if (config.showComparison) previousSummaries else null,
                         baseCurrency = baseCurrency,
                         config = config,
                         onAccountClick = callbacks.onAccountClick,
@@ -176,61 +170,58 @@ fun AccountsCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountsSettingsSheet(
+private fun AccountsSettingsContent(
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Accounts", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Layout") {
-            AeonLayoutToggle(
-                layout = config.layout,
-                onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
-                showBackground = false
-            )
-            AeonGridColumnsSettings(
-                gridColumns = config.gridColumns,
-                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Comparison",
-                description = "Show change from previous period",
-                checked = config.showComparison,
-                onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show add account card",
-                checked = config.showAddAccountCard,
-                onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) },
-                showBackground = false
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { newPerspective -> callbacks.onPerspectiveChange(config.cardId, newPerspective) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(
-                    config.cardId,
-                    it
-                )
-            }
+    CardSettingsSection("Layout") {
+        AeonLayoutToggle(
+            layout = config.layout,
+            onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+            showBackground = false
         )
-        OutlinedButton(
-            onClick = { callbacks.onManageClick(); onDismiss() },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(
-                Icons.Default.Settings,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
+        AeonGridColumnsSettings(
+            gridColumns = config.gridColumns,
+            onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show add account card",
+            checked = config.showAddAccountCard,
+            onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) },
+            showBackground = false
+        )
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { newPerspective -> callbacks.onPerspectiveChange(config.cardId, newPerspective) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onExcludeInternalTransfersChange(
+                config.cardId,
+                it
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Manage Accounts")
         }
+    )
+    OutlinedButton(
+        onClick = { callbacks.onManageClick() },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Manage Accounts")
     }
 }
 
@@ -239,6 +230,7 @@ private fun AccountsSettingsSheet(
 private fun FlowRowScope.AccountItemWrapper(
     account: Account,
     accountSummaries: Map<String, AccountSummaryItem>,
+    previousSummaries: Map<String, AccountSummaryItem>? = null,
     baseCurrency: String,
     config: AccountsCardConfig,
     onAccountClick: (String) -> Unit,
@@ -248,6 +240,7 @@ private fun FlowRowScope.AccountItemWrapper(
     AccountItemContent(
         account = account,
         accountSummaries = accountSummaries,
+        previousSummaries = previousSummaries,
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
@@ -260,17 +253,19 @@ private fun FlowRowScope.AccountItemWrapper(
 
 @Composable
 private fun AccountItemWrapper(
+    modifier: Modifier = Modifier,
     account: Account,
     accountSummaries: Map<String, AccountSummaryItem>,
+    previousSummaries: Map<String, AccountSummaryItem>? = null,
     baseCurrency: String,
     config: AccountsCardConfig,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     AccountItemContent(
         account = account,
         accountSummaries = accountSummaries,
+        previousSummaries = previousSummaries,
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
@@ -285,6 +280,7 @@ private fun AccountItemWrapper(
 private fun AccountItemContent(
     account: Account,
     accountSummaries: Map<String, AccountSummaryItem>,
+    previousSummaries: Map<String, AccountSummaryItem>? = null,
     baseCurrency: String,
     gridColumns: Int,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
@@ -294,10 +290,12 @@ private fun AccountItemContent(
     modifier: Modifier = Modifier
 ) {
     val stats = accountSummaries[account.id] ?: AccountSummaryItem(account)
+    val prevStats = previousSummaries?.get(account.id)
 
     when (gridColumns) {
         1 -> AeonAccountCardLarge(
             summary = stats,
+            previousSummary = prevStats,
             baseCurrency = baseCurrency,
             perspective = perspective,
             onClick = { onAccountClick(account.id) },
@@ -375,16 +373,6 @@ private fun AccountItemContent(
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun FlowRowScope.AeonAddAccountCard(
-    baseCurrency: String,
-    onClick: () -> Unit,
-    gridColumns: Int = 2,
-    modifier: Modifier = Modifier
-) {
-    AeonAddAccountCardContent(baseCurrency, onClick, gridColumns, modifier)
-}
-
 @Composable
 fun AeonAddAccountCard(
     baseCurrency: String,
@@ -517,6 +505,7 @@ fun mapAccounts(
     callbacks = CardCallbacks.Accounts(
         onGridColumnsChange = updateHandler::updateCardAccountsGridColumns,
         onLayoutChange = updateHandler::updateCardAccountsLayout,
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardAccountsFilter,
         onShowAddAccountCardChange = updateHandler::updateCardAccountsShowAddAccountCard,
         onPerspectiveChange = updateHandler::updateCardPerspective,

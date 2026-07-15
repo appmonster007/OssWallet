@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.PieChart
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -38,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -51,11 +49,10 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
@@ -74,21 +71,10 @@ fun CategoryPieChartCard(
     config: CategoryPieChartCardConfig,
     data: List<CategoryChartData>,
     currency: String,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    animate: Boolean = false,
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     val mode = LocalThemeMode.current
     val isDarkTheme = mode.isDarkTheme
@@ -102,14 +88,8 @@ fun CategoryPieChartCard(
         }
     }
 
-    // D3+D6: remember(filteredData) resets the stack immediately when underlying data or filter
-    // changes — no one-frame lag and no stale drill-down after a compute round.
     var navigationStack by remember(filteredData) {
-        mutableStateOf(
-            listOf<List<CategoryChartData>>(
-                filteredData
-            )
-        )
+        mutableStateOf(listOf(filteredData))
     }
 
     val currentData = navigationStack.last()
@@ -117,21 +97,20 @@ fun CategoryPieChartCard(
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.PieChart,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CategoryPieChartSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CategoryPieChartSettingsContent(
                 config = config,
                 onUpdate = { callbacks.onUpdate(it) },
-                onDelete = callbacks.onDelete,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -196,11 +175,8 @@ fun CategoryPieChartCard(
         val groupedData = remember(currentData, navigationStack.size) {
             val sorted = currentData.sortedByDescending { it.amount.abs() }
 
-            // Detect if we are in a synthesized "More Categories" view
             val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
                 val prevLevelRawData = navigationStack[navigationStack.size - 2]
-                // If the current list isn't a subcategory of anything in the previous level, 
-                // it's our synthesized "More Categories" list.
                 prevLevelRawData.none { it.subcategoryData === currentData }
             } else false
 
@@ -218,9 +194,9 @@ fun CategoryPieChartCard(
 
                     mainItems + CategoryChartData(
                         category = "More Categories",
-                        categoryId = -1L, // Special ID for "More Categories"
+                        categoryId = -1L,
                         amount = otherSum,
-                        colorHex = 0xFF9E9E9E.toInt(), // Grey
+                        colorHex = 0xFF9E9E9E.toInt(),
                         percentage = otherPercentage,
                         hasSubcategories = true,
                         subcategoryCount = others.size,
@@ -235,7 +211,6 @@ fun CategoryPieChartCard(
             }
         }
 
-        // Refined Visualization
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -287,18 +262,16 @@ fun CategoryPieChartCard(
                     modifier = Modifier.fillMaxSize(),
                     rounded = config.rounded,
                     currency = currency,
-                    animate = animate,
+                    animate = layoutProps.animate,
                     previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
                     positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
-                    onSliceClick = { slice ->
-                        // Interaction feedback
-                    },
+                    onSliceClick = {},
                     onDrillInClick = { slice ->
                         val clickedItem = groupedData.find { it.category == slice.label }
                         if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
-                            navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
+                            navigationStack += listOf(clickedItem.subcategoryData)
                         }
                     },
                     onNavigateToRecords = { slice ->
@@ -308,7 +281,7 @@ fun CategoryPieChartCard(
 
                         callbacks.onRecordsClick(
                             config.filter.copy(
-                                categoryIds = categoryIds.map { it.toLong() }.toSet()
+                                categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
                             )
                         )
                     }
@@ -324,7 +297,6 @@ fun CategoryPieChartCard(
             }
         }
 
-        // Optimized Legend
         if (config.showLegend && groupedData.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
             CategoryLegend(
@@ -337,12 +309,12 @@ fun CategoryPieChartCard(
                 onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
                 onItemClick = { item ->
                     if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
-                        navigationStack = navigationStack + listOf(item.subcategoryData)
+                        navigationStack += listOf(item.subcategoryData)
                     } else {
                         val categoryIds = item.allCategoryIds()
                         callbacks.onRecordsClick(
                             config.filter.copy(
-                                categoryIds = categoryIds.map { it.toLong() }.toSet()
+                                categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
                             )
                         )
                     }
@@ -353,60 +325,55 @@ fun CategoryPieChartCard(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryPieChartSettingsSheet(
+private fun CategoryPieChartSettingsContent(
     config: CategoryPieChartCardConfig,
     onUpdate: (CategoryPieChartCardConfig) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Pie Chart", onDismiss = onDismiss, onDelete = onDelete) {
-        CardSettingsSection("Visuals") {
-            AeonSettingsToggle(
-                "Show Labels",
-                config.showLabels,
-                onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
-            )
-            AeonSettingsToggle(
-                "Show Legend",
-                config.showLegend,
-                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
-            )
-            AeonSettingsToggle(
-                "Rounded Visuals",
-                config.rounded,
-                description = "Apply spacing and modern segment styles",
-                onCheckedChange = { onUpdate(config.copy(rounded = it)) }
-            )
-        }
-        CardSettingsSection("Data") {
-            AeonSettingsToggle(
-                "Full Breakdown",
-                config.showFullBreakdown,
-                description = "Show all categories instead of top 5",
-                onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
-            )
-            AeonSettingsToggle(
-                "Active Only",
-                config.showOnlyActiveCategories,
-                description = "Only show categories with non-zero values",
-                onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-            )
-            AeonSettingsToggle(
-                "Show Comparison",
-                config.showComparison,
-                description = "Compare to previous period in chart center",
-                onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+    CardSettingsSection("Visuals") {
+        AeonSettingsToggle(
+            "Show Labels",
+            config.showLabels,
+            onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+        )
+        AeonSettingsToggle(
+            "Show Legend",
+            config.showLegend,
+            onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+        )
+        AeonSettingsToggle(
+            "Rounded Visuals",
+            config.rounded,
+            description = "Apply spacing and modern segment styles",
+            onCheckedChange = { onUpdate(config.copy(rounded = it)) }
         )
     }
+    CardSettingsSection("Data") {
+        AeonSettingsToggle(
+            "Full Breakdown",
+            config.showFullBreakdown,
+            description = "Show all categories instead of top 5",
+            onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+        )
+        AeonSettingsToggle(
+            "Active Only",
+            config.showOnlyActiveCategories,
+            description = "Only show categories with non-zero values",
+            onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+        )
+        AeonSettingsToggle(
+            "Show Comparison",
+            config.showComparison,
+            description = "Compare to previous period in chart center",
+            onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
+        )
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+    )
 }
 
 
@@ -534,12 +501,6 @@ fun mapCategoryPieChart(
         onUpdate = { newConfig ->
             if (newConfig is CategoryPieChartCardConfig) {
                 updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
-            } else {
-                if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
-                    android.util.Log.w(
-                        "CardBridge",
-                        "CategoryPieChart.onUpdate: unexpected ${newConfig::class.simpleName}"
-                    )
             }
         },
         onDelete = onDelete?.let { { it(config.cardId) } },

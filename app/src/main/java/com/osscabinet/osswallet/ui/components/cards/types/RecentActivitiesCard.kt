@@ -1,11 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -13,69 +13,55 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.RecentActivitiesCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.TransactionGroupingType
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.components.transactions.RecentActivitiesScreen
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionItemEvent
 import com.osscabinet.ossWallet.ui.screens.transactions.model.TransactionListUiState
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 @Composable
 fun RecentActivitiesCard(
     listState: TransactionListUiState,
     config: RecentActivitiesCardConfig,
     callbacks: CardCallbacks.RecentActivities,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
     baseCurrency: String = "USD",
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    scrollToId: String? = null,
-    highlightedId: String? = null,
-    onScrollComplete: () -> Unit = {}
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.History,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onClick = { callbacks.onRecordsClick(config.filter) },
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            RecentActivitiesSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            RecentActivitiesSettingsContent(
                 config = config,
                 onUpdate = callbacks.onUpdate,
-                onDelete = callbacks.onDelete,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -98,10 +84,10 @@ fun RecentActivitiesCard(
             showTags = config.showTags,
             showTimestamp = config.showTimestamp,
             showIcon = config.showIcon,
-            revealedCardIds = emptyList<String>(),
-            scrollToId = scrollToId,
-            highlightedId = highlightedId,
-            onScrollComplete = onScrollComplete,
+            revealedCardIds = emptyList(),
+            scrollToId = layoutProps.scrollToId,
+            highlightedId = layoutProps.highlightedId,
+            onScrollComplete = layoutProps.onScrollComplete,
             onTransactionEvent = { event ->
                 when (event) {
                     is TransactionItemEvent.Click -> {
@@ -141,117 +127,112 @@ fun RecentActivitiesCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RecentActivitiesSettingsSheet(
+private fun RecentActivitiesSettingsContent(
     config: RecentActivitiesCardConfig,
     onUpdate: (RecentActivitiesCardConfig) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Recent Activities", onDismiss = onDismiss, onDelete = onDelete) {
-        CardSettingsSection("Grouping") {
-            SingleChoiceSegmentedButtonRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                TransactionGroupingType.entries.forEachIndexed { index, type ->
-                    SegmentedButton(
-                        selected = config.groupBy == type,
-                        onClick = { onUpdate(config.copy(groupBy = type)) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = TransactionGroupingType.entries.size
-                        ),
-                        label = {
-                            Text(
-                                when (type) {
-                                    TransactionGroupingType.BY_DAY -> "Day"
-                                    TransactionGroupingType.BY_WEEK -> "Week"
-                                }
-                            )
-                        }
-                    )
-                }
+    CardSettingsSection("Grouping") {
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        ) {
+            TransactionGroupingType.entries.forEachIndexed { index, type ->
+                SegmentedButton(
+                    selected = config.groupBy == type,
+                    onClick = { onUpdate(config.copy(groupBy = type)) },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = TransactionGroupingType.entries.size
+                    ),
+                    label = {
+                        Text(
+                            when (type) {
+                                TransactionGroupingType.BY_DAY -> "Day"
+                                TransactionGroupingType.BY_WEEK -> "Week"
+                            }
+                        )
+                    }
+                )
             }
         }
+    }
 
-        CardSettingsSection("Components") {
-            AeonSettingsToggle(
-                label = "Use Note as Header",
-                checked = config.useNoteAsHeader,
-                onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Account",
-                checked = config.showAccount,
-                onCheckedChange = { onUpdate(config.copy(showAccount = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Category",
-                checked = config.showCategory,
-                onCheckedChange = { onUpdate(config.copy(showCategory = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Note",
-                checked = config.showNote,
-                onCheckedChange = { onUpdate(config.copy(showNote = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Tags",
-                checked = config.showTags,
-                onCheckedChange = { onUpdate(config.copy(showTags = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Timestamp",
-                checked = config.showTimestamp,
-                onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Icon",
-                checked = config.showIcon,
-                onCheckedChange = { onUpdate(config.copy(showIcon = it)) },
-                showBackground = false
-            )
-        }
+    CardSettingsSection("Components") {
+        AeonSettingsToggle(
+            label = "Use Note as Header",
+            checked = config.useNoteAsHeader,
+            onCheckedChange = { onUpdate(config.copy(useNoteAsHeader = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Account",
+            checked = config.showAccount,
+            onCheckedChange = { onUpdate(config.copy(showAccount = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Category",
+            checked = config.showCategory,
+            onCheckedChange = { onUpdate(config.copy(showCategory = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Note",
+            checked = config.showNote,
+            onCheckedChange = { onUpdate(config.copy(showNote = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Tags",
+            checked = config.showTags,
+            onCheckedChange = { onUpdate(config.copy(showTags = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Timestamp",
+            checked = config.showTimestamp,
+            onCheckedChange = { onUpdate(config.copy(showTimestamp = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Icon",
+            checked = config.showIcon,
+            onCheckedChange = { onUpdate(config.copy(showIcon = it)) },
+            showBackground = false
+        )
+    }
 
-        CardSettingsSection("Balances") {
-            AeonSettingsToggle(
-                label = "Show Opening Balance",
-                enabled = config.allTxnBreakdown,
-                checked = config.allTxnBreakdown && config.showOpeningBalance,
-                onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Closing Balance",
-                enabled = config.allTxnBreakdown,
-                checked = config.allTxnBreakdown && config.showClosingBalance,
-                onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Currency Breakdown",
-                checked = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Period Overview",
-                description = "Show full period totals regardless of active filter",
-                checked = config.allTxnBreakdown,
-                enabled = config.showCurrencyBreakdown,
-                onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) },
-                showBackground = false
-            )
-        }
+    CardSettingsSection("Balances") {
+        AeonSettingsToggle(
+            label = "Show Opening Balance",
+            enabled = config.allTxnBreakdown,
+            checked = config.allTxnBreakdown && config.showOpeningBalance,
+            onCheckedChange = { onUpdate(config.copy(showOpeningBalance = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Closing Balance",
+            enabled = config.allTxnBreakdown,
+            checked = config.allTxnBreakdown && config.showClosingBalance,
+            onCheckedChange = { onUpdate(config.copy(showClosingBalance = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Currency Breakdown",
+            checked = config.showCurrencyBreakdown,
+            onCheckedChange = { onUpdate(config.copy(showCurrencyBreakdown = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Period Overview",
+            description = "Show full period totals regardless of active filter",
+            checked = config.allTxnBreakdown,
+            enabled = config.showCurrencyBreakdown,
+            onCheckedChange = { onUpdate(config.copy(allTxnBreakdown = it)) },
+            showBackground = false
+        )
     }
 }
 
@@ -304,3 +285,17 @@ fun mapRecentActivities(
     baseFilter = input.filter,
     filterSheetEnabled = filterSheetEnabled
 )
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun RecentActivitiesCardPreview() {
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            RecentActivitiesCard(
+                listState = TransactionListUiState(),
+                config = RecentActivitiesCardConfig(cardId = "preview"),
+                callbacks = CardCallbacks.RecentActivities()
+            )
+        }
+    }
+}

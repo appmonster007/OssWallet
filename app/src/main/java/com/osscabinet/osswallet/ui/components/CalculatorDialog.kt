@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 
 @Composable
@@ -143,7 +144,7 @@ fun CalculatorDialog(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun CalculatorDialogPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         CalculatorDialog(
             initialValue = "100 + 50",
             onDismiss = {},

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.filled.ViewStream
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -57,11 +55,10 @@ import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionSummaryBreakdown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonUpSetData
@@ -81,7 +78,7 @@ fun mapTagUpSetPlot(
     onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
-    filterSheetEnabled: Boolean
+    filterSheetEnabled: Boolean,
 ) = CardWithCallbacks.TagUpSetPlot(
     renderData = renderData,
     callbacks = CardCallbacks.TagUpSetPlot(
@@ -104,47 +101,36 @@ fun mapTagUpSetPlot(
 fun TagUpSetPlotCard(
     renderData: CardRenderData.TagUpSetPlot,
     callbacks: CardCallbacks.TagUpSetPlot = CardCallbacks.TagUpSetPlot(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
     onRecordsClick: (TransactionFilter) -> Unit = {},
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
     var selectedIntersection by remember { mutableStateOf<AeonUpSetIntersection?>(null) }
 
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Default.Analytics,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            TagUpSetSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            TagUpSetSettingsContent(
                 config = config,
                 onUpdate = { newConfig ->
                     callbacks.onUpdate(newConfig)
                 },
-                onDelete = callbacks.onDelete,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -154,7 +140,8 @@ fun TagUpSetPlotCard(
                     ChartMetric.INCOME -> s.income
                     ChartMetric.EXPENSE -> s.expense
                     ChartMetric.NET,
-                    ChartMetric.TRANSFER -> s.income.add(s.expense)
+                    ChartMetric.TRANSFER,
+                    -> s.income.add(s.expense)
                 }
             }
 
@@ -180,7 +167,7 @@ fun TagUpSetPlotCard(
             }
         }
         val setIndexMap =
-            remember(uiSets) { uiSets.withIndex().associate { it.value.name to it.index } }
+            remember(uiSets) { uiSets.asSequence().withIndex().associateBy({ it.value.name }, { it.index }) }
 
         val uiIntersections = remember(
             renderData.intersections,
@@ -264,7 +251,7 @@ fun TagUpSetPlotCard(
                     val titleText = if (isSet) {
                         uiSets[intersection.setIndices.first()].name
                     } else {
-                        intersection.setIndices.map { uiSets[it].name }.joinToString(", ")
+                        intersection.setIndices.joinToString(", ") { uiSets[it].name }
                     }
 
                     Surface(
@@ -388,257 +375,252 @@ private fun CompactMetricSelector(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TagUpSetSettingsSheet(
+private fun TagUpSetSettingsContent(
     config: TagUpSetPlotCardConfig,
     onUpdate: (TagUpSetPlotCardConfig) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Tag Analytics", onDismiss = onDismiss, onDelete = onDelete) {
-        CardSettingsSection("Display") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Maximum visible tags", style = AppTextStyles.transactionTitle)
-                    Text(
-                        "Showing top ${config.maxTags} tags",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (config.maxTags != 7) {
-                        IconButton(
-                            onClick = { onUpdate(config.copy(maxTags = 7)) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = "Reset to 7",
-                                tint = AppColors.contentSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    AeonStepperField(
-                        value = config.maxTags,
-                        onDecrement = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
-                        onIncrement = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
-                        min = 1
-                    )
-                }
-            }
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.3f),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Maximum intersections", style = AppTextStyles.transactionTitle)
-                    Text(
-                        "Showing top ${config.maxIntersections} sets",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                val screenWidthDp = LocalConfiguration.current.screenWidthDp
-                val defaultIntersections = maxOf(1, (screenWidthDp - 32 - 120 - 8) / 24)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (config.maxIntersections != defaultIntersections) {
-                        IconButton(
-                            onClick = { onUpdate(config.copy(maxIntersections = defaultIntersections)) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = "Reset to default",
-                                tint = AppColors.contentSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    AeonStepperField(
-                        value = config.maxIntersections,
-                        onDecrement = {
-                            if (config.maxIntersections > 1) onUpdate(
-                                config.copy(
-                                    maxIntersections = config.maxIntersections - 1
-                                )
-                            )
-                        },
-                        onIncrement = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
-                        min = 1
-                    )
-                }
-            }
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.3f),
-            )
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
+    CardSettingsSection("Display") {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Maximum visible tags", style = AppTextStyles.transactionTitle)
                 Text(
-                    "DYNAMIC FILTERING",
-                    style = AppTextStyles.transactionSwipeAction.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.sp,
-                        fontSize = 11.sp
-                    ),
-                    color = AppColors.contentSecondary.copy(alpha = 0.6f)
+                    "Showing top ${config.maxTags} tags",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    UpSetDynamicFilteringMode.entries.forEachIndexed { index, mode ->
-                        SegmentedButton(
-                            selected = config.dynamicFilteringMode == mode,
-                            onClick = { onUpdate(config.copy(dynamicFilteringMode = mode)) },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = UpSetDynamicFilteringMode.entries.size
-                            ),
-                            icon = {},
-                            label = {
-                                Icon(
-                                    imageVector = when (mode) {
-                                        UpSetDynamicFilteringMode.OFF -> Icons.Default.Block
-                                        UpSetDynamicFilteringMode.HORIZONTAL -> Icons.Default.ViewColumn
-                                        UpSetDynamicFilteringMode.VERTICAL -> Icons.Default.ViewStream
-                                    },
-                                    contentDescription = when (mode) {
-                                        UpSetDynamicFilteringMode.OFF -> "Filtering Off"
-                                        UpSetDynamicFilteringMode.HORIZONTAL -> "Row Filtering"
-                                        UpSetDynamicFilteringMode.VERTICAL -> "Column Filtering"
-                                    },
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (config.maxTags != 7) {
+                    IconButton(
+                        onClick = { onUpdate(config.copy(maxTags = 7)) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Reset to 7",
+                            tint = AppColors.contentSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                AeonStepperField(
+                    value = config.maxTags,
+                    onDecrement = { if (config.maxTags > 1) onUpdate(config.copy(maxTags = config.maxTags - 1)) },
+                    onIncrement = { onUpdate(config.copy(maxTags = config.maxTags + 1)) },
+                    min = 1
+                )
+            }
+        }
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = AppColors.divider.copy(alpha = 0.3f),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Maximum intersections", style = AppTextStyles.transactionTitle)
+                Text(
+                    "Showing top ${config.maxIntersections} sets",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
+            val screenWidthDp = LocalConfiguration.current.screenWidthDp
+            val defaultIntersections = maxOf(1, (screenWidthDp - 32 - 120 - 8) / 24)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (config.maxIntersections != defaultIntersections) {
+                    IconButton(
+                        onClick = { onUpdate(config.copy(maxIntersections = defaultIntersections)) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Reset to default",
+                            tint = AppColors.contentSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                AeonStepperField(
+                    value = config.maxIntersections,
+                    onDecrement = {
+                        if (config.maxIntersections > 1) onUpdate(
+                            config.copy(
+                                maxIntersections = config.maxIntersections - 1
+                            )
+                        )
+                    },
+                    onIncrement = { onUpdate(config.copy(maxIntersections = config.maxIntersections + 1)) },
+                    min = 1
+                )
+            }
+        }
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = AppColors.divider.copy(alpha = 0.3f),
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            Text(
+                "DYNAMIC FILTERING",
+                style = AppTextStyles.transactionSwipeAction.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp
+                ),
+                color = AppColors.contentSecondary.copy(alpha = 0.6f)
+            )
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                UpSetDynamicFilteringMode.entries.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = config.dynamicFilteringMode == mode,
+                        onClick = { onUpdate(config.copy(dynamicFilteringMode = mode)) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = UpSetDynamicFilteringMode.entries.size
+                        ),
+                        icon = {},
+                        label = {
+                            Icon(
+                                imageVector = when (mode) {
+                                    UpSetDynamicFilteringMode.OFF -> Icons.Default.Block
+                                    UpSetDynamicFilteringMode.HORIZONTAL -> Icons.Default.ViewColumn
+                                    UpSetDynamicFilteringMode.VERTICAL -> Icons.Default.ViewStream
+                                },
+                                contentDescription = when (mode) {
+                                    UpSetDynamicFilteringMode.OFF -> "Filtering Off"
+                                    UpSetDynamicFilteringMode.HORIZONTAL -> "Row Filtering"
+                                    UpSetDynamicFilteringMode.VERTICAL -> "Column Filtering"
+                                },
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+    )
+    CardSettingsSection("Sorting") {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Tags",
+                style = AppTextStyles.transactionTitle,
+                modifier = Modifier.weight(1f)
+            )
+            SingleChoiceSegmentedButtonRow {
+                val tagPairs = listOf(
+                    UpSetTagSortMode.NAME_ASC to UpSetTagSortMode.NAME_DESC,
+                    UpSetTagSortMode.DECREASING_ABS to UpSetTagSortMode.INCREASING_ABS,
+                    UpSetTagSortMode.DECREASING to UpSetTagSortMode.INCREASING
+                )
+                tagPairs.forEachIndexed { index, (pairA, pairB) ->
+                    val isSelected = (config.tagSortMode == pairA) || (config.tagSortMode == pairB)
+                    val displayed = if (isSelected) config.tagSortMode else pairA
+                    SegmentedButton(
+                        selected = isSelected,
+                        onClick = {
+                            onUpdate(config.copy(tagSortMode = if (config.tagSortMode == pairA) pairB else pairA))
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = tagPairs.size
+                        ),
+                        icon = {}
+                    ) {
+                        Text(
+                            text = when (displayed) {
+                                UpSetTagSortMode.NAME_ASC -> "Az"
+                                UpSetTagSortMode.NAME_DESC -> "Za"
+                                UpSetTagSortMode.DECREASING_ABS -> "|↓|"
+                                UpSetTagSortMode.INCREASING_ABS -> "|↑|"
+                                UpSetTagSortMode.DECREASING -> "↓"
+                                UpSetTagSortMode.INCREASING -> "↑"
+                            },
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
                         )
                     }
                 }
             }
         }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = AppColors.divider.copy(alpha = 0.3f),
         )
-        CardSettingsSection("Sorting") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Tags",
-                    style = AppTextStyles.transactionTitle,
-                    modifier = Modifier.weight(1f)
-                )
-                SingleChoiceSegmentedButtonRow {
-                    val tagPairs = listOf(
-                        UpSetTagSortMode.NAME_ASC to UpSetTagSortMode.NAME_DESC,
-                        UpSetTagSortMode.DECREASING_ABS to UpSetTagSortMode.INCREASING_ABS,
-                        UpSetTagSortMode.DECREASING to UpSetTagSortMode.INCREASING
-                    )
-                    tagPairs.forEachIndexed { index, (pairA, pairB) ->
-                        val isSelected = config.tagSortMode == pairA || config.tagSortMode == pairB
-                        val displayed = if (isSelected) config.tagSortMode else pairA
-                        SegmentedButton(
-                            selected = isSelected,
-                            onClick = {
-                                onUpdate(config.copy(tagSortMode = if (config.tagSortMode == pairA) pairB else pairA))
-                            },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = tagPairs.size
-                            ),
-                            icon = {}
-                        ) {
-                            Text(
-                                text = when (displayed) {
-                                    UpSetTagSortMode.NAME_ASC -> "Az"
-                                    UpSetTagSortMode.NAME_DESC -> "Za"
-                                    UpSetTagSortMode.DECREASING_ABS -> "|↓|"
-                                    UpSetTagSortMode.INCREASING_ABS -> "|↑|"
-                                    UpSetTagSortMode.DECREASING -> "↓"
-                                    UpSetTagSortMode.INCREASING -> "↑"
-                                },
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
-                            )
-                        }
-                    }
-                }
-            }
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = AppColors.divider.copy(alpha = 0.3f),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Intersections",
+                style = AppTextStyles.transactionTitle,
+                modifier = Modifier.weight(1f)
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Intersections",
-                    style = AppTextStyles.transactionTitle,
-                    modifier = Modifier.weight(1f)
+            SingleChoiceSegmentedButtonRow {
+                val intPairs = listOf(
+                    UpSetIntersectionSortMode.DECREASING_ABS to UpSetIntersectionSortMode.INCREASING_ABS,
+                    UpSetIntersectionSortMode.DECREASING to UpSetIntersectionSortMode.INCREASING
                 )
-                SingleChoiceSegmentedButtonRow {
-                    val intPairs = listOf(
-                        UpSetIntersectionSortMode.DECREASING_ABS to UpSetIntersectionSortMode.INCREASING_ABS,
-                        UpSetIntersectionSortMode.DECREASING to UpSetIntersectionSortMode.INCREASING
-                    )
-                    intPairs.forEachIndexed { index, (pairA, pairB) ->
-                        val isSelected =
-                            config.intersectionSortMode == pairA || config.intersectionSortMode == pairB
-                        val displayed = if (isSelected) config.intersectionSortMode else pairA
-                        SegmentedButton(
-                            selected = isSelected,
-                            onClick = {
-                                onUpdate(config.copy(intersectionSortMode = if (config.intersectionSortMode == pairA) pairB else pairA))
+                intPairs.forEachIndexed { index, (pairA, pairB) ->
+                    val isSelected =
+                        config.intersectionSortMode == pairA || config.intersectionSortMode == pairB
+                    val displayed = if (isSelected) config.intersectionSortMode else pairA
+                    SegmentedButton(
+                        selected = isSelected,
+                        onClick = {
+                            onUpdate(config.copy(intersectionSortMode = if (config.intersectionSortMode == pairA) pairB else pairA))
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = intPairs.size
+                        ),
+                        icon = {}
+                    ) {
+                        Text(
+                            text = when (displayed) {
+                                UpSetIntersectionSortMode.DECREASING_ABS -> "|↓|"
+                                UpSetIntersectionSortMode.INCREASING_ABS -> "|↑|"
+                                UpSetIntersectionSortMode.DECREASING -> "↓"
+                                UpSetIntersectionSortMode.INCREASING -> "↑"
                             },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = index,
-                                count = intPairs.size
-                            ),
-                            icon = {}
-                        ) {
-                            Text(
-                                text = when (displayed) {
-                                    UpSetIntersectionSortMode.DECREASING_ABS -> "|↓|"
-                                    UpSetIntersectionSortMode.INCREASING_ABS -> "|↑|"
-                                    UpSetIntersectionSortMode.DECREASING -> "↓"
-                                    UpSetIntersectionSortMode.INCREASING -> "↑"
-                                },
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                                modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
-                            )
-                        }
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.alpha(if (isSelected) 1f else 0.45f)
+                        )
                     }
                 }
             }

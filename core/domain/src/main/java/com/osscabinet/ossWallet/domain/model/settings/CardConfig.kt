@@ -211,6 +211,7 @@ data class CashFlowCardConfig(
     override val order: Int = 2,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showBaseConversion: Boolean = true,
+    val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
     val showNetColumn: Boolean = true,
@@ -367,6 +368,7 @@ data class PlannedPaymentsCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val maxItems: Int = 5,
+    val showComparison: Boolean = true,
     /** Legacy field kept for JSON backwards-compat; prefer viewMode. */
     val showOverdue: Boolean = true,
     val viewMode: PlannedPaymentsViewMode = PlannedPaymentsViewMode.BOTH,
@@ -393,6 +395,7 @@ data class BudgetsCardConfig(
     override val order: Int = 0,
     override val screenContext: ScreenContext = ScreenContext.DASHBOARD,
     val showArchived: Boolean = false,
+    val showComparison: Boolean = true,
     val maxItems: Int = 5,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(

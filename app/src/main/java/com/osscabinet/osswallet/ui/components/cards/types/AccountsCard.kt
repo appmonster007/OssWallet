@@ -209,7 +209,7 @@ private fun AccountsSettingsSheet(
         }
         CardPerspectiveSettings(
             perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+            onPerspectiveChange = { newPerspective -> callbacks.onPerspectiveChange(config.cardId, newPerspective) },
             excludeInternalTransfers = config.excludeInternalTransfers,
             onExcludeInternalTransfersChange = {
                 callbacks.onExcludeInternalTransfersChange(

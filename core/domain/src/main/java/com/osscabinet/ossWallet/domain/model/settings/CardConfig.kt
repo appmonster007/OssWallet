@@ -505,7 +505,7 @@ sealed class AccountingPerspective {
                 )
             }
 
-        val ALL: List<AccountingPerspective> = listOf(Accounting, CashFlow)
+        val ALL: List<AccountingPerspective> get() = listOf(Accounting, CashFlow)
     }
 }
 

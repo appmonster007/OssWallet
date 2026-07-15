@@ -40,6 +40,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -89,17 +90,62 @@ import java.util.Date
 import java.util.Locale
 
 /**
+ * Encapsulates the interaction state for an Aeon card.
+ */
+@Stable
+class AeonCardState internal constructor(
+    val cardId: String?,
+    initialFlipped: Boolean = false,
+    initialFilterVisible: Boolean = false,
+    private val onSessionChange: ((String?) -> Unit)? = null,
+    private val sessionState: String? = null
+) {
+    var isFlippedInternal by mutableStateOf(initialFlipped)
+    var isFilterVisibleInternal by mutableStateOf(initialFilterVisible)
+
+    val isFlipped: Boolean
+        get() = if (sessionState != null && cardId != null) sessionState == "settings:$cardId" else isFlippedInternal
+
+    val isFilterVisible: Boolean
+        get() = if (sessionState != null && cardId != null) sessionState == "filter:$cardId" else isFilterVisibleInternal
+
+    fun flip(flipped: Boolean) {
+        if (onSessionChange != null && cardId != null) {
+            onSessionChange(if (flipped) "settings:$cardId" else null)
+        } else {
+            isFlippedInternal = flipped
+        }
+    }
+
+    fun showFilter(visible: Boolean) {
+        if (onSessionChange != null && cardId != null) {
+            onSessionChange(if (visible) "filter:$cardId" else null)
+        } else {
+            isFilterVisibleInternal = visible
+        }
+    }
+}
+
+/**
+ * Standardizes the synchronization between local state and global card editing sessions.
+ */
+@Composable
+fun rememberAeonCardState(
+    cardId: String? = LocalCardId.current,
+): AeonCardState {
+    val sessionState = LocalEditingCardId.current
+    val onSessionChange = LocalOnEditCard.current
+    return remember(cardId, sessionState) {
+        AeonCardState(cardId, onSessionChange = onSessionChange, sessionState = sessionState)
+    }
+}
+
+/**
  * Core card shell for the Aeon design system — an Editorial Instrument.
  *
- * This refactored implementation handles the "Front" and "Back" sides as distinct
- * glass layers within a shared flipping shell.
- *
- * @param title Front-side title.
- * @param subtitle Optional front-side subtitle (defaults to period readout if filter is present).
- * @param icon Optional front-side icon (circle-wrapped).
- * @param accentColor Optional border accent color.
- * @param settingsContent When non-null, the card becomes flippable via long-press on header.
- *                        Content rendered on the back side.
+ * Implements a 3D glass flipping architecture with structural parity.
+ * - Front side: Primary data visualization and interaction.
+ * - Back side: Configuration and metadata (lazy-loaded).
  */
 @Composable
 fun AeonExpressiveCard(
@@ -117,7 +163,10 @@ fun AeonExpressiveCard(
     contentColor: Color = AppColors.contentPrimary,
     backgroundIcon: ImageVector? = null,
 
-    // Filter — tappable period readout + pill overlay appear automatically when both are non-null
+    // State
+    state: AeonCardState = rememberAeonCardState(),
+
+    // Filter properties
     filterEnabled: Boolean = true,
     filter: TransactionFilter? = null,
     baseFilter: TransactionFilter = TransactionFilter(),
@@ -126,69 +175,41 @@ fun AeonExpressiveCard(
     onFilterChange: ((TransactionFilter) -> Unit)? = null,
     onSaveFilterClick: (TransactionFilter) -> Unit = {},
 
-    // Settings — renders on the back side
+    // Settings / Back Side
     displaySettings: (@Composable (onDismiss: () -> Unit) -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     settingsContent: (@Composable ColumnScope.() -> Unit)? = null,
 
-    // Timeline mode — renders AeonTimelinePeriodSelector below the header
     timelineMode: Boolean = false,
-
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
-
     val interactionSource = if (onClick != null) remember { MutableInteractionSource() } else null
     val isPressed = interactionSource?.collectIsPressedAsState()?.value ?: false
     val scale by animateFloatAsState(if (isPressed) 0.98f else 1f, label = "cardScale")
-
     val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
-    val hasSettings = (displaySettings != null) || (settingsContent != null)
 
-    // Editing Session Synchronization
-    val editingCardSession = LocalEditingCardId.current
-    val cardId = LocalCardId.current
-    val onEditSession = LocalOnEditCard.current
-
-    val (showFilterSheet, setShowFilterSheet) = rememberSyncedCardState(
-        cardId = cardId,
-        tag = "filter",
-        sessionState = editingCardSession,
-        onSessionChange = onEditSession,
-    )
-
-    val (isFlipped, setIsFlipped) = rememberSyncedCardState(
-        cardId = cardId,
-        tag = "settings",
-        sessionState = editingCardSession,
-        onSessionChange = onEditSession,
-    )
-
+    // Flip Animation Logic
     val rotation by animateFloatAsState(
-        targetValue = if (isFlipped) 180f else 0f,
+        targetValue = if (state.isFlipped) 180f else 0f,
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
         label = "cardFlip"
     )
-
     val isFrontVisible by remember { derivedStateOf { rotation <= 90f } }
 
     // Discoverability & Intent Feedback
-    var initialComposition by remember { mutableStateOf(true) }
     LaunchedEffect(isFrontVisible) {
-        if (initialComposition) { initialComposition = false; return@LaunchedEffect }
         if (rotation > 0f && rotation < 180f) {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
 
-    // Shared border logic applied to the outer shell
     val borderModifier = when {
         isWarning -> Modifier.border(BorderStroke(0.5.dp, AppColors.error), cardShape)
         accentColor != null -> Modifier.border(BorderStroke(1.dp, accentColor), cardShape)
         else -> Modifier.aeonHairlineBorder(cardShape)
     }
 
-    // Outer shell: handles scale, rotation, elevation, and content sizing
     Box(
         modifier = modifier
             .graphicsLayer {
@@ -197,25 +218,22 @@ fun AeonExpressiveCard(
                 rotationY = rotation
                 cameraDistance = 20f * density 
 
-                // Dynamic elevation and transparency during flip
+                // Dynamic visual weight during rotation
                 if (rotation > 0.5f && rotation < 179.5f) {
-                    val progress = if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
-                    shadowElevation = (2.dp + (6.dp * progress)).toPx()
-                    alpha = 1f - (progress * 0.15f)
+                    val p = if (rotation <= 90f) rotation / 90f else (180f - rotation) / 90f
+                    shadowElevation = (2.dp + (6.dp * p)).toPx()
+                    alpha = 1f - (p * 0.15f)
                 } else {
                     shadowElevation = 2.dp.toPx()
                     alpha = 1f
                 }
-
                 clip = true
                 shape = cardShape
             }
             .then(borderModifier)
-            .animateContentSize(
-                animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-            )
+            .animateContentSize(tween(400, easing = FastOutSlowInEasing))
             .then(
-                if ((onClick != null) && !isFlipped) Modifier.clickable(
+                if ((onClick != null) && !state.isFlipped) Modifier.clickable(
                     interactionSource = interactionSource ?: remember { MutableInteractionSource() },
                     indication = LocalIndication.current,
                     onClick = onClick,
@@ -223,9 +241,7 @@ fun AeonExpressiveCard(
             ),
     ) {
         if (isFrontVisible) {
-            // ── FRONT SIDE ──────────────────────────────────────────────────
             AeonCardSideShell(containerColor = containerColor) {
-                // Background Decorative Icon
                 backgroundIcon?.let {
                     Icon(
                         imageVector = it,
@@ -243,7 +259,6 @@ fun AeonExpressiveCard(
                     val effectiveSubtitle = remember(subtitle, filter?.timelineRange, timelineMode) {
                         subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
                     }
-                    val periodTappable = filterEnabled && (filter != null) && (onFilterChange != null)
 
                     AeonCardHeader(
                         title = title,
@@ -251,12 +266,12 @@ fun AeonExpressiveCard(
                         subtitleColor = subtitleColor,
                         icon = icon,
                         iconColor = contentColor,
-                        subtitleClickable = periodTappable,
-                        onSubtitleClick = { setShowFilterSheet(true) },
+                        subtitleClickable = filterEnabled && (filter != null) && (onFilterChange != null),
+                        onSubtitleClick = { state.showFilter(true) },
                         onLongClick = {
-                            if (hasSettings) {
+                            if (settingsContent != null || displaySettings != null) {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                setIsFlipped(true)
+                                state.flip(true)
                             }
                         },
                         showFilterIndicator = filter != null && filter != baseFilter,
@@ -280,16 +295,14 @@ fun AeonExpressiveCard(
                 }
             }
         } else {
-            // ── BACK SIDE ───────────────────────────────────────────────────
-            // Double-rotation fix: rotationY=180 counteracts parent's rotationY=180
-            // allowing Haze to sample background correctly (Identity transform in screen-space)
+            // BACK SIDE: Identity transform restoration via 180 counter-rotation
             AeonCardSideShell(
                 containerColor = containerColor,
                 modifier = Modifier.graphicsLayer { rotationY = 180f }
             ) {
                 val onDismissBack = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    setIsFlipped(false)
+                    state.flip(false)
                 }
 
                 if (settingsContent != null) {
@@ -307,12 +320,11 @@ fun AeonExpressiveCard(
         }
     }
 
-    // Overlay components (Sheet, Dialog)
     FilterPillOverlay(
-        visible = showFilterSheet && filter != null && onFilterChange != null,
+        visible = state.isFilterVisible && filter != null && onFilterChange != null,
         filter = filter,
         onFilterChange = onFilterChange,
-        onDismiss = { setShowFilterSheet(false) },
+        onDismiss = { state.showFilter(false) },
         filterRules = filterRules,
         filterContext = filterContext,
         baseFilter = baseFilter,
@@ -438,12 +450,11 @@ private fun AeonCardSideShell(
     val hazeLayers = LocalAeonHaze.current
     val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
     val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
-    val isDark = isSystemInDarkTheme()
     val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
     
-    val cardStyle = GlassTokens.cardStyle(isDark)
-    val glassStyle = remember(containerColor, isDark, cardStyle) {
-        cardStyle.copyStyle(bgColor = containerColor, isDark = isDark)
+    val cardStyle = GlassTokens.cardStyle(isSystemInDarkTheme())
+    val glassStyle = remember(containerColor, cardStyle) {
+        cardStyle.copyStyle(bgColor = containerColor, isDark = null)
     }
 
     CompositionLocalProvider(
@@ -475,7 +486,7 @@ private fun AeonCardSideShell(
 }
 
 /**
- * A specialized version of [AeonExpressiveCard] for "Hero" sections.
+ * Hero card variant for primary dashboard readouts.
  */
 @Composable
 fun AeonHeroCard(
@@ -491,6 +502,7 @@ fun AeonHeroCard(
     contentColor: Color = AppColors.contentPrimary,
     backgroundIcon: ImageVector? = null,
     onClick: (() -> Unit)? = null,
+    state: AeonCardState = rememberAeonCardState(),
     displaySettings: (@Composable (onDismiss: () -> Unit) -> Unit)? = null,
     content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
@@ -504,6 +516,7 @@ fun AeonHeroCard(
         backgroundIcon = backgroundIcon,
         modifier = modifier,
         onClick = onClick,
+        state = state,
         displaySettings = displaySettings,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -525,7 +538,7 @@ fun AeonHeroCard(
     }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Overlay Management ───────────────────────────────────────────────────────
 
 @Composable
 private fun FilterPillOverlay(
@@ -550,7 +563,7 @@ private fun FilterPillOverlay(
                     val current = currentFilter.value ?: return@remember
                     currentOnFilterChange.value.invoke(current.copy(timelineRange = event.range))
                 }
-                is FilterEvent.Reset -> currentOnFilterChange.value?.invoke(TransactionFilter())
+                is FilterEvent.Reset -> currentOnFilterChange.value.invoke(TransactionFilter())
                 else -> Unit
             }
         }
@@ -603,22 +616,6 @@ private fun FilterPillOverlay(
     }
 }
 
-@Composable
-private fun rememberSyncedCardState(
-    cardId: String?,
-    tag: String,
-    sessionState: String?,
-    onSessionChange: ((String?) -> Unit)?
-): Pair<Boolean, (Boolean) -> Unit> {
-    var internalState by remember { mutableStateOf(false) }
-    val isActive = if (sessionState != null && cardId != null) sessionState == "$tag:$cardId" else internalState
-    val setter: (Boolean) -> Unit = { active ->
-        if (onSessionChange != null && cardId != null) onSessionChange(if (active) "$tag:$cardId" else null)
-        else internalState = active
-    }
-    return isActive to setter
-}
-
 private fun timelineLabel(range: TimelineRange): String {
     val (startMs, endMs) = TimelineService.getDateRange(range)
     if (startMs == null || endMs == null) return "All Time"
@@ -662,7 +659,7 @@ private fun AeonExpressiveCardLightPreview() {
                 icon = Icons.Rounded.AccountBalance,
                 filter = TransactionFilter(),
                 onFilterChange = {},
-                displaySettings = {},
+                settingsContent = { Text("Configuration Screen") }
             ) {
                 Text("$12,450.00", style = AppTextStyles.heroAmount, color = AppColors.primary, modifier = Modifier.padding(vertical = 8.dp))
             }

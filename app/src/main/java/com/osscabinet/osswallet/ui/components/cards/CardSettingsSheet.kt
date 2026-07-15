@@ -83,10 +83,9 @@ fun CardPerspectiveSettings(
                     ),
                     label = {
                         Text(
-                            text = when {
-                                mode is AccountingPerspective.Accounting -> "Accounting"
-                                mode is AccountingPerspective.CashFlow -> "Cash Flow"
-                                else -> "Perspective"
+                            text = when (mode) {
+                                is AccountingPerspective.Accounting -> "Accounting"
+                                is AccountingPerspective.CashFlow -> "Cash Flow"
                             },
                             style = AppTextStyles.caption.copy(
                                 fontSize = 11.sp,

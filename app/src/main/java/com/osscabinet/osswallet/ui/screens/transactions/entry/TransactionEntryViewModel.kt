@@ -657,7 +657,10 @@ class TransactionEntryViewModel @Inject constructor(
 
             // Splitting
             is TransactionEntryEvent.ToggleSplitMode -> update {
-                it.copy(isSplitMode = event.enabled)
+                it.copy(
+                    isSplitMode = event.enabled,
+                    splits = if (!event.enabled) emptyList() else it.splits
+                )
             }
 
             is TransactionEntryEvent.AddSplit -> update {
@@ -718,7 +721,13 @@ class TransactionEntryViewModel @Inject constructor(
             }
 
             is TransactionEntryEvent.ShowLocationSheet -> update { it.copy(showLocationSheet = event.show) }
-            is TransactionEntryEvent.ShowSplitSheet -> update { it.copy(showSplitSheet = event.show) }
+            is TransactionEntryEvent.ShowSplitSheet -> update {
+                val shouldRevert = !event.show && it.splits.isEmpty()
+                it.copy(
+                    showSplitSheet = event.show,
+                    isSplitMode = if (shouldRevert) false else it.isSplitMode
+                )
+            }
             is TransactionEntryEvent.ShowSplitCategorySheet -> update {
                 it.copy(
                     showSplitCategorySheet = event.splitIndex
@@ -764,7 +773,9 @@ class TransactionEntryViewModel @Inject constructor(
                     showSplitSheet = false,
                     showSplitCategorySheet = null,
                     showSplitNumpad = null,
-                )
+                ).let { s ->
+                    if (s.splits.isEmpty()) s.copy(isSplitMode = false) else s
+                }
             }
 
             is TransactionEntryEvent.SwapAccounts -> {

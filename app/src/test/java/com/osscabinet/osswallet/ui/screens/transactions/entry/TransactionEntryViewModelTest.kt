@@ -322,4 +322,46 @@ class TransactionEntryViewModelTest {
 
         assertEquals("TransactionManager called exactly once despite two saveTransaction() calls", 1, saveCount)
     }
+
+    @Test
+    fun `reverts from split mode if no splits exist when dismissing sheet`() = runTest(testDispatcher) {
+        backgroundScope.launch { viewModel.initialize() }
+        backgroundScope.launch { viewModel.state.collect {} }
+        advanceUntilIdle()
+
+        // 1. Enable split mode
+        viewModel.onEvent(TransactionEntryEvent.ToggleSplitMode(true))
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.isSplitMode)
+
+        // 2. Open split sheet
+        viewModel.onEvent(TransactionEntryEvent.ShowSplitSheet(true))
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.showSplitSheet)
+
+        // 3. Dismiss split sheet (splits are empty)
+        viewModel.onEvent(TransactionEntryEvent.ShowSplitSheet(false))
+        advanceUntilIdle()
+        assertFalse(viewModel.state.value.showSplitSheet)
+        assertFalse(viewModel.state.value.isSplitMode) // Should revert
+
+        // 4. Test DismissAllSheets
+        viewModel.onEvent(TransactionEntryEvent.ToggleSplitMode(true))
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.isSplitMode)
+        viewModel.onEvent(TransactionEntryEvent.DismissAllSheets)
+        advanceUntilIdle()
+        assertFalse(viewModel.state.value.isSplitMode) // Should revert
+
+        // 5. Should NOT revert if splits are not empty
+        viewModel.onEvent(TransactionEntryEvent.ToggleSplitMode(true))
+        viewModel.onEvent(TransactionEntryEvent.AddSplit)
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.isSplitMode)
+        assertEquals(1, viewModel.state.value.splits.size)
+
+        viewModel.onEvent(TransactionEntryEvent.ShowSplitSheet(false))
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.isSplitMode) // Should NOT revert
+    }
 }

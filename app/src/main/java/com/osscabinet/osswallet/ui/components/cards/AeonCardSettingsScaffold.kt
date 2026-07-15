@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -33,7 +31,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -54,8 +51,7 @@ import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 
 /**
  * The unified scaffold for card configuration — renders on the back side of a flipped card.
- * Header structure mirrors the front side exactly: same icon circle sizing, spacing tokens,
- * and text styles.
+ * Uses the shared AeonCardHeader for exact structural parity with the front side.
  */
 @Composable
 fun AeonCardSettingsScaffold(
@@ -66,68 +62,17 @@ fun AeonCardSettingsScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(AeonTheme.dimensions.cardPadding),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-        ) {
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .clickable(onClick = onDismiss),
-                shape = CircleShape,
-                color = AppColors.contentPrimary.copy(alpha = 0.15f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = "Back",
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = AppColors.contentPrimary,
-                    )
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = AppTextStyles.cardSectionTitle,
-                    color = AppColors.contentPrimary,
-                )
-                Text(
-                    text = "CONFIGURATION",
-                    style = AppTextStyles.cardPeriodReadout,
-                    color = AppColors.contentSecondary,
-                )
-            }
-
-            if (onDelete != null) {
-                Surface(
-                    modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .clickable {
-                        onDelete()
-                        onDismiss()
-                    },
-                shape = CircleShape,
-                    color = AppColors.error.copy(alpha = 0.10f),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Delete card",
-                            modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                            tint = AppColors.error,
-                        )
-                    }
-                }
-            }
-        }
+        AeonCardHeader(
+            title = title,
+            subtitle = "CONFIGURATION",
+            icon = Icons.Default.ChevronLeft,
+            onIconClick = onDismiss,
+            trailingIcon = if (onDelete != null) Icons.Default.Delete else null,
+            onTrailingIconClick = onDelete,
+        )
 
         content()
     }
@@ -190,7 +135,6 @@ fun CardPerspectiveSettings(
 
 /**
  * Shared metric selector for various chart cards.
- * Standardizes the toggle row across all 10 cards.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -298,15 +242,13 @@ fun CardSettingsStandardizationLab() {
                 title = "Standardization Lab",
                 onDismiss = {},
                 onDelete = {},
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
-                // 1. Perspective Section (Complex Group)
                 CardPerspectiveSettings(
                     perspective = perspective,
                     onPerspectiveChange = { perspective = it }
                 )
 
-                // 2. Metrics Section (Dynamic Segmented)
                 CardSettingsSection("Metric Selection") {
                     AeonMetricToggle(
                         perspective = perspective,
@@ -315,7 +257,6 @@ fun CardSettingsStandardizationLab() {
                     )
                 }
 
-                // 3. Layout & Visuals (Using showBackground = false for components with their own surfaces)
                 CardSettingsSection("Layout & Visuals", showBackground = false) {
                     AeonLayoutToggle(
                         layout = layout,
@@ -329,7 +270,6 @@ fun CardSettingsStandardizationLab() {
                     )
                 }
 
-                // 4. Display Flags (Unified Boolean Controls)
                 CardSettingsSection("Display Flags") {
                     AeonSettingsToggle(
                         label = "Show Comparison",
@@ -338,44 +278,8 @@ fun CardSettingsStandardizationLab() {
                         onCheckedChange = { },
                         showBackground = false
                     )
-                    AeonSettingsToggle(
-                        label = "Show Labels",
-                        checked = false,
-                        onCheckedChange = { },
-                        showBackground = false
-                    )
                 }
 
-                // 5. General Configuration (Standard Pickers)
-                CardSettingsSection("General") {
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        listOf("S", "M", "L", "XL").forEachIndexed { index, size ->
-                            SegmentedButton(
-                                selected = index == 1,
-                                onClick = { },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
-                                label = {
-                                    Text(
-                                        size,
-                                        style = AppTextStyles.caption.copy(
-                                            fontWeight = if (index == 1) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    )
-                                },
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
-                                    activeContentColor = AppColors.primary,
-                                    inactiveContainerColor = Color.Transparent,
-                                    inactiveContentColor = AppColors.contentSecondary,
-                                    activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
-                                    inactiveBorderColor = AppColors.outlineVariant
-                                )
-                            )
-                        }
-                    }
-                }
-
-                // 6. Actions (Outlined variant)
                 CardSettingsSection("Actions", showBackground = false) {
                     OutlinedButton(
                         onClick = { },

@@ -67,7 +67,7 @@ fun rememberCardWithCallbacks(
     when (state) {
         is CardComputeState.Loading, null -> CardWithCallbacks.Loading(
             cardId = config.cardId,
-            cardType = config.cardType
+            cardType = config.cardType,
         )
 
         is CardComputeState.Error -> CardWithCallbacks.ComputeError(
@@ -77,13 +77,12 @@ fun rememberCardWithCallbacks(
         )
 
         is CardComputeState.Success -> {
-            val effectiveOnDelete = if (input.deleteEnabled) onDelete else null
             mapSuccessState(
                 config,
                 state.data,
                 input,
                 updateHandler,
-                effectiveOnDelete,
+                onDelete,
                 onRecordsClick,
                 callbacks,
                 filterSheetEnabled
@@ -103,8 +102,8 @@ private fun mapSuccessState(
     filterSheetEnabled: Boolean
 ): CardWithCallbacks {
     // P4: CardRenderData.Error carries the actual error message — surface it directly.
-    if (renderData is CardRenderData.Error) {
-        return CardWithCallbacks.ComputeError(config.cardId, config.cardType, renderData.message)
+    (renderData as? CardRenderData.Error)?.let {
+        return CardWithCallbacks.ComputeError(config.cardId, config.cardType, it.message)
     }
     // CardType mismatch (e.g. during a card-type transition): treat as transient error.
     if (config.cardType != renderData.cardType) {
@@ -192,6 +191,7 @@ private fun mapSuccessState(
                 renderData,
                 input,
                 updateHandler,
+                onDelete,
                 onRecordsClick,
                 callbacks,
                 filterSheetEnabled

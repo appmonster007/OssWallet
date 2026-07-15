@@ -41,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -51,19 +50,23 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.TimeUtils.formatRelativeDate
 import java.math.BigDecimal
 
@@ -72,50 +75,58 @@ import java.math.BigDecimal
 fun PlannedPaymentsCard(
     items: List<PlannedPaymentSummary>,
     targetCurrency: String = "USD",
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-            anchor = targetCurrency,
-            rates = emptyMap()
-        ),
+    exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(
+        anchor = targetCurrency,
+        rates = emptyMap()
+    ),
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    filterRules: CardFilterRules? = null,
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier
+    previousItems: List<PlannedPaymentSummary>? = null,
+    layoutProps: CardLayoutProps = CardLayoutProps()
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.EventRepeat,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            PlannedPaymentsSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            PlannedPaymentsSettingsContent(
                 config = config,
-                onUpdate = callbacks.onUpdate,
-                onDelete = callbacks.onDelete,
-                onDismiss = onDismiss
+                callbacks = callbacks,
             )
         }
     ) {
         val dims = AeonTheme.dimensions
+
+        // Total comparison readout if showComparison is enabled
+        if (config.showComparison && previousItems != null) {
+            val currentTotal = items.sumOf { it.amount }
+            val previousTotal = previousItems.sumOf { it.amount }
+            if (previousTotal.signum() != 0) {
+                val change = currentTotal.subtract(previousTotal)
+                val percentage = change.multiply(BigDecimal("100"))
+                    .divide(previousTotal.abs(), 1, java.math.RoundingMode.HALF_UP)
+                val up = change.signum() > 0
+                Text(
+                    text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage% VS PRIOR PERIOD",
+                    style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.Bold),
+                    color = if (up) AppColors.negative else AppColors.positive,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+        }
+
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
@@ -140,7 +151,8 @@ fun PlannedPaymentsCard(
 
             items(
                 items,
-                key = { "${if (it.isOverdue) "overdue" else "upcoming"}_${it.id}_${it.scheduledDate}" }) { summary ->
+                key = { "${if (it.isOverdue) "overdue" else "upcoming"}_${it.id}_${it.scheduledDate}" }
+            ) { summary ->
                 PlannedPaymentRow(
                     title = summary.name,
                     amount = summary.amount,
@@ -176,70 +188,72 @@ fun PlannedPaymentsCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlannedPaymentsSettingsSheet(
+private fun PlannedPaymentsSettingsContent(
     config: PlannedPaymentsCardConfig,
-    onUpdate: (PlannedPaymentsCardConfig) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit
+    callbacks: CardCallbacks.PlannedPayments,
 ) {
-    CardSettingsSheet(title = "Planned Payments", onDismiss = onDismiss, onDelete = onDelete) {
-        val dims = AeonTheme.dimensions
-        CardSettingsSection("Show") {
-            val viewModes = listOf(
-                PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
-                PlannedPaymentsViewMode.BOTH to "Overdue + Upcoming",
-                PlannedPaymentsViewMode.FUTURE_ONLY to "Future only (1 per schedule)"
-            )
-            viewModes.forEach { (mode, label) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = dims.spacingXs),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(label, style = AppTextStyles.transactionTitle)
-                    RadioButton(
-                        selected = config.viewMode == mode,
-                        onClick = { onUpdate(config.copy(viewMode = mode)) }
-                    )
-                }
-            }
-        }
-        CardSettingsSection("Display") {
+    val dims = AeonTheme.dimensions
+    CardSettingsSection("Show") {
+        val viewModes = listOf(
+            PlannedPaymentsViewMode.OVERDUE_ONLY to "Overdue only",
+            PlannedPaymentsViewMode.BOTH to "Overdue + Upcoming",
+            PlannedPaymentsViewMode.FUTURE_ONLY to "Future only (1 per schedule)"
+        )
+        viewModes.forEach { (mode, label) ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = dims.spacingSm),
+                    .padding(vertical = dims.spacingXs),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Max items", style = AppTextStyles.transactionTitle)
-                    Text(
-                        "Showing up to ${config.maxItems} payments",
-                        style = AppTextStyles.caption,
-                        color = AppColors.contentSecondary
-                    )
-                }
-                AeonStepperField(
-                    value = config.maxItems,
-                    onDecrement = {
-                        onUpdate(
-                            config.copy(
-                                maxItems = (config.maxItems - 1).coerceAtLeast(
-                                    1
-                                )
-                            )
-                        )
-                    },
-                    onIncrement = { onUpdate(config.copy(maxItems = config.maxItems + 1)) },
-                    min = 1
+                Text(label, style = AppTextStyles.transactionTitle)
+                RadioButton(
+                    selected = config.viewMode == mode,
+                    onClick = { callbacks.onUpdate(config.copy(viewMode = mode)) }
                 )
             }
         }
+    }
+    CardSettingsSection("Display") {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = dims.spacingSm),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Max items", style = AppTextStyles.transactionTitle)
+                Text(
+                    "Showing up to ${config.maxItems} payments",
+                    style = AppTextStyles.caption,
+                    color = AppColors.contentSecondary
+                )
+            }
+            AeonStepperField(
+                value = config.maxItems,
+                onDecrement = {
+                    callbacks.onUpdate(
+                        config.copy(
+                            maxItems = (config.maxItems - 1).coerceAtLeast(
+                                1
+                            )
+                        )
+                    )
+                },
+                onIncrement = { callbacks.onUpdate(config.copy(maxItems = config.maxItems + 1)) },
+                min = 1
+            )
+        }
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
+        )
     }
 }
 
@@ -249,7 +263,7 @@ private fun PlannedPaymentRow(
     amount: BigDecimal,
     currency: String,
     targetCurrency: String,
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
+    exchangeRates: ExchangeRateSnapshot,
     entryMode: EntryMode,
     dateLabel: String,
     isOverdue: Boolean,
@@ -259,13 +273,13 @@ private fun PlannedPaymentRow(
 ) {
     val haptic = LocalHapticFeedback.current
     val dims = AeonTheme.dimensions
-    var isPressed by remember { mutableStateOf(false) }
+    var isPressed by remember { mutableStateOf(value = false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
         animationSpec = spring(stiffness = 600f),
         label = "rowScale"
     )
-    var showActions by remember { mutableStateOf(false) }
+    var showActions by remember { mutableStateOf(value = false) }
 
     val typeColor = when {
         isOverdue -> AppColors.negative
@@ -314,7 +328,7 @@ private fun PlannedPaymentRow(
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
-            com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
+            ConvertedWithNativeSubtext(
                 amount = amount,
                 nativeCurrency = currency,
                 targetCurrency = targetCurrency,
@@ -328,7 +342,7 @@ private fun PlannedPaymentRow(
                 subtextStyle = AppTextStyles.metaLabel,
                 subtextColor = AppColors.contentSecondary.copy(alpha = 0.7f)
             )
-            if (onConfirm != null || onSkip != null) {
+            if (onConfirm != null || (onSkip != null)) {
                 Box {
                     IconButton(
                         onClick = { showActions = true },
@@ -410,6 +424,7 @@ fun mapPlannedPayments(
                 newConfig
             )
         },
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardPlannedPaymentsFilter,
         onItemClick = callbacks.paymentActions.onClick,
         onConfirm = callbacks.paymentActions.onConfirm,
@@ -427,7 +442,7 @@ fun mapPlannedPayments(
 @Composable
 fun PlannedPaymentsCardPreview() {
     val now = System.currentTimeMillis()
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             PlannedPaymentsCard(
                 items = listOf(

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -32,15 +30,15 @@ import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConf
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartMarker
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
@@ -48,6 +46,7 @@ import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartSeries
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
@@ -59,83 +58,37 @@ private val CurrentPeriodColor = ChartColorBlue
 private val PreviousPeriodColor = ChartColorOrange
 private val LastYearColor = ChartColorGreen
 
-fun mapCashFlowComparison(
-    config: CashFlowComparisonCardConfig,
-    renderData: CardRenderData.CashFlowComparison,
-    input: CardInput,
-    updateHandler: CardUpdateHandler,
-    onDelete: ((String) -> Unit)?,
-    onRecordsClick: (TransactionFilter) -> Unit,
-    callbacks: AeonInteractionCallbacks,
-    filterSheetEnabled: Boolean
-) = CardWithCallbacks.CashFlowComparison(
-    renderData = renderData,
-    callbacks = CardCallbacks.CashFlowComparison(
-        onUpdate = { newConfig ->
-            updateHandler.updateCashFlowComparisonConfig(
-                config.cardId,
-                newConfig
-            )
-        },
-        onDelete = onDelete?.let { { it(config.cardId) } },
-        onRecordsClick = { drillDown ->
-            onRecordsClick(
-                resolveDrillDown(
-                    input,
-                    config,
-                    drillDown
-                )
-            )
-        },
-        onSaveFilterClick = callbacks.filterActions.onSaveClick
-    ),
-    filterRules = config.filterRules,
-    baseFilter = input.filter,
-    filterSheetEnabled = filterSheetEnabled
-)
-
 @Composable
 fun CashFlowComparisonCard(
     renderData: CardRenderData.CashFlowComparison,
-    modifier: Modifier = Modifier,
     callbacks: CardCallbacks.CashFlowComparison = CardCallbacks.CashFlowComparison(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    animate: Boolean = false,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
 
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
 
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.AutoMirrored.Filled.ShowChart,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CashFlowComparisonSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CashFlowComparisonSettingsContent(
                 config = config,
                 callbacks = callbacks,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -208,7 +161,7 @@ fun CashFlowComparisonCard(
                     totalXSlots = totalXSlots,
                     xAxisLabels = xAxisLabels,
                     markers = markers,
-                    animate = animate,
+                    animate = layoutProps.animate,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
@@ -366,7 +319,7 @@ private fun buildMarkersList(
     // For the current period, we mark 'today' (where the line terminates).
     // For previous/last-year periods, we mark the end of their respective periods.
     fun addMarker(show: Boolean, position: Int, label: String, color: Color) {
-        if (!show || position <= 0) return
+        if (!show || (position <= 0)) return
         markers.add(AeonChartMarker(position.toFloat(), label, color, isDashed = true))
     }
 
@@ -399,6 +352,97 @@ private fun buildMarkersList(
 
     return markers
 }
+
+@Composable
+private fun CashFlowComparisonSettingsContent(
+    config: CashFlowComparisonCardConfig,
+    callbacks: CardCallbacks.CashFlowComparison,
+) {
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Cumulative",
+            checked = config.isCumulative,
+            onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Grid Lines",
+            checked = config.showGridLines,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            showBackground = false
+        )
+    }
+    CardSettingsSection("Series") {
+        AeonSettingsToggle(
+            label = "Current Period",
+            checked = config.showCurrentPeriod,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Previous Period",
+            checked = config.showPreviousPeriod,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Same Period Last Year",
+            checked = config.showSamePeriodLastYear,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
+            showBackground = false
+        )
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onUpdate(
+                config.copy(
+                    excludeInternalTransfers = it,
+                ),
+            )
+        },
+    )
+}
+
+/**
+ * Maps [CashFlowComparisonCardConfig] + [CardRenderData.CashFlowComparison] to [CardWithCallbacks.CashFlowComparison].
+ */
+fun mapCashFlowComparison(
+    config: CashFlowComparisonCardConfig,
+    renderData: CardRenderData.CashFlowComparison,
+    input: CardInput,
+    updateHandler: CardUpdateHandler,
+    onDelete: ((String) -> Unit)?,
+    onRecordsClick: (TransactionFilter) -> Unit,
+    callbacks: AeonInteractionCallbacks,
+    filterSheetEnabled: Boolean
+) = CardWithCallbacks.CashFlowComparison(
+    renderData = renderData,
+    callbacks = CardCallbacks.CashFlowComparison(
+        onUpdate = { newConfig ->
+            updateHandler.updateCashFlowComparisonConfig(
+                config.cardId,
+                newConfig
+            )
+        },
+        onDelete = onDelete?.let { { it(config.cardId) } },
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onSaveFilterClick = callbacks.filterActions.onSaveClick
+    ),
+    filterRules = config.filterRules,
+    baseFilter = input.filter,
+    filterSheetEnabled = filterSheetEnabled
+)
 
 @androidx.compose.ui.tooling.preview.Preview(
     showBackground = true,
@@ -471,7 +515,7 @@ fun CashFlowComparisonShorterPrevPreview() {
         lastYearTotalBuckets = 0
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             CashFlowComparisonCard(renderData = renderData)
         }
@@ -562,7 +606,7 @@ fun CashFlowComparisonLongerPrevPreview() {
         lastYearTotalBuckets = 0
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             CashFlowComparisonCard(renderData = renderData)
         }
@@ -627,70 +671,9 @@ fun CashFlowComparisonTightMarkersPreview() {
         lastYearTotalBuckets = 30
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             CashFlowComparisonCard(renderData = renderData)
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CashFlowComparisonSettingsSheet(
-    config: CashFlowComparisonCardConfig,
-    callbacks: CardCallbacks.CashFlowComparison,
-    onDismiss: () -> Unit
-) {
-    CardSettingsSheet(
-        title = "Cash Flow Comparison",
-        onDismiss = onDismiss,
-        onDelete = callbacks.onDelete
-    ) {
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Cumulative",
-                checked = config.isCumulative,
-                onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show Grid Lines",
-                checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
-                showBackground = false
-            )
-        }
-        CardSettingsSection("Series") {
-            AeonSettingsToggle(
-                label = "Current Period",
-                checked = config.showCurrentPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Previous Period",
-                checked = config.showPreviousPeriod,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Same Period Last Year",
-                checked = config.showSamePeriodLastYear,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
-                showBackground = false
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onUpdate(
-                    config.copy(
-                        excludeInternalTransfers = it
-                    )
-                )
-            }
-        )
     }
 }

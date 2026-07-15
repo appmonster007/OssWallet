@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -27,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -38,11 +36,10 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -50,6 +47,7 @@ import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import java.math.BigDecimal
@@ -62,14 +60,14 @@ fun mapIncomeExpenseBar(
     onDelete: ((String) -> Unit)?,
     onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
-    filterSheetEnabled: Boolean
+    filterSheetEnabled: Boolean,
 ) = CardWithCallbacks.IncomeExpenseBar(
     renderData = renderData,
     callbacks = CardCallbacks.IncomeExpenseBar(
         onUpdate = { newConfig ->
             updateHandler.updateIncomeExpenseBarConfig(
                 config.cardId,
-                newConfig
+                newConfig,
             )
         },
         onDelete = onDelete?.let { { it(config.cardId) } },
@@ -93,44 +91,33 @@ fun mapIncomeExpenseBar(
 fun IncomeExpenseBarCard(
     renderData: CardRenderData.IncomeExpenseBar,
     callbacks: CardCallbacks.IncomeExpenseBar = CardCallbacks.IncomeExpenseBar(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    animate: Boolean = false,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
 
     var isCumulative by rememberSaveable { mutableStateOf(config.isCumulative) }
 
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Default.BarChart,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { newFilter ->
             callbacks.onUpdate(config.copy(filter = newFilter))
         },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            IncomeExpenseBarSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            IncomeExpenseBarSettingsContent(
                 config = config,
                 callbacks = callbacks,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -140,7 +127,7 @@ fun IncomeExpenseBarCard(
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 modeOptions.forEachIndexed { index, label ->
                     val isSelected =
-                        (isCumulative && label == "Cumulative") || (!isCumulative && label == "Trend")
+                        (isCumulative && (label == "Cumulative")) || (!isCumulative && (label == "Trend"))
                     SegmentedButton(
                         selected = isSelected,
                         onClick = {
@@ -197,6 +184,8 @@ fun IncomeExpenseBarCard(
 
             val realBuckets = if (renderData.todayBucketIndex >= 0) {
                 renderData.buckets.take(renderData.todayBucketIndex + 1)
+            } else if (renderData.todayBucketIndex == -1) {
+                renderData.buckets
             } else {
                 emptyList()
             }
@@ -219,7 +208,7 @@ fun IncomeExpenseBarCard(
                     lineColor = ChartColorBlue,
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
-                    animate = animate,
+                    animate = layoutProps.animate,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
@@ -327,44 +316,35 @@ fun IncomeExpenseBarCardPreview() {
         todayBucketIndex = 2
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             IncomeExpenseBarCard(renderData = renderData)
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IncomeExpenseBarSettingsSheet(
+private fun IncomeExpenseBarSettingsContent(
     config: IncomeExpenseBarCardConfig,
     callbacks: CardCallbacks.IncomeExpenseBar,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(
-        title = "Income & Expense",
-        onDismiss = onDismiss,
-        onDelete = callbacks.onDelete
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Show Grid Lines",
+            checked = config.showGridLines,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            showBackground = false
+        )
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
     ) {
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Show Grid Lines",
-                checked = config.showGridLines,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
-                showBackground = false
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onUpdate(
-                    config.copy(
-                        excludeInternalTransfers = it
-                    )
-                )
-            }
+        callbacks.onUpdate(
+            config.copy(
+                excludeInternalTransfers = it,
+            ),
         )
     }
 }

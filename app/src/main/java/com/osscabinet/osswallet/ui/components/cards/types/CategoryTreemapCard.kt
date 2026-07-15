@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.Dashboard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -40,7 +39,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -53,11 +51,10 @@ import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
@@ -79,21 +76,10 @@ fun CategoryTreemapCard(
     config: CategoryTreemapCardConfig,
     data: List<CategoryChartData>,
     currency: String,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
-    animate: Boolean = false,
     callbacks: CardCallbacks.Analytics = CardCallbacks.Analytics(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     val mode = LocalThemeMode.current
     val isDarkTheme = mode.isDarkTheme
@@ -107,8 +93,8 @@ fun CategoryTreemapCard(
     // active-categories filter changes — symmetric with CategoryPieChartCard.
     var navigationStack by remember(filteredData) {
         mutableStateOf(
-            listOf<List<CategoryChartData>>(
-                filteredData
+            listOf(
+                filteredData,
             )
         )
     }
@@ -116,8 +102,7 @@ fun CategoryTreemapCard(
 
     // Grouping logic for "More Categories" grouping based on 2% threshold
     val groupedData = remember(currentData, navigationStack.size) {
-        val filtered = currentData
-        val sorted = filtered.sortedByDescending { it.amount.abs() }
+        val sorted = currentData.sortedByDescending { it.amount.abs() }
 
         // Detect if we are in a synthesized "More Categories" view
         val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
@@ -130,7 +115,7 @@ fun CategoryTreemapCard(
         if (!isMoreCategoriesDrillDown) {
             val mainItems = sorted.filter { it.percentage >= 0.02f }
             val others =
-                sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
+                sorted.filter { (it.percentage < 0.02f) && (it.amount.abs() > BigDecimal.ZERO) }
 
             if (others.size > 1) {
                 val otherSum = others.sumOf { it.amount }
@@ -163,21 +148,20 @@ fun CategoryTreemapCard(
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Dashboard,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CategoryTreemapSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CategoryTreemapSettingsContent(
                 config = config,
                 onUpdate = { callbacks.onUpdate(it) },
-                onDelete = callbacks.onDelete,
-                onDismiss = onDismiss
             )
         }
     ) {
@@ -277,14 +261,14 @@ fun CategoryTreemapCard(
                     currency = currency,
                     showLabels = config.showLabels,
                     rounded = config.rounded,
-                    animate = animate,
+                    animate = layoutProps.animate,
                     onNodeClick = { _ ->
                         // Interaction feedback
                     },
                     onDrillInClick = { node ->
                         val clickedItem = groupedData.find { it.category == node.name }
                         if (clickedItem?.hasSubcategories == true && !clickedItem.subcategoryData.isNullOrEmpty()) {
-                            navigationStack = navigationStack + listOf(clickedItem.subcategoryData)
+                            navigationStack += listOf(clickedItem.subcategoryData)
                         }
                     },
                     onNavigateToRecords = { node ->
@@ -294,7 +278,7 @@ fun CategoryTreemapCard(
 
                         callbacks.onRecordsClick(
                             config.filter.copy(
-                                categoryIds = categoryIds.map { it.toLong() }.toSet()
+                                categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
                             )
                         )
                     }
@@ -423,12 +407,12 @@ fun CategoryTreemapCard(
                     onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
                     onItemClick = { item ->
                         if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
-                            navigationStack = navigationStack + listOf(item.subcategoryData)
+                            navigationStack += listOf(item.subcategoryData)
                         } else {
                             val categoryIds = item.allCategoryIds()
                             callbacks.onRecordsClick(
                                 config.filter.copy(
-                                    categoryIds = categoryIds.map { it.toLong() }.toSet()
+                                    categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
                                 )
                             )
                         }
@@ -440,56 +424,51 @@ fun CategoryTreemapCard(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CategoryTreemapSettingsSheet(
+private fun CategoryTreemapSettingsContent(
     config: CategoryTreemapCardConfig,
     onUpdate: (CategoryTreemapCardConfig) -> Unit,
-    onDelete: (() -> Unit)?,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Treemap", onDismiss = onDismiss, onDelete = onDelete) {
-        CardSettingsSection("Visuals") {
-            AeonSettingsToggle(
-                "Show Labels",
-                config.showLabels,
-                description = "Display category names on segments",
-                onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
-            )
-            AeonSettingsToggle(
-                "Show Legend",
-                config.showLegend,
-                description = "Display list of categories beneath the map",
-                onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
-            )
-            AeonSettingsToggle(
-                "Rounded Visuals",
-                config.rounded,
-                description = "Apply rounded corners and spacing to segments",
-                onCheckedChange = { onUpdate(config.copy(rounded = it)) }
-            )
-        }
-        CardSettingsSection("Data") {
-            AeonSettingsToggle(
-                "Full Breakdown",
-                config.showFullBreakdown,
-                description = "Show all categories instead of top 5",
-                onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
-            )
-            AeonSettingsToggle(
-                "Active Only",
-                config.showOnlyActiveCategories,
-                description = "Only show categories with non-zero values",
-                onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+    CardSettingsSection("Visuals") {
+        AeonSettingsToggle(
+            "Show Labels",
+            config.showLabels,
+            description = "Display category names on segments",
+            onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+        )
+        AeonSettingsToggle(
+            "Show Legend",
+            config.showLegend,
+            description = "Display list of categories beneath the map",
+            onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+        )
+        AeonSettingsToggle(
+            "Rounded Visuals",
+            config.rounded,
+            description = "Apply rounded corners and spacing to segments",
+            onCheckedChange = { onUpdate(config.copy(rounded = it)) }
         )
     }
+    CardSettingsSection("Data") {
+        AeonSettingsToggle(
+            "Full Breakdown",
+            config.showFullBreakdown,
+            description = "Show all categories instead of top 5",
+            onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+        )
+        AeonSettingsToggle(
+            "Active Only",
+            config.showOnlyActiveCategories,
+            description = "Only show categories with non-zero values",
+            onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+        )
+    }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+    )
 }
 
 
@@ -733,17 +712,19 @@ fun CategoryTreemapCardPreview() {
     )
 
     OssWalletTheme {
-        CategoryTreemapCard(
-            config = CategoryTreemapCardConfig(
-                cardId = "preview",
-                title = "Category Treemap",
-                showLabels = true,
-                showLegend = true,
-                showComparison = true,
-                filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
-            ),
-            data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
-            currency = "USD"
-        )
+        Box(modifier = Modifier.padding(16.dp)) {
+            CategoryTreemapCard(
+                config = CategoryTreemapCardConfig(
+                    cardId = "preview",
+                    title = "Category Treemap",
+                    showLabels = true,
+                    showLegend = true,
+                    showComparison = true,
+                    filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
+                ),
+                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
+                currency = "USD"
+            )
+        }
     }
 }

@@ -38,7 +38,7 @@ interface CardUpdateHandler {
     fun <C : CardConfig> updateCardConfig(
         cardId: String,
         configClass: Class<C>,
-        transform: (C) -> C
+        transform: (C) -> C,
     ) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
@@ -111,15 +111,25 @@ interface CardUpdateHandler {
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(fontSize = fontSize) else config
+                (config as? NetWorthCardConfig)?.copy(fontSize = fontSize) ?: config
             }
         }
     }
 
-    fun updateCardNetWorthShowComparison(cardId: String, showComparison: Boolean) {
+    fun updateCardShowComparison(cardId: String, show: Boolean) {
         cardUpdateScope.launch {
             cardRepository.updateCard(cardScreenContext, cardId) { config ->
-                if (config is NetWorthCardConfig) config.copy(showComparison = showComparison) else config
+                when (config) {
+                    is NetWorthCardConfig -> config.copy(showComparison = show)
+                    is AccountsCardConfig -> config.copy(showComparison = show)
+                    is AccountHeroCardConfig -> config.copy(showComparison = show)
+                    is CategoryPieChartCardConfig -> config.copy(showComparison = show)
+                    is CategoryTreemapCardConfig -> config.copy(showComparison = show)
+                    is CashFlowCardConfig -> config.copy(showComparison = show)
+                    is BudgetsCardConfig -> config.copy(showComparison = show)
+                    is PlannedPaymentsCardConfig -> config.copy(showComparison = show)
+                    else -> config
+                }
             }
         }
     }
@@ -231,8 +241,6 @@ interface CardUpdateHandler {
             }
         }
     }
-
-
 
     fun updateCardHeroFilter(cardId: String, filter: TransactionFilter) {
         cardUpdateScope.launch {

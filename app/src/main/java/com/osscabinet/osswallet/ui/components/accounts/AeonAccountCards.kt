@@ -205,11 +205,12 @@ fun AeonAccountCardMedium(
 
 @Composable
 fun AeonAccountCardLarge(
+    modifier: Modifier = Modifier,
     summary: AccountSummaryItem,
     baseCurrency: String,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    previousSummary: AccountSummaryItem? = null,
     cardNumber: String? = null,
     extraLabel: String? = null,
     onClickIncome: (() -> Unit)? = null,
@@ -303,7 +304,7 @@ fun AeonAccountCardLarge(
             )
 
             val flow = summary.currentPeriodFlow
-            val prevFlow = summary.previousPeriodFlow
+            val prevFlow = previousSummary?.currentPeriodFlow ?: summary.previousPeriodFlow
 
             Row(
                 modifier = Modifier

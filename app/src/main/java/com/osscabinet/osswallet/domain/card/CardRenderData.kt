@@ -71,7 +71,8 @@ sealed class CardRenderData {
     data class CashFlow(
         val config: CashFlowCardConfig,
         val result: CashFlowResult,
-        val currency: String
+        val currency: String,
+        val previousResult: CashFlowResult? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.CASH_FLOW
     }
@@ -82,6 +83,7 @@ sealed class CardRenderData {
         val accountSummaries: Map<String, AccountSummaryItem>,
         val currency: String,
         val currentTheme: String,
+        val previousSummaries: Map<String, AccountSummaryItem>? = null,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.ACCOUNTS
@@ -121,6 +123,7 @@ sealed class CardRenderData {
         val config: PlannedPaymentsCardConfig,
         val items: List<PlannedPaymentSummary>,
         val currency: String,
+        val previousItems: List<PlannedPaymentSummary>? = null,
         val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(anchor = currency, rates = emptyMap())
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.PLANNED_PAYMENTS
@@ -129,7 +132,8 @@ sealed class CardRenderData {
     data class Budgets(
         val config: BudgetsCardConfig,
         val items: List<BudgetProgress>,
-        val currency: String
+        val currency: String,
+        val previousItems: List<BudgetProgress>? = null
     ) : CardRenderData() {
         override val cardType: CardType get() = CardType.BUDGETS
     }

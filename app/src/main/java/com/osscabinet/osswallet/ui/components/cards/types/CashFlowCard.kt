@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -14,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -27,7 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -38,16 +36,16 @@ import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.isTransfer
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonBaseConversionToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -62,48 +60,37 @@ fun CashFlowCard(
     cashFlowResult: CashFlowResult?,
     baseCurrency: String,
     config: CashFlowCardConfig,
+    previousResult: CashFlowResult? = null,
     callbacks: CardCallbacks.CashFlow = CardCallbacks.CashFlow(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    filterRules: CardFilterRules? = null,
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier,
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val totalIncomeInBase = cashFlowResult?.totalIncomeInBase ?: BigDecimal.ZERO
-    val totalExpenseInBase = cashFlowResult?.totalExpensesInBase ?: BigDecimal.ZERO
-
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Analytics,
-        modifier = modifier,
-        headerModifier = headerModifier,
-        filterEnabled = showFilterButton,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            CashFlowSettingsSheet(
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            CashFlowSettingsContent(
                 config = config,
                 baseCurrency = baseCurrency,
                 callbacks = callbacks,
-                onDismiss = onDismiss
             )
         }
     ) {
         CashFlowTable(
             config = config,
             result = cashFlowResult ?: CashFlowResult.empty(),
+            previousResult = if (config.showComparison) previousResult else null,
             baseCurrency = baseCurrency,
             callbacks = callbacks,
         )
@@ -115,6 +102,7 @@ private data class TableColumn(
     val key: String,
     val color: Color,
     val totalInBase: BigDecimal,
+    val previousTotalInBase: BigDecimal? = null,
     val nativeOf: (CashFlowBreakdownItem) -> BigDecimal,
     val baseOf: (CashFlowBreakdownItem) -> BigDecimal,
     val onCellClick: ((String) -> Unit)?,
@@ -125,6 +113,7 @@ private data class TableColumn(
 private fun CashFlowTable(
     config: CashFlowCardConfig,
     result: CashFlowResult,
+    previousResult: CashFlowResult?,
     baseCurrency: String,
     callbacks: CardCallbacks.CashFlow,
 ) {
@@ -141,16 +130,18 @@ private fun CashFlowTable(
         config,
         types,
         result,
+        previousResult,
         positiveColor.value,
         negativeColor.value,
         accentColor.value
     ) {
-        when {
-            config.perspective is AccountingPerspective.Accounting -> buildList {
+        when (config.perspective) {
+            is AccountingPerspective.Accounting -> buildList {
                 if (showIncome) add(
                     TableColumn(
                         label = "INCOME", key = "inc", color = positiveColor,
                         totalInBase = result.totalIncomeInBase,
+                        previousTotalInBase = previousResult?.totalIncomeInBase,
                         nativeOf = { it.income }, baseOf = { it.incomeInBase },
                         onCellClick = { ccy ->
                             callbacks.onClickIncome?.invoke(
@@ -166,6 +157,7 @@ private fun CashFlowTable(
                     TableColumn(
                         label = "EXPENSE", key = "exp", color = negativeColor,
                         totalInBase = result.totalExpensesInBase,
+                        previousTotalInBase = previousResult?.totalExpensesInBase,
                         nativeOf = { it.expense }, baseOf = { it.expenseInBase },
                         onCellClick = { ccy ->
                             callbacks.onClickExpense?.invoke(
@@ -181,6 +173,7 @@ private fun CashFlowTable(
                     TableColumn(
                         label = "TRANSFER", key = "trf", color = accentColor,
                         totalInBase = result.totalNetTransferInBase,
+                        previousTotalInBase = previousResult?.totalNetTransferInBase,
                         nativeOf = { it.netTransfer },
                         baseOf = { it.netTransferInBase },
                         onCellClick = { ccy ->
@@ -196,7 +189,7 @@ private fun CashFlowTable(
                 )
             }
 
-            config.perspective is AccountingPerspective.CashFlow -> {
+            is AccountingPerspective.CashFlow -> {
                 val inflowTypes = buildSet {
                     if (showIncome) add(TransactionType.INCOME)
                     if (showTransfer) add(TransactionType.TRANSFER_INFLOW)
@@ -205,11 +198,25 @@ private fun CashFlowTable(
                     if (showExpense) add(TransactionType.EXPENSE)
                     if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
                 }
+                val currentInflow = (if (showIncome) result.totalIncomeInBase else BigDecimal.ZERO) +
+                        (if (showTransfer) result.totalTransferInInBase else BigDecimal.ZERO)
+                val prevInflow = previousResult?.let {
+                    (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) +
+                            (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
+                }
+
+                val currentOutflow = (if (showExpense) result.totalExpensesInBase else BigDecimal.ZERO) +
+                        (if (showTransfer) result.totalTransferOutInBase else BigDecimal.ZERO)
+                val prevOutflow = previousResult?.let {
+                    (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) +
+                            (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
+                }
+
                 listOf(
                     TableColumn(
                         label = "INFLOW", key = "in", color = positiveColor,
-                        totalInBase = (if (showIncome) result.totalIncomeInBase else BigDecimal.ZERO) +
-                                (if (showTransfer) result.totalTransferInInBase else BigDecimal.ZERO),
+                        totalInBase = currentInflow,
+                        previousTotalInBase = prevInflow,
                         nativeOf = {
                             (if (showIncome) it.income else BigDecimal.ZERO) +
                                     (if (showTransfer) it.transferIn else BigDecimal.ZERO)
@@ -229,8 +236,8 @@ private fun CashFlowTable(
                     ),
                     TableColumn(
                         label = "OUTFLOW", key = "out", color = negativeColor,
-                        totalInBase = (if (showExpense) result.totalExpensesInBase else BigDecimal.ZERO) +
-                                (if (showTransfer) result.totalTransferOutInBase else BigDecimal.ZERO),
+                        totalInBase = currentOutflow,
+                        previousTotalInBase = prevOutflow,
                         nativeOf = {
                             (if (showExpense) it.expense else BigDecimal.ZERO) +
                                     (if (showTransfer) it.transferOut else BigDecimal.ZERO)
@@ -250,17 +257,21 @@ private fun CashFlowTable(
                     ),
                 )
             }
-            else -> emptyList()
         }
     }
 
     val netColumn: TableColumn? = if (config.showNetColumn) {
         val netTotalInBase = columns.fold(BigDecimal.ZERO) { acc, c -> acc + c.totalInBase }
+        val prevNetTotalInBase = if (previousResult != null) {
+            columns.fold(BigDecimal.ZERO) { acc, c -> acc + (c.previousTotalInBase ?: BigDecimal.ZERO) }
+        } else null
+
         TableColumn(
             label = if (config.perspective is AccountingPerspective.Accounting) "NET" else "NET FLOW",
             key = "net",
             color = accentColor,
             totalInBase = netTotalInBase,
+            previousTotalInBase = prevNetTotalInBase,
             nativeOf = { item ->
                 columns.fold(BigDecimal.ZERO) { acc, c ->
                     val v = c.nativeOf(item)
@@ -320,6 +331,7 @@ private fun CashFlowTable(
                 activeColumns.forEach { col ->
                     TotalsCell(
                         amountInBase = col.totalInBase,
+                        previousAmountInBase = col.previousTotalInBase,
                         baseCurrency = baseCurrency,
                         color = col.color,
                         signed = col.isSigned,
@@ -411,29 +423,49 @@ private fun TotalsCell(
     color: Color,
     signed: Boolean,
     width: Dp,
+    previousAmountInBase: BigDecimal? = null,
 ) {
-    val text = if (amountInBase.signum() == 0 && signed) {
-        buildAnnotatedString { append("—") }
-    } else {
-        CurrencyReprUi.formatCurrencyAnnotated(
-            amount = amountInBase,
-            currencyCode = baseCurrency,
-            spec = CurrencyDisplaySpec(forceShowPlus = signed, useSemanticColor = false)
-        )
-    }
     Box(
         modifier = Modifier
             .width(width)
             .padding(end = 4.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
-        Text(
-            text = text,
-            style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.SemiBold),
-            color = color,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(horizontalAlignment = Alignment.End) {
+            val text = if (amountInBase.signum() == 0 && signed) {
+                buildAnnotatedString { append("—") }
+            } else {
+                CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = amountInBase,
+                    currencyCode = baseCurrency,
+                    spec = CurrencyDisplaySpec(forceShowPlus = signed, useSemanticColor = false)
+                )
+            }
+            Text(
+                text = text,
+                style = AppTextStyles.metaLabel.copy(fontWeight = FontWeight.SemiBold),
+                color = color,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (previousAmountInBase != null) {
+                val change = amountInBase.subtract(previousAmountInBase)
+                if (change.signum() != 0 && previousAmountInBase.signum() != 0) {
+                    val percentage = change.multiply(BigDecimal("100"))
+                        .divide(previousAmountInBase.abs(), 1, java.math.RoundingMode.HALF_UP)
+                    val up = change.signum() > 0
+                    Text(
+                        text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage%",
+                        style = AppTextStyles.metaLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 8.sp
+                        ),
+                        color = color,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -495,45 +527,48 @@ private fun BreakdownCell(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CashFlowSettingsSheet(
+private fun CashFlowSettingsContent(
     config: CashFlowCardConfig,
     baseCurrency: String,
     callbacks: CardCallbacks.CashFlow,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Cash Flow", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Display") {
-            AeonBaseConversionToggle(
-                baseCurrency = baseCurrency,
-                showBaseConversion = config.showBaseConversion,
-                onShowBaseConversionChange = {
-                    callbacks.onShowBaseConversionChange(config.cardId, it)
-                },
-                showBackground = false
-            )
-            AeonSettingsToggle(
-                label = "Show NET column",
-                checked = config.showNetColumn,
-                onCheckedChange = {
-                    callbacks.onShowNetColumnChange(config.cardId, it)
-                },
-                showBackground = false
-            )
-        }
-        CardPerspectiveSettings(
-            perspective = config.perspective,
-            onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
-            excludeInternalTransfers = config.excludeInternalTransfers,
-            onExcludeInternalTransfersChange = {
-                callbacks.onExcludeInternalTransfersChange(
-                    config.cardId,
-                    it
-                )
-            }
+    CardSettingsSection("Display") {
+        AeonBaseConversionToggle(
+            baseCurrency = baseCurrency,
+            showBaseConversion = config.showBaseConversion,
+            onShowBaseConversionChange = {
+                callbacks.onShowBaseConversionChange(config.cardId, it)
+            },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show NET column",
+            checked = config.showNetColumn,
+            onCheckedChange = {
+                callbacks.onShowNetColumnChange(config.cardId, it)
+            },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
         )
     }
+    CardPerspectiveSettings(
+        perspective = config.perspective,
+        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        excludeInternalTransfers = config.excludeInternalTransfers,
+        onExcludeInternalTransfersChange = {
+            callbacks.onExcludeInternalTransfersChange(
+                config.cardId,
+                it
+            )
+        }
+    )
 }
 
 @androidx.compose.ui.tooling.preview.Preview(name = "Light Mode", showBackground = true)
@@ -634,6 +669,7 @@ fun mapCashFlow(
     renderData = renderData,
     callbacks = CardCallbacks.CashFlow(
         onShowBaseConversionChange = updateHandler::updateCardCashFlowShowBaseConversion,
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardCashFlowFilter,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,

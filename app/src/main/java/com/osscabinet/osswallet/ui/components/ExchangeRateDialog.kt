@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 /**
@@ -110,7 +111,7 @@ fun ExchangeRateDialog(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun ExchangeRateDialogPreview() {
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         ExchangeRateDialog(
             initialRate = BigDecimal("1.25"),
             onDismiss = {},

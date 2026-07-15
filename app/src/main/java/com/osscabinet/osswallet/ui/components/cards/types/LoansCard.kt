@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +21,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
@@ -31,16 +29,19 @@ import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.WarningColor
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
@@ -51,42 +52,32 @@ import java.math.RoundingMode
 fun LoansCard(
     items: List<LoanSummary>,
     targetCurrency: String = "USD",
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot =
-        com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot(
-            anchor = targetCurrency,
-            rates = emptyMap()
-        ),
+    exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(
+        anchor = targetCurrency,
+        rates = emptyMap(),
+    ),
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    filterRules: CardFilterRules? = null,
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.Payments,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            LoansSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            LoansSettingsContent(config = config, callbacks = callbacks)
         }
     ) {
         if (items.isEmpty()) {
@@ -104,7 +95,7 @@ fun LoansCard(
                         targetCurrency = targetCurrency,
                         exchangeRates = exchangeRates,
                         showDivider = index < items.lastIndex,
-                        onClick = { callbacks.onLoanClick(summary.loan.id) }
+                        onClick = { callbacks.onLoanClick(summary.loan.id) },
                     )
                 }
             }
@@ -112,32 +103,28 @@ fun LoansCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoansSettingsSheet(
+private fun LoansSettingsContent(
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Loans", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Show Type") {
-            listOf("ALL", "LENT", "BORROWED").forEach { type ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        type.lowercase().replaceFirstChar { it.uppercase() },
-                        style = AppTextStyles.transactionTitle
-                    )
-                    RadioButton(
-                        selected = config.showType == type,
-                        onClick = { callbacks.onUpdate(config.copy(showType = type)) }
-                    )
-                }
+    CardSettingsSection("Show Type") {
+        listOf("ALL", "LENT", "BORROWED").forEach { type ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    type.lowercase().replaceFirstChar { it.uppercase() },
+                    style = AppTextStyles.transactionTitle
+                )
+                RadioButton(
+                    selected = config.showType == type,
+                    onClick = { callbacks.onUpdate(config.copy(showType = type)) }
+                )
             }
         }
     }
@@ -147,7 +134,7 @@ private fun LoansSettingsSheet(
 private fun LoanSummaryRow(
     summary: LoanSummary,
     targetCurrency: String,
-    exchangeRates: com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot,
+    exchangeRates: ExchangeRateSnapshot,
     showDivider: Boolean,
     onClick: () -> Unit
 ) {
@@ -190,7 +177,7 @@ private fun LoanSummaryRow(
                 )
             }
 
-            com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext(
+            ConvertedWithNativeSubtext(
                 amount = summary.remainingBalance + summary.interestAccrued,
                 nativeCurrency = summary.loan.currency,
                 targetCurrency = targetCurrency,
@@ -290,7 +277,7 @@ fun LoansCardPreview() {
         )
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             LoansCard(
                 items = loans,

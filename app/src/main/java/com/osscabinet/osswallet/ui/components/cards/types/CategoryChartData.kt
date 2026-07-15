@@ -14,10 +14,16 @@ data class CategoryChartData(
     val subcategoryData: List<CategoryChartData>? = null,
     val previousAmount: BigDecimal? = null
 ) {
+    /**
+     * Optimized collection of all leaf category IDs under this node.
+     * Uses a sequence to avoid intermediate list allocations during deep recursion.
+     */
     fun allCategoryIds(): List<String> {
-        val ids = mutableListOf<String>()
-        categoryId?.let { ids.add(it.toString()) }
-        subcategoryData?.forEach { ids.addAll(it.allCategoryIds()) }
-        return ids
+        return allCategoryIdsSequence().toList()
+    }
+
+    private fun allCategoryIdsSequence(): Sequence<String> = sequence {
+        categoryId?.let { yield(it.toString()) }
+        subcategoryData?.forEach { yieldAll(it.allCategoryIdsSequence()) }
     }
 }

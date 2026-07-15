@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DonutLarge
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,26 +22,26 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.osscabinet.ossWallet.domain.card.CardFilterRules
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
+import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSheet
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.FilterSelectionContext
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 
@@ -50,36 +49,28 @@ import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 fun BudgetsCard(
     items: List<BudgetProgress>,
     config: BudgetsCardConfig,
+    previousItems: List<BudgetProgress>? = null,
     callbacks: CardCallbacks.Budgets = CardCallbacks.Budgets(),
-    filterContext: FilterSelectionContext = FilterSelectionContext(),
-    filterRules: CardFilterRules? = null,
-    baseFilter: TransactionFilter = TransactionFilter(),
-    inheritedFilter: TransactionFilter = TransactionFilter(),
-    screenOwnsTimeline: Boolean = false,
-    showFilterButton: Boolean = true,
-    modifier: Modifier = Modifier,
-    headerModifier: Modifier = Modifier
+    layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
-    val displayFilter =
-        if (screenOwnsTimeline || inheritedFilter.timelineRange !is TimelineRange.AllTime)
-            config.filter.copy(timelineRange = inheritedFilter.timelineRange)
-        else config.filter
+    val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
         title = config.title,
         icon = Icons.Rounded.DonutLarge,
-        modifier = modifier,
-        headerModifier = headerModifier,
+        modifier = layoutProps.modifier,
+        headerModifier = layoutProps.headerModifier,
         onClick = callbacks.onSeeAll,
-        filterEnabled = showFilterButton,
+        filterEnabled = layoutProps.showFilterButton,
         filter = displayFilter,
-        baseFilter = baseFilter,
-        filterRules = filterRules ?: config.filterRules,
-        filterContext = filterContext,
+        baseFilter = layoutProps.baseFilter,
+        filterRules = layoutProps.filterRules ?: config.filterRules,
+        filterContext = layoutProps.filterContext,
         onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
-        displaySettings = { onDismiss ->
-            BudgetsSettingsSheet(config = config, callbacks = callbacks, onDismiss = onDismiss)
+        onDelete = callbacks.onDelete,
+        settingsContent = {
+            BudgetsSettingsContent(config = config, callbacks = callbacks)
         }
     ) {
         if (items.isEmpty()) {
@@ -95,8 +86,10 @@ fun BudgetsCard(
                 items.forEachIndexed { index, progress ->
                     val budgetId = progress.budget.id
                     val onClick = remember(budgetId, onBudgetClick) { { onBudgetClick(budgetId) } }
+                    val previousProgress = previousItems?.find { it.budget.id == budgetId }
                     BudgetProgressRow(
                         progress = progress,
+                        previousProgress = if (config.showComparison) previousProgress else null,
                         showDivider = index < items.lastIndex,
                         onClick = onClick
                     )
@@ -106,28 +99,32 @@ fun BudgetsCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BudgetsSettingsSheet(
+private fun BudgetsSettingsContent(
     config: BudgetsCardConfig,
     callbacks: CardCallbacks.Budgets,
-    onDismiss: () -> Unit
 ) {
-    CardSettingsSheet(title = "Budgets", onDismiss = onDismiss, onDelete = callbacks.onDelete) {
-        CardSettingsSection("Display") {
-            AeonSettingsToggle(
-                label = "Show archived budgets",
-                checked = config.showArchived,
-                onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
-                showBackground = false
-            )
-        }
+    CardSettingsSection("Display") {
+        AeonSettingsToggle(
+            label = "Show archived budgets",
+            checked = config.showArchived,
+            onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
+            showBackground = false
+        )
+        AeonSettingsToggle(
+            label = "Show Comparison",
+            description = "Show change from previous period",
+            checked = config.showComparison,
+            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            showBackground = false
+        )
     }
 }
 
 @Composable
 private fun BudgetProgressRow(
     progress: BudgetProgress,
+    previousProgress: BudgetProgress? = null,
     showDivider: Boolean,
     onClick: () -> Unit
 ) {
@@ -152,11 +149,29 @@ private fun BudgetProgressRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ) {
-            Text(
-                text = progress.budget.name,
-                style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
-                color = AppColors.contentPrimary
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = progress.budget.name,
+                    style = AppTextStyles.listItemTitle.copy(fontWeight = FontWeight.Medium),
+                    color = AppColors.contentPrimary
+                )
+                if (previousProgress != null) {
+                    val change = progress.spent.subtract(previousProgress.spent)
+                    if (change.signum() != 0 && previousProgress.spent.signum() != 0) {
+                        val percentage = change.multiply(java.math.BigDecimal("100"))
+                            .divide(previousProgress.spent.abs(), 1, java.math.RoundingMode.HALF_UP)
+                        val up = change.signum() > 0
+                        Text(
+                            text = "${if (up) "▲" else "▼"} ${if (up) "+" else ""}$percentage% VS PRIOR",
+                            style = AppTextStyles.metaLabel.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp
+                            ),
+                            color = if (up) AppColors.negative else AppColors.positive
+                        )
+                    }
+                }
+            }
             Text(
                 text = buildAnnotatedString {
                     append(
@@ -213,6 +228,7 @@ fun mapBudgets(
     renderData = renderData,
     callbacks = CardCallbacks.Budgets(
         onUpdate = { newConfig -> updateHandler.updateCardBudgetsConfig(config.cardId, newConfig) },
+        onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardBudgetsFilter,
         onBudgetClick = callbacks.budgetActions.onClick,
         onSeeAll = callbacks.budgetActions.onSeeAll,
@@ -232,7 +248,7 @@ fun BudgetsCardPreview() {
         name = "Food",
         currency = "USD",
         limitAmount = java.math.BigDecimal("1000.00"),
-        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
+        timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
         profileId = 1
     )
     val budget2 = com.osscabinet.ossWallet.domain.model.Budget(
@@ -240,7 +256,7 @@ fun BudgetsCardPreview() {
         name = "Rent",
         currency = "USD",
         limitAmount = java.math.BigDecimal("1200.00"),
-        timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
+        timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH),
         profileId = 1
     )
 
@@ -263,7 +279,7 @@ fun BudgetsCardPreview() {
         )
     )
 
-    com.osscabinet.ossWallet.ui.theme.OssWalletTheme {
+    OssWalletTheme {
         Box(modifier = Modifier.padding(16.dp)) {
             BudgetsCard(
                 items = budgets,

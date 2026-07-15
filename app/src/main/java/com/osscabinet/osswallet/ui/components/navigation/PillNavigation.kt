@@ -267,7 +267,7 @@ fun PillNavigationBar(
     val dimensions = LocalAeonDimensions.current
 
     // Grid constants derived from the Aeon Design System
-    val spacing = dimensions.spacingSm // 8.dp (The base grid unit)
+    val spacing = dimensions.spacingSm / 2 // 8.dp (The base grid unit)
     val itemWidth = AeonSize.D56.value // Standard touch target width
     val barHeight = AeonSize.D54.value // Matches Material BottomAppBar height
     val indicatorHeight =

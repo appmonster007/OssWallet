@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -307,18 +308,38 @@ fun AeonShimmer(
 }
 
 @Composable
-fun ShimmerByType(type: com.osscabinet.ossWallet.domain.card.CardType, brush: Brush) {
+fun ShimmerByType(type: CardType, brush: Brush) {
     when (type) {
-        com.osscabinet.ossWallet.domain.card.CardType.NET_WORTH -> NetWorthShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES -> CurrencyBalancesShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW -> CashFlowShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS -> AccountsShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.BUDGETS -> BudgetsShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.PLANNED_PAYMENTS -> PlannedPaymentsShimmer(brush)
-        com.osscabinet.ossWallet.domain.card.CardType.LOANS -> BudgetsShimmer(brush) // Reuse budget shape for now
-        com.osscabinet.ossWallet.domain.card.CardType.RECENT_ACTIVITIES -> CashFlowShimmer(brush) // Reuse table shape
-        com.osscabinet.ossWallet.domain.card.CardType.CASHFLOW_COMPARISON -> CashFlowShimmer(brush)
+        CardType.NET_WORTH -> NetWorthShimmer(brush)
+        CardType.CURRENCY_BALANCES -> CurrencyBalancesShimmer(brush)
+        CardType.CASH_FLOW -> CashFlowShimmer(brush)
+        CardType.ACCOUNTS -> AccountsShimmer(brush)
+        CardType.BUDGETS -> BudgetsShimmer(brush)
+        CardType.PLANNED_PAYMENTS -> PlannedPaymentsShimmer(brush)
+        CardType.LOANS -> BudgetsShimmer(brush) // Reuse budget shape for now
+        CardType.RECENT_ACTIVITIES -> CashFlowShimmer(brush) // Reuse table shape
+        CardType.CASHFLOW_COMPARISON -> CashFlowShimmer(brush)
+        CardType.CATEGORY_PIE_CHART -> ChartShimmer(brush)
+        CardType.CATEGORY_TREEMAP -> ChartShimmer(brush)
+        CardType.INCOME_EXPENSE_BAR -> ChartShimmer(brush)
+        CardType.CATEGORY_SPENDING_TREND -> ChartShimmer(brush)
+        CardType.TAG_UPSET_PLOT -> ChartShimmer(brush)
         else -> CardContentShimmer(brush)
+    }
+}
+
+@Composable
+fun ChartShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(brush, RoundedCornerShape(dims.componentCornerRadius))
+                .graphicsLayer { alpha = 0.2f }
+        )
     }
 }
 

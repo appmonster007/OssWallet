@@ -495,7 +495,8 @@ fun DashboardScreenLayout(
                                 innerPadding = PaddingValues(
                                     top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
                                     bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                                )
+                                ),
+                                cards = cardsConfig.cards.map { it.cardType }
                             )
                         }
 

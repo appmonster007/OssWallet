@@ -335,9 +335,11 @@ fun AccountDetailScreen(
                         when (val state = uiState) {
                             is AccountDetailUiState.Loading -> {
                                 AeonShimmer(
-                                    innerPadding = screenPadding,
-                                    showCashflow = false,
-                                    showAccounts = false
+                                    innerPadding = PaddingValues(
+                                        top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
+                                        bottom = screenPadding.calculateBottomPadding()
+                                    ),
+                                    cards = accountDetailCardsConfig.cards.map { it.cardType }
                                 )
                             }
 

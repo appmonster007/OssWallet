@@ -188,10 +188,6 @@ class AnalyticsViewModel @Inject constructor(
                     )
                 }.distinctUntilChanged()
             ) { domain, planning, config ->
-                if (!config.hasLoadedRates) {
-                    return@combine AnalyticsUiState.Loading
-                }
-
                 AnalyticsUiState.Success(
                     profileId = profileId,
                     accounts = domain.accounts,

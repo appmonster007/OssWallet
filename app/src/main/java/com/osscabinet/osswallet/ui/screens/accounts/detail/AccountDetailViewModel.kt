@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -161,66 +162,81 @@ class AccountDetailViewModel @Inject constructor(
             ) { domain, config ->
                 domain to config
             }.flatMapLatest { (domain, config) ->
+                val account = domain.accounts.find { it.id == accountId }
+                if (account == null) {
+                    return@flatMapLatest kotlinx.coroutines.flow.flowOf(AccountDetailUiState.Error("Account not found"))
+                }
+
+                val initialSuccess = AccountDetailUiState.Success(
+                    profileId = profileId,
+                    account = account,
+                    listState = TransactionListState(groups = emptyList(), isEmpty = true),
+                    allCategories = domain.categories,
+                    allTags = domain.tags,
+                    baseCurrency = config.baseCurrency,
+                    exchangeRates = config.rates,
+                    showPlannedPayments = config.settings.showPlannedPayments,
+                    useNoteAsHeader = config.settings.useNoteAsHeader,
+                    currentFilter = config.filter,
+                    version = domain.version
+                )
+
                 if (!config.hasLoadedRates) {
-                    kotlinx.coroutines.flow.flowOf(AccountDetailUiState.Loading)
+                    kotlinx.coroutines.flow.flowOf(initialSuccess)
                 } else {
-                    val account = domain.accounts.find { it.id == accountId }
-                    if (account == null) {
-                        kotlinx.coroutines.flow.flowOf(AccountDetailUiState.Error("Account not found"))
-                    } else {
-                        transactionUseCases.observeHistoryWithBalances(
-                            profileId = profileId,
-                            filter = TransactionFilter(
-                                accountIds = setOf(accountId),
-                                timelineRange = TimelineRange.AllTime(excludeFuture = false)
-                            ),
-                            baseCurrency = config.baseCurrency,
-                            exchangeRates = config.rates
-                        ).map { result ->
-                            val absoluteTransactionsWithBalance = result.getOrNull()
-                                ?: emptyList<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>()
+                    transactionUseCases.observeHistoryWithBalances(
+                        profileId = profileId,
+                        filter = TransactionFilter(
+                            accountIds = setOf(accountId),
+                            timelineRange = TimelineRange.AllTime(excludeFuture = false)
+                        ),
+                        baseCurrency = config.baseCurrency,
+                        exchangeRates = config.rates
+                    ).map { result ->
+                        val absoluteTransactionsWithBalance = result.getOrNull()
+                            ?: emptyList<com.osscabinet.ossWallet.domain.model.TransactionWithBalance>()
 
-                            // Filtered transactions for the list tab
-                            val filteredTransactionsWithBalance =
-                                TransactionFilterService.filterTransactionsWithBalance(
-                                    absoluteTransactionsWithBalance,
-                                    config.filter
-                                )
-
-                            val initialBalancesPerGroup = domain.accounts.associate { acc ->
-                                val earliestTx =
-                                    absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
-                                acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
-                            }
-
-                            val listState = TimelineService.getGroupedData(
-                                transactions = filteredTransactionsWithBalance,
-                                absoluteHistory = absoluteTransactionsWithBalance,
-                                groupingType = config.settings.groupBy,
-                                accounts = domain.accounts,
-                                categories = domain.categories,
-                                allTags = domain.tags,
-                                baseCurrency = config.baseCurrency,
-                                exchangeRates = config.rates,
-                                linkedTransactionIds = domain.links,
-                                initialBalances = initialBalancesPerGroup
-                            ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
-
-                            AccountDetailUiState.Success(
-                                profileId = profileId,
-                                account = account,
-                                listState = listState,
-                                allCategories = domain.categories,
-                                allTags = domain.tags,
-                                baseCurrency = config.baseCurrency,
-                                exchangeRates = config.rates,
-                                showPlannedPayments = config.settings.showPlannedPayments,
-                                useNoteAsHeader = config.settings.useNoteAsHeader,
-                                currentFilter = config.filter,
-                                version = domain.version
+                        // Filtered transactions for the list tab
+                        val filteredTransactionsWithBalance =
+                            TransactionFilterService.filterTransactionsWithBalance(
+                                absoluteTransactionsWithBalance,
+                                config.filter
                             )
-                        }.flowOn(kotlinx.coroutines.Dispatchers.Default)
+
+                        val initialBalancesPerGroup = domain.accounts.associate { acc ->
+                            val earliestTx =
+                                absoluteTransactionsWithBalance.findLast { it.transaction.accountId == acc.id }
+                            acc.id to (earliestTx?.balanceBefore ?: BigDecimal.ZERO)
+                        }
+
+                        val listState = TimelineService.getGroupedData(
+                            transactions = filteredTransactionsWithBalance,
+                            absoluteHistory = absoluteTransactionsWithBalance,
+                            groupingType = config.settings.groupBy,
+                            accounts = domain.accounts,
+                            categories = domain.categories,
+                            allTags = domain.tags,
+                            baseCurrency = config.baseCurrency,
+                            exchangeRates = config.rates,
+                            linkedTransactionIds = domain.links,
+                            initialBalances = initialBalancesPerGroup
+                        ).let { TransactionListState(groups = it, isEmpty = it.isEmpty()) }
+
+                        AccountDetailUiState.Success(
+                            profileId = profileId,
+                            account = account,
+                            listState = listState,
+                            allCategories = domain.categories,
+                            allTags = domain.tags,
+                            baseCurrency = config.baseCurrency,
+                            exchangeRates = config.rates,
+                            showPlannedPayments = config.settings.showPlannedPayments,
+                            useNoteAsHeader = config.settings.useNoteAsHeader,
+                            currentFilter = config.filter,
+                            version = domain.version
+                        )
                     }
+                    .onStart { emit(initialSuccess) }
                 }
             }
         }

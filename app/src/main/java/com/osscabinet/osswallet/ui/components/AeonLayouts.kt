@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -40,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -185,15 +188,18 @@ fun rememberShimmerBrush(horizontal: Boolean = false, label: String = "shimmer")
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
+            animation = tween(1400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "${label}_translate"
     )
+    val shimmerColor = AppColors.insetSurface.copy(alpha = 0.4f)
+    val highlightColor = AppColors.insetSurface.copy(alpha = 0.1f)
+    
     val colors = listOf(
-        AppColors.insetSurface.copy(alpha = 0.6f),
-        AppColors.insetSurface.copy(alpha = 0.2f),
-        AppColors.insetSurface.copy(alpha = 0.6f),
+        shimmerColor,
+        highlightColor,
+        shimmerColor,
     )
     return if (horizontal) {
         Brush.linearGradient(
@@ -204,9 +210,58 @@ fun rememberShimmerBrush(horizontal: Boolean = false, label: String = "shimmer")
     } else {
         Brush.linearGradient(
             colors = colors,
-            start = Offset.Zero,
-            end = Offset(x = translateAnim, y = translateAnim)
+            start = Offset(x = translateAnim - 500f, y = translateAnim - 500f),
+            end = Offset(x = translateAnim + 500f, y = translateAnim + 500f)
         )
+    }
+}
+
+@Composable
+fun ShimmerCardShell(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = cardShape,
+        color = AppColors.cardSurface,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, AppColors.outlineVariant.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(AeonTheme.dimensions.cardPadding),
+            verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun ShimmerHeader(brush: Brush) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(AeonTheme.dimensions.iconSizeLg)
+                .background(brush, CircleShape)
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp, 16.dp)
+                    .background(brush, RoundedCornerShape(4.dp))
+            )
+            Box(
+                modifier = Modifier
+                    .size(80.dp, 12.dp)
+                    .background(brush, RoundedCornerShape(4.dp))
+            )
+        }
     }
 }
 
@@ -220,124 +275,170 @@ fun AeonShimmer(
     showBudgets: Boolean = false
 ) {
     val brush = rememberShimmerBrush(label = "aeon_shimmer")
+    val dims = AeonTheme.dimensions
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
-            .padding(horizontal = AeonTheme.dimensions.screenPadding),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingXl),
+            .padding(horizontal = dims.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(dims.spacingMd),
         contentPadding = PaddingValues(
-            top = AeonTheme.dimensions.spacingLg,
-            bottom = AeonTheme.dimensions.spacingXl
-        )
+            top = dims.spacingMd,
+            bottom = dims.spacingXl
+        ),
+        userScrollEnabled = false
     ) {
         if (showNetWorth) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
-                    Box(
-                        modifier = Modifier
-                            .size(150.dp, 20.dp)
-                            .background(brush, RoundedCornerShape(4.dp))
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(250.dp, 48.dp)
-                            .background(brush, RoundedCornerShape(8.dp))
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp, 24.dp)
-                            .background(brush, RoundedCornerShape(16.dp))
-                    )
-                }
-            }
-        }
-        if (showCurrency) {
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                    repeat(3) {
-                        Box(
-                            modifier = Modifier
-                                .size(120.dp, 60.dp)
-                                .background(
-                                    brush,
-                                    RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
-                                )
-                        )
-                    }
-                }
-            }
-        }
-        if (showCashflow) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(
-                            brush,
-                            RoundedCornerShape(AeonTheme.dimensions.dialogCornerRadius)
-                        )
-                )
-            }
-        }
-        if (showAccounts) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                ShimmerCardShell {
+                    ShimmerHeader(brush)
+                    Column(
+                        modifier = Modifier.padding(top = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(100.dp, 20.dp)
-                                .background(brush, RoundedCornerShape(4.dp))
+                                .size(200.dp, 36.dp)
+                                .background(brush, RoundedCornerShape(8.dp))
                         )
                         Box(
                             modifier = Modifier
-                                .size(60.dp, 20.dp)
+                                .size(140.dp, 14.dp)
                                 .background(brush, RoundedCornerShape(4.dp))
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(120.dp)
-                                .background(
-                                    brush,
-                                    RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)
+                    ) {
+                        repeat(3) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp, 10.dp)
+                                        .background(brush, RoundedCornerShape(2.dp))
                                 )
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(120.dp)
-                                .background(
-                                    brush,
-                                    RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(18.dp)
+                                        .background(brush, RoundedCornerShape(4.dp))
                                 )
-                        )
+                            }
+                        }
                     }
                 }
             }
         }
-        if (showBudgets) {
+
+        if (showCurrency) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingLg)) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp, 20.dp)
-                            .background(brush, RoundedCornerShape(4.dp))
-                    )
-                    repeat(2) {
+                ShimmerCardShell {
+                    ShimmerHeader(brush)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+                    ) {
+                        repeat(2) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(72.dp)
+                                    .background(brush, RoundedCornerShape(dims.componentCornerRadius))
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showCashflow) {
+            item {
+                ShimmerCardShell {
+                    ShimmerHeader(brush)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Table Header
+                        Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
+                            Box(modifier = Modifier.size(50.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+                            Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+                            Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+                        }
+                        // Totals Row
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(60.dp)
-                                .background(brush, RoundedCornerShape(16.dp))
+                                .height(40.dp)
+                                .background(brush, RoundedCornerShape(6.dp))
+                                .graphicsLayer { alpha = 0.3f }
                         )
+                        // Per CCY Rows
+                        repeat(2) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Box(modifier = Modifier.size(40.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                                Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                                    Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                                    Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showAccounts) {
+            item {
+                ShimmerCardShell {
+                    ShimmerHeader(brush)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+                    ) {
+                        repeat(2) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(100.dp)
+                                    .background(brush, RoundedCornerShape(dims.componentCornerRadius))
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showBudgets) {
+            item {
+                ShimmerCardShell {
+                    ShimmerHeader(brush)
+                    repeat(2) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Box(modifier = Modifier.size(100.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                                Box(modifier = Modifier.size(80.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .background(brush, RoundedCornerShape(2.dp))
+                            )
+                        }
                     }
                 }
             }

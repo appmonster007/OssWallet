@@ -170,10 +170,17 @@ fun AnalyticsScreen(
                 ) {
                     when (val state = uiState) {
                         is AnalyticsUiState.Loading -> {
+                            val currentTabName = tabs[pagerState.currentPage]
+                            val filteredCardTypes = cardsConfig.cards
+                                .filter { it.cardType.getAtelierTab().displayName == currentTabName }
+                                .map { it.cardType }
+
                             AeonShimmer(
-                                innerPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
-                                showCashflow = false,
-                                showAccounts = false
+                                innerPadding = PaddingValues(
+                                    top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
+                                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                                ),
+                                cards = filteredCardTypes
                             )
                         }
 

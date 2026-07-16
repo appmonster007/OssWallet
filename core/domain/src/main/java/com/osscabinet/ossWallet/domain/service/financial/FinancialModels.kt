@@ -4,6 +4,8 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
@@ -125,20 +127,29 @@ typealias StatusBreakdown = FinancialMetrics<String>
  * Note: When transactionType is EXPENSE_ONLY, netBalance == expense.
  * When transactionType is INCOME_ONLY, netBalance == income.
  */
+@Serializable
 data class CategoryTreeMetrics(
     val category: String,
     val categoryId: Long?,
+    @Serializable(with = BigDecimalSerializer::class)
     val netBalance: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val income: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val transfer: BigDecimal = BigDecimal.ZERO,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryTreeMetrics> = emptyList(),
+    @Serializable(with = BigDecimalSerializer::class)
     val previousNetBalance: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val previousIncome: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val previousExpense: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val previousTransfer: BigDecimal? = null
 )
 

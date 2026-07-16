@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.screens.dashboard
 
 import com.osscabinet.ossWallet.core.util.MainDispatcherRule
 import com.osscabinet.ossWallet.core.util.TestDispatcherProvider
+import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -22,6 +23,7 @@ import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.navigation.DashboardViewContext
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -52,6 +54,7 @@ class DashboardViewModelTest {
     private lateinit var templateRepository: TemplateRepository
     private lateinit var filterRepository: FilterRepository
     private lateinit var profileRepository: ProfileRepository
+    private lateinit var cardCacheDao: CardCacheDao
 
     private lateinit var viewModel: DashboardViewModel
 
@@ -107,6 +110,8 @@ class DashboardViewModelTest {
         profileRepository = mockk(relaxed = true)
         every { profileRepository.getAllProfiles() } returns flowOf(emptyList())
 
+        cardCacheDao = mockk(relaxed = true)
+
         viewModel = DashboardViewModel(
             accountRepository = accountRepository,
             transactionUseCases = transactionUseCases,
@@ -123,7 +128,10 @@ class DashboardViewModelTest {
             templateRepository = templateRepository,
             filterRepository = filterRepository,
             profileRepository = profileRepository,
-            cardRenderCache = CardRenderCache(),
+            cardRenderCache = CardRenderCache(
+                cardCacheDao = cardCacheDao,
+                json = Json { ignoreUnknownKeys = true }
+            ),
             dispatchers = TestDispatcherProvider(mainDispatcherRule.testDispatcher),
         )
     }

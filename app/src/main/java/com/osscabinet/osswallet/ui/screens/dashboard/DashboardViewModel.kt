@@ -502,6 +502,9 @@ class DashboardViewModel @Inject constructor(
                 val successState = state as DashboardUiState.Success
 
                 channelFlow<DashboardUiState> {
+                    // Pre-fetch persistent cache into memory before seeding localCardState
+                    cardRenderCache.loadProfile(successState.profileId, successState.baseCurrency)
+
                     val configs = successState.cardsConfig.cards
 
                     // Seed from cache so recomputations (e.g. after saving a transaction) show
@@ -559,8 +562,13 @@ class DashboardViewModel @Inject constructor(
                                 }
                             )
                             if (state is CardComputeState.Success) {
-                                cardRenderCache[successState.profileId, successState.baseCurrency, cardConfig.cardId] =
-                                    state.data
+                                cardRenderCache.persist(
+                                    successState.profileId,
+                                    successState.baseCurrency,
+                                    cardConfig.cardId,
+                                    state.data,
+                                    cardInput.transactionsVersion
+                                )
                             }
                             localCardState.update { it.putting(cardConfig.cardId, state) }
                         }

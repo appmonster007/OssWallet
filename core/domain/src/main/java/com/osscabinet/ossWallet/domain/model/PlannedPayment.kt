@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 enum class RecurrenceType {
@@ -104,10 +106,12 @@ data class UpcomingPaymentItem(
     val isOverdue: Boolean
 )
 
+@Serializable
 data class PlannedPaymentSummary(
     val id: Long,
     val name: String,
-    val amount: java.math.BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
+    val amount: BigDecimal,
     val currency: String,
     val entryMode: EntryMode,
     val scheduledDate: Long,

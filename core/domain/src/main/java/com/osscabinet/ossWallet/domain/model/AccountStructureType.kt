@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class AccountStructureType(val displayName: String) {
     BANK("Bank"),
     SAVINGS("Savings"),

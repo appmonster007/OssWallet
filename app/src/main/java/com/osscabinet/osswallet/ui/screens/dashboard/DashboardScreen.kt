@@ -23,6 +23,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Visibility
@@ -30,7 +34,6 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -51,7 +54,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -471,121 +473,118 @@ fun DashboardScreenLayout(
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // 1. Content Layer (Layer 1)
-                Scaffold(
-                    containerColor = Color.Transparent
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding()
-                            .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
-                            .padding(bottom = innerPadding.calculateBottomPadding())
-                    ) {
-                        // Context indicator banner (if view focus is applied)
-                        if (initialViewContext != DashboardViewContext.None) {
-                            DashboardViewIndicator(
-                                context = initialViewContext,
-                                onReset = onResetView
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+                ) {
+                    // Context indicator banner (if view focus is applied)
+                    if (initialViewContext != DashboardViewContext.None) {
+                        DashboardViewIndicator(
+                            context = initialViewContext,
+                            onReset = onResetView
+                        )
+                    }
+
+                    when (val state = uiState) {
+                        is DashboardUiState.Loading -> Unit
+
+                        is DashboardUiState.Success -> {
+                            DashboardContent(
+                                modifier = Modifier.weight(1f),
+                                innerPadding = PaddingValues(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
+                                pagerState = pagerState,
+                                state = state,
+                                onMenuClick = actions.onMenuClick,
+                                onManageAccountsClick = { navigate(actions.onManageAccountsClick) },
+                                onAccountClick = { id -> navigate { actions.onAccountClick(id) } },
+                                onNavigateToPlannedPaymentList = { navigate(actions.onNavigateToPlannedPaymentList) },
+                                onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
+                                onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
+                                onNavigateToPlannedPaymentDetail = { id ->
+                                    navigate {
+                                        actions.onNavigateToPlannedPaymentDetail(
+                                            id
+                                        )
+                                    }
+                                },
+                                onNavigateToBudgetDetail = { id ->
+                                    navigate {
+                                        actions.onNavigateToBudgetDetail(
+                                            id
+                                        )
+                                    }
+                                },
+                                onNavigateToLoanDetail = { id ->
+                                    navigate {
+                                        actions.onNavigateToLoanDetail(
+                                            id
+                                        )
+                                    }
+                                },
+                                onRecordsClick = { context ->
+                                    navigate {
+                                        actions.onRecordsClick(
+                                            context
+                                        )
+                                    }
+                                },
+                                onSaveFilterClick = actions.onSaveFilterClick,
+                                onEditTransactionClick = { id ->
+                                    navigate {
+                                        actions.onEditTransactionClick(
+                                            id
+                                        )
+                                    }
+                                },
+                                onCloneTransactionClick = onCloneTransactionClick,
+                                onSplitTransactionClick = { id ->
+                                    navigate {
+                                        actions.onSplitTransactionClick(
+                                            id
+                                        )
+                                    }
+                                },
+                                onJumpTransaction = onJumpTransaction,
+                                onPerformJump = onPerformJump,
+                                scrollToId = scrollToId,
+                                highlightedId = highlightedId,
+                                onClearScrollTo = onClearScrollTo,
+                                savedFilters = savedFilters,
+                                revealedCardIds = revealedCardIds,
+                                recentActivitiesBreakdown = recentActivitiesBreakdown,
+                                onSearchTransactions = onSearchTransactions,
+                                onItemExpanded = onItemExpanded,
+                                onItemCollapsed = onItemCollapsed,
+                                onStatusChange = onStatusChange,
+                                onDeleteTransaction = onDeleteTransaction,
+                                onFullSwipeRight = onFullSwipeRight,
+                                onQuickConfirm = onQuickConfirm,
+                                onQuickSkip = onQuickSkip,
+                                onAddTag = onAddTag,
+                                onReorderCards = onReorderCards,
+                                onRemoveCard = onRemoveCard,
+                                onConfirmPlanned = onConfirmPlanned,
+                                onCancelPlanned = onCancelPlanned,
+                                onAddCard = onAddCard,
+                                cardUpdateHandler = cardUpdateHandler,
+                                cardsConfig = cardsConfig,
+                                glanceListState = glanceListState,
+                                recentActivitiesListState = recentActivitiesListState,
+                                showAddCardDialog = showAddCardDialog,
+                                onShowAddCardDialogChange = { showAddCardDialog = it },
+                                cardAnimationEnabled = cardAnimationEnabled
                             )
                         }
 
-                        when (val state = uiState) {
-                            is DashboardUiState.Loading -> Unit
-
-                            is DashboardUiState.Success -> {
-                                DashboardContent(
-                                    innerPadding = innerPadding,
-                                    pagerState = pagerState,
-                                    tabs = tabs,
-                                    state = state,
-                                    onManageAccountsClick = { navigate(actions.onManageAccountsClick) },
-                                    onAccountClick = { id -> navigate { actions.onAccountClick(id) } },
-                                    onNavigateToPlannedPaymentList = { navigate(actions.onNavigateToPlannedPaymentList) },
-                                    onNavigateToBudgetList = { navigate(actions.onNavigateToBudgetList) },
-                                    onNavigateToLoanList = { navigate(actions.onNavigateToLoanList) },
-                                    onNavigateToPlannedPaymentDetail = { id ->
-                                        navigate {
-                                            actions.onNavigateToPlannedPaymentDetail(
-                                                id
-                                            )
-                                        }
-                                    },
-                                    onNavigateToBudgetDetail = { id ->
-                                        navigate {
-                                            actions.onNavigateToBudgetDetail(
-                                                id
-                                            )
-                                        }
-                                    },
-                                    onNavigateToLoanDetail = { id ->
-                                        navigate {
-                                            actions.onNavigateToLoanDetail(
-                                                id
-                                            )
-                                        }
-                                    },
-                                    onRecordsClick = { context ->
-                                        navigate {
-                                            actions.onRecordsClick(
-                                                context
-                                            )
-                                        }
-                                    },
-                                    onSaveFilterClick = actions.onSaveFilterClick,
-                                    onEditTransactionClick = { id ->
-                                        navigate {
-                                            actions.onEditTransactionClick(
-                                                id
-                                            )
-                                        }
-                                    },
-                                    onCloneTransactionClick = onCloneTransactionClick,
-                                    onSplitTransactionClick = { id ->
-                                        navigate {
-                                            actions.onSplitTransactionClick(
-                                                id
-                                            )
-                                        }
-                                    },
-                                    onJumpTransaction = onJumpTransaction,
-                                    onPerformJump = onPerformJump,
-                                    scrollToId = scrollToId,
-                                    highlightedId = highlightedId,
-                                    onClearScrollTo = onClearScrollTo,
-                                    savedFilters = savedFilters,
-                                    revealedCardIds = revealedCardIds,
-                                    recentActivitiesBreakdown = recentActivitiesBreakdown,
-                                    onSearchTransactions = onSearchTransactions,
-                                    onItemExpanded = onItemExpanded,
-                                    onItemCollapsed = onItemCollapsed,
-                                    onStatusChange = onStatusChange,
-                                    onDeleteTransaction = onDeleteTransaction,
-                                    onFullSwipeRight = onFullSwipeRight,
-                                    onQuickConfirm = onQuickConfirm,
-                                    onQuickSkip = onQuickSkip,
-                                    onAddTag = onAddTag,
-                                    onReorderCards = onReorderCards,
-                                    onRemoveCard = onRemoveCard,
-                                    onConfirmPlanned = onConfirmPlanned,
-                                    onCancelPlanned = onCancelPlanned,
-                                    onAddCard = onAddCard,
-                                    cardUpdateHandler = cardUpdateHandler,
-                                    cardsConfig = cardsConfig,
-                                    glanceListState = glanceListState,
-                                    recentActivitiesListState = recentActivitiesListState,
-                                    showAddCardDialog = showAddCardDialog,
-                                    onShowAddCardDialogChange = { showAddCardDialog = it },
-                                    cardAnimationEnabled = cardAnimationEnabled
-                                )
-                            }
-
-                            is DashboardUiState.Error -> {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(state.message)
-                                }
+                        is DashboardUiState.Error -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(state.message)
                             }
                         }
                     }
@@ -724,10 +723,11 @@ fun DashboardScreenLayout(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DashboardContent(
+    modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     pagerState: PagerState,
-    tabs: List<NavigationTab>,
     state: DashboardUiState.Success,
+    onMenuClick: () -> Unit,
     onManageAccountsClick: () -> Unit,
     onAccountClick: (String) -> Unit,
     onNavigateToPlannedPaymentList: () -> Unit = {},
@@ -773,14 +773,12 @@ fun DashboardContent(
 ) {
     val pillHeight = AeonSize.D64.value
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.Top
-        ) { page ->
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.fillMaxSize(),
+        beyondViewportPageCount = 1,
+        verticalAlignment = Alignment.Top
+    ) { page ->
             when (page) {
                 0 -> {
                     DashboardGlanceTab(
@@ -892,7 +890,6 @@ fun DashboardContent(
                 }
             )
         }
-    }
 }
 
 @Composable

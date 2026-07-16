@@ -48,7 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -63,7 +62,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
@@ -202,22 +205,17 @@ fun ExchangeRatesScreen(
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Scaffold(
-                containerColor = Color.Transparent,
-                contentWindowInsets = WindowInsets(0)
-            ) { paddingValues ->
-                Box(
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .aeonHazeSource(hazeLayers.states[HazeLayer.Overlay])
+                        .statusBarsPadding()
+                        .padding(top = AeonSize.D64.value)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding()
-                            .padding(top = AeonSize.D64.value)
-                    ) {
                         // Custom Tab Row Pill - Glassmorphism correctly implemented here
                         GlassSurface(
                             shape = CircleShape,
@@ -257,7 +255,8 @@ fun ExchangeRatesScreen(
 
                         HorizontalPager(
                             state = pagerState,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.weight(1f),
+                            beyondViewportPageCount = 1
                         ) { page ->
                             when (page) {
                                 0 -> RatesTab(uiState)
@@ -271,7 +270,6 @@ fun ExchangeRatesScreen(
                         }
                     }
                 }
-            }
 
             AeonTopAppBar(
                 left = AeonTopBarSection(

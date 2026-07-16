@@ -82,6 +82,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -354,6 +355,13 @@ class DashboardViewModel @Inject constructor(
                 if (!snapshot.currency.hasLoaded) {
                     kotlinx.coroutines.flow.flowOf<StructuralState?>(null)
                 } else {
+                    val initialStructural = StructuralState(
+                        snapshot = snapshot,
+                        hierarchy = CategoryHierarchyCache.build(snapshot.categories),
+                        visibleGroups = emptyList(),
+                        history = emptyList()
+                    )
+
                     transactionUseCases.observeHistoryWithBalances(
                         profileId = profileId,
                         filter = TransactionFilter(),
@@ -382,7 +390,9 @@ class DashboardViewModel @Inject constructor(
                                 visibleGroups,
                                 transactionsWithBalance
                             )
-                        }.flowOn(dispatchers.default)
+                        }
+                        .onStart { emit(initialStructural) }
+                        .flowOn(dispatchers.default)
                 }
             }
 

@@ -86,6 +86,7 @@ import com.osscabinet.ossWallet.domain.model.settings.ScreenContext
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.repository.CardRepository
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
+import com.osscabinet.ossWallet.ui.components.AeonShimmer
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarActionPill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
@@ -489,7 +490,14 @@ fun DashboardScreenLayout(
                     }
 
                     when (val state = uiState) {
-                        is DashboardUiState.Loading -> Unit
+                        is DashboardUiState.Loading -> {
+                            AeonShimmer(
+                                innerPadding = PaddingValues(
+                                    top = AeonSize.D64.value + AeonTheme.dimensions.spacingMd,
+                                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                                )
+                            )
+                        }
 
                         is DashboardUiState.Success -> {
                             DashboardContent(

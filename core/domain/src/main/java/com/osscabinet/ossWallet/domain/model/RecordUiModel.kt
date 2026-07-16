@@ -1,14 +1,18 @@
 package com.osscabinet.ossWallet.domain.model
 
+import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
  * Unified interface for items that can appear in the transaction list.
  * This is a domain-level representation of a timeline record.
  */
+@Serializable
 sealed interface RecordUiModel {
     val id: String
     val timestamp: Long
+    @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal
     val currency: String
     val categoryName: String
@@ -18,9 +22,11 @@ sealed interface RecordUiModel {
     val accountCurrency: String
     val note: String?
     val tags: List<TagUiModel>
+    @Serializable(with = BigDecimalSerializer::class)
     val amountInBase: BigDecimal?
 }
 
+@Serializable
 data class ConfirmedTransactionUiModel(
     val item: TransactionWithBalance,
     override val accountName: String,
@@ -29,6 +35,7 @@ data class ConfirmedTransactionUiModel(
     override val categoryIcon: String?,
     override val categoryColor: Int,
     override val tags: List<TagUiModel> = emptyList(),
+    @Serializable(with = BigDecimalSerializer::class)
     override val amountInBase: BigDecimal? = null,
     val linkedTransactionIds: List<Long> = emptyList()
 ) : RecordUiModel {
@@ -40,10 +47,12 @@ data class ConfirmedTransactionUiModel(
     val status: TransactionStatus get() = item.transaction.status
 }
 
+@Serializable
 data class PlannedPaymentUiModel(
     val paymentId: Long,
     val occurrenceId: Long?,
     override val timestamp: Long,
+    @Serializable(with = BigDecimalSerializer::class)
     override val amount: BigDecimal,
     override val currency: String,
     override val categoryName: String,
@@ -53,6 +62,7 @@ data class PlannedPaymentUiModel(
     override val accountCurrency: String,
     override val note: String?,
     override val tags: List<TagUiModel> = emptyList(),
+    @Serializable(with = BigDecimalSerializer::class)
     override val amountInBase: BigDecimal? = null,
     val isOverdue: Boolean
 ) : RecordUiModel {

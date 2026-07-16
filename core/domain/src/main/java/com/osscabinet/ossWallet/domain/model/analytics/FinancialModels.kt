@@ -3,19 +3,30 @@ package com.osscabinet.ossWallet.domain.model.analytics
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
  * Result of cash flow computation.
  */
+@Serializable
 data class CashFlowResult(
+    @Serializable(with = BigDecimalSerializer::class)
     val totalIncomeInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalExpensesInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalTransfersInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalTransferOutInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalCrossCcyTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val totalCrossCcyTransferOutInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val netInBase: BigDecimal,
     val breakdown: List<CashFlowBreakdownItem>,
     val filteredTransactions: List<Transaction>
@@ -70,21 +81,36 @@ data class CashFlowResult(
  *   `currency != targetCurrency`. Useful at currency level where same-ccy transfers
  *   self-cancel in their bucket.
  */
+@Serializable
 data class CashFlowBreakdownItem(
     val currency: String,
+    @Serializable(with = BigDecimalSerializer::class)
     val income: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val incomeInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val expenseInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val transfer: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferInBase: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferInInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferOut: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferOutInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferInInBase: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferOutInBase: BigDecimal = BigDecimal.ZERO,
 ) {
     val netTransfer: BigDecimal get() = transferIn.add(transferOut)
@@ -124,9 +150,12 @@ data class CashFlowBreakdownItem(
 /**
  * Aggregated total for a single currency.
  */
+@Serializable
 data class CurrencyAggregationItem(
     val currency: String,
+    @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val amountInBase: BigDecimal
 ) {
     companion object {
@@ -141,10 +170,13 @@ data class CurrencyAggregationItem(
 /**
  * Summary statistics for an account.
  */
+@Serializable
 data class AccountSummaryItem(
     val account: Account,
-    val currencyBalances: Map<String, BigDecimal> = emptyMap(),
+    val currencyBalances: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
+    @Serializable(with = BigDecimalSerializer::class)
     val balance: BigDecimal = BigDecimal.ZERO, // Total balance in account currency
+    @Serializable(with = BigDecimalSerializer::class)
     val balanceInBase: BigDecimal = BigDecimal.ZERO,
     val currentPeriodFlow: AccountFlowMetrics = AccountFlowMetrics(),
     val previousPeriodFlow: AccountFlowMetrics? = null
@@ -153,12 +185,19 @@ data class AccountSummaryItem(
 /**
  * Encapsulates flow-based metrics for an account or group of accounts.
  */
+@Serializable
 data class AccountFlowMetrics(
+    @Serializable(with = BigDecimalSerializer::class)
     val income: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferOut: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO
 ) {
     val netTransfer: BigDecimal get() = transferIn + transferOut

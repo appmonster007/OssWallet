@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.ui.screens.accounts.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
+import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.card.CardComputeState
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -66,6 +67,7 @@ class AccountDetailViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val computationRepository: ComputationRepository,
     private val tagRepository: TagRepository,
+    private val cardRenderCache: CardRenderCache,
     private val cardComputerRegistry: CardComputerRegistry,
     private val dispatchers: DispatcherProvider,
 ) : BaseViewModel(settingsRepository), CardUpdateHandler {
@@ -265,13 +267,21 @@ class AccountDetailViewModel @Inject constructor(
 
                     val myGen = _computeGeneration.incrementAndGet()
 
+                    // D2: Seed from persistent cache to enable instant cold starts
+                    cardRenderCache.loadProfile(state.profileId, state.baseCurrency)
+                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(state.profileId, state.baseCurrency)
+
                     // D2: Preserve existing Success/Error states to avoid shimmer-on-refresh flicker;
                     // only new cards (not yet in prevMap) start as Loading.
                     val prevMap = _cardDataMap.value
                     _cardDataMap.value =
                         persistentMapOf<String, CardComputeState>().builder().apply {
                             cards.cards.forEach { c ->
-                                put(c.cardId, prevMap[c.cardId] ?: CardComputeState.Loading)
+                                val cached = cachedSnapshot[c.cardId]
+                                put(
+                                    c.cardId,
+                                    prevMap[c.cardId] ?: if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
+                                )
                             }
                         }.build()
 
@@ -312,6 +322,17 @@ class AccountDetailViewModel @Inject constructor(
                                 } catch (e: Throwable) {
                                     CardComputeState.Error(e.message ?: "Compute error")
                                 }
+
+                                if (result is CardComputeState.Success) {
+                                    cardRenderCache.persist(
+                                        state.profileId,
+                                        state.baseCurrency,
+                                        cardConfig.cardId,
+                                        result.data,
+                                        state.version
+                                    )
+                                }
+
                                 // P1: check inside update{} to eliminate TOCTOU window.
                                 _cardDataMap.update { map ->
                                     if (_computeGeneration.get() == myGen) map.putting(

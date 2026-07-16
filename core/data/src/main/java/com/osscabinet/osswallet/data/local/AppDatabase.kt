@@ -9,6 +9,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
+import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
@@ -23,6 +24,7 @@ import com.osscabinet.ossWallet.data.local.dao.TransactionDao
 import com.osscabinet.ossWallet.data.local.dao.TransactionLinkDao
 import com.osscabinet.ossWallet.data.local.entity.AccountEntity
 import com.osscabinet.ossWallet.data.local.entity.BudgetEntity
+import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.data.local.entity.CategoryEntity
 import com.osscabinet.ossWallet.data.local.entity.CurrencyRateEntity
 import com.osscabinet.ossWallet.data.local.entity.FilterEntity
@@ -57,9 +59,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         PlannedPaymentOccurrenceEntity::class,
         BudgetEntity::class,
         LoanEntity::class,
-        LoanPaymentEntity::class
+        LoanPaymentEntity::class,
+        CardCacheEntity::class
     ],
-    version = 29,
+    version = 30,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -78,10 +81,30 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun loanDao(): LoanDao
     abstract fun loanPaymentDao(): LoanPaymentDao
+    abstract fun cardCacheDao(): CardCacheDao
 
     companion object {
         init {
             System.loadLibrary("sqlcipher")
+        }
+
+        val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `card_cache` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `profileId` INTEGER NOT NULL,
+                        `currency` TEXT NOT NULL,
+                        `cardId` TEXT NOT NULL,
+                        `dataJson` TEXT NOT NULL,
+                        `version` INTEGER NOT NULL,
+                        `timestamp` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_card_cache_profileId_currency_cardId` ON `card_cache` (`profileId`, `currency`, `cardId`)")
+            }
         }
 
         val MIGRATION_28_29 = object : Migration(28, 29) {
@@ -809,7 +832,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_25_26,
                         MIGRATION_26_27,
                         MIGRATION_27_28,
-                        MIGRATION_28_29
+                        MIGRATION_28_29,
+                        MIGRATION_29_30
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

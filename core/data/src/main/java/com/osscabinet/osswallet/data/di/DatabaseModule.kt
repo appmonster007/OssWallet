@@ -5,6 +5,7 @@ import com.osscabinet.ossWallet.data.local.AppDatabase
 import com.osscabinet.ossWallet.data.local.SecurePassphraseManager
 import com.osscabinet.ossWallet.data.local.dao.AccountDao
 import com.osscabinet.ossWallet.data.local.dao.BudgetDao
+import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.dao.CategoryDao
 import com.osscabinet.ossWallet.data.local.dao.CurrencyDao
 import com.osscabinet.ossWallet.data.local.dao.FilterDao
@@ -99,4 +100,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
+
+    @Provides
+    @Singleton
+    fun provideCardCacheDao(db: AppDatabase): CardCacheDao = db.cardCacheDao()
 }

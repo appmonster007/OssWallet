@@ -1,15 +1,19 @@
 package com.osscabinet.ossWallet.domain.model
 
 import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
+import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 interface Timestamped {
     val timestamp: Long
 }
 
+@Serializable
 data class Transaction(
     val id: Long = 0,
     val name: String,
+    @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
     override val timestamp: Long,
     val currency: String,
@@ -27,18 +31,23 @@ data class Transaction(
     val status: TransactionStatus = TransactionStatus.CLEARED,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferRate: BigDecimal = BigDecimal.ONE
 ) : Timestamped
 
+@Serializable
 data class TransactionWithBalance(
     val transaction: Transaction,
+    @Serializable(with = BigDecimalSerializer::class)
     val balanceBefore: BigDecimal,
+    @Serializable(with = BigDecimalSerializer::class)
     val balanceAfter: BigDecimal
 )
 
 /**
  * UI representation of a tag with its associated color.
  */
+@Serializable
 data class TagUiModel(
     val name: String,
     val color: Int
@@ -64,6 +73,7 @@ fun Set<String>.toUiModels(
 /**
  * Pre-computed group of transactions with its period-specific header data.
  */
+@Serializable
 data class TransactionGroup(
     val key: String,
     val headerData: GroupHeaderData,
@@ -73,6 +83,7 @@ data class TransactionGroup(
 /**
  * Unified state for transaction lists across the app.
  */
+@Serializable
 data class TransactionListState(
     val groups: List<TransactionGroup> = emptyList(),
     val isEmpty: Boolean = true

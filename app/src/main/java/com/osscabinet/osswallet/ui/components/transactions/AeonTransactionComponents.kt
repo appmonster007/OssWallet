@@ -149,9 +149,7 @@ fun AeonTransactionList(
                 val headerKey = "header_${group.key}"
                 if (hasStickyHeader) {
                     stickyHeader(key = headerKey, contentType = "header") {
-                        Box(modifier = Modifier.aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Overlay))) {
-                            headerContent()
-                        }
+                        headerContent()
                     }
                 } else {
                     item(key = headerKey, contentType = "header") { headerContent() }
@@ -170,7 +168,6 @@ fun AeonTransactionList(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Surface))
-                            .aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Overlay))
                     ) {
                         val isHighlighted = record.id == highlightedId
                         val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }

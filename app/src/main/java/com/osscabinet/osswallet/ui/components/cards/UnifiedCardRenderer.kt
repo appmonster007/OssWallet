@@ -22,6 +22,8 @@ import com.osscabinet.ossWallet.ui.components.cards.types.NetWorthCard
 import com.osscabinet.ossWallet.ui.components.cards.types.PlannedPaymentsCard
 import com.osscabinet.ossWallet.ui.components.cards.types.RecentActivitiesCard
 import com.osscabinet.ossWallet.ui.components.cards.types.TagUpSetPlotCard
+import com.osscabinet.ossWallet.ui.components.ShimmerByType
+import com.osscabinet.ossWallet.ui.components.rememberShimmerBrush
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -221,13 +223,8 @@ fun UnifiedCardRenderer(
             }
 
             is CardWithCallbacks.Loading -> {
-                AeonExpressiveCard(
-                    title = cardWithCallbacks.cardType.displayName,
-                    icon = cardWithCallbacks.cardType.toIcon(),
-                    headerModifier = effectiveProps.headerModifier,
-                ) {
-                    CardContentShimmer()
-                }
+                val brush = rememberShimmerBrush(label = "card_loading_${cardWithCallbacks.cardId}")
+                ShimmerByType(type = cardWithCallbacks.cardType, brush = brush)
             }
 
             is CardWithCallbacks.ComputeError -> {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -268,6 +269,8 @@ fun ShimmerHeader(brush: Brush) {
 @Composable
 fun AeonShimmer(
     innerPadding: PaddingValues,
+    cards: List<com.osscabinet.ossWallet.domain.card.CardType>? = null,
+    // Fallback flags if list not provided
     showNetWorth: Boolean = true,
     showCurrency: Boolean = true,
     showCashflow: Boolean = true,
@@ -289,160 +292,227 @@ fun AeonShimmer(
         ),
         userScrollEnabled = false
     ) {
-        if (showNetWorth) {
-            item {
-                ShimmerCardShell {
-                    ShimmerHeader(brush)
-                    Column(
-                        modifier = Modifier.padding(top = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(200.dp, 36.dp)
-                                .background(brush, RoundedCornerShape(8.dp))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(140.dp, 14.dp)
-                                .background(brush, RoundedCornerShape(4.dp))
-                        )
-                    }
-                    Row(
+        if (cards != null) {
+            items(cards) { type ->
+                ShimmerByType(type, brush)
+            }
+        } else {
+            if (showNetWorth) item { NetWorthShimmer(brush) }
+            if (showCurrency) item { CurrencyBalancesShimmer(brush) }
+            if (showCashflow) item { CashFlowShimmer(brush) }
+            if (showAccounts) item { AccountsShimmer(brush) }
+            if (showBudgets) item { BudgetsShimmer(brush) }
+        }
+    }
+}
+
+@Composable
+fun ShimmerByType(type: com.osscabinet.ossWallet.domain.card.CardType, brush: Brush) {
+    when (type) {
+        com.osscabinet.ossWallet.domain.card.CardType.NET_WORTH -> NetWorthShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.CURRENCY_BALANCES -> CurrencyBalancesShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.CASH_FLOW -> CashFlowShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.ACCOUNTS -> AccountsShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.BUDGETS -> BudgetsShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.PLANNED_PAYMENTS -> PlannedPaymentsShimmer(brush)
+        com.osscabinet.ossWallet.domain.card.CardType.LOANS -> BudgetsShimmer(brush) // Reuse budget shape for now
+        com.osscabinet.ossWallet.domain.card.CardType.RECENT_ACTIVITIES -> CashFlowShimmer(brush) // Reuse table shape
+        com.osscabinet.ossWallet.domain.card.CardType.CASHFLOW_COMPARISON -> CashFlowShimmer(brush)
+        else -> CardContentShimmer(brush)
+    }
+}
+
+@Composable
+fun NetWorthShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        Column(
+            modifier = Modifier.padding(top = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(dims.spacingSm)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(200.dp, 36.dp)
+                    .background(brush, RoundedCornerShape(8.dp))
+            )
+            Box(
+                modifier = Modifier
+                    .size(140.dp, 14.dp)
+                    .background(brush, RoundedCornerShape(4.dp))
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)
+        ) {
+            repeat(3) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp, 10.dp)
+                            .background(brush, RoundedCornerShape(2.dp))
+                    )
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)
-                    ) {
-                        repeat(3) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp, 10.dp)
-                                        .background(brush, RoundedCornerShape(2.dp))
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(18.dp)
-                                        .background(brush, RoundedCornerShape(4.dp))
-                                )
-                            }
-                        }
-                    }
+                            .height(18.dp)
+                            .background(brush, RoundedCornerShape(4.dp))
+                    )
                 }
             }
         }
+    }
+}
 
-        if (showCurrency) {
-            item {
-                ShimmerCardShell {
-                    ShimmerHeader(brush)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
-                    ) {
-                        repeat(2) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(72.dp)
-                                    .background(brush, RoundedCornerShape(dims.componentCornerRadius))
-                            )
-                        }
-                    }
-                }
+@Composable
+fun CurrencyBalancesShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+        ) {
+            repeat(2) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(72.dp)
+                        .background(brush, RoundedCornerShape(dims.componentCornerRadius))
+                )
             }
         }
+    }
+}
 
-        if (showCashflow) {
-            item {
-                ShimmerCardShell {
-                    ShimmerHeader(brush)
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        // Table Header
-                        Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
-                            Box(modifier = Modifier.size(50.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
-                            Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
-                            Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
-                        }
-                        // Totals Row
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp)
-                                .background(brush, RoundedCornerShape(6.dp))
-                                .graphicsLayer { alpha = 0.3f }
-                        )
-                        // Per CCY Rows
-                        repeat(2) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Box(modifier = Modifier.size(40.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
-                                Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
-                                    Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
-                                    Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
-                                }
-                            }
-                        }
+@Composable
+fun CashFlowShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Table Header
+            Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)) {
+                Box(modifier = Modifier.size(50.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+                Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+                Box(modifier = Modifier.size(70.dp, 12.dp).background(brush, RoundedCornerShape(2.dp)))
+            }
+            // Totals Row
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(brush, RoundedCornerShape(6.dp))
+                    .graphicsLayer { alpha = 0.3f }
+            )
+            // Per CCY Rows
+            repeat(2) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(modifier = Modifier.size(40.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                    Row(horizontalArrangement = Arrangement.spacedBy(dims.spacingLg)) {
+                        Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                        Box(modifier = Modifier.size(60.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
                     }
                 }
             }
         }
+    }
+}
 
-        if (showAccounts) {
-            item {
-                ShimmerCardShell {
-                    ShimmerHeader(brush)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
-                    ) {
-                        repeat(2) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(100.dp)
-                                    .background(brush, RoundedCornerShape(dims.componentCornerRadius))
-                            )
-                        }
-                    }
-                }
+@Composable
+fun AccountsShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(dims.spacingMd)
+        ) {
+            repeat(2) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(100.dp)
+                        .background(brush, RoundedCornerShape(dims.componentCornerRadius))
+                )
             }
         }
+    }
+}
 
-        if (showBudgets) {
-            item {
-                ShimmerCardShell {
-                    ShimmerHeader(brush)
-                    repeat(2) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Box(modifier = Modifier.size(100.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
-                                Box(modifier = Modifier.size(80.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .background(brush, RoundedCornerShape(2.dp))
-                            )
-                        }
-                    }
+@Composable
+fun BudgetsShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        repeat(2) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(modifier = Modifier.size(100.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
+                    Box(modifier = Modifier.size(80.dp, 16.dp).background(brush, RoundedCornerShape(4.dp)))
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(brush, RoundedCornerShape(2.dp))
+                )
             }
         }
+    }
+}
+
+@Composable
+fun PlannedPaymentsShimmer(brush: Brush) {
+    val dims = AeonTheme.dimensions
+    ShimmerCardShell {
+        ShimmerHeader(brush)
+        repeat(3) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(modifier = Modifier.size(120.dp, 14.dp).background(brush, RoundedCornerShape(2.dp)))
+                    Box(modifier = Modifier.size(60.dp, 10.dp).background(brush, RoundedCornerShape(2.dp)))
+                }
+                Box(modifier = Modifier.size(70.dp, 18.dp).background(brush, RoundedCornerShape(4.dp)))
+            }
+        }
+    }
+}
+
+@Composable
+fun CardContentShimmer(brush: Brush) {
+    Column(verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.45f)
+                .height(28.dp)
+                .background(brush, RoundedCornerShape(4.dp))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(brush, RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius))
+        )
     }
 }
 

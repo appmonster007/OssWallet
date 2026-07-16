@@ -210,6 +210,7 @@ fun DashboardScreen(
     }
 
     val dashboardUiState by dashboardViewModel.uiState.collectAsStateWithLifecycle()
+    val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val successState = dashboardUiState as? DashboardUiState.Success
 
@@ -222,7 +223,7 @@ fun DashboardScreen(
         isTopLevel = isTopLevel,
         initialViewContext = successState?.initialViewContext ?: DashboardViewContext.None,
         uiState = dashboardUiState,
-        cardsConfig = successState?.cardsConfig ?: DashboardCardsConfig(),
+        cardsConfig = cardsConfig,
         currentProfileName = successState?.displayPrefs?.currentProfileName,
         cardAnimationEnabled = successState?.displayPrefs?.cardAnimationEnabled ?: true,
         expandableFabEnabled = successState?.displayPrefs?.expandableFabEnabled ?: true,

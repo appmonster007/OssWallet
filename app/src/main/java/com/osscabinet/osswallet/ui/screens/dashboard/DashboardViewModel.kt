@@ -352,16 +352,16 @@ class DashboardViewModel @Inject constructor(
             ) { acc, version, cat, links, curr ->
                 AccountingSnapshot(acc, version ?: 0L, cat, links, curr)
             }.distinctUntilChanged().flatMapLatest { snapshot ->
-                if (!snapshot.currency.hasLoaded) {
-                    kotlinx.coroutines.flow.flowOf<StructuralState?>(null)
-                } else {
-                    val initialStructural = StructuralState(
-                        snapshot = snapshot,
-                        hierarchy = CategoryHierarchyCache.build(snapshot.categories),
-                        visibleGroups = emptyList(),
-                        history = emptyList()
-                    )
+                val initialStructural = StructuralState(
+                    snapshot = snapshot,
+                    hierarchy = CategoryHierarchyCache.build(snapshot.categories),
+                    visibleGroups = emptyList(),
+                    history = emptyList()
+                )
 
+                if (!snapshot.currency.hasLoaded) {
+                    flowOf(initialStructural)
+                } else {
                     transactionUseCases.observeHistoryWithBalances(
                         profileId = profileId,
                         filter = TransactionFilter(),
@@ -392,7 +392,6 @@ class DashboardViewModel @Inject constructor(
                             )
                         }
                         .onStart { emit(initialStructural) }
-                        .flowOn(dispatchers.default)
                 }
             }
 

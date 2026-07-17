@@ -1,9 +1,9 @@
 package com.osscabinet.ossWallet.domain.cache
 
+import android.util.Log
 import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.domain.card.CardRenderData
-import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -87,7 +87,13 @@ class CardRenderCache @Inject constructor(
     suspend fun loadProfile(profileId: Int, currency: String): Boolean = withContext(Dispatchers.IO) {
         val start = System.currentTimeMillis()
         if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile START profile=$profileId currency=$currency")
-        val entities = cardCacheDao.getCacheForProfile(profileId, currency)
+        val entities = try {
+            cardCacheDao.getCacheForProfile(profileId, currency)
+        } catch (e: Exception) {
+            // DB read failed (e.g. SQLiteException after migration) — treat as empty cache.
+            if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] loadProfile DB read failed: ${e.message}")
+            return@withContext false
+        }
         if (entities.isEmpty()) {
             if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — 0 cards (empty cache) in ${System.currentTimeMillis() - start}ms")
             return@withContext false
@@ -106,12 +112,12 @@ class CardRenderCache @Inject constructor(
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] deserialize failed for cardId=${entity.cardId}: ${e.message}")
                 // Prune the stale row so it doesn't fail on every subsequent boot.
-                // Wrapped separately so a DB failure here doesn't poison the Deferred.
                 try { cardCacheDao.deleteByCardId(profileId, currency, entity.cardId) } catch (_: Exception) {}
             }
         }
         if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — $loaded/${entities.size} cards loaded in ${System.currentTimeMillis() - start}ms")
-        true
+        // Return false if every row failed deserialization so callers know the cache is empty.
+        loaded > 0
     }
 
     fun getProfileSnapshot(profileId: Int, currency: String): Map<String, CardRenderData> =
@@ -139,22 +145,27 @@ class CardRenderCache @Inject constructor(
      * check and a concurrent invalidateProfile clearing the index.
      */
     suspend fun awaitProfileLoaded(profileId: Int, currency: String) {
-        pendingLoads.computeIfAbsent(Pair(profileId, currency)) {
-            cacheScope.async { loadProfile(profileId, currency) }
+        val key = Pair(profileId, currency)
+        pendingLoads.computeIfAbsent(key) {
+            cacheScope.async { loadProfile(profileId, currency) }.also { deferred ->
+                deferred.invokeOnCompletion { cause ->
+                    if (cause != null) pendingLoads.remove(key, deferred)
+                }
+            }
         }.await()
     }
 
     suspend fun invalidateProfile(profileId: Int) {
-        cache.keys.removeIf { it.first == profileId }
-        versionCache.keys.removeIf { it.first == profileId }
-        profileIndex.keys.removeIf { it.first == profileId }
-        // Cancel any in-flight loads for this profile so they don't race to re-populate
-        // the cleared index after this method returns.
-        val keysToRemove = pendingLoads.keys.filter { it.first == profileId }
-        keysToRemove.forEach { key -> pendingLoads.remove(key)?.cancel() }
+        // Clear DB first: any load that slips through after pendingLoads cancellation will read
+        // empty rows rather than stale data.
         withContext(Dispatchers.IO) {
             cardCacheDao.clearForProfile(profileId)
         }
+        cache.keys.removeIf { it.first == profileId }
+        versionCache.keys.removeIf { it.first == profileId }
+        profileIndex.keys.removeIf { it.first == profileId }
+        val keysToRemove = pendingLoads.keys.filter { it.first == profileId }
+        keysToRemove.forEach { key -> pendingLoads.remove(key)?.cancel() }
     }
 
     fun invalidateCard(profileId: Int, currency: String, cardId: String) {

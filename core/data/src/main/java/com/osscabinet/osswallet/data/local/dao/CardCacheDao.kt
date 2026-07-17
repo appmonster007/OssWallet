@@ -19,4 +19,7 @@ interface CardCacheDao {
 
     @Query("DELETE FROM card_cache WHERE timestamp < :threshold")
     suspend fun pruneOldCache(threshold: Long)
+
+    @Query("DELETE FROM card_cache WHERE profileId = :profileId AND currency = :currency AND cardId = :cardId")
+    suspend fun deleteByCardId(profileId: Int, currency: String, cardId: String)
 }

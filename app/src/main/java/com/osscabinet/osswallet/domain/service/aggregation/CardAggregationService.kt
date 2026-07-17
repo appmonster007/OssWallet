@@ -237,22 +237,32 @@ object CardAggregationService {
 
         val excludeInternal = config.excludeInternalTransfers && config.perspective is AccountingPerspective.CashFlow
 
-        val currentPeriodAccountStats = computeAccountStats(queryService, profileId, input, currentFilter, targetAccounts, excludeInternal)
-            .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
+        val (prevStart, prevEnd) = if (config.showComparison)
+            TimelineService.getPreviousRange(currentFilter.timelineRange)
+        else null to null
+        val prevFilter = if (prevStart != null && prevEnd != null)
+            currentFilter.copy(timelineRange = TimelineRange.CustomRange(prevStart, prevEnd))
+        else null
 
-        val accountSummaries = if (config.showComparison) {
-            val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
-            if (prevStart != null && prevEnd != null) {
-                val prevFilter = currentFilter.copy(
-                    timelineRange = TimelineRange.CustomRange(prevStart, prevEnd)
-                )
-                val previousPeriodAccountStats = computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
+        // Launch current and previous period queries in parallel when comparison is enabled.
+        val accountSummaries = coroutineScope {
+            val currentDeferred = async {
+                computeAccountStats(queryService, profileId, input, currentFilter, targetAccounts, excludeInternal)
                     .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
-                currentPeriodAccountStats.mapValues { (id, summary) ->
-                    summary.copy(previousPeriodFlow = previousPeriodAccountStats[id]?.currentPeriodFlow)
+            }
+            val previousDeferred = if (prevFilter != null) async {
+                computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
+                    .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
+            } else null
+
+            val current = currentDeferred.await()
+            val previous = previousDeferred?.await()
+            if (previous != null) {
+                current.mapValues { (id, summary) ->
+                    summary.copy(previousPeriodFlow = previous[id]?.currentPeriodFlow)
                 }
-            } else currentPeriodAccountStats
-        } else currentPeriodAccountStats
+            } else current
+        }
 
         return CardRenderData.Accounts(
             config = config,
@@ -660,16 +670,23 @@ object CardAggregationService {
         filter: TransactionFilter,
         accounts: List<Account>,
         excludeInternalTransfers: Boolean = false
-    ): Map<String, AccountSummaryItem> {
+    ): Map<String, AccountSummaryItem> = coroutineScope {
         val balanceFilter = filter.toBalanceFilter()
 
-        val summariesByAccountAndCurrencyBalance = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, balanceFilter)
-            .getOrDefault(emptyMap())
+        // Run balance and period aggregation queries in parallel — they are independent.
+        val balanceDeferred = async {
+            TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, balanceFilter)
+                .getOrDefault(emptyMap())
+        }
+        val periodDeferred = async {
+            TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, filter, excludeInternalTransfers)
+                .getOrDefault(emptyMap())
+        }
 
-        val summariesByAccountAndCurrencyPeriod = TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, filter, excludeInternalTransfers)
-            .getOrDefault(emptyMap())
+        val summariesByAccountAndCurrencyBalance = balanceDeferred.await()
+        val summariesByAccountAndCurrencyPeriod = periodDeferred.await()
 
-        return accounts.associate { account ->
+        accounts.associate { account ->
             val balanceSummaries = summariesByAccountAndCurrencyBalance[account.id] ?: emptyMap()
             val periodSummaries = summariesByAccountAndCurrencyPeriod[account.id] ?: emptyMap()
             

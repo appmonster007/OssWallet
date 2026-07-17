@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.cache
 import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -15,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import com.osscabinet.ossWallet.BuildConfig
 
 /**
  * Global cache for rendered dashboard cards.
@@ -83,9 +85,15 @@ class CardRenderCache @Inject constructor(
      * Returns true if any data was loaded.
      */
     suspend fun loadProfile(profileId: Int, currency: String): Boolean = withContext(Dispatchers.IO) {
+        val start = System.currentTimeMillis()
+        if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile START profile=$profileId currency=$currency")
         val entities = cardCacheDao.getCacheForProfile(profileId, currency)
-        if (entities.isEmpty()) return@withContext false
+        if (entities.isEmpty()) {
+            if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — 0 cards (empty cache) in ${System.currentTimeMillis() - start}ms")
+            return@withContext false
+        }
 
+        var loaded = 0
         entities.forEach { entity ->
             try {
                 val data = json.decodeFromString<CardRenderData>(entity.dataJson)
@@ -94,10 +102,14 @@ class CardRenderCache @Inject constructor(
                 profileIndex.compute(Pair(profileId, currency)) { _, existing ->
                     (existing ?: ConcurrentHashMap()).also { it[entity.cardId] = data }
                 }
+                loaded++
             } catch (e: Exception) {
-                // Handle or log deserialization error (e.g. schema change)
+                if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] deserialize failed for cardId=${entity.cardId}: ${e.message}")
+                // Prune the stale row so it doesn't fail on every subsequent boot.
+                cardCacheDao.deleteByCardId(profileId, currency, entity.cardId)
             }
         }
+        if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — $loaded/${entities.size} cards loaded in ${System.currentTimeMillis() - start}ms")
         true
     }
 

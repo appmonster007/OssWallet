@@ -4,12 +4,14 @@ import androidx.compose.runtime.Immutable
 import com.osscabinet.ossWallet.domain.model.ConfirmedTransactionUiModel
 import com.osscabinet.ossWallet.domain.model.RecordUiModel
 import com.osscabinet.ossWallet.domain.model.timeline.GroupHeaderData
+import kotlinx.serialization.Serializable
 
 /**
  * UI-specific representation of a transaction record.
  * Contains pre-formatted strings to ensure 60fps scrolling.
  */
 @Immutable
+@Serializable
 data class TransactionListItem(
     val record: RecordUiModel,
     val formattedAmount: String,
@@ -23,6 +25,7 @@ data class TransactionListItem(
  * UI-specific representation of a transaction group.
  */
 @Immutable
+@Serializable
 data class TransactionGroupUi(
     val key: String,
     val headerData: GroupHeaderData,
@@ -33,6 +36,7 @@ data class TransactionGroupUi(
  * State for the transaction list.
  */
 @Immutable
+@Serializable
 data class TransactionListUiState(
     val groups: List<TransactionGroupUi> = emptyList(),
     val isEmpty: Boolean = true

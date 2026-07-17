@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.detail
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
@@ -9,6 +10,7 @@ import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.card.ScreenPersistenceEnvelope
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
 import com.osscabinet.ossWallet.domain.model.FilterManager
@@ -36,6 +38,7 @@ import jakarta.inject.Inject
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +48,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -252,98 +256,79 @@ class AccountDetailViewModel @Inject constructor(
         MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
     val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> = _cardDataMap.asStateFlow()
 
-    // Generation counter: guards against stale writes from CPU-bound children that run to
-    // completion after coroutineScope is cancelled (cooperative cancellation, no suspension points).
-    private val _computeGeneration = AtomicInteger(0)
-
     init {
+        // Hydrate state from cache immediately to prevent flashing
+        viewModelScope.launch(dispatchers.io) {
+            val profileId = settingsRepository.currentProfileId.first()
+            val baseCurrency = computationRepository.selectedCurrency.first()
+            
+            cardRenderCache.loadProfile(profileId, baseCurrency)
+            val cachedCards = cardRenderCache.getProfileCardSnapshot(profileId, baseCurrency)
+            val cachedEnvelopes = cardRenderCache.getProfileEnvelopeSnapshot(profileId, baseCurrency)
+            val cachedSnapshot = cachedEnvelopes["account_detail_${accountId}_snapshot"] as? ScreenPersistenceEnvelope.Snapshot
+
+            _cardDataMap.update { current ->
+                current.toMutableMap().apply {
+                    cachedCards.forEach { (id, data) -> put(id, CardComputeState.Success(data)) }
+                }.toPersistentMap()
+            }
+            Log.d("AeonBenchmark", "AccountDetailVM: Cache populated in init")
+        }
+
+        // Trigger computations whenever ingredients change
         viewModelScope.launch {
-            combine(cardsConfig, uiState) { cards, state -> cards to state }
-                .collectLatest { (cards, state) ->
-                    if (state !is AccountDetailUiState.Success) {
-                        _cardDataMap.value = persistentMapOf()
-                        return@collectLatest
-                    }
+            combine(cardsConfig, uiState) { cards, state ->
+                if (state !is AccountDetailUiState.Success) null
+                else {
+                    val input = CardInput(
+                        profileId = state.profileId,
+                        transactionsVersion = state.version,
+                        accounts = listOf(state.account),
+                        categories = state.allCategories,
+                        tags = state.allTags,
+                        exchangeRates = state.exchangeRates,
+                        targetCurrency = state.account.currencyCode,
+                        filter = state.currentFilter,
+                        screenContext = ScreenContext.ACCOUNT_DETAIL,
+                        categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
+                    )
+                    Triple(cards, state, input)
+                }
+            }.collectLatest { triple ->
+                val (cards, state, input) = triple ?: return@collectLatest
+                
+                // Persist ground truth snapshot
+                launch(dispatchers.io) {
+                    val snapshot = ScreenPersistenceEnvelope.Snapshot(
+                        accounts = listOf(state.account),
+                        categories = state.allCategories,
+                        tags = state.allTags,
+                        baseCurrency = state.baseCurrency,
+                        exchangeRates = state.exchangeRates,
+                        cardsConfig = cards
+                    )
+                    cardRenderCache.persistEnvelope(state.profileId, state.baseCurrency, "account_detail_${accountId}_snapshot", snapshot, state.version)
+                }
 
-                    val myGen = _computeGeneration.incrementAndGet()
-
-                    // D2: Seed from persistent cache to enable instant cold starts
-                    cardRenderCache.loadProfile(state.profileId, state.baseCurrency)
-                    val cachedSnapshot = cardRenderCache.getProfileSnapshot(state.profileId, state.baseCurrency)
-
-                    // D2: Preserve existing Success/Error states to avoid shimmer-on-refresh flicker;
-                    // only new cards (not yet in prevMap) start as Loading.
-                    val prevMap = _cardDataMap.value
-                    _cardDataMap.value =
-                        persistentMapOf<String, CardComputeState>().builder().apply {
-                            cards.cards.forEach { c ->
-                                val cached = cachedSnapshot[c.cardId]
-                                put(
-                                    c.cardId,
-                                    prevMap[c.cardId] ?: if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
-                                )
-                            }
-                        }.build()
-
-                    // AC8: Build inputs on Default — build hierarchy once per round
-                    val input = kotlinx.coroutines.withContext(dispatchers.default) {
-                        CardInput(
-                            profileId = state.profileId,
-                            transactionsVersion = state.version,
-                            accounts = listOf(state.account),
-                            categories = state.allCategories,
-                            tags = state.allTags,
-                            exchangeRates = state.exchangeRates,
-                            targetCurrency = state.account.currencyCode,
-                            filter = state.currentFilter,
-                            screenContext = ScreenContext.ACCOUNT_DETAIL,
-                            categoryHierarchy = CategoryHierarchyCache.build(state.allCategories)
-                        )
-                    }
-
-                    // D1+P2: supervisorScope lets cards fail independently without cancelling siblings.
-                    // Children re-throw CancellationException so cooperative cancellation works correctly
-                    // when collectLatest cancels this block on a new emission.
-                    supervisorScope {
-                        cards.cards.forEach { cardConfig ->
-                            launch(dispatchers.default) {
-                                val result = try {
-                                    val data = cardComputerRegistry.compute(
-                                        cardConfig.cardType,
-                                        input,
-                                        cardConfig
-                                    )
-                                    if (data is CardRenderData.Error) CardComputeState.Error(
-                                        data.message ?: "Compute error"
-                                    )
+                cards.cards.forEach { config ->
+                    launch(dispatchers.default) {
+                        val result = runCatching { cardComputerRegistry.compute(config.cardType, input, config) }
+                            .fold(
+                                onSuccess = { data ->
+                                    if (data is CardRenderData.Error) CardComputeState.Error(data.message ?: "Compute error")
                                     else CardComputeState.Success(data)
-                                } catch (e: CancellationException) {
-                                    throw e
-                                } catch (e: Throwable) {
-                                    CardComputeState.Error(e.message ?: "Compute error")
-                                }
+                                },
+                                onFailure = { CardComputeState.Error(it.message ?: "Compute error") }
+                            )
 
-                                if (result is CardComputeState.Success) {
-                                    cardRenderCache.persist(
-                                        state.profileId,
-                                        state.baseCurrency,
-                                        cardConfig.cardId,
-                                        result.data,
-                                        state.version
-                                    )
-                                }
-
-                                // P1: check inside update{} to eliminate TOCTOU window.
-                                _cardDataMap.update { map ->
-                                    if (_computeGeneration.get() == myGen) map.putting(
-                                        cardConfig.cardId,
-                                        result
-                                    ) else map
-                                }
-                            }
+                        if (result is CardComputeState.Success) {
+                            cardRenderCache.persist(state.profileId, state.baseCurrency, config.cardId, result.data, state.version)
                         }
+
+                        _cardDataMap.update { it.putting(config.cardId, result) }
                     }
                 }
+            }
         }
     }
 }

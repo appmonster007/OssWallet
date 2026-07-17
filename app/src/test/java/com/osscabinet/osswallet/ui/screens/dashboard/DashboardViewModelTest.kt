@@ -1,5 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
+import io.mockk.mockkStatic
+import android.util.Log
 import com.osscabinet.ossWallet.core.util.MainDispatcherRule
 import com.osscabinet.ossWallet.core.util.TestDispatcherProvider
 import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
@@ -60,6 +62,13 @@ class DashboardViewModelTest {
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.d(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>(), any<Throwable>()) } returns 0
+        every { Log.e(any<String>(), any<String>()) } returns 0
+        every { Log.i(any<String>(), any<String>()) } returns 0
+        every { Log.w(any<String>(), any<String>()) } returns 0
+
         settingsRepository = mockk(relaxed = true)
         every { settingsRepository.currentProfileId } returns profileIdFlow
         every { settingsRepository.recentActivitiesBreakdown } returns flowOf(false)

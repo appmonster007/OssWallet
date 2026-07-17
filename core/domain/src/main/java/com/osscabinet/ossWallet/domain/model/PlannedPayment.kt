@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
+@Serializable
 enum class RecurrenceType {
     ONE_TIME,
     DAILY,
@@ -16,6 +17,7 @@ enum class RecurrenceType {
     CRON
 }
 
+@Serializable
 enum class PlannedPaymentStatus(
     val displayName: String,
     val iconName: String,
@@ -36,6 +38,7 @@ enum class PlannedPaymentStatus(
     }
 }
 
+@Serializable
 enum class OccurrenceStatus {
     PENDING, CONFIRMED, SKIPPED;
 
@@ -46,6 +49,7 @@ enum class OccurrenceStatus {
     }
 }
 
+@Serializable
 data class RecurrenceRule(
     val type: RecurrenceType,
     val interval: Int = 1,
@@ -57,6 +61,7 @@ data class RecurrenceRule(
 /**
  * Groups scheduling logic and state.
  */
+@Serializable
 data class PaymentSchedule(
     val recurrenceRule: RecurrenceRule,
     val startDate: Long,
@@ -65,15 +70,18 @@ data class PaymentSchedule(
     val lastTriggeredDate: Long? = null
 )
 
+@Serializable
 data class PlannedPayment(
     val id: Long = 0,
     val name: String,
     val categoryId: Long,
+    @Serializable(with = BigDecimalSerializer::class)
     val amount: BigDecimal,
     val entryMode: EntryMode,
     val accountId: String? = null,
     val targetAccountId: String? = null,
     val targetCurrency: String? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferRate: BigDecimal = BigDecimal.ONE,
     val note: String? = null,
     val payee: String? = null,

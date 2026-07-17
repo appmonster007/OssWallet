@@ -204,6 +204,7 @@ private fun mapSuccessState(
                 input,
                 updateHandler,
                 onDelete,
+                onRecordsClick,
                 callbacks,
                 filterSheetEnabled
             )
@@ -215,6 +216,7 @@ private fun mapSuccessState(
                 input,
                 updateHandler,
                 onDelete,
+                onRecordsClick,
                 callbacks,
                 filterSheetEnabled
             )
@@ -226,6 +228,7 @@ private fun mapSuccessState(
                 input,
                 updateHandler,
                 onDelete,
+                onRecordsClick,
                 callbacks,
                 filterSheetEnabled
             )

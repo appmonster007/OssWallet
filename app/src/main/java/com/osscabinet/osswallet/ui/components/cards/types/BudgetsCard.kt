@@ -28,17 +28,19 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.BudgetAlertLevel
 import com.osscabinet.ossWallet.domain.model.BudgetProgress
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.BudgetsCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -71,7 +73,7 @@ fun BudgetsCard(
         onDelete = callbacks.onDelete,
         settingsContent = {
             BudgetsSettingsContent(config = config, callbacks = callbacks)
-        }
+        },
     ) {
         if (items.isEmpty()) {
             Text(
@@ -157,7 +159,7 @@ private fun BudgetProgressRow(
                 )
                 if (previousProgress != null) {
                     val change = progress.spent.subtract(previousProgress.spent)
-                    if (change.signum() != 0 && previousProgress.spent.signum() != 0) {
+                    if ((change.signum() != 0) && (previousProgress.spent.signum() != 0)) {
                         val percentage = change.multiply(java.math.BigDecimal("100"))
                             .divide(previousProgress.spent.abs(), 1, java.math.RoundingMode.HALF_UP)
                         val up = change.signum() > 0
@@ -222,6 +224,7 @@ fun mapBudgets(
     input: CardInput,
     updateHandler: CardUpdateHandler,
     onDelete: ((String) -> Unit)?,
+    onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.Budgets(
@@ -231,7 +234,23 @@ fun mapBudgets(
         onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardBudgetsFilter,
         onBudgetClick = callbacks.budgetActions.onClick,
-        onSeeAll = callbacks.budgetActions.onSeeAll,
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onSeeAll = {
+            onRecordsClick(
+                resolveSeeAll(
+                    input,
+                    config
+                )
+            )
+        },
         onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),

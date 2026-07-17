@@ -147,6 +147,7 @@ sealed class CardCallbacks {
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onItemClick: (Long) -> Unit = {},
+        val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onConfirm: ((Long, Long) -> Unit)? = null,
         val onSkip: ((Long, Long) -> Unit)? = null,
         val onSeeAll: () -> Unit = {},
@@ -162,6 +163,7 @@ sealed class CardCallbacks {
         val onShowComparisonChange: (String, Boolean) -> Unit = { _, _ -> },
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onBudgetClick: (Long) -> Unit = {},
+        val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSeeAll: () -> Unit = {},
         val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}
@@ -174,6 +176,7 @@ sealed class CardCallbacks {
         val onUpdate: (com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig) -> Unit = {},
         val onFilterChange: (String, TransactionFilter) -> Unit = { _, _ -> },
         val onLoanClick: (Long) -> Unit = {},
+        val onRecordsClick: (TransactionFilter) -> Unit = {},
         val onSeeAll: () -> Unit = {},
         val onDelete: (() -> Unit)? = null,
         val onSaveFilterClick: (TransactionFilter) -> Unit = {}

@@ -1,5 +1,8 @@
 package com.osscabinet.ossWallet.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class SystemCategory(
     val id: Long,
     val displayName: String,
@@ -15,6 +18,7 @@ enum class SystemCategory(
     TRANSFER(1005L, "Transfer", "SwapHoriz", -7829368, 1000L);
 }
 
+@Serializable
 data class Category(
     val id: Long,
     val name: String,

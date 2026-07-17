@@ -115,9 +115,14 @@ fun AeonTransactionList(
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val trackPad = maxHeight * 0.10f
 
+        val surfaceState = remember(hazeLayers) { hazeLayers?.states?.getOrNull(HazeLayer.Surface) }
+        val overlayState = remember(hazeLayers) { hazeLayers?.states?.getOrNull(HazeLayer.Overlay) }
+
         // Full-height list — unaffected by scrollbar inset
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .aeonHazeSource(overlayState),
             state = lazyListState,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(0.dp)
@@ -164,61 +169,57 @@ fun AeonTransactionList(
                     val icon = getIconByName(record.categoryIcon)
                     val iconBg = Color(record.categoryColor)
 
-                    Box(
+                    val isHighlighted = record.id == highlightedId
+                    val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+
+                    LaunchedEffect(isHighlighted) {
+                        if (isHighlighted) {
+                            blinkAlpha.animateTo(0.4f, tween(200))
+                            kotlinx.coroutines.delay(600)
+                            blinkAlpha.animateTo(0f, tween(200))
+                        } else {
+                            blinkAlpha.snapTo(0f)
+                        }
+                    }
+
+                    ActionableTransactionItem(
+                        record = record,
+                        isRevealed = revealedCardIds.contains(record.id),
+                        onEvent = onTransactionEvent,
+                        actionEnabled = actionEnabled,
+                        isSwipeActionEnabled = isSwipeActionEnabled,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .aeonHazeSource(hazeLayers?.states?.getOrNull(HazeLayer.Surface))
+                            .aeonHazeSource(surfaceState)
+                            .background(AppColors.primary.copy(alpha = blinkAlpha.value))
                     ) {
-                        val isHighlighted = record.id == highlightedId
-                        val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
-
-                        LaunchedEffect(isHighlighted) {
-                            if (isHighlighted) {
-                                blinkAlpha.animateTo(0.4f, tween(200))
-                                kotlinx.coroutines.delay(600)
-                                blinkAlpha.animateTo(0f, tween(200))
-                            } else {
-                                blinkAlpha.snapTo(0f)
-                            }
-                        }
-
-                        ActionableTransactionItem(
-                            record = record,
-                            isRevealed = revealedCardIds.contains(record.id),
-                            onEvent = onTransactionEvent,
-                            actionEnabled = actionEnabled,
-                            isSwipeActionEnabled = isSwipeActionEnabled,
-                            modifier = Modifier.background(AppColors.primary.copy(alpha = blinkAlpha.value))
-                        ) {
-                            AeonTransactionItem(
-                                category = record.categoryName,
-                                account = record.accountName,
-                                amount = item.formattedAmount,
-                                convertedAmount = item.formattedConvertedAmount,
-                                balanceBefore = item.formattedBalanceBefore,
-                                balanceAfter = item.formattedBalanceAfter,
-                                type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
-                                timestamp = item.formattedDate,
-                                note = record.note,
-                                tags = record.tags,
-                                icon = icon,
-                                iconBg = iconBg,
-                                useNoteAsHeader = useNoteAsHeader,
-                                showOpeningBalance = showItemOpeningBalance && (record is ConfirmedTransactionUiModel),
-                                showClosingBalance = showItemClosingBalance && (record is ConfirmedTransactionUiModel),
-                                status = (record as? ConfirmedTransactionUiModel)?.status
-                                    ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
-                                showAccount = showAccount,
-                                showCategory = showCategory,
-                                showNote = showNote,
-                                showTags = showTags,
-                                showTimestamp = showTimestamp,
-                                showIcon = showIcon,
-                                showDividers = index < group.items.size - 1,
-                                isPlanned = record is PlannedPaymentUiModel,
-                                onClick = null
-                            )
-                        }
+                        AeonTransactionItem(
+                            category = record.categoryName,
+                            account = record.accountName,
+                            amount = item.formattedAmount,
+                            convertedAmount = item.formattedConvertedAmount,
+                            balanceBefore = item.formattedBalanceBefore,
+                            balanceAfter = item.formattedBalanceAfter,
+                            type = if (record.amount.signum() >= 0) CashFlowType.INCOME else CashFlowType.EXPENSE,
+                            timestamp = item.formattedDate,
+                            note = record.note,
+                            tags = record.tags,
+                            icon = icon,
+                            iconBg = iconBg,
+                            useNoteAsHeader = useNoteAsHeader,
+                            showOpeningBalance = showItemOpeningBalance && (record is ConfirmedTransactionUiModel),
+                            showClosingBalance = showItemClosingBalance && (record is ConfirmedTransactionUiModel),
+                            status = (record as? ConfirmedTransactionUiModel)?.status
+                                ?: com.osscabinet.ossWallet.domain.model.TransactionStatus.UNCLEARED,
+                            showAccount = showAccount,
+                            showCategory = showCategory,
+                            showNote = showNote,
+                            showTags = showTags,
+                            showTimestamp = showTimestamp,
+                            showIcon = showIcon,
+                            showDividers = index < group.items.size - 1,
+                            isPlanned = record is PlannedPaymentUiModel,
+                            onClick = null
+                        )
                     }
                 }
             }

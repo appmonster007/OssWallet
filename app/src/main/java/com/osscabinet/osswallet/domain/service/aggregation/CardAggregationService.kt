@@ -29,6 +29,7 @@ import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -245,14 +246,18 @@ object CardAggregationService {
         else null
 
         // Launch current and previous period queries in parallel when comparison is enabled.
-        val accountSummaries = coroutineScope {
+        // supervisorScope so a failure in the previous-period query degrades to current-only
+        // rather than cancelling the current-period query and surfacing a card error.
+        val accountSummaries = supervisorScope {
             val currentDeferred = async {
                 computeAccountStats(queryService, profileId, input, currentFilter, targetAccounts, excludeInternal)
                     .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
             }
             val previousDeferred = if (prevFilter != null) async {
-                computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
-                    .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
+                runCatching {
+                    computeAccountStats(queryService, profileId, input, prevFilter, targetAccounts, excludeInternal)
+                        .mapValues { it.value.copy(currentPeriodFlow = it.value.currentPeriodFlow.toPerspective(config.perspective)) }
+                }.getOrNull()
             } else null
 
             val current = currentDeferred.await()
@@ -670,7 +675,7 @@ object CardAggregationService {
         filter: TransactionFilter,
         accounts: List<Account>,
         excludeInternalTransfers: Boolean = false
-    ): Map<String, AccountSummaryItem> = coroutineScope {
+    ): Map<String, AccountSummaryItem> = supervisorScope {
         val balanceFilter = filter.toBalanceFilter()
 
         // Run balance and period aggregation queries in parallel — they are independent.

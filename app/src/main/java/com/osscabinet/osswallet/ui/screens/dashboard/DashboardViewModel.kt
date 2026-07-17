@@ -524,7 +524,12 @@ class DashboardViewModel @Inject constructor(
                     val t0 = vmCreatedAt
                     if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] channelFlow START — first ingredients ready @ ${System.currentTimeMillis() - t0}ms")
 
-                    // Await the eagerly-started cache load (kicked off in init, likely already done).
+                    // Ensure the load is keyed to the ACTUAL current profile/currency (the init
+                    // block may have snapshotted a different profile if the user switched before
+                    // the channelFlow ran). computeIfAbsent is idempotent when the key exists.
+                    cardRenderCache.kickOffProfileLoad(successState.profileId, successState.baseCurrency)
+
+                    // Await the eagerly-started cache load (typically already done or in-flight).
                     val cacheAwaitStart = System.currentTimeMillis()
                     cardRenderCache.awaitProfileLoaded(successState.profileId, successState.baseCurrency)
                     if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] cache await done — waited ${System.currentTimeMillis() - cacheAwaitStart}ms (total ${System.currentTimeMillis() - t0}ms)")

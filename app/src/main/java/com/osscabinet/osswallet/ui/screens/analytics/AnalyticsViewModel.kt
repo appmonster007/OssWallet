@@ -38,6 +38,7 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -239,7 +240,14 @@ class AnalyticsViewModel @Inject constructor(
                 val myGen = _computeGeneration.incrementAndGet()
 
                 // D2: Seed from persistent cache — short-circuits if already loaded by DashboardViewModel.
-                cardRenderCache.awaitProfileLoaded(state.profileId, state.selectedCurrency)
+                try {
+                    cardRenderCache.awaitProfileLoaded(state.profileId, state.selectedCurrency)
+                } catch (_: CancellationException) {
+                    // Re-throw if this coroutine itself is being cancelled (cooperative cancellation
+                    // from collectLatest). If still active, the Deferred was cancelled externally
+                    // (e.g. invalidateProfile on profile switch) — proceed with empty snapshot.
+                    coroutineContext.ensureActive()
+                }
                 val cachedSnapshot = cardRenderCache.getProfileSnapshot(state.profileId, state.selectedCurrency)
 
                 val prevMap = _cardDataMap.value

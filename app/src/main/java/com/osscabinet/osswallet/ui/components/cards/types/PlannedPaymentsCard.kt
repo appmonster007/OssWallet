@@ -297,7 +297,9 @@ private fun PlannedPaymentRow(
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
+                        isPressed = true
                         tryAwaitRelease()
+                        isPressed = false
                     },
                     onTap = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)

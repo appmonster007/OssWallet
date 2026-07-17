@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -187,11 +186,6 @@ fun DashboardScreen(
 ) {
     val dashboardViewModel = vms.dashboardViewModel
 
-    val startTime = remember { System.currentTimeMillis() }
-    LaunchedEffect(Unit) {
-        Log.d("AeonBenchmark", "DashboardScreen: Entered composition at ${System.currentTimeMillis()}")
-    }
-
     // Apply initial view focus when screen opens with context
     LaunchedEffect(config.viewContextJson) {
         config.viewContextJson?.let { contextString ->
@@ -219,26 +213,6 @@ fun DashboardScreen(
     val cardsConfig by dashboardViewModel.cardsConfig.collectAsStateWithLifecycle()
 
     val successState = dashboardUiState as? DashboardUiState.Success
-
-    LaunchedEffect(dashboardUiState) {
-        when (val state = dashboardUiState) {
-            is DashboardUiState.Loading -> Log.d("AeonBenchmark", "Dashboard: State is LOADING")
-            is DashboardUiState.Success -> {
-                val duration = System.currentTimeMillis() - startTime
-                val totalCards = state.cardsConfig.cards.size
-                val successCards = state.cardsConfig.cards.count { config -> 
-                    state.cardDataMap[config.cardId] is com.osscabinet.ossWallet.domain.card.CardComputeState.Success 
-                }
-                
-                Log.d("AeonBenchmark", "Dashboard: State is SUCCESS. Delta: ${duration}ms. Cards: $successCards/$totalCards")
-                
-                if (successCards == totalCards && totalCards > 0) {
-                    Log.d("AeonBenchmark", "Dashboard: FULLY HYDRATED. Total time: ${duration}ms")
-                }
-            }
-            is DashboardUiState.Error -> Log.d("AeonBenchmark", "Dashboard: State is ERROR: ${state.message}")
-        }
-    }
 
     val isTopLevel = remember(successState?.initialViewContext, config.isTopLevel) {
         val initialViewContext = successState?.initialViewContext ?: DashboardViewContext.None
@@ -1041,7 +1015,7 @@ fun DashboardGlanceTab(
             )
         }
 
-        val sharedCardInput = state.cardInput ?: remember(
+        val sharedCardInput = remember(
             state.profileId,
             state.allAccounts,
             state.allCategories,

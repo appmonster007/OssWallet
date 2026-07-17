@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Api
 import androidx.compose.material.icons.rounded.Badge
 import androidx.compose.material.icons.rounded.BugReport
@@ -569,11 +568,8 @@ private fun WelcomeStep() {
             color = AppColors.primary.copy(alpha = 0.1f)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Rounded.AccountBalanceWallet,
-                    contentDescription = null,
-                    modifier = Modifier.size(if (isSmallScreen) 40.dp else 64.dp),
-                    tint = AppColors.primary
+                com.osscabinet.ossWallet.ui.components.AppLogo(
+                    modifier = Modifier.size(if (isSmallScreen) 56.dp else 84.dp)
                 )
             }
         }

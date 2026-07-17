@@ -106,7 +106,8 @@ class CardRenderCache @Inject constructor(
             } catch (e: Exception) {
                 if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] deserialize failed for cardId=${entity.cardId}: ${e.message}")
                 // Prune the stale row so it doesn't fail on every subsequent boot.
-                cardCacheDao.deleteByCardId(profileId, currency, entity.cardId)
+                // Wrapped separately so a DB failure here doesn't poison the Deferred.
+                try { cardCacheDao.deleteByCardId(profileId, currency, entity.cardId) } catch (_: Exception) {}
             }
         }
         if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — $loaded/${entities.size} cards loaded in ${System.currentTimeMillis() - start}ms")
@@ -123,16 +124,21 @@ class CardRenderCache @Inject constructor(
      */
     fun kickOffProfileLoad(profileId: Int, currency: String): Deferred<Boolean> =
         pendingLoads.computeIfAbsent(Pair(profileId, currency)) {
-            cacheScope.async { loadProfile(profileId, currency) }
+            cacheScope.async { loadProfile(profileId, currency) }.also { deferred ->
+                // Remove the failed Deferred so the next awaitProfileLoaded retries instead of
+                // re-awaiting the same poisoned result forever.
+                deferred.invokeOnCompletion { cause ->
+                    if (cause != null) pendingLoads.remove(Pair(profileId, currency), deferred)
+                }
+            }
         }
 
     /**
      * Ensures the profile cache is in memory before returning.
-     * Short-circuits immediately if already loaded. Otherwise awaits the in-flight Deferred
-     * (started by [kickOffProfileLoad]) or starts a fresh load if none is pending.
+     * Always goes through the Deferred path to avoid a TOCTOU race between the containsKey
+     * check and a concurrent invalidateProfile clearing the index.
      */
     suspend fun awaitProfileLoaded(profileId: Int, currency: String) {
-        if (profileIndex.containsKey(Pair(profileId, currency))) return
         pendingLoads.computeIfAbsent(Pair(profileId, currency)) {
             cacheScope.async { loadProfile(profileId, currency) }
         }.await()
@@ -142,7 +148,10 @@ class CardRenderCache @Inject constructor(
         cache.keys.removeIf { it.first == profileId }
         versionCache.keys.removeIf { it.first == profileId }
         profileIndex.keys.removeIf { it.first == profileId }
-        pendingLoads.keys.removeIf { it.first == profileId }
+        // Cancel any in-flight loads for this profile so they don't race to re-populate
+        // the cleared index after this method returns.
+        val keysToRemove = pendingLoads.keys.filter { it.first == profileId }
+        keysToRemove.forEach { key -> pendingLoads.remove(key)?.cancel() }
         withContext(Dispatchers.IO) {
             cardCacheDao.clearForProfile(profileId)
         }

@@ -80,16 +80,8 @@ class OssWalletApp : Application(), Configuration.Provider {
         // a widget refresh via WidgetRefreshTrigger.
         widgetInvalidationObserver = WidgetInvalidationObserver(db, queryCache, widgetRefreshTrigger).also { it.start() }
 
-        // Eagerly open remaining SQLCipher connection pool slots so PBKDF2 key derivation
-        // happens during app startup (overlapping with Activity/Compose inflation) rather than
-        // when the DashboardViewModel subscribes to 12+ flows and triggers pool expansion.
-        // The observer above opens the first connection; we open the remaining 2 (pool max = 2
-        // readers + 1 writer). They serialize through arch_disk_io but start ~4s earlier.
-        repeat(2) {
-            applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                try { db.query("SELECT 1", null).close() } catch (_: Exception) {}
-            }
-        }
+        // Note: TRUNCATE journal mode uses a single connection (no reader pool), so the observer
+        // above already keys the only connection via PBKDF2. No additional warm-up is needed.
 
         createNotificationChannels()
         PlannedPaymentWorker.schedule(this)

@@ -170,7 +170,7 @@ fun AeonTransactionList(
                     val iconBg = Color(record.categoryColor)
 
                     val isHighlighted = record.id == highlightedId
-                    val blinkAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
+                    val blinkAlpha = remember(record.id) { androidx.compose.animation.core.Animatable(0f) }
 
                     LaunchedEffect(isHighlighted) {
                         if (isHighlighted) {

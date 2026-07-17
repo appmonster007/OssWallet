@@ -807,6 +807,16 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "osswallet_manager_db"
                 ).openHelperFactory(factory)
+                    // Force TRUNCATE journal mode instead of the default WAL.
+                    // WAL mode opens a pool of ~4 reader connections; each SQLCipher connection
+                    // requires an independent PBKDF2 key derivation (~1.5s on device, ~3s on
+                    // emulator). With 5 connections serializing through the pool lock, this adds
+                    // 7-8 seconds to every cold start. TRUNCATE mode uses a single connection
+                    // (already keyed at app start by OssWalletApp), so all ViewModel flow
+                    // subscriptions get an immediately-available connection. For a single-user
+                    // wallet app this trade-off (sequential reads) is far preferable to the
+                    // multi-second cold start penalty.
+                    .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
                     .addMigrations(
                         MIGRATION_4_5,
                         MIGRATION_5_6,

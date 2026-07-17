@@ -3,6 +3,7 @@ package com.osscabinet.ossWallet.domain.cache
 import com.osscabinet.ossWallet.data.local.dao.CardCacheDao
 import com.osscabinet.ossWallet.data.local.entity.CardCacheEntity
 import com.osscabinet.ossWallet.domain.card.CardRenderData
+import com.osscabinet.ossWallet.domain.card.ScreenPersistenceEnvelope
 import java.util.concurrent.ConcurrentHashMap
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -13,7 +14,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 
 /**
- * Global cache for rendered dashboard cards.
+ * Global cache for rendered dashboard cards and dashboard persistence envelopes.
  * Keyed by (profileId, currency, cardId) for granular invalidation.
  * Supports persistent storage in Room with version tracking via transactions' lastUpdated.
  */
@@ -22,39 +23,34 @@ class CardRenderCache @Inject constructor(
     private val cardCacheDao: CardCacheDao,
     private val json: Json
 ) {
-    private val cache = ConcurrentHashMap<Triple<Int, String, String>, CardRenderData>()
+    private val cardCache = ConcurrentHashMap<Triple<Int, String, String>, CardRenderData>()
+    private val envelopeCache = ConcurrentHashMap<Triple<Int, String, String>, ScreenPersistenceEnvelope>()
     private val versionCache = ConcurrentHashMap<Triple<Int, String, String>, Long>()
 
-    // Secondary index: (profileId, currency) → map of cardId → data
-    private val profileIndex = ConcurrentHashMap<Pair<Int, String>, ConcurrentHashMap<String, CardRenderData>>()
+    // Secondary indices for profile snapshots
+    private val cardProfileIndex = ConcurrentHashMap<Pair<Int, String>, ConcurrentHashMap<String, CardRenderData>>()
+    private val envelopeProfileIndex = ConcurrentHashMap<Pair<Int, String>, ConcurrentHashMap<String, ScreenPersistenceEnvelope>>()
 
-    operator fun get(profileId: Int, currency: String, cardId: String): CardRenderData? =
-        cache[Triple(profileId, currency, cardId)]
+    fun getCard(profileId: Int, currency: String, cardId: String): CardRenderData? =
+        cardCache[Triple(profileId, currency, cardId)]
 
-    fun getVersion(profileId: Int, currency: String, cardId: String): Long? =
-        versionCache[Triple(profileId, currency, cardId)]
+    fun getEnvelope(profileId: Int, currency: String, key: String): ScreenPersistenceEnvelope? =
+        envelopeCache[Triple(profileId, currency, key)]
 
-    /**
-     * Synchronously sets the in-memory cache and asynchronously updates the persistent Room cache.
-     */
-    fun set(profileId: Int, currency: String, cardId: String, data: CardRenderData, version: Long) {
-        cache[Triple(profileId, currency, cardId)] = data
-        versionCache[Triple(profileId, currency, cardId)] = version
-        
-        profileIndex.compute(Pair(profileId, currency)) { _, existing ->
-            (existing ?: ConcurrentHashMap()).also { it[cardId] = data }
-        }
-
-        // Persistent update (Fire and forget, but ideally supervised)
-        // In a real app, this should be launched in a dedicated scope
-    }
+    fun getVersion(profileId: Int, currency: String, key: String): Long? =
+        versionCache[Triple(profileId, currency, key)]
 
     /**
-     * Version-aware setter that persists to DB.
+     * Version-aware setter that persists to DB for CardRenderData.
      */
     suspend fun persist(profileId: Int, currency: String, cardId: String, data: CardRenderData, version: Long) {
         withContext(Dispatchers.IO) {
-            set(profileId, currency, cardId, data, version)
+            cardCache[Triple(profileId, currency, cardId)] = data
+            versionCache[Triple(profileId, currency, cardId)] = version
+            cardProfileIndex.compute(Pair(profileId, currency)) { _, existing ->
+                (existing ?: ConcurrentHashMap()).also { it[cardId] = data }
+            }
+
             val jsonStr = json.encodeToString(data)
             cardCacheDao.insert(
                 CardCacheEntity(
@@ -69,8 +65,32 @@ class CardRenderCache @Inject constructor(
     }
 
     /**
+     * Version-aware setter that persists to DB for ScreenPersistenceEnvelope.
+     */
+    suspend fun persistEnvelope(profileId: Int, currency: String, key: String, envelope: ScreenPersistenceEnvelope, version: Long) {
+        withContext(Dispatchers.IO) {
+            envelopeCache[Triple(profileId, currency, key)] = envelope
+            versionCache[Triple(profileId, currency, key)] = version
+            envelopeProfileIndex.compute(Pair(profileId, currency)) { _, existing ->
+                (existing ?: ConcurrentHashMap()).also { it[key] = envelope }
+            }
+
+            val jsonStr = json.encodeToString(envelope)
+            cardCacheDao.insert(
+                CardCacheEntity(
+                    profileId = profileId,
+                    currency = currency,
+                    cardId = key,
+                    dataJson = jsonStr,
+                    version = version
+                )
+            )
+        }
+    }
+
+    /**
      * Loads the entire profile cache from DB into memory.
-     * Returns true if any data was loaded.
+     * Distinguishes between CardRenderData and ScreenPersistenceEnvelope using heuristic on key or trial decoding.
      */
     suspend fun loadProfile(profileId: Int, currency: String): Boolean = withContext(Dispatchers.IO) {
         val entities = cardCacheDao.getCacheForProfile(profileId, currency)
@@ -78,34 +98,47 @@ class CardRenderCache @Inject constructor(
 
         entities.forEach { entity ->
             try {
-                val data = json.decodeFromString<CardRenderData>(entity.dataJson)
-                cache[Triple(profileId, currency, entity.cardId)] = data
-                versionCache[Triple(profileId, currency, entity.cardId)] = entity.version
-                profileIndex.compute(Pair(profileId, currency)) { _, existing ->
-                    (existing ?: ConcurrentHashMap()).also { it[entity.cardId] = data }
+                if (entity.cardId.startsWith("dashboard_") || entity.cardId.endsWith("_snapshot") || entity.cardId.endsWith("_feed")) {
+                    val envelope = json.decodeFromString<ScreenPersistenceEnvelope>(entity.dataJson)
+                    envelopeCache[Triple(profileId, currency, entity.cardId)] = envelope
+                    envelopeProfileIndex.compute(Pair(profileId, currency)) { _, existing ->
+                        (existing ?: ConcurrentHashMap()).also { it[entity.cardId] = envelope }
+                    }
+                } else {
+                    val data = json.decodeFromString<CardRenderData>(entity.dataJson)
+                    cardCache[Triple(profileId, currency, entity.cardId)] = data
+                    cardProfileIndex.compute(Pair(profileId, currency)) { _, existing ->
+                        (existing ?: ConcurrentHashMap()).also { it[entity.cardId] = data }
+                    }
                 }
+                versionCache[Triple(profileId, currency, entity.cardId)] = entity.version
             } catch (e: Exception) {
-                // Handle or log deserialization error (e.g. schema change)
+                // Handle or log deserialization error
             }
         }
         true
     }
 
-    fun getProfileSnapshot(profileId: Int, currency: String): Map<String, CardRenderData> =
-        profileIndex[Pair(profileId, currency)]?.toMap() ?: emptyMap()
+    fun getProfileCardSnapshot(profileId: Int, currency: String): Map<String, CardRenderData> =
+        cardProfileIndex[Pair(profileId, currency)]?.toMap() ?: emptyMap()
+
+    fun getProfileEnvelopeSnapshot(profileId: Int, currency: String): Map<String, ScreenPersistenceEnvelope> =
+        envelopeProfileIndex[Pair(profileId, currency)]?.toMap() ?: emptyMap()
 
     suspend fun invalidateProfile(profileId: Int) {
-        cache.keys.removeIf { it.first == profileId }
+        cardCache.keys.removeIf { it.first == profileId }
+        envelopeCache.keys.removeIf { it.first == profileId }
         versionCache.keys.removeIf { it.first == profileId }
-        profileIndex.keys.removeIf { it.first == profileId }
+        cardProfileIndex.keys.removeIf { it.first == profileId }
+        envelopeProfileIndex.keys.removeIf { it.first == profileId }
         withContext(Dispatchers.IO) {
             cardCacheDao.clearForProfile(profileId)
         }
     }
 
     fun invalidateCard(profileId: Int, currency: String, cardId: String) {
-        cache.remove(Triple(profileId, currency, cardId))
+        cardCache.remove(Triple(profileId, currency, cardId))
         versionCache.remove(Triple(profileId, currency, cardId))
-        profileIndex[Pair(profileId, currency)]?.remove(cardId)
+        cardProfileIndex[Pair(profileId, currency)]?.remove(cardId)
     }
 }

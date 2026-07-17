@@ -49,7 +49,6 @@ import com.osscabinet.ossWallet.domain.model.PlannedPaymentSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.PlannedPaymentsViewMode
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.ui.components.AeonStepperField
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
@@ -62,6 +61,8 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -77,7 +78,7 @@ fun PlannedPaymentsCard(
     targetCurrency: String = "USD",
     exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot(
         anchor = targetCurrency,
-        rates = emptyMap()
+        rates = emptyMap(),
     ),
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
@@ -86,31 +87,31 @@ fun PlannedPaymentsCard(
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
-    AeonExpressiveCard(
-        title = config.title,
-        icon = Icons.Rounded.EventRepeat,
-        modifier = layoutProps.modifier,
-        headerModifier = layoutProps.headerModifier,
-        onClick = callbacks.onSeeAll,
-        filterEnabled = layoutProps.showFilterButton,
-        filter = displayFilter,
-        baseFilter = layoutProps.baseFilter,
-        filterRules = layoutProps.filterRules ?: config.filterRules,
-        filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
-        onSaveFilterClick = callbacks.onSaveFilterClick,
-        onDelete = callbacks.onDelete,
-        settingsContent = {
-            PlannedPaymentsSettingsContent(
-                config = config,
-                callbacks = callbacks,
-            )
-        }
-    ) {
+        AeonExpressiveCard(
+            title = config.title,
+            icon = Icons.Rounded.EventRepeat,
+            modifier = layoutProps.modifier,
+            headerModifier = layoutProps.headerModifier,
+            onClick = callbacks.onSeeAll,
+            filterEnabled = layoutProps.showFilterButton,
+            filter = displayFilter,
+            baseFilter = layoutProps.baseFilter,
+            filterRules = layoutProps.filterRules ?: config.filterRules,
+            filterContext = layoutProps.filterContext,
+            onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+            onSaveFilterClick = callbacks.onSaveFilterClick,
+            onDelete = callbacks.onDelete,
+            settingsContent = {
+                PlannedPaymentsSettingsContent(
+                    config = config,
+                    callbacks = callbacks,
+                )
+            },
+        ) {
         val dims = AeonTheme.dimensions
 
         // Total comparison readout if showComparison is enabled
-        if (config.showComparison && previousItems != null) {
+        if (config.showComparison && (previousItems != null)) {
             val currentTotal = items.sumOf { it.amount }
             val previousTotal = previousItems.sumOf { it.amount }
             if (previousTotal.signum() != 0) {
@@ -296,9 +297,7 @@ private fun PlannedPaymentRow(
             .pointerInput(onClick) {
                 detectTapGestures(
                     onPress = {
-                        isPressed = true
                         tryAwaitRelease()
-                        isPressed = false
                     },
                     onTap = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -413,6 +412,7 @@ fun mapPlannedPayments(
     input: CardInput,
     updateHandler: CardUpdateHandler,
     onDelete: ((String) -> Unit)?,
+    onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.PlannedPayments(
@@ -427,9 +427,25 @@ fun mapPlannedPayments(
         onShowComparisonChange = updateHandler::updateCardShowComparison,
         onFilterChange = updateHandler::updateCardPlannedPaymentsFilter,
         onItemClick = callbacks.paymentActions.onClick,
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onSeeAll = {
+            onRecordsClick(
+                resolveSeeAll(
+                    input,
+                    config
+                )
+            )
+        },
         onConfirm = callbacks.paymentActions.onConfirm,
         onSkip = callbacks.paymentActions.onSkip,
-        onSeeAll = callbacks.paymentActions.onSeeAll,
         onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),

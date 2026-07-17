@@ -28,8 +28,8 @@ import com.osscabinet.ossWallet.domain.model.LoanSummary
 import com.osscabinet.ossWallet.domain.model.LoanType
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.LoansCardConfig
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.management.LoanService
 import com.osscabinet.ossWallet.ui.components.ConvertedWithNativeSubtext
 import com.osscabinet.ossWallet.ui.components.aeonDottedUnderline
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
@@ -39,6 +39,8 @@ import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -243,6 +245,7 @@ fun mapLoans(
     input: CardInput,
     updateHandler: CardUpdateHandler,
     onDelete: ((String) -> Unit)?,
+    onRecordsClick: (TransactionFilter) -> Unit,
     callbacks: AeonInteractionCallbacks,
     filterSheetEnabled: Boolean
 ) = CardWithCallbacks.Loans(
@@ -251,7 +254,23 @@ fun mapLoans(
         onUpdate = { newConfig -> updateHandler.updateCardLoansConfig(config.cardId, newConfig) },
         onFilterChange = updateHandler::updateCardLoansFilter,
         onLoanClick = callbacks.loanActions.onClick,
-        onSeeAll = callbacks.loanActions.onSeeAll,
+        onRecordsClick = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onSeeAll = {
+            onRecordsClick(
+                resolveSeeAll(
+                    input,
+                    config
+                )
+            )
+        },
         onDelete = onDelete?.let { { it(config.cardId) } },
         onSaveFilterClick = callbacks.filterActions.onSaveClick
     ),

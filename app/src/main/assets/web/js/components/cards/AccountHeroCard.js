@@ -50,23 +50,18 @@ function renderAccountHeroCard(d) {
   }
 
   return `
-    <div class="account-hero" style="background: ${bg}; margin: -20px; padding: 24px; border-radius: var(--radius); color: #fff; position: relative; overflow: hidden">
-      <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1; pointer-events: none">💳</div>
-
-      <div style="position: relative; z-index: 1">
-        <div style="font-size: 0.75rem; font-weight: 700; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px">
+    <div style="background:${bg};margin:-18px -18px 0;padding:24px 18px 22px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-10px;right:-10px;font-size:8rem;opacity:0.08;pointer-events:none">💳</div>
+      <div style="position:relative;z-index:1">
+        <div style="font-size:0.7rem;font-weight:800;opacity:0.7;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;color:#fff">
           ${isAccounting ? 'TOTAL BALANCE' : 'NET CASH FLOW'}
         </div>
-        <div style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px; cursor: pointer"
-             onclick="navigateWithFilter('${esc(cardId)}')">
-          ${fmt(d.balance, cur)}
-        </div>
-        ${d.currency !== cachedSettings.baseCurrency ? `<div style="font-size: 0.9rem; opacity: 0.8; font-weight: 500">≈ ${fmt(d.balanceInBase, cachedSettings.baseCurrency)}</div>` : ''}
-
+        <div style="font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;margin-bottom:2px;cursor:pointer;color:#fff"
+             onclick="navigateWithFilter('${esc(cardId)}')">${fmt(d.balance, cur)}</div>
+        ${d.currency !== cachedSettings.baseCurrency ? `<div style="font-size:0.88rem;opacity:0.75;font-weight:500;color:#fff">≈ ${fmt(d.balanceInBase, cachedSettings.baseCurrency)}</div>` : ''}
         ${flowGrid}
         ${chips}
       </div>
     </div>
-    <div style="height: 20px"></div>
   `;
 }

@@ -20,9 +20,9 @@ function renderCashFlowComparisonCard(d, cardId, metric) {
   };
 
   const series = [];
-  if (d.showCurrent) series.push(processSeries(current, 'Current', '#2979FF', 1, false));
-  if (d.showPrevious) series.push(processSeries(previous, 'Previous', '#FF5722', 0.8, true));
-  if (d.showLastYear) series.push(processSeries(lastYear, 'Last Year', '#00C853', 0.6, true));
+  if (d.showCurrent)  series.push(processSeries(current,  'Current',   'var(--accent)',   1,   false));
+  if (d.showPrevious) series.push(processSeries(previous, 'Previous',  'var(--expense)',  0.8, true));
+  if (d.showLastYear) series.push(processSeries(lastYear, 'Last Year', 'var(--income)',   0.6, true));
 
   const toggleHtml = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
     <div style="display:flex; gap:6px">

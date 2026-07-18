@@ -7,18 +7,26 @@ function renderCashFlowCard(d) {
   const cardId = d.cardId;
 
   if (!breakdown.length) {
-    const netCls = (d.net||0) >= 0 ? 'positive' : 'negative';
-    return `<div class="card-grid" style="margin-bottom:0">
-      <div class="stat-card" style="cursor:pointer" onclick="navigateWithFilter('${esc(cardId)}', {transactionTypes:['INCOME']})"><div class="stat-label">Income</div><div class="stat-value positive">${fmt(d.income||0,baseCur)}</div></div>
-      <div class="stat-card" style="cursor:pointer" onclick="navigateWithFilter('${esc(cardId)}', {transactionTypes:['EXPENSE']})"><div class="stat-label">Expense</div><div class="stat-value negative">${fmt(d.expense||0,baseCur)}</div></div>
-      <div class="stat-card" style="cursor:pointer" onclick="navigateWithFilter('${esc(cardId)}')"><div class="stat-label">Net</div><div class="stat-value ${netCls}">${fmt(d.net||0,baseCur)}</div></div>
-    </div>`;
+    const netColor = (d.net||0) >= 0 ? 'var(--income)' : 'var(--expense)';
+    const mkRow = (label, val, color, drill) =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);cursor:pointer"
+            onclick="navigateWithFilter('${esc(cardId)}', ${JSON.stringify(drill).replace(/"/g,'&quot;')})">
+         <span style="font-size:0.88rem;color:var(--text-muted);font-weight:500">${label}</span>
+         <span style="font-size:0.95rem;font-weight:700;color:${color}">${fmt(val,baseCur)}</span>
+       </div>`;
+    return mkRow('Income', d.income||0, 'var(--income)', {transactionTypes:['INCOME']})
+         + mkRow('Expense', d.expense||0, 'var(--expense)', {transactionTypes:['EXPENSE']})
+         + mkRow('Transfer', d.transfer||0, 'var(--transfer)', {transactionTypes:['TRANSFER']})
+         + `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 0">
+              <span style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint)">Net</span>
+              <span style="font-size:1.05rem;font-weight:800;color:${netColor}">${fmt(d.net||0,baseCur)}</span>
+            </div>`;
   }
 
   const isAccounting = perspective === 'Accounting';
   const columns = isAccounting
-    ? [{label:'INC', key:'income', color:'var(--success)', types:['INCOME']}, {label:'EXP', key:'expense', color:'var(--danger)', types:['EXPENSE']}, {label:'TRF', key:'transfer', color:'var(--accent)', types:['TRANSFER']}]
-    : [{label:'INFLOW', key:'inflow', color:'var(--success)', types:['INCOME', 'TRANSFER_INFLOW']}, {label:'OUTFLOW', key:'outflow', color:'var(--danger)', types:['EXPENSE', 'TRANSFER_OUTFLOW']}];
+    ? [{label:'INC', key:'income', color:'var(--income)', types:['INCOME']}, {label:'EXP', key:'expense', color:'var(--expense)', types:['EXPENSE']}, {label:'TRF', key:'transfer', color:'var(--transfer)', types:['TRANSFER']}]
+    : [{label:'INFLOW', key:'inflow', color:'var(--income)', types:['INCOME', 'TRANSFER_INFLOW']}, {label:'OUTFLOW', key:'outflow', color:'var(--expense)', types:['EXPENSE', 'TRANSFER_OUTFLOW']}];
 
   if (showNet) columns.push({label: isAccounting ? 'NET' : 'NET FLOW', key:'net', color:'var(--text)', types:[]});
 

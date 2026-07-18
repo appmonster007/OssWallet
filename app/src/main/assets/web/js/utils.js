@@ -1,6 +1,6 @@
 /* Formatters and chart primitives */
 
-const CHART_COLORS = ['#2979FF', '#00C853', '#B3261E', '#FF5722', '#6a1b9a', '#00838f', '#ad1457', '#4e342e', '#37474f', '#558b2f'];
+const CHART_COLORS = ['#4DCE85','#DDE2FA','#E27974','#FBBF24','#93C5FD','#F9A8D4','#A5B4FC','#6EE7B7','#FCA5A5','#86EFAC'];
 
 function fmt(amount, currency) {
   try { return new Intl.NumberFormat(navigator.language, { style: 'currency', currency, minimumFractionDigits: 2 }).format(amount); }
@@ -45,12 +45,12 @@ function fmtTrendPct(current, previous) {
   const delta = current - previous;
   const pct = (delta / Math.abs(previous)) * 100;
   const up = delta > 0;
-  const color = up ? 'amount-income' : 'amount-expense';
+  const color = up ? 'var(--income)' : 'var(--expense)';
 
   let label = pct.toFixed(1) + '%';
   if (Math.abs(pct) > 999) label = (pct > 0 ? '>999' : '<-999') + '%';
 
-  return `<span class="${color}" style="font-weight:700">${up ? '▲' : '▼'} ${up ? '+' : ''}${label}</span>`;
+  return `<span style="color:${color};font-weight:700">${up ? '▲' : '▼'} ${up ? '+' : ''}${label}</span>`;
 }
 
 function progressBar(pct, color) {
@@ -127,17 +127,17 @@ function svgBars(points, width, height, showNetLine, todayIdx) {
     if (i === todayIdx) svg += `<rect x="${x}" y="${pt}" width="${slotW}" height="${height-pb-pt}" fill="var(--accent)" opacity="0.08"/>`;
 
     const incH = Math.abs(zeroY - incY);
-    if (incH > 0.5) svg += `<rect x="${x}" y="${Math.min(zeroY, incY)}" width="${barW}" height="${incH}" fill="#00C853" opacity="0.85" rx="1"><title>Income: ${fmtRaw(p.inc)}</title></rect>`;
+    if (incH > 0.5) svg += `<rect x="${x}" y="${Math.min(zeroY, incY)}" width="${barW}" height="${incH}" fill="var(--income)" opacity="0.85" rx="1"><title>Income: ${fmtRaw(p.inc)}</title></rect>`;
 
     const expH = Math.abs(zeroY - expY);
-    if (expH > 0.5) svg += `<rect x="${x + barW + 2}" y="${Math.min(zeroY, expY)}" width="${barW}" height="${expH}" fill="#B3261E" opacity="0.85" rx="1"><title>Expense: ${fmtRaw(p.exp)}</title></rect>`;
+    if (expH > 0.5) svg += `<rect x="${x + barW + 2}" y="${Math.min(zeroY, expY)}" width="${barW}" height="${expH}" fill="var(--expense)" opacity="0.85" rx="1"><title>Expense: ${fmtRaw(p.exp)}</title></rect>`;
 
     svg += `<text x="${cx}" y="${height - 4}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${esc(String(p.label).slice(0, 6))}</text>`;
   });
 
   if (showNetLine && data.length > 1) {
     const netPts = data.slice(0, (todayIdx != null ? todayIdx + 1 : data.length)).map(c => `${c.x.toFixed(1)},${getY(c.net).toFixed(1)}`).join(' ');
-    svg += `<polyline points="${netPts}" fill="none" stroke="#2979FF" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svg += `<polyline points="${netPts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round" stroke-linejoin="round"/>`;
   }
 
   return `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow:visible;display:block">${svg}</svg>`;
@@ -307,7 +307,7 @@ function pinnedAccountsWrap(card, bodyHtml, payloadType) {
       <span class="pinned-label">Pinned</span>
       ${activeBadge}
       <div class="dash-card-actions">
-        <button class="btn-icon" title="Filter" onclick="openCardFilterSheet('${esc(card.cardId)}','${esc(payloadType||'')}','${esc(card.cardType||'')}')">⚙️</button>
+        <button class="btn-icon" title="Filter" onclick="openCardFilterSheet('${esc(card.cardId)}','${esc(payloadType||'')}','${esc(card.cardType||'')}')">⚙</button>
       </div>
     </div>
     <div class="dash-card-body" id="card-body-${esc(card.cardId)}">${bodyHtml}</div>
@@ -322,7 +322,7 @@ function dashCardWrap(card, bodyHtml, payloadType) {
       <span class="dash-card-title">${esc(card.title||'')}</span>
       ${activeBadge}
       <div class="dash-card-actions">
-        <button class="btn-icon" title="Filter" onclick="openCardFilterSheet('${esc(card.cardId)}','${esc(payloadType||'')}','${esc(card.cardType||'')}')">⚙️</button>
+        <button class="btn-icon" title="Filter" onclick="openCardFilterSheet('${esc(card.cardId)}','${esc(payloadType||'')}','${esc(card.cardType||'')}')">⚙</button>
         <button class="btn-icon" title="Remove card" onclick="removeDashboardCard('${esc(card.cardId)}')">✕</button>
       </div>
     </div>
@@ -335,6 +335,8 @@ function dispatchCardRender(card, d, payloadType) {
 }
 
 function dispatchCardBody(card, d, payloadType) {
+  // Inject cardId into payload so render functions can use it for drill-down navigation
+  if (d && !d.cardId) d.cardId = card.cardId;
   switch (payloadType) {
     case 'NetWorth':              return renderNetWorthCard(d);
     case 'CashFlow':              return renderCashFlowCard(d);

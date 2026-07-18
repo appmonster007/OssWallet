@@ -27,7 +27,7 @@ function renderLoansCard(d) {
 
       <div style="font-weight:800; font-size:1.1rem; margin-bottom:8px">${fmt(principal, loan.currency)}</div>
 
-      <div class="progress-track" style="height:3px; background:rgba(0,0,0,0.05)">
+      <div class="progress-track">
         <div class="progress-fill" style="width:${rp}%; background:${accentColor}"></div>
       </div>
 

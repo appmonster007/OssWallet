@@ -9,8 +9,8 @@ function renderTagUpSetPlotCard(d, baseCur) {
   const getVal = (s) => metric === 'INCOME' ? s.income : (metric === 'EXPENSE' ? s.expense : s.income + s.expense);
   const maxAmt = Math.max(...sets.map(s=>Math.abs(getVal(s))), 1);
 
-  let body = `<div style="display: flex; gap: 8px; margin-bottom: 16px">
-    ${['INCOME', 'EXPENSE', 'NET'].map(m => `<button class="btn btn-ghost btn-sm ${metric === m ? 'btn-primary' : ''}" style="flex:1" onclick="updateCardSetting('${esc(cardId)}', {selectedMetric:'${m}'}, 'TagUpSetPlot')">${m}</button>`).join('')}
+  let body = `<div class="atelier-tabs" style="margin-bottom:16px">
+    ${['INCOME', 'EXPENSE', 'NET'].map(m => `<div class="atelier-tab${metric === m ? ' active' : ''}" onclick="updateCardSetting('${esc(cardId)}', {selectedMetric:'${m}'}, 'TagUpSetPlot')">${m}</div>`).join('')}
   </div>`;
 
   body += '<div style="margin-bottom:16px">';
@@ -24,7 +24,7 @@ function renderTagUpSetPlotCard(d, baseCur) {
         <span class="${val >= 0 ? 'amount-income' : 'amount-expense'}" style="font-size:0.8rem; font-weight:700">${fmt(val, cur)}</span>
         <span style="color:var(--text-muted);font-size:0.72rem;white-space:nowrap">${s.transactionCount||0} txns</span>
       </div>
-      <div class="progress-track" style="height:4px; background:rgba(0,0,0,0.05)">
+      <div class="progress-track" style="height:4px">
         <div class="progress-fill ${val >= 0 ? 'progress-green' : 'progress-red'}" style="width:${pct}%"></div>
       </div>
     </div>`;

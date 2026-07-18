@@ -2,46 +2,56 @@ function renderRecentActivitiesCard(d) {
   const groups = d.groups || [];
   if (!groups.length) return '<p class="empty-state">No transactions found.</p>';
 
+  const showCategory = d.showCategory !== false;
+  const showAccount  = d.showAccount  !== false;
+  const showNote     = d.showNote     !== false;
+  const showTags     = d.showTags     !== false;
+
   let html = '<div class="recent-activities-list">';
 
   groups.forEach(group => {
     html += `<div class="tx-group">
-      <div class="tx-group-header" style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px">
-        ${esc(group.label)}
-      </div>`;
+      <div class="tx-group-header">${esc(group.label)}</div>`;
 
     group.transactions.forEach(tx => {
-      const amtCls = tx.type==='INCOME' ? 'amount-income' : (tx.type==='EXPENSE' ? 'amount-expense' : 'amount-accent');
-      const isPlanned = tx.isPlanned;
+      const isIncome   = tx.type === 'INCOME';
+      const isExpense  = tx.type === 'EXPENSE';
+      const typeCls    = isIncome ? 'income' : (isExpense ? 'expense' : 'transfer');
+      const amtSign    = isIncome ? '+' : (isExpense ? '−' : '');
+      const isPlanned  = tx.isPlanned;
       const clickAction = isPlanned
         ? `openPlannedActionModal(${tx.paymentId}, ${tx.date}, '${esc(tx.title)}')`
         : `openTxDetail(${tx.id})`;
 
-      html += `<div class="tx-row ${isPlanned ? 'tx-planned' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); cursor: pointer" onclick="${clickAction}">
-        <div class="tx-icon" style="width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0">
-          ${isPlanned ? '📅' : (tx.type === 'INCOME' ? '↓' : (tx.type === 'EXPENSE' ? '↑' : '↔'))}
+      const subtitle = [
+        showCategory && tx.categoryName
+          ? `<span style="cursor:pointer" onclick="event.stopPropagation();navigateWithFilter('${esc(d.cardId)}',{categoryIds:[${tx.categoryId}]})">${esc(tx.categoryName)}</span>`
+          : '',
+        showAccount && tx.accountName
+          ? `<span style="opacity:.55">•</span><span style="cursor:pointer" onclick="event.stopPropagation();navigateWithFilter('${esc(d.cardId)}',{accountIds:['${esc(tx.accountId)}']})"> ${esc(tx.accountName)}</span>`
+          : ''
+      ].filter(Boolean).join('');
+
+      html += `<div class="tx-row${isPlanned ? ' tx-planned' : ''}" onclick="${clickAction}">
+        <div class="tx-dot ${typeCls}"></div>
+
+        <div class="tx-info">
+          <div class="tx-name">${isPlanned ? '🕒 ' : ''}${esc(tx.title)}</div>
+          ${subtitle ? `<div class="tx-sub" style="display:flex;gap:4px;align-items:center">${subtitle}</div>` : ''}
+          ${showNote && tx.note ? `<div class="tx-sub" style="opacity:.75;margin-top:1px">${esc(tx.note)}</div>` : ''}
+          ${showTags && tx.tags && tx.tags.length
+            ? `<div class="tx-tags">${tx.tags.map(t => `<span class="tx-tag" style="cursor:pointer" onclick="event.stopPropagation();navigateWithFilter('${esc(d.cardId)}',{tags:['${esc(t)}']})">#${esc(t)}</span>`).join('')}</div>`
+            : ''}
         </div>
 
-        <div style="flex: 1; min-width: 0">
-          <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${isPlanned ? '🕒 ' : ''}${esc(tx.title)}</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center">
-            ${tx.categoryName ? `<span style="cursor:pointer; text-decoration:underline" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {categoryIds:[${tx.categoryId}]})">${esc(tx.categoryName)}</span>` : ''}
-            ${tx.accountName ? `<span style="opacity: 0.5">•</span><span style="cursor:pointer; text-decoration:underline" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(tx.accountId)}']})">${esc(tx.accountName)}</span>` : ''}
-          </div>
-          ${tx.note ? `<div style="font-size: 0.72rem; color: var(--text-muted); opacity: 0.8; margin-top: 2px">${esc(tx.note)}</div>` : ''}
+        <div class="tx-right">
+          <div class="tx-amount ${typeCls}">${amtSign}${fmt(tx.amount, tx.currency)}</div>
         </div>
 
-        <div style="text-align: right">
-          <div class="${amtCls}" style="font-weight: 700; font-size: 0.95rem">${fmt(tx.amount, tx.currency)}</div>
-          ${tx.tags && tx.tags.length ? `<div style="font-size: 0.65rem; color: var(--accent); margin-top: 2px">${tx.tags.map(t => `<span style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {tags:['${esc(t)}']})">#${esc(t)}</span>`).join(' ')}</div>` : ''}
-        </div>
-
-        ${isPlanned ? `
-          <div class="row-actions" style="display: flex; gap: 4px; margin-left: 8px">
-            <button class="btn-icon btn-sm" title="Confirm" onclick="event.stopPropagation(); confirmPlannedOccurrence(${tx.paymentId}, ${tx.date})">✓</button>
-            <button class="btn-icon btn-sm" title="Skip" onclick="event.stopPropagation(); skipPlannedOccurrence(${tx.paymentId}, ${tx.date})">»</button>
-          </div>
-        ` : ''}
+        ${isPlanned ? `<div class="tx-actions">
+          <button class="btn-icon btn-sm" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">✓</button>
+          <button class="btn-icon btn-sm" title="Skip" onclick="event.stopPropagation();skipPlannedOccurrence(${tx.paymentId},${tx.date})">»</button>
+        </div>` : ''}
       </div>`;
     });
 
@@ -50,7 +60,7 @@ function renderRecentActivitiesCard(d) {
 
   html += '</div>';
   if (d.total > 20) {
-    html += `<div style="padding-top: 12px; text-align: right">
+    html += `<div style="padding-top:12px;text-align:right">
       <a href="#/records" class="btn btn-ghost btn-sm">View All ${d.total} Records</a>
     </div>`;
   }

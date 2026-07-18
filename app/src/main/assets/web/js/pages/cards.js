@@ -145,11 +145,14 @@ window.openCardFilterSheet = function (cardId, payloadType, cardType) {
   body += '</div>';
 
   const hasOverride = Object.keys(fs).length > 0;
-  body += `<div style="margin-top:12px"><button class="btn btn-ghost btn-sm" ${hasOverride?'':'disabled style="opacity:0.45;cursor:not-allowed"'} onclick="resetCardFilter('${esc(cardId)}','${esc(payloadType)}','${esc(cardType)}')">✕ Reset to default</button></div>`;
+  const title = document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType;
 
-  openModal(`⚙️ Filter — ${esc(document.querySelector(`[data-card-id="${cardId}"] .dash-card-title`)?.textContent || payloadType)}`,
-    body, () => applyCardFilter(cardId, payloadType, cardType, caps), 'Apply Filter');
-  modalConfBtn.className = 'btn btn-primary';
+  openFilterSheet(
+    `Filter — ${title}`,
+    body,
+    () => applyCardFilter(cardId, payloadType, cardType, caps),
+    hasOverride ? () => resetCardFilter(cardId, payloadType, cardType) : null
+  );
   wireDateRange('cf-from', 'cf-to');
 };
 
@@ -241,7 +244,7 @@ window.applyCardFilter = async function (cardId, payloadType, cardType, caps) {
 
 window.resetCardFilter = async function (cardId, payloadType, cardType) {
   delete cardOverrides[cardId];
-  closeModal();
+  closeModal(); closeFilterSheet();
   const badgeEl = document.querySelector(`[data-card-id="${cardId}"] .dash-card-header .filter-badge`);
   if (badgeEl) badgeEl.remove();
   await apiWrite('PUT', `/api/dashboard/cards/${cardId}`, { timelineType:'ALL_TIME', excludeFuture:true, accountIds:[], categoryIds:[], transactionTypes:[], tags:[], currencies:[], statuses:[], paymentMethods:[] });

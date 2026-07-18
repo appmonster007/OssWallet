@@ -150,61 +150,147 @@ window.deleteAccount = function (id, name) {
   });
 };
 
+let _accDetailData = null;
+let _accDetailTab  = 'overview';
+
 async function renderAccountDetail(id) {
   if (!id) { navigate('#/accounts'); return; }
   showSpinner();
   try {
     const json = await apiFetch(`/api/accounts/${encodeURIComponent(id)}`);
     if (!json.success) { showError('Failed to load account.'); return; }
-    const acc = json.data.account || {};
-    const txs = json.data.recentTransactions || [];
-    const balClass = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
-
-    let html = `<div class="page-header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <a class="btn btn-ghost btn-sm" href="#/accounts">← Back</a>
-        <h2 class="section-title" style="margin:0">${esc(acc.name)}</h2>
-      </div>
-      <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
-    </div>
-    <div class="card-grid" style="margin-bottom:20px">
-      <div class="stat-card">
-        <div class="stat-label">Current Balance</div>
-        <div class="stat-value ${balClass}">${fmt(acc.balance||0, acc.currency)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Currency</div>
-        <div class="stat-value">${esc(acc.currency||'')}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Type</div>
-        <div class="stat-value" style="font-size:1rem">${esc(acc.type||'')}</div>
-      </div>
-    </div>
-    <div class="section-sub">Recent Transactions (last 20)</div>`;
-
-    if (!txs.length) {
-      html += '<p class="empty-state">No transactions for this account.</p>';
-    } else {
-      html += `<div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Type</th><th style="text-align:right">Amount</th><th></th></tr></thead><tbody>`;
-      txs.forEach(tx => {
-        const amtClass = tx.type === 'INCOME' ? 'amount-income' : tx.type === 'EXPENSE' ? 'amount-expense' : '';
-        const sign = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
-        const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
-        html += `<tr style="cursor:pointer" onclick="openTxDetail(${tx.id})">
-          <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-          <td>${esc(tx.title)}</td>
-          <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
-          <td><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span></td>
-          <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
-          <td onclick="event.stopPropagation()">
-            <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
-          </td>
-        </tr>`;
-      });
-      html += '</tbody></table></div></div>';
-    }
-    setContent(html);
+    _accDetailData = json.data;
+    _accDetailTab  = 'overview';
+    _renderAccDetailContent();
   } catch (e) { if (e.message !== 'Session expired') showError('Error loading account detail.'); }
+}
+
+window.switchAccDetailTab = function(tab) {
+  _accDetailTab = tab;
+  _renderAccDetailContent();
+};
+
+function _renderAccDetailContent() {
+  const acc  = _accDetailData?.account || {};
+  const txs  = _accDetailData?.recentTransactions || [];
+  const color = acc.colorHex || '#42A5F5';
+
+  // Income / expense totals from recent transactions
+  let income = 0, expense = 0;
+  txs.forEach(tx => {
+    if (tx.type === 'INCOME')  income  += Math.abs(tx.amount || 0);
+    if (tx.type === 'EXPENSE') expense += Math.abs(tx.amount || 0);
+  });
+
+  const heroHtml = `
+    <div class="acc-hero" style="background:${esc(color)}">
+      <div class="acc-hero-overlay"></div>
+      <div style="position:relative">
+        <div class="acc-hero-name">${esc(acc.name)}</div>
+        <div class="acc-hero-type">${prettyEnum(acc.type || '')}</div>
+        <div class="acc-hero-balance">${fmt(acc.balance || 0, acc.currency)}</div>
+        <div class="acc-hero-currency">${esc(acc.currency || '')}</div>
+        ${txs.length ? `<div class="acc-hero-stats">
+          <div class="acc-hero-stat">
+            <div class="acc-hero-stat-label">Income</div>
+            <div class="acc-hero-stat-value">+${fmt(income, acc.currency)}</div>
+          </div>
+          <div class="acc-hero-stat">
+            <div class="acc-hero-stat-label">Expense</div>
+            <div class="acc-hero-stat-value">−${fmt(expense, acc.currency)}</div>
+          </div>
+          <div class="acc-hero-stat">
+            <div class="acc-hero-stat-label">Transactions</div>
+            <div class="acc-hero-stat-value">${txs.length}</div>
+          </div>
+        </div>` : ''}
+        <div class="acc-hero-actions">
+          <button class="acc-hero-btn" onclick="openAddTransaction()">+ Transaction</button>
+          <button class="acc-hero-btn" onclick="openEditAccount('${esc(acc.id)}')">✏ Edit</button>
+          <a class="acc-hero-btn" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
+        </div>
+      </div>
+    </div>`;
+
+  const tabs = `
+    <div class="acc-detail-tabs">
+      <div class="acc-detail-tab ${_accDetailTab==='overview'?'active':''}" onclick="switchAccDetailTab('overview')">Overview</div>
+      <div class="acc-detail-tab ${_accDetailTab==='transactions'?'active':''}" onclick="switchAccDetailTab('transactions')">Transactions</div>
+    </div>`;
+
+  let tabBody = '';
+  if (_accDetailTab === 'overview') {
+    tabBody += `
+      <div class="card" style="margin-bottom:16px">
+        <div class="dash-card-header"><span class="dash-card-title">Account Details</span></div>
+        <div class="dash-card-body" style="padding:0 18px 16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><div class="stat-label">Type</div><div style="font-weight:600;margin-top:2px">${prettyEnum(acc.type||'')}</div></div>
+            <div><div class="stat-label">Currency</div><div style="font-weight:600;margin-top:2px">${esc(acc.currency||'')}</div></div>
+            ${acc.creditLimit ? `<div><div class="stat-label">Credit Limit</div><div style="font-weight:600;margin-top:2px">${fmt(acc.creditLimit, acc.currency)}</div></div>` : ''}
+          </div>
+        </div>
+      </div>`;
+
+    if (txs.length) {
+      tabBody += `<div class="section-sub" style="margin-bottom:12px">Recent Activity</div>
+        <div class="card"><div class="dash-card-body" style="padding:0 0 4px">`;
+      txs.slice(0, 5).forEach(tx => {
+        const isIncome   = tx.type === 'INCOME';
+        const isExpense  = tx.type === 'EXPENSE';
+        const typeCls    = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
+        const sign       = isIncome ? '+' : isExpense ? '−' : '';
+        tabBody += `<div class="tx-row" onclick="openTxDetail(${tx.id})">
+          <div class="tx-dot ${typeCls}"></div>
+          <div class="tx-info">
+            <div class="tx-name">${esc(tx.title)}</div>
+            <div class="tx-sub">${fmtDate(tx.date)}${tx.categoryName ? ' · ' + esc(tx.categoryName) : ''}</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-amount ${typeCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
+          </div>
+        </div>`;
+      });
+      tabBody += `</div></div>
+        ${txs.length > 5 ? `<div style="text-align:center;margin-top:8px"><button class="btn btn-ghost btn-sm" onclick="switchAccDetailTab('transactions')">View all ${txs.length} transactions →</button></div>` : ''}`;
+    } else {
+      tabBody += '<p class="empty-state">No recent transactions.</p>';
+    }
+  } else {
+    if (!txs.length) {
+      tabBody += '<p class="empty-state">No transactions for this account.</p>';
+    } else {
+      tabBody += `<div class="card"><div class="dash-card-body" style="padding:0 0 4px">`;
+      txs.forEach(tx => {
+        const isIncome  = tx.type === 'INCOME';
+        const isExpense = tx.type === 'EXPENSE';
+        const typeCls   = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
+        const sign      = isIncome ? '+' : isExpense ? '−' : '';
+        tabBody += `<div class="tx-row" onclick="openTxDetail(${tx.id})">
+          <div class="tx-dot ${typeCls}"></div>
+          <div class="tx-info">
+            <div class="tx-name">${esc(tx.title)}</div>
+            <div class="tx-sub">${fmtDate(tx.date)}${tx.categoryName ? ' · ' + esc(tx.categoryName) : ''}</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-amount ${typeCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
+            <div class="tx-actions">
+              <button class="btn-icon" title="Edit" onclick="event.stopPropagation();openEditTransaction(${tx.id})">✏️</button>
+            </div>
+          </div>
+        </div>`;
+      });
+      tabBody += `</div></div>
+        <div style="text-align:center;margin-top:12px">
+          <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">View all records →</a>
+        </div>`;
+    }
+  }
+
+  let html = `<div class="page-header">
+    <a class="btn btn-ghost btn-sm" href="#/accounts">← Accounts</a>
+  </div>
+  ${heroHtml}${tabs}${tabBody}`;
+
+  setContent(html);
 }

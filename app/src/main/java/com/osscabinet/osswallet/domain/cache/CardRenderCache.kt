@@ -16,7 +16,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
-import com.osscabinet.ossWallet.BuildConfig
 
 /**
  * Global cache for rendered dashboard cards.
@@ -85,19 +84,13 @@ class CardRenderCache @Inject constructor(
      * Returns true if any data was loaded.
      */
     suspend fun loadProfile(profileId: Int, currency: String): Boolean = withContext(Dispatchers.IO) {
-        val start = System.currentTimeMillis()
-        if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile START profile=$profileId currency=$currency")
         val entities = try {
             cardCacheDao.getCacheForProfile(profileId, currency)
         } catch (e: Exception) {
-            // DB read failed (e.g. SQLiteException after migration) — treat as empty cache.
-            if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] loadProfile DB read failed: ${e.message}")
+            Log.w("CardRenderCache", "DB read failed for profile=$profileId: ${e.message}")
             return@withContext false
         }
-        if (entities.isEmpty()) {
-            if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — 0 cards (empty cache) in ${System.currentTimeMillis() - start}ms")
-            return@withContext false
-        }
+        if (entities.isEmpty()) return@withContext false
 
         var loaded = 0
         entities.forEach { entity ->
@@ -110,12 +103,11 @@ class CardRenderCache @Inject constructor(
                 }
                 loaded++
             } catch (e: Exception) {
-                if (BuildConfig.DEBUG) Log.w("OssPerf", "[Cache] deserialize failed for cardId=${entity.cardId}: ${e.message}")
+                Log.w("CardRenderCache", "Deserialization failed for cardId=${entity.cardId}: ${e.message}")
                 // Prune the stale row so it doesn't fail on every subsequent boot.
                 try { cardCacheDao.deleteByCardId(profileId, currency, entity.cardId) } catch (_: Exception) {}
             }
         }
-        if (BuildConfig.DEBUG) Log.d("OssPerf", "[Cache] loadProfile END — $loaded/${entities.size} cards loaded in ${System.currentTimeMillis() - start}ms")
         // Return false if every row failed deserialization so callers know the cache is empty.
         loaded > 0
     }

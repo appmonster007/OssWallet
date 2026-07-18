@@ -51,9 +51,9 @@ function renderAnalyticsContent(data) {
         <h2 class="section-title">Intelligence</h2>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="toggleCommonFilter(${!commonFilterEnabled})">
-            ${commonFilterEnabled ? '🔓 Individual Filters' : '🔒 Use Common Filter'}
+            ${commonFilterEnabled ? 'Individual Filters' : 'Use Common Filter'}
           </button>
-          <button class="btn btn-ghost btn-sm" onclick="openManageAnalyticsCards()">⚙️ Settings</button>
+          <button class="btn btn-ghost btn-sm" onclick="openManageAnalyticsCards()">Settings</button>
         </div>
       </div>
       <div class="atelier-tabs">
@@ -68,7 +68,6 @@ function renderAnalyticsContent(data) {
 
   if (!filteredCards.length) {
     html += `<div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
-      <div style="font-size:3rem;margin-bottom:16px;opacity:0.3">📊</div>
       <p>No <strong>${analyticsActiveTab.toLowerCase()}</strong> widgets active in Intelligence.</p>
     </div>`;
   } else {

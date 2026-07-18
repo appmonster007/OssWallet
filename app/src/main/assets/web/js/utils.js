@@ -295,7 +295,7 @@ function filterBadge(fs) {
   if (fs.queryNote) parts.push(`note:"${fs.queryNote}"`);
   if (fs.queryPayee) parts.push(`payee:"${fs.queryPayee}"`);
   if (fs.minAmount != null || fs.maxAmount != null) parts.push(`${fs.minAmount||0}–${fs.maxAmount||'∞'}`);
-  return parts.length ? `<span class="filter-badge" title="Active filter">⚙️ ${esc(parts.join(' · '))}</span>` : '';
+  return parts.length ? `<span class="filter-badge" title="Active filter">${esc(parts.join(' · '))}</span>` : '';
 }
 
 function pinnedAccountsWrap(card, bodyHtml, payloadType) {

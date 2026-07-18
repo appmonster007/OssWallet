@@ -13,7 +13,7 @@ async function renderFilters() {
     <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Save frequently-used filter combinations and apply them to your Records in one click.</p>`;
 
     if (!filters.length) {
-      html += emptyState('🔖', 'No saved filters yet.', '+ New Filter', 'openCreateFilter()');
+      html += emptyState('', 'No saved filters yet.', '+ New Filter', 'openCreateFilter()');
     } else {
       html += '<div class="card">';
       filters.forEach((f, idx) => {
@@ -25,8 +25,8 @@ async function renderFilters() {
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;align-items:center">
             <button class="btn btn-primary btn-sm" onclick="applyFilter(${f.id})" title="Apply this filter to Records">▶ Apply</button>
-            <button class="btn-icon" title="Edit" onclick="openEditFilter(${f.id})">✏️</button>
-            <button class="btn-icon" title="Delete" onclick="deleteFilter(${f.id},'${esc(f.name)}')">🗑️</button>
+            <button class="btn-icon" title="Edit" onclick="openEditFilter(${f.id})">Edit</button>
+            <button class="btn-icon" title="Delete" onclick="deleteFilter(${f.id},'${esc(f.name)}')">Del</button>
           </div>
         </div>`;
       });

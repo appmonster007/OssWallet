@@ -18,7 +18,7 @@ async function renderPlannedPayments() {
 
     if (overdue.length) {
       html += `<div class="card" style="border-color:var(--danger)">
-        <div class="overdue-header">⚠️ Overdue (${overdue.length})</div>
+        <div class="overdue-header">Overdue (${overdue.length})</div>
         <div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Account</th><th>Actions</th></tr></thead><tbody>`;
       overdue.forEach(p => {
@@ -28,7 +28,7 @@ async function renderPlannedPayments() {
           <td style="white-space:nowrap;color:var(--danger)">${fmtDate(p.nextDueDate)}</td>
           <td>${esc(p.accountName||'')}</td>
           <td style="white-space:nowrap">
-            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓ Confirm</button>
+            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">Confirm</button>
             <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
           </td>
         </tr>`;
@@ -38,7 +38,7 @@ async function renderPlannedPayments() {
 
     if (upcoming.length) {
       html += `<div class="card" style="border-color:var(--warning)">
-        <div class="upcoming-header">📅 Upcoming (next 30 days)</div>
+        <div class="upcoming-header">Upcoming (next 30 days)</div>
         <div class="table-wrap"><table>
           <thead><tr><th>Name</th><th>Amount</th><th>Due Date</th><th>Recurrence</th><th>Actions</th></tr></thead><tbody>`;
       upcoming.forEach(p => {
@@ -48,7 +48,7 @@ async function renderPlannedPayments() {
           <td style="white-space:nowrap">${fmtDate(p.nextDueDate)}</td>
           <td><small style="color:var(--text-muted)">${esc(p.recurrenceDescription||'—')}</small></td>
           <td style="white-space:nowrap">
-            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">✓ Confirm</button>
+            <button class="btn btn-sm btn-primary" onclick="confirmPlanned('${esc(p.id)}')">Confirm</button>
             <button class="btn btn-sm btn-ghost" onclick="skipPlanned('${esc(p.id)}')">Skip</button>
           </td>
         </tr>`;
@@ -58,7 +58,7 @@ async function renderPlannedPayments() {
 
     html += `<div class="section-sub">All Planned Payments</div>`;
     if (!allPayments.length) {
-      html += emptyState('🔄', 'No planned payments yet.', '+ Add Planned Payment', 'openAddPlanned()');
+      html += emptyState('', 'No planned payments yet.', '+ Add Planned Payment', 'openAddPlanned()');
     } else {
       html += `<div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Amount</th><th>Next Due</th><th>Type</th><th>Status</th><th>Auto</th><th></th></tr></thead><tbody>`;
@@ -72,8 +72,8 @@ async function renderPlannedPayments() {
           <td><span class="badge ${p.isOverdue ? 'badge-overdue' : 'badge-active'}">${esc(p.status||'')}</span></td>
           <td>${p.autoConfirm ? '✅' : '—'}</td>
           <td style="white-space:nowrap">
-            <button class="btn-icon" title="Edit" onclick="openEditPlanned('${esc(p.id)}')">✏️</button>
-            <button class="btn-icon" title="Delete" onclick="deletePlanned('${esc(p.id)}','${esc(p.name)}')">🗑️</button>
+            <button class="btn-icon" title="Edit" onclick="openEditPlanned('${esc(p.id)}')">Edit</button>
+            <button class="btn-icon" title="Delete" onclick="deletePlanned('${esc(p.id)}','${esc(p.name)}')">Del</button>
           </td>
         </tr>`;
       });

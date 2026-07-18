@@ -23,7 +23,7 @@ overlay.addEventListener('click', closeSidebar);
     document.documentElement.classList.remove('force-light', 'force-dark');
     if (theme === 'light') document.documentElement.classList.add('force-light');
     else if (theme === 'dark') document.documentElement.classList.add('force-dark');
-    btn.textContent = (theme === 'light') ? '🌙' : '☀️';
+    btn.textContent = (theme === 'light') ? 'Dark' : 'Light';
   }
   const saved = localStorage.getItem('oss-theme');
   if (saved) applyTheme(saved);

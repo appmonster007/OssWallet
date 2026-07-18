@@ -11,7 +11,7 @@ async function renderTemplates() {
       <button class="btn btn-primary btn-sm" onclick="openAddTemplate()">+ New Template</button>
     </div>`;
     if (!templates.length) {
-      html += emptyState('📄', 'No templates yet.', '+ Add Template', 'openAddTemplate()');
+      html += emptyState('', 'No templates yet.', '+ Add Template', 'openAddTemplate()');
     } else {
       html += `<div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Type</th><th>Amount</th><th>Category</th><th>Account</th><th></th></tr></thead><tbody>`;
@@ -28,9 +28,9 @@ async function renderTemplates() {
           <td>${cat?esc(cat.name):'<span style="color:var(--text-muted)">—</span>'}</td>
           <td>${acc?esc(acc.name):'<span style="color:var(--text-muted)">—</span>'}</td>
           <td style="white-space:nowrap">
-            <button class="btn-icon" title="Use template" onclick="useTemplate(${t.id})">➕</button>
-            <button class="btn-icon" title="Edit" onclick="openEditTemplate(${t.id})">✏️</button>
-            <button class="btn-icon" title="Delete" onclick="deleteTemplate(${t.id},'${esc(t.name)}')">🗑️</button>
+            <button class="btn-icon" title="Use template" onclick="useTemplate(${t.id})">Use</button>
+            <button class="btn-icon" title="Edit" onclick="openEditTemplate(${t.id})">Edit</button>
+            <button class="btn-icon" title="Delete" onclick="deleteTemplate(${t.id},'${esc(t.name)}')">Del</button>
           </td>
         </tr>`;
       });

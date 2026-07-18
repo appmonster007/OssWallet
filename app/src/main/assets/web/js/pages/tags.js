@@ -11,7 +11,7 @@ async function renderTags() {
     html += '<p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Tags are created automatically when you add them to records. Rename or delete unused tags here.</p>';
 
     if (!tags.length) {
-      html += emptyState('🏷️', 'No tags yet.', 'Add a Record with Tags', 'openAddTransaction()');
+      html += emptyState('', 'No tags yet.', 'Add a Record with Tags', 'openAddTransaction()');
     } else {
       html += '<div class="card"><div class="tag-chips">';
       tags.forEach(tag => {
@@ -20,7 +20,7 @@ async function renderTags() {
           <span class="color-swatch" style="background:${esc(col)}"></span>
           <span>${esc(tag.name)}</span>
           <span class="chip-count">${tag.transactionCount || 0} records</span>
-          <button class="btn-icon" title="Rename tag" style="padding:2px 4px" onclick="openRenameTag('${esc(tag.name)}','${esc(col)}')">✏️</button>
+          <button class="btn-icon" title="Rename tag" style="padding:2px 4px" onclick="openRenameTag('${esc(tag.name)}','${esc(col)}')">Edit</button>
           <button class="btn-icon" title="Delete tag" style="padding:2px 4px" onclick="deleteTag('${esc(tag.name)}')">✕</button>
         </div>`;
       });

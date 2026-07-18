@@ -33,12 +33,14 @@
   <div id="main">
     <div id="overlay"></div>
     <nav id="sidebar">
+      <div id="sidebar-profile"></div>
       <div class="nav-section">Overview</div>
       <a class="nav-item" href="#/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
       <a class="nav-item" href="#/analytics"><span class="nav-icon">📉</span> Analytics</a>
       <div class="nav-section">Finance</div>
       <a class="nav-item" href="#/records"><span class="nav-icon">📋</span> Records</a>
       <a class="nav-item" href="#/accounts"><span class="nav-icon">💳</span> Accounts</a>
+      <div id="sidebar-accs"></div>
       <a class="nav-item" href="#/budgets"><span class="nav-icon">📈</span> Budgets</a>
       <a class="nav-item" href="#/loans"><span class="nav-icon">🏦</span> Loans</a>
       <a class="nav-item" href="#/planned-payments"><span class="nav-icon">🔄</span> Planned</a>
@@ -70,6 +72,27 @@
 
 <div id="nprogress"></div>
 <div id="toast-container"></div>
+
+<!-- Filter Bottom Sheet -->
+<div id="filter-sheet-overlay" onclick="closeFilterSheet()"></div>
+<div id="filter-sheet">
+  <div class="filter-sheet-handle"></div>
+  <div id="filter-sheet-title"></div>
+  <div id="filter-sheet-body"></div>
+  <div id="filter-sheet-actions">
+    <button class="btn btn-ghost btn-sm" id="fs-reset-btn">✕ Reset</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" onclick="closeFilterSheet()">Cancel</button>
+    <button class="btn btn-primary" id="fs-apply-btn">Apply</button>
+  </div>
+</div>
+
+<!-- Analytics Common Filter Pill -->
+<div id="analytics-filter-pill" onclick="openCommonFilterSheet()">
+  <div id="analytics-filter-pill-dot"></div>
+  <span id="analytics-filter-pill-label">Common Filter</span>
+  <span style="opacity:0.5;font-size:0.72rem">▾</span>
+</div>
 
 <!-- ───────────────────── Modules ─────────────────────────── -->
 <script defer src="/web/js/state.js"></script>

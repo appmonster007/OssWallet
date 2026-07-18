@@ -97,6 +97,7 @@ async function warmCache() {
     if (accR.status === 'fulfilled' && accR.value?.success) cachedAccounts   = accR.value.data || [];
     if (setR.status === 'fulfilled' && setR.value?.success) cachedSettings   = setR.value.data || cachedSettings;
     if (tagR.status === 'fulfilled' && tagR.value?.success) cachedTags = (tagR.value.data || []).map(t => t.name || t).filter(Boolean);
+    if (typeof refreshSidebar === 'function') refreshSidebar();
   } catch { /* non-fatal */ }
 }
 
@@ -143,6 +144,10 @@ function updateActiveNav(hash) {
     const href = el.getAttribute('href');
     el.classList.toggle('active', href && hash.startsWith(href));
   });
+  // Hide analytics filter pill when leaving analytics
+  if (!hash.startsWith('#/analytics')) {
+    document.getElementById('analytics-filter-pill')?.classList.remove('visible');
+  }
 }
 
 window.doLogout = doLogout;

@@ -62,16 +62,7 @@ function renderAnalyticsContent(data) {
     </div>
   `;
 
-  if (commonFilterEnabled) {
-    html += `
-      <div class="card" style="margin-bottom:20px;border-color:var(--accent-cont)">
-        <div class="dash-card-header">
-          <span class="dash-card-title" style="color:var(--accent)">Common Filter Active</span>
-        </div>
-        <div class="dash-card-body">${renderCommonFilterBar()}</div>
-      </div>
-    `;
-  }
+  updateAnalyticsFilterPill(data);
 
   const filteredCards = cards.filter(c => getTabForCardType(c.cardType) === analyticsActiveTab);
 
@@ -127,47 +118,39 @@ window.toggleCommonFilter = async function(enabled) {
   } catch (e) { showError('Error.'); }
 };
 
-function renderCommonFilterBar() {
-  const fs = lastAnalyticsResponse?.screenFilter || {};
-  const summary = buildFilterSummary(fs);
-  return `
-    <div style="display: flex; gap: 12px; align-items: center; background: var(--surface); padding: 12px; border-radius: 8px">
-       <div style="flex: 1; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4">
-         ${summary || '<em>No criteria set — showing all data</em>'}
-       </div>
-       <button class="btn btn-sm btn-primary" onclick="openCommonFilterSheet()">Edit Filter</button>
-    </div>
-  `;
+const TL_LABELS = {ALL_TIME:'All Time',TODAY:'Today',WEEK:'This Week',MONTH:'This Month',QUARTER:'This Quarter',YEAR:'This Year',HALF_YEAR:'Half Year',LAST_7_DAYS:'Last 7 Days',LAST_30_DAYS:'Last 30 Days',LAST_6_MONTHS:'Last 6 Mo',LAST_1_YEAR:'Last Year',CUSTOM:'Custom Range'};
+
+function updateAnalyticsFilterPill(data) {
+  const pill  = document.getElementById('analytics-filter-pill');
+  const label = document.getElementById('analytics-filter-pill-label');
+  if (!pill) return;
+  if (data.commonFilterEnabled) {
+    const fs = data.screenFilter || {};
+    const tl = fs.timelineType || 'ALL_TIME';
+    label.textContent = TL_LABELS[tl] || tl;
+    pill.classList.add('visible');
+  } else {
+    pill.classList.remove('visible');
+  }
 }
 
 window.openCommonFilterSheet = function() {
   const existing = lastAnalyticsResponse?.screenFilter || {};
-  const body = `
-    <div style="max-height: 70vh; overflow-y: auto; padding-right: 8px">
-      ${buildFilterForm(existing)}
-    </div>
-  `;
+  const body = buildFilterForm(existing);
 
-  openModal('Analytics Common Filter', body, async () => {
+  openFilterSheet('Common Filter', body, async () => {
     const payload = collectFilterPayload();
     if (!payload) return;
+    const res = await apiWrite('POST', '/api/analytics/filter', payload);
+    if (res.success) { renderAnalytics(); showToast('Common filter updated'); }
+    else { showToast('Failed to update filter: ' + (res.error || ''), 'error'); }
+  }, null);
 
-    await withLoading(modalConfBtn, async () => {
-      const res = await apiWrite('POST', '/api/analytics/filter', payload);
-      if (res.success) {
-        closeModal();
-        renderAnalytics();
-        showToast('Common filter updated');
-      } else {
-        showToast('Failed to update filter: ' + (res.error || ''), 'error');
-      }
-    });
-  }, 'Apply to All Charts');
-
-  modalConfBtn.className = 'btn btn-primary';
-  // Hide name field as it's not needed for common filter
-  const nameField = document.getElementById('fl-name')?.closest('.form-field');
-  if (nameField) nameField.style.display = 'none';
+  // Hide name field — not needed for common filter
+  requestAnimationFrame(() => {
+    const nameField = document.getElementById('fl-name')?.closest('.form-field');
+    if (nameField) nameField.style.display = 'none';
+  });
 };
 
 window.openManageAnalyticsCards = async function() {

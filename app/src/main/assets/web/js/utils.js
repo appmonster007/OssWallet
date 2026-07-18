@@ -403,6 +403,82 @@ async function updateCardSetting(cardId, settings, payloadType) {
   } catch (e) { console.error('Failed to update card setting', cardId, settings, e); }
 }
 
+/* ── Filter Bottom Sheet ── */
+let _fsApplyFn = null;
+
+window.openFilterSheet = function(title, bodyHtml, onApply, onReset) {
+  const overlay  = document.getElementById('filter-sheet-overlay');
+  const sheet    = document.getElementById('filter-sheet');
+  const titleEl  = document.getElementById('filter-sheet-title');
+  const bodyEl   = document.getElementById('filter-sheet-body');
+  const applyBtn = document.getElementById('fs-apply-btn');
+  const resetBtn = document.getElementById('fs-reset-btn');
+  if (!overlay || !sheet) return;
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = bodyHtml;
+
+  _fsApplyFn = onApply;
+  applyBtn.onclick = () => { if (_fsApplyFn) _fsApplyFn(); closeFilterSheet(); };
+
+  if (onReset) {
+    resetBtn.disabled = false; resetBtn.style.opacity = '';
+    resetBtn.onclick = () => { onReset(); closeFilterSheet(); };
+  } else {
+    resetBtn.disabled = true; resetBtn.style.opacity = '0.4';
+    resetBtn.onclick = null;
+  }
+
+  overlay.classList.add('open');
+  requestAnimationFrame(() => sheet.classList.add('open'));
+  document.body.classList.add('modal-open');
+};
+
+window.closeFilterSheet = function() {
+  document.getElementById('filter-sheet')?.classList.remove('open');
+  document.getElementById('filter-sheet-overlay')?.classList.remove('open');
+  document.body.classList.remove('modal-open');
+};
+
+/* ── Sidebar: profile + dynamic accounts ── */
+window.refreshSidebar = function() {
+  const profileEl = document.getElementById('sidebar-profile');
+  const accsEl    = document.getElementById('sidebar-accs');
+
+  if (profileEl) {
+    const name     = cachedSettings.profileName || cachedSettings.name || 'My Wallet';
+    const initial  = name.charAt(0).toUpperCase();
+    const currency = cachedSettings.baseCurrency || '';
+    profileEl.innerHTML =
+      `<div class="sidebar-profile">
+        <div class="sidebar-profile-row">
+          <div class="sidebar-avatar">${esc(initial)}</div>
+          <div style="min-width:0">
+            <div class="sidebar-profile-name">${esc(name)}</div>
+            ${currency ? `<div class="sidebar-profile-currency">${esc(currency)}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (accsEl) {
+    if (cachedAccounts.length) {
+      accsEl.innerHTML = cachedAccounts.slice(0, 7).map(a => {
+        const color    = a.colorHex || '#42A5F5';
+        const balStr   = fmt(a.balance || 0, a.currency);
+        const balColor = (a.balance || 0) >= 0 ? 'var(--income)' : 'var(--expense)';
+        return `<a class="sidebar-account-item" href="#/accounts/${esc(a.id)}">
+          <div class="sidebar-account-dot" style="background:${esc(color)}"></div>
+          <span class="sidebar-account-name">${esc(a.name)}</span>
+          <span class="sidebar-account-bal" style="color:${balColor}">${esc(balStr)}</span>
+        </a>`;
+      }).join('');
+    } else {
+      accsEl.innerHTML = '';
+    }
+  }
+};
+
 function navigateWithFilter(cardId, drillDown = {}) {
   const fs = cardOverrides[cardId] || {};
   const p = new URLSearchParams();

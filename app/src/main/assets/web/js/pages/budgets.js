@@ -17,7 +17,7 @@ async function renderBudgets() {
     let html = `<div class="page-header"><h2 class="section-title">Budgets</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm${showArchived?' btn-filter-active':''}" onclick="toggleBudgetArchived()" title="Show/hide archived budgets">
-          📦 ${showArchived ? 'Hide Archived' : `Archived (${archived.length})`}
+          Archive ${showArchived ? 'Hide Archived' : `Archived (${archived.length})`}
         </button>
         <button class="btn btn-primary btn-sm" onclick="openAddBudget()">+ Add Budget</button>
       </div>
@@ -25,8 +25,8 @@ async function renderBudgets() {
 
     if (!displayed.length) {
       html += showArchived
-        ? emptyState('📦', 'No archived budgets.', 'Show Active', 'toggleBudgetArchived()')
-        : emptyState('📈', 'No budgets yet.', '+ Add Budget', 'openAddBudget()');
+        ? emptyState('', 'No archived budgets.', 'Show Active', 'toggleBudgetArchived()')
+        : emptyState('', 'No budgets yet.', '+ Add Budget', 'openAddBudget()');
     } else {
       html += '<div class="card-grid">';
       displayed.forEach(b => {
@@ -48,10 +48,10 @@ async function renderBudgets() {
           <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">Remaining: ${fmt(b.remaining||0,b.currency)}</div>
           <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
             ${!b.isArchived ? `<a class="btn btn-primary btn-sm" href="#/budgets/${esc(b.id)}">Details</a>` : ''}
-            <button class="btn btn-ghost btn-sm" onclick="openEditBudget('${esc(b.id)}')">✏️ Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditBudget('${esc(b.id)}')">Edit</button>
             ${b.isArchived
-              ? `<button class="btn btn-ghost btn-sm" onclick="restoreBudget('${esc(b.id)}','${esc(b.name)}')">♻️ Restore</button>`
-              : `<button class="btn btn-ghost btn-sm" onclick="archiveBudget('${esc(b.id)}','${esc(b.name)}')">📦 Archive</button>`
+              ? `<button class="btn btn-ghost btn-sm" onclick="restoreBudget('${esc(b.id)}','${esc(b.name)}')">Restore</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="archiveBudget('${esc(b.id)}','${esc(b.name)}')">Archive</button>`
             }
             <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteBudget('${esc(b.id)}','${esc(b.name)}')">Delete</button>
           </div>
@@ -189,11 +189,11 @@ async function renderBudgetDetail(id) {
         ${b.isArchived ? '<span class="badge" style="background:var(--border);color:var(--text-muted)">Archived</span>' : ''}
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="openEditBudget('${esc(b.id)}')">✏️ Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditBudget('${esc(b.id)}')">Edit</button>
       </div>
     </div>
-    ${overBudget ? '<div class="alert alert-error">⚠️ Over budget! Spending has exceeded the limit.</div>' : ''}
-    ${nearLimit  ? '<div class="alert alert-warn">⚠️ Approaching budget limit.</div>' : ''}
+    ${overBudget ? '<div class="alert alert-error">Over budget! Spending has exceeded the limit.</div>' : ''}
+    ${nearLimit  ? '<div class="alert alert-warn">Approaching budget limit.</div>' : ''}
     <div class="card" style="max-width:560px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div style="font-size:0.8rem;color:var(--text-muted)">${esc(b.period||'')}</div>
@@ -215,10 +215,10 @@ async function renderBudgetDetail(id) {
         </div>
       </div>
       <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn btn-ghost btn-sm" href="#/analytics">📉 View in Analytics</a>
+        <a class="btn btn-ghost btn-sm" href="#/analytics">View in Analytics</a>
         ${b.isArchived
-          ? `<button class="btn btn-ghost btn-sm" onclick="restoreBudget('${esc(b.id)}','${esc(b.name)}')">♻️ Restore</button>`
-          : `<button class="btn btn-ghost btn-sm" onclick="archiveBudget('${esc(b.id)}','${esc(b.name)}')">📦 Archive</button>`
+          ? `<button class="btn btn-ghost btn-sm" onclick="restoreBudget('${esc(b.id)}','${esc(b.name)}')">Restore</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="archiveBudget('${esc(b.id)}','${esc(b.name)}')">Archive</button>`
         }
       </div>
     </div>`;

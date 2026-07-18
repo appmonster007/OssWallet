@@ -12,7 +12,7 @@ async function renderAccounts() {
     </div>`;
 
     if (!cachedAccounts.length) {
-      html += emptyState('💳', 'No accounts yet.', '+ Add Account', 'openAddAccount()');
+      html += emptyState('', 'No accounts yet.', '+ Add Account', 'openAddAccount()');
     } else {
       html += '<div class="card-grid">';
       cachedAccounts.forEach(acc => {
@@ -23,7 +23,7 @@ async function renderAccounts() {
           <div class="stat-value ${balClass}">${fmt(acc.balance || 0, acc.currency)}</div>
           <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
             <a class="btn btn-primary btn-sm" href="#/accounts/${esc(acc.id)}">Details</a>
-            <button class="btn btn-ghost btn-sm" onclick="openEditAccount('${esc(acc.id)}')">✏️ Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
             <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
             <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
           </div>
@@ -206,7 +206,7 @@ function _renderAccDetailContent() {
         </div>` : ''}
         <div class="acc-hero-actions">
           <button class="acc-hero-btn" onclick="openAddTransaction()">+ Transaction</button>
-          <button class="acc-hero-btn" onclick="openEditAccount('${esc(acc.id)}')">✏ Edit</button>
+          <button class="acc-hero-btn" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
           <a class="acc-hero-btn" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
         </div>
       </div>
@@ -275,7 +275,7 @@ function _renderAccDetailContent() {
           <div class="tx-right">
             <div class="tx-amount ${typeCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
             <div class="tx-actions">
-              <button class="btn-icon" title="Edit" onclick="event.stopPropagation();openEditTransaction(${tx.id})">✏️</button>
+              <button class="btn-icon" title="Edit" onclick="event.stopPropagation();openEditTransaction(${tx.id})">Edit</button>
             </div>
           </div>
         </div>`;

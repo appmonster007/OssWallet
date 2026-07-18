@@ -43,7 +43,7 @@ async function renderRecords() {
 
     const filterKeys = [type, accountId, dateFrom, dateTo, categoryId, minAmount, maxAmount, status, payee];
     const activeFilterCount = filterKeys.filter(Boolean).length;
-    const filterBtnLabel = `⚙️ Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}`;
+    const filterBtnLabel = `Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}`;
     const filterBtnCls   = activeFilterCount ? 'btn btn-ghost btn-sm btn-filter-active' : 'btn btn-ghost btn-sm';
 
     const today = new Date(); today.setHours(0,0,0,0);
@@ -112,7 +112,7 @@ async function renderRecords() {
     </div>${fPanel}`;
 
     if (data.items.length === 0) {
-      html += emptyState('🔍', 'No records found.', 'Clear Filters', 'clearRecordFilters()');
+      html += emptyState('', 'No records found.', 'Clear Filters', 'clearRecordFilters()');
     } else {
       // Client-side sort (within current page)
       let items = [...data.items];
@@ -192,7 +192,7 @@ function buildTxTimeline(items, showGroupHeader, groupLabel) {
     const dotCls     = amtCls;
     const tagsHtml   = (tx.tags||[]).length
       ? `<div class="tx-tags">${tx.tags.map(t=>`<span class="tx-tag">#${esc(t)}</span>`).join('')}</div>` : '';
-    const warIcon    = tx.warrantyExpiration ? ' 🛡️' : '';
+    const warIcon    = tx.warrantyExpiration ? ' [W]' : '';
 
     let rowCls = 'tx-row';
     if (tx.isPlanned) { rowCls += tx.isOverdue ? ' tx-overdue' : ' tx-planned'; }
@@ -214,7 +214,7 @@ function buildTxTimeline(items, showGroupHeader, groupLabel) {
     let actionsHtml = '';
     if (tx.isPlanned) {
       actionsHtml = `<div class="tx-actions">
-        <button class="btn-icon" style="color:var(--income)" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">✓</button>
+        <button class="btn-icon" style="color:var(--income)" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">Confirm</button>
         <button class="btn-icon" title="Skip" onclick="event.stopPropagation();skipPlannedOccurrence(${tx.paymentId},${tx.date})">⏭</button>
       </div>`;
     } else {
@@ -254,7 +254,7 @@ function buildTxTable(items, noHeader) {
     const sign     = tx.type === 'EXPENSE' ? '−' : tx.type === 'INCOME' ? '+' : '';
     const badgeCls = tx.type === 'INCOME' ? 'badge-income' : tx.type === 'EXPENSE' ? 'badge-expense' : 'badge-transfer';
     const tagsHtml = (tx.tags||[]).length ? `<br>${tx.tags.map(t=>`<span class="badge" style="font-size:0.68rem;background:var(--surface2);color:var(--text)">#${esc(t)}</span>`).join(' ')}` : '';
-    const warIcon  = tx.warrantyExpiration ? ' 🛡️' : '';
+    const warIcon  = tx.warrantyExpiration ? ' [W]' : '';
 
     let trCls = '';
     if (tx.isPlanned) {
@@ -266,19 +266,19 @@ function buildTxTable(items, noHeader) {
 
     s += `<tr class="${trCls}" style="cursor:pointer" onclick="${clickAction}">
       <td style="white-space:nowrap">${fmtDate(tx.date)}</td>
-      <td>${tx.isPlanned ? '🕒 ' : ''}${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
+      <td>${tx.isPlanned ? '' : ''}${esc(tx.title)}${warIcon}${tx.note ? `<br><small style="color:var(--text-muted)">${esc(tx.note)}</small>` : ''}${tagsHtml}</td>
       <td>${tx.categoryName ? esc(tx.categoryName) : '<span style="color:var(--text-muted)">—</span>'}</td>
       <td>${esc(tx.accountName || '')}</td>
       <td><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span></td>
       <td style="text-align:right" class="${amtClass}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         ${tx.isPlanned ? `
-          <button class="btn-icon" title="Confirm" onclick="confirmPlannedOccurrence(${tx.paymentId}, ${tx.date})">✅</button>
+          <button class="btn-icon" title="Confirm" onclick="confirmPlannedOccurrence(${tx.paymentId}, ${tx.date})">Confirm</button>
           <button class="btn-icon" title="Skip" onclick="skipPlannedOccurrence(${tx.paymentId}, ${tx.date})">⏭️</button>
         ` : `
-          <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">📋</button>
-          <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">✏️</button>
-          <button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">🗑️</button>
+          <button class="btn-icon" title="Clone" onclick="cloneTransaction(${tx.id})">Clone</button>
+          <button class="btn-icon" title="Edit" onclick="openEditTransaction(${tx.id})">Edit</button>
+          <button class="btn-icon" title="Delete" onclick="deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">Del</button>
         `}
       </td>
     </tr>`;
@@ -675,10 +675,10 @@ window.openTxDetail = async function (id) {
   const badgeCls = tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
   const tags = (tx.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2)">#${esc(t)}</span>`).join(' ');
   const warLine = tx.warrantyExpiration
-    ? `<div class="form-field"><label>Warranty Expires</label><div>${new Date(tx.warrantyExpiration).toLocaleDateString()} 🛡️</div></div>`
+    ? `<div class="form-field"><label>Warranty Expires</label><div>${new Date(tx.warrantyExpiration).toLocaleDateString()} [W]</div></div>`
     : '';
   const locationLine = tx.location
-    ? `${formField('Location', `<div>📍 ${esc(tx.location)}</div>`)}`
+    ? `${formField('Location', `<div>${esc(tx.location)}</div>`)}`
     : '';
   const linkedLine = (tx.linkedTransactionIds||[]).length
     ? `${formField('Linked Transactions', `<div>${tx.linkedTransactionIds.map(lid=>`<a href="#" onclick="event.preventDefault();closeModal();openTxDetail(${lid})" style="color:var(--accent);margin-right:8px">#${lid}</a>`).join('')}</div>`)}`
@@ -704,9 +704,9 @@ window.openTxDetail = async function (id) {
     ${warLine}
     ${linkedLine}
     <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal();openEditTransaction(${tx.id})">✏️ Edit</button>
-      <button class="btn btn-ghost btn-sm" onclick="closeModal();cloneTransaction(${tx.id})">📋 Clone</button>
-      <button class="btn btn-danger btn-sm" onclick="closeModal();deleteTransaction('${tx.id}','${esc(tx.title)}')">🗑️ Delete</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal();openEditTransaction(${tx.id})">Edit</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal();cloneTransaction(${tx.id})">Clone</button>
+      <button class="btn btn-danger btn-sm" onclick="closeModal();deleteTransaction('${tx.id}','${esc(tx.title)}')">Delete</button>
     </div>
   </div>`;
   openModal(`Transaction Detail`, body, null, null);

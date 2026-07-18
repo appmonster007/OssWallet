@@ -38,7 +38,7 @@ async function renderDashboard() {
 
     let html = `<div class="page-header">
       <h2 class="section-title">Dashboard</h2>
-      <button class="btn btn-ghost btn-sm" onclick="openManageCards()">⚙️ Manage Cards</button>
+      <button class="btn btn-ghost btn-sm" onclick="openManageCards()">Manage Cards</button>
     </div>`;
 
     if (pinnedCard) {

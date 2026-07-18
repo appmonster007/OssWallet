@@ -14,7 +14,7 @@ async function renderCategories() {
     </div>`;
 
     if (!cachedCategories.length) {
-      html += emptyState('🏷️', 'No categories found.', '+ Add Category', 'openAddCategory()');
+      html += emptyState('', 'No categories found.', '+ Add Category', 'openAddCategory()');
     } else {
       html += '<div class="card">';
       parents.forEach((cat, idx) => {
@@ -39,7 +39,7 @@ function renderCatRow(cat, indent, idx, total) {
     : (cat.colorHex || '#9e9e9e');
   const iconStr   = cat.iconName && cat.iconName.length <= 2 ? cat.iconName : '📁';
   const deleteBtn = !cat.isDefault
-    ? `<button class="btn-icon" title="Delete" onclick="deleteCategory('${esc(cat.id)}','${esc(cat.name)}')">🗑️</button>` : '';
+    ? `<button class="btn-icon" title="Delete" onclick="deleteCategory('${esc(cat.id)}','${esc(cat.name)}')">Del</button>` : '';
   const upBtn   = (!indent && idx > 0)
     ? `<button class="btn-icon" title="Move up" onclick="moveCategoryUp(${cat.id})" style="font-size:0.8rem">↑</button>` : '<span style="width:32px;display:inline-block"></span>';
   const downBtn = (!indent && idx < total - 1)
@@ -53,7 +53,7 @@ function renderCatRow(cat, indent, idx, total) {
     ${cat.isDefault ? '<span style="font-size:0.75rem;color:var(--text-muted);margin-right:8px">Default</span>' : ''}
     ${!indent ? upBtn : ''}
     ${!indent ? downBtn : ''}
-    <button class="btn-icon" title="Edit" onclick="openEditCategory('${esc(cat.id)}')">✏️</button>
+    <button class="btn-icon" title="Edit" onclick="openEditCategory('${esc(cat.id)}')">Edit</button>
     ${deleteBtn}
   </div>`;
 }

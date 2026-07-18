@@ -15,7 +15,7 @@ async function renderSettings() {
     const html = `<h2 class="section-title">Settings</h2>
       <div class="card" style="max-width:520px">
 
-        <div class="form-section-label">👤 Profile</div>
+        <div class="form-section-label">Profile</div>
         <div class="settings-row">
           <div>
             <div class="settings-label">Profile ID</div>
@@ -23,7 +23,7 @@ async function renderSettings() {
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="settings-value" style="font-family:monospace">${esc(String(s.currentProfileId || '—'))}</span>
-            <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:3px 8px" onclick="navigator.clipboard.writeText('${esc(String(s.currentProfileId||''))}').then(()=>showToast('Profile ID copied!'))">📋 Copy</button>
+            <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:3px 8px" onclick="navigator.clipboard.writeText('${esc(String(s.currentProfileId||''))}').then(()=>showToast('Profile ID copied!'))">Copy</button>
           </div>
         </div>
         <div class="settings-row">
@@ -34,7 +34,7 @@ async function renderSettings() {
           <span class="settings-value" style="font-size:0.82rem">${esc(Intl.DateTimeFormat().resolvedOptions().timeZone || '—')}</span>
         </div>
 
-        <div class="form-section-label" style="margin-top:20px">💱 Currency &amp; Display</div>
+        <div class="form-section-label" style="margin-top:20px">Currency &amp; Display</div>
         <div class="settings-row">
           <div style="flex:1">
             <div class="settings-label">Base Currency</div>
@@ -64,14 +64,14 @@ async function renderSettings() {
           <button class="btn btn-primary btn-sm" id="set-save-btn" onclick="saveSettings()">Save Settings</button>
         </div>
 
-        <div class="form-section-label" style="margin-top:20px">🎨 Appearance</div>
+        <div class="form-section-label" style="margin-top:20px">Appearance</div>
         <div class="settings-row">
           <div style="flex:1">
             <div class="settings-label">Theme</div>
             <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Light, dark, or follow system preference</div>
           </div>
           <div style="display:flex;gap:6px">
-            ${['auto','light','dark'].map(t=>`<button id="theme-btn-${t}" class="btn btn-sm ${savedTheme===t?'btn-primary':'btn-ghost'}" onclick="setThemePref('${t}')">${t==='auto'?'🔄 Auto':t==='light'?'☀️ Light':'🌙 Dark'}</button>`).join('')}
+            ${['auto','light','dark'].map(t=>`<button id="theme-btn-${t}" class="btn btn-sm ${savedTheme===t?'btn-primary':'btn-ghost'}" onclick="setThemePref('${t}')">${t==='auto'?' Auto':t==='light'?'Light':'Dark'}</button>`).join('')}
           </div>
         </div>
         <div class="settings-row">
@@ -84,7 +84,7 @@ async function renderSettings() {
           </select>
         </div>
 
-        <div class="form-section-label" style="margin-top:20px">🔒 Security</div>
+        <div class="form-section-label" style="margin-top:20px">Security</div>
         <div class="settings-row">
           <div>
             <div class="settings-label">Session</div>
@@ -105,7 +105,7 @@ window.setThemePref = function (theme) {
   if (theme === 'light') document.documentElement.classList.add('force-light');
   else if (theme === 'dark') document.documentElement.classList.add('force-dark');
   const headerBtn = document.getElementById('theme-toggle');
-  if (headerBtn) headerBtn.textContent = (theme === 'light') ? '🌙' : '☀️';
+  if (headerBtn) headerBtn.textContent = (theme === 'light') ? 'Dark' : 'Light';
   // Refresh button states
   ['auto','light','dark'].forEach(t => {
     const btn = document.getElementById('theme-btn-' + t);

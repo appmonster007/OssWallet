@@ -140,7 +140,6 @@ document.addEventListener('click', () => {
 
 function emptyState(icon, message, actionLabel, onAction) {
   return `<div class="empty-state">
-    <div style="font-size:2.5rem;margin-bottom:8px">${icon}</div>
     <div style="font-weight:600;margin-bottom:4px">${esc(message)}</div>
     ${actionLabel ? `<button class="btn btn-primary btn-sm" onclick="${onAction}" style="margin-top:12px">${esc(actionLabel)}</button>` : ''}
   </div>`;

@@ -12,7 +12,7 @@ async function renderLoans() {
     </div>`;
 
     if (!loans.length) {
-      html += emptyState('🏦', 'No loans yet.', '+ Add Loan', 'openAddLoan()');
+      html += emptyState('', 'No loans yet.', '+ Add Loan', 'openAddLoan()');
     } else {
       html += '<div class="card-grid">';
       loans.forEach(loan => {
@@ -44,7 +44,7 @@ async function renderLoans() {
           </div>
           <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
             <a class="btn btn-primary btn-sm" href="#/loans/${esc(loan.id)}">Details</a>
-            <button class="btn btn-ghost btn-sm" onclick="openEditLoan('${esc(loan.id)}')">✏️ Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditLoan('${esc(loan.id)}')">Edit</button>
             <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
           </div>
         </div>`;
@@ -218,7 +218,7 @@ async function renderLoanDetail(id) {
           <td style="white-space:nowrap">${fmtDate(p.date)}</td>
           <td>${fmt(p.amount||0, loan.currency)}</td>
           <td>${p.note ? esc(p.note) : '<span style="color:var(--text-muted)">—</span>'}</td>
-          <td><button class="btn-icon" title="Delete" onclick="deleteRepayment(${loan.id},${p.id})">🗑️</button></td>
+          <td><button class="btn-icon" title="Delete" onclick="deleteRepayment(${loan.id},${p.id})">Del</button></td>
         </tr>`;
       });
       html += '</tbody></table></div></div>';
@@ -238,7 +238,7 @@ window.openLogRepayment = function (loanId, principal=0, remaining=0, paid=0, cu
       formField('Amount', `<div class="input-group"><span class="input-group-addon">${esc(currency)||'$'}</span><input type="number" id="rp-amount" placeholder="0.00" min="0" step="0.01" oninput="const r=${remaining};const v=parseFloat(this.value)||0;const w=document.getElementById('rp-overpay');if(w)w.style.display=v>r&&r>0?'':'none'"></div>`),
       formField('Date', `<input type="date" id="rp-date" value="${new Date().toISOString().slice(0,10)}">`)
     )}
-    <div id="rp-overpay" style="display:none;color:var(--warning);font-size:0.8rem;margin-top:-8px">⚠️ Exceeds remaining balance — overpayment will settle the loan.</div>
+    <div id="rp-overpay" style="display:none;color:var(--warning);font-size:0.8rem;margin-top:-8px">Exceeds remaining balance — overpayment will settle the loan.</div>
     ${formField('Account (debited)', buildSelect('rp-account',[{value:'',label:'— None —'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),'','— None —',true))}
     ${formField('Note (optional)', '<input type="text" id="rp-note" placeholder="e.g. Monthly payment">')}`;
   openModal('Log Repayment', body, () => submitLogRepayment(loanId), 'Save');

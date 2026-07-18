@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OssWallet — Web Portal</title>
 <link rel="stylesheet" href="/web/style.css">
+<!-- Mock mode: inject token before state.js so app auto-logs in -->
+<script>
+  (function() {
+    if (new URLSearchParams(location.search).get('mock') === 'true') {
+      if (!sessionStorage.getItem('oss_token')) sessionStorage.setItem('oss_token', 'mock-token');
+    }
+  })();
+</script>
 </head>
 <body>
 
@@ -130,6 +138,9 @@
 <script defer src="/web/js/pages/filters.js"></script>
 <script defer src="/web/js/pages/settings.js"></script>
 <script defer src="/web/js/pages/cards.js"></script>
+<!-- Mock data + interceptor — only active when ?mock=true -->
+<script defer src="/web/js/mock-data.js"></script>
+<script defer src="/web/js/mock.js"></script>
 <script defer src="/web/js/app.js"></script>
 
 </body>

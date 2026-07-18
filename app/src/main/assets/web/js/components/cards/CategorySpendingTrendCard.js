@@ -5,7 +5,7 @@ function renderCategorySpendingTrendCard(d) {
   const isCumulative = d.isCumulative;
   const cur = d.baseCurrency;
 
-  const natureMap = { MUST: '#B3261E', NEED: '#2979FF', WANT: '#FF5722' };
+  const natureMap = { MUST: 'var(--expense)', NEED: 'var(--accent)', WANT: 'var(--warning)' };
   const processedBuckets = [];
   let runTotals = { MUST: 0, NEED: 0, WANT: 0 };
 
@@ -39,10 +39,11 @@ function renderCategorySpendingTrendCard(d) {
     }
   });
 
+  const selectedNatures = d.selectedNatures || [];
   const natureFilters = `<div style="display: flex; gap: 8px; margin: 16px 0">
     ${['MUST', 'NEED', 'WANT'].map(n => {
-      const active = d.selectedNatures.includes(n);
-      const newNatures = active ? d.selectedNatures.filter(x => x !== n) : [...d.selectedNatures, n];
+      const active = selectedNatures.includes(n);
+      const newNatures = active ? selectedNatures.filter(x => x !== n) : [...selectedNatures, n];
       return `<div class="badge" style="flex:1; text-align:center; padding: 6px; cursor: pointer; background: ${active ? natureMap[n] : 'var(--surface2)'}; color: ${active ? '#fff' : 'var(--text-muted)'}; opacity: ${active ? 1 : 0.5}"
                    onclick="updateCardSetting('${esc(d.cardId)}', {selectedNatures:${JSON.stringify(newNatures).replace(/"/g, '&quot;')}}, 'CategorySpendingTrend')">
         ${prettyEnum(n)}

@@ -1,40 +1,50 @@
 function renderPlannedPaymentsCard(d) {
-  const upcoming = d.upcoming||[], overdue = d.overdue||[];
+  const upcoming = d.upcoming || [], overdue = d.overdue || [];
   if (!upcoming.length && !overdue.length) return '<p class="empty-state">No upcoming or overdue payments.</p>';
 
-  let html = '<div class="planned-payments-list">';
+  const renderRow = (p, isOD) => {
+    const isIncome   = p.transactionType === 'INCOME';
+    const isTransfer = p.transactionType === 'TRANSFER';
+    const typeCls    = isIncome ? 'income' : (isTransfer ? 'transfer' : 'expense');
+    const amtSign    = isIncome ? '+' : (isTransfer ? '' : '−');
 
-  const renderRow = (p, isOverdue) => {
-    const typeCls = isOverdue ? 'amount-expense' : (p.transactionType === 'INCOME' ? 'amount-income' : (p.transactionType === 'TRANSFER' ? 'amount-accent' : 'amount-expense'));
+    return `<div class="tx-row${isOD ? ' tx-overdue' : ' tx-planned'}" onclick="navigate('#/planned-payments/${esc(p.id)}')">
+      <div class="tx-dot ${typeCls}"></div>
 
-    return `<div class="planned-payment-row" style="padding: 12px 0; border-bottom: 1px dashed var(--border); display: flex; align-items: center; gap: 12px; cursor: pointer" onclick="navigate('#/planned-payments/${esc(p.id)}')">
-      <div style="flex: 1; min-width: 0">
-        <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">${esc(p.name)}</div>
-        <div style="font-size: 0.72rem; color: ${isOverdue ? 'var(--danger)' : 'var(--text-muted)'}; text-transform: uppercase; margin-top: 2px">
-          ${isOverdue ? 'OVERDUE' : fmtDate(p.nextDueDate)}
+      <div class="tx-info">
+        <div class="tx-name">${esc(p.name)}</div>
+        <div class="tx-sub" style="display:flex;gap:6px;align-items:center">
+          <span style="color:${isOD ? 'var(--expense)' : 'var(--text-muted)'}">${fmtDate(p.nextDueDate)}</span>
+          ${esc(p.categoryName || '')}
         </div>
       </div>
 
-      <div style="text-align: right">
-        <div class="${typeCls}" style="font-weight: 700; font-size: 0.95rem">${fmt(p.amount, p.currency)}</div>
-        <div style="font-size: 0.7rem; color: var(--text-muted)">${esc(p.categoryName || 'No Category')}</div>
+      <div class="tx-right">
+        <div class="tx-amount ${typeCls}">${amtSign}${fmt(p.amount, p.currency)}</div>
       </div>
 
-      <div class="row-actions" style="display: flex; gap: 4px; margin-left: 8px">
-        <button class="btn-icon btn-sm" title="Confirm" onclick="event.stopPropagation(); confirmPlannedOccurrence('${esc(p.id)}', ${p.nextDueDate})">✓</button>
-        <button class="btn-icon btn-sm" title="Skip" onclick="event.stopPropagation(); skipPlannedOccurrence('${esc(p.id)}', ${p.nextDueDate})">»</button>
+      <div class="tx-actions">
+        <button class="btn-icon btn-sm" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence('${esc(p.id)}',${p.nextDueDate})">✓</button>
+        <button class="btn-icon btn-sm" title="Skip" onclick="event.stopPropagation();skipPlannedOccurrence('${esc(p.id)}',${p.nextDueDate})">»</button>
       </div>
     </div>`;
   };
 
+  let html = '';
+
   if (overdue.length) {
-    overdue.forEach(p => { html += renderRow(p, true); });
+    html += `<div class="planned-section planned-section-overdue">
+      <div class="planned-section-header overdue">Overdue</div>
+      ${overdue.map(p => renderRow(p, true)).join('')}
+    </div>`;
   }
 
   if (upcoming.length) {
-    upcoming.forEach(p => { html += renderRow(p, false); });
+    html += `<div class="planned-section">
+      ${overdue.length ? '<div class="planned-section-header">Upcoming</div>' : ''}
+      ${upcoming.map(p => renderRow(p, false)).join('')}
+    </div>`;
   }
 
-  html += '</div>';
   return html;
 }

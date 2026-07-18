@@ -116,38 +116,37 @@ async function renderRecords() {
     } else {
       // Client-side sort (within current page)
       let items = [...data.items];
-      if (sortBy === 'date_asc')     items.sort((a,b) => a.date - b.date);
+      if (sortBy === 'date_asc')         items.sort((a,b) => a.date - b.date);
       else if (sortBy === 'amount_desc') items.sort((a,b) => Math.abs(b.amount||0) - Math.abs(a.amount||0));
       else if (sortBy === 'amount_asc')  items.sort((a,b) => Math.abs(a.amount||0) - Math.abs(b.amount||0));
       else if (sortBy === 'title_asc')   items.sort((a,b) => (a.title||'').localeCompare(b.title||''));
-      // date_desc is the default from server
 
-      // Build grouped or flat table
-      html += `<div class="card"><div class="table-wrap">`;
+      // Timeline layout
+      html += `<div class="tx-timeline">`;
 
       if (groupBy === 'none') {
-        html += buildTxTable(items);
+        html += buildTxTimeline(items, false);
       } else {
         const groups = groupTransactions(items, groupBy);
         groups.forEach(([label, groupItems]) => {
-          html += `<div style="padding:8px 12px 4px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--surface2);border-bottom:1px solid var(--border)">${esc(label)}</div>`;
-          html += buildTxTable(groupItems, true);
+          html += buildTxTimeline(groupItems, true, label);
         });
       }
 
+      html += `</div>`;
+
       const totalPages = Math.ceil(data.total / data.limit);
       const lastPage   = Math.max(0, totalPages - 1);
-      html += `</div>
-        <div class="pagination">
-          <span class="page-info">Page ${page+1} of ${totalPages} (${data.total} total)</span>
-          <select style="font-size:0.78rem;padding:3px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text)" title="Rows per page" onchange="localStorage.setItem('oss-page-size',this.value);navPage(0)">
-            ${[10,25,50,100].map(n=>`<option value="${n}" ${pageLimit===n?'selected':''}>${n} / page</option>`).join('')}
-          </select>
-          <button class="btn btn-ghost btn-sm" onclick="navPage(0)" ${page===0?'disabled':''} title="First page">«</button>
-          <button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
-          <button class="btn btn-ghost btn-sm" onclick="navPage(${page+1})" ${!data.hasMore?'disabled':''}>Next →</button>
-          <button class="btn btn-ghost btn-sm" onclick="navPage(${lastPage})" ${!data.hasMore?'disabled':''} title="Last page">»</button>
-        </div></div>`;
+      html += `<div class="pagination">
+        <span class="page-info">Page ${page+1} of ${totalPages} (${data.total} total)</span>
+        <select style="font-size:0.78rem;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text)" title="Rows per page" onchange="localStorage.setItem('oss-page-size',this.value);navPage(0)">
+          ${[10,25,50,100].map(n=>`<option value="${n}" ${pageLimit===n?'selected':''}>${n} / page</option>`).join('')}
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="navPage(0)" ${page===0?'disabled':''} title="First">«</button>
+        <button class="btn btn-ghost btn-sm" onclick="navPage(${page-1})" ${page===0?'disabled':''}>← Prev</button>
+        <button class="btn btn-ghost btn-sm" onclick="navPage(${page+1})" ${!data.hasMore?'disabled':''}>Next →</button>
+        <button class="btn btn-ghost btn-sm" onclick="navPage(${lastPage})" ${!data.hasMore?'disabled':''} title="Last">»</button>
+      </div>`;
     }
 
     setContent(html);
@@ -158,6 +157,92 @@ async function renderRecords() {
     wireDateRange('f-from', 'f-to');
 
   } catch (e) { if (e.message !== 'Session expired') showError('Error loading records.'); }
+}
+
+function buildTxTimeline(items, showGroupHeader, groupLabel) {
+  if (!items.length) return '';
+
+  // Compute group net for display in group header
+  let net = 0;
+  items.forEach(tx => {
+    if (tx.isPlanned) return;
+    const amt = Math.abs(tx.amount || 0);
+    if (tx.type === 'INCOME') net += amt;
+    else if (tx.type === 'EXPENSE') net -= amt;
+  });
+  const netCls = net > 0 ? 'income' : net < 0 ? 'expense' : 'neutral';
+  const netSign = net > 0 ? '+' : '';
+  const netFmt = items[0] ? fmt(net, items[0].currency || '') : '';
+
+  let s = '<div class="tx-group">';
+
+  if (showGroupHeader && groupLabel) {
+    s += `<div class="tx-group-header">
+      <span class="tx-group-label">${esc(groupLabel)}</span>
+      <span class="tx-group-total ${netCls}">${netSign}${netFmt}</span>
+    </div>`;
+  }
+
+  items.forEach(tx => {
+    const isIncome   = tx.type === 'INCOME';
+    const isExpense  = tx.type === 'EXPENSE';
+    const isTransfer = tx.type === 'TRANSFER';
+    const sign       = isIncome ? '+' : isExpense ? '−' : '';
+    const amtCls     = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
+    const dotCls     = amtCls;
+    const tagsHtml   = (tx.tags||[]).length
+      ? `<div class="tx-tags">${tx.tags.map(t=>`<span class="tx-tag">#${esc(t)}</span>`).join('')}</div>` : '';
+    const warIcon    = tx.warrantyExpiration ? ' 🛡️' : '';
+
+    let rowCls = 'tx-row';
+    if (tx.isPlanned) { rowCls += tx.isOverdue ? ' tx-overdue' : ' tx-planned'; }
+
+    const overdueBadge = (tx.isPlanned && tx.isOverdue)
+      ? `<span class="badge badge-overdue" style="font-size:0.6rem;margin-left:6px">Overdue</span>` : '';
+    const plannedBadge = (tx.isPlanned && !tx.isOverdue)
+      ? `<span class="badge badge-active" style="font-size:0.6rem;margin-left:6px">Planned</span>` : '';
+
+    const statusLabel = tx.status && tx.status !== 'CLEARED'
+      ? `<div class="tx-status">● ${prettyEnum(tx.status)}</div>` : '';
+    const noteHtml = tx.note
+      ? `<div class="tx-sub" style="margin-top:1px">${esc(tx.note)}</div>` : '';
+
+    const clickAction = tx.isPlanned
+      ? `openPlannedActionModal(${tx.paymentId}, ${tx.date}, '${esc(tx.title)}')`
+      : `openTxDetail(${tx.id})`;
+
+    let actionsHtml = '';
+    if (tx.isPlanned) {
+      actionsHtml = `<div class="tx-actions">
+        <button class="btn-icon" style="color:var(--income)" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">✓</button>
+        <button class="btn-icon" title="Skip" onclick="event.stopPropagation();skipPlannedOccurrence(${tx.paymentId},${tx.date})">⏭</button>
+      </div>`;
+    } else {
+      actionsHtml = `<div class="tx-actions">
+        <button class="btn-icon" title="Clone" onclick="event.stopPropagation();cloneTransaction(${tx.id})">⧉</button>
+        <button class="btn-icon" title="Edit" onclick="event.stopPropagation();openEditTransaction(${tx.id})">✎</button>
+        <button class="btn-icon btn-icon-danger" title="Delete" onclick="event.stopPropagation();deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">✕</button>
+      </div>`;
+    }
+
+    s += `<div class="${rowCls}" onclick="${clickAction}">
+      <div class="tx-dot ${dotCls}"></div>
+      <div class="tx-info">
+        <div class="tx-name">${tx.isPlanned ? '↺ ' : ''}${esc(tx.title)}${warIcon}${plannedBadge}${overdueBadge}</div>
+        <div class="tx-sub">${esc(tx.accountName||'')}${tx.categoryName ? ' · ' + esc(tx.categoryName) : ''}</div>
+        ${noteHtml}
+        ${tagsHtml}
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount ${amtCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
+        ${statusLabel}
+        <div class="tx-status">${fmtDate(tx.date)}</div>
+      </div>
+      ${actionsHtml}
+    </div>`;
+  });
+
+  return s + '</div>';
 }
 
 function buildTxTable(items, noHeader) {

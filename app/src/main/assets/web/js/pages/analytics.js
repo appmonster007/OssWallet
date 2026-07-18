@@ -11,9 +11,8 @@ async function renderAnalytics() {
 
     lastAnalyticsResponse = json.data;
     const cards = json.data.cards || [];
-    const commonFilterEnabled = json.data.commonFilterEnabled;
 
-    // Cache card settings for filters
+    // Cache card filter overrides
     cards.forEach(card => {
       const fs = card.filterSummary;
       if (fs && !cardOverrides[card.cardId]) {
@@ -37,67 +36,64 @@ async function renderAnalytics() {
       }
     });
 
-    const tabs = ['Status', 'Wallet', 'Track', 'Charts', 'Graphs'];
+    renderAnalyticsContent(json.data);
+  } catch (e) { if (e.message !== 'Session expired') showError('Error loading intelligence.'); }
+}
 
-    let html = `
-      <div class="page-header" style="flex-direction: column; align-items: flex-start; gap: 12px">
-        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center">
-          <h2 class="section-title">Intelligence</h2>
-          <div style="display: flex; gap: 8px">
-            <button class="btn btn-ghost btn-sm" onclick="toggleCommonFilter(${!commonFilterEnabled})">
-               ${commonFilterEnabled ? '🔓 Individual Filters' : '🔒 Use Common Filter'}
-            </button>
-            <button class="btn btn-ghost btn-sm" onclick="openManageAnalyticsCards()">⚙️ Settings</button>
-          </div>
-        </div>
+function renderAnalyticsContent(data) {
+  const cards = data.cards || [];
+  const commonFilterEnabled = data.commonFilterEnabled;
+  const tabs = ['Status', 'Wallet', 'Track', 'Charts', 'Graphs'];
 
-        <div class="atelier-tabs" style="display: flex; gap: 8px; width: 100%; overflow-x: auto; padding-bottom: 4px">
-          ${tabs.map(tab => `
-            <div class="atelier-tab ${analyticsActiveTab === tab ? 'active' : ''}"
-                 onclick="switchAnalyticsTab('${tab}')"
-                 style="padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap;
-                        background: ${analyticsActiveTab === tab ? 'var(--primary)' : 'var(--surface2)'};
-                        color: ${analyticsActiveTab === tab ? '#fff' : 'var(--text-muted)'}">
-              ${tab}
-            </div>
-          `).join('')}
+  let html = `
+    <div class="page-header" style="flex-direction:column;align-items:flex-start;gap:12px">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <h2 class="section-title">Intelligence</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="toggleCommonFilter(${!commonFilterEnabled})">
+            ${commonFilterEnabled ? '🔓 Individual Filters' : '🔒 Use Common Filter'}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="openManageAnalyticsCards()">⚙️ Settings</button>
         </div>
       </div>
+      <div class="atelier-tabs">
+        ${tabs.map(tab => `<div class="atelier-tab${analyticsActiveTab === tab ? ' active' : ''}" onclick="switchAnalyticsTab('${tab}')">${tab}</div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  if (commonFilterEnabled) {
+    html += `
+      <div class="card" style="margin-bottom:20px;border-color:var(--accent-cont)">
+        <div class="dash-card-header">
+          <span class="dash-card-title" style="color:var(--accent)">Common Filter Active</span>
+        </div>
+        <div class="dash-card-body">${renderCommonFilterBar()}</div>
+      </div>
     `;
+  }
 
-    if (commonFilterEnabled) {
-      html += `
-        <div class="card" style="margin-bottom: 20px; border: 2px solid var(--primary-light)">
-          <div style="font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 8px">Common Filter Active</div>
-          ${renderCommonFilterBar()}
-        </div>
-      `;
-    }
+  const filteredCards = cards.filter(c => getTabForCardType(c.cardType) === analyticsActiveTab);
 
-    const filteredCards = cards.filter(c => getTabForCardType(c.cardType) === analyticsActiveTab);
+  if (!filteredCards.length) {
+    html += `<div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+      <div style="font-size:3rem;margin-bottom:16px;opacity:0.3">📊</div>
+      <p>No <strong>${analyticsActiveTab.toLowerCase()}</strong> widgets active in Intelligence.</p>
+    </div>`;
+  } else {
+    filteredCards.forEach(card => {
+      try {
+        const d = card.data || {};
+        const payloadType = d.type ? d.type.split('.').pop() : '';
+        html += dispatchCardRender(card, d, payloadType);
+      } catch (e) {
+        console.error('Error rendering analytics card', card, e);
+        html += `<div class="card"><div class="alert alert-error">Error rendering card "${esc(card.title)}": ${esc(e.message)}</div></div>`;
+      }
+    });
+  }
 
-    if (!filteredCards.length) {
-      html += `
-        <div style="text-align: center; padding: 60px 20px; color: var(--text-muted)">
-          <div style="font-size: 3rem; margin-bottom: 16px; opacity: 0.3">📊</div>
-          <p>No <strong>${analyticsActiveTab.toLowerCase()}</strong> widgets active in Intelligence.</p>
-        </div>
-      `;
-    } else {
-      filteredCards.forEach(card => {
-        try {
-          const d = card.data || {};
-          const payloadType = d.type ? d.type.split('.').pop() : '';
-          html += dispatchCardRender(card, d, payloadType);
-        } catch (e) {
-          console.error('Error rendering analytics card', card, e);
-          html += `<div class="card" style="border:1px solid var(--danger)"><div class="alert alert-error">Error rendering card "${esc(card.title)}": ${esc(e.message)}</div></div>`;
-        }
-      });
-    }
-
-    setContent(html);
-  } catch (e) { if (e.message !== 'Session expired') showError('Error loading intelligence.'); }
+  setContent(html);
 }
 
 function getTabForCardType(type) {
@@ -111,7 +107,12 @@ function getTabForCardType(type) {
 
 window.switchAnalyticsTab = function(tab) {
   analyticsActiveTab = tab;
-  renderAnalytics();
+  // Render from cache — never re-fetch on tab switch
+  if (lastAnalyticsResponse) {
+    renderAnalyticsContent(lastAnalyticsResponse);
+  } else {
+    renderAnalytics();
+  }
 };
 
 window.toggleCommonFilter = async function(enabled) {

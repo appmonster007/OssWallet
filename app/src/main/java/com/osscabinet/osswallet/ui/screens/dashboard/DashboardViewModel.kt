@@ -1,9 +1,7 @@
 package com.osscabinet.ossWallet.ui.screens.dashboard
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
-import com.osscabinet.ossWallet.BuildConfig
 import com.osscabinet.ossWallet.core.util.DispatcherProvider
 import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.card.CardComputeState
@@ -66,7 +64,6 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toImmutableSet
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -121,18 +118,13 @@ class DashboardViewModel @Inject constructor(
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.DASHBOARD
 
-    // Absolute reference point for all perf logs in this ViewModel instance.
-    private val vmCreatedAt = System.currentTimeMillis()
-
     init {
-        if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] VM init t=0")
         // Kick off the card cache load at ViewModel creation so it races the ingredient
         // DB queries instead of running serially after them. The channelFlow awaits this
         // Deferred — on a warm cache it returns instantly, on cold start it's already in flight.
         viewModelScope.launch(dispatchers.io) {
             val profileId = settingsRepository.currentProfileId.first()
             val currency = computationRepository.selectedCurrency.first()
-            if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] kickOffProfileLoad profile=$profileId currency=$currency @ ${System.currentTimeMillis() - vmCreatedAt}ms")
             cardRenderCache.kickOffProfileLoad(profileId, currency)
         }
     }
@@ -521,18 +513,13 @@ class DashboardViewModel @Inject constructor(
                 val successState = state as DashboardUiState.Success
 
                 channelFlow<DashboardUiState> {
-                    val t0 = vmCreatedAt
-                    if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] channelFlow START — first ingredients ready @ ${System.currentTimeMillis() - t0}ms")
-
                     // Ensure the load is keyed to the ACTUAL current profile/currency (the init
                     // block may have snapshotted a different profile if the user switched before
                     // the channelFlow ran). computeIfAbsent is idempotent when the key exists.
                     cardRenderCache.kickOffProfileLoad(successState.profileId, successState.baseCurrency)
 
                     // Await the eagerly-started cache load (typically already done or in-flight).
-                    val cacheAwaitStart = System.currentTimeMillis()
                     cardRenderCache.awaitProfileLoaded(successState.profileId, successState.baseCurrency)
-                    if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] cache await done — waited ${System.currentTimeMillis() - cacheAwaitStart}ms (total ${System.currentTimeMillis() - t0}ms)")
 
                     val configs = successState.cardsConfig.cards
 
@@ -542,12 +529,10 @@ class DashboardViewModel @Inject constructor(
                         successState.profileId,
                         successState.baseCurrency
                     )
-                    val cacheHits = AtomicInteger(0)
                     val localCardState = MutableStateFlow<PersistentMap<String, CardComputeState>>(
                         persistentMapOf<String, CardComputeState>().builder().apply {
                             configs.forEach { c ->
                                 val cached = cachedSnapshot[c.cardId]
-                                if (cached != null) cacheHits.incrementAndGet()
                                 put(
                                     c.cardId,
                                     if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
@@ -555,7 +540,6 @@ class DashboardViewModel @Inject constructor(
                             }
                         }.build()
                     )
-                    if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] seeded ${configs.size} cards — ${cacheHits.get()} cache hits, ${configs.size - cacheHits.get()} cold @ ${System.currentTimeMillis() - t0}ms")
 
                     launch {
                         localCardState.collect { cards ->
@@ -563,7 +547,6 @@ class DashboardViewModel @Inject constructor(
                         }
                     }
 
-                    val completedCards = AtomicInteger(0)
                     configs.forEach { cardConfig ->
                         launch(dispatchers.default) {
                             val cardInput = successState.cardInput ?: run {
@@ -575,8 +558,6 @@ class DashboardViewModel @Inject constructor(
                                 }
                                 return@launch
                             }
-                            if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] card COMPUTE START type=${cardConfig.cardType} id=${cardConfig.cardId} @ ${System.currentTimeMillis() - t0}ms")
-                            val cardStart = System.currentTimeMillis()
                             val state = runCatching {
                                 cardComputerRegistry.compute(
                                     cardConfig.cardType,
@@ -596,9 +577,6 @@ class DashboardViewModel @Inject constructor(
                                     )
                                 }
                             )
-                            val elapsed = System.currentTimeMillis() - cardStart
-                            val done = completedCards.incrementAndGet()
-                            if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] card COMPUTE END type=${cardConfig.cardType} id=${cardConfig.cardId} — ${elapsed}ms compute | $done/${configs.size} done | total ${System.currentTimeMillis() - t0}ms")
                             if (state is CardComputeState.Success) {
                                 cardRenderCache.persist(
                                     successState.profileId,
@@ -609,9 +587,6 @@ class DashboardViewModel @Inject constructor(
                                 )
                             }
                             localCardState.update { it.putting(cardConfig.cardId, state) }
-                            if (done == configs.size) {
-                                if (BuildConfig.DEBUG) Log.d("OssPerf", "[Dashboard] ALL CARDS DONE — ${configs.size} cards complete @ ${System.currentTimeMillis() - t0}ms from VM init")
-                            }
                         }
                     }
                 }

@@ -200,9 +200,9 @@ fun Route.accountRoutes(
                     transferIn = transferIn.toDouble(), transferOut = transferOut.toDouble(),
                     distribution = distribution
                 )
-                call.respond(ApiResponse(success = true, data = mapOf(
-                    "account" to accountDto,
-                    "recentTransactions" to recentTx
+                call.respond(ApiResponse(success = true, data = AccountDetailDto(
+                    account = accountDto,
+                    recentTransactions = recentTx
                 )))
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, ApiResponse<Unit>(success = false, error = e.message ?: "Internal error"))

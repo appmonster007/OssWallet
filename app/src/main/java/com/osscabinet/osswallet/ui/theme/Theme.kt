@@ -172,6 +172,8 @@ fun applyIdentityToColorScheme(
     identity: UiIdentity,
     themeMode: ThemeMode,
     accentOverride: Color? = null,
+    accentContainerOverride: Color? = null,
+    onAccentContainerOverride: Color? = null,
 ): ColorScheme = when (identity) {
     UiIdentity.H -> {
         val h = when {
@@ -181,7 +183,12 @@ fun applyIdentityToColorScheme(
         }
         if (accentOverride != null) {
             val onAccent = if (accentOverride.luminance() > 0.5f) ColorOnLight else ColorOnDark
-            h.copy(primary = accentOverride, onPrimary = onAccent)
+            h.copy(
+                primary = accentOverride,
+                onPrimary = onAccent,
+                primaryContainer = accentContainerOverride ?: h.primaryContainer,
+                onPrimaryContainer = onAccentContainerOverride ?: h.onPrimaryContainer,
+            )
         } else h
     }
 
@@ -246,12 +253,18 @@ fun OssWalletTheme(
         else -> lightColorScheme()
     }
 
-    val accentOverride = if (dynamicAccent && dynamicColorAvailable) {
-        if (darkTheme) dynamicDarkColorScheme(context).primary
-        else dynamicLightColorScheme(context).primary
+    val dynamicAccentScheme = if (dynamicAccent && dynamicColorAvailable) {
+        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else null
 
-    val colorScheme = applyIdentityToColorScheme(baseScheme, uiIdentity, themeMode, accentOverride)
+    val colorScheme = applyIdentityToColorScheme(
+        base = baseScheme,
+        identity = uiIdentity,
+        themeMode = themeMode,
+        accentOverride = dynamicAccentScheme?.primary,
+        accentContainerOverride = dynamicAccentScheme?.primaryContainer,
+        onAccentContainerOverride = dynamicAccentScheme?.onPrimaryContainer,
+    )
 
     val view = LocalView.current
     if (!view.isInEditMode) {

@@ -1,74 +1,165 @@
 /* PAGE: Saved Filters */
 
-async function renderFilters() {
+async function renderFilters(searchQuery) {
   showSpinner();
   try {
     const json = await apiFetch('/api/filters');
     if (!json.success) { showError('Failed to load filters.'); return; }
-    const filters = json.data || [];
+    const allFilters = json.data || [];
+    const q = (searchQuery || '').toLowerCase().trim();
+    const filters = q ? allFilters.filter(f => (f.name || '').toLowerCase().includes(q)) : allFilters;
 
-    let html = `<div class="page-header"><h2 class="section-title">Saved Filters</h2>
+    let html = `<div class="page-header">
+      <h2 class="section-title">Saved Filters</h2>
       <button class="btn btn-primary btn-sm" onclick="openCreateFilter()">+ New Filter</button>
     </div>
-    <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:16px">Save frequently-used filter combinations and apply them to your Records in one click.</p>`;
+    <div class="search-bar-wrap" style="margin-bottom:16px">
+      <input type="text" class="search-bar" id="filter-search" placeholder="Search saved filters…"
+        value="${esc(q)}" oninput="renderFilters(this.value)">
+    </div>`;
+
+    if (!allFilters.length) {
+      html += emptyState('', 'No saved filters yet.', '+ New Filter', 'openCreateFilter()');
+      setContent(html);
+      return;
+    }
 
     if (!filters.length) {
-      html += emptyState('', 'No saved filters yet.', '+ New Filter', 'openCreateFilter()');
-    } else {
-      html += '<div class="card">';
-      filters.forEach((f, idx) => {
-        const summary = buildFilterSummary(f);
-        html += `<div style="display:flex;align-items:flex-start;padding:12px 0;border-bottom:${idx < filters.length - 1 ? '1px solid var(--border)' : 'none'}">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;margin-bottom:4px">${esc(f.name)}</div>
-            <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.5">${summary || '<em>No criteria set</em>'}</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;align-items:center">
-            <button class="btn btn-primary btn-sm" onclick="applyFilter(${f.id})" title="Apply this filter to Records">▶ Apply</button>
-            <button class="btn-icon" title="Edit" onclick="openEditFilter(${f.id})">Edit</button>
-            <button class="btn-icon" title="Delete" onclick="deleteFilter(${f.id},'${esc(f.name)}')">Del</button>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
+      html += `<div style="text-align:center;padding:32px;color:var(--text-muted)">No filters match "<strong>${esc(q)}</strong>"</div>`;
+      setContent(html);
+      document.getElementById('filter-search')?.focus();
+      return;
     }
+
+    html += `<div class="filter-cards-grid">`;
+    filters.forEach(f => {
+      const chips   = buildFilterChips(f);
+      const count   = countFilterCriteria(f);
+      html += `<div class="filter-card">
+        <div class="filter-card-header">
+          <span class="filter-card-icon">⊟</span>
+          <span class="filter-card-name">${esc(f.name)}</span>
+          ${count ? `<span class="filter-card-count">${count} criteri${count === 1 ? 'on' : 'a'}</span>` : ''}
+        </div>
+        <div class="filter-card-chips">
+          ${chips || '<span style="font-size:0.8rem;color:var(--text-muted);font-style:italic">No criteria set — matches all records</span>'}
+        </div>
+        <div class="filter-card-actions">
+          <button class="btn btn-primary btn-sm filter-apply-btn" onclick="applyFilter(${f.id})">▶ Apply to Records</button>
+          <button class="btn-icon" title="Edit filter" onclick="openEditFilter(${f.id})">Edit</button>
+          <button class="btn-icon" title="Delete filter" style="color:var(--danger)" onclick="deleteFilter(${f.id},'${esc(f.name)}')">✕</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+
     setContent(html);
+    const inp = document.getElementById('filter-search');
+    if (inp && q) { inp.focus(); inp.setSelectionRange(q.length, q.length); }
   } catch (e) { if (e.message !== 'Session expired') showError('Error loading filters.'); }
 }
 
-function buildFilterSummary(f) {
-  const parts = [];
-  if (f.timelineType && f.timelineType !== 'ALL_TIME') parts.push(`Period: ${f.timelineType.replace(/_/g,' ')}`);
-  if (f.dateFrom) parts.push(`From: ${new Date(f.dateFrom).toLocaleDateString()}`);
-  if (f.dateTo) parts.push(`To: ${new Date(f.dateTo).toLocaleDateString()}`);
-  if (f.transactionTypes?.length) parts.push(`Type: ${f.transactionTypes.join(', ')}`);
-  if (f.categoryIds?.length) {
-    const names = f.categoryIds.map(id => {
-      const c = (cachedCategories||[]).find(x => x.id === id);
-      return c ? c.name : `#${id}`;
-    });
-    parts.push(`Categories: ${names.join(', ')}`);
+function countFilterCriteria(f) {
+  let n = 0;
+  if (f.transactionTypes?.length) n++;
+  if (f.categoryIds?.length) n++;
+  if (f.accountIds?.length) n++;
+  if (f.tags?.length) n++;
+  if (f.paymentMethods?.length) n++;
+  if (f.statuses?.length) n++;
+  if (f.currencies?.length) n++;
+  if (f.timelineType && f.timelineType !== 'ALL_TIME') n++;
+  if (f.dateFrom || f.dateTo) n++;
+  if (f.minAmount != null || f.maxAmount != null) n++;
+  if (f.queryPayee) n++;
+  if (f.queryNote) n++;
+  if (f.hasWarranty != null) n++;
+  return n;
+}
+
+function buildFilterChips(f) {
+  const chips = [];
+
+  // Transaction type chips — colored by type
+  const typeColor = { EXPENSE: 'var(--danger)', INCOME: '#2e7d32', TRANSFER: 'var(--accent)' };
+  (f.transactionTypes || []).forEach(t => {
+    const col = typeColor[t] || 'var(--text-muted)';
+    chips.push(`<span class="fcl-chip" style="background:${col};color:#fff">${esc(t.charAt(0) + t.slice(1).toLowerCase())}</span>`);
+  });
+
+  // Category chips — use category color when available
+  (f.categoryIds || []).slice(0, 4).forEach((id, i, arr) => {
+    const cat = (cachedCategories || []).find(x => x.id === id);
+    const name = cat ? cat.name : `#${id}`;
+    const col  = cat ? (typeof cat.colorHex === 'number' ? '#' + ((cat.colorHex >>> 0) & 0xFFFFFF).toString(16).padStart(6,'0') : cat.colorHex || '#9e9e9e') : '#9e9e9e';
+    chips.push(`<span class="fcl-chip fcl-chip-cat" style="border-left:3px solid ${esc(col)}">${esc(name)}</span>`);
+  });
+  if ((f.categoryIds || []).length > 4) {
+    chips.push(`<span class="fcl-chip fcl-chip-more">+${f.categoryIds.length - 4} more</span>`);
   }
-  if (f.accountIds?.length) {
-    const names = f.accountIds.map(id => {
-      const a = (cachedAccounts||[]).find(x => x.id === id);
-      return a ? a.name : id;
-    });
-    parts.push(`Accounts: ${names.join(', ')}`);
+
+  // Account chips
+  (f.accountIds || []).slice(0, 3).forEach(id => {
+    const acc = (cachedAccounts || []).find(x => x.id === id);
+    const name = acc ? acc.name : id;
+    const col  = acc ? (acc.colorHex || '#9e9e9e') : '#9e9e9e';
+    chips.push(`<span class="fcl-chip fcl-chip-acc" style="border-left:3px solid ${esc(col)}">🏦 ${esc(name)}</span>`);
+  });
+  if ((f.accountIds || []).length > 3) {
+    chips.push(`<span class="fcl-chip fcl-chip-more">+${f.accountIds.length - 3} more</span>`);
   }
-  if (f.tags?.length) parts.push(`Tags: ${f.tags.join(', ')}`);
-  if (f.paymentMethods?.length) parts.push(`Payment: ${f.paymentMethods.join(', ')}`);
-  if (f.statuses?.length) parts.push(`Status: ${f.statuses.join(', ')}`);
-  if (f.currencies?.length) parts.push(`Currency: ${f.currencies.join(', ')}`);
+
+  // Tag chips
+  (f.tags || []).slice(0, 4).forEach(tag => {
+    chips.push(`<span class="fcl-chip fcl-chip-tag"># ${esc(tag)}</span>`);
+  });
+  if ((f.tags || []).length > 4) {
+    chips.push(`<span class="fcl-chip fcl-chip-more">+${f.tags.length - 4} more</span>`);
+  }
+
+  // Timeline / date chips
+  if (f.timelineType && f.timelineType !== 'ALL_TIME') {
+    const label = f.timelineType.replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    chips.push(`<span class="fcl-chip fcl-chip-meta">📅 ${esc(label)}</span>`);
+  }
+  if (f.dateFrom || f.dateTo) {
+    const from = f.dateFrom ? new Date(f.dateFrom).toLocaleDateString() : '…';
+    const to   = f.dateTo   ? new Date(f.dateTo).toLocaleDateString()   : '…';
+    chips.push(`<span class="fcl-chip fcl-chip-meta">📅 ${esc(from)} → ${esc(to)}</span>`);
+  }
+
+  // Amount range chip
   if (f.minAmount != null || f.maxAmount != null) {
-    const range = [f.minAmount != null ? `≥${f.minAmount}` : null, f.maxAmount != null ? `≤${f.maxAmount}` : null].filter(Boolean);
-    parts.push(`Amount: ${range.join(' ')}`);
+    const lo = f.minAmount != null ? `≥${f.minAmount}` : '';
+    const hi = f.maxAmount != null ? `≤${f.maxAmount}` : '';
+    chips.push(`<span class="fcl-chip fcl-chip-meta">$ ${esc([lo,hi].filter(Boolean).join(' '))}</span>`);
   }
-  if (f.queryNote) parts.push(`Note: "${f.queryNote}"${f.isNoteRegex ? ' (regex)' : ''}`);
-  if (f.queryPayee) parts.push(`Payee: "${f.queryPayee}"${f.isPayeeRegex ? ' (regex)' : ''}`);
-  if (f.hasWarranty === true) parts.push('Has warranty');
-  if (f.excludeFuture === false) parts.push('Include future');
-  return parts.join(' · ');
+
+  // Status chips
+  const statusColor = { CLEARED: '#2e7d32', UNCLEARED: '#f57f17', CANCELLED: '#757575' };
+  (f.statuses || []).forEach(s => {
+    const col = statusColor[s] || '#9e9e9e';
+    chips.push(`<span class="fcl-chip" style="color:${col};border:1px solid ${col}">${esc(s.charAt(0)+s.slice(1).toLowerCase())}</span>`);
+  });
+
+  // Payment method chips
+  const pmLabel = { CASH:'Cash', DEBIT_CARD:'Debit', CREDIT_CARD:'Credit', BANK_TRANSFER:'Bank Xfer', DIGITAL_WALLET:'Digital', OTHER:'Other' };
+  (f.paymentMethods || []).forEach(pm => {
+    chips.push(`<span class="fcl-chip fcl-chip-meta">${esc(pmLabel[pm] || pm)}</span>`);
+  });
+
+  // Currency chips
+  (f.currencies || []).forEach(cur => {
+    chips.push(`<span class="fcl-chip fcl-chip-meta">💱 ${esc(cur)}</span>`);
+  });
+
+  // Payee / note text search
+  if (f.queryPayee) chips.push(`<span class="fcl-chip fcl-chip-meta">Payee: "${esc(f.queryPayee)}"</span>`);
+  if (f.queryNote)  chips.push(`<span class="fcl-chip fcl-chip-meta">Note: "${esc(f.queryNote)}"</span>`);
+  if (f.hasWarranty === true)  chips.push(`<span class="fcl-chip fcl-chip-meta">Has warranty</span>`);
+  if (f.excludeFuture === false) chips.push(`<span class="fcl-chip fcl-chip-meta">Include future</span>`);
+
+  return chips.join('');
 }
 
 window.applyFilter = async function (id) {
@@ -78,18 +169,20 @@ window.applyFilter = async function (id) {
     const f = res.data;
     const p = new URLSearchParams();
     if (f.dateFrom) p.set('dateFrom', new Date(f.dateFrom).toISOString().slice(0, 10));
-    if (f.dateTo) p.set('dateTo', new Date(f.dateTo).toISOString().slice(0, 10));
-    if (f.transactionTypes?.length === 1) p.set('type', f.transactionTypes[0]);
-    if (f.categoryIds?.length === 1) p.set('categoryId', f.categoryIds[0]);
-    if (f.accountIds?.length === 1) p.set('accountId', f.accountIds[0]);
-    if (f.tags?.length) p.set('tag', f.tags[0]);
-    if (f.paymentMethods?.length) p.set('paymentMethod', f.paymentMethods[0]);
-    if (f.statuses?.length) p.set('status', f.statuses[0]);
-    if (f.currencies?.length) p.set('currency', f.currencies[0]);
-    if (f.minAmount != null) p.set('minAmount', f.minAmount);
-    if (f.maxAmount != null) p.set('maxAmount', f.maxAmount);
-    if (f.queryNote) p.set('search', f.queryNote);
-    if (f.excludeFuture === false) p.set('excludeFuture', 'false');
+    if (f.dateTo)   p.set('dateTo',   new Date(f.dateTo).toISOString().slice(0, 10));
+    if (f.transactionTypes?.length) p.set('types',          f.transactionTypes.join(','));
+    if (f.categoryIds?.length)      p.set('categoryIds',    f.categoryIds.join(','));
+    if (f.accountIds?.length)       p.set('accountIds',     f.accountIds.join(','));
+    if (f.tags?.length)             p.set('tagNames',       f.tags.join(','));
+    if (f.paymentMethods?.length)   p.set('paymentMethods', f.paymentMethods.join(','));
+    if (f.statuses?.length)         p.set('statuses',       f.statuses.join(','));
+    if (f.currencies?.length)       p.set('currencies',     f.currencies.join(','));
+    if (f.minAmount != null)        p.set('minAmount',      f.minAmount);
+    if (f.maxAmount != null)        p.set('maxAmount',      f.maxAmount);
+    if (f.queryPayee)               p.set('queryPayee',     f.queryPayee);
+    if (f.queryNote)                p.set('queryNote',      f.queryNote);
+    if (f.excludeFuture === false)  p.set('excludeFuture',  'false');
+    p.set('page', '0');
     location.hash = '#/records?' + p.toString();
   } catch (e) { if (e.message !== 'Session expired') showToast('Error applying filter.', 'error'); }
 };
@@ -106,15 +199,12 @@ function buildFilterForm(existing) {
   const fromVal = f.dateFrom ? new Date(f.dateFrom).toISOString().slice(0,10) : '';
   const toVal   = f.dateTo   ? new Date(f.dateTo).toISOString().slice(0,10) : '';
 
-  const catOptions = (cachedCategories||[]).map(c =>
-    `<option value="${c.id}" ${(f.categoryIds||[]).includes(c.id)?'selected':''}>${esc(c.name)}</option>`
-  ).join('');
-  const accOptions = (cachedAccounts||[]).map(a =>
-    `<option value="${esc(a.id)}" ${(f.accountIds||[]).includes(a.id)?'selected':''}>${esc(a.name)}</option>`
-  ).join('');
-  const tagOptions = (cachedTags||[]).map(t =>
-    `<option value="${esc(t)}" ${(f.tags||[]).includes(t)?'selected':''}>${esc(t)}</option>`
-  ).join('');
+  const catItems = (cachedCategories||[]).map(c => ({value: String(c.id), label: c.name}));
+  const accItems = (cachedAccounts||[]).map(a => ({value: a.id, label: a.name}));
+  const tagItems = (cachedTags||[]).map(t => ({value: t, label: t}));
+  const selCatIds = (f.categoryIds||[]).map(String);
+  const selAccIds = (f.accountIds||[]).map(String);
+  const selTags   = (f.tags||[]).map(String);
 
   return `
     ${formField('Filter Name', `<input type="text" id="fl-name" value="${esc(f.name||'')}" placeholder="My filter">`)}
@@ -141,26 +231,26 @@ function buildFilterForm(existing) {
           </label>`).join('')}
       </div>
     </div>
-    ${catOptions ? `<div class="form-field"><label>Categories</label><select id="fl-categories" multiple style="height:80px;width:100%">${catOptions}</select></div>` : ''}
-    ${accOptions ? `<div class="form-field"><label>Accounts</label><select id="fl-accounts" multiple style="height:80px;width:100%">${accOptions}</select></div>` : ''}
-    ${tagOptions ? `<div class="form-field"><label>Tags</label><select id="fl-tags" multiple style="height:80px;width:100%">${tagOptions}</select></div>` : ''}
+    ${catItems.length ? `<div class="form-field"><label>Categories</label>${buildMultiSelect('fl-categories', catItems, selCatIds, 'Search categories…')}</div>` : ''}
+    ${accItems.length ? `<div class="form-field"><label>Accounts</label>${buildMultiSelect('fl-accounts', accItems, selAccIds, 'Search accounts…')}</div>` : ''}
+    ${tagItems.length ? `<div class="form-field"><label>Tags</label>${buildMultiSelect('fl-tags', tagItems, selTags, 'Search tags…')}</div>` : ''}
     <div class="form-field"><label>Payment Methods</label>
       <div class="chip-group">
-        ${['CASH','CARD','BANK_TRANSFER','OTHER'].map(pm=>`
-          <label class="chip-check ${(f.paymentMethods||[]).includes(pm)?'active':''}">
-            <input type="checkbox" name="fl-pm" value="${pm}" ${(f.paymentMethods||[]).includes(pm)?'checked':''}
+        ${[['CASH','Cash'],['DEBIT_CARD','Debit Card'],['CREDIT_CARD','Credit Card'],['BANK_TRANSFER','Bank Transfer'],['DIGITAL_WALLET','Digital Wallet'],['OTHER','Other']].map(([v,l])=>`
+          <label class="chip-check ${(f.paymentMethods||[]).includes(v)?'active':''}">
+            <input type="checkbox" name="fl-pm" value="${v}" ${(f.paymentMethods||[]).includes(v)?'checked':''}
               onchange="this.closest('label').classList.toggle('active',this.checked)">
-            <span>${pm.replace(/_/g,' ')}</span>
+            <span>${l}</span>
           </label>`).join('')}
       </div>
     </div>
-    <div class="form-field"><label>Statuses</label>
+    <div class="form-field"><label>Status</label>
       <div class="chip-group">
-        ${['CLEARED','PENDING','VOID'].map(s=>`
-          <label class="chip-check ${(f.statuses||[]).includes(s)?'active':''}">
-            <input type="checkbox" name="fl-status" value="${s}" ${(f.statuses||[]).includes(s)?'checked':''}
+        ${[['CLEARED','Cleared'],['UNCLEARED','Uncleared'],['CANCELLED','Cancelled']].map(([v,l])=>`
+          <label class="chip-check ${(f.statuses||[]).includes(v)?'active':''}">
+            <input type="checkbox" name="fl-status" value="${v}" ${(f.statuses||[]).includes(v)?'checked':''}
               onchange="this.closest('label').classList.toggle('active',this.checked)">
-            <span>${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+            <span>${l}</span>
           </label>`).join('')}
       </div>
     </div>
@@ -222,12 +312,9 @@ function collectFilterPayload() {
   const paymentMethods   = [...document.querySelectorAll('input[name="fl-pm"]:checked')].map(e => e.value);
   const statuses         = [...document.querySelectorAll('input[name="fl-status"]:checked')].map(e => e.value);
 
-  const catSel = document.getElementById('fl-categories');
-  const categoryIds = catSel ? [...catSel.selectedOptions].map(o => Number(o.value)) : [];
-  const accSel = document.getElementById('fl-accounts');
-  const accountIds  = accSel ? [...accSel.selectedOptions].map(o => o.value) : [];
-  const tagSel = document.getElementById('fl-tags');
-  const tags        = tagSel ? [...tagSel.selectedOptions].map(o => o.value) : [];
+  const categoryIds = msGetSelected('fl-categories').map(Number);
+  const accountIds  = msGetSelected('fl-accounts');
+  const tags        = msGetSelected('fl-tags');
 
   const minVal = document.getElementById('fl-min')?.value;
   const maxVal = document.getElementById('fl-max')?.value;

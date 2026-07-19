@@ -50,7 +50,9 @@ fun Route.loanRoutes(
                         status = loan.status.name,
                         lenderOrBorrowerName = loan.lenderOrBorrowerName,
                         startDate = loan.startDate,
-                        expectedSettlementDate = loan.expectedSettlementDate
+                        expectedSettlementDate = loan.expectedSettlementDate,
+                        interestRate = loan.interestRate?.toDouble(),
+                        linkedAccountId = loan.linkedAccountId
                     )
                 }
                 call.respond(ApiResponse(success = true, data = dtos))
@@ -136,7 +138,9 @@ fun Route.loanRoutes(
                             status = loan.status.name,
                             lenderOrBorrowerName = loan.lenderOrBorrowerName,
                             startDate = loan.startDate,
-                            expectedSettlementDate = loan.expectedSettlementDate
+                            expectedSettlementDate = loan.expectedSettlementDate,
+                            interestRate = loan.interestRate?.toDouble(),
+                            linkedAccountId = loan.linkedAccountId
                         )
                     )
                 )

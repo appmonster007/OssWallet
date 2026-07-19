@@ -35,22 +35,46 @@ fun Route.accountRoutes(
                     transactionRepository.getAllTransactionsSync(profileId)
                 val accounts = accountRepository.getAllAccountsSync(profileId)
 
+                val txByAccount = allTransactions.groupBy { it.accountId }
                 val dtos = accounts.map { account ->
-                    val balance = allTransactions
-                        .filter { it.accountId == account.id }
-                        .fold(BigDecimal.ZERO) { acc, tx ->
-                            when (tx.transactionType) {
-                                TransactionType.INCOME -> acc + tx.amount
-                                TransactionType.EXPENSE -> acc - tx.amount
-                                TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                            }
+                    val txs = txByAccount[account.id] ?: emptyList()
+                    val balance = txs.fold(BigDecimal.ZERO) { acc, tx ->
+                        when (tx.transactionType) {
+                            TransactionType.INCOME -> acc + tx.amount
+                            TransactionType.EXPENSE -> acc - tx.amount
+                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                         }
+                    }
+                    val income = txs.filter { it.transactionType == TransactionType.INCOME }
+                        .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                    val expense = txs.filter { it.transactionType == TransactionType.EXPENSE }
+                        .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                    val transferIn = txs.filter { it.transactionType == TransactionType.TRANSFER_INFLOW }
+                        .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                    val transferOut = txs.filter { it.transactionType == TransactionType.TRANSFER_OUTFLOW }
+                        .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                    val distribution = txs.groupBy { it.currency }
+                        .mapValues { (_, cTxs) ->
+                            cTxs.fold(BigDecimal.ZERO) { a, tx ->
+                                when (tx.transactionType) {
+                                    TransactionType.INCOME -> a + tx.amount
+                                    TransactionType.EXPENSE -> a - tx.amount
+                                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> a + tx.amount
+                                }
+                            }.toDouble()
+                        }.filter { it.value != 0.0 }
                     AccountDto(
                         id = account.id,
                         name = account.name,
                         currency = account.currencyCode,
                         balance = balance.toDouble(),
-                        type = account.structureType.name
+                        type = account.structureType.name,
+                        colorHex = account.colorHex,
+                        income = income.toDouble(),
+                        expense = expense.toDouble(),
+                        transferIn = transferIn.toDouble(),
+                        transferOut = transferOut.toDouble(),
+                        distribution = distribution
                     )
                 }
                 call.respond(ApiResponse(success = true, data = dtos))
@@ -147,11 +171,37 @@ fun Route.accountRoutes(
                         TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
                     }
                 }
+                val income = txForAccount.filter { it.transactionType == TransactionType.INCOME }
+                    .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                val expense = txForAccount.filter { it.transactionType == TransactionType.EXPENSE }
+                    .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                val transferIn = txForAccount.filter { it.transactionType == TransactionType.TRANSFER_INFLOW }
+                    .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                val transferOut = txForAccount.filter { it.transactionType == TransactionType.TRANSFER_OUTFLOW }
+                    .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
+                val distribution = txForAccount.groupBy { it.currency }
+                    .mapValues { (_, cTxs) ->
+                        cTxs.fold(BigDecimal.ZERO) { a, tx ->
+                            when (tx.transactionType) {
+                                TransactionType.INCOME -> a + tx.amount
+                                TransactionType.EXPENSE -> a - tx.amount
+                                TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> a + tx.amount
+                            }
+                        }.toDouble()
+                    }.filter { it.value != 0.0 }
                 val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
                 val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
                 val recentTx = txForAccount.sortedByDescending { it.timestamp }.take(20).map { it.toDto(categoryMap, accountMap) }
+                val accountDto = AccountDto(
+                    id = account.id, name = account.name, currency = account.currencyCode,
+                    balance = balance.toDouble(), type = account.structureType.name,
+                    colorHex = account.colorHex,
+                    income = income.toDouble(), expense = expense.toDouble(),
+                    transferIn = transferIn.toDouble(), transferOut = transferOut.toDouble(),
+                    distribution = distribution
+                )
                 call.respond(ApiResponse(success = true, data = mapOf(
-                    "account" to AccountDto(id = account.id, name = account.name, currency = account.currencyCode, balance = balance.toDouble(), type = account.structureType.name),
+                    "account" to accountDto,
                     "recentTransactions" to recentTx
                 )))
             } catch (e: Exception) {

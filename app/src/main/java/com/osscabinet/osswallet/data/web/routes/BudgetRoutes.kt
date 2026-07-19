@@ -70,6 +70,16 @@ fun Route.budgetRoutes(
                         precision
                     )
                     val progress = BudgetService.buildProgress(budget, spent)
+                    val tlType = when (val tl = budget.timelineRange) {
+                        is TimelineRange.ThisPeriod -> when (tl.period) {
+                            ThisPeriodType.MONTH -> "MONTHLY"
+                            ThisPeriodType.YEAR -> "YEARLY"
+                            ThisPeriodType.WEEK -> "WEEKLY"
+                            ThisPeriodType.TODAY -> "TODAY"
+                            ThisPeriodType.QUARTER -> "QUARTER"
+                        }
+                        else -> "MONTHLY"
+                    }
                     BudgetDto(
                         id = budget.id,
                         name = budget.name,
@@ -80,7 +90,12 @@ fun Route.budgetRoutes(
                         percentage = progress.percentage.toDouble(),
                         alertLevel = progress.alertLevel.name,
                         period = periodLabel,
-                        isArchived = budget.isArchived
+                        isArchived = budget.isArchived,
+                        alertThreshold = budget.alertThreshold.toDouble(),
+                        timelineType = tlType,
+                        categoryIds = budget.categoryIds.toList(),
+                        accountIds = budget.accountIds.toList(),
+                        rollover = budget.rollover
                     )
                 }
                 call.respond(ApiResponse(success = true, data = dtos))
@@ -185,6 +200,16 @@ fun Route.budgetRoutes(
                     precision
                 )
                 val progress = BudgetService.buildProgress(budget, spent)
+                val tlType = when (val tl = budget.timelineRange) {
+                    is TimelineRange.ThisPeriod -> when (tl.period) {
+                        ThisPeriodType.MONTH -> "MONTHLY"
+                        ThisPeriodType.YEAR -> "YEARLY"
+                        ThisPeriodType.WEEK -> "WEEKLY"
+                        ThisPeriodType.TODAY -> "TODAY"
+                        ThisPeriodType.QUARTER -> "QUARTER"
+                    }
+                    else -> "MONTHLY"
+                }
                 call.respond(
                     ApiResponse(
                         success = true, data = BudgetDto(
@@ -197,7 +222,12 @@ fun Route.budgetRoutes(
                             percentage = progress.percentage.toDouble(),
                             alertLevel = progress.alertLevel.name,
                             period = periodLabel,
-                            isArchived = budget.isArchived
+                            isArchived = budget.isArchived,
+                            alertThreshold = budget.alertThreshold.toDouble(),
+                            timelineType = tlType,
+                            categoryIds = budget.categoryIds.toList(),
+                            accountIds = budget.accountIds.toList(),
+                            rollover = budget.rollover
                         )
                     )
                 )

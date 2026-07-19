@@ -127,6 +127,7 @@ function route() {
   else if (hash.startsWith('#/budgets'))          renderBudgets();
   else if (hash.startsWith('#/loans/'))           renderLoanDetail(hash.split('/')[2]);
   else if (hash.startsWith('#/loans'))            renderLoans();
+  else if (hash.startsWith('#/planned-payments/')) renderPlannedPaymentDetail(hash.split('/')[2]);
   else if (hash.startsWith('#/planned-payments')) renderPlannedPayments();
   else if (hash.startsWith('#/categories'))       renderCategories();
   else if (hash.startsWith('#/analytics'))        renderAnalytics();

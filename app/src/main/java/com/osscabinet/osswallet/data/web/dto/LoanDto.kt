@@ -15,5 +15,7 @@ data class LoanDto(
     val status: String,     // "ACTIVE" or "SETTLED"
     val lenderOrBorrowerName: String,
     val startDate: Long,
-    val expectedSettlementDate: Long?
+    val expectedSettlementDate: Long?,
+    val interestRate: Double? = null,
+    val linkedAccountId: String? = null
 )

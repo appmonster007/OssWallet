@@ -34,6 +34,9 @@ class OpenInWebViewModel @Inject constructor(
     val isEnabled: StateFlow<Boolean> = webServerRepository.isEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val stayAlive: StateFlow<Boolean> = webServerRepository.stayAlive
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     init {
         viewModelScope.launch {
             webServerRepository.serverState.collect { state ->
@@ -51,6 +54,12 @@ class OpenInWebViewModel @Inject constructor(
                     if (enabled) WebServerService.ACTION_START else WebServerService.ACTION_STOP
             }
             context.startForegroundService(intent)
+        }
+    }
+
+    fun toggleStayAlive(stayAlive: Boolean) {
+        viewModelScope.launch {
+            webServerRepository.setStayAlive(stayAlive)
         }
     }
 

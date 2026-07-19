@@ -13,11 +13,16 @@ import com.osscabinet.ossWallet.data.local.SettingsDataStore
 import com.osscabinet.ossWallet.data.seed.SeedingConfig
 import com.osscabinet.ossWallet.domain.cache.CardRenderCache
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.domain.service.BackupScheduler
 import com.osscabinet.ossWallet.domain.service.WidgetRefreshTrigger
+import com.osscabinet.ossWallet.service.WebServerService
 import com.osscabinet.ossWallet.util.PlannedPaymentWorker
 import dagger.hilt.android.HiltAndroidApp
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +66,9 @@ class OssWalletApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var cardRenderCache: CardRenderCache
+
+    @Inject
+    lateinit var webServerRepository: WebServerRepository
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -110,6 +118,28 @@ class OssWalletApp : Application(), Configuration.Provider {
                 previousProfileId = profileId
             }
             .launchIn(applicationScope)
+
+        // Auto-stop WebServer if it shouldn't stay alive in background
+        ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
+            override fun onStop(owner: LifecycleOwner) {
+                applicationScope.launch {
+                    val stayAlive = webServerRepository.stayAlive.first()
+                    if (!stayAlive && webServerRepository.isRunning()) {
+                        val intent = Intent(this@OssWalletApp, WebServerService::class.java).apply {
+                            action = WebServerService.ACTION_STOP
+                        }
+                        startService(intent)
+                    }
+                }
+            }
+        })
+
+        // Ensure it's disabled on startup if not staying alive
+        applicationScope.launch {
+            if (!webServerRepository.stayAlive.first()) {
+                webServerRepository.setEnabled(false)
+            }
+        }
 
         // We don't auto-start the WebServerService here anymore to prevent the app 
         // from staying alive in the background unnecessarily. 

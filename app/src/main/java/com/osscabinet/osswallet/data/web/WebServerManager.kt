@@ -71,6 +71,7 @@ class WebServerManager @Inject constructor(
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
     override val serverState: StateFlow<WebServerState> = _serverState.asStateFlow()
     override val isEnabled: Flow<Boolean> = webServerPreferences.isEnabled
+    override val stayAlive: Flow<Boolean> = webServerPreferences.stayAlive
 
     private var engine: EmbeddedServer<*, *>? = null
     private var serverScope: CoroutineScope? = null
@@ -92,6 +93,8 @@ class WebServerManager @Inject constructor(
         (_serverState.value as? WebServerState.Running)?.accessCode
 
     override suspend fun setEnabled(enabled: Boolean) = webServerPreferences.setEnabled(enabled)
+
+    override suspend fun setStayAlive(stayAlive: Boolean) = webServerPreferences.setStayAlive(stayAlive)
 
     override fun isConnectedToWifi(): Boolean = NetworkUtils.isConnectedToWifi(context)
 

@@ -27,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -66,6 +67,7 @@ fun OpenInWebScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isEnabled by viewModel.isEnabled.collectAsStateWithLifecycle()
+    val stayAlive by viewModel.stayAlive.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     AeonHazeProvider(backgroundColor = AppColors.screenBackground) { hazeLayers ->
@@ -113,19 +115,34 @@ fun OpenInWebScreen(
                         }
 
                         Card {
-                            EntrySwitchRow(
-                                modifier = Modifier.padding(16.dp),
-                                label = "Open in Web",
-                                subtitle = when (val s = uiState.serverState) {
-                                    is WebServerState.Stopped -> "Disabled"
-                                    is WebServerState.Starting -> "Starting..."
-                                    is WebServerState.Running -> "Running on port ${s.port}"
-                                    is WebServerState.Error -> "Error: ${s.message}"
-                                },
-                                checked = isEnabled,
-                                onCheckedChange = { viewModel.toggleServer(it) },
-                                isFlush = true
-                            )
+                            Column {
+                                EntrySwitchRow(
+                                    modifier = Modifier.padding(16.dp),
+                                    label = "Open in Web",
+                                    subtitle = when (val s = uiState.serverState) {
+                                        is WebServerState.Stopped -> "Disabled"
+                                        is WebServerState.Starting -> "Starting..."
+                                        is WebServerState.Running -> "Running on port ${s.port}"
+                                        is WebServerState.Error -> "Error: ${s.message}"
+                                    },
+                                    checked = isEnabled,
+                                    onCheckedChange = { viewModel.toggleServer(it) },
+                                    isFlush = true
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    thickness = 0.5.dp,
+                                    color = AppColors.divider
+                                )
+                                EntrySwitchRow(
+                                    modifier = Modifier.padding(16.dp),
+                                    label = "Stay Alive in Background",
+                                    subtitle = "Keep server running when app is closed",
+                                    checked = stayAlive,
+                                    onCheckedChange = { viewModel.toggleStayAlive(it) },
+                                    isFlush = true
+                                )
+                            }
                         }
 
                         val runningState = uiState.serverState as? WebServerState.Running

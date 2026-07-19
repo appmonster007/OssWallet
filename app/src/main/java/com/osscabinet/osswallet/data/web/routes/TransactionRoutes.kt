@@ -47,22 +47,46 @@ fun Route.transactionRoutes(
                 val limit =
                     call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100)
                         ?: 25
-                val accountFilter = call.request.queryParameters["accountId"]
-                val typeParam = call.request.queryParameters["type"]
-                val dateFrom = call.request.queryParameters["dateFrom"]?.toLongOrNull()
-                val dateTo = call.request.queryParameters["dateTo"]?.toLongOrNull()
-                val categoryIdParam =
-                    call.request.queryParameters["categoryId"]?.toLongOrNull()
-                val tagNamesParam = call.request.queryParameters["tagNames"]
-                val minAmountParam =
-                    call.request.queryParameters["minAmount"]?.toDoubleOrNull()
-                val maxAmountParam =
-                    call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
-                val currencyParam = call.request.queryParameters["currency"]
-                val statusParam = call.request.queryParameters["status"]
-                val payeeParam = call.request.queryParameters["payee"]
+                // Parse a date param that may be epoch-millis or ISO date string (yyyy-MM-dd)
+                fun parseDateMs(param: String?): Long? {
+                    if (param == null) return null
+                    param.toLongOrNull()?.let { return it }
+                    return try {
+                        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                        sdf.timeZone = java.util.TimeZone.getDefault()
+                        sdf.parse(param)?.time
+                    } catch (_: Exception) { null }
+                }
+
+                // Comma-separated multi-value helper; merges singular (legacy) + plural (new) params
+                fun splitMulti(vararg keys: String): List<String> =
+                    keys.flatMap { key ->
+                        call.request.queryParameters[key]
+                            ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
+                            ?: emptyList()
+                    }.distinct()
+
                 val includePlanned = call.request.queryParameters["includePlanned"]?.toBoolean() ?: true
-                val excludeFuture = call.request.queryParameters["excludeFuture"]?.toBoolean() ?: false
+                val excludeFuture  = call.request.queryParameters["excludeFuture"]?.toBoolean() ?: false
+                val dateFrom = parseDateMs(call.request.queryParameters["dateFrom"])
+                // dateTo from ISO string is start-of-day; extend to end-of-day for inclusive filtering
+                val dateToRaw = parseDateMs(call.request.queryParameters["dateTo"])
+                val dateTo = dateToRaw?.let { raw ->
+                    if (call.request.queryParameters["dateTo"]?.contains("-") == true &&
+                        call.request.queryParameters["dateTo"]?.toLongOrNull() == null
+                    ) raw + 86_399_999L else raw
+                }
+
+                val accountIds     = splitMulti("accountId", "accountIds")
+                val typeStrings    = splitMulti("type", "types")
+                val categoryIds    = splitMulti("categoryId", "categoryIds").mapNotNull { it.toLongOrNull() }
+                val statusStrings  = splitMulti("status", "statuses")
+                val methodStrings  = splitMulti("paymentMethods")
+                val tagNamesParam  = call.request.queryParameters["tagNames"]
+                val minAmountParam = call.request.queryParameters["minAmount"]?.toDoubleOrNull()
+                val maxAmountParam = call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
+                val currencyParam  = call.request.queryParameters["currency"]
+                val payeeParam     = call.request.queryParameters["payee"]
 
                 val allTransactions =
                     transactionRepository.getAllTransactionsSync(profileId)
@@ -71,7 +95,6 @@ fun Route.transactionRoutes(
                 val accountMap =
                     accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
 
-                // Build filter from query params
                 val timelineRange = if (dateFrom != null || dateTo != null) {
                     TimelineRange.CustomRange(start = dateFrom, end = dateTo, excludeFuture = excludeFuture)
                 } else {
@@ -80,34 +103,23 @@ fun Route.transactionRoutes(
 
                 val filter = TransactionFilter(
                     timelineRange = timelineRange,
-                    accountIds = if (accountFilter != null) setOf(accountFilter) else emptySet(),
-                    transactionTypes = if (typeParam != null) {
-                        setOf(TransactionType.entries.find {
-                            it.name.equals(
-                                typeParam,
-                                ignoreCase = true
-                            )
-                        } ?: TransactionType.EXPENSE)
-                    } else emptySet(),
-                    categoryIds = if (categoryIdParam != null) setOf(categoryIdParam) else emptySet(),
-                    tags = if (!tagNamesParam.isNullOrBlank()) tagNamesParam.split(",")
-                        .map { it.trim() }.toSet() else emptySet(),
-                    minAmount = if (minAmountParam != null) BigDecimal.valueOf(
-                        minAmountParam
-                    ) else null,
-                    maxAmount = if (maxAmountParam != null) BigDecimal.valueOf(
-                        maxAmountParam
-                    ) else null,
-                    currencies = if (!currencyParam.isNullOrBlank()) setOf(currencyParam) else emptySet(),
-                    statuses = if (statusParam != null) {
-                        setOf(TransactionStatus.entries.find {
-                            it.name.equals(
-                                statusParam,
-                                ignoreCase = true
-                            )
-                        } ?: TransactionStatus.CLEARED)
-                    } else emptySet(),
-                    queryPayee = payeeParam
+                    accountIds     = accountIds.toSet(),
+                    transactionTypes = typeStrings.mapNotNull { t ->
+                        TransactionType.entries.find { it.name.equals(t, ignoreCase = true) }
+                    }.toSet(),
+                    categoryIds    = categoryIds.toSet(),
+                    statuses       = statusStrings.mapNotNull { s ->
+                        TransactionStatus.entries.find { it.name.equals(s, ignoreCase = true) }
+                    }.toSet(),
+                    paymentMethods = methodStrings.mapNotNull { m ->
+                        PaymentMethod.entries.find { it.name.equals(m, ignoreCase = true) }
+                    }.toSet(),
+                    tags           = if (!tagNamesParam.isNullOrBlank())
+                        tagNamesParam.split(",").map { it.trim() }.toSet() else emptySet(),
+                    minAmount      = minAmountParam?.let { BigDecimal.valueOf(it) },
+                    maxAmount      = maxAmountParam?.let { BigDecimal.valueOf(it) },
+                    currencies     = if (!currencyParam.isNullOrBlank()) setOf(currencyParam) else emptySet(),
+                    queryPayee     = payeeParam
                 )
 
                 val filtered =

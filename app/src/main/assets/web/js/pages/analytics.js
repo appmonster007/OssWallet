@@ -45,13 +45,15 @@ function renderAnalyticsContent(data) {
   const commonFilterEnabled = data.commonFilterEnabled;
   const tabs = ['Status', 'Wallet', 'Track', 'Charts', 'Graphs'];
 
+  const filterIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>`;
+
   let html = `
     <div class="page-header" style="flex-direction:column;align-items:flex-start;gap:12px">
       <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
         <h2 class="section-title">Intelligence</h2>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="toggleCommonFilter(${!commonFilterEnabled})">
-            ${commonFilterEnabled ? 'Individual Filters' : 'Use Common Filter'}
+          <button class="tx-pill tx-pill-filter${commonFilterEnabled ? ' active' : ''}" onclick="toggleCommonFilter(${!commonFilterEnabled})">
+            ${filterIcon} ${commonFilterEnabled ? 'Common Filter On' : 'Use Common Filter'}
           </button>
           <button class="btn btn-ghost btn-sm" onclick="openManageAnalyticsCards()">Settings</button>
         </div>
@@ -61,6 +63,17 @@ function renderAnalyticsContent(data) {
       </div>
     </div>
   `;
+
+  // Inline filter bar when common filter is active
+  if (commonFilterEnabled && data.screenFilter) {
+    const fs  = data.screenFilter;
+    const tl  = TL_LABELS[fs.timelineType] || fs.timelineType || 'All Time';
+    html += `<div class="analytics-filter-bar">
+      ${filterIcon}
+      <span>Common filter: <strong>${esc(tl)}</strong></span>
+      <button class="analytics-filter-edit" onclick="openCommonFilterSheet()">Edit</button>
+    </div>`;
+  }
 
   updateAnalyticsFilterPill(data);
 
@@ -135,21 +148,42 @@ function updateAnalyticsFilterPill(data) {
 
 window.openCommonFilterSheet = function() {
   const existing = lastAnalyticsResponse?.screenFilter || {};
-  const body = buildFilterForm(existing);
+  const cur = existing.timelineType || 'ALL_TIME';
+
+  const quickPresets = `<div class="fs-quick-presets">
+    <span class="fs-preset-label">Quick:</span>
+    ${[['TODAY','Today'],['WEEK','This Week'],['MONTH','This Month'],['LAST_30_DAYS','Last 30 Days'],['ALL_TIME','All Time']]
+      .map(([v,l]) => `<button class="tx-pill${cur===v?' active':''}" onclick="applyAnalyticsQuickFilter('${v}')">${l}</button>`).join('')}
+  </div>`;
+
+  const body = quickPresets + buildFilterForm(existing);
 
   openFilterSheet('Common Filter', body, async () => {
     const payload = collectFilterPayload();
     if (!payload) return;
+    delete payload.name;
     const res = await apiWrite('POST', '/api/analytics/filter', payload);
     if (res.success) { renderAnalytics(); showToast('Common filter updated'); }
     else { showToast('Failed to update filter: ' + (res.error || ''), 'error'); }
-  }, null);
+  }, async () => {
+    const res = await apiWrite('POST', '/api/analytics/filter', { timelineType: 'ALL_TIME' });
+    if (res.success) renderAnalytics();
+  });
 
-  // Hide name field — not needed for common filter
   requestAnimationFrame(() => {
     const nameField = document.getElementById('fl-name')?.closest('.form-field');
     if (nameField) nameField.style.display = 'none';
   });
+};
+
+window.applyAnalyticsQuickFilter = async function(timelineType) {
+  closeFilterSheet();
+  showSpinner();
+  try {
+    const res = await apiWrite('POST', '/api/analytics/filter', { timelineType });
+    if (res.success) renderAnalytics();
+    else showToast('Failed to update filter.', 'error');
+  } catch (e) { showToast('Error.', 'error'); }
 };
 
 window.openManageAnalyticsCards = async function() {

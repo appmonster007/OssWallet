@@ -138,6 +138,77 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.custom-select').forEach(c => c.classList.remove('open'));
 });
 
+// Multi-select component: chip pills + search + checkbox list
+// items: [{value, label}], selected: string[]
+function buildMultiSelect(id, items, selected, placeholder) {
+  placeholder = placeholder || 'Search…';
+  const selSet = new Set(selected.map(String));
+  const chipsHtml = [...selSet].map(v => {
+    const item = items.find(i => String(i.value) === v);
+    const lbl  = item ? item.label : v;
+    return `<span class="ms-chip" id="${id}-chip-${CSS.escape(v)}">${esc(lbl)}<span class="ms-chip-x" onclick="msRemove('${id}','${v.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">×</span></span>`;
+  }).join('');
+
+  const optsHtml = items.map(item => {
+    const v   = String(item.value);
+    const sel = selSet.has(v);
+    return `<label class="ms-opt" id="${id}-opt-${CSS.escape(v)}">
+      <input type="checkbox" name="${id}" value="${esc(v)}" ${sel ? 'checked' : ''}
+        onchange="msToggle('${id}',this.value,${JSON.stringify(item.label)},this.checked)">
+      <span>${esc(item.label)}</span>
+    </label>`;
+  }).join('');
+
+  return `<div class="ms-wrap" id="${id}">
+    <div class="ms-chips-row" id="${id}-chips">${chipsHtml}</div>
+    <div class="ms-search-row">
+      <input class="ms-search" type="text" placeholder="${esc(placeholder)}" oninput="msFilter('${id}',this.value)">
+    </div>
+    <div class="ms-opts">${optsHtml}<div class="ms-empty" id="${id}-empty" style="display:none">No results</div></div>
+  </div>`;
+}
+
+window.msToggle = function(id, value, label, checked) {
+  const chipsEl = document.getElementById(id + '-chips');
+  if (!chipsEl) return;
+  const safeId  = CSS.escape(value);
+  if (checked) {
+    if (document.getElementById(`${id}-chip-${safeId}`)) return;
+    const chip = document.createElement('span');
+    chip.className = 'ms-chip';
+    chip.id = `${id}-chip-${safeId}`;
+    const safeVal = value.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    chip.innerHTML = `${esc(label)}<span class="ms-chip-x" onclick="msRemove('${id}','${safeVal}')">×</span>`;
+    chipsEl.appendChild(chip);
+  } else {
+    document.getElementById(`${id}-chip-${safeId}`)?.remove();
+  }
+};
+
+window.msRemove = function(id, value) {
+  document.getElementById(`${id}-chip-${CSS.escape(value)}`)?.remove();
+  const cb = document.querySelector(`#${id} input[name="${id}"][value="${value}"]`);
+  if (cb) cb.checked = false;
+};
+
+window.msFilter = function(id, query) {
+  const q = query.toLowerCase().trim();
+  let anyVisible = false;
+  document.querySelectorAll(`#${id} .ms-opt`).forEach(opt => {
+    const text   = opt.querySelector('span')?.textContent.toLowerCase() || '';
+    const hidden = q !== '' && !text.includes(q);
+    opt.classList.toggle('ms-hidden', hidden);
+    if (!hidden) anyVisible = true;
+  });
+  const emptyEl = document.getElementById(id + '-empty');
+  if (emptyEl) emptyEl.style.display = !anyVisible ? '' : 'none';
+};
+
+// Read selected values from a buildMultiSelect component
+function msGetSelected(id) {
+  return [...document.querySelectorAll(`#${id} input[name="${id}"]:checked`)].map(e => e.value);
+}
+
 function emptyState(icon, message, actionLabel, onAction) {
   return `<div class="empty-state">
     <div style="font-weight:600;margin-bottom:4px">${esc(message)}</div>

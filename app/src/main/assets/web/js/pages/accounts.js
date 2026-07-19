@@ -14,18 +14,61 @@ async function renderAccounts() {
     if (!cachedAccounts.length) {
       html += emptyState('', 'No accounts yet.', '+ Add Account', 'openAddAccount()');
     } else {
-      html += '<div class="card-grid">';
+      // Net worth summary bar
+      const baseCur = (cachedSettings && cachedSettings.baseCurrency) || 'USD';
+      const totalBalance = cachedAccounts.reduce((sum, a) => sum + (parseFloat(a.balance) || 0), 0);
+      const balClass = totalBalance >= 0 ? '' : 'negative';
+      html += `<div class="acc-net-worth-bar">
+        <div>
+          <div class="acc-net-worth-bar-label">Net Worth</div>
+          <div class="acc-net-worth-bar-value ${balClass}">${fmt(totalBalance, baseCur)}</div>
+        </div>
+        <div class="acc-net-worth-bar-count">${cachedAccounts.length} account${cachedAccounts.length !== 1 ? 's' : ''}</div>
+      </div>`;
+
+      html += '<div class="acc-list-grid">';
       cachedAccounts.forEach(acc => {
-        const balClass = (acc.balance || 0) >= 0 ? 'positive' : 'negative';
-        html += `<div class="stat-card">
-          <div class="stat-label">${esc(acc.type || '')}</div>
-          <div style="font-weight:600;margin-bottom:8px">${esc(acc.name)}</div>
-          <div class="stat-value ${balClass}">${fmt(acc.balance || 0, acc.currency)}</div>
-          <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
-            <a class="btn btn-primary btn-sm" href="#/accounts/${esc(acc.id)}">Details</a>
-            <button class="btn btn-ghost btn-sm" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
-            <a class="btn btn-ghost btn-sm" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
-            <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
+        const color      = acc.colorHex || '#42A5F5';
+        const bal        = parseFloat(acc.balance) || 0;
+        const balNeg     = bal < 0 ? ' negative' : '';
+        const inc        = parseFloat(acc.income)  || 0;
+        const exp        = parseFloat(acc.expense) || 0;
+        const tIn        = parseFloat(acc.transferIn)  || 0;
+        const tOut       = parseFloat(acc.transferOut) || 0;
+        const netTrf     = tIn - tOut;
+        const hasFlow    = inc > 0 || exp > 0 || tIn > 0 || tOut > 0;
+        const incStr     = inc  > 0 ? '+' + fmt(inc, acc.currency) : '—';
+        const expStr     = exp  > 0 ? '−' + fmt(exp, acc.currency) : '—';
+        const trfStr     = (tIn > 0 || tOut > 0) ? (netTrf >= 0 ? '+' : '') + fmt(netTrf, acc.currency) : esc(acc.currency || '');
+        const trfCls     = netTrf > 0 ? 'inc' : netTrf < 0 ? 'exp' : 'trf';
+        html += `<div class="acc-list-card" onclick="navigate('#/accounts/${esc(acc.id)}')">
+          <div class="acc-list-card-body">
+            <div class="acc-list-card-header">
+              <span class="acc-list-dot" style="background:${esc(color)}"></span>
+              <span class="acc-list-name">${esc(acc.name)}</span>
+              <span class="acc-list-type">${esc(prettyEnum(acc.type || ''))}</span>
+            </div>
+            <div class="acc-list-balance${balNeg}">${fmt(bal, acc.currency)}</div>
+            <hr class="acc-list-sep">
+            <div class="acc-list-flow">
+              <div class="acc-list-flow-item">
+                <span class="acc-list-flow-label">INC</span>
+                <span class="acc-list-flow-amount inc">${incStr}</span>
+              </div>
+              <div class="acc-list-flow-item">
+                <span class="acc-list-flow-label">EXP</span>
+                <span class="acc-list-flow-amount exp">${expStr}</span>
+              </div>
+              <div class="acc-list-flow-item">
+                <span class="acc-list-flow-label">TRF</span>
+                <span class="acc-list-flow-amount ${trfCls}">${trfStr}</span>
+              </div>
+            </div>
+          </div>
+          <div class="acc-list-actions" onclick="event.stopPropagation()">
+            <button class="acc-list-action-btn" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
+            <a class="acc-list-action-btn" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name)}">Records</a>
+            <button class="acc-list-action-btn danger" onclick="deleteAccount('${esc(acc.id)}','${esc(acc.name)}')">Delete</button>
           </div>
         </div>`;
       });
@@ -171,51 +214,80 @@ window.switchAccDetailTab = function(tab) {
 };
 
 function _renderAccDetailContent() {
-  const acc  = _accDetailData?.account || {};
-  const txs  = _accDetailData?.recentTransactions || [];
+  const acc   = _accDetailData?.account || {};
+  const txs   = _accDetailData?.recentTransactions || [];
   const color = acc.colorHex || '#42A5F5';
 
-  // Income / expense totals from recent transactions
-  let income = 0, expense = 0;
-  txs.forEach(tx => {
-    if (tx.type === 'INCOME')  income  += Math.abs(tx.amount || 0);
-    if (tx.type === 'EXPENSE') expense += Math.abs(tx.amount || 0);
-  });
+  // Use account-level flow totals from API (computed across ALL transactions, not just recent 20)
+  const income      = parseFloat(acc.income)      || 0;
+  const expense     = parseFloat(acc.expense)     || 0;
+  const transferIn  = parseFloat(acc.transferIn)  || 0;
+  const transferOut = parseFloat(acc.transferOut) || 0;
+  const hasFlow     = income > 0 || expense > 0 || transferIn > 0 || transferOut > 0;
+  const hasTrf      = transferIn > 0 || transferOut > 0;
+
+  // Flow chips — 4-chip 2×2 grid when transfers present, 2-chip single row otherwise
+  const chipsHtml = hasFlow ? `
+    <div class="acc-hero2-chips">
+      <div class="acc-hero2-chip">
+        <span class="acc-hero2-chip-label">INCOME</span>
+        <span class="acc-hero2-chip-amount income">+${fmt(income, acc.currency)}</span>
+      </div>
+      <div class="acc-hero2-chip">
+        <span class="acc-hero2-chip-label">EXPENSE</span>
+        <span class="acc-hero2-chip-amount expense">−${fmt(expense, acc.currency)}</span>
+      </div>
+      ${hasTrf ? `
+      <div class="acc-hero2-chip">
+        <span class="acc-hero2-chip-label">TRF IN</span>
+        <span class="acc-hero2-chip-amount">+${fmt(transferIn, acc.currency)}</span>
+      </div>
+      <div class="acc-hero2-chip">
+        <span class="acc-hero2-chip-label">TRF OUT</span>
+        <span class="acc-hero2-chip-amount">−${fmt(transferOut, acc.currency)}</span>
+      </div>` : ''}
+    </div>` : '';
+
+  // Distribution row — shown when account has multi-currency balances
+  const dist = acc.distribution || {};
+  const distEntries = Object.entries(dist).filter(([, v]) => v !== 0);
+  const distHtml = distEntries.length > 1 ? `
+    <div class="acc-hero2-dist-label">DISTRIBUTION</div>
+    <div class="acc-hero2-dist">
+      ${distEntries.sort((a, b) => a[0].localeCompare(b[0])).map(([ccy, bal]) =>
+        `<span class="acc-hero2-dist-chip"><span class="acc-hero2-dist-ccy">${esc(ccy)}</span>${fmt(bal, ccy)}</span>`
+      ).join('')}
+    </div>` : '';
 
   const heroHtml = `
-    <div class="acc-hero" style="background:${esc(color)}">
-      <div class="acc-hero-overlay"></div>
-      <div style="position:relative">
-        <div class="acc-hero-name">${esc(acc.name)}</div>
-        <div class="acc-hero-type">${prettyEnum(acc.type || '')}</div>
-        <div class="acc-hero-balance">${fmt(acc.balance || 0, acc.currency)}</div>
-        <div class="acc-hero-currency">${esc(acc.currency || '')}</div>
-        ${txs.length ? `<div class="acc-hero-stats">
-          <div class="acc-hero-stat">
-            <div class="acc-hero-stat-label">Income</div>
-            <div class="acc-hero-stat-value">+${fmt(income, acc.currency)}</div>
-          </div>
-          <div class="acc-hero-stat">
-            <div class="acc-hero-stat-label">Expense</div>
-            <div class="acc-hero-stat-value">−${fmt(expense, acc.currency)}</div>
-          </div>
-          <div class="acc-hero-stat">
-            <div class="acc-hero-stat-label">Transactions</div>
-            <div class="acc-hero-stat-value">${txs.length}</div>
-          </div>
-        </div>` : ''}
-        <div class="acc-hero-actions">
-          <button class="acc-hero-btn" onclick="openAddTransaction()">+ Transaction</button>
-          <button class="acc-hero-btn" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
-          <a class="acc-hero-btn" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
+    <div class="acc-hero2" style="background:${esc(color)}">
+      <div class="acc-hero2-overlay"></div>
+      <div class="acc-hero2-inner">
+        <div class="acc-hero2-top">
+          <span class="acc-hero2-type-badge">${esc(prettyEnum(acc.type || ''))}</span>
         </div>
+        <div class="acc-hero2-name">${esc(acc.name)}</div>
+        <div style="margin-top:20px">
+          <div class="acc-hero2-balance-label">CURRENT BALANCE</div>
+          <div class="acc-hero2-balance">${fmt(acc.balance || 0, acc.currency)}</div>
+          <div class="acc-hero2-currency">${esc(acc.currency || '')}</div>
+        </div>
+        ${chipsHtml}
+        ${distHtml}
       </div>
     </div>`;
 
+  const actionsHtml = `
+    <div class="acc-detail-actions">
+      <button class="acc-detail-action-btn primary" onclick="openAddTransaction()">+ Transaction</button>
+      <button class="acc-detail-action-btn" onclick="openEditAccount('${esc(acc.id)}')">Edit</button>
+      <a class="acc-detail-action-btn" href="#/records?accountId=${esc(acc.id)}&accountName=${encodeURIComponent(acc.name||'')}">All Records</a>
+    </div>`;
+
   const tabs = `
-    <div class="acc-detail-tabs">
-      <div class="acc-detail-tab ${_accDetailTab==='overview'?'active':''}" onclick="switchAccDetailTab('overview')">Overview</div>
-      <div class="acc-detail-tab ${_accDetailTab==='transactions'?'active':''}" onclick="switchAccDetailTab('transactions')">Transactions</div>
+    <div class="acc-detail-tabs2">
+      <div class="acc-detail-tab2 ${_accDetailTab==='overview'?'active':''}" onclick="switchAccDetailTab('overview')">Overview</div>
+      <div class="acc-detail-tab2 ${_accDetailTab==='transactions'?'active':''}" onclick="switchAccDetailTab('transactions')">Transactions</div>
     </div>`;
 
   let tabBody = '';
@@ -236,10 +308,10 @@ function _renderAccDetailContent() {
       tabBody += `<div class="section-sub" style="margin-bottom:12px">Recent Activity</div>
         <div class="card"><div class="dash-card-body" style="padding:0 0 4px">`;
       txs.slice(0, 5).forEach(tx => {
-        const isIncome   = tx.type === 'INCOME';
-        const isExpense  = tx.type === 'EXPENSE';
-        const typeCls    = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
-        const sign       = isIncome ? '+' : isExpense ? '−' : '';
+        const isIncome  = tx.type === 'INCOME';
+        const isExpense = tx.type === 'EXPENSE';
+        const typeCls   = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
+        const sign      = isIncome ? '+' : isExpense ? '−' : '';
         tabBody += `<div class="tx-row" onclick="openTxDetail(${tx.id})">
           <div class="tx-dot ${typeCls}"></div>
           <div class="tx-info">
@@ -287,10 +359,14 @@ function _renderAccDetailContent() {
     }
   }
 
-  let html = `<div class="page-header">
+  const html = `<div class="page-header">
     <a class="btn btn-ghost btn-sm" href="#/accounts">← Accounts</a>
   </div>
-  ${heroHtml}${tabs}${tabBody}`;
+  ${heroHtml}
+  ${actionsHtml}
+  <div style="height:20px"></div>
+  ${tabs}
+  ${tabBody}`;
 
   setContent(html);
 }

@@ -1,5 +1,60 @@
 /* PAGE: Loans + Loan Detail */
 
+/* ── helpers ─────────────────────────────────────────────── */
+
+function _loanAccentVar(loan) {
+  return loan.loanType === 'LENT' ? 'var(--accent)' : 'var(--warning)';
+}
+
+function _loanIcon(loan) {
+  const up = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>`;
+  const dn = `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>`;
+  return loan.loanType === 'LENT' ? up : dn;
+}
+
+function _loanStatusBadge(status) {
+  if (status === 'SETTLED') return '<span class="loan-status-badge settled">Settled</span>';
+  return '<span class="loan-status-badge active">Active</span>';
+}
+
+function _loanListItem(loan) {
+  const isLent = loan.loanType === 'LENT';
+  const accentVar = _loanAccentVar(loan);
+  const principal = loan.principalAmount || 0;
+  const paid = loan.totalPaid || 0;
+  const pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
+  const partySub = (isLent ? 'Lent to ' : 'Borrowed from ') + esc(loan.lenderOrBorrowerName || '—');
+
+  return `<div class="loan-item" onclick="navigate('#/loans/${esc(loan.id)}')">
+    <div class="loan-item-icon" style="color:${accentVar};background:${accentVar}18">${_loanIcon(loan)}</div>
+    <div class="loan-item-body">
+      <div class="loan-item-header">
+        <span class="loan-item-name">${esc(loan.name)}</span>
+        <div class="loan-item-trail">
+          <span class="loan-item-principal" style="color:${accentVar}">${fmt(principal, loan.currency)}</span>
+          ${_loanStatusBadge(loan.status)}
+        </div>
+      </div>
+      <div class="loan-item-sub">${partySub}</div>
+      <div class="loan-item-progress-row">
+        <div class="loan-item-progress-wrap">
+          <div class="loan-item-progress-track">
+            <div class="loan-item-progress-fill" style="width:${pct}%;background:${accentVar}"></div>
+          </div>
+        </div>
+        <span class="loan-item-pct" style="color:${accentVar}">${pct}%</span>
+      </div>
+    </div>
+    <div class="loan-item-actions">
+      ${loan.status === 'ACTIVE' ? `<button class="loan-menu-btn" onclick="event.stopPropagation();markLoanSettled('${esc(loan.id)}','${esc(loan.name)}')">Mark Settled</button>` : ''}
+      <button class="loan-menu-btn" onclick="event.stopPropagation();openEditLoan('${esc(loan.id)}')">Edit</button>
+      <button class="loan-menu-btn danger" onclick="event.stopPropagation();deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+/* ── list page ───────────────────────────────────────────── */
+
 async function renderLoans() {
   showSpinner();
   try {
@@ -13,47 +68,260 @@ async function renderLoans() {
 
     if (!loans.length) {
       html += emptyState('', 'No loans yet.', '+ Add Loan', 'openAddLoan()');
-    } else {
-      html += '<div class="card-grid">';
-      loans.forEach(loan => {
-        const repaidPct = Math.round(((loan.totalPaid || 0) / (loan.principalAmount || 1)) * 100);
-        const typeBadge = loan.loanType === 'LENT' ? 'badge-lent' : 'badge-borrowed';
-        const statusBadge = loan.status === 'SETTLED' ? 'badge-settled' : 'badge-active';
-        html += `<div class="stat-card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-            <div>
-              <div style="font-weight:700">${esc(loan.name)}</div>
-              <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px">${esc(loan.lenderOrBorrowerName || '')}</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
-              <span class="badge ${statusBadge}">${esc(loan.status)}</span>
-            </div>
-          </div>
-          <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:2px">Principal</div>
-          <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px">${fmt(loan.principalAmount||0, loan.currency)}</div>
-          ${progressBar(repaidPct, repaidPct >= 100 ? 'progress-green' : 'progress-orange')}
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:4px">
-            <span>Paid: ${fmt(loan.totalPaid||0,loan.currency)}</span>
-            <span>Left: ${fmt(loan.remainingBalance||0,loan.currency)}</span>
-          </div>
-          ${loan.interestAccrued ? `<div style="font-size:0.78rem;color:var(--warning);margin-top:2px">Interest: ${fmt(loan.interestAccrued, loan.currency)}</div>` : ''}
-          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">
-            ${loan.startDate ? `Start: ${fmtDate(loan.startDate)}` : ''}
-            ${loan.expectedSettlementDate ? ` &bull; Due: ${fmtDate(loan.expectedSettlementDate)}` : ''}
-          </div>
-          <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
-            <a class="btn btn-primary btn-sm" href="#/loans/${esc(loan.id)}">Details</a>
-            <button class="btn btn-ghost btn-sm" onclick="openEditLoan('${esc(loan.id)}')">Edit</button>
-            <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteLoan('${esc(loan.id)}','${esc(loan.name)}')">Delete</button>
-          </div>
-        </div>`;
-      });
-      html += '</div>';
+      setContent(html);
+      return;
     }
+
+    const active = loans.filter(l => l.status !== 'SETTLED');
+    const settled = loans.filter(l => l.status === 'SETTLED');
+
+    html += '<div class="loan-list">';
+    if (active.length) {
+      html += '<div class="loan-section-header">ACTIVE</div>';
+      active.forEach(l => { html += _loanListItem(l); });
+    }
+    if (settled.length) {
+      html += '<div class="loan-section-header">SETTLED</div>';
+      settled.forEach(l => { html += _loanListItem(l); });
+    }
+    html += '</div>';
+
     setContent(html);
   } catch (e) { if (e.message !== 'Session expired') showError('Error loading loans.'); }
 }
+
+/* ── hero card ───────────────────────────────────────────── */
+
+function _loanHeroHtml(loan) {
+  const isLent = loan.loanType === 'LENT';
+  const accentVar = _loanAccentVar(loan);
+  const principal = loan.principalAmount || 0;
+  const paid = loan.totalPaid || 0;
+  const remaining = loan.remainingBalance || 0;
+  const pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
+  const party = loan.lenderOrBorrowerName || '—';
+  const partyLabel = isLent ? 'LENT TO' : 'BORROWED FROM';
+
+  const bankIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zm-8 9h19v3H2v-3zm14-9v7h3v-7h-3zM11.5 1L2 6v2h19V6l-9.5-5z"/></svg>`;
+
+  return `<div class="loan-hero" style="--loan-accent:${accentVar}">
+    <div class="loan-hero-title-row">
+      <div class="loan-hero-icon-wrap" style="background:${accentVar}22;color:${accentVar}">${bankIcon}</div>
+      <div>
+        <div class="loan-hero-card-title">${esc(loan.name)}</div>
+        <div class="loan-hero-card-sub">${isLent ? 'Lent' : 'Borrowed'} &bull; ${loan.status === 'SETTLED' ? 'Settled' : 'Active'}</div>
+      </div>
+    </div>
+    <div class="loan-hero-top">
+      <div class="loan-hero-meta">
+        <div class="loan-hero-label">REMAINING BALANCE</div>
+        <div class="loan-hero-amount" style="color:${accentVar}">${fmt(remaining, loan.currency)}</div>
+      </div>
+      <div class="loan-hero-badge" style="background:${accentVar}20;color:${accentVar}">${pct}%</div>
+    </div>
+    <div class="loan-hero-track"><div class="loan-hero-fill" style="width:${pct}%;background:${accentVar}"></div></div>
+    <div class="loan-hero-stats">
+      <span class="loan-hero-stat-paid">&bull; ${fmt(paid, loan.currency)} settled</span>
+      <span class="loan-hero-stat-goal">Goal: ${fmt(principal, loan.currency)}</span>
+    </div>
+    <div class="loan-hero-chips">
+      <div class="loan-hero-chip">
+        <div class="loan-hero-chip-label">${partyLabel}</div>
+        <div class="loan-hero-chip-val" style="color:${accentVar}">${esc(party)}</div>
+      </div>
+      ${loan.interestRate ? `<div class="loan-hero-chip">
+        <div class="loan-hero-chip-label">INTEREST</div>
+        <div class="loan-hero-chip-val">${loan.interestRate}% p.a.</div>
+      </div>` : ''}
+      ${loan.startDate ? `<div class="loan-hero-chip">
+        <div class="loan-hero-chip-label">START</div>
+        <div class="loan-hero-chip-val">${fmtDate(loan.startDate)}</div>
+      </div>` : ''}
+      ${loan.expectedSettlementDate ? `<div class="loan-hero-chip">
+        <div class="loan-hero-chip-label">DUE</div>
+        <div class="loan-hero-chip-val">${fmtDate(loan.expectedSettlementDate)}</div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ── scope card ──────────────────────────────────────────── */
+
+function _loanScopeHtml(loan) {
+  const account = loan.linkedAccountId
+    ? (cachedAccounts.find(a => String(a.id) === String(loan.linkedAccountId))?.name || loan.linkedAccountId)
+    : null;
+
+  const calIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>`;
+  const acctIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`;
+  const rateIcon = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>`;
+
+  let rows = '';
+  rows += `<div class="loan-scope-row"><span class="loan-scope-icon">${calIcon}</span><span class="loan-scope-key">TYPE</span><span class="loan-scope-val">${loan.loanType === 'LENT' ? 'Money Lent Out' : 'Money Borrowed'}</span></div>`;
+  if (account) {
+    rows += `<div class="loan-scope-row"><span class="loan-scope-icon">${acctIcon}</span><span class="loan-scope-key">LINKED ACCOUNT</span><span class="loan-scope-val">${esc(account)}</span></div>`;
+  }
+  if (loan.interestRate) {
+    rows += `<div class="loan-scope-row"><span class="loan-scope-icon">${rateIcon}</span><span class="loan-scope-key">INTEREST RATE</span><span class="loan-scope-val">${loan.interestRate}% per annum</span></div>`;
+  }
+
+  return `<div class="loan-scope-card">
+    <div class="loan-scope-header">Details</div>
+    ${rows}
+  </div>`;
+}
+
+/* ── amortization schedule ───────────────────────────────── */
+
+function _amortizationHtml(loan) {
+  if (!loan.interestRate || !loan.principalAmount) return '';
+  const r = loan.interestRate / 100 / 12;
+  const principal = loan.principalAmount;
+
+  const settleDateMs = loan.expectedSettlementDate;
+  const startDateMs = loan.startDate || Date.now();
+  if (!settleDateMs || !startDateMs) return '';
+  const months = Math.max(1, Math.round((settleDateMs - startDateMs) / (1000 * 60 * 60 * 24 * 30.44)));
+
+  let monthlyPayment;
+  if (r === 0) {
+    monthlyPayment = principal / months;
+  } else {
+    monthlyPayment = (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+  }
+
+  let balance = principal;
+  let rows = '';
+  const now = new Date(startDateMs);
+  for (let i = 1; i <= Math.min(months, 60); i++) {
+    const interest = balance * r;
+    const principalPart = Math.min(monthlyPayment - interest, balance);
+    balance = Math.max(0, balance - principalPart);
+    const d = new Date(now);
+    d.setMonth(d.getMonth() + i);
+    rows += `<tr>
+      <td>${d.toLocaleDateString('en-US', {month:'short',year:'numeric'})}</td>
+      <td>${fmt(monthlyPayment, loan.currency)}</td>
+      <td style="color:var(--expense)">${fmt(interest, loan.currency)}</td>
+      <td>${fmt(principalPart, loan.currency)}</td>
+      <td>${fmt(Math.max(0, balance), loan.currency)}</td>
+    </tr>`;
+    if (balance <= 0) break;
+  }
+
+  return `<div class="loan-amort-wrap">
+    <div class="loan-amort-header" onclick="this.parentElement.classList.toggle('open')">
+      <span>Amortization Schedule</span>
+      <span class="loan-amort-chevron">▾</span>
+    </div>
+    <div class="loan-amort-body">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Balance</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      ${months > 60 ? `<p style="color:var(--text-muted);font-size:0.75rem;padding:8px 12px">Showing first 60 of ${months} months</p>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ── activity tab ────────────────────────────────────────── */
+
+function _loanActivityHtml(txs, loan) {
+  if (!txs.length) {
+    return '<div class="loan-activity-empty">No transactions linked to this loan\'s account.</div>';
+  }
+  const byDate = {};
+  txs.forEach(tx => {
+    const key = fmtDate(tx.date);
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(tx);
+  });
+  let html = '<div class="loan-activity-list">';
+  Object.entries(byDate).forEach(([date, group]) => {
+    html += `<div class="loan-activity-group-label">${date}</div>`;
+    group.forEach(tx => {
+      const isIncome = (tx.amount || 0) >= 0;
+      const amtColor = isIncome ? 'var(--income)' : 'var(--expense)';
+      const sign = isIncome ? '+' : '';
+      const catName = tx.categoryId
+        ? (cachedCategories.find(c => String(c.id) === String(tx.categoryId))?.name || '')
+        : '';
+      html += `<div class="loan-activity-row">
+        <div class="loan-activity-info">
+          <div class="loan-activity-name">${esc(tx.title || tx.description || 'Transaction')}</div>
+          ${catName ? `<div class="loan-activity-sub">${esc(catName)}</div>` : ''}
+        </div>
+        <div class="loan-activity-amount" style="color:${amtColor}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency || loan.currency)}</div>
+      </div>`;
+    });
+  });
+  return html + '</div>';
+}
+
+/* ── tab switcher ────────────────────────────────────────── */
+
+window.loanDetailTab = function (tab) {
+  document.querySelectorAll('.loan-detail-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  document.querySelectorAll('.loan-detail-pane').forEach(el => el.classList.toggle('active', el.dataset.pane === tab));
+};
+
+/* ── detail page ─────────────────────────────────────────── */
+
+async function renderLoanDetail(id) {
+  if (!id) { navigate('#/loans'); return; }
+  showSpinner();
+  try {
+    const loanRes = await apiFetch(`/api/loans/${encodeURIComponent(id)}`);
+    if (!loanRes.success) { showError('Failed to load loan.'); return; }
+    const loan = loanRes.data || {};
+
+    let txs = [];
+    if (loan.linkedAccountId) {
+      try {
+        const txRes = await apiFetch(`/api/transactions?accountId=${encodeURIComponent(loan.linkedAccountId)}&limit=200`);
+        if (txRes.success) txs = txRes.data || [];
+      } catch (_) {}
+    }
+
+    const accentVar = _loanAccentVar(loan);
+
+    let html = `<div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <a class="btn btn-ghost btn-sm" href="#/loans">← Back</a>
+        <h2 class="section-title" style="margin:0">${esc(loan.name)}</h2>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditLoan('${esc(loan.id)}')">Edit</button>
+        ${loan.status === 'ACTIVE' ? `<button class="btn btn-primary btn-sm" onclick="openLogRepayment(${loan.id},${loan.principalAmount||0},${loan.remainingBalance||0},${loan.totalPaid||0},'${esc(loan.currency||'USD')}')">+ Repayment</button>` : ''}
+      </div>
+    </div>
+
+    <div class="loan-detail-pill-nav">
+      <div class="loan-detail-tabs">
+        <button class="loan-detail-tab active" data-tab="overview" onclick="loanDetailTab('overview')">Overview</button>
+        <button class="loan-detail-tab" data-tab="activity" onclick="loanDetailTab('activity')">Activity</button>
+      </div>
+    </div>
+
+    <div class="loan-detail-pane active" data-pane="overview">
+      ${_loanHeroHtml(loan)}
+      ${_loanScopeHtml(loan)}
+      ${_amortizationHtml(loan)}
+    </div>
+
+    <div class="loan-detail-pane" data-pane="activity">
+      <div class="loan-activity-header">
+        <span>${esc(loan.name)} Transactions</span>
+        ${loan.linkedAccountId ? '' : '<span style="color:var(--text-muted);font-size:0.8rem">No linked account</span>'}
+      </div>
+      ${_loanActivityHtml(txs, loan)}
+    </div>`;
+
+    setContent(html);
+  } catch (e) { if (e.message !== 'Session expired') showError('Error loading loan detail.'); }
+}
+
+/* ── modals ──────────────────────────────────────────────── */
 
 window.openAddLoan = function () {
   const body = `
@@ -117,7 +385,7 @@ window.openEditLoan = async function (id) {
     ${formField(partyLabel, `<input type="text" id="ln-party" value="${esc(loan.lenderOrBorrowerName||'')}" placeholder="${partyLabel}…">`)}
     ${formRow(
       formField('Expected Settlement', `<input type="date" id="ln-settle" value="${esc(settleVal)}">`),
-      formField('Interest Rate (% p.a.)', `<div class="input-group"><input type="number" id="ln-rate" value="0" min="0" max="100" step="0.01" placeholder="0"><span class="input-group-addon">% p.a.</span></div>`)
+      formField('Interest Rate (% p.a.)', `<div class="input-group"><input type="number" id="ln-rate" value="${loan.interestRate || 0}" min="0" max="100" step="0.01" placeholder="0"><span class="input-group-addon">% p.a.</span></div>`)
     )}
     <small style="color:var(--text-muted);font-size:0.75rem">Principal cannot be changed. Use repayments to adjust balance.</small>`;
   openModal(`Edit Loan — ${esc(loan.name)}`, body, async () => {
@@ -140,6 +408,17 @@ window.openEditLoan = async function (id) {
   }, 'Save Changes');
 };
 
+window.markLoanSettled = function (id, name) {
+  openModal(`Mark "${name}" as Settled?`, '<p style="color:var(--text-muted)">This will mark the loan as fully settled. You can still view it under the Settled section.</p>', async () => {
+    await withLoading(modalConfBtn, async () => {
+      const res = await apiWrite('PUT', `/api/loans/${encodeURIComponent(id)}`, { status: 'SETTLED' });
+      if (res.success) { closeModal(); renderLoans(); showToast('Loan marked as settled.'); }
+      else { showToast('Failed: ' + (res.error||''), 'error'); }
+    });
+  }, 'Mark Settled');
+  modalConfBtn.className = 'btn btn-primary';
+};
+
 window.deleteLoan = function (id, name) {
   confirmDelete(`Delete loan "${name}"?`, async () => {
     try {
@@ -150,82 +429,6 @@ window.deleteLoan = function (id, name) {
     } catch (e) { if (e.message !== 'Session expired') showToast('Error deleting loan.', 'error'); }
   });
 };
-
-async function renderLoanDetail(id) {
-  if (!id) { navigate('#/loans'); return; }
-  showSpinner();
-  try {
-    const [loanRes, paymentsRes] = await Promise.all([
-      apiFetch(`/api/loans/${encodeURIComponent(id)}`),
-      apiFetch(`/api/loans/${encodeURIComponent(id)}/payments`)
-    ]);
-    if (!loanRes.success) { showError('Failed to load loan.'); return; }
-    const loan = loanRes.data || {};
-    const payments = paymentsRes.success ? (paymentsRes.data || []) : [];
-    const typeBadge = loan.loanType === 'LENT' ? 'badge-lent' : 'badge-borrowed';
-    const statusBadge = loan.status === 'SETTLED' ? 'badge-settled' : 'badge-active';
-    const repaidPct = Math.round(((loan.totalPaid||0)/(loan.principalAmount||1))*100);
-
-    let html = `<div class="page-header">
-      <div style="display:flex;align-items:center;gap:12px">
-        <a class="btn btn-ghost btn-sm" href="#/loans">← Back</a>
-        <h2 class="section-title" style="margin:0">${esc(loan.name)}</h2>
-      </div>
-      <div style="display:flex;gap:6px">
-        <span class="badge ${typeBadge}">${esc(loan.loanType)}</span>
-        <span class="badge ${statusBadge}">${esc(loan.status)}</span>
-      </div>
-    </div>
-    <div class="card-grid" style="margin-bottom:20px">
-      <div class="stat-card">
-        <div class="stat-label">Principal</div>
-        <div class="stat-value">${fmt(loan.principalAmount||0, loan.currency)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Paid</div>
-        <div class="stat-value" style="color:var(--success)">${fmt(loan.totalPaid||0, loan.currency)}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Remaining</div>
-        <div class="stat-value" style="color:var(--danger)">${fmt(loan.remainingBalance||0, loan.currency)}</div>
-      </div>
-      ${loan.interestAccrued ? `<div class="stat-card">
-        <div class="stat-label">Interest Accrued</div>
-        <div class="stat-value" style="color:var(--warning)">${fmt(loan.interestAccrued, loan.currency)}</div>
-      </div>` : ''}
-    </div>
-    <div class="card" style="max-width:520px;margin-bottom:20px">
-      ${progressBar(repaidPct, repaidPct>=100?'progress-green':'progress-orange')}
-      <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-top:4px">
-        <span>Repaid: ${repaidPct}%</span>
-        ${loan.lenderOrBorrowerName ? `<span>${esc(loan.lenderOrBorrowerName)}</span>` : ''}
-      </div>
-      ${loan.startDate ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:8px">Start: ${fmtDate(loan.startDate)}</div>` : ''}
-      ${loan.expectedSettlementDate ? `<div style="font-size:0.8rem;color:var(--text-muted)">Expected settlement: ${fmtDate(loan.expectedSettlementDate)}</div>` : ''}
-    </div>
-    <div class="section-sub" style="display:flex;justify-content:space-between;align-items:center">
-      <span>Repayment History</span>
-      <button class="btn btn-primary btn-sm" onclick="openLogRepayment(${loan.id},${loan.principalAmount||0},${loan.remainingBalance||0},${loan.totalPaid||0},'${esc(loan.currency||'USD')}')">+ Log Repayment</button>
-    </div>`;
-
-    if (!payments.length) {
-      html += '<p class="empty-state">No repayments logged yet.</p>';
-    } else {
-      html += `<div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Date</th><th>Amount</th><th>Note</th><th></th></tr></thead><tbody>`;
-      payments.forEach(p => {
-        html += `<tr>
-          <td style="white-space:nowrap">${fmtDate(p.date)}</td>
-          <td>${fmt(p.amount||0, loan.currency)}</td>
-          <td>${p.note ? esc(p.note) : '<span style="color:var(--text-muted)">—</span>'}</td>
-          <td><button class="btn-icon" title="Delete" onclick="deleteRepayment(${loan.id},${p.id})">Del</button></td>
-        </tr>`;
-      });
-      html += '</tbody></table></div></div>';
-    }
-    setContent(html);
-  } catch (e) { if (e.message !== 'Session expired') showError('Error loading loan detail.'); }
-}
 
 window.openLogRepayment = function (loanId, principal=0, remaining=0, paid=0, currency='') {
   const body = `

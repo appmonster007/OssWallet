@@ -11,7 +11,12 @@ data class BudgetDto(
     val spent: Double,
     val remaining: Double,
     val percentage: Double,
-    val alertLevel: String, // "NONE", "WARNING", "EXCEEDED"
-    val period: String,     // e.g. "2025-06"
-    val isArchived: Boolean
+    val alertLevel: String,      // "NONE", "WARNING", "EXCEEDED"
+    val period: String,          // e.g. "2025-06"
+    val isArchived: Boolean,
+    val alertThreshold: Double = 0.8,
+    val timelineType: String = "MONTHLY",
+    val categoryIds: List<Long> = emptyList(),
+    val accountIds: List<Long> = emptyList(),
+    val rollover: Boolean = false
 )

@@ -6,18 +6,20 @@ async function renderRecords() {
   const accountName = params.get('accountName') ? decodeURIComponent(params.get('accountName')) : '';
   let page          = parseInt(params.get('page') || '0', 10);
   if (isNaN(page) || page < 0) page = 0;
-  const type        = params.get('type') || '';
-  const dateFrom    = params.get('dateFrom') || '';
-  const dateTo      = params.get('dateTo') || '';
-  const categoryId  = params.get('categoryId') || '';
-  const minAmount   = params.get('minAmount') || '';
-  const maxAmount   = params.get('maxAmount') || '';
-  const status      = params.get('status') || '';
-  const payee       = params.get('payee') || '';
-  const groupBy     = params.get('groupBy') || 'date';
-  const sortBy      = params.get('sortBy') || 'date_desc';
-  const filtersOpen = params.get('filtersOpen') === '1';
-  const pageLimit   = parseInt(localStorage.getItem('oss-page-size') || '25', 10);
+  // Multi-value filter params (backward-compat: also read old singular names)
+  const types          = params.get('types')          || params.get('type')       || '';
+  const dateFrom       = params.get('dateFrom') || '';
+  const dateTo         = params.get('dateTo')   || '';
+  const categoryIds    = params.get('categoryIds')    || params.get('categoryId') || '';
+  const statuses       = params.get('statuses')       || params.get('status')     || '';
+  const paymentMethods = params.get('paymentMethods') || '';
+  const tagNames       = params.get('tagNames')       || '';
+  const minAmount      = params.get('minAmount') || '';
+  const maxAmount      = params.get('maxAmount') || '';
+  const payee          = params.get('payee')     || '';
+  const groupBy        = params.get('groupBy') || 'date';
+  const sortBy         = params.get('sortBy')  || 'date_desc';
+  const pageLimit      = parseInt(localStorage.getItem('oss-page-size') || '25', 10);
 
   showSpinner();
   try {
@@ -25,26 +27,23 @@ async function renderRecords() {
     const excludeFuture  = params.get('excludeFuture') === '1';
 
     let url = `/api/transactions?page=${page}&limit=${pageLimit}`;
-    if (accountId)  url += `&accountId=${encodeURIComponent(accountId)}`;
-    if (type)       url += `&type=${encodeURIComponent(type)}`;
-    if (dateFrom)   url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
-    if (dateTo)     url += `&dateTo=${encodeURIComponent(dateTo)}`;
-    if (categoryId) url += `&categoryId=${encodeURIComponent(categoryId)}`;
-    if (minAmount)  url += `&minAmount=${encodeURIComponent(minAmount)}`;
-    if (maxAmount)  url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
-    if (status)     url += `&status=${encodeURIComponent(status)}`;
-    if (payee)      url += `&payee=${encodeURIComponent(payee)}`;
+    if (accountId)      url += `&accountId=${encodeURIComponent(accountId)}`;
+    if (types)          url += `&types=${encodeURIComponent(types)}`;
+    if (dateFrom)       url += `&dateFrom=${encodeURIComponent(dateFrom)}`;
+    if (dateTo)         url += `&dateTo=${encodeURIComponent(dateTo)}`;
+    if (categoryIds)    url += `&categoryIds=${encodeURIComponent(categoryIds)}`;
+    if (statuses)       url += `&statuses=${encodeURIComponent(statuses)}`;
+    if (paymentMethods) url += `&paymentMethods=${encodeURIComponent(paymentMethods)}`;
+    if (tagNames)       url += `&tagNames=${encodeURIComponent(tagNames)}`;
+    if (minAmount)      url += `&minAmount=${encodeURIComponent(minAmount)}`;
+    if (maxAmount)      url += `&maxAmount=${encodeURIComponent(maxAmount)}`;
+    if (payee)          url += `&payee=${encodeURIComponent(payee)}`;
     url += `&includePlanned=${includePlanned}&excludeFuture=${excludeFuture}`;
 
     const json = await apiFetch(url);
     if (!json.success) { showError('Failed to load records.'); return; }
     const data = json.data || { items: [], total: 0, page: 0, limit: 25, hasMore: false };
     const title = accountName ? `Records — ${esc(accountName)}` : 'Records';
-
-    const filterKeys = [type, accountId, dateFrom, dateTo, categoryId, minAmount, maxAmount, status, payee];
-    const activeFilterCount = filterKeys.filter(Boolean).length;
-    const filterBtnLabel = `Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}`;
-    const filterBtnCls   = activeFilterCount ? 'btn btn-ghost btn-sm btn-filter-active' : 'btn btn-ghost btn-sm';
 
     const today = new Date(); today.setHours(0,0,0,0);
     const fmtD  = d => d.toISOString().slice(0,10);
@@ -53,77 +52,100 @@ async function renderRecords() {
     const monthStartStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
     const last30Str     = fmtD(new Date(today.getTime() - 29*86400000));
 
-    const fPanel = `<div class="filter-panel${filtersOpen ? '' : ' hidden'}" id="filter-panel">
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
-        <span style="font-size:0.75rem;color:var(--text-muted);align-self:center;padding-right:4px">Quick:</span>
-        <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${todayStr}','${todayStr}')">Today</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${weekStartStr}','${todayStr}')">This Week</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${monthStartStr}','${todayStr}')">This Month</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:0.78rem;padding:4px 10px" onclick="setDateQuick('${last30Str}','${todayStr}')">Last 30 Days</button>
-      </div>
-      <div class="filter-grid">
-        <div class="form-field"><label>Type</label>
-          ${buildSelect('f-type',[{value:'',label:'All'},{value:'INCOME',label:'Income'},{value:'EXPENSE',label:'Expense'},{value:'TRANSFER',label:'Transfer'}],type||'','All',false)}
-        </div>
-        <div class="form-field"><label>Account</label>
-          ${buildSelect('f-account',[{value:'',label:'All Accounts'}].concat(cachedAccounts.map(a=>({value:a.id,label:`${a.name} (${a.currency})`}))),accountId||'','All Accounts',true)}
-        </div>
-        <div class="form-field"><label>Category</label>
-          ${buildSelect('f-cat',[{value:'',label:'All'}].concat(cachedCategories.map(c=>({value:String(c.id),label:c.name}))),categoryId||'','All',true)}
-        </div>
-        <div class="form-field"><label>Status</label>
-          ${buildSelect('f-status',[{value:'',label:'All'},{value:'CLEARED',label:'Cleared'},{value:'RECONCILE',label:'Reconcile'},{value:'UNCLEARED',label:'Uncleared'}],status||'','All',false)}
-        </div>
-        <div class="form-field"><label>Date Range</label><div class="date-range-wrap"><input type="date" id="f-from" value="${esc(dateFrom)}"><span class="date-range-sep">→</span><input type="date" id="f-to" value="${esc(dateTo)}"></div></div>
-        <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00" min="0" step="0.01"></div>
-        <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="999999" min="0" step="0.01"></div>
-        <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
-        <div class="form-field" style="display:flex;align-items:center;gap:8px;margin-top:24px">
-          <input type="checkbox" id="f-planned" ${includePlanned ? 'checked' : ''} style="width:18px;height:18px">
-          <label style="margin:0;cursor:pointer" for="f-planned">Include Planned</label>
-        </div>
-        <div class="form-field" style="display:flex;align-items:center;gap:8px;margin-top:24px">
-          <input type="checkbox" id="f-excl-future" ${excludeFuture ? 'checked' : ''} style="width:18px;height:18px">
-          <label style="margin:0;cursor:pointer" for="f-excl-future">Exclude Future</label>
-        </div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-        <div class="form-field" style="margin:0;flex:1;min-width:160px">
-          <label>Group By</label>
-          ${buildSelect('f-group',[{value:'none',label:'None'},{value:'date',label:'Date'},{value:'type',label:'Type'},{value:'category',label:'Category'},{value:'account',label:'Account'}],groupBy||'date','None',false)}
-        </div>
-        <div class="form-field" style="margin:0;flex:1;min-width:200px">
-          <label>Sort By</label>
-          ${buildSelect('f-sort',[{value:'date_desc',label:'Date (newest first)'},{value:'date_asc',label:'Date (oldest first)'},{value:'amount_desc',label:'Amount (high → low)'},{value:'amount_asc',label:'Amount (low → high)'},{value:'title_asc',label:'Title (A → Z)'}],sortBy||'date_desc','Date (newest first)',false)}
-        </div>
-      </div>
-      <div class="filter-actions" style="margin-top:12px">
-        <button class="btn btn-primary btn-sm" onclick="applyRecordFilters()">Apply Filters</button>
-        <button class="btn btn-ghost btn-sm" onclick="clearRecordFilters()">Clear All</button>
-      </div>
-    </div>`;
+    const isToday     = dateFrom === todayStr     && dateTo === todayStr;
+    const isThisWeek  = dateFrom === weekStartStr  && dateTo === todayStr;
+    const isThisMonth = dateFrom === monthStartStr && dateTo === todayStr;
+    const isLast30    = dateFrom === last30Str    && dateTo === todayStr;
+
+    // Build quick-filter URL: preserves all non-date params, replaces date range
+    const mkQuickUrl = (from, to) => {
+      const p = new URLSearchParams();
+      if (accountId)      p.set('accountId',      accountId);
+      if (accountName)    p.set('accountName',    encodeURIComponent(accountName));
+      if (types)          p.set('types',          types);
+      if (categoryIds)    p.set('categoryIds',    categoryIds);
+      if (statuses)       p.set('statuses',       statuses);
+      if (paymentMethods) p.set('paymentMethods', paymentMethods);
+      if (tagNames)       p.set('tagNames',       tagNames);
+      if (payee)          p.set('payee',          payee);
+      if (minAmount)      p.set('minAmount',      minAmount);
+      if (maxAmount)      p.set('maxAmount',      maxAmount);
+      if (groupBy && groupBy !== 'date')      p.set('groupBy', groupBy);
+      if (sortBy  && sortBy  !== 'date_desc') p.set('sortBy',  sortBy);
+      if (!includePlanned) p.set('includePlanned', '0');
+      if (excludeFuture)   p.set('excludeFuture',  '1');
+      if (from) p.set('dateFrom', from);
+      if (to)   p.set('dateTo',   to);
+      return `#/records?${p.toString()}`;
+    };
+
+    // Active filter chips (each chip clears one param, multi-values shown as one chip)
+    const _chip = (keys, label) => {
+      const p2 = new URLSearchParams(params.toString());
+      const keyArr = Array.isArray(keys) ? keys : [keys];
+      keyArr.forEach(k => { p2.delete(k); });
+      p2.set('page', '0');
+      return `<span class="tx-active-chip" onclick="location.hash='#/records?${p2.toString()}'">${esc(label)} <span class="tx-chip-x">×</span></span>`;
+    };
+    const chips = [];
+    if (types) {
+      const labels = types.split(',').map(t => prettyEnum(t.trim())).join(', ');
+      chips.push(_chip(['types','type'], labels));
+    }
+    if (statuses) {
+      const labels = statuses.split(',').map(s => prettyEnum(s.trim())).join(', ');
+      chips.push(_chip(['statuses','status'], labels));
+    }
+    if (categoryIds) {
+      const ids = categoryIds.split(',').map(s => s.trim());
+      const names = ids.map(id => cachedCategories.find(c => String(c.id) === id)?.name || `#${id}`);
+      chips.push(_chip(['categoryIds','categoryId'], names.length === 1 ? names[0] : `${names.length} categories`));
+    }
+    if (paymentMethods) {
+      const labels = paymentMethods.split(',').map(m => m.trim().replace(/_/g,' ')).join(', ');
+      chips.push(_chip('paymentMethods', labels));
+    }
+    if (tagNames) {
+      const tags = tagNames.split(',').map(t => t.trim());
+      chips.push(_chip('tagNames', tags.length === 1 ? tags[0] : `${tags.length} tags`));
+    }
+    if (payee)      chips.push(_chip('payee',      `Payee: ${payee}`));
+    if (minAmount)  chips.push(_chip('minAmount',  `≥ ${minAmount}`));
+    if (maxAmount)  chips.push(_chip('maxAmount',  `≤ ${maxAmount}`));
+    if (dateFrom || dateTo) chips.push(_chip(['dateFrom','dateTo'], dateFrom && dateTo ? `${dateFrom} → ${dateTo}` : (dateFrom || dateTo)));
+    const chipsHtml = chips.length
+      ? `<div class="tx-active-chips">${chips.join('')}<button class="tx-chip-clear-all" onclick="clearRecordFilters()">Clear all</button></div>`
+      : '';
+
+    const activeFilterCount = [types, dateFrom, dateTo, categoryIds, minAmount, maxAmount, statuses, paymentMethods, tagNames, payee].filter(Boolean).length;
 
     let html = `<div class="page-header">
       <h2 class="section-title">${title}</h2>
-      <div style="display:flex;gap:8px">
-        <button class="${filterBtnCls}" id="filters-btn" onclick="toggleRecordFilters()">${filterBtnLabel}</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Record</button>
-      </div>
-    </div>${fPanel}`;
+      <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Record</button>
+    </div>
+    <div class="tx-filter-pills">
+      <button class="tx-pill${isToday    ? ' active' : ''}" onclick="location.hash='${mkQuickUrl(todayStr, todayStr)}'">Today</button>
+      <button class="tx-pill${isThisWeek ? ' active' : ''}" onclick="location.hash='${mkQuickUrl(weekStartStr, todayStr)}'">This Week</button>
+      <button class="tx-pill${isThisMonth? ' active' : ''}" onclick="location.hash='${mkQuickUrl(monthStartStr, todayStr)}'">This Month</button>
+      <button class="tx-pill${isLast30   ? ' active' : ''}" onclick="location.hash='${mkQuickUrl(last30Str, todayStr)}'">Last 30 Days</button>
+      <span class="tx-pill-spacer"></span>
+      <button class="tx-pill tx-pill-filter${activeFilterCount ? ' active' : ''}" onclick="openRecordFilterSheet()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+        Filters${activeFilterCount ? ` (${activeFilterCount})` : ''}
+      </button>
+    </div>
+    ${chipsHtml}`;
 
     if (data.items.length === 0) {
       html += emptyState('', 'No records found.', 'Clear Filters', 'clearRecordFilters()');
     } else {
-      // Client-side sort (within current page)
       let items = [...data.items];
       if (sortBy === 'date_asc')         items.sort((a,b) => a.date - b.date);
       else if (sortBy === 'amount_desc') items.sort((a,b) => Math.abs(b.amount||0) - Math.abs(a.amount||0));
       else if (sortBy === 'amount_asc')  items.sort((a,b) => Math.abs(a.amount||0) - Math.abs(b.amount||0));
       else if (sortBy === 'title_asc')   items.sort((a,b) => (a.title||'').localeCompare(b.title||''));
 
-      // Timeline layout
       html += `<div class="tx-timeline">`;
-
       if (groupBy === 'none') {
         html += buildTxTimeline(items, false);
       } else {
@@ -132,7 +154,6 @@ async function renderRecords() {
           html += buildTxTimeline(groupItems, true, label);
         });
       }
-
       html += `</div>`;
 
       const totalPages = Math.ceil(data.total / data.limit);
@@ -151,18 +172,12 @@ async function renderRecords() {
 
     setContent(html);
 
-    if (categoryId) { const el = document.getElementById('f-cat'); if (el) el.value = categoryId; }
-    if (accountId)  { const el = document.getElementById('f-account'); if (el) el.value = accountId; }
-    if (filtersOpen) { const fp = document.getElementById('filter-panel'); if (fp) fp.classList.remove('hidden'); }
-    wireDateRange('f-from', 'f-to');
-
   } catch (e) { if (e.message !== 'Session expired') showError('Error loading records.'); }
 }
 
 function buildTxTimeline(items, showGroupHeader, groupLabel) {
   if (!items.length) return '';
 
-  // Compute group net for display in group header
   let net = 0;
   items.forEach(tx => {
     if (tx.isPlanned) return;
@@ -170,16 +185,16 @@ function buildTxTimeline(items, showGroupHeader, groupLabel) {
     if (tx.type === 'INCOME') net += amt;
     else if (tx.type === 'EXPENSE') net -= amt;
   });
-  const netCls = net > 0 ? 'income' : net < 0 ? 'expense' : 'neutral';
+  const netCls  = net > 0 ? 'income' : net < 0 ? 'expense' : 'neutral';
   const netSign = net > 0 ? '+' : '';
-  const netFmt = items[0] ? fmt(net, items[0].currency || '') : '';
+  const netFmt  = items[0] ? fmt(net, items[0].currency || '') : '';
 
   let s = '<div class="tx-group">';
 
   if (showGroupHeader && groupLabel) {
-    s += `<div class="tx-group-header">
-      <span class="tx-group-label">${esc(groupLabel)}</span>
-      <span class="tx-group-total ${netCls}">${netSign}${netFmt}</span>
+    s += `<div class="tx-day-header">
+      <span class="tx-day-label">${esc(groupLabel)}</span>
+      <span class="tx-day-net ${netCls}">${netSign}${netFmt}</span>
     </div>`;
   }
 
@@ -187,56 +202,58 @@ function buildTxTimeline(items, showGroupHeader, groupLabel) {
     const isIncome   = tx.type === 'INCOME';
     const isExpense  = tx.type === 'EXPENSE';
     const isTransfer = tx.type === 'TRANSFER';
-    const sign       = isIncome ? '+' : isExpense ? '−' : '';
-    const amtCls     = isIncome ? 'income' : isExpense ? 'expense' : 'transfer';
-    const dotCls     = amtCls;
-    const tagsHtml   = (tx.tags||[]).length
-      ? `<div class="tx-tags">${tx.tags.map(t=>`<span class="tx-tag">#${esc(t)}</span>`).join('')}</div>` : '';
-    const warIcon    = tx.warrantyExpiration ? ' [W]' : '';
+    const sign     = isIncome ? '+' : isExpense ? '−' : '';
+    const amtColor = isIncome ? 'var(--income)' : isExpense ? 'var(--expense)' : 'var(--accent)';
+    const iconBg   = amtColor;
+    const typeIcon = isIncome
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>`
+      : isTransfer
+      ? `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>`;
 
-    let rowCls = 'tx-row';
-    if (tx.isPlanned) { rowCls += tx.isOverdue ? ' tx-overdue' : ' tx-planned'; }
+    const sub  = [tx.accountName||'', tx.categoryName||''].filter(Boolean).join(' · ');
+    const note = tx.note ? `<div class="tx-item-note">${esc(tx.note)}</div>` : '';
+    const tags = (tx.tags||[]).length
+      ? `<div class="tx-item-tags">${tx.tags.map(t=>`<span class="tx-tag">#${esc(t)}</span>`).join('')}</div>` : '';
+    const warBadge    = tx.warrantyExpiration ? ` <span class="tx-item-war-badge">W</span>` : '';
+    const overduePip  = (tx.isPlanned && tx.isOverdue)  ? `<span class="tx-item-overdue-pill">Overdue</span>` : '';
+    const plannedPip  = (tx.isPlanned && !tx.isOverdue) ? `<span class="tx-item-planned-pill">Planned</span>` : '';
+    const statusDot   = tx.status && tx.status !== 'CLEARED'
+      ? `<span class="tx-item-status-dot" title="${prettyEnum(tx.status)}"></span>` : '';
 
-    const overdueBadge = (tx.isPlanned && tx.isOverdue)
-      ? `<span class="badge badge-overdue" style="font-size:0.6rem;margin-left:6px">Overdue</span>` : '';
-    const plannedBadge = (tx.isPlanned && !tx.isOverdue)
-      ? `<span class="badge badge-active" style="font-size:0.6rem;margin-left:6px">Planned</span>` : '';
-
-    const statusLabel = tx.status && tx.status !== 'CLEARED'
-      ? `<div class="tx-status">● ${prettyEnum(tx.status)}</div>` : '';
-    const noteHtml = tx.note
-      ? `<div class="tx-sub" style="margin-top:1px">${esc(tx.note)}</div>` : '';
+    let itemCls = 'tx-item';
+    if (tx.isPlanned) itemCls += tx.isOverdue ? ' tx-item-overdue' : ' tx-item-planned';
 
     const clickAction = tx.isPlanned
       ? `openPlannedActionModal(${tx.paymentId}, ${tx.date}, '${esc(tx.title)}')`
       : `openTxDetail(${tx.id})`;
 
-    let actionsHtml = '';
+    let actionsHtml;
     if (tx.isPlanned) {
-      actionsHtml = `<div class="tx-actions">
-        <button class="btn-icon" style="color:var(--income)" title="Confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">Confirm</button>
-        <button class="btn-icon" title="Skip" onclick="event.stopPropagation();skipPlannedOccurrence(${tx.paymentId},${tx.date})">⏭</button>
+      actionsHtml = `<div class="tx-item-actions">
+        <button class="tx-action-btn confirm" onclick="event.stopPropagation();confirmPlannedOccurrence(${tx.paymentId},${tx.date})">✓ Confirm</button>
+        <button class="tx-action-btn"         onclick="event.stopPropagation();skipPlannedOccurrence(${tx.paymentId},${tx.date})">Skip</button>
       </div>`;
     } else {
-      actionsHtml = `<div class="tx-actions">
-        <button class="btn-icon" title="Clone" onclick="event.stopPropagation();cloneTransaction(${tx.id})">⧉</button>
-        <button class="btn-icon" title="Edit" onclick="event.stopPropagation();openEditTransaction(${tx.id})">✎</button>
-        <button class="btn-icon btn-icon-danger" title="Delete" onclick="event.stopPropagation();deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">✕</button>
+      actionsHtml = `<div class="tx-item-actions">
+        <button class="tx-action-btn"        onclick="event.stopPropagation();openEditTransaction(${tx.id})">Edit</button>
+        <button class="tx-action-btn"        onclick="event.stopPropagation();cloneTransaction(${tx.id})">Clone</button>
+        <button class="tx-action-btn danger" onclick="event.stopPropagation();deleteTransaction('${esc(tx.id)}','${esc(tx.title)}')">Delete</button>
       </div>`;
     }
 
-    s += `<div class="${rowCls}" onclick="${clickAction}">
-      <div class="tx-dot ${dotCls}"></div>
-      <div class="tx-info">
-        <div class="tx-name">${tx.isPlanned ? '↺ ' : ''}${esc(tx.title)}${warIcon}${plannedBadge}${overdueBadge}</div>
-        <div class="tx-sub">${esc(tx.accountName||'')}${tx.categoryName ? ' · ' + esc(tx.categoryName) : ''}</div>
-        ${noteHtml}
-        ${tagsHtml}
-      </div>
-      <div class="tx-right">
-        <div class="tx-amount ${amtCls}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
-        ${statusLabel}
-        <div class="tx-status">${fmtDate(tx.date)}</div>
+    s += `<div class="${itemCls}" onclick="${clickAction}">
+      <div class="tx-item-icon" style="background:${iconBg}">${typeIcon}</div>
+      <div class="tx-item-body">
+        <div class="tx-item-row1">
+          <span class="tx-item-name">${tx.isPlanned ? '↺ ' : ''}${esc(tx.title)}${warBadge}${overduePip}${plannedPip}</span>
+          <span class="tx-item-amount" style="color:${amtColor}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</span>
+        </div>
+        <div class="tx-item-row2">
+          <span class="tx-item-sub">${esc(sub)}</span>
+          <span class="tx-item-date">${statusDot}${fmtDate(tx.date)}</span>
+        </div>
+        ${note}${tags}
       </div>
       ${actionsHtml}
     </div>`;
@@ -353,51 +370,160 @@ function groupTransactions(items, groupBy) {
   return [...map.entries()];
 }
 
-window.toggleRecordFilters = function () {
-  const params = new URLSearchParams(location.hash.split('?')[1] || '');
-  const cur = params.get('filtersOpen') === '1';
-  params.set('filtersOpen', cur ? '0' : '1');
-  location.hash = '#/records?' + params.toString();
-};
+window.openRecordFilterSheet = function() {
+  const params         = new URLSearchParams(location.hash.split('?')[1] || '');
+  const accountId      = params.get('accountId') || '';
+  const curTypes       = (params.get('types') || params.get('type') || '').split(',').filter(Boolean);
+  const curCatIds      = (params.get('categoryIds') || params.get('categoryId') || '').split(',').filter(Boolean);
+  const curStatuses    = (params.get('statuses') || params.get('status') || '').split(',').filter(Boolean);
+  const curMethods     = (params.get('paymentMethods') || '').split(',').filter(Boolean);
+  const curTags        = (params.get('tagNames') || '').split(',').filter(Boolean);
+  const minAmount      = params.get('minAmount') || '';
+  const maxAmount      = params.get('maxAmount') || '';
+  const payee          = params.get('payee')     || '';
+  const dateFrom       = params.get('dateFrom')  || '';
+  const dateTo         = params.get('dateTo')    || '';
+  const groupBy        = params.get('groupBy') || 'date';
+  const sortBy         = params.get('sortBy')  || 'date_desc';
+  const includePlanned = params.get('includePlanned') !== '0';
+  const excludeFuture  = params.get('excludeFuture') === '1';
 
-window.setDateQuick = function (from, to) {
-  const fFrom = document.getElementById('f-from');
-  const fTo   = document.getElementById('f-to');
-  if (fFrom) fFrom.value = from;
-  if (fTo)   fTo.value   = to;
+  const mkChips = (name, opts) => opts.map(([val, label]) => `
+    <label class="chip-check ${curTypes.includes(val) || curStatuses.includes(val) || curMethods.includes(val) ? 'active' : ''}">
+      <input type="checkbox" name="${name}" value="${val}"
+        onchange="this.closest('label').classList.toggle('active',this.checked)">
+      <span>${label}</span>
+    </label>`).join('');
+
+  const typeChips = ['EXPENSE','INCOME','TRANSFER'].map(t => `
+    <label class="chip-check ${curTypes.includes(t)?'active':''}">
+      <input type="checkbox" name="f-type" value="${t}" ${curTypes.includes(t)?'checked':''}
+        onchange="this.closest('label').classList.toggle('active',this.checked)">
+      <span>${t.charAt(0)+t.slice(1).toLowerCase()}</span>
+    </label>`).join('');
+
+  const statusChips = ['CLEARED','UNCLEARED','RECONCILE'].map(s => `
+    <label class="chip-check ${curStatuses.includes(s)?'active':''}">
+      <input type="checkbox" name="f-status" value="${s}" ${curStatuses.includes(s)?'checked':''}
+        onchange="this.closest('label').classList.toggle('active',this.checked)">
+      <span>${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+    </label>`).join('');
+
+  const methodChips = ['CASH','CARD','BANK_TRANSFER','DIGITAL_WALLET','OTHER'].map(m => `
+    <label class="chip-check ${curMethods.includes(m)?'active':''}">
+      <input type="checkbox" name="f-pm" value="${m}" ${curMethods.includes(m)?'checked':''}
+        onchange="this.closest('label').classList.toggle('active',this.checked)">
+      <span>${m.replace(/_/g,' ')}</span>
+    </label>`).join('');
+
+  const catItems = cachedCategories.map(c => ({value: String(c.id), label: c.name}));
+  const accItems = cachedAccounts.map(a => ({value: a.id, label: `${a.name} (${a.currency})`}));
+  const tagItems = (cachedTags||[]).map(t => ({value: t, label: t}));
+
+  const body = `
+    <div class="form-field"><label>Transaction Types</label>
+      <div class="chip-group">${typeChips}</div>
+    </div>
+    <div class="form-field"><label>Status</label>
+      <div class="chip-group">${statusChips}</div>
+    </div>
+    <div class="form-field"><label>Payment Methods</label>
+      <div class="chip-group">${methodChips}</div>
+    </div>
+    ${catItems.length ? `<div class="form-field"><label>Categories</label>${buildMultiSelect('f-cats', catItems, curCatIds, 'Search categories…')}</div>` : ''}
+    ${accItems.length ? `<div class="form-field"><label>Accounts</label>${buildMultiSelect('f-accs', accItems, [], 'Search accounts…')}</div>` : ''}
+    ${tagItems.length ? `<div class="form-field"><label>Tags</label>${buildMultiSelect('f-tags', tagItems, curTags, 'Search tags…')}</div>` : ''}
+    <div class="form-field"><label>Date Range</label>
+      <div class="date-range-wrap"><input type="date" id="f-from" value="${esc(dateFrom)}"><span class="date-range-sep">→</span><input type="date" id="f-to" value="${esc(dateTo)}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label>Min Amount</label><input type="number" id="f-min" value="${esc(minAmount)}" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-field"><label>Max Amount</label><input type="number" id="f-max" value="${esc(maxAmount)}" placeholder="Any" min="0" step="0.01"></div>
+    </div>
+    <div class="form-field"><label>Payee</label><input type="text" id="f-payee" value="${esc(payee)}" placeholder="Search payee…"></div>
+    <div class="form-row">
+      <div class="form-field"><label>Group By</label>
+        ${buildSelect('f-group',[{value:'none',label:'None'},{value:'date',label:'Date'},{value:'type',label:'Type'},{value:'category',label:'Category'},{value:'account',label:'Account'}],groupBy,'None',false)}
+      </div>
+      <div class="form-field"><label>Sort By</label>
+        ${buildSelect('f-sort',[{value:'date_desc',label:'Date ↓'},{value:'date_asc',label:'Date ↑'},{value:'amount_desc',label:'Amount ↓'},{value:'amount_asc',label:'Amount ↑'},{value:'title_asc',label:'Title A→Z'}],sortBy,'Date ↓',false)}
+      </div>
+    </div>
+    <div style="display:flex;gap:20px;padding-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem">
+        <input type="checkbox" id="f-planned" ${includePlanned ? 'checked' : ''} style="width:16px;height:16px"> Include Planned
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem">
+        <input type="checkbox" id="f-excl-future" ${excludeFuture ? 'checked' : ''} style="width:16px;height:16px"> Exclude Future
+      </label>
+    </div>`;
+
+  openFilterSheet('Filter Records', body, applyRecordFilters, clearRecordFilters);
+  requestAnimationFrame(() => wireDateRange('f-from', 'f-to'));
 };
 
 window.applyRecordFilters = function () {
-  const params = new URLSearchParams(location.hash.split('?')[1] || '');
-  const get = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const check = id => { const el = document.getElementById(id); return el ? (el.checked ? '1' : '0') : '0'; };
-  params.set('type',       get('f-type'));
-  params.set('categoryId', get('f-cat'));
-  params.set('accountId',  get('f-account'));
-  params.set('dateFrom',   get('f-from'));
-  params.set('dateTo',     get('f-to'));
-  params.set('minAmount',  get('f-min'));
-  params.set('maxAmount',  get('f-max'));
-  params.set('status',     get('f-status'));
-  params.set('payee',      get('f-payee'));
-  params.set('includePlanned', check('f-planned'));
-  params.set('excludeFuture',  check('f-excl-future'));
-  params.set('groupBy',    get('f-group'));
-  params.set('sortBy',     get('f-sort'));
-  params.set('page',       '0');
-  params.set('filtersOpen','1');
-  [...params.keys()].forEach(k => { if (!params.get(k)) params.delete(k); });
-  params.set('filtersOpen','1');
-  location.hash = '#/records?' + params.toString();
+  const get   = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const cur   = new URLSearchParams(location.hash.split('?')[1] || '');
+  const p     = new URLSearchParams();
+
+  // preserve context params
+  if (cur.get('accountId'))   p.set('accountId',   cur.get('accountId'));
+  if (cur.get('accountName')) p.set('accountName', cur.get('accountName'));
+
+  // chip-group multi-selects
+  const selTypes    = [...document.querySelectorAll('input[name="f-type"]:checked')].map(e => e.value);
+  const selStatuses = [...document.querySelectorAll('input[name="f-status"]:checked')].map(e => e.value);
+  const selMethods  = [...document.querySelectorAll('input[name="f-pm"]:checked')].map(e => e.value);
+  // buildMultiSelect components
+  const selCats = msGetSelected('f-cats');
+  const selAccs = msGetSelected('f-accs');
+  const selTags = msGetSelected('f-tags');
+
+  // fall back to current URL values when sheet elements don't exist
+  const types    = selTypes.length    ? selTypes.join(',')    : (cur.get('types')          || cur.get('type')       || '');
+  const statuses = selStatuses.length ? selStatuses.join(',') : (cur.get('statuses')        || cur.get('status')     || '');
+  const methods  = selMethods.length  ? selMethods.join(',')  : (cur.get('paymentMethods')  || '');
+  const cats     = selCats.length     ? selCats.join(',')     : (cur.get('categoryIds')     || cur.get('categoryId') || '');
+  const accs     = selAccs.length     ? selAccs.join(',')     : (cur.get('accountIds')      || '');
+  const tags     = selTags.length     ? selTags.join(',')     : (cur.get('tagNames')        || '');
+
+  if (types)    p.set('types',          types);
+  if (statuses) p.set('statuses',       statuses);
+  if (methods)  p.set('paymentMethods', methods);
+  if (cats)     p.set('categoryIds',    cats);
+  if (accs)     p.set('accountIds',     accs);
+  if (tags)     p.set('tagNames',       tags);
+
+  const fromVal = get('f-from') || cur.get('dateFrom') || '';
+  const toVal   = get('f-to')   || cur.get('dateTo')   || '';
+  const minVal  = get('f-min')  || cur.get('minAmount') || '';
+  const maxVal  = get('f-max')  || cur.get('maxAmount') || '';
+  const payeeV  = get('f-payee') || cur.get('payee')   || '';
+  if (fromVal) p.set('dateFrom',   fromVal);
+  if (toVal)   p.set('dateTo',     toVal);
+  if (minVal)  p.set('minAmount',  minVal);
+  if (maxVal)  p.set('maxAmount',  maxVal);
+  if (payeeV)  p.set('payee',      payeeV);
+
+  const gBy = get('f-group') || cur.get('groupBy') || 'date';
+  const sBy = get('f-sort')  || cur.get('sortBy')  || 'date_desc';
+  if (gBy && gBy !== 'date')      p.set('groupBy', gBy);
+  if (sBy && sBy !== 'date_desc') p.set('sortBy',  sBy);
+
+  const planned = document.getElementById('f-planned');
+  const exclF   = document.getElementById('f-excl-future');
+  if (planned && !planned.checked) p.set('includePlanned', '0');
+  if (exclF && exclF.checked)      p.set('excludeFuture',  '1');
+  p.set('page', '0');
+  location.hash = '#/records?' + p.toString();
 };
 
 window.clearRecordFilters = function () {
-  const params = new URLSearchParams(location.hash.split('?')[1] || '');
-  const keep = ['accountId','accountName'];
-  const fresh = new URLSearchParams();
-  keep.forEach(k => { if (params.get(k)) fresh.set(k, params.get(k)); });
-  fresh.set('filtersOpen','1');
-  location.hash = '#/records?' + fresh.toString();
+  const cur = new URLSearchParams(location.hash.split('?')[1] || '');
+  const p   = new URLSearchParams();
+  ['accountId','accountName'].forEach(k => { if (cur.get(k)) p.set(k, cur.get(k)); });
+  location.hash = '#/records?' + p.toString();
 };
 
 function txFormBody(tx) {
@@ -670,46 +796,50 @@ window.openTxDetail = async function (id) {
   const resp = await apiFetch(`/api/transactions/${id}`);
   if (!resp.success) { showToast('Could not load transaction.', 'error'); return; }
   const tx = resp.data;
-  const amtCls = tx.type==='INCOME'?'amount-income':tx.type==='EXPENSE'?'amount-expense':'';
-  const sign   = tx.type==='EXPENSE'?'−':tx.type==='INCOME'?'+':'';
-  const badgeCls = tx.type==='INCOME'?'badge-income':tx.type==='EXPENSE'?'badge-expense':'badge-transfer';
-  const tags = (tx.tags||[]).map(t=>`<span class="badge" style="background:var(--surface2)">#${esc(t)}</span>`).join(' ');
-  const warLine = tx.warrantyExpiration
-    ? `<div class="form-field"><label>Warranty Expires</label><div>${new Date(tx.warrantyExpiration).toLocaleDateString()} [W]</div></div>`
-    : '';
-  const locationLine = tx.location
-    ? `${formField('Location', `<div>${esc(tx.location)}</div>`)}`
-    : '';
-  const linkedLine = (tx.linkedTransactionIds||[]).length
-    ? `${formField('Linked Transactions', `<div>${tx.linkedTransactionIds.map(lid=>`<a href="#" onclick="event.preventDefault();closeModal();openTxDetail(${lid})" style="color:var(--accent);margin-right:8px">#${lid}</a>`).join('')}</div>`)}`
-    : '';
-  const body = `<div style="display:flex;flex-direction:column;gap:10px">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3 style="margin:0">${esc(tx.title)}</h3>
-      <span class="${amtCls}" style="font-size:1.3rem;font-weight:700">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</span>
+
+  const isIncome   = tx.type === 'INCOME';
+  const isExpense  = tx.type === 'EXPENSE';
+  const sign       = isIncome ? '+' : isExpense ? '−' : '';
+  const amtColor   = isIncome ? 'var(--income)' : isExpense ? 'var(--expense)' : 'var(--accent)';
+  const typeIcon   = isIncome
+    ? `<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>`
+    : (tx.type === 'TRANSFER')
+    ? `<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>`;
+
+  const tags = (tx.tags||[]).map(t=>`<span class="pp-tag-chip">#${esc(t)}</span>`).join('');
+
+  const rows = [
+    ['Date',     new Date(tx.date).toLocaleString()],
+    ['Account',  esc(tx.accountName || '—')],
+    tx.targetAccountName ? ['To Account', esc(tx.targetAccountName)] : null,
+    ['Category', esc(tx.categoryName || '—')],
+    tx.payee           ? ['Payee',    esc(tx.payee)]                           : null,
+    tx.status          ? ['Status',   prettyEnum(tx.status)]                   : null,
+    tx.paymentMethod   ? ['Method',   prettyEnum(tx.paymentMethod)]            : null,
+    tx.location        ? ['Location', esc(tx.location)]                        : null,
+    tx.note            ? ['Note',     `<span style="color:var(--text-muted)">${esc(tx.note)}</span>`] : null,
+    tags               ? ['Tags',     `<div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div>`] : null,
+    tx.warrantyExpiration ? ['Warranty', new Date(tx.warrantyExpiration).toLocaleDateString()] : null,
+    (tx.linkedTransactionIds||[]).length ? ['Linked', tx.linkedTransactionIds.map(lid=>`<a href="#" onclick="event.preventDefault();closeModal();openTxDetail(${lid})" style="color:var(--accent);margin-right:8px">#${lid}</a>`).join('')] : null,
+  ].filter(Boolean);
+
+  const body = `<div class="tx-detail">
+    <div class="tx-detail-hero">
+      <div class="tx-detail-icon" style="background:${amtColor}">${typeIcon}</div>
+      <div class="tx-detail-title">${esc(tx.title)}</div>
+      <div class="tx-detail-amount" style="color:${amtColor}">${sign}${fmt(Math.abs(tx.amount||0), tx.currency)}</div>
     </div>
-    <div><span class="badge ${badgeCls}">${prettyEnum(tx.type)}</span> ${tx.status ? `<span class="badge">${prettyEnum(tx.status)}</span>` : ''} ${tx.paymentMethod ? `<span class="badge">${prettyEnum(tx.paymentMethod)}</span>` : ''}</div>
-    ${formRow(
-      formField('Date', `<div>${new Date(tx.date).toLocaleString()}</div>`),
-      formField('Account', `<div>${esc(tx.accountName||'—')}</div>`)
-    )}
-    ${tx.targetAccountName ? formField('To Account', `<div>${esc(tx.targetAccountName)}</div>`) : ''}
-    ${formRow(
-      formField('Category', `<div>${esc(tx.categoryName||'—')}</div>`),
-      formField('Payee', `<div>${esc(tx.payee||'—')}</div>`)
-    )}
-    ${tx.note ? formField('Note', `<div style="color:var(--text-muted)">${esc(tx.note)}</div>`) : ''}
-    ${tags ? formField('Tags', `<div>${tags}</div>`) : ''}
-    ${locationLine}
-    ${warLine}
-    ${linkedLine}
-    <div style="display:flex;gap:8px;margin-top:4px">
+    <div class="tx-detail-rows">
+      ${rows.map(([k,v]) => `<div class="tx-detail-row"><span class="tx-detail-key">${k}</span><span class="tx-detail-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="tx-detail-footer">
       <button class="btn btn-ghost btn-sm" onclick="closeModal();openEditTransaction(${tx.id})">Edit</button>
       <button class="btn btn-ghost btn-sm" onclick="closeModal();cloneTransaction(${tx.id})">Clone</button>
       <button class="btn btn-danger btn-sm" onclick="closeModal();deleteTransaction('${tx.id}','${esc(tx.title)}')">Delete</button>
     </div>
   </div>`;
-  openModal(`Transaction Detail`, body, null, null);
+  openModal('Transaction Detail', body, null, null);
 };
 
 window.deleteTransaction = function (id, name) {

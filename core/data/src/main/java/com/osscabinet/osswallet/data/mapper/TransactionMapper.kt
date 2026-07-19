@@ -1,0 +1,62 @@
+package com.osscabinet.ossWallet.data.mapper
+
+import com.osscabinet.ossWallet.data.local.entity.TransactionEntity
+import com.osscabinet.ossWallet.domain.model.Transaction
+
+/**
+ * Mappers for Transaction data.
+ * Centralizes transformation between Room entities and Domain models.
+ */
+fun TransactionEntity.toDomain(): Transaction {
+    return Transaction(
+        id = id,
+        name = name,
+        amount = amount,
+        timestamp = timestamp,
+        currency = currency,
+        transactionType = transactionType,
+        accountId = accountId,
+        categoryId = categoryId,
+        tags = tags,
+        paymentMethod = paymentMethod,
+        payee = payee,
+        note = note,
+        sourcePlannedPaymentId = sourcePlannedPaymentId,
+        gpsLocation = gpsLocation,
+        location = location,
+        warrantyExpiration = warrantyExpiration,
+        status = status,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate
+    )
+}
+
+fun List<TransactionEntity>.toDomainList() = map { it.toDomain() }
+
+fun Transaction.toEntity(profileId: Int): TransactionEntity {
+    return TransactionEntity(
+        id = id,
+        name = name,
+        amount = amount,
+        timestamp = timestamp,
+        currency = currency,
+        transactionType = transactionType,
+        accountId = accountId,
+        categoryId = categoryId,
+        tags = tags,
+        profileId = profileId,
+        paymentMethod = paymentMethod,
+        payee = payee,
+        note = note,
+        sourcePlannedPaymentId = sourcePlannedPaymentId,
+        gpsLocation = gpsLocation,
+        location = location,
+        warrantyExpiration = warrantyExpiration,
+        status = status,
+        targetAccountId = targetAccountId,
+        targetCurrency = targetCurrency,
+        transferRate = transferRate,
+        lastUpdated = System.currentTimeMillis()
+    )
+}

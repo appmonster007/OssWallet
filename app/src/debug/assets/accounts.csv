@@ -1,0 +1,9 @@
+id,name,currencyCode,structureType,colorHex,icon,allowedCurrencies,profileId,isArchived,displayOrder
+acc_cash,Cash Wallet,USD,CASH,#4CAF50,AccountBalanceWallet,"USD",1,false,0
+acc_bank,Main Bank,USD,BANK,#2196F3,AccountBalance,"USD,INR,EUR",1,false,1
+acc_savings,Savings,USD,SAVINGS,#9C27B0,Savings,"USD,INR",1,false,2
+acc_credit,Credit Card,USD,CREDIT,#F44336,CreditCard,"USD",1,false,3
+acc_invest,Investment,USD,INVESTMENT,#FF9800,TrendingUp,"USD",1,false,4
+acc_jpy,Japan Travel Card,JPY,BANK,#FF5722,Payment,"JPY",1,false,5
+acc_sgd,DBS Bank,SGD,BANK,#E91E63,AccountBalance,"SGD",1,false,6
+acc_idr,GoPay IDR,IDR,DIGITAL_WALLET,#00C853,Wallet,"IDR",1,false,7

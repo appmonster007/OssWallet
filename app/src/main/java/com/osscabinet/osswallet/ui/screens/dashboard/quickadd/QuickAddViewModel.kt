@@ -1,0 +1,835 @@
+package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
+
+import androidx.lifecycle.viewModelScope
+import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountRef
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.domain.model.AmountEditingSide
+import com.osscabinet.ossWallet.domain.model.Category
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.Template
+import com.osscabinet.ossWallet.domain.model.TransactionSide
+import com.osscabinet.ossWallet.domain.model.TransactionStatus
+import com.osscabinet.ossWallet.domain.model.isOutside
+import com.osscabinet.ossWallet.domain.model.isPicked
+import com.osscabinet.ossWallet.domain.model.isTransfer
+import com.osscabinet.ossWallet.domain.repository.AccountRepository
+import com.osscabinet.ossWallet.domain.repository.CategoryRepository
+import com.osscabinet.ossWallet.domain.repository.ComputationRepository
+import com.osscabinet.ossWallet.domain.repository.SettingsRepository
+import com.osscabinet.ossWallet.domain.repository.TemplateRepository
+import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
+import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
+import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.ui.util.BaseViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.util.concurrent.TimeUnit
+
+sealed interface QuickAddResult {
+    data class TemplateItem(
+        val template: Template,
+        val iconName: String?,
+        val colorHex: Int
+    ) : QuickAddResult
+
+    data class CategoryItem(val category: Category) : QuickAddResult
+    data class SuggestionItem(
+        val label: String,
+        val categoryId: Long,
+        val iconName: String?,
+        val colorHex: Int,
+        val accountId: String?,
+        val targetAccountId: String? = null,
+        val amount: BigDecimal,
+        val currency: String,
+        val targetCurrency: String? = null,
+        val entryMode: EntryMode,
+        val note: String,
+        val payee: String,
+        val tags: Set<String>
+    ) : QuickAddResult
+}
+
+data class QuickAddSection(
+    val title: String,
+    val items: List<QuickAddResult>
+)
+
+data class QuickAddState(
+    val currentStep: Int = 0,
+    val searchQuery: String = "",
+    val amount: BigDecimal = BigDecimal.ZERO,
+    val selectedTemplate: Template? = null,
+    val selectedCategoryId: Long? = null,
+    val selectedAccount: AccountRef = AccountRef.Unselected,
+    val selectedToAccount: AccountRef = AccountRef.Unselected,
+    val selectedCurrency: String = "",
+    val selectedToCurrency: String = "",
+    val amountOverride: BigDecimal? = null,
+    val isAmountOverridden: Boolean = false,
+    val activeAmountSide: AmountEditingSide = AmountEditingSide.SOURCE,
+    val activeAccountSide: AmountEditingSide = AmountEditingSide.SOURCE,
+    val entryMode: EntryMode = EntryMode.EXPENSE,
+    val note: String = "",
+    val payee: String = "",
+    val tags: Set<String> = emptySet(),
+    val accounts: List<Account> = emptyList(),
+    val structureTypes: List<AccountStructureType> = emptyList(),
+    val accountBalances: Map<String, BigDecimal> = emptyMap(),
+    val exchangeRates: ExchangeRateSnapshot = ExchangeRateSnapshot.EMPTY,
+    val baseCurrency: String = "USD",
+    val isSaving: Boolean = false
+) {
+    val selectedAccountId: String?
+        get() = (selectedAccount as? AccountRef.Wallet)?.id
+            ?: if (selectedAccount.isOutside) "" else null
+    val selectedToAccountId: String?
+        get() = (selectedToAccount as? AccountRef.Wallet)?.id
+            ?: if (selectedToAccount.isOutside) "" else null
+
+    val effectiveTargetAmount: BigDecimal
+        get() = amountOverride ?: if (entryMode == EntryMode.TRANSFER) {
+            val rate = TransactionEntryService.getMarketRate(
+                selectedCurrency,
+                selectedToCurrency,
+                exchangeRates
+            )
+            TransactionEntryService.calculateTargetAmountValue(amount, rate)
+        } else BigDecimal.ZERO
+
+    val canSave: Boolean
+        get() {
+            if (amount < BigDecimal.ZERO) return false
+            if ((selectedCategoryId ?: 0L) <= 0L) return false
+            return TransactionEntryService.validateAccountSelection(
+                entryMode = entryMode,
+                source = selectedAccount,
+                target = selectedToAccount
+            ).isValid
+        }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
+class QuickAddViewModel @Inject constructor(
+    settingsRepository: SettingsRepository,
+    private val accountRepository: AccountRepository,
+    private val transactionManager: TransactionManager,
+    private val transactionRepository: TransactionRepository,
+    private val computationRepository: ComputationRepository,
+    private val queryService: DatabaseQueryService,
+    templateRepository: TemplateRepository,
+    categoryRepository: CategoryRepository,
+) : BaseViewModel(settingsRepository) {
+
+    private val initialType: EntryMode = EntryMode.EXPENSE
+
+    val templates: StateFlow<List<Template>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> templateRepository.getAllTemplates(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList<Template>())
+
+    val categories: StateFlow<List<Category>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId -> categoryRepository.getAllCategories(profileId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList<Category>())
+
+    private val _uiState = MutableStateFlow(QuickAddState(entryMode = initialType))
+
+    init {
+        // Initialize _uiState with base data from repositories
+        viewModelScope.launch {
+            try {
+                val (currency, rates) = settingsRepository.currentProfileId.flatMapLatest {
+                    combine(
+                        settingsRepository.currency,
+                        computationRepository.exchangeRatesSnapshot
+                    ) { c, r -> c to r }
+                }.first()
+
+                _uiState.update { s ->
+                    s.copy(
+                        baseCurrency = currency,
+                        exchangeRates = rates,
+                        selectedCurrency = if (s.selectedCurrency.isBlank()) currency else s.selectedCurrency,
+                        selectedToCurrency = if (s.selectedToCurrency.isBlank() && s.entryMode == EntryMode.TRANSFER) currency else s.selectedToCurrency
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // Ignore other errors during initialization
+            }
+        }
+    }
+
+    val sections: StateFlow<List<QuickAddSection>> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId ->
+            combine(
+                _uiState.map { it.searchQuery }.distinctUntilChanged(),
+                templates,
+                categories
+            ) { query, allTemplates, allCategories ->
+                Triple(query, allTemplates, allCategories)
+            }.flatMapLatest { (query, allTemplates, allCategories) ->
+                val templateSection = run {
+                    val matchedTemplates = allTemplates.filter {
+                        it.name.contains(query, ignoreCase = true) ||
+                                it.note?.contains(query, ignoreCase = true) == true
+                    }.sortedByDescending { it.isStarred }
+
+                    if (matchedTemplates.isNotEmpty()) {
+                        QuickAddSection(
+                            title = "TEMPLATES",
+                            items = matchedTemplates.map { t ->
+                                val cat = allCategories.find { it.id == t.categoryId }
+                                QuickAddResult.TemplateItem(
+                                    template = t,
+                                    iconName = t.icon ?: cat?.iconName,
+                                    colorHex = t.colorHex?.let {
+                                        runCatching { android.graphics.Color.parseColor(it) }.getOrNull()
+                                    } ?: cat?.colorHex ?: -1
+                                )
+                            }
+                        )
+                    } else null
+                }
+
+                val categorySection = run {
+                    val matchedCategories = allCategories
+                        .filter { !Category.isSystemCategory(it.id) }
+                        .filter { it.name.contains(query, ignoreCase = true) }
+                        .sortedBy { it.name }
+
+                    if (matchedCategories.isNotEmpty()) {
+                        QuickAddSection(
+                            title = "CATEGORIES",
+                            items = matchedCategories.map { QuickAddResult.CategoryItem(it) }
+                        )
+                    } else null
+                }
+
+                if (query.isNotBlank()) {
+                    transactionRepository.searchTransactions(profileId, query).map { allTransactions ->
+                        val cutoff = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(367)
+                        val suggestions = allTransactions
+                            .filter { it.timestamp >= cutoff }
+                            .filter {
+                                it.note.contains(query, ignoreCase = true) ||
+                                        it.payee.contains(query, ignoreCase = true)
+                            }
+                            .mapNotNull { tx ->
+                                val label = when {
+                                    tx.note.isNotBlank() && tx.payee.isNotBlank() -> "${tx.note}: ${tx.payee}"
+                                    tx.note.isNotBlank() -> tx.note
+                                    tx.payee.isNotBlank() -> tx.payee
+                                    else -> null
+                                }
+                                label?.let { l -> tx to l }
+                            }
+                            .groupBy { it.second }
+                            .map { (label, pairs) ->
+                                val latest = pairs.maxBy { it.first.timestamp }.first
+                                val cat = allCategories.find { it.id == latest.categoryId }
+
+                                if (latest.transactionType.isTransfer) {
+                                    val counterpart = allTransactions.find {
+                                        it.id != latest.id &&
+                                                it.transactionType.isTransfer &&
+                                                it.transactionType != latest.transactionType &&
+                                                Math.abs(it.timestamp - latest.timestamp) < 5000 &&
+                                                it.amount.abs().compareTo(latest.amount.abs()) == 0
+                                    }
+                                    val sourceLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_OUTFLOW) latest else counterpart
+                                    val targetLeg = if (latest.transactionType == com.osscabinet.ossWallet.domain.model.TransactionType.TRANSFER_INFLOW) latest else counterpart
+
+                                    QuickAddResult.SuggestionItem(
+                                        label = label, categoryId = latest.categoryId,
+                                        iconName = cat?.iconName, colorHex = cat?.colorHex ?: -1,
+                                        accountId = sourceLeg?.accountId ?: "", targetAccountId = targetLeg?.accountId ?: "",
+                                        amount = sourceLeg?.amount?.abs() ?: latest.amount.abs(),
+                                        currency = sourceLeg?.currency ?: latest.currency,
+                                        targetCurrency = targetLeg?.currency, entryMode = EntryMode.TRANSFER,
+                                        note = latest.note, payee = latest.payee, tags = latest.tags
+                                    )
+                                } else {
+                                    QuickAddResult.SuggestionItem(
+                                        label = label, categoryId = latest.categoryId,
+                                        iconName = cat?.iconName, colorHex = cat?.colorHex ?: -1,
+                                        accountId = latest.accountId, targetAccountId = null,
+                                        amount = latest.amount.abs(), currency = latest.currency,
+                                        targetCurrency = null,
+                                        entryMode = if (latest.amount >= BigDecimal.ZERO) EntryMode.INCOME else EntryMode.EXPENSE,
+                                        note = latest.note, payee = latest.payee, tags = latest.tags
+                                    )
+                                }
+                            }
+                            .sortedByDescending { it.label }
+                            .take(5)
+
+                        listOfNotNull(
+                            templateSection,
+                            if (suggestions.isNotEmpty()) QuickAddSection("SUGGESTIONS", suggestions) else null,
+                            categorySection
+                        )
+                    }
+                } else {
+                    flowOf(listOfNotNull(templateSection, categorySection))
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+
+    val state: StateFlow<QuickAddState> = settingsRepository.currentProfileId
+        .flatMapLatest { profileId ->
+            combine(
+                _uiState,
+                accountRepository.getAllAccounts(profileId),
+                transactionRepository.getLatestTransactionVersion(profileId),
+                settingsRepository.currency,
+                computationRepository.exchangeRatesSnapshot
+            ) { uiState, allAccounts, _, baseCurrency, rates ->
+                val baseAccounts = allAccounts.filter { !it.isArchived && it.id.isNotBlank() }
+                val activeAccounts = if (uiState.entryMode == EntryMode.TRANSFER) {
+                    listOf(Account.OUTSIDE_WALLET) + baseAccounts
+                } else {
+                    baseAccounts
+                }
+
+                val sortedAccounts = activeAccounts.sortedWith(
+                    compareByDescending<Account> { AccountRef.fromStored(it.id) == uiState.selectedAccount }
+                        .thenBy { it.name }
+                )
+
+                val structureTypes = baseAccounts.map { it.structureType }
+                    .distinct()
+                    .sortedBy { it.displayName }
+
+                val summaries = TransactionAggregationService.getSummaryByAccountAndCurrency(
+                    queryService,
+                    profileId
+                ).getOrDefault(emptyMap())
+
+                val balances = baseAccounts.associate { acc ->
+                    val accSummaries = summaries[acc.id] ?: emptyMap()
+                    acc.id to CurrencyService.calculateTotalFinancialSummary(
+                        accSummaries,
+                        acc.currencyCode,
+                        rates
+                    ).totalAmount
+                }
+
+                uiState.copy(
+                    accounts = sortedAccounts,
+                    structureTypes = structureTypes,
+                    accountBalances = balances,
+                    exchangeRates = rates,
+                    baseCurrency = baseCurrency
+                )
+            }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(),
+            QuickAddState(entryMode = initialType)
+        )
+
+    fun onSearchQueryChanged(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun onTemplateSelected(template: Template) {
+        val prefill = TransactionEntryService.resolvePrefill(
+            entryMode = template.entryMode,
+            accountId = template.accountId,
+            targetAccountId = template.targetAccountId,
+            currency = template.currency,
+            targetCurrency = template.targetCurrency,
+            amount = template.amount,
+            categoryId = template.categoryId,
+            note = template.note,
+            payee = template.payee,
+            tags = template.tags,
+            accounts = state.value.accounts
+        )
+        _uiState.update {
+            it.copy(
+                selectedTemplate = template,
+                selectedCategoryId = prefill.categoryId,
+                selectedAccount = prefill.account,
+                selectedToAccount = prefill.targetAccount,
+                selectedCurrency = prefill.currency,
+                selectedToCurrency = prefill.targetCurrency,
+                entryMode = prefill.entryMode,
+                amount = prefill.amount,
+                note = prefill.note,
+                payee = prefill.payee,
+                tags = prefill.tags,
+                currentStep = 1
+            )
+        }
+    }
+
+    fun onSuggestionSelected(item: QuickAddResult.SuggestionItem) {
+        val prefill = TransactionEntryService.resolvePrefill(
+            entryMode = item.entryMode,
+            accountId = item.accountId,
+            targetAccountId = item.targetAccountId,
+            currency = item.currency,
+            targetCurrency = item.targetCurrency,
+            amount = item.amount,
+            categoryId = item.categoryId,
+            note = item.note,
+            payee = item.payee,
+            tags = item.tags,
+            accounts = state.value.accounts
+        )
+        _uiState.update {
+            it.copy(
+                selectedTemplate = null,
+                selectedCategoryId = prefill.categoryId,
+                selectedAccount = prefill.account,
+                selectedToAccount = prefill.targetAccount,
+                selectedCurrency = prefill.currency,
+                selectedToCurrency = prefill.targetCurrency,
+                entryMode = prefill.entryMode,
+                amount = prefill.amount,
+                note = prefill.note,
+                payee = prefill.payee,
+                tags = prefill.tags,
+                currentStep = if (prefill.account.isPicked) 2 else 1
+            )
+        }
+    }
+
+    fun onCategorySelected(category: Category) {
+        _uiState.update {
+            it.copy(
+                selectedTemplate = null,
+                selectedCategoryId = category.id,
+                selectedAccount = AccountRef.Unselected,
+                entryMode = EntryMode.EXPENSE,
+                amount = BigDecimal.ZERO,
+                note = "",
+                payee = "",
+                tags = emptySet(),
+                currentStep = 1
+            )
+        }
+    }
+
+    /**
+     * Map to unified logic structure.
+     */
+    private fun toUpdateResult(s: QuickAddState) = TransactionEntryService.StateUpdateResult(
+        source = TransactionSide(
+            account = s.selectedAccount,
+            amount = s.amount.stripTrailingZeros().toPlainString(),
+            currency = s.selectedCurrency,
+            categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+        ),
+        destination = TransactionSide(
+            account = s.selectedToAccount,
+            amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
+            currency = s.selectedToCurrency,
+            categoryId = Category.SYSTEM_TRANSFER
+        ),
+        entryMode = s.entryMode,
+        exchangeRate = if (s.entryMode == EntryMode.TRANSFER) {
+            TransactionEntryService.getMarketRate(
+                s.selectedCurrency,
+                s.selectedToCurrency,
+                s.exchangeRates
+            )
+        } else BigDecimal.ONE,
+        isRateFixed = s.isAmountOverridden
+    )
+
+    /**
+     * Update from unified logic result.
+     */
+    private fun applyUpdate(s: QuickAddState, result: TransactionEntryService.StateUpdateResult) =
+        s.copy(
+            selectedAccount = result.source.account,
+            selectedToAccount = result.destination.account,
+            selectedCurrency = result.source.currency,
+            selectedToCurrency = result.destination.currency,
+            amount = result.source.amountValue,
+            amountOverride = if (result.destination.amount.isBlank()) null else result.destination.amountValue,
+            selectedCategoryId = result.source.categoryId,
+            entryMode = result.entryMode,
+            isAmountOverridden = result.isRateFixed
+        )
+
+    fun onAmountChanged(amount: BigDecimal) {
+        _uiState.update { s ->
+            val amountStr = amount.stripTrailingZeros().toPlainString()
+            val result = if (s.activeAmountSide == AmountEditingSide.TARGET) {
+                TransactionEntryService.handleTargetAmountChange(
+                    amountStr = amountStr,
+                    currentState = toUpdateResult(s),
+                    exchangeRates = s.exchangeRates
+                )
+            } else {
+                TransactionEntryService.handleAmountChange(
+                    amountStr = amountStr,
+                    currentState = toUpdateResult(s),
+                    exchangeRates = s.exchangeRates,
+                    isSplitMode = false
+                )
+            }
+            applyUpdate(s, result)
+        }
+    }
+
+    fun setAmountFocus(side: AmountEditingSide) {
+        _uiState.update { s ->
+            // If switching to Source, we keep the existing override mode.
+            // If switching to Target, we MUST be in manual mode to edit it.
+            val isManual = if (side == AmountEditingSide.TARGET) true else s.isAmountOverridden
+
+            s.copy(
+                activeAmountSide = side,
+                isAmountOverridden = isManual,
+                amountOverride = if (isManual && s.amountOverride == null) {
+                    val rate = TransactionEntryService.getMarketRate(
+                        s.selectedCurrency,
+                        s.selectedToCurrency,
+                        s.exchangeRates
+                    )
+                    TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
+                } else s.amountOverride
+            )
+        }
+    }
+
+    fun toggleAmountOverride() {
+        _uiState.update { s ->
+            val next = !s.isAmountOverridden
+            s.copy(
+                isAmountOverridden = next,
+                activeAmountSide = if (!next) AmountEditingSide.SOURCE else s.activeAmountSide,
+                amountOverride = if (next && s.amountOverride == null) {
+                    val rate = TransactionEntryService.getMarketRate(
+                        s.selectedCurrency,
+                        s.selectedToCurrency,
+                        s.exchangeRates
+                    )
+                    if (rate.signum() != 0) {
+                        TransactionEntryService.calculateTargetAmountValue(s.amount, rate)
+                    } else BigDecimal.ZERO
+                } else if (!next) null else s.amountOverride
+            )
+        }
+    }
+
+    fun onSwapAccounts() {
+        _uiState.update { s ->
+            if (s.entryMode != EntryMode.TRANSFER) return@update s
+
+            val (newSrc, newDst, _) = TransactionEntryService.swapAccounts(
+                source = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                destination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                transferRate = if (s.amount.signum() != 0 && s.amountOverride != null) {
+                    s.amountOverride.divide(s.amount, 8, java.math.RoundingMode.HALF_UP)
+                } else TransactionEntryService.getMarketRate(
+                    s.selectedCurrency,
+                    s.selectedToCurrency,
+                    s.exchangeRates
+                )
+            )
+
+            applyFocusGuard(
+                s.copy(
+                    selectedAccount = newSrc.account,
+                    selectedToAccount = newDst.account,
+                    selectedCurrency = newSrc.currency,
+                    selectedToCurrency = newDst.currency,
+                    amount = newSrc.amountValue,
+                    amountOverride = if (newDst.amount.isBlank()) null else newDst.amountValue
+                )
+            )
+        }
+    }
+
+    fun goToStep(step: Int) {
+        _uiState.update { s ->
+            applyFocusGuard(s.copy(currentStep = step))
+        }
+    }
+
+    fun onAccountTapped(accountId: String, isFrom: Boolean = true) {
+        val currentAccounts = state.value.accounts
+        _uiState.update { s ->
+            val result = TransactionEntryService.handleAccountSelection(
+                accountId = accountId,
+                isSource = isFrom,
+                currentState = toUpdateResult(s),
+                accounts = currentAccounts,
+                baseCurrency = s.baseCurrency
+            )
+            val next = applyUpdate(s, result).copy(
+                currentStep = if (s.entryMode == EntryMode.TRANSFER) s.currentStep else 2,
+                activeAccountSide = if (s.entryMode == EntryMode.TRANSFER && isFrom) AmountEditingSide.TARGET else s.activeAccountSide
+            )
+            applyFocusGuard(next)
+        }
+    }
+
+    fun setAccountFocus(side: AmountEditingSide) {
+        _uiState.update { it.copy(activeAccountSide = side) }
+    }
+
+    fun onCurrencySelected(currency: String, isFrom: Boolean = true) {
+        _uiState.update { s ->
+            if (isFrom) {
+                val nextTo =
+                    if (s.entryMode == EntryMode.TRANSFER && s.selectedToAccount.isOutside) {
+                        currency
+                    } else s.selectedToCurrency
+                s.copy(selectedCurrency = currency, selectedToCurrency = nextTo)
+            } else {
+                val nextFrom =
+                    if (s.entryMode == EntryMode.TRANSFER && s.selectedAccount.isOutside) {
+                        currency
+                    } else s.selectedCurrency
+                s.copy(selectedToCurrency = currency, selectedCurrency = nextFrom)
+            }
+        }
+    }
+
+    fun toggleTransactionType() {
+        _uiState.update { s ->
+            val nextMode = when (s.entryMode) {
+                EntryMode.EXPENSE -> EntryMode.INCOME
+                else -> EntryMode.EXPENSE
+            }
+
+            val result = TransactionEntryService.transitionType(
+                oldMode = s.entryMode,
+                newMode = nextMode,
+                currentSource = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                currentDestination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                isSplitMode = false
+            )
+
+            applyFocusGuard(
+                applyUpdate(
+                    s, TransactionEntryService.StateUpdateResult(
+                        source = result.source,
+                        destination = result.destination,
+                        entryMode = result.newMode,
+                        exchangeRate = BigDecimal.ONE, // Placeholder as we'll recalc
+                        isRateFixed = false
+                    )
+                )
+            )
+        }
+    }
+
+    fun toggleTransferMode() {
+        _uiState.update { s ->
+            val nextMode =
+                if (s.entryMode == EntryMode.TRANSFER) EntryMode.EXPENSE else EntryMode.TRANSFER
+
+            val result = TransactionEntryService.transitionType(
+                oldMode = s.entryMode,
+                newMode = nextMode,
+                currentSource = TransactionSide(
+                    account = s.selectedAccount,
+                    amount = s.amount.stripTrailingZeros().toPlainString(),
+                    currency = s.selectedCurrency,
+                    categoryId = s.selectedCategoryId ?: Category.SYSTEM_UNKNOWN
+                ),
+                currentDestination = TransactionSide(
+                    account = s.selectedToAccount,
+                    amount = s.amountOverride?.stripTrailingZeros()?.toPlainString() ?: "0",
+                    currency = s.selectedToCurrency,
+                    categoryId = Category.SYSTEM_TRANSFER
+                ),
+                isSplitMode = false
+            )
+
+            applyFocusGuard(
+                applyUpdate(
+                    s, TransactionEntryService.StateUpdateResult(
+                        source = result.source,
+                        destination = result.destination,
+                        entryMode = result.newMode,
+                        exchangeRate = BigDecimal.ONE,
+                        isRateFixed = false
+                    )
+                )
+            )
+        }
+    }
+
+    private fun applyFocusGuard(s: QuickAddState): QuickAddState {
+        if (s.entryMode != EntryMode.TRANSFER) return s.copy(activeAmountSide = AmountEditingSide.SOURCE)
+
+        return when {
+            s.activeAmountSide == AmountEditingSide.SOURCE && s.selectedAccount.isOutside ->
+                s.copy(activeAmountSide = AmountEditingSide.TARGET)
+
+            s.activeAmountSide == AmountEditingSide.TARGET && s.selectedToAccount.isOutside ->
+                s.copy(activeAmountSide = AmountEditingSide.SOURCE)
+
+            else -> s
+        }
+    }
+
+    fun updateCategory(category: Category) {
+        _uiState.update { it.copy(selectedCategoryId = category.id) }
+    }
+
+    fun updateAccount(accountId: String, isFrom: Boolean) {
+        val allAccounts = state.value.accounts
+        val account = allAccounts.find { it.id == accountId }
+        val newRef =
+            if (accountId.isBlank() || accountId == Account.OUTSIDE_WALLET.id) AccountRef.Outside else AccountRef.Wallet(
+                accountId
+            )
+        _uiState.update { s ->
+            val next = if (isFrom) {
+                val fallbackCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !s.selectedToAccount.isOutside) {
+                        s.selectedToCurrency
+                    } else s.selectedCurrency
+
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = fallbackCurrency,
+                    baseCurrency = s.baseCurrency
+                )
+
+                // Enforce: if NEW source is a Wallet and target is Outside, target MUST match new source currency
+                val finalToCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedToAccount.isOutside) {
+                        newCurrency
+                    } else s.selectedToCurrency
+
+                s.copy(
+                    selectedAccount = newRef,
+                    selectedCurrency = newCurrency,
+                    selectedToCurrency = finalToCurrency
+                )
+            } else {
+                val fallbackCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !s.selectedAccount.isOutside) {
+                        s.selectedCurrency
+                    } else s.selectedToCurrency
+
+                val newCurrency = TransactionEntryService.resolveSideCurrency(
+                    account = newRef,
+                    accountCurrency = account?.currencyCode,
+                    currentCurrency = fallbackCurrency,
+                    baseCurrency = s.baseCurrency
+                )
+
+                // Enforce: if NEW target is a Wallet and source is Outside, source MUST match new target currency
+                val finalFromCurrency =
+                    if (s.entryMode == EntryMode.TRANSFER && !newRef.isOutside && s.selectedAccount.isOutside) {
+                        newCurrency
+                    } else s.selectedCurrency
+
+                s.copy(
+                    selectedToAccount = newRef,
+                    selectedToCurrency = newCurrency,
+                    selectedCurrency = finalFromCurrency
+                )
+            }
+            applyFocusGuard(next)
+        }
+    }
+
+    fun saveTransaction(onSuccess: () -> Unit) {
+        if (_uiState.value.isSaving) return
+        val s = state.value
+        if (!canSave) return
+        val amount = s.amount
+
+        val categoryId = s.selectedCategoryId ?: Category.SYSTEM_OTHERS
+        val name = s.selectedTemplate?.name
+            ?: categories.value.find { it.id == categoryId }?.name
+            ?: if (s.entryMode == EntryMode.TRANSFER) "Transfer" else "Quick Transaction"
+
+        _uiState.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            runCatching {
+                withProfile { profileId ->
+                    val request = TransactionEntryService.createRequest(
+                        name = name,
+                        amount = amount,
+                        entryMode = s.entryMode,
+                        sourceAccount = s.selectedAccount,
+                        sourceCurrency = s.selectedCurrency,
+                        targetAccount = s.selectedToAccount,
+                        targetCurrency = s.selectedToCurrency,
+                        categoryId = categoryId,
+                        note = s.note.ifBlank { s.selectedTemplate?.note ?: "" },
+                        payee = s.payee.ifBlank { s.selectedTemplate?.payee ?: "" },
+                        status = s.selectedTemplate?.transactionStatus ?: TransactionStatus.CLEARED,
+                        tags = s.tags.ifEmpty { s.selectedTemplate?.tags ?: emptySet() },
+                        targetAmountOverride = s.amountOverride,
+                        exchangeRates = s.exchangeRates,
+                        accounts = s.accounts,
+                        baseCurrency = s.baseCurrency
+                    )
+                    transactionManager.handleSaveTransaction(
+                        existingTransaction = null,
+                        request = request,
+                        profileId = profileId
+                    )
+                }
+            }.onSuccess {
+                _uiState.update { it.copy(isSaving = false) }
+                onSuccess()
+            }.onFailure {
+                if (it is CancellationException) throw it
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
+
+    fun reset() {
+        _uiState.value = QuickAddState(entryMode = initialType)
+    }
+
+    val canSave: Boolean get() = state.value.canSave
+}

@@ -1,0 +1,5 @@
+id,name,categoryName,amount,transactionType,currency,paymentMethod,payee,note,tags,accountId
+1,Monthly Rent,Rent,1850.00,expense,USD,BANK_TRANSFER,Property Management,Monthly rent payment,"Housing,Essential",acc_bank
+2,Quick Coffee,Coffee & Snacks,6.50,expense,USD,CASH,Starbucks,Latte,Social,acc_cash
+3,Salary Deposit,Salary,5250.00,income,USD,BANK_TRANSFER,TechCorp Inc,Monthly salary,Work,acc_bank
+4,Gojek Bali,Rideshare,35000.00,expense,IDR,DIGITAL_WALLET,Gojek,Ride in Bali,Travel,acc_idr

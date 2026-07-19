@@ -1,0 +1,72 @@
+package com.osscabinet.ossWallet.ui.screens.loans.entry
+
+import com.osscabinet.ossWallet.domain.model.LoanType
+import com.osscabinet.ossWallet.domain.model.TransactionType
+
+sealed class LoanEntryEvent {
+    data class SetName(val name: String) : LoanEntryEvent()
+    data class SetPrincipalAmount(val amount: String) : LoanEntryEvent()
+    data class SetCurrency(val currency: String) : LoanEntryEvent()
+    data class SetLoanType(val type: LoanType) : LoanEntryEvent()
+    data class SetCounterparty(val counterparty: String) : LoanEntryEvent()
+    data class SetTimelineRange(val range: com.osscabinet.ossWallet.domain.model.timeline.TimelineRange) :
+        LoanEntryEvent()
+
+    data class SetInterestRate(val rate: String) : LoanEntryEvent()
+    data class SetNote(val note: String) : LoanEntryEvent()
+    data class SetTrackTypes(val types: Set<TransactionType>) : LoanEntryEvent()
+    data class SetCategoryIds(val ids: Set<Long>) : LoanEntryEvent()
+    data class SetCurrencies(val currencies: Set<String>) : LoanEntryEvent()
+    data class SetTags(val tags: Set<String>) : LoanEntryEvent()
+    data class SetPaymentMethods(val methods: Set<com.osscabinet.ossWallet.domain.model.PaymentMethod>) :
+        LoanEntryEvent()
+
+    data class SetStatuses(val statuses: Set<com.osscabinet.ossWallet.domain.model.TransactionStatus>) :
+        LoanEntryEvent()
+
+    data class SetLinkedTransactions(val ids: Set<Long>) : LoanEntryEvent()
+    data class SetQueryNote(val query: String) : LoanEntryEvent()
+    data class SetNoteRegex(val isRegex: Boolean) : LoanEntryEvent()
+    data class SetQueryPayee(val query: String) : LoanEntryEvent()
+    data class SetPayeeRegex(val isRegex: Boolean) : LoanEntryEvent()
+    data class SetMinAmount(val amount: String) : LoanEntryEvent()
+    data class SetMaxAmount(val amount: String) : LoanEntryEvent()
+    data class SetHasWarranty(val hasWarranty: Boolean?) : LoanEntryEvent()
+    data class SetWarrantyExpirationStart(val date: Long?) : LoanEntryEvent()
+    data class SetWarrantyExpirationEnd(val date: Long?) : LoanEntryEvent()
+    data class SetStartDate(val date: Long) : LoanEntryEvent()
+    data class SetHasSettlementDate(val has: Boolean) : LoanEntryEvent()
+    data class SetSettlementDate(val date: Long) : LoanEntryEvent()
+    data class SetLinkedAccountId(val id: String) : LoanEntryEvent()
+    data class SetFilterId(val filterId: Long?) : LoanEntryEvent()
+    data class ShowSharedFilterDialog(val show: Boolean) : LoanEntryEvent()
+    data class ConfirmSaveWithSharedFilter(val updateShared: Boolean) : LoanEntryEvent()
+    data object MakeFilterUnique : LoanEntryEvent()
+    data class SetDeleteFilterWithLoan(val delete: Boolean) : LoanEntryEvent()
+    data class ShowDeleteDialog(val show: Boolean) : LoanEntryEvent()
+
+    // Visibility
+    data class ShowStartDatePicker(val show: Boolean) : LoanEntryEvent()
+    data class ShowSettlementDatePicker(val show: Boolean) : LoanEntryEvent()
+    data class ShowNumpad(val show: Boolean) : LoanEntryEvent()
+    data class ShowInterestNumpad(val show: Boolean) : LoanEntryEvent()
+    data class ShowTimelineSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowAccountSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowTrackTypeSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowCategorySheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowTagSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowCurrencyFilterSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowPaymentMethodSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowStatusSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowLinkSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowFilterSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowMinAmountSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowMaxAmountSheet(val show: Boolean) : LoanEntryEvent()
+    data class ShowWarrantyStartPicker(val show: Boolean) : LoanEntryEvent()
+    data class ShowWarrantyEndPicker(val show: Boolean) : LoanEntryEvent()
+
+    data class SetAccountQuery(val query: String) : LoanEntryEvent()
+    data class SetCategoryQuery(val query: String) : LoanEntryEvent()
+
+    data object TriggerNavigation : LoanEntryEvent()
+}

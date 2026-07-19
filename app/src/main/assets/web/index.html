@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OssWallet — Web Portal</title>
+<link rel="stylesheet" href="/web/style.css">
+<!-- Mock mode: inject token before state.js so app auto-logs in -->
+<script>
+  (function() {
+    if (new URLSearchParams(location.search).get('mock') === 'true') {
+      if (!sessionStorage.getItem('oss_token')) sessionStorage.setItem('oss_token', 'mock-token');
+    }
+  })();
+</script>
+</head>
+<body>
+
+<!-- ───────────────────── Login ───────────────────────────── -->
+<div id="login-page" style="display:none;">
+  <div class="login-card">
+    <h2>OssWallet Web Portal</h2>
+    <p>Enter the access code shown on your phone to continue.</p>
+    <input class="code-input" id="code-input" type="text" maxlength="8" placeholder="XXXXXXXX"
+           autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="error-msg" id="login-error"></div>
+    <button class="btn btn-primary login-submit" id="login-btn">Verify</button>
+  </div>
+</div>
+
+<!-- ───────────────────── App shell ───────────────────────── -->
+<div id="app" style="display:none;">
+  <div id="header">
+    <button id="hamburger" aria-label="Menu">&#9776;</button>
+    <h1>OssWallet</h1>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <button class="btn btn-ghost btn-sm" id="theme-toggle" title="Toggle dark/light mode" style="font-size:0.78rem;padding:5px 10px">Dark</button>
+      <button class="btn btn-ghost" id="logout-btn" style="font-size:0.82rem; padding:6px 12px;">Log out</button>
+    </div>
+  </div>
+  <div id="main">
+    <div id="overlay"></div>
+    <nav id="sidebar">
+      <div id="sidebar-profile"></div>
+      <div class="nav-section">Overview</div>
+      <a class="nav-item" href="#/dashboard">Dashboard</a>
+      <a class="nav-item" href="#/analytics">Analytics</a>
+      <div class="nav-section">Finance</div>
+      <a class="nav-item" href="#/records">Records</a>
+      <a class="nav-item" href="#/accounts">Accounts</a>
+      <div id="sidebar-accs"></div>
+      <a class="nav-item" href="#/budgets">Budgets</a>
+      <a class="nav-item" href="#/loans">Loans</a>
+      <a class="nav-item" href="#/planned-payments">Planned</a>
+      <div class="nav-section">Organize</div>
+      <a class="nav-item" href="#/templates">Templates</a>
+      <a class="nav-item" href="#/categories">Categories</a>
+      <a class="nav-item" href="#/tags">Tags</a>
+      <a class="nav-item" href="#/filters">Filters</a>
+      <div class="nav-section">System</div>
+      <a class="nav-item" href="#/settings">Settings</a>
+    </nav>
+    <main id="content">
+      <div class="loading-wrap"><div class="spinner"></div></div>
+    </main>
+  </div>
+</div>
+
+<!-- ───────────────────── Modal ───────────────────────────── -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="nprogress"></div>
+<div id="toast-container"></div>
+
+<!-- Filter Bottom Sheet -->
+<div id="filter-sheet-overlay" onclick="closeFilterSheet()"></div>
+<div id="filter-sheet">
+  <div class="filter-sheet-handle"></div>
+  <div id="filter-sheet-title"></div>
+  <div id="filter-sheet-body"></div>
+  <div id="filter-sheet-actions">
+    <button class="btn btn-ghost btn-sm" id="fs-reset-btn">✕ Reset</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" onclick="closeFilterSheet()">Cancel</button>
+    <button class="btn btn-primary" id="fs-apply-btn">Apply</button>
+  </div>
+</div>
+
+<!-- Analytics Common Filter Pill -->
+<div id="analytics-filter-pill" onclick="openCommonFilterSheet()">
+  <div id="analytics-filter-pill-dot"></div>
+  <span id="analytics-filter-pill-label">Common Filter</span>
+  <span style="opacity:0.5;font-size:0.72rem">▾</span>
+</div>
+
+<!-- ───────────────────── Modules ─────────────────────────── -->
+<script defer src="/web/js/state.js"></script>
+<script defer src="/web/js/utils.js"></script>
+<script defer src="/web/js/api.js"></script>
+<script defer src="/web/js/modal.js"></script>
+<script defer src="/web/js/components.js"></script>
+
+<!-- Card Components -->
+<script defer src="/web/js/components/cards/NetWorthCard.js"></script>
+<script defer src="/web/js/components/cards/CashFlowCard.js"></script>
+<script defer src="/web/js/components/cards/CurrencyBalancesCard.js"></script>
+<script defer src="/web/js/components/cards/AccountsCard.js"></script>
+<script defer src="/web/js/components/cards/BudgetsCard.js"></script>
+<script defer src="/web/js/components/cards/PlannedPaymentsCard.js"></script>
+<script defer src="/web/js/components/cards/LoansCard.js"></script>
+<script defer src="/web/js/components/cards/RecentActivitiesCard.js"></script>
+<script defer src="/web/js/components/cards/AccountHeroCard.js"></script>
+<script defer src="/web/js/components/cards/CategoryBreakdownCard.js"></script>
+<script defer src="/web/js/components/cards/CashFlowComparisonCard.js"></script>
+<script defer src="/web/js/components/cards/IncomeExpenseBarCard.js"></script>
+<script defer src="/web/js/components/cards/CategorySpendingTrendCard.js"></script>
+<script defer src="/web/js/components/cards/TagUpSetPlotCard.js"></script>
+<script defer src="/web/js/ui.js"></script>
+<script defer src="/web/js/pages/dashboard.js"></script>
+<script defer src="/web/js/pages/accounts.js"></script>
+<script defer src="/web/js/pages/transactions.js"></script>
+<script defer src="/web/js/pages/budgets.js"></script>
+<script defer src="/web/js/pages/loans.js"></script>
+<script defer src="/web/js/pages/planned-payments.js"></script>
+<script defer src="/web/js/pages/categories.js"></script>
+<script defer src="/web/js/pages/analytics.js"></script>
+<script defer src="/web/js/pages/tags.js"></script>
+<script defer src="/web/js/pages/templates.js"></script>
+<script defer src="/web/js/pages/filters.js"></script>
+<script defer src="/web/js/pages/settings.js"></script>
+<script defer src="/web/js/pages/cards.js"></script>
+<!-- Mock data + interceptor — only active when ?mock=true -->
+<script defer src="/web/js/mock-data.js"></script>
+<script defer src="/web/js/mock.js"></script>
+<script defer src="/web/js/app.js"></script>
+
+</body>
+</html>

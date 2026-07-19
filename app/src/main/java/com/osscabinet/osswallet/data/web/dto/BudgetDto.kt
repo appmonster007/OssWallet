@@ -17,6 +17,6 @@ data class BudgetDto(
     val alertThreshold: Double = 0.8,
     val timelineType: String = "MONTHLY",
     val categoryIds: List<Long> = emptyList(),
-    val accountIds: List<Long> = emptyList(),
+    val accountIds: List<String> = emptyList(),
     val rollover: Boolean = false
 )

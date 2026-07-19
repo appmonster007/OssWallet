@@ -268,6 +268,7 @@ fun AeonExpressiveCard(
                         iconColor = contentColor,
                         subtitleClickable = filterEnabled && (filter != null) && (onFilterChange != null),
                         onSubtitleClick = { state.showFilter(true) },
+                        onHeaderClick = onClick,
                         onLongClick = {
                             if (settingsContent != null || displaySettings != null) {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -349,17 +350,19 @@ internal fun AeonCardHeader(
     onTrailingIconClick: (() -> Unit)? = null,
     subtitleClickable: Boolean = false,
     onSubtitleClick: (() -> Unit)? = null,
+    onHeaderClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     showFilterIndicator: Boolean = false,
     accentColor: Color = AppColors.primary
 ) {
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
+            .then(if (icon == null) modifier else Modifier)
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = {},
+                onClick = { onHeaderClick?.invoke() },
                 onLongClick = onLongClick
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -369,7 +372,16 @@ internal fun AeonCardHeader(
             Surface(
                 modifier = Modifier
                     .size(AeonTheme.dimensions.iconSizeLg)
-                    .then(if (onIconClick != null) Modifier.clickable(onClick = onIconClick) else Modifier),
+                    .then(modifier)
+                    .then(
+                        if (onIconClick != null || onHeaderClick != null) {
+                            Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onIconClick?.invoke() ?: onHeaderClick?.invoke() }
+                            )
+                        } else Modifier
+                    ),
                 shape = CircleShape,
                 color = iconColor.copy(alpha = 0.15f),
             ) {

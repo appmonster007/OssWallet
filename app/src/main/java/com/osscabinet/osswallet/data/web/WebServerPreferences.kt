@@ -12,13 +12,23 @@ private val Context.webServerDataStore by preferencesDataStore(name = "web_serve
 class WebServerPreferences(private val context: Context) {
 
     private val KEY_ENABLED = booleanPreferencesKey("server_enabled")
+    private val KEY_STAY_ALIVE = booleanPreferencesKey("stay_alive")
 
     val isEnabled: Flow<Boolean> = context.webServerDataStore.data
         .map { prefs -> prefs[KEY_ENABLED] ?: false }
 
+    val stayAlive: Flow<Boolean> = context.webServerDataStore.data
+        .map { prefs -> prefs[KEY_STAY_ALIVE] ?: false }
+
     suspend fun setEnabled(enabled: Boolean) {
         context.webServerDataStore.edit { prefs ->
             prefs[KEY_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setStayAlive(stayAlive: Boolean) {
+        context.webServerDataStore.edit { prefs ->
+            prefs[KEY_STAY_ALIVE] = stayAlive
         }
     }
 }

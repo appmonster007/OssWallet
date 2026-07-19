@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface WebServerRepository {
     val serverState: StateFlow<WebServerState>
     val isEnabled: Flow<Boolean>
+    val stayAlive: Flow<Boolean>
     suspend fun setEnabled(enabled: Boolean)
+    suspend fun setStayAlive(stayAlive: Boolean)
     suspend fun start()
     suspend fun stop()
     fun isRunning(): Boolean

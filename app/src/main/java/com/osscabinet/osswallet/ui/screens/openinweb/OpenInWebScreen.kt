@@ -33,16 +33,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.data.web.QRCodeGenerator
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.ui.components.AeonHazeProvider
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
@@ -158,7 +161,23 @@ fun OpenInWebScreen(
                                 }
                             }
 
-                            uiState.qrBitmap?.let { bitmap ->
+                            // QR generation logic - Best practices:
+                            // 1. Handled in UI layer to keep Domain layer pure (no Bitmap dependency)
+                            // 2. Reacts to theme changes using remember with color keys
+                            val color = AppColors.onSurface
+                            val backgroundColor = AppColors.surfaceContainer
+
+                            val qrBitmap = remember(runningState.accessUrl, color, backgroundColor) {
+                                runCatching {
+                                    QRCodeGenerator.generate(
+                                        text = runningState.accessUrl,
+                                        color = color.toArgb(),
+                                        backgroundColor = backgroundColor.toArgb()
+                                    )
+                                }.getOrNull()
+                            }
+
+                            qrBitmap?.let { bitmap ->
                                 Card {
                                     Column(
                                         modifier = Modifier

@@ -1,7 +1,6 @@
 package com.osscabinet.ossWallet.data.web
 
 import android.content.Context
-import android.graphics.Bitmap
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
@@ -93,9 +92,6 @@ class WebServerManager @Inject constructor(
         (_serverState.value as? WebServerState.Running)?.accessCode
 
     override suspend fun setEnabled(enabled: Boolean) = webServerPreferences.setEnabled(enabled)
-
-    override fun generateQrCode(url: String): Bitmap? =
-        runCatching { QRCodeGenerator.generate(url) }.getOrNull()
 
     override fun isConnectedToWifi(): Boolean = NetworkUtils.isConnectedToWifi(context)
 

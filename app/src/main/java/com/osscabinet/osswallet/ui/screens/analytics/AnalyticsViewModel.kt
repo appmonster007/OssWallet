@@ -34,9 +34,13 @@ import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import com.osscabinet.ossWallet.ui.util.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,17 +48,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
-import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -77,13 +82,21 @@ class AnalyticsViewModel @Inject constructor(
     override val cardUpdateScope = viewModelScope
     override val cardScreenContext = ScreenContext.ANALYTICS
 
+    init {
+        viewModelScope.launch(dispatchers.io) {
+            val profileId = settingsRepository.currentProfileId.first()
+            val currency = computationRepository.selectedCurrency.first()
+            cardRenderCache.kickOffProfileLoad(profileId, currency)
+        }
+    }
+
     private val _screenFilter = MutableStateFlow(TransactionFilter())
     val screenFilter: StateFlow<TransactionFilter> = _screenFilter.asStateFlow()
 
     val commonFilterEnabled: StateFlow<Boolean> = settingsRepository.analyticsCommonFilterEnabled
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = true,
         )
 
@@ -137,7 +150,7 @@ class AnalyticsViewModel @Inject constructor(
 
     val cardsConfig: StateFlow<DashboardCardsConfig> =
         cardRepository.getCardsConfig(cardScreenContext)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), DashboardCardsConfig())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardCardsConfig())
 
     private data class DomainSnapshot(
         val version: Long,
@@ -193,77 +206,65 @@ class AnalyticsViewModel @Inject constructor(
             ) { domain, planning, config ->
                 AnalyticsUiState.Success(
                     profileId = profileId,
-                    accounts = domain.accounts,
-                    allCategories = domain.categories,
-                    allTags = domain.tags,
-                    exchangeRates = config.rates,
+                    accounts = domain.accounts.toImmutableList(),
+                    allCategories = domain.categories.toImmutableList(),
+                    allTags = domain.tags.toImmutableList(),
+                    exchangeRates = config.rates.toImmutableMap(),
                     selectedCurrency = config.baseCurrency,
-                    plannedPayments = planning.plannedPayments,
-                    budgets = planning.budgets,
-                    loans = planning.loans,
+                    plannedPayments = planning.plannedPayments.toImmutableList(),
+                    budgets = planning.budgets.toImmutableList(),
+                    loans = planning.loans.toImmutableList(),
                     version = domain.version
-                )
+                ) as AnalyticsUiState
             }
         }
+        .catch { e -> emit(AnalyticsUiState.Error(e.message ?: "Failed to load analytics data")) }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(),
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = AnalyticsUiState.Loading
         )
 
-    private val _cardDataMap =
-        MutableStateFlow<PersistentMap<String, CardComputeState>>(persistentMapOf())
-    val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> = _cardDataMap.asStateFlow()
+    val cardDataMap: StateFlow<ImmutableMap<String, CardComputeState>> =
+        combine(
+            cardsConfig,
+            uiState,
+            _screenFilter,
+            commonFilterEnabled
+        ) { cards, state, sf, ce ->
+            cards to Triple(state, sf, ce)
+        }.flatMapLatest { (cards, stateTriple) ->
+            val (state, sf, commonEnabled) = stateTriple
+            if (state !is AnalyticsUiState.Success) return@flatMapLatest flowOf(persistentMapOf())
 
-    // Generation counter: guards against stale writes from CPU-bound children that run to
-    // completion after coroutineScope is cancelled (cooperative cancellation, no suspension points).
-    private val _computeGeneration = AtomicInteger(0)
-
-    init {
-        viewModelScope.launch {
-            // D4: 4-arg combine replaces two nested combine operators, eliminating the intermediate flow.
-            combine(
-                cardsConfig,
-                uiState,
-                _screenFilter,
-                commonFilterEnabled
-            ) { cards, state, sf, ce ->
-                cards to Triple(state, sf, ce)
-            }.collectLatest { (cards, stateTriple) ->
-                val (state, sf, commonEnabled) = stateTriple
-
-                if (state !is AnalyticsUiState.Success) {
-                    _cardDataMap.value = persistentMapOf()
-                    return@collectLatest
-                }
-
-                val myGen = _computeGeneration.incrementAndGet()
-
-                // D2: Seed from persistent cache — short-circuits if already loaded by DashboardViewModel.
+            channelFlow {
+                // Seed from persistent cache — short-circuits if already loaded by DashboardViewModel.
                 try {
                     cardRenderCache.awaitProfileLoaded(state.profileId, state.selectedCurrency)
                 } catch (_: CancellationException) {
-                    // Re-throw if this coroutine itself is being cancelled (cooperative cancellation
-                    // from collectLatest). If still active, the Deferred was cancelled externally
-                    // (e.g. invalidateProfile on profile switch) — proceed with empty snapshot.
+                    // If this coroutine is being cancelled by flatMapLatest, ensureActive() re-throws.
+                    // If the Deferred was cancelled externally (e.g. profile switch), proceed with
+                    // empty snapshot.
                     coroutineContext.ensureActive()
                 }
-                val cachedSnapshot = cardRenderCache.getProfileSnapshot(state.profileId, state.selectedCurrency)
+                val cachedSnapshot =
+                    cardRenderCache.getProfileSnapshot(state.profileId, state.selectedCurrency)
 
-                val prevMap = _cardDataMap.value
-                _cardDataMap.value =
+                val localCardState = MutableStateFlow(
                     persistentMapOf<String, CardComputeState>().builder().apply {
                         cards.cards.forEach { c ->
                             val cached = cachedSnapshot[c.cardId]
                             put(
                                 c.cardId,
-                                prevMap[c.cardId] ?: if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
+                                if (cached != null) CardComputeState.Success(cached) else CardComputeState.Loading
                             )
                         }
                     }.build()
+                )
 
-                // AC7: Build inputs on Default — build hierarchy once per round
-                val input = kotlinx.coroutines.withContext(dispatchers.default) {
+                launch { localCardState.collect { send(it) } }
+
+                val input = withContext(dispatchers.default) {
                     CardInput(
                         profileId = state.profileId,
                         transactionsVersion = state.version,
@@ -288,29 +289,28 @@ class AnalyticsViewModel @Inject constructor(
                     )
                 }
 
-                // D1+P2: supervisorScope lets cards fail independently without cancelling siblings.
-                // Children re-throw CancellationException so cooperative cancellation works correctly
-                // when collectLatest cancels this block on a new emission.
-                supervisorScope {
-                    cards.cards.forEach { cardConfig ->
-                        launch(dispatchers.default) {
-                            val result = try {
-                                val data = cardComputerRegistry.compute(
-                                    cardConfig.cardType,
-                                    input,
-                                    cardConfig
-                                )
-                                if (data is CardRenderData.Error) CardComputeState.Error(
-                                    data.message ?: "Compute error"
-                                )
-                                else CardComputeState.Success(data)
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Throwable) {
-                                CardComputeState.Error(e.message ?: "Compute error")
-                            }
+                // channelFlow scope cancels all children when flatMapLatest fires a new emission,
+                // so no generation counter is needed — structured concurrency handles it.
+                cards.cards.forEach { cardConfig ->
+                    launch(dispatchers.default) {
+                        val result = try {
+                            val data = cardComputerRegistry.compute(
+                                cardConfig.cardType,
+                                input,
+                                cardConfig
+                            )
+                            if (data is CardRenderData.Error) CardComputeState.Error(
+                                data.message ?: "Compute error"
+                            )
+                            else CardComputeState.Success(data)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Throwable) {
+                            CardComputeState.Error(e.message ?: "Compute error")
+                        }
 
-                            if (result is CardComputeState.Success) {
+                        if (result is CardComputeState.Success) {
+                            try {
                                 cardRenderCache.persist(
                                     state.profileId,
                                     state.selectedCurrency,
@@ -318,35 +318,33 @@ class AnalyticsViewModel @Inject constructor(
                                     result.data,
                                     state.version
                                 )
-                            }
-
-                            // P1: check inside update{} to eliminate TOCTOU window.
-                            _cardDataMap.update { map ->
-                                if (_computeGeneration.get() == myGen) map.putting(
-                                    cardConfig.cardId,
-                                    result
-                                ) else map
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (_: Exception) {
+                                // Cache write failure — result still applied to local state below.
                             }
                         }
+
+                        localCardState.update { it.putting(cardConfig.cardId, result) }
                     }
                 }
             }
         }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), persistentMapOf())
 }
 
 sealed class AnalyticsUiState {
     object Loading : AnalyticsUiState()
     data class Success(
         val profileId: Int = 0,
-        val accounts: List<Account> = emptyList(),
-        val allCategories: List<Category> = emptyList(),
-        val allTags: List<Tag> = emptyList(),
+        val accounts: ImmutableList<Account> = persistentListOf(),
+        val allCategories: ImmutableList<Category> = persistentListOf(),
+        val allTags: ImmutableList<Tag> = persistentListOf(),
         val selectedCurrency: String = "USD",
-        val exchangeRates: Map<String, BigDecimal> = emptyMap(),
-        val plannedPayments: List<PlannedPayment> = emptyList(),
-        val budgets: List<Budget> = emptyList(),
-        val loans: List<Loan> = emptyList(),
+        val exchangeRates: ImmutableMap<String, BigDecimal> = persistentMapOf(),
+        val plannedPayments: ImmutableList<PlannedPayment> = persistentListOf(),
+        val budgets: ImmutableList<Budget> = persistentListOf(),
+        val loans: ImmutableList<Loan> = persistentListOf(),
         val version: Long = 0L
     ) : AnalyticsUiState()
 

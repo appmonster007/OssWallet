@@ -77,6 +77,7 @@ fun Route.budgetRoutes(
                             ThisPeriodType.WEEK -> "WEEKLY"
                             ThisPeriodType.TODAY -> "TODAY"
                             ThisPeriodType.QUARTER -> "QUARTER"
+                            ThisPeriodType.HALF_YEAR -> "HALF_YEAR"
                         }
                         else -> "MONTHLY"
                     }
@@ -207,6 +208,7 @@ fun Route.budgetRoutes(
                         ThisPeriodType.WEEK -> "WEEKLY"
                         ThisPeriodType.TODAY -> "TODAY"
                         ThisPeriodType.QUARTER -> "QUARTER"
+                        ThisPeriodType.HALF_YEAR -> "HALF_YEAR"
                     }
                     else -> "MONTHLY"
                 }

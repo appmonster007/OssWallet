@@ -2,7 +2,6 @@ package com.osscabinet.ossWallet.ui.screens.openinweb
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.osscabinet.ossWallet.domain.model.web.WebServerState
@@ -20,7 +19,6 @@ import kotlinx.coroutines.launch
 
 data class OpenInWebUiState(
     val serverState: WebServerState = WebServerState.Stopped,
-    val qrBitmap: Bitmap? = null,
     val isWifiConnected: Boolean = false
 )
 
@@ -39,10 +37,7 @@ class OpenInWebViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             webServerRepository.serverState.collect { state ->
-                val qr = if (state is WebServerState.Running) {
-                    webServerRepository.generateQrCode(state.accessUrl)
-                } else null
-                _uiState.value = _uiState.value.copy(serverState = state, qrBitmap = qr)
+                _uiState.value = _uiState.value.copy(serverState = state)
             }
         }
         refreshWifiStatus()

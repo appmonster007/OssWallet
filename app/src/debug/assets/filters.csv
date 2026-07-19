@@ -1,0 +1,10 @@
+id,name,categoryNames,transactionTypes,currencies,tags,queryPayee
+1,Food & Drink Expense,"Dining Out,Groceries,Coffee & Snacks",expense,,,
+2,Shopping Expense,"Clothing & Apparel,Electronics,Online Shopping",expense,,,
+3,Salary Income,Salary,income,,,
+4,Transport Expense,"Own Vehicle,Public Transit,Ride & Taxi",expense,,,
+5,Entertainment Expense,"Movies & Theater,Music,Gaming",expense,,,
+6,Food Budget Filter,"Groceries,Dining Out,Coffee & Snacks",expense,,,
+7,Japan Trip Filter,Travel,,JPY,,
+8,Car Loan Filter,,,,CarLoan,
+9,Friend Loan Filter,,,,,John Doe

@@ -1,0 +1,162 @@
+package com.osscabinet.ossWallet.ui.components.entry
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.scaledDp
+
+/**
+ * Animated type selector for entry screens.
+ * Following the "Architect Slate" design specification.
+ */
+@Composable
+fun <T> EntryTypeSelector(
+    selectedType: T,
+    onTypeSelected: (T) -> Unit,
+    types: List<Triple<ImageVector, String, T>>,
+    selectedColor: Color = AppColors.primary,
+    itemWidth: androidx.compose.ui.unit.Dp = 80.dp
+) {
+    val selectedIndex = types.indexOfFirst { it.third == selectedType }.coerceAtLeast(0)
+    val haptic = LocalHapticFeedback.current
+    val uiScale = AeonTheme.uiScale
+
+    val indicatorColor by animateColorAsState(
+        targetValue = selectedColor,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "indicatorColor"
+    )
+
+    val indicatorOffset by animateDpAsState(
+        targetValue = itemWidth * selectedIndex,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "indicatorOffset"
+    )
+
+    GlassSurface(
+        modifier = Modifier.height(scaledDp(44f, uiScale)),
+        shape = RoundedCornerShape(32.dp),
+        hazeStyle = GlassTokens.pillStyle(),
+        glassVariant = com.osscabinet.ossWallet.ui.theme.GlassVariant.Pill,
+        fallbackColor = AppColors.recessedSurface,
+    ) {
+        Box(modifier = Modifier.padding(4.dp)) {
+            Box(
+                modifier = Modifier
+                    .offset { androidx.compose.ui.unit.IntOffset(indicatorOffset.roundToPx(), 0) }
+                    .width(itemWidth)
+                    .fillMaxHeight()
+                    .clip(CircleShape)
+                    .background(indicatorColor)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxHeight(),
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                types.forEach { (icon, label, type) ->
+                    val isSelected = selectedType == type
+                    val scale by animateFloatAsState(
+                        targetValue = if (isSelected) 1.1f else 1.0f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                        label = "iconScale"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .width(itemWidth)
+                            .fillMaxHeight()
+                            .clip(CircleShape)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onTypeSelected(type)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = label,
+                            tint = if (isSelected) ColorOnDark else AppColors.contentSecondary.copy(
+                                alpha = 0.6f
+                            ),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EntryTypeSelectorPreview() {
+    var selectedType by remember { mutableStateOf(EntryMode.EXPENSE) }
+    val types = listOf(
+        Triple(Icons.Rounded.Remove, "Expense", EntryMode.EXPENSE),
+        Triple(Icons.Rounded.Add, "Income", EntryMode.INCOME),
+        Triple(Icons.Rounded.SwapHoriz, "Transfer", EntryMode.TRANSFER)
+    )
+
+    OssWalletTheme {
+        Box(modifier = Modifier.padding(16.dp)) {
+            EntryTypeSelector(
+                selectedType = selectedType,
+                onTypeSelected = { selectedType = it },
+                types = types,
+                selectedColor = if (selectedType == EntryMode.INCOME) AppColors.primary else AppColors.error
+            )
+        }
+    }
+}

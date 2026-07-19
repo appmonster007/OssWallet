@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget colors (dark mode) — brighter variants of app colors for dark bg legibility -->
+    <color name="widget_surface">#FF1C1B1F</color>
+    <color name="widget_on_surface">#FFE6E1E5</color>
+    <color name="widget_subtle">#FF938F99</color>
+    <color name="widget_income_color">#FF69F0AE</color>
+    <color name="widget_income_label">#CC69F0AE</color>
+    <color name="widget_income_comparison">#B369F0AE</color>
+    <color name="widget_expense_color">#FFFF5449</color>
+    <color name="widget_expense_label">#CCFF5449</color>
+    <color name="widget_expense_comparison">#B3FF5449</color>
+    <color name="widget_badge_income_bg">#1469F0AE</color>
+    <color name="widget_badge_expense_bg">#14FF5449</color>
+    <color name="widget_income_fill">#1469F0AE</color>
+    <color name="widget_income_stroke">#1A69F0AE</color>
+    <color name="widget_expense_fill">#14FF5449</color>
+    <color name="widget_expense_stroke">#1AFF5449</color>
+    <color name="widget_transfer_color">#FF90CAF9</color>
+    <color name="widget_transfer_label">#CC90CAF9</color>
+    <color name="widget_transfer_comparison">#B390CAF9</color>
+    <color name="widget_badge_transfer_bg">#1490CAF9</color>
+    <color name="widget_transfer_fill">#1490CAF9</color>
+    <color name="widget_transfer_stroke">#1A90CAF9</color>
+</resources>

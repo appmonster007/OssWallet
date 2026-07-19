@@ -1,0 +1,94 @@
+# generated: 2026-06-25T23:55:00
+# last_updated: 2026-06-25T23:55:00
+# project: OssWallet
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: /Users/prathitaswar/Desktop/Dev/AndroidStudioProjects/OssWallet/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-06-25T23:55:00
+last_updated: 2026-07-06T18:00:00
+project: OssWallet
+project_key: NOKEY
+tracking_system: file-system
+story_location: /Users/prathitaswar/Desktop/Dev/AndroidStudioProjects/OssWallet/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-core-infrastructure-baseline-serialization-concurrency: done
+  1-2-establish-pure-domain-module-core-domain: done
+  1-3-data-layer-isolation-feature-stubs-core-data-feature-dashboard: done
+  1-4-purify-aggregation-logic-domain-query-abstraction: done
+  epic-1-retrospective: optional
+  epic-2: in-progress
+  2-1-dashboard-performance-root-cause-analysis-rca: done
+  2-2-mandatory-mvi-pattern-for-dashboard: done
+  2-3-dashboard-rendering-optimization-lazy-loading-caching: done
+  2-4-per-card-parallel-computation-and-independent-loading-states: done
+  2-5-universal-currency-integrity-and-consistent-formatting: done
+  epic-2-retrospective: optional
+  epic-3: in-progress
+  3-1-design-token-audit-theme-refactor: review
+  3-2-settings-screen-simplification-refactor: review
+  3-3-global-h-design-consistency-pass: review
+  3-4-editorial-input-field-solid-mode-rca-fix: done
+  3-5-fix-atelier-panel-background-blend-with-sheet: done
+  3-6-editorial-input-field-ime-handling-rca-fix: in-progress
+  3-7-shared-entry-form-body-composable: backlog
+  epic-3-retrospective: optional
+  epic-4: backlog
+  4-1-web-ui-planned-payments-management-page: backlog
+  4-2-web-ui-gps-location-management: backlog
+  4-3-web-ui-interactive-dashboard-analytics-drill-downs: backlog
+  4-4-web-ui-h-editorial-instrument-redesign-consistency: backlog
+  epic-4-retrospective: optional
+  epic-5: backlog
+  5-1-implement-room-native-fts4-search: backlog
+  5-2-centralized-cache-lifecycle-cachecoordinator: backlog
+  5-3-domain-wide-result-wrapper-boundary-protection: backlog
+  epic-5-retrospective: optional
+  epic-6: in-progress
+  6-1-fix-csv-parser-quoted-fields-commas: done
+  6-2-per-account-currency-selector-import: ready-for-dev
+  6-3-fix-double-negative-amount-display: done
+  epic-6-retrospective: optional
+  epic-7: in-progress
+  7-1-suppress-duplicate-numpad-planned-payment: done
+  7-2-fix-smart-suggestion-crash-save: done
+  7-3-fix-prefill-smart-suggestion: done
+  7-4-quick-add-template-first-step: done
+  epic-7-retrospective: optional

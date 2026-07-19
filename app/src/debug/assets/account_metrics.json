@@ -1,0 +1,296 @@
+{
+  "accountMetrics": [
+    {
+      "accountId": "acc_bank",
+      "accountName": "Main Bank",
+      "currencyCode": "USD",
+      "structureType": "REGULAR",
+      "currentBalance": 12923.28,
+      "initialBalance": 0.0,
+      "netChange": 12923.28,
+      "transactionCount": 18,
+      "cashFlow": {
+        "totalIncome": 14743.85,
+        "totalExpenses": 1820.57,
+        "netCashFlow": 12923.28
+      },
+      "multiCurrencyCashFlow": {
+        "EUR": {
+          "totalIncome": 800.0,
+          "totalExpenses": 185.5,
+          "netCashFlow": 614.5,
+          "convertedToUSD": 667.9615
+        },
+        "INR": {
+          "totalIncome": 85000.0,
+          "totalExpenses": 10700.0,
+          "netCashFlow": 74300.0,
+          "convertedToUSD": 895.3149999999999
+        },
+        "USD": {
+          "totalIncome": 12850.0,
+          "totalExpenses": 1490.0,
+          "netCashFlow": 11360.0
+        }
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Dining Out",
+          "amount": 1505.5,
+          "transactionCount": 2
+        },
+        {
+          "category": "Entertainment",
+          "amount": 15.0,
+          "transactionCount": 1
+        },
+        {
+          "category": "Fuel",
+          "amount": 45.0,
+          "transactionCount": 1
+        },
+        {
+          "category": "Groceries",
+          "amount": 3500.0,
+          "transactionCount": 1
+        },
+        {
+          "category": "Housing",
+          "amount": 6065.0,
+          "transactionCount": 5
+        },
+        {
+          "category": "Rent",
+          "amount": 1200.0,
+          "transactionCount": 1
+        },
+        {
+          "category": "Salary",
+          "amount": 0.0,
+          "transactionCount": 5
+        },
+        {
+          "category": "Transport",
+          "amount": 45.0,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 14743.85,
+          "expenses": 1820.57,
+          "balance": 12923.28
+        }
+      ]
+    },
+    {
+      "accountId": "acc_cash",
+      "accountName": "Cash Wallet",
+      "currencyCode": "USD",
+      "structureType": "REGULAR",
+      "currentBalance": 640.51,
+      "initialBalance": 0.0,
+      "netChange": 640.51,
+      "transactionCount": 7,
+      "cashFlow": {
+        "totalIncome": 1000.0,
+        "totalExpenses": 359.49,
+        "netCashFlow": 640.51
+      },
+      "multiCurrencyCashFlow": {
+        "USD": {
+          "totalIncome": 1000.0,
+          "totalExpenses": 359.49,
+          "netCashFlow": 640.51
+        }
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Dining Out",
+          "amount": 123.25,
+          "transactionCount": 3
+        },
+        {
+          "category": "Groceries",
+          "amount": 206.25,
+          "transactionCount": 2
+        },
+        {
+          "category": "Shopping",
+          "amount": 29.99,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 1000.0,
+          "expenses": 359.49,
+          "balance": 640.51
+        }
+      ]
+    },
+    {
+      "accountId": "acc_credit",
+      "accountName": "Credit Card",
+      "currencyCode": "USD",
+      "structureType": "CREDIT",
+      "currentBalance": -235.79,
+      "initialBalance": 0.0,
+      "netChange": -235.79,
+      "transactionCount": 5,
+      "cashFlow": {
+        "totalIncome": 0.0,
+        "totalExpenses": 235.79,
+        "netCashFlow": -235.79
+      },
+      "multiCurrencyCashFlow": {
+        "USD": {
+          "totalIncome": 0.0,
+          "totalExpenses": 235.79000000000002,
+          "netCashFlow": -235.79000000000002
+        }
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Entertainment",
+          "amount": 60.99,
+          "transactionCount": 2
+        },
+        {
+          "category": "Shopping",
+          "amount": 156.3,
+          "transactionCount": 1
+        },
+        {
+          "category": "Transport",
+          "amount": 18.5,
+          "transactionCount": 1
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 0.0,
+          "expenses": 235.79,
+          "balance": -235.79
+        }
+      ]
+    },
+    {
+      "accountId": "acc_invest",
+      "accountName": "Investment",
+      "currencyCode": "USD",
+      "structureType": "INVESTMENT",
+      "currentBalance": 10000.0,
+      "initialBalance": 0.0,
+      "netChange": 10000.0,
+      "transactionCount": 1,
+      "cashFlow": {
+        "totalIncome": 10000.0,
+        "totalExpenses": 0.0,
+        "netCashFlow": 10000.0
+      },
+      "multiCurrencyCashFlow": {
+        "USD": {
+          "totalIncome": 10000.0,
+          "totalExpenses": 0.0,
+          "netCashFlow": 10000.0
+        }
+      },
+      "categoryBreakdown": [],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 10000.0,
+          "expenses": 0.0,
+          "balance": 10000.0
+        }
+      ]
+    },
+    {
+      "accountId": "acc_savings",
+      "accountName": "Savings",
+      "currencyCode": "USD",
+      "structureType": "SAVINGS",
+      "currentBalance": 16807.5,
+      "initialBalance": 0.0,
+      "netChange": 16807.5,
+      "transactionCount": 3,
+      "cashFlow": {
+        "totalIncome": 16807.5,
+        "totalExpenses": 0.0,
+        "netCashFlow": 16807.5
+      },
+      "multiCurrencyCashFlow": {
+        "INR": {
+          "totalIncome": 150000.0,
+          "totalExpenses": 0.0,
+          "netCashFlow": 150000.0,
+          "convertedToUSD": 1807.5
+        },
+        "USD": {
+          "totalIncome": 15000.0,
+          "totalExpenses": 0.0,
+          "netCashFlow": 15000.0
+        }
+      },
+      "categoryBreakdown": [
+        {
+          "category": "Salary",
+          "amount": 0.0,
+          "transactionCount": 2
+        }
+      ],
+      "monthlyTrend": [
+        {
+          "month": "2024-01",
+          "income": 16807.5,
+          "expenses": 0.0,
+          "balance": 16807.5
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalAccounts": 5,
+    "totalBalance": 40135.5,
+    "totalIncome": 42551.35,
+    "totalExpenses": 2415.85,
+    "netCashFlow": 40135.5,
+    "activeAccounts": 5,
+    "accountsWithTransactions": 5,
+    "totalTransactions": 34,
+    "currenciesUsed": [
+      "EUR",
+      "INR",
+      "USD"
+    ],
+    "multiCurrencyAccounts": 2
+  },
+  "globalCurrencyBreakdown": {
+    "EUR": {
+      "totalIncome": 800.0,
+      "totalExpenses": 185.5,
+      "netCashFlow": 614.5,
+      "accountCount": 1
+    },
+    "INR": {
+      "totalIncome": 235000.0,
+      "totalExpenses": 10700.0,
+      "netCashFlow": 224300.0,
+      "accountCount": 2
+    },
+    "USD": {
+      "totalIncome": 42551.35,
+      "totalExpenses": 2415.85,
+      "netCashFlow": 40135.5,
+      "accountCount": 5
+    }
+  },
+  "exchangeRatesUsed": {
+    "INR_to_USD": 0.01205,
+    "EUR_to_USD": 1.087
+  }
+}

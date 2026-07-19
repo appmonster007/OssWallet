@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="ic_launcher_background">#8AB4F8</color>
+    <!-- Widget colors (light mode) — matches PositiveAmountColor / NegativeAmountColor in theme -->
+    <color name="widget_surface">#FFFFFFFF</color>
+    <color name="widget_on_surface">#FF1C1B1F</color>
+    <color name="widget_subtle">#FF49454F</color>
+    <color name="widget_income_color">#FF00C853</color>
+    <color name="widget_income_label">#CC00C853</color>
+    <color name="widget_income_comparison">#B300C853</color>
+    <color name="widget_expense_color">#FFBA1A1A</color>
+    <color name="widget_expense_label">#CCBA1A1A</color>
+    <color name="widget_expense_comparison">#B3BA1A1A</color>
+    <color name="widget_badge_income_bg">#1400C853</color>
+    <color name="widget_badge_expense_bg">#14BA1A1A</color>
+    <color name="widget_income_fill">#1400C853</color>
+    <color name="widget_income_stroke">#1A00C853</color>
+    <color name="widget_expense_fill">#14BA1A1A</color>
+    <color name="widget_expense_stroke">#1ABA1A1A</color>
+    <color name="widget_transfer_color">#FF2196F3</color>
+    <color name="widget_transfer_label">#CC2196F3</color>
+    <color name="widget_transfer_comparison">#B32196F3</color>
+    <color name="widget_badge_transfer_bg">#142196F3</color>
+    <color name="widget_transfer_fill">#142196F3</color>
+    <color name="widget_transfer_stroke">#1A2196F3</color>
+</resources>

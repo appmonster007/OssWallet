@@ -64,8 +64,10 @@ import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -452,7 +454,7 @@ class DashboardViewModel @Inject constructor(
                     allTemplates = part2.first,
                     savedFilters = part2.second
                 )
-            }
+            }.distinctUntilChanged()
 
             // 4. Build Success state and launch card computation
             combine(structuralStateFlow, metadataFlow, stableAppStateFlow) { s, m, a ->
@@ -519,7 +521,15 @@ class DashboardViewModel @Inject constructor(
                     cardRenderCache.kickOffProfileLoad(successState.profileId, successState.baseCurrency)
 
                     // Await the eagerly-started cache load (typically already done or in-flight).
-                    cardRenderCache.awaitProfileLoaded(successState.profileId, successState.baseCurrency)
+                    try {
+                        cardRenderCache.awaitProfileLoaded(successState.profileId, successState.baseCurrency)
+                    } catch (_: CancellationException) {
+                        // Re-throw if our own scope is being cancelled (flatMapLatest fired a new
+                        // emission). If only the Deferred was cancelled externally (e.g.
+                        // invalidateProfile on profile switch), proceed with whatever snapshot
+                        // is already in memory rather than surfacing an error screen.
+                        coroutineContext.ensureActive()
+                    }
 
                     val configs = successState.cardsConfig.cards
 
@@ -578,13 +588,19 @@ class DashboardViewModel @Inject constructor(
                                 }
                             )
                             if (state is CardComputeState.Success) {
-                                cardRenderCache.persist(
-                                    successState.profileId,
-                                    successState.baseCurrency,
-                                    cardConfig.cardId,
-                                    state.data,
-                                    cardInput.transactionsVersion
-                                )
+                                try {
+                                    cardRenderCache.persist(
+                                        successState.profileId,
+                                        successState.baseCurrency,
+                                        cardConfig.cardId,
+                                        state.data,
+                                        cardInput.transactionsVersion
+                                    )
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (_: Exception) {
+                                    // Cache write failure — result still applied to local state below.
+                                }
                             }
                             localCardState.update { it.putting(cardConfig.cardId, state) }
                         }

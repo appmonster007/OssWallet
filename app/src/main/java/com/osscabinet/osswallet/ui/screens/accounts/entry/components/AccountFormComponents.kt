@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.ui.screens.accounts.entry.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -44,6 +46,9 @@ import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.ColorOnDark
+import com.osscabinet.ossWallet.ui.theme.ColorOnLight
+import com.osscabinet.ossWallet.ui.util.isDark
 import java.util.Currency.getAvailableCurrencies
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -167,11 +172,20 @@ fun CurrencyManagementSection(
                 }
             }
 
+            var isSearchFocused by remember { mutableStateOf(false) }
+            val searchBgColor by animateColorAsState(
+                targetValue = if (isSearchFocused) AppColors.surfaceContainerHighest else AppColors.surfaceContainerLow,
+                label = "searchBg"
+            )
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(AeonTheme.dimensions.spacingMd),
-                color = AppColors.surfaceContainerLow,
-                border = BorderStroke(1.dp, AppColors.outlineVariant)
+                color = searchBgColor,
+                border = BorderStroke(
+                    1.dp,
+                    if (isSearchFocused) AppColors.primary else AppColors.outlineVariant
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(
@@ -183,15 +197,17 @@ fun CurrencyManagementSection(
                     Icon(
                         Icons.Rounded.Search,
                         contentDescription = null,
-                        tint = AppColors.primary,
+                        tint = if (isSearchFocused) AppColors.primary else AppColors.contentSecondary,
                         modifier = Modifier.size(AeonSize.D20.value)
                     )
                     Spacer(modifier = Modifier.width(AeonTheme.dimensions.spacingMd))
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.weight(1f),
-                        textStyle = AppTextStyles.formFieldValue,
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { isSearchFocused = it.isFocused },
+                        textStyle = AppTextStyles.formFieldValue.copy(color = AppColors.contentPrimary),
                         cursorBrush = SolidColor(AppColors.primary),
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) Text(
@@ -320,11 +336,13 @@ fun CurrencyTile(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val onAccentColor = if (accentColor.isDark()) ColorOnDark else ColorOnLight
+
     Surface(
         onClick = onClick,
         modifier = modifier
             .height(70.dp),
-        shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
+        shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
         color = if (isPrimary) accentColor else AppColors.surfaceContainerLow,
         border = BorderStroke(
             width = if (isPrimary) 2.dp else 1.dp,
@@ -353,7 +371,7 @@ fun CurrencyTile(
                         .align(Alignment.TopEnd)
                         .padding(AeonTheme.dimensions.spacingSm),
                     shape = CircleShape,
-                    color = AppColors.onPrimary.copy(alpha = 0.2f)
+                    color = onAccentColor.copy(alpha = 0.2f)
                 ) {
                     Icon(
                         Icons.Rounded.Star,
@@ -361,7 +379,7 @@ fun CurrencyTile(
                         modifier = Modifier
                             .padding(AeonSize.D4.value)
                             .size(AeonSize.D10.value),
-                        tint = AppColors.onPrimary
+                        tint = onAccentColor
                     )
                 }
             }
@@ -373,12 +391,12 @@ fun CurrencyTile(
                 Text(
                     CurrencyService.getCurrencySymbol(code),
                     style = AppTextStyles.heroAmount,
-                    color = if (isPrimary) AppColors.onPrimary else AppColors.contentPrimary
+                    color = if (isPrimary) onAccentColor else AppColors.contentPrimary
                 )
                 Text(
                     code,
                     style = AppTextStyles.overlineLabel,
-                    color = if (isPrimary) AppColors.onPrimary else AppColors.contentSecondary
+                    color = if (isPrimary) onAccentColor else AppColors.contentSecondary
                 )
             }
         }

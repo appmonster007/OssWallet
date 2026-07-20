@@ -33,24 +33,14 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_WIDGET_NAV = "WIDGET_NAV"
-        const val EXTRA_ASSISTANT_NAV = "ASSISTANT_NAV"
-        const val EXTRA_ASSISTANT_PREFILL = "ASSISTANT_PREFILL"
     }
 
     private var pendingWidgetRoute by mutableStateOf<String?>(null)
-    private var pendingAssistantNavTarget by mutableStateOf<String?>(null)
-    private var pendingAssistantPrefillJson by mutableStateOf<String?>(null)
-
-    private fun readAssistantExtras(intent: Intent?) {
-        pendingAssistantNavTarget = intent?.getStringExtra(EXTRA_ASSISTANT_NAV)
-        pendingAssistantPrefillJson = intent?.getStringExtra(EXTRA_ASSISTANT_PREFILL)
-    }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingWidgetRoute = intent.getStringExtra(EXTRA_WIDGET_NAV)
-        readAssistantExtras(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +50,6 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
 
         pendingWidgetRoute = intent?.getStringExtra(EXTRA_WIDGET_NAV)
-        readAssistantExtras(intent)
 
         setContent {
             val theme by settingsRepository.theme.collectAsStateWithLifecycle(initialValue = "System")
@@ -130,13 +119,7 @@ class MainActivity : FragmentActivity() {
 
                     OssWalletNavGraph(
                         navController = navController,
-                        onSplashConditionChanged = { keepSplashOnScreen = it },
-                        pendingAssistantNavTarget = pendingAssistantNavTarget,
-                        pendingAssistantPrefillJson = pendingAssistantPrefillJson,
-                        onAssistantNavHandled = {
-                            pendingAssistantNavTarget = null
-                            pendingAssistantPrefillJson = null
-                        },
+                        onSplashConditionChanged = { keepSplashOnScreen = it }
                     )
                 }
                 } // CompositionLocalProvider

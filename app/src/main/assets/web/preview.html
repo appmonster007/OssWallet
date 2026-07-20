@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OssWallet — Card Studio Preview</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { height: auto; overflow: auto; padding-bottom: 100px; background: var(--bg); color: var(--text); }
+  .preview-shell { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+  .preview-header { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .preview-controls { display: flex; gap: 12px; margin-top: 12px; }
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px; }
+  .preview-item { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; background: var(--surface); }
+  .preview-label { font-size: 0.75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; margin-bottom: 12px; letter-spacing: .1em; }
+  .theme-toggle-btn { background: var(--surface2); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  @media (max-width: 500px) { .preview-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="force-dark">
+
+<div class="preview-shell">
+  <div class="preview-header">
+    <div>
+      <h1 class="section-title" style="margin-bottom: 4px">Aeon Atelier Preview</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem">Local UI development and consistency playground for dashboard widgets.</p>
+    </div>
+    <div class="preview-controls">
+      <button class="theme-toggle-btn" onclick="togglePreviewTheme()">🌓 Toggle Dark/Light</button>
+    </div>
+  </div>
+
+  <div class="preview-grid" id="preview-container">
+    <!-- Cards will be injected here -->
+  </div>
+</div>
+
+<!-- Core Utilities -->
+<script src="js/utils.js"></script>
+
+<!-- Card Components -->
+<script src="js/components/cards/NetWorthCard.js"></script>
+<script src="js/components/cards/CashFlowCard.js"></script>
+<script src="js/components/cards/CurrencyBalancesCard.js"></script>
+<script src="js/components/cards/AccountsCard.js"></script>
+<script src="js/components/cards/BudgetsCard.js"></script>
+<script src="js/components/cards/PlannedPaymentsCard.js"></script>
+<script src="js/components/cards/LoansCard.js"></script>
+<script src="js/components/cards/RecentActivitiesCard.js"></script>
+<script src="js/components/cards/AccountHeroCard.js"></script>
+<script src="js/components/cards/CategoryBreakdownCard.js"></script>
+<script src="js/components/cards/CashFlowComparisonCard.js"></script>
+<script src="js/components/cards/IncomeExpenseBarCard.js"></script>
+<script src="js/components/cards/CategorySpendingTrendCard.js"></script>
+<script src="js/components/cards/TagUpSetPlotCard.js"></script>
+
+<script>
+  // Mock globals needed by dashboard renderers
+  const cachedSettings = { baseCurrency: 'USD', decimalPrecision: 2 };
+  const cardOverrides = {};
+  const navigate = (h) => console.log('Navigate to:', h);
+
+  // Mock data for all card types
+  const PREVIEW_MOCKS = {
+    NetWorth: { netWorth: 12500.50, income: 5200.00, expense: -3150.25, transfer: 100.00, previousNetWorth: 11800.00, currency: 'USD', perspective:'Accounting', showComparison:true, fontSize:'Medium' },
+    CashFlow: { income: 4500, expense: -3200, transfer: 0, net: 1300, currency: 'USD', perspective:'Accounting', showNetColumn:true, breakdown: [{currency:'USD', income:4500, incomeInBase:4500, expense:-3200, expenseInBase:-3200, transfer:0, transferInBase:0, transferIn:0, transferInInBase:0, transferOut:0, transferOutInBase:0}] },
+    CurrencyBalances: { items: [{currency:'USD', balance:8500, balanceInBase:8500}, {currency:'EUR', balance:4000, balanceInBase:4200}], baseCurrency:'USD', layout:'grid', gridColumns:2, showBaseConversion:true },
+    Accounts: { accounts: [{id:'1', name:'Checking', balance:5200, income:4000, expense:-1200, currency:'USD'}, {id:'2', name:'Savings', balance:15000, income:500, expense:0, currency:'USD'}], layout:'grid', gridColumns:2 },
+    Budgets: { items: [{id:'1', name:'Groceries', spent:450, limitAmount:600, remaining:150, percentage:75, currency:'USD', alertLevel:'NORMAL'}, {id:'2', name:'Dining', spent:220, limitAmount:200, remaining:-20, percentage:110, currency:'USD', alertLevel:'EXCEEDED'}] },
+    PlannedPayments: { upcoming: [{id:'1', name:'Rent', amount:1200, currency:'USD', nextDueDate:Date.now()+86400000*5, transactionType:'EXPENSE'}], overdue: [{id:'2', name:'Internet', amount:60, currency:'USD', nextDueDate:Date.now()-86400000*2, transactionType:'EXPENSE'}] },
+    Loans: { items: [{id:'1', name:'Car Loan', loanType:'BORROWED', principalAmount:15000, totalPaid:5000, remainingBalance:10000, status:'ACTIVE', currency:'USD'}] },
+    RecentActivities: { groups: [{label:'Today', transactions:[{id:1, title:'Starbucks', amount:-5.50, currency:'USD', type:'EXPENSE', categoryName:'Food', accountName:'Card'}]}], total:1 },
+    AccountHero: { accountName:'Main Bank', balance:12500.50, currency:'USD', colorHex:'#1976D2', income:4500, expense:-3200, transferIn:500, transferOut:-100, distribution:{'USD':12500.50}, showCurrencyBadges:true, perspective:'Accounting' },
+    CategoryBreakdown: { items: [{categoryName:'Housing', amount:1200, percentage:40, colorHex:'#E53935'}, {categoryName:'Food', amount:600, percentage:20, colorHex:'#43A047'}], displayCurrency:'USD' },
+    CashFlowComparison: { current:[{label:'Jan', net:1000}, {label:'Feb', net:1500}], previous:[{label:'Jan', net:800}, {label:'Feb', net:1200}], lastYear:[], baseCurrency:'USD', showCurrent:true, showPrevious:true, selectedMetric:'net' },
+    IncomeExpenseBar: { buckets:[{label:'W1', income:1000, expense:-800}, {label:'W2', income:1200, expense:-900}], granularity:'WEEK', baseCurrency:'USD' },
+    CategorySpendingTrend: { buckets:[{label:'Jan', categories:[{nature:'MUST', amount:1000}, {nature:'WANT', amount:500}]}], baseCurrency:'USD', selectedNatures:['MUST','WANT'], activeCategories:[] },
+    TagUpSetPlot: { sets:[{tagName:'Subscription', totalAmount:-150, income:0, expense:-150, transactionCount:5}], intersections:[], baseCurrency:'USD', selectedMetric:'EXPENSE' },
+  };
+
+  function dashCardWrap(title, html) {
+    return `<div class="preview-item">
+      <div class="preview-label">${esc(title)}</div>
+      <div class="dash-card" style="margin-bottom:0">
+        <div class="dash-card-header"><div class="dash-card-title">${esc(title)}</div></div>
+        <div>${html}</div>
+      </div>
+    </div>`;
+  }
+
+  const container = document.getElementById('preview-container');
+
+  function init() {
+    console.log('Initializing Preview...');
+    container.innerHTML = '';
+
+    // We can use the dispatchCardBody from utils.js now!
+    Object.keys(PREVIEW_MOCKS).forEach(type => {
+      try {
+        console.log('Rendering:', type);
+        const card = { cardId: 'preview-'+type, title: prettyEnum(type), cardType: type };
+        const html = dispatchCardBody(card, PREVIEW_MOCKS[type], type);
+        container.insertAdjacentHTML('beforeend', dashCardWrap(prettyEnum(type), html));
+      } catch (e) {
+        console.error('Failed to render card:', type, e);
+        container.insertAdjacentHTML('beforeend', `<div class="preview-item" style="border-color:red"><div class="preview-label">${type}</div><div style="color:red;font-size:0.7rem">Render Error: ${e.message}</div></div>`);
+      }
+    });
+  }
+
+  window.togglePreviewTheme = () => {
+    const b = document.body;
+    if (b.classList.contains('force-light')) {
+      b.classList.remove('force-light'); b.classList.add('force-dark');
+    } else {
+      b.classList.remove('force-dark'); b.classList.add('force-light');
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

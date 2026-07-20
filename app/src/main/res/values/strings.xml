@@ -1,0 +1,105 @@
+<resources>
+    <string name="app_name">OssWallet</string>
+    <string name="widget_preview_income_label">INCOME</string>
+    <string name="widget_preview_expense_label">EXPENSE</string>
+    <string name="widget_preview_income_amount">5,000.00</string>
+    <string name="widget_preview_expense_amount">3,200.00</string>
+    <string name="recent_activities">Recent Activities</string>
+    <string name="recent_activities_header">RECENT ACTIVITIES</string>
+    <string name="widget_preview_period_this_month">THIS MONTH</string>
+    <string name="widget_preview_tx1_title">Food &amp; Drinks</string>
+    <string name="widget_preview_tx1_subtitle">Morning coffee • Visa Card</string>
+    <string name="widget_preview_tx1_amount">-5.50</string>
+    <string name="widget_preview_tx1_time">10:30 AM</string>
+    <string name="widget_preview_tx2_title">Salary</string>
+    <string name="widget_preview_tx2_subtitle">Monthly salary • Savings Account</string>
+    <string name="widget_preview_tx2_amount">+2,500.00</string>
+    <string name="widget_preview_tx2_time">Yesterday</string>
+    <string name="loading">Loading…</string>
+    <string name="no_recent_activities">No recent activities</string>
+
+    <!-- Common Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_done">Done</string>
+    <string name="action_create">Create</string>
+    <string name="action_close">Close</string>
+    <string name="action_filter">Filter</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_add_card">Add Card</string>
+    <string name="action_clear_all">Clear All</string>
+    <string name="unknown">Unknown</string>
+
+    <!-- Tag Selection -->
+    <string name="tag_selection_title">Select Tags</string>
+    <string name="tag_transaction_tags">Transaction Tags</string>
+    <string name="tag_search_placeholder">Search or create…</string>
+    <string name="tag_create_new">Create \"%1$s\"</string>
+    <string name="tag_create_action">CREATE</string>
+    <string name="tag_no_matches">No matches found</string>
+    <string name="tag_no_tags_found">No tags found</string>
+    <string name="tag_no_match_query">No match for \"%1$s\"</string>
+    <string name="tag_create_dialog_title">Create New Tag</string>
+    <string name="tag_name_label">TAG NAME</string>
+    <string name="tag_name_placeholder">e.g. Shopping, Travel…</string>
+    <string name="action_select_all">Select All</string>
+    <string name="action_deselect_all">Deselect All</string>
+    <string name="action_invert_selection">Invert Selection</string>
+    <string name="action_edit_tags">Edit Tags</string>
+    <plurals name="tag_done_selected">
+        <item quantity="one">Done (%1$d selected)</item>
+        <item quantity="other">Done (%1$d selected)</item>
+    </plurals>
+
+    <!-- Account Detail -->
+    <string name="account_detail_load_filter_error">Failed to load custom filter</string>
+    <string name="nav_overview">Overview</string>
+    <string name="nav_overview_desc">Overview tab</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_transactions_desc">Transactions tab</string>
+    <string name="transaction_settings_title">Transaction Settings</string>
+    <string name="setting_show_planned">Show Planned Payments</string>
+    <string name="setting_show_planned_desc">Include future transactions</string>
+    <string name="setting_use_note_as_header">Use Note as Header</string>
+    <string name="setting_use_note_as_header_desc">Primary header will show transaction note</string>
+    <string name="account_detail_title">Account Details</string>
+    <string name="no_transactions_yet">No transactions yet</string>
+    <string name="delete_cards_title">Delete Cards</string>
+    <string name="delete_cards_prompt">Select cards to delete:</string>
+
+    <!-- Linked Transactions -->
+    <string name="link_records_title">Link Records</string>
+    <string name="link_records_hint">Select related activities from your history to link them to this record.</string>
+    <string name="link_records_search_placeholder">Search by note or payee…</string>
+    <string name="selected_desc">Selected</string>
+    <plurals name="link_records_button_count">
+        <item quantity="one">Link %1$d Record</item>
+        <item quantity="other">Link %1$d Records</item>
+    </plurals>
+
+    <!-- Selection Titles -->
+    <string name="target_account_selection_title">Select Target Account</string>
+    <string name="target_currency_selection_title">Select Target Currency</string>
+
+    <!-- Tag Management -->
+    <string name="tag_manage_title">Manage Tags</string>
+    <string name="tag_delete_title">Delete Tag</string>
+    <string name="tag_edit_title">Edit Tag</string>
+    <string name="tag_edit_name_label">Tag Name</string>
+    <string name="tag_edit_color_label">Tag Color</string>
+    <string name="tag_delete_confirm_with_count">This tag is used in %1$d transactions. Are you sure you want to delete it? The tag will be removed from those transactions.</string>
+    <string name="tag_delete_confirm_simple">Are you sure you want to delete the tag \"%1$s\"?</string>
+
+    <!-- Notification channels -->
+    <string name="notification_channel_planned_payments_name">Planned Payments</string>
+    <string name="notification_channel_planned_payments_description">Reminders for upcoming planned payments</string>
+
+    <!-- App shortcuts -->
+    <string name="shortcut_quick_add_short">Quick Add</string>
+    <string name="shortcut_quick_add_long">Add Transaction</string>
+    <string name="shortcut_disabled">Quick Add is not available</string>
+</resources>

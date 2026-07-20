@@ -1,0 +1,1 @@
+- [Cash Flow Widget Implementation](project_cash_flow_widget.md) — WorkManager work name, no config activity, per-currency JSON format, sign convention, data source

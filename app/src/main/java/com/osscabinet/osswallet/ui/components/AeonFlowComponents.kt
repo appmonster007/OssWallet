@@ -1,0 +1,588 @@
+package com.osscabinet.ossWallet.ui.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.snapping.SnapPosition
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.osscabinet.ossWallet.domain.model.CashFlowType
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.ui.components.transactions.countActiveFilters
+import com.osscabinet.ossWallet.ui.theme.AeonTheme
+import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.AppTextStyles
+import com.osscabinet.ossWallet.ui.theme.GlassTokens
+import com.osscabinet.ossWallet.ui.theme.GlassVariant
+import com.osscabinet.ossWallet.ui.theme.LocalGlassSettings
+import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.ThemePreviews
+import com.osscabinet.ossWallet.ui.util.applyFlowTint
+import com.osscabinet.ossWallet.ui.util.formatCurrency
+import java.math.BigDecimal
+
+@Composable
+fun AeonSettingsToggle(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    enabled: Boolean = true,
+    showBackground: Boolean = true,
+    showBorder: Boolean = true,
+    thumbContent: (@Composable () -> Unit)? = null
+) {
+    val content = @Composable {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(
+                        vertical = 4.dp
+                    )
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    label.uppercase(),
+                    style = AppTextStyles.overlineLabel.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = if (enabled) AppColors.primary else AppColors.primary.copy(alpha = 0.4f)
+                )
+                if (description != null) {
+                    Text(
+                        description,
+                        style = AppTextStyles.caption.copy(fontSize = 12.sp),
+                        color = AppColors.contentSecondary.copy(alpha = if (enabled) 1f else 0.5f)
+                    )
+                }
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                thumbContent = thumbContent,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = AppColors.primary,
+                    checkedTrackColor = AppColors.switchTrackOn,
+                    checkedBorderColor = AppColors.primary,
+                    uncheckedThumbColor = AppColors.switchThumbOff,
+                    uncheckedTrackColor = AppColors.switchTrackOff,
+                    uncheckedBorderColor = AppColors.outline
+                )
+            )
+        }
+    }
+
+    if (showBackground) {
+        Surface(
+            color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(
+                alpha = 0.5f
+            ),
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            modifier = modifier.fillMaxWidth(),
+            border = if (showBorder) BorderStroke(
+                1.dp,
+                AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f)
+            ) else null
+        ) {
+            content()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun AeonBaseConversionToggle(
+    baseCurrency: String,
+    showBaseConversion: Boolean,
+    onShowBaseConversionChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    showBackground: Boolean = true
+) {
+    AeonSettingsToggle(
+        label = "BASE CONVERSION",
+        description = "Show estimated value in $baseCurrency",
+        checked = showBaseConversion,
+        onCheckedChange = onShowBaseConversionChange,
+        modifier = modifier,
+        showBackground = showBackground
+    )
+}
+
+@Composable
+fun AeonLayoutToggle(
+    layout: String,
+    onLayoutChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "LAYOUT",
+    showBackground: Boolean = true
+) {
+    AeonSettingsToggle(
+        label = label,
+        description = if (layout == "grid") "Grid Layout" else "Horizontal Overflow",
+        checked = layout == "grid",
+        onCheckedChange = { onLayoutChange(if (it) "grid" else "scroll") },
+        showBackground = showBackground,
+        thumbContent = {
+            if (layout == "grid") {
+                Icon(
+                    imageVector = Icons.Default.GridView,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.ViewCarousel,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun AeonGridColumnsSettings(
+    gridColumns: Int,
+    onGridColumnsChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    maxColumns: Int = 3,
+    showBackground: Boolean = true,
+    showBorder: Boolean = true
+) {
+    val content = @Composable {
+        Column(
+            modifier = Modifier.padding(
+                if (showBackground) PaddingValues(AeonTheme.dimensions.cardPadding) else PaddingValues(
+                    vertical = 4.dp
+                )
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                "GRID COLUMNS",
+                style = AppTextStyles.overlineLabel.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
+                ),
+                color = AppColors.primary
+            )
+
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                (1..maxColumns).forEachIndexed { index, count ->
+                    SegmentedButton(
+                        selected = gridColumns == count,
+                        onClick = { onGridColumnsChange(count) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = maxColumns
+                        ),
+                        label = {
+                            Text(
+                                text = count.toString(),
+                                style = AppTextStyles.caption.copy(
+                                    fontWeight = if (gridColumns == count) FontWeight.Bold else FontWeight.Normal
+                                )
+                            )
+                        },
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = AppColors.primary.copy(alpha = 0.1f),
+                            activeContentColor = AppColors.primary,
+                            inactiveContainerColor = Color.Transparent,
+                            inactiveContentColor = AppColors.contentSecondary,
+                            activeBorderColor = AppColors.primary.copy(alpha = 0.2f),
+                            inactiveBorderColor = AppColors.outlineVariant
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    if (showBackground) {
+        Surface(
+            color = AppColors.surfaceContainerLow,
+            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
+            modifier = modifier.fillMaxWidth(),
+            border = if (showBorder) BorderStroke(1.dp, AppColors.outlineVariant) else null
+        ) {
+            content()
+        }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
+
+@Composable
+fun AeonFlowSectionHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null,
+    breadcrumbs: List<String> = emptyList(),
+    onBreadcrumbClick: (Int) -> Unit = {},
+    filter: TransactionFilter? = null
+) {
+    val haptic = LocalHapticFeedback.current
+    val activeFilterCount = filter?.let { countActiveFilters(it) } ?: 0
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+            ) {
+                Text(
+                    title.uppercase(),
+                    style = AppTextStyles.sectionOverline,
+                    color = AppColors.primary
+                )
+
+                if (activeFilterCount > 0) {
+                    FilterActiveIndicator(count = activeFilterCount)
+                }
+            }
+            if (trailing != null) {
+                trailing()
+            }
+        }
+
+        if (breadcrumbs.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onBreadcrumbClick(-1)
+                        },
+                    tint = AppColors.contentSecondary
+                )
+
+                breadcrumbs.forEachIndexed { index, crumb ->
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = AppColors.outline
+                    )
+                    Text(
+                        text = crumb.uppercase(),
+                        style = if (index == breadcrumbs.size - 1) AppTextStyles.chipLabelBold else AppTextStyles.chipLabel,
+                        color = if (index == breadcrumbs.size - 1)
+                            AppColors.primary
+                        else
+                            AppColors.contentSecondary,
+                        modifier = Modifier.clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onBreadcrumbClick(index)
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FilterActiveIndicator(count: Int) {
+    Surface(
+        color = AppColors.primaryContainer,
+        contentColor = AppColors.onPrimaryContainer,
+        shape = CircleShape,
+        modifier = Modifier.size(24.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(Icons.Default.FilterAlt, null, modifier = Modifier.size(12.dp))
+                Text(count.toString(), style = AppTextStyles.caption)
+            }
+        }
+    }
+}
+
+@Composable
+fun AeonFlowBadge(
+    amount: BigDecimal,
+    type: CashFlowType,
+    currency: String,
+    modifier: Modifier = Modifier,
+    incomeColor: Color = AppColors.positive,
+    expenseColor: Color = AppColors.negative,
+    onClick: (() -> Unit)? = null
+) {
+    val color = if (type == CashFlowType.INCOME) incomeColor else expenseColor
+    val mode = LocalThemeMode.current
+    val (containerColor, contentColor) = color.applyFlowTint(mode)
+    val isDark = mode.isDarkTheme
+
+    GlassSurface(
+        modifier = if (onClick != null) modifier.clickable { onClick() } else modifier,
+        shape = RoundedCornerShape(8.dp),
+        glassVariant = GlassVariant.Card, // Using card variant for consistent glass morphism
+        hazeStyle = GlassTokens.createHazeStyle(
+            config = LocalGlassSettings.current.card,
+            bgColor = containerColor,
+            isDark = isDark,
+        ),
+        fallbackColor = containerColor,
+        borderColor = contentColor.copy(alpha = 0.1f),
+    ) {
+        Text(
+            text = formatCurrency(amount, currency).trim(),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            style = AppTextStyles.transactionSwipeAction.copy(
+                fontWeight = FontWeight.Black,
+                fontSize = 8.sp,
+                fontFeatureSettings = "tnum"
+            ),
+            color = contentColor,
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AeonLazyRow(
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    snap: Boolean = true,
+    content: LazyListScope.() -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+
+    // Observe the layout info to get the size of the first item dynamically
+    val firstItemWidth = remember(state) {
+        derivedStateOf {
+            state.layoutInfo.visibleItemsInfo.firstOrNull()?.size?.let {
+                with(density) { it.toDp() }
+            } ?: 0.dp
+        }
+    }.value
+
+    BoxWithConstraints(modifier = modifier) {
+        val containerWidth = maxWidth
+        val sidePadding = if (firstItemWidth > 0.dp) {
+            (containerWidth - firstItemWidth) / 2
+        } else {
+            0.dp
+        }
+
+        val flingBehavior = if (snap) {
+            rememberSnapFlingBehavior(lazyListState = state, snapPosition = SnapPosition.Center)
+        } else {
+            ScrollableDefaults.flingBehavior()
+        }
+
+        val centerItemIndex by remember {
+            derivedStateOf {
+                val layoutInfo = state.layoutInfo
+                val visibleItems = layoutInfo.visibleItemsInfo
+                if (visibleItems.isEmpty()) return@derivedStateOf -1
+
+                val center = layoutInfo.viewportStartOffset +
+                        (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset) / 2
+
+                visibleItems.minByOrNull {
+                    kotlin.math.abs((it.offset + it.size / 2) - center)
+                }?.index ?: -1
+            }
+        }
+
+        LaunchedEffect(centerItemIndex) {
+            if (state.isScrollInProgress && centerItemIndex != -1) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            state = state,
+            contentPadding = PaddingValues(
+                start = sidePadding + contentPadding.calculateStartPadding(layoutDirection),
+                end = sidePadding + contentPadding.calculateEndPadding(layoutDirection),
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding()
+            ),
+            horizontalArrangement = horizontalArrangement,
+            verticalAlignment = verticalAlignment,
+            flingBehavior = flingBehavior,
+            content = content
+        )
+    }
+}
+
+// ── PREVIEWS ─────────────────────────────────────────────────────────────
+
+@ThemePreviews
+@Composable
+fun AeonFlowBadgePreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AeonFlowBadge(
+                amount = BigDecimal("1500.00"),
+                type = CashFlowType.INCOME,
+                currency = "USD"
+            )
+            AeonFlowBadge(
+                amount = BigDecimal("850.50"),
+                type = CashFlowType.EXPENSE,
+                currency = "USD"
+            )
+            AeonFlowBadge(
+                amount = BigDecimal("1234567.89"),
+                type = CashFlowType.INCOME,
+                currency = "EUR"
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AeonFlowComponentsPreview() {
+    OssWalletTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Settings Toggle", style = AppTextStyles.listSectionHeader)
+            AeonSettingsToggle(
+                label = "Notifications",
+                description = "Enable push notifications for your account.",
+                checked = true,
+                onCheckedChange = {}
+            )
+
+            Text("Base Conversion Toggle", style = AppTextStyles.listSectionHeader)
+            AeonBaseConversionToggle(
+                baseCurrency = "USD",
+                showBaseConversion = true,
+                onShowBaseConversionChange = {}
+            )
+
+            Text("Layout Toggle", style = AppTextStyles.listSectionHeader)
+            AeonLayoutToggle(
+                layout = "grid",
+                onLayoutChange = {}
+            )
+
+            Text("Grid Columns Settings", style = AppTextStyles.listSectionHeader)
+            AeonGridColumnsSettings(
+                gridColumns = 2,
+                onGridColumnsChange = {}
+            )
+
+            Text("Flow Section Header", style = AppTextStyles.listSectionHeader)
+            AeonFlowSectionHeader(
+                title = "Transactions",
+                breadcrumbs = listOf("Accounts", "Savings"),
+                onBreadcrumbClick = {}
+            )
+
+            Text("Flow Badges", style = AppTextStyles.listSectionHeader)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AeonFlowBadge(
+                    amount = BigDecimal("1500.00"),
+                    type = CashFlowType.INCOME,
+                    currency = "USD"
+                )
+                AeonFlowBadge(
+                    amount = BigDecimal("850.00"),
+                    type = CashFlowType.EXPENSE,
+                    currency = "USD"
+                )
+            }
+
+            Text("Filter Indicator", style = AppTextStyles.listSectionHeader)
+            FilterActiveIndicator(count = 3)
+        }
+    }
+}

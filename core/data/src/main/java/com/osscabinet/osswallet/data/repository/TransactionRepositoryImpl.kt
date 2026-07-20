@@ -200,12 +200,12 @@ class TransactionRepositoryImpl @Inject constructor(
                 entity,
                 accountDao
             )
-            syncTransactionTags(id, transaction.tags)
+            syncTransactionTags(id, transaction.tags, profileId)
             id
         }
     }
 
-    private suspend fun syncTransactionTags(transactionId: Long, tagNames: Set<String>) {
+    private suspend fun syncTransactionTags(transactionId: Long, tagNames: Set<String>, profileId: Int) {
         if (transactionId <= 0) return
 
         val sanitizedNames = tagNames.filter { it.isNotBlank() }.map { it.trim() }.toSet()
@@ -215,16 +215,17 @@ class TransactionRepositoryImpl @Inject constructor(
 
         if (sanitizedNames.isEmpty()) return
 
-        // 2. Ensure tags exist and collect their IDs uniquely by name
+        // 2. Ensure tags exist within the active profile and collect their IDs
         val tagIds = sanitizedNames.mapNotNull { name ->
-            tagDao.getTagIdByName(name) ?: run {
+            tagDao.getTagIdByName(name, profileId) ?: run {
                 val newId = tagDao.insertTag(
                     com.osscabinet.ossWallet.data.local.entity.TagEntity(
                         name = name,
-                        colorHex = -1
+                        colorHex = -1,
+                        profileId = profileId
                     )
                 )
-                if (newId > 0) newId else tagDao.getTagIdByName(name)
+                if (newId > 0) newId else tagDao.getTagIdByName(name, profileId)
             }
         }.toSet()
 
@@ -252,8 +253,8 @@ class TransactionRepositoryImpl @Inject constructor(
                 targetTransaction.toEntity(profileId), accountDao
             )
 
-            if (sourceId > 0) syncTransactionTags(sourceId, sourceTransaction.tags)
-            if (targetId > 0) syncTransactionTags(targetId, targetTransaction.tags)
+            if (sourceId > 0) syncTransactionTags(sourceId, sourceTransaction.tags, profileId)
+            if (targetId > 0) syncTransactionTags(targetId, targetTransaction.tags, profileId)
 
             if (sourceId > 0 && targetId > 0) {
                 // Create bi-directional links for transfers
@@ -287,7 +288,7 @@ class TransactionRepositoryImpl @Inject constructor(
                 accountDao
             )
             if (id > 0) {
-                syncTransactionTags(id, newTransaction.tags)
+                syncTransactionTags(id, newTransaction.tags, profileId)
             }
         }
     }

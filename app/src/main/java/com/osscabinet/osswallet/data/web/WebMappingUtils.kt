@@ -544,6 +544,19 @@ internal fun Filter.toDto(): FilterDto {
     )
 }
 
+private const val MAX_REGEX_LENGTH = 200
+
+private fun validateRegexOrThrow(pattern: String, fieldName: String) {
+    require(pattern.length <= MAX_REGEX_LENGTH) {
+        "$fieldName pattern exceeds $MAX_REGEX_LENGTH character limit"
+    }
+    try {
+        Regex(pattern)
+    } catch (e: Exception) {
+        throw IllegalArgumentException("Invalid $fieldName regex pattern: ${e.message}")
+    }
+}
+
 internal fun CreateFilterRequest.toTransactionFilter(): TransactionFilter {
     val timelineRange = when (timelineType.uppercase()) {
         "ALL_TIME" -> TimelineRange.AllTime(excludeFuture = excludeFuture)
@@ -555,6 +568,9 @@ internal fun CreateFilterRequest.toTransactionFilter(): TransactionFilter {
         "QUARTER" -> TimelineRange.ThisPeriod(ThisPeriodType.QUARTER, excludeFuture = excludeFuture)
         else -> TimelineRange.AllTime(excludeFuture = excludeFuture)
     }
+    if (isNoteRegex && !queryNote.isNullOrEmpty()) validateRegexOrThrow(queryNote, "note")
+    if (isPayeeRegex && !queryPayee.isNullOrEmpty()) validateRegexOrThrow(queryPayee, "payee")
+
     return TransactionFilter(
         timelineRange = timelineRange,
         queryNote = queryNote,

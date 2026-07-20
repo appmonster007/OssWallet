@@ -111,13 +111,14 @@ fun Route.loanRoutes(
             if (!authenticate(authSessionManager)) return@get
             try {
                 val now = System.currentTimeMillis()
+                val profileId = settingsRepository.currentProfileId.first()
                 val precision = settingsRepository.decimalPrecision.first()
                 val id = call.parameters["id"]?.toLongOrNull()
                     ?: return@get call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val loan = loanRepository.getLoanById(id)
+                val loan = loanRepository.getLoanById(id, profileId)
                     ?: return@get call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Loan not found")
@@ -158,12 +159,13 @@ fun Route.loanRoutes(
         put("/{id}") {
             if (!authenticate(authSessionManager)) return@put
             try {
+                val profileId = settingsRepository.currentProfileId.first()
                 val id = call.parameters["id"]?.toLongOrNull()
                     ?: return@put call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val existing = loanRepository.getLoanById(id)
+                val existing = loanRepository.getLoanById(id, profileId)
                     ?: return@put call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Loan not found")
@@ -251,12 +253,13 @@ fun Route.loanRoutes(
         post("/{id}/payments") {
             if (!authenticate(authSessionManager)) return@post
             try {
+                val profileId = settingsRepository.currentProfileId.first()
                 val id = call.parameters["id"]?.toLongOrNull()
                     ?: return@post call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                loanRepository.getLoanById(id)
+                loanRepository.getLoanById(id, profileId)
                     ?: return@post call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Loan not found")

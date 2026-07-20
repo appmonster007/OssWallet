@@ -544,6 +544,30 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Covers very early installs (v1–3). Uses CREATE TABLE IF NOT EXISTS so existing
+         * tables are preserved; no data is destroyed.
+         */
+        val MIGRATION_1_4 = object : Migration(1, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `profiles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `currency` TEXT NOT NULL DEFAULT 'USD')")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `accounts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `currency` TEXT NOT NULL, `colorHex` INTEGER NOT NULL, `iconName` TEXT NOT NULL, `isDefault` INTEGER NOT NULL DEFAULT 0, `isArchived` INTEGER NOT NULL DEFAULT 0, `profileId` INTEGER NOT NULL DEFAULT 1)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `categories` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `iconName` TEXT NOT NULL, `colorHex` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL DEFAULT 0, `parentId` INTEGER, `nature` TEXT NOT NULL DEFAULT 'EXPENSE', `profileId` INTEGER NOT NULL DEFAULT 1)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `tags` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `colorHex` INTEGER NOT NULL DEFAULT -1, `profileId` INTEGER NOT NULL DEFAULT 1)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `amount` TEXT NOT NULL, `currency` TEXT NOT NULL, `categoryId` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `note` TEXT, `payee` TEXT, `entryMode` TEXT NOT NULL, `status` TEXT NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, `targetAccountId` TEXT, `targetCurrency` TEXT, `transferRate` TEXT, `location` TEXT, `gpsLocation` TEXT, `warrantyExpiration` INTEGER, `paymentMethod` TEXT, `sourcePlannedPaymentId` INTEGER, `tags` TEXT NOT NULL DEFAULT '')")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `transaction_tag_cross_ref` (`transactionId` INTEGER NOT NULL, `tagId` INTEGER NOT NULL, PRIMARY KEY(`transactionId`, `tagId`))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `transaction_links` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transactionId` INTEGER NOT NULL, `linkedTransactionId` INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `currency_rates` (`code` TEXT NOT NULL, `rate` REAL NOT NULL, `base` TEXT NOT NULL, `fetchedAt` INTEGER NOT NULL, PRIMARY KEY(`code`, `base`))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `templates` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `categoryId` INTEGER NOT NULL, `amount` TEXT NOT NULL, `entryMode` TEXT NOT NULL, `currency` TEXT NOT NULL, `accountId` TEXT, `targetAccountId` TEXT, `targetCurrency` TEXT, `transferRate` TEXT NOT NULL, `note` TEXT, `payee` TEXT, `location` TEXT, `gpsLocation` TEXT, `warrantyExpiration` INTEGER, `transactionStatus` TEXT NOT NULL, `paymentMethod` TEXT, `profileId` INTEGER NOT NULL DEFAULT 1)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `filters` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `filterJson` TEXT NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `planned_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `amount` TEXT NOT NULL, `currency` TEXT NOT NULL, `entryMode` TEXT NOT NULL, `accountId` TEXT, `targetAccountId` TEXT, `targetCurrency` TEXT, `transferRate` TEXT NOT NULL, `categoryId` INTEGER NOT NULL, `tags` TEXT NOT NULL, `paymentMethod` TEXT, `payee` TEXT, `note` TEXT, `scheduleJson` TEXT NOT NULL, `profileId` INTEGER NOT NULL DEFAULT 1, `warrantyExpiration` INTEGER, `gpsLocation` TEXT)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `planned_payment_occurrences` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `plannedPaymentId` INTEGER NOT NULL, `scheduledDate` INTEGER NOT NULL, `status` TEXT NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `budgets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `currency` TEXT NOT NULL, `limitAmount` TEXT NOT NULL, `isArchived` INTEGER NOT NULL DEFAULT 0, `alertThreshold` REAL NOT NULL DEFAULT 0.9, `timelineRangeJson` TEXT NOT NULL, `filterId` INTEGER NOT NULL DEFAULT 0, `profileId` INTEGER NOT NULL DEFAULT 1, `rollover` INTEGER NOT NULL DEFAULT 0)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `loans` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `loanType` TEXT NOT NULL, `currency` TEXT NOT NULL, `principalAmount` TEXT NOT NULL, `interestRate` REAL, `startDate` INTEGER NOT NULL, `expectedSettlementDate` INTEGER, `lenderOrBorrowerName` TEXT NOT NULL, `status` TEXT NOT NULL, `note` TEXT, `linkedAccountId` TEXT, `filterId` INTEGER NOT NULL DEFAULT 0, `profileId` INTEGER NOT NULL DEFAULT 1)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS `loan_payments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `loanId` INTEGER NOT NULL, `amount` TEXT NOT NULL, `date` INTEGER NOT NULL, `note` TEXT)")
+            }
+        }
+
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS `transactions_fts` USING fts4(content=`transactions`, `note`, `payee`, `name`)")
@@ -818,6 +842,7 @@ abstract class AppDatabase : RoomDatabase() {
                     // multi-second cold start penalty.
                     .setJournalMode(RoomDatabase.JournalMode.TRUNCATE)
                     .addMigrations(
+                        MIGRATION_1_4,
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,

@@ -36,8 +36,13 @@ interface LoanDao {
     suspend fun clearAll()
 
     @Transaction
+    @Query("SELECT * FROM loans WHERE id = :id AND profileId = :profileId")
+    suspend fun getLoanById(id: Long, profileId: Int): LoanWithFilter?
+
+    /** For internal use by [deleteLoan] only — fetches filterId without profile check. */
+    @Transaction
     @Query("SELECT * FROM loans WHERE id = :id")
-    suspend fun getLoanById(id: Long): LoanWithFilter?
+    suspend fun getLoanByIdInternal(id: Long): LoanWithFilter?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(loan: LoanEntity): Long

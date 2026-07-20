@@ -26,8 +26,8 @@ class BudgetRepositoryImpl @Inject constructor(
     override suspend fun getActiveBudgetsSync(profileId: Int): List<Budget> =
         dao.getActiveBudgetsSync(profileId).map { it.toDomain() }
 
-    override suspend fun getById(id: Long): Budget? =
-        dao.getById(id)?.toDomain()
+    override suspend fun getById(id: Long, profileId: Int): Budget? =
+        dao.getById(id, profileId)?.toDomain()
 
     override suspend fun insert(budget: Budget): Long {
         val filterId =
@@ -42,7 +42,7 @@ class BudgetRepositoryImpl @Inject constructor(
     }
 
     override suspend fun delete(id: Long) {
-        val filterId = dao.getById(id)?.budget?.filterId
+        val filterId = dao.getByIdInternal(id)?.budget?.filterId
         dao.deleteById(id)
         filterId?.let {
             filterRepository.getFilterById(it)?.let { f -> filterRepository.deleteFilter(f) }

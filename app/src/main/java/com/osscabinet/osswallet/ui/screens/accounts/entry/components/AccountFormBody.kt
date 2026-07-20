@@ -53,11 +53,13 @@ import com.osscabinet.ossWallet.ui.components.AeonSelectionScreen
 import com.osscabinet.ossWallet.ui.components.entry.EntrySection
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryEvent
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.AccountEntryState
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.color
+import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.icon
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
@@ -230,8 +232,11 @@ fun AccountFormBody(
                                             color = AppColors.contentSecondary
                                         )
                                         Text(
-                                            text = displayBalance.abs().stripTrailingZeros()
-                                                .toPlainString(),
+                                            text = formatCurrency(
+                                                amount = displayBalance.abs(),
+                                                currencyCode = currencyCode,
+                                                spec = CurrencyDisplaySpec(shortenThreshold = -1)
+                                            ),
                                             style = AppTextStyles.heroAmount.copy(fontSize = 24.sp),
                                             color = if (isNegative) AppColors.negative else accentColor
                                         )

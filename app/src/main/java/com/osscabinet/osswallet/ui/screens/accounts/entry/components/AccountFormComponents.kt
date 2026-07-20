@@ -217,7 +217,7 @@ fun CurrencyManagementSection(
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingMd)
                 ) {
                     allowedCurrencies.forEach { code ->
@@ -240,6 +240,10 @@ fun CurrencyManagementSection(
                                 onAllowedCurrenciesChange(allowedCurrencies - code)
                             }
                         )
+                    }
+                    // Phantom items to ensure left-alignment in the last row
+                    repeat(10) {
+                        Spacer(Modifier.width(100.dp).height(0.dp))
                     }
                 }
             }
@@ -268,7 +272,7 @@ fun CurrencyManagementSection(
 
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.chipPadding)
             ) {
                 filteredCurrencies.filter { !allowedCurrencies.contains(it) }.forEach { code ->
@@ -297,6 +301,10 @@ fun CurrencyManagementSection(
                             )
                         }
                     }
+                }
+                // Phantom items to ensure left-alignment in the last row
+                repeat(10) {
+                    Spacer(Modifier.width(80.dp).height(0.dp))
                 }
             }
         }

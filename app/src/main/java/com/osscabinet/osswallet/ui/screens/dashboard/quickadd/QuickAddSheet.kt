@@ -105,8 +105,24 @@ fun QuickAddSheet(
     val categories by viewModel.categories.collectAsState()
     var saveSucceeded by remember { mutableStateOf(false) }
 
+    // When launched with a pre-selected template, suppress step content until
+    // openWithTemplate has propagated to `state`. Step -1 is a sentinel:
+    // the when(step) else->{} branch renders nothing so QuickAddTemplateStep
+    // never enters composition and its focus requester never fires.
+    //
+    // Key insight: `state.selectedTemplate` and `state.currentStep` are fields of
+    // the same QuickAddState object emitted by the same StateFlow. They update
+    // atomically in the same recomposition, eliminating the one-frame gap that a
+    // separate `templateApplied` boolean would have (it could flip true one frame
+    // before `state.currentStep` updates, briefly exposing step 0).
+    val effectiveState = if (initialTemplate != null && state.selectedTemplate == null) {
+        state.copy(currentStep = -1)
+    } else {
+        state
+    }
+
     QuickAddSheetInternal(
-        state = state,
+        state = effectiveState,
         sections = sections,
         categories = categories,
         onDismiss = onDismiss,
@@ -182,7 +198,9 @@ internal fun QuickAddSheetInternal(
     }
 
     // Reset state every time the sheet opens
-    LaunchedEffect(Unit) { onReset() }
+    LaunchedEffect(Unit) {
+        onReset()
+    }
 
     fun hideKeyboard() {
         keyboardController?.hide()

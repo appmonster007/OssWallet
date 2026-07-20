@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -500,7 +502,10 @@ private fun QuickAddSheetContent(
                 targetState = state.currentStep,
                 modifier = Modifier.fillMaxWidth(),
                 transitionSpec = {
-                    if (targetState > initialState) {
+                    if (initialState == -1) {
+                        // Sentinel → real step: sheet is opening directly at this step, no slide
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else if (targetState > initialState) {
                         (slideInHorizontally(tween(280)) { it } + fadeIn(tween(200))).togetherWith(
                             slideOutHorizontally(tween(280)) { -it } + fadeOut(tween(200))
                         )

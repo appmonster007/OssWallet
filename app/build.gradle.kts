@@ -129,6 +129,11 @@ dependencies {
     implementation(libs.univocity.parsers)
     implementation(libs.androidx.documentfile)
 
+    // AppFunctions (Gemini integration)
+    implementation(libs.androidx.appfunctions)
+    implementation(libs.androidx.appfunctions.service)
+    ksp(libs.androidx.appfunctions.compiler)
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

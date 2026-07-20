@@ -45,6 +45,41 @@
             android:theme="@style/Theme.App.QuickAddShortcut"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Google Assistant App Actions + Bixby App Control trampoline -->
+        <activity
+            android:name=".assistant.AssistantActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay">
+            <!-- Google Assistant: record transaction (HTTPS deep link) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="https"
+                    android:host="osswalletapp.com"
+                    android:pathPrefix="/assistant/record-transaction" />
+            </intent-filter>
+            <!-- Google Assistant: get account balance (HTTPS deep link) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="https"
+                    android:host="osswalletapp.com"
+                    android:pathPrefix="/assistant/account-balance" />
+            </intent-filter>
+            <!--
+                Custom scheme for the account_balance shortcut (android:data in shortcuts.xml).
+                Bixby triggers shortcuts via their declared <intent>, so this resolves that intent.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="ossWallet"
+                    android:host="assistant" />
+            </intent-filter>
+        </activity>
+
         <!-- NetWorth homescreen widget -->
         <receiver
             android:name=".widget.NetWorthWidgetProvider"

@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
 import android.os.Build
+import androidx.appfunctions.service.AppFunctionConfiguration
 import com.osscabinet.ossWallet.R
+import com.osscabinet.ossWallet.appfunctions.TransactionAppFunctions
 import com.osscabinet.ossWallet.data.local.WidgetInvalidationObserver
 import com.osscabinet.ossWallet.data.local.query.QueryCache
 import com.osscabinet.ossWallet.data.local.AppDatabase
@@ -36,14 +38,22 @@ import kotlinx.coroutines.launch
 import jakarta.inject.Inject
 
 @HiltAndroidApp
-class OssWalletApp : Application(), Configuration.Provider {
+class OssWalletApp : Application(), Configuration.Provider, AppFunctionConfiguration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var transactionAppFunctions: TransactionAppFunctions
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .build()
+
+    override val appFunctionConfiguration: AppFunctionConfiguration
+        get() = AppFunctionConfiguration.Builder()
+            .addEnclosingClassFactory(TransactionAppFunctions::class.java) { transactionAppFunctions }
             .build()
 
     @Inject

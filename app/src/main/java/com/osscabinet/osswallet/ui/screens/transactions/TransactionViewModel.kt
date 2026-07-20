@@ -626,6 +626,10 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    fun setPrefillFromAssistant(dto: TransactionPrefillDTO) {
+        _prefillDto.value = dto
+    }
+
     fun clearPrefillDto() {
         _prefillDto.value = null
         _templatePrefill.value = null

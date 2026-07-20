@@ -7,7 +7,7 @@ interface BudgetRepository {
     fun getActiveBudgets(profileId: Int): Flow<List<Budget>>
     fun getAllBudgets(profileId: Int): Flow<List<Budget>>
     suspend fun getActiveBudgetsSync(profileId: Int): List<Budget>
-    suspend fun getById(id: Long): Budget?
+    suspend fun getById(id: Long, profileId: Int): Budget?
     suspend fun insert(budget: Budget): Long
     suspend fun update(budget: Budget)
     suspend fun delete(id: Long)

@@ -242,7 +242,8 @@ class DashboardViewModel @Inject constructor(
 
     private fun addTag(name: String, color: Int) {
         viewModelScope.launch {
-            tagRepository.insertTag(Tag(name = name, colorHex = color))
+            val profileId = settingsRepository.currentProfileId.first()
+            tagRepository.insertTag(Tag(name = name, colorHex = color, profileId = profileId))
         }
     }
 
@@ -414,7 +415,7 @@ class DashboardViewModel @Inject constructor(
                 budgetRepository.getAllBudgets(profileId),
                 loanRepository.getAllLoans(profileId),
                 loanRepository.getAllPayments(profileId),
-                tagRepository.getAllTags()
+                tagRepository.getAllTags(profileId)
             ) { pp, b, l, lp, t ->
                 MetadataSnapshot(pp, b, l, lp.groupBy { it.loanId }, t)
             }.distinctUntilChanged()
@@ -771,7 +772,7 @@ class DashboardViewModel @Inject constructor(
                     scopedLinked,
                     accountRepository.getAllAccounts(profileId).first(),
                     categoryRepository.getAllCategories(profileId).first(),
-                    tagRepository.getAllTags().first(),
+                    tagRepository.getAllTags(profileId).first(),
                     baseCurr,
                     rates
                 )

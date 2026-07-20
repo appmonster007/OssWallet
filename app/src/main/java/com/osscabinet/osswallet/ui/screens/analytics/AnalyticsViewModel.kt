@@ -178,7 +178,7 @@ class AnalyticsViewModel @Inject constructor(
                     transactionUseCases.getLatestTransactionVersion(profileId),
                     accountRepository.getAllAccounts(profileId),
                     categoryRepository.getAllCategories(profileId),
-                    tagRepository.getAllTags()
+                    tagRepository.getAllTags(profileId)
                 ) { version, acc, cat, tags ->
                     DomainSnapshot(
                         version ?: 0L,

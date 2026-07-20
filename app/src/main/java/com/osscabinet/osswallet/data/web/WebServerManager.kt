@@ -45,6 +45,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
 @Singleton
@@ -73,6 +75,7 @@ class WebServerManager @Inject constructor(
     override val isEnabled: Flow<Boolean> = webServerPreferences.isEnabled
     override val stayAlive: Flow<Boolean> = webServerPreferences.stayAlive
 
+    private val serverMutex = Mutex()
     private var engine: EmbeddedServer<*, *>? = null
     private var serverScope: CoroutineScope? = null
     private val authSessionManager = AuthSessionManager()
@@ -98,8 +101,8 @@ class WebServerManager @Inject constructor(
 
     override fun isConnectedToWifi(): Boolean = NetworkUtils.isConnectedToWifi(context)
 
-    override suspend fun start() {
-        if (isRunning()) return
+    override suspend fun start() = serverMutex.withLock {
+        if (isRunning()) return@withLock
         _serverState.value = WebServerState.Starting
         lastActivityTime = System.currentTimeMillis()
 
@@ -184,10 +187,12 @@ class WebServerManager @Inject constructor(
         } catch (e: Exception) {
             _serverState.value = WebServerState.Error(e.message ?: "Failed to start server")
             engine = null
+            serverScope?.cancel()
+            serverScope = null
         }
     }
 
-    override suspend fun stop() {
+    override suspend fun stop() = serverMutex.withLock {
         authSessionManager.invalidateSession()
         engine?.stop(gracePeriodMillis = 500, timeoutMillis = 2000)
         engine = null

@@ -102,8 +102,4 @@
     <string name="shortcut_quick_add_short">Quick Add</string>
     <string name="shortcut_quick_add_long">Add Transaction</string>
     <string name="shortcut_disabled">Quick Add is not available</string>
-    <string name="shortcut_create_transaction_short">Create Transaction</string>
-    <string name="shortcut_create_transaction_long">Create a new transaction</string>
-    <string name="shortcut_account_balance_short">Account Balance</string>
-    <string name="shortcut_account_balance_long">Check account balance</string>
 </resources>

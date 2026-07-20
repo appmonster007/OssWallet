@@ -114,7 +114,7 @@ private fun AccountEntryScreenPreview() {
                 allowedCurrencies = setOf("USD", "EUR", "GBP", "JPY"),
                 shortlistedCurrencies = listOf("USD", "EUR", "GBP", "INR", "JPY", "AUD", "CAD", "CHF", "CNY", "BRL"),
                 systemClosingBalances = mapOf(
-                    "USD" to BigDecimal("1500000876876000000000.0498769876987698769876"),
+                    "USD" to BigDecimal("1500.0498769876987698769876"),
                     "EUR" to BigDecimal("450.00"),
                     "GBP" to BigDecimal("120.00"),
                     "JPY" to BigDecimal("15000")

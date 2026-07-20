@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -31,14 +32,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,13 +85,13 @@ class RecentTransactionsWidgetConfigActivity : ComponentActivity() {
                             val glanceId = glanceManager
                                 .getGlanceIds(RecentTransactionsGlanceWidget::class.java)
                                 .firstOrNull { glanceManager.getAppWidgetId(it) == widgetId }
-                            
+
                             if (glanceId != null) {
                                 RecentTransactionsGlanceWidget().update(applicationContext, glanceId)
                             } else {
                                 RecentTransactionsGlanceWidget().updateAll(applicationContext)
                             }
-                            
+
                             val resultValue = Intent().putExtra(
                                 AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId
                             )
@@ -108,6 +114,8 @@ private fun RecentTransactionsWidgetConfigScreen(
     onSave: () -> Unit,
     onBack: () -> Unit
 ) {
+    var showFilterSheet by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = AppColors.screenBackground,
         topBar = {
@@ -132,13 +140,32 @@ private fun RecentTransactionsWidgetConfigScreen(
         ) {
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingSm))
 
+            SectionHeader("Timeline")
+            AeonTimelinePeriodSelector(
+                currentRange = config.filter.timelineRange,
+                onRangeSelected = {
+                    onConfigChange(config.copy(filter = config.filter.copy(timelineRange = it)))
+                },
+                swipeEntireComponent = true,
+                isFlush = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            AeonDashedButton(
+                onClick = { showFilterSheet = true },
+                text = "Advanced Filters",
+                icon = Icons.Filled.Tune
+            )
+
+            HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
+
             SectionHeader("Display Preference")
             Text(
                 "Choose what to show as the primary text for each transaction.",
                 style = AppTextStyles.caption,
                 color = AppColors.contentSecondary
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
@@ -181,6 +208,26 @@ private fun RecentTransactionsWidgetConfigScreen(
 
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
+    }
+
+    if (showFilterSheet) {
+        TransactionFilterSheet(
+            filter = config.filter,
+            accounts = emptyList(),
+            categories = emptyList(),
+            onSearchTransactions = { flowOf(emptyList()) },
+            onFilterEvent = { event ->
+                when (event) {
+                    is FilterEvent.Apply -> onConfigChange(config.copy(filter = event.filter))
+                    is FilterEvent.Reset -> onConfigChange(
+                        config.copy(filter = TransactionFilter(timelineRange = config.filter.timelineRange))
+                    )
+                    else -> {}
+                }
+            },
+            onSaveFilterClick = { onConfigChange(config.copy(filter = it)) },
+            onClose = { showFilterSheet = false }
+        )
     }
 }
 

@@ -1,3 +1,5 @@
+@file:Suppress("RestrictedApi") // Glance's resource-based ColorProvider(@ColorRes) is public but flagged across library groups
+
 package com.osscabinet.ossWallet.widget
 
 import android.appwidget.AppWidgetManager
@@ -21,17 +23,16 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.MainActivity
+import com.osscabinet.ossWallet.R
 
-/**
- * Base class for all OssWallet Glance widgets.
- * Handles common sizing logic, theming, and navigation.
- */
 abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
     protected open val widgetNavRoute: String = "dashboard"
@@ -63,12 +64,12 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
 
     @Composable
     private fun WidgetContainer(context: Context, content: @Composable () -> Unit) {
-        Column(
+        Box(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.surface)
-                .cornerRadius(32.dp)
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .background(ColorProvider(R.color.widget_outline))
+                .cornerRadius(28.dp)
+                .padding(1.dp)
                 .clickable(
                     actionStartActivity(
                         Intent(context, MainActivity::class.java).apply {
@@ -76,11 +77,19 @@ abstract class BaseOssWalletWidget : GlanceAppWidget() {
                             putExtra(MainActivity.EXTRA_WIDGET_NAV, widgetNavRoute)
                         }
                     )
-                ),
-            verticalAlignment = Alignment.Top,
-            horizontalAlignment = Alignment.Start
+                )
         ) {
-            content()
+            Column(
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .background(ColorProvider(R.color.widget_surface))
+                    .cornerRadius(27.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                content()
+            }
         }
     }
 

@@ -33,8 +33,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -178,20 +184,27 @@ fun OpenInWebScreen(
                                 }
                             }
 
-                            // QR generation logic - Best practices:
-                            // 1. Handled in UI layer to keep Domain layer pure (no Bitmap dependency)
-                            // 2. Reacts to theme changes using remember with color keys
                             val color = AppColors.onSurface
                             val backgroundColor = AppColors.surfaceContainer
 
-                            val qrBitmap = remember(runningState.accessUrl, color, backgroundColor) {
-                                runCatching {
-                                    QRCodeGenerator.generate(
-                                        text = runningState.accessUrl,
-                                        color = color.toArgb(),
-                                        backgroundColor = backgroundColor.toArgb()
-                                    )
-                                }.getOrNull()
+                            var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                            LaunchedEffect(runningState.accessUrl, color, backgroundColor) {
+                                val old = qrBitmap
+                                qrBitmap = withContext(Dispatchers.Default) {
+                                    runCatching {
+                                        QRCodeGenerator.generate(
+                                            text = runningState.accessUrl,
+                                            color = color.toArgb(),
+                                            backgroundColor = backgroundColor.toArgb()
+                                        )
+                                    }.getOrNull()
+                                }
+                                old?.recycle()
+                            }
+
+                            DisposableEffect(Unit) {
+                                onDispose { qrBitmap?.recycle() }
                             }
 
                             qrBitmap?.let { bitmap ->

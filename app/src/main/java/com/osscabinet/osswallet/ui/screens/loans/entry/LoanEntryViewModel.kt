@@ -121,7 +121,8 @@ class LoanEntryViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            loanRepository.getLoanById(loanId)?.let { loan: Loan ->
+            val profileId = settingsRepository.currentProfileId.first()
+            loanRepository.getLoanById(loanId, profileId)?.let { loan: Loan ->
                 val filter = loan.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val tf = filter?.filter ?: TransactionFilter()
                 val usageCount =

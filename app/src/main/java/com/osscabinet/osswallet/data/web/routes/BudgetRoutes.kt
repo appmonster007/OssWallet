@@ -172,7 +172,7 @@ fun Route.budgetRoutes(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val budget = budgetRepository.getById(id)
+                val budget = budgetRepository.getById(id, profileId)
                     ?: return@get call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Budget not found")
@@ -247,12 +247,13 @@ fun Route.budgetRoutes(
         put("/{id}") {
             if (!authenticate(authSessionManager)) return@put
             try {
+                val profileId = settingsRepository.currentProfileId.first()
                 val id = call.parameters["id"]?.toLongOrNull()
                     ?: return@put call.respond(
                         HttpStatusCode.BadRequest,
                         ApiResponse<Unit>(success = false, error = "Invalid id")
                     )
-                val existing = budgetRepository.getById(id)
+                val existing = budgetRepository.getById(id, profileId)
                     ?: return@put call.respond(
                         HttpStatusCode.NotFound,
                         ApiResponse<Unit>(success = false, error = "Budget not found")

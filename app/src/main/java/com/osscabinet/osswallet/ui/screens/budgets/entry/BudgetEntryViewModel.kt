@@ -124,7 +124,8 @@ class BudgetEntryViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            budgetRepository.getById(budgetId)?.let { budget ->
+            val profileId = settingsRepository.currentProfileId.first()
+            budgetRepository.getById(budgetId, profileId)?.let { budget ->
                 val filter = budget.filterId?.let { id -> filterRepository.getFilterById(id) }
                 val tf = filter?.filter ?: TransactionFilter()
                 val usageCount =

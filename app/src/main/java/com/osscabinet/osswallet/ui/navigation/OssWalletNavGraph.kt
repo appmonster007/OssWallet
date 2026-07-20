@@ -48,12 +48,17 @@ import com.osscabinet.ossWallet.ui.screens.tags.TagViewModel
 import com.osscabinet.ossWallet.ui.screens.templates.TemplateViewModel
 import com.osscabinet.ossWallet.ui.screens.transactions.TransactionViewModel
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.dto.TransactionPrefillDTO
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @Composable
 fun OssWalletNavGraph(
     navController: NavHostController,
     onSplashConditionChanged: (Boolean) -> Unit = {},
+    pendingAssistantNavTarget: String? = null,
+    pendingAssistantPrefillJson: String? = null,
+    onAssistantNavHandled: () -> Unit = {},
 ) {
     val vms = SharedNavViewModels(
         settingsViewModel = hiltViewModel(),
@@ -90,6 +95,21 @@ fun OssWalletNavGraph(
     // Splash covers the blank frame while DataStore resolves (<50ms on any device).
     // Captured as a local val so Kotlin can smart-cast it (delegated props can't be smart-cast).
     val resolvedDestination = startDestination ?: return
+
+    LaunchedEffect(pendingAssistantNavTarget) {
+        pendingAssistantNavTarget ?: return@LaunchedEffect
+        when (pendingAssistantNavTarget) {
+            "create_transaction" -> {
+                pendingAssistantPrefillJson?.let { json ->
+                    runCatching { Json.decodeFromString<TransactionPrefillDTO>(json) }
+                        .onSuccess { dto -> vms.transactionViewModel.setPrefillFromAssistant(dto) }
+                }
+                navController.navigate(TransactionEntryRoute())
+            }
+            "accounts" -> navController.navigate(AccountListRoute)
+        }
+        onAssistantNavHandled()
+    }
 
     val drawerHazeState = remember { HazeState() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

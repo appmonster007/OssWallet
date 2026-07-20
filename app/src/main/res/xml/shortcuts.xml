@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Launcher / Bixby shortcut: quick add via the bottom sheet -->
     <shortcut
             android:shortcutId="quick_add"
             android:enabled="true"
@@ -14,5 +15,75 @@
                 android:targetClass="com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddActivity" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
+
+    <!--
+        Launcher / Bixby shortcut: create a transaction (full entry form, with prefill support).
+        Bixby matches shortcutLongLabel by voice: "Hey Bixby, Create a new transaction in OssWallet"
+    -->
+    <shortcut
+            android:shortcutId="create_transaction"
+            android:enabled="true"
+            android:icon="@drawable/ic_shortcut_quick_add"
+            android:shortcutShortLabel="@string/shortcut_create_transaction_short"
+            android:shortcutLongLabel="@string/shortcut_create_transaction_long"
+            android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="com.osscabinet.ossWallet"
+                android:targetClass="com.osscabinet.ossWallet.assistant.AssistantActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <!--
+        Launcher / Bixby shortcut: check account balances.
+        Bixby matches by voice: "Hey Bixby, Check account balance in OssWallet"
+    -->
+    <shortcut
+            android:shortcutId="account_balance"
+            android:enabled="true"
+            android:icon="@drawable/ic_shortcut_quick_add"
+            android:shortcutShortLabel="@string/shortcut_account_balance_short"
+            android:shortcutLongLabel="@string/shortcut_account_balance_long"
+            android:shortcutDisabledMessage="@string/shortcut_disabled">
+        <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="com.osscabinet.ossWallet"
+                android:targetClass="com.osscabinet.ossWallet.assistant.AssistantActivity"
+                android:data="ossWallet://assistant/account-balance" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <!-- Google Assistant App Action: record a financial transaction -->
+    <capability android:name="actions.intent.RECORD_TRANSACTION">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.osscabinet.ossWallet"
+            android:targetClass="com.osscabinet.ossWallet.assistant.AssistantActivity">
+            <parameter
+                android:name="transaction.transactionType"
+                android:key="transaction_type" />
+            <parameter
+                android:name="transaction.paymentAmount.value"
+                android:key="amount" />
+            <parameter
+                android:name="accountInfo.account.name"
+                android:key="account_name" />
+            <parameter
+                android:name="categoryInfo.category.name"
+                android:key="category_name" />
+        </intent>
+    </capability>
+
+    <!-- Google Assistant App Action: check account balance -->
+    <capability android:name="actions.intent.GET_ACCOUNT_BALANCE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.osscabinet.ossWallet"
+            android:targetClass="com.osscabinet.ossWallet.assistant.AssistantActivity">
+            <parameter
+                android:name="accountInfo.account.name"
+                android:key="account_name" />
+        </intent>
+    </capability>
 
 </shortcuts>

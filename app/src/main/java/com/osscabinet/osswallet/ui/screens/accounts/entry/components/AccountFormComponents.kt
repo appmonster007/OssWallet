@@ -238,7 +238,8 @@ fun CurrencyManagementSection(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (isPrimary) onPrimaryCurrencyChange("")
                                 onAllowedCurrenciesChange(allowedCurrencies - code)
-                            }
+                            },
+                            modifier = Modifier.width(100.dp)
                         )
                     }
                     // Phantom items to ensure left-alignment in the last row
@@ -284,15 +285,14 @@ fun CurrencyManagementSection(
                         },
                         shape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius),
                         color = AppColors.surfaceContainerLow,
-                        border = BorderStroke(1.dp, AppColors.outlineVariant)
+                        border = BorderStroke(1.dp, AppColors.outlineVariant),
+                        modifier = Modifier.width(72.dp)
                     ) {
-                        Row(
+                        Box(
                             modifier = Modifier.padding(
-                                horizontal = AeonSize.D14.value,
                                 vertical = AeonTheme.dimensions.spacingMd
                             ),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 code,
@@ -304,7 +304,7 @@ fun CurrencyManagementSection(
                 }
                 // Phantom items to ensure left-alignment in the last row
                 repeat(10) {
-                    Spacer(Modifier.width(80.dp).height(0.dp))
+                    Spacer(Modifier.width(72.dp).height(0.dp))
                 }
             }
         }
@@ -317,12 +317,12 @@ fun CurrencyTile(
     isPrimary: Boolean,
     accentColor: Color,
     onClick: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier
-            .width(100.dp)
+        modifier = modifier
             .height(70.dp),
         shape = RoundedCornerShape(AeonTheme.dimensions.buttonCornerRadius),
         color = if (isPrimary) accentColor else AppColors.surfaceContainerLow,

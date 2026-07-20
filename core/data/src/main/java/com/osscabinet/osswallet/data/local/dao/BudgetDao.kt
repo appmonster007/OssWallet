@@ -37,8 +37,13 @@ interface BudgetDao {
     suspend fun clearAll()
 
     @Transaction
+    @Query("SELECT * FROM budgets WHERE id = :id AND profileId = :profileId")
+    suspend fun getById(id: Long, profileId: Int): BudgetWithFilter?
+
+    /** For internal use by [delete] only — fetches filterId without profile check. */
+    @Transaction
     @Query("SELECT * FROM budgets WHERE id = :id")
-    suspend fun getById(id: Long): BudgetWithFilter?
+    suspend fun getByIdInternal(id: Long): BudgetWithFilter?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: BudgetEntity): Long

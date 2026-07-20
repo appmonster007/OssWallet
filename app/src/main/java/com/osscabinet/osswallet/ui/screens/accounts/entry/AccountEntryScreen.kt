@@ -9,9 +9,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.ui.components.entry.AeonEntryScaffold
 import com.osscabinet.ossWallet.ui.screens.accounts.entry.components.AccountFormBody
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import java.math.BigDecimal
 
 /**
  * A Value Object representing a valid configuration for the Account Entry screen.
@@ -55,28 +59,71 @@ fun AccountEntryScreen(
         }
     }
 
-    AeonEntryScaffold(
-        title = if (state.isEditMode) "Edit Account" else "New Account",
+    AccountEntryContent(
+        state = state,
+        onEvent = viewModel::onEvent,
         onBackClick = actions.onBackClick,
         onSaveClick = {
             viewModel.saveAccount {
                 viewModel.onEvent(AccountEntryEvent.TriggerNavigation)
             }
         },
+        onDeleteClick = if (state.isEditMode) {
+            {
+                viewModel.deleteAccount {
+                    actions.onBackClick()
+                }
+            }
+        } else null
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AccountEntryContent(
+    state: AccountEntryState,
+    onEvent: (AccountEntryEvent) -> Unit,
+    onBackClick: () -> Unit,
+    onSaveClick: () -> Unit,
+    onDeleteClick: (() -> Unit)?
+) {
+    AeonEntryScaffold(
+        title = if (state.isEditMode) "Edit Account" else "New Account",
+        onBackClick = onBackClick,
+        onSaveClick = onSaveClick,
         canSave = state.canSave && !state.navTriggered,
         isEditMode = state.isEditMode
     ) { innerPadding ->
         AccountFormBody(
             state = state,
-            onEvent = viewModel::onEvent,
+            onEvent = onEvent,
             contentPadding = innerPadding,
-            onDeleteClick = if (state.isEditMode) {
-                {
-                    viewModel.deleteAccount {
-                        actions.onBackClick()
-                    }
-                }
-            } else null
+            onDeleteClick = onDeleteClick
+        )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 1200, widthDp = 380)
+@Composable
+private fun AccountEntryScreenPreview() {
+    OssWalletTheme {
+        AccountEntryContent(
+            state = AccountEntryState(
+                accountName = "Savings Account",
+                structureType = AccountStructureType.SAVINGS,
+                allowedCurrencies = setOf("USD", "EUR", "GBP", "JPY"),
+                shortlistedCurrencies = listOf("USD", "EUR", "GBP", "INR", "JPY", "AUD", "CAD", "CHF", "CNY", "BRL"),
+                systemClosingBalances = mapOf(
+                    "USD" to BigDecimal("1500000876876000000000.0498769876987698769876"),
+                    "EUR" to BigDecimal("450.00"),
+                    "GBP" to BigDecimal("120.00"),
+                    "JPY" to BigDecimal("15000")
+                )
+            ),
+            onEvent = {},
+            onBackClick = {},
+            onSaveClick = {},
+            onDeleteClick = null
         )
     }
 }

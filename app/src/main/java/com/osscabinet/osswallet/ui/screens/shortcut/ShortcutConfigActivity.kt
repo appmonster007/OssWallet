@@ -1,6 +1,5 @@
 package com.osscabinet.ossWallet.ui.screens.shortcut
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -39,22 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.R
 import com.osscabinet.ossWallet.domain.model.Category
@@ -65,7 +56,6 @@ import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.ui.components.getIconByName
-import com.osscabinet.ossWallet.ui.screens.dashboard.quickadd.QuickAddActivity
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.LocalGlassmorphismEnabled
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -134,23 +124,7 @@ class ShortcutConfigActivity : ComponentActivity() {
     }
 
     private fun createPinnedShortcut(template: Template, iconBitmap: Bitmap) {
-        if (!ShortcutManagerCompat.isRequestPinShortcutSupported(this)) return
-
-        val shortcutIntent = Intent(this, QuickAddActivity::class.java).apply {
-            action = Intent.ACTION_VIEW
-            putExtra(QuickAddActivity.EXTRA_TEMPLATE_ID, template.id)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        }
-
-        val shortcutId = "template_${template.id}_${System.currentTimeMillis()}"
-        val info = ShortcutInfoCompat.Builder(this, shortcutId)
-            .setShortLabel(template.name)
-            .setLongLabel(getString(R.string.shortcut_template_long) + ": ${template.name}")
-            .setIcon(IconCompat.createWithAdaptiveBitmap(iconBitmap))
-            .setIntent(shortcutIntent)
-            .build()
-
-        ShortcutManagerCompat.requestPinShortcut(this, info, null)
+        createTemplateHomeScreenShortcut(this, template, iconBitmap)
     }
 }
 
@@ -270,7 +244,7 @@ private fun TemplateRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                val bitmap = buildIconBitmap(
+                val bitmap = buildShortcutIconBitmap(
                     painter = painter,
                     density = density,
                     bgColor = bgColor
@@ -317,35 +291,3 @@ private fun TemplateRow(
     }
 }
 
-private fun buildIconBitmap(
-    painter: androidx.compose.ui.graphics.painter.Painter,
-    density: Density,
-    bgColor: Color
-): Bitmap {
-    // 108dp in pixels — matches the adaptive icon spec at the device's actual density
-    val sizePx = (108 * density.density).toInt().coerceAtLeast(108)
-    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-    val composeCanvas = Canvas(android.graphics.Canvas(bitmap))
-
-    val iconSize = sizePx * 0.45f
-    val iconOffset = (sizePx - iconSize) / 2f
-
-    CanvasDrawScope().draw(
-        density = density,
-        layoutDirection = LayoutDirection.Ltr,
-        canvas = composeCanvas,
-        size = Size(sizePx.toFloat(), sizePx.toFloat())
-    ) {
-        drawCircle(color = bgColor, radius = sizePx / 2f, center = center)
-        translate(left = iconOffset, top = iconOffset) {
-            with(painter) {
-                draw(
-                    size = Size(iconSize, iconSize),
-                    colorFilter = ColorFilter.tint(Color.White)
-                )
-            }
-        }
-    }
-
-    return bitmap
-}

@@ -832,7 +832,6 @@ class QuickAddViewModel @Inject constructor(
     }
 
     fun openWithTemplate(template: Template) {
-        _uiState.value = QuickAddState(entryMode = template.entryMode)
         val prefill = TransactionEntryService.resolvePrefill(
             entryMode = template.entryMode,
             accountId = template.accountId,
@@ -846,22 +845,22 @@ class QuickAddViewModel @Inject constructor(
             tags = template.tags,
             accounts = state.value.accounts
         )
-        _uiState.update {
-            it.copy(
-                selectedTemplate = template,
-                selectedCategoryId = prefill.categoryId,
-                selectedAccount = prefill.account,
-                selectedToAccount = prefill.targetAccount,
-                selectedCurrency = prefill.currency,
-                selectedToCurrency = prefill.targetCurrency,
-                entryMode = prefill.entryMode,
-                amount = prefill.amount,
-                note = prefill.note,
-                payee = prefill.payee,
-                tags = prefill.tags,
-                currentStep = if (prefill.account.isPicked) 2 else 1
-            )
-        }
+        // Single atomic write — never touches step 0, so the template search field
+        // never enters composition and its focus-requester never fires.
+        _uiState.value = QuickAddState(
+            entryMode = prefill.entryMode,
+            selectedTemplate = template,
+            selectedCategoryId = prefill.categoryId,
+            selectedAccount = prefill.account,
+            selectedToAccount = prefill.targetAccount,
+            selectedCurrency = prefill.currency,
+            selectedToCurrency = prefill.targetCurrency,
+            amount = prefill.amount,
+            note = prefill.note,
+            payee = prefill.payee,
+            tags = prefill.tags,
+            currentStep = if (prefill.account.isPicked) 2 else 1
+        )
     }
 
     val canSave: Boolean get() = state.value.canSave

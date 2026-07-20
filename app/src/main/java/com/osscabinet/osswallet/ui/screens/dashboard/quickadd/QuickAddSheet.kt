@@ -97,6 +97,7 @@ private const val TOTAL_STEPS = 3
 @Composable
 fun QuickAddSheet(
     onDismiss: () -> Unit,
+    initialTemplate: Template? = null,
     viewModel: QuickAddViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -109,7 +110,11 @@ fun QuickAddSheet(
         sections = sections,
         categories = categories,
         onDismiss = onDismiss,
-        onReset = viewModel::reset,
+        onReset = if (initialTemplate != null) {
+            { viewModel.openWithTemplate(initialTemplate) }
+        } else {
+            viewModel::reset
+        },
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
         onTemplateSelected = viewModel::onTemplateSelected,
         onSuggestionSelected = viewModel::onSuggestionSelected,
@@ -514,6 +519,7 @@ private fun QuickAddSheetContent(
                         entryMode = state.entryMode,
                         activeSide = state.activeAccountSide,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
+                        isSheetSettled = isSheetSettled,
                         onAccountTapped = onAccountTapped,
                         onToggleType = { onToggleType() },
                         onToggleTransfer = { onToggleTransfer() },

@@ -102,4 +102,10 @@
     <string name="shortcut_quick_add_short">Quick Add</string>
     <string name="shortcut_quick_add_long">Add Transaction</string>
     <string name="shortcut_disabled">Quick Add is not available</string>
+    <string name="shortcut_template_short">Template</string>
+    <string name="shortcut_template_long">Quick Add from Template</string>
+    <string name="shortcut_template_config_title">Choose Template</string>
+    <string name="shortcut_template_config_search">Search templates…</string>
+    <string name="shortcut_template_config_empty">No templates found</string>
+    <string name="shortcut_template_added">Shortcut added to home screen</string>
 </resources>

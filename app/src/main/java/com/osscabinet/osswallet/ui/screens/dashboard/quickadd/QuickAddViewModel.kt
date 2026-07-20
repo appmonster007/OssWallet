@@ -831,5 +831,38 @@ class QuickAddViewModel @Inject constructor(
         _uiState.value = QuickAddState(entryMode = initialType)
     }
 
+    fun openWithTemplate(template: Template) {
+        _uiState.value = QuickAddState(entryMode = template.entryMode)
+        val prefill = TransactionEntryService.resolvePrefill(
+            entryMode = template.entryMode,
+            accountId = template.accountId,
+            targetAccountId = template.targetAccountId,
+            currency = template.currency,
+            targetCurrency = template.targetCurrency,
+            amount = template.amount,
+            categoryId = template.categoryId,
+            note = template.note,
+            payee = template.payee,
+            tags = template.tags,
+            accounts = state.value.accounts
+        )
+        _uiState.update {
+            it.copy(
+                selectedTemplate = template,
+                selectedCategoryId = prefill.categoryId,
+                selectedAccount = prefill.account,
+                selectedToAccount = prefill.targetAccount,
+                selectedCurrency = prefill.currency,
+                selectedToCurrency = prefill.targetCurrency,
+                entryMode = prefill.entryMode,
+                amount = prefill.amount,
+                note = prefill.note,
+                payee = prefill.payee,
+                tags = prefill.tags,
+                currentStep = if (prefill.account.isPicked) 2 else 1
+            )
+        }
+    }
+
     val canSave: Boolean get() = state.value.canSave
 }

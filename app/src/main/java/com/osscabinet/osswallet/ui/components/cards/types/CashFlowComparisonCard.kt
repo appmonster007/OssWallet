@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -67,6 +68,7 @@ fun CashFlowComparisonCard(
     val config = renderData.config
 
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
+    LaunchedEffect(config.selectedMetric) { selectedMetric = config.selectedMetric }
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 

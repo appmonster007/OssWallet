@@ -276,16 +276,33 @@ fun NetWorthCard(
                     }
 
                     is AccountingPerspective.CashFlow -> {
-                        val inflow =
-                            (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
-                        val outflow =
-                            (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
-
+                        val inflow = when {
+                            showIncome && showTransfer -> cf.totalInflowInBase
+                            showIncome                 -> cf.totalIncomeInBase
+                            showTransfer               -> cf.totalTransferInInBase
+                            else                       -> BigDecimal.ZERO
+                        }
+                        val outflow = when {
+                            showExpense && showTransfer -> cf.totalOutflowInBase
+                            showExpense                 -> cf.totalExpensesInBase
+                            showTransfer                -> cf.totalTransferOutInBase
+                            else                        -> BigDecimal.ZERO
+                        }
                         val prevInflow = prevCf?.let {
-                            (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
+                            when {
+                                showIncome && showTransfer -> it.totalInflowInBase
+                                showIncome                 -> it.totalIncomeInBase
+                                showTransfer               -> it.totalTransferInInBase
+                                else                       -> BigDecimal.ZERO
+                            }
                         }
                         val prevOutflow = prevCf?.let {
-                            (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
+                            when {
+                                showExpense && showTransfer -> it.totalOutflowInBase
+                                showExpense                 -> it.totalExpensesInBase
+                                showTransfer                -> it.totalTransferOutInBase
+                                else                        -> BigDecimal.ZERO
+                            }
                         }
 
                         NetWorthFlowColumn(

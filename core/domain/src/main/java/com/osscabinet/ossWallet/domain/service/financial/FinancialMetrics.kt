@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
@@ -78,6 +79,21 @@ data class FinancialSummary(
             )
         }
     }
+}
+
+/**
+ * Extracts a scalar value for this metric from a perspective-resolved [FinancialSummary].
+ * Always call [FinancialSummary.toPerspective] before calling this — [ChartMetric.INCOME]
+ * and [ChartMetric.EXPENSE] already include absorbed transfers in CashFlow perspective,
+ * and [ChartMetric.TRANSFER] is zero in CashFlow perspective.
+ */
+fun ChartMetric.extractFrom(summary: FinancialSummary): BigDecimal = when (this) {
+    ChartMetric.NET          -> summary.income + summary.expense + summary.transfer
+    ChartMetric.INCOME       -> summary.income
+    ChartMetric.EXPENSE      -> summary.expense
+    ChartMetric.TRANSFER     -> summary.transfer
+    ChartMetric.TRANSFER_IN  -> summary.transferIn
+    ChartMetric.TRANSFER_OUT -> summary.transferOut
 }
 
 /**

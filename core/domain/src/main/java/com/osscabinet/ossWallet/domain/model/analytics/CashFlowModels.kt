@@ -32,6 +32,8 @@ data class CashFlowResult(
     val filteredTransactions: List<Transaction>
 ) {
     val totalNetTransferInBase: BigDecimal get() = totalTransferInInBase.add(totalTransferOutInBase)
+    val totalInflowInBase: BigDecimal get() = totalIncomeInBase.add(totalTransferInInBase)
+    val totalOutflowInBase: BigDecimal get() = totalExpensesInBase.add(totalTransferOutInBase)
     val totalNetCrossCcyTransferInBase: BigDecimal
         get() = totalCrossCcyTransferInInBase.add(
             totalCrossCcyTransferOutInBase

@@ -161,6 +161,8 @@ data class NetWorthCardConfig(
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -214,6 +216,8 @@ data class CashFlowCardConfig(
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val showNetColumn: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
@@ -243,6 +247,8 @@ data class AccountsCardConfig(
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,
@@ -268,6 +274,8 @@ data class CategoryPieChartCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -299,6 +307,8 @@ data class CategoryTreemapCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.EXPENSE,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val showLabels: Boolean = true,
     val showLegend: Boolean = true,
     val rounded: Boolean = true,
@@ -331,6 +341,8 @@ data class AccountHeroCardConfig(
     val showComparison: Boolean = true,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.AllTime(
             excludeFuture = true
@@ -526,6 +538,8 @@ data class CashFlowComparisonCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val showCurrentPeriod: Boolean = true,
     val showPreviousPeriod: Boolean = true,
     val showSamePeriodLastYear: Boolean = true,
@@ -553,6 +567,8 @@ data class CategorySpendingTrendCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val selectedNatures: Set<CategoryNature> = CategoryNature.entries.toSet(),
     val isCumulative: Boolean = false,
     val showGridLines: Boolean = true,
@@ -578,6 +594,8 @@ data class IncomeExpenseBarCardConfig(
     val isCumulative: Boolean = false,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val showGridLines: Boolean = true,
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
@@ -601,6 +619,8 @@ data class TagUpSetPlotCardConfig(
     val selectedMetric: ChartMetric = ChartMetric.NET,
     val perspective: AccountingPerspective = AccountingPerspective.Accounting,
     val excludeInternalTransfers: Boolean = true,
+    // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
+    val splitTransfers: Boolean = false,
     val maxTags: Int = 7,
     val maxIntersections: Int = 15,
     val dynamicFilteringMode: UpSetDynamicFilteringMode = UpSetDynamicFilteringMode.OFF,

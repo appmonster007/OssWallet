@@ -208,7 +208,9 @@ private fun AccountsSettingsContent(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
     )
     OutlinedButton(
         onClick = { callbacks.onManageClick() },
@@ -244,6 +246,7 @@ private fun FlowRowScope.AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
+        splitTransfers = config.splitTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -269,6 +272,7 @@ private fun AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
+        splitTransfers = config.splitTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -284,6 +288,7 @@ private fun AccountItemContent(
     baseCurrency: String,
     gridColumns: Int,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
+    splitTransfers: Boolean = false,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -298,6 +303,7 @@ private fun AccountItemContent(
             previousSummary = prevStats,
             baseCurrency = baseCurrency,
             perspective = perspective,
+            splitTransfers = splitTransfers,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
             onClickIncome = {
@@ -510,6 +516,7 @@ fun mapAccounts(
         onShowAddAccountCardChange = updateHandler::updateCardAccountsShowAddAccountCard,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onManageClick = callbacks.accountActions.onManageClick,
         onAccountClick = callbacks.accountActions.onClick,
         onRecordsClick = { drillDown ->

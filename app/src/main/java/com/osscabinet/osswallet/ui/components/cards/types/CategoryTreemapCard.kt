@@ -467,7 +467,9 @@ private fun CategoryTreemapSettingsContent(
         perspective = config.perspective,
         onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
-        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
     )
 }
 

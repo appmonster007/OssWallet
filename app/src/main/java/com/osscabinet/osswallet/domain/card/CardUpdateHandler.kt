@@ -107,6 +107,20 @@ interface CardUpdateHandler {
         }
     }
 
+    fun updateCardSplitTransfers(cardId: String, split: Boolean) {
+        cardUpdateScope.launch {
+            cardRepository.updateCard(cardScreenContext, cardId) { config ->
+                when (config) {
+                    is NetWorthCardConfig -> config.copy(splitTransfers = split)
+                    is CashFlowCardConfig -> config.copy(splitTransfers = split)
+                    is AccountsCardConfig -> config.copy(splitTransfers = split)
+                    is AccountHeroCardConfig -> config.copy(splitTransfers = split)
+                    else -> config
+                }
+            }
+        }
+    }
+
     // Net Worth
     fun updateCardNetWorthFontSize(cardId: String, fontSize: String) {
         cardUpdateScope.launch {

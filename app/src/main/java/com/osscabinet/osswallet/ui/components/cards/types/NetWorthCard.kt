@@ -224,21 +224,54 @@ fun NetWorthCard(
                         }
                         if (showTransfer) {
                             if (showIncome || showExpense) NetWorthSeparator()
-                            NetWorthFlowColumn(
-                                label = "TRF",
-                                amount = cf.totalNetTransferInBase,
-                                currency = displayCurrency,
-                                color = AppColors.accent,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable {
-                                        callbacks.onClickTransfer?.invoke(
-                                            config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
-                                        )
-                                    },
-                                previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
-                                forceShowPlus = true
-                            )
+                            if (config.splitTransfers) {
+                                NetWorthFlowColumn(
+                                    label = "TRF IN",
+                                    amount = cf.totalTransferInInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalTransferInInBase else null,
+                                    forceShowPlus = true
+                                )
+                                NetWorthSeparator()
+                                NetWorthFlowColumn(
+                                    label = "TRF OUT",
+                                    amount = cf.totalTransferOutInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalTransferOutInBase else null
+                                )
+                            } else {
+                                NetWorthFlowColumn(
+                                    label = "TRF",
+                                    amount = cf.totalNetTransferInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
+                                    forceShowPlus = true
+                                )
+                            }
                         }
                     }
 
@@ -435,7 +468,9 @@ private fun NetWorthSettingsContent(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
     )
 }
 
@@ -579,6 +614,7 @@ fun mapNetWorth(
         onShowComparisonChange = updateHandler::updateCardShowComparison,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onFilterChange = updateHandler::updateCardNetWorthFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickExpense = { drillDown ->

@@ -223,20 +223,51 @@ fun AccountHeroCard(
                         }
                     )
                     LedgerDivider()
-                    LedgerRow(
-                        label = "Transfer",
-                        amount = flow.netTransfer,
-                        currency = account.currencyCode,
-                        badgeIcon = Icons.Rounded.SwapHoriz,
-                        color = AppColors.contentPrimary,
-                        previousAmount = prevFlow?.netTransfer,
-                        forceShowPlus = true,
-                        onClick = {
-                            callbacks.onClickTransfer?.invoke(
-                                config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
-                            )
-                        }
-                    )
+                    if (config.splitTransfers) {
+                        LedgerRow(
+                            label = "Transfer In",
+                            amount = flow.transferIn,
+                            currency = account.currencyCode,
+                            badgeIcon = Icons.Rounded.SwapHoriz,
+                            color = AppColors.contentPrimary,
+                            previousAmount = prevFlow?.transferIn,
+                            forceShowPlus = true,
+                            onClick = {
+                                callbacks.onClickTransfer?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+                                )
+                            }
+                        )
+                        LedgerDivider()
+                        LedgerRow(
+                            label = "Transfer Out",
+                            amount = flow.transferOut,
+                            currency = account.currencyCode,
+                            badgeIcon = Icons.Rounded.SwapHoriz,
+                            color = AppColors.contentPrimary,
+                            previousAmount = prevFlow?.transferOut,
+                            onClick = {
+                                callbacks.onClickTransfer?.invoke(
+                                    config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+                                )
+                            }
+                        )
+                    } else {
+                        LedgerRow(
+                            label = "Transfer",
+                            amount = flow.netTransfer,
+                            currency = account.currencyCode,
+                            badgeIcon = Icons.Rounded.SwapHoriz,
+                            color = AppColors.contentPrimary,
+                            previousAmount = prevFlow?.netTransfer,
+                            forceShowPlus = true,
+                            onClick = {
+                                callbacks.onClickTransfer?.invoke(
+                                    config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
+                                )
+                            }
+                        )
+                    }
                 } else {
                     val inflow = flow.income + flow.transferIn
                     val outflow = flow.expense + flow.transferOut
@@ -562,7 +593,9 @@ private fun AccountHeroSettingsContent(
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
             callbacks.onExcludeInternalTransfersChange(config.cardId, it)
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
     )
 }
 
@@ -585,6 +618,7 @@ fun mapAccountHero(
         onShowComparisonChange = updateHandler::updateCardShowComparison,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onFilterChange = updateHandler::updateCardHeroFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },

@@ -329,7 +329,9 @@ private fun CategorySpendingSettingsContent(
                     excludeInternalTransfers = it
                 )
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) }
     )
 }
 

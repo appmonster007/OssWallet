@@ -253,7 +253,8 @@ private fun mapCategoryMetrics(
         ChartMetric.INCOME -> incomeTotal.abs()
         ChartMetric.EXPENSE -> expenseTotal.abs()
         ChartMetric.NET -> items.sumOf { it.netBalance.abs() }
-        ChartMetric.TRANSFER -> transferTotal.abs()
+        // Category charts don't split transfers; fold in/out into the net transfer bucket.
+        ChartMetric.TRANSFER, ChartMetric.TRANSFER_IN, ChartMetric.TRANSFER_OUT -> transferTotal.abs()
     }
 
     fun mapOne(metric: CategoryTreeMetrics): CategoryChartData? {
@@ -261,13 +262,13 @@ private fun mapCategoryMetrics(
             ChartMetric.INCOME -> metric.income
             ChartMetric.EXPENSE -> metric.expense
             ChartMetric.NET -> metric.netBalance
-            ChartMetric.TRANSFER -> metric.transfer
+            ChartMetric.TRANSFER, ChartMetric.TRANSFER_IN, ChartMetric.TRANSFER_OUT -> metric.transfer
         }
         val prevAmount = when (selectedMetric) {
             ChartMetric.INCOME -> metric.previousIncome
             ChartMetric.EXPENSE -> metric.previousExpense
             ChartMetric.NET -> metric.previousNetBalance
-            ChartMetric.TRANSFER -> metric.previousTransfer
+            ChartMetric.TRANSFER, ChartMetric.TRANSFER_IN, ChartMetric.TRANSFER_OUT -> metric.previousTransfer
         }
         val subData = metric.subcategoryData.asSequence().mapNotNull { mapOne(it) }
             .sortedByDescending { it.amount.abs() }.toList()

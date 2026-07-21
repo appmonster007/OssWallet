@@ -154,9 +154,10 @@ fun AeonMetricToggle(
     perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    splitTransfers: Boolean = false
 ) {
-    val labels = AccountingPerspective.labelsFor(perspective)
+    val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 
     SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {

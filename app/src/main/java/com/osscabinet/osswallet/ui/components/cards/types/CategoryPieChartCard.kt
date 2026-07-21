@@ -18,6 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.PieChart
@@ -34,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +56,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonPieChartSlice
@@ -60,6 +64,9 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
+import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
+import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
@@ -211,6 +218,13 @@ fun CategoryPieChartCard(
             }
         }
 
+        val total = remember(currentData) { currentData.sumOf { it.amount } }
+        val previousTotalValue = remember(currentData) {
+            if (currentData.any { it.previousAmount != null }) {
+                currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+            } else null
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -249,20 +263,13 @@ fun CategoryPieChartCard(
                     )
                 }
 
-                val currentDataLocal = navigationStack.last()
-
-                val previousTotalValue = remember(currentDataLocal) {
-                    if (currentDataLocal.any { it.previousAmount != null }) {
-                        currentDataLocal.sumOf { it.previousAmount?.abs() ?: BigDecimal.ZERO }
-                    } else null
-                }
-
                 AeonPieChart(
                     slices = slices,
                     modifier = Modifier.fillMaxSize(),
                     rounded = config.rounded,
                     currency = currency,
                     animate = layoutProps.animate,
+                    showCenterTotal = false,
                     previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
@@ -295,6 +302,19 @@ fun CategoryPieChartCard(
                     )
                 }
             }
+        }
+
+        if (groupedData.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ChartSummarySection(
+                total = total,
+                previousTotal = previousTotalValue,
+                currency = currency,
+                showComparison = config.showComparison,
+                isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
+                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+            )
         }
 
         if (config.showLegend && groupedData.isNotEmpty()) {

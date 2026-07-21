@@ -55,6 +55,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemap
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonTreemapNode
@@ -305,96 +306,14 @@ fun CategoryTreemapCard(
                     currentData.sumOf { it.previousAmount ?: BigDecimal.ZERO }
                 } else null
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column {
-                    Text(
-                        text = "TOTAL",
-                        style = AppTextStyles.overlineLabel.copy(
-                            letterSpacing = 1.25.sp
-                        ),
-                        color = AppColors.contentSecondary.copy(alpha = 0.6f)
-                    )
-
-                    val contentColor = AppColors.contentPrimary
-                    Text(
-                        text = CurrencyReprUi.formatCurrencyAnnotated(
-                            amount = total,
-                            currencyCode = currency,
-                            spec = CurrencyDisplaySpec(useSemanticColor = false),
-                            partStyles = CurrencyPartStyles(
-                                symbol = SpanStyle(
-                                    fontWeight = FontWeight.Light,
-                                    color = contentColor.copy(alpha = 0.6f),
-                                    fontSize = 16.sp
-                                ),
-                                neutral = contentColor
-                            )
-                        ),
-                        style = AppTextStyles.heroAmount.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = contentColor
-                    )
-                }
-
-                if (config.showComparison && config.filter.timelineRange !is TimelineRange.AllTime && previousTotalValue != null && previousTotalValue.signum() != 0) {
-                    val delta = total.abs().subtract(previousTotalValue.abs())
-                        .divide(previousTotalValue.abs(), 8, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal("100"))
-
-                    val isIncrease = delta.signum() > 0
-                    val isDecrease = delta.signum() < 0
-
-                    val positiveDeltaIsGood =
-                        config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
-
-                    val color = when {
-                        isIncrease -> if (positiveDeltaIsGood) AppColors.positive else AppColors.negative
-                        isDecrease -> if (positiveDeltaIsGood) AppColors.negative else AppColors.positive
-                        else -> AppColors.contentSecondary
-                    }
-
-                    val icon = when {
-                        isIncrease -> Icons.Default.ArrowUpward
-                        isDecrease -> Icons.Default.ArrowDownward
-                        else -> null
-                    }
-
-                    Surface(
-                        color = color.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            if (icon != null) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = color
-                                )
-                            }
-                            Text(
-                                text = "${delta.abs().setScale(1, RoundingMode.HALF_UP)}%",
-                                style = AppTextStyles.transactionBadge.copy(
-                                    fontSize = 11.sp
-                                ),
-                                color = color
-                            )
-                        }
-                    }
-                }
-            }
+            ChartSummarySection(
+                total = total,
+                previousTotal = previousTotalValue,
+                currency = currency,
+                showComparison = config.showComparison,
+                isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
+                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+            )
 
             if (config.showLegend) {
                 Spacer(modifier = Modifier.height(16.dp))

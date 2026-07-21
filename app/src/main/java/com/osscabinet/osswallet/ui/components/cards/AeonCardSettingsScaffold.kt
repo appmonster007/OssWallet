@@ -123,25 +123,28 @@ fun CardPerspectiveSettings(
             }
         }
 
+        if (perspective is AccountingPerspective.Accounting) {
+            AeonSettingsToggle(
+                label = "Split transfers",
+                description = "Show transfer in and out separately instead of a net value",
+                checked = splitTransfers,
+                onCheckedChange = onSplitTransfersChange,
+                enabled = true,
+                showBackground = false,
+                showBorder = false
+            )
+        }
+
         AeonSettingsToggle(
             label = "Exclude internal transfers",
             description = "Hides transfers between accounts",
             checked = excludeInternalTransfers,
             onCheckedChange = onExcludeInternalTransfersChange,
-            enabled = perspective is AccountingPerspective.CashFlow,
+            enabled = if (perspective is AccountingPerspective.Accounting) splitTransfers else true,
             showBackground = false,
             showBorder = false
         )
 
-        AeonSettingsToggle(
-            label = "Split transfers",
-            description = "Show transfer in and out separately instead of a net value",
-            checked = splitTransfers,
-            onCheckedChange = onSplitTransfersChange,
-            enabled = perspective is AccountingPerspective.Accounting,
-            showBackground = false,
-            showBorder = false
-        )
     }
 }
 

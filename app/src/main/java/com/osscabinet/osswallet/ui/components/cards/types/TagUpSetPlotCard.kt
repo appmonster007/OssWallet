@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +46,7 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
@@ -139,10 +141,11 @@ fun TagUpSetPlotCard(
                 when (selectedMetric) {
                     ChartMetric.INCOME       -> s.income
                     ChartMetric.EXPENSE      -> s.expense
+                    ChartMetric.TRANSFER     -> s.transfer
                     ChartMetric.TRANSFER_IN  -> s.transferIn
                     ChartMetric.TRANSFER_OUT -> s.transferOut
-                    ChartMetric.NET,
-                    ChartMetric.TRANSFER     -> s.income.add(s.expense)
+                    ChartMetric.NET          -> s.income.add(s.expense).add(s.transfer)
+                    else                     -> BigDecimal.ZERO
                 }
             }
 
@@ -161,6 +164,7 @@ fun TagUpSetPlotCard(
                     total = getMetricValue(it),
                     income = it.income,
                     expense = it.expense,
+                    transfer = it.transfer,
                     incomeByCurrency = it.incomeByCurrency,
                     expenseByCurrency = it.expenseByCurrency,
                     transactionCount = it.transactionCount
@@ -183,16 +187,18 @@ fun TagUpSetPlotCard(
                     val amount = when (selectedMetric) {
                         ChartMetric.INCOME       -> intersection.income
                         ChartMetric.EXPENSE      -> intersection.expense
+                        ChartMetric.TRANSFER     -> intersection.transfer
                         ChartMetric.TRANSFER_IN  -> intersection.transferIn
                         ChartMetric.TRANSFER_OUT -> intersection.transferOut
-                        ChartMetric.NET,
-                        ChartMetric.TRANSFER     -> intersection.income.add(intersection.expense)
+                        ChartMetric.NET          -> intersection.income.add(intersection.expense).add(intersection.transfer)
+                        else                     -> BigDecimal.ZERO
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,
                         value = amount,
                         income = intersection.income,
                         expense = intersection.expense,
+                        transfer = intersection.transfer,
                         incomeByCurrency = intersection.incomeByCurrency,
                         expenseByCurrency = intersection.expenseByCurrency,
                         count = intersection.transactionCount
@@ -224,6 +230,7 @@ fun TagUpSetPlotCard(
                                 selectedMetric = metric
                                 callbacks.onUpdate(config.copy(selectedMetric = metric))
                             },
+                            splitTransfers = config.splitTransfers,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(end = 8.dp)
@@ -242,6 +249,7 @@ fun TagUpSetPlotCard(
                             value = set.total,
                             income = set.income,
                             expense = set.expense,
+                            transfer = set.transfer,
                             incomeByCurrency = set.incomeByCurrency,
                             expenseByCurrency = set.expenseByCurrency,
                             count = set.transactionCount
@@ -302,7 +310,7 @@ fun TagUpSetPlotCard(
                                 expenseByCurrency = intersection.expenseByCurrency,
                                 incomeBase = intersection.income,
                                 expenseBase = intersection.expense,
-                                netBase = intersection.income.add(intersection.expense),
+                                netBase = intersection.income.add(intersection.expense).add(intersection.transfer),
                                 baseCurrency = renderData.currency,
                                 labelColumnWidth = 32.dp,
                                 showCurrencyBreakdown = true
@@ -333,9 +341,10 @@ private fun CompactMetricSelector(
     perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    splitTransfers: Boolean = false
 ) {
-    val labels: Map<ChartMetric, String> = AccountingPerspective.labelsFor(perspective)
+    val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 
     Column(
@@ -355,7 +364,7 @@ private fun CompactMetricSelector(
                 onClick = { onMetricChange(metric) },
                 shape = shape,
                 color = if (isSelected) AppColors.primaryContainer.copy(alpha = 0.5f) else AppColors.cardSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border),
+                border = androidx.compose.foundation.BorderStroke(0.5.dp, AppColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()

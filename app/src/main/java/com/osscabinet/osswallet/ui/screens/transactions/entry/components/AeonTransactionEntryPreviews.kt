@@ -92,8 +92,8 @@ fun PreviewEditTransaction() {
                     name = "Main Wallet",
                     currencyCode = "EUR",
                     structureType = AccountStructureType.CASH,
-                    colorHex = "#4CAF50",
-                    icon = "Wallet"
+                    colorHex = AccountStructureType.CASH.colorHex,
+                    icon = AccountStructureType.CASH.iconKey
                 )
             )
         )
@@ -122,16 +122,16 @@ fun PreviewNewTransfer() {
                     name = "Checking",
                     currencyCode = "USD",
                     structureType = AccountStructureType.BANK,
-                    colorHex = "#2196F3",
-                    icon = "AccountBalance"
+                    colorHex = AccountStructureType.BANK.colorHex,
+                    icon = AccountStructureType.BANK.iconKey
                 ),
                 Account(
                     id = "wallet2",
                     name = "Savings",
                     currencyCode = "USD",
                     structureType = AccountStructureType.SAVINGS,
-                    colorHex = "#9C27B0",
-                    icon = "Savings"
+                    colorHex = AccountStructureType.SAVINGS.colorHex,
+                    icon = AccountStructureType.SAVINGS.iconKey
                 )
             )
         )
@@ -168,8 +168,8 @@ fun PreviewNonGlassMode() {
                     name = "Main Wallet",
                     currencyCode = "USD",
                     structureType = AccountStructureType.CASH,
-                    colorHex = "#4CAF50",
-                    icon = "Wallet"
+                    colorHex = AccountStructureType.CASH.colorHex,
+                    icon = AccountStructureType.CASH.iconKey
                 )
             )
         ),
@@ -194,8 +194,8 @@ fun PreviewAmoledNonGlass() {
                     name = "Main Wallet",
                     currencyCode = "USD",
                     structureType = AccountStructureType.CASH,
-                    colorHex = "#4CAF50",
-                    icon = "Wallet"
+                    colorHex = AccountStructureType.CASH.colorHex,
+                    icon = AccountStructureType.CASH.iconKey
                 )
             )
         ),

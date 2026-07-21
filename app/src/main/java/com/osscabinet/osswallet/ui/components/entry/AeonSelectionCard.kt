@@ -29,7 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.ui.components.AeonSelectMode
 import com.osscabinet.ossWallet.ui.components.management.AeonListItem
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -136,18 +137,18 @@ fun AeonSelectionListPreview() {
                 Triple(
                     "Work",
                     "Professional tasks and business meetings",
-                    AccountStructureColors.bank
+                    AccountStructureType.BANK.color
                 ),
-                Triple("Personal", "Private matters and home life", AccountStructureColors.savings),
+                Triple("Personal", "Private matters and home life", AccountStructureType.SAVINGS.color),
                 Triple(
                     "Urgent",
                     "High priority - needs immediate attention",
-                    AccountStructureColors.credit
+                    AccountStructureType.CREDIT.color
                 ),
                 Triple(
                     "Later",
                     "Low priority tasks for next week",
-                    AccountStructureColors.investment
+                    AccountStructureType.INVESTMENT.color
                 )
             )
 

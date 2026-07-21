@@ -1172,8 +1172,8 @@ fun DashboardScreenPreview() {
         name = "Main Savings",
         currencyCode = "USD",
         structureType = AccountStructureType.SAVINGS,
-        colorHex = "#4CAF50",
-        icon = "AccountBalance",
+        colorHex = AccountStructureType.SAVINGS.colorHex,
+        icon = AccountStructureType.SAVINGS.iconKey,
     )
 
     val netWorthConfig = NetWorthCardConfig(cardId = "net_worth_1", order = 0)
@@ -1303,8 +1303,8 @@ fun DashboardGlanceTabPreview() {
                 name = "Main Account",
                 currencyCode = "USD",
                 structureType = AccountStructureType.SAVINGS,
-                colorHex = "#4CAF50",
-                icon = "AccountBalance",
+                colorHex = AccountStructureType.SAVINGS.colorHex,
+                icon = AccountStructureType.SAVINGS.iconKey,
             )
         ),
         allAccounts = persistentListOf(
@@ -1313,8 +1313,8 @@ fun DashboardGlanceTabPreview() {
                 name = "Main Account",
                 currencyCode = "USD",
                 structureType = AccountStructureType.SAVINGS,
-                colorHex = "#4CAF50",
-                icon = "AccountBalance",
+                colorHex = AccountStructureType.SAVINGS.colorHex,
+                icon = AccountStructureType.SAVINGS.iconKey,
             )
         ),
         cardDataMap = persistentMapOf(),

@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.model.Account
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.EntryMode
 import com.osscabinet.ossWallet.domain.model.Profile
 import com.osscabinet.ossWallet.domain.model.Template
@@ -389,16 +390,16 @@ fun AppDrawerContentPreview() {
             "1",
             "Main Savings",
             "USD",
-            com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS,
-            "#004D40",
-            "AccountBalance",
+            AccountStructureType.SAVINGS,
+            AccountStructureType.SAVINGS.colorHex,
+            AccountStructureType.SAVINGS.iconKey,
             emptyList()
         ),
         Account(
             "2",
             "Travel Fund",
             "EUR",
-            com.osscabinet.ossWallet.domain.model.AccountStructureType.SAVINGS,
+            AccountStructureType.SAVINGS,
             "#B3261E",
             "Travel",
             emptyList()

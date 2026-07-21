@@ -195,7 +195,13 @@ class AccountEntryViewModel @Inject constructor(
     fun onEvent(event: AccountEntryEvent) {
         when (event) {
             is AccountEntryEvent.SetName -> _state.update { it.copy(accountName = event.name) }
-            is AccountEntryEvent.SetStructureType -> _state.update { it.copy(structureType = event.type) }
+            is AccountEntryEvent.SetStructureType -> _state.update {
+                it.copy(
+                    structureType = event.type,
+                    selectedIconName = event.type.iconKey,
+                    accentColorHex = event.type.colorHex
+                )
+            }
             is AccountEntryEvent.SetPrimaryCurrency -> _state.update { it.copy(primaryCurrency = event.currency) }
             is AccountEntryEvent.SetAllowedCurrencies -> {
                 _state.update { state ->

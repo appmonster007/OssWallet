@@ -60,10 +60,10 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
 import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
@@ -143,8 +143,7 @@ fun AccountHeroCard(
                     )
 
                     Surface(
-                        color = AccountStructureColors.getColor(account.structureType)
-                            .copy(alpha = 0.12f),
+                        color = account.structureType.color.copy(alpha = 0.12f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
@@ -154,7 +153,7 @@ fun AccountHeroCard(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             ),
-                            color = AccountStructureColors.getColor(account.structureType),
+                            color = account.structureType.color,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -523,7 +522,7 @@ private fun CurrencyChip(
     Surface(
         modifier = modifier.clickable { onClick() },
         color = AppColors.contentPrimary.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(18.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
@@ -560,7 +559,7 @@ private fun GhostChip(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .background(AppColors.contentPrimary.copy(alpha = 0.015f), RoundedCornerShape(10.dp))
+            .background(AppColors.contentPrimary.copy(alpha = 0.015f), RoundedCornerShape(18.dp))
     )
 }
 

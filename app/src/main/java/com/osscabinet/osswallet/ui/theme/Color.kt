@@ -6,6 +6,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
@@ -198,32 +199,8 @@ const val DefaultAccentColorHex = "#004D5F"
 val DefaultAccentColor = Color(0xFF004D5F)  // Color form of DefaultAccentColorHex
 val DeepTealGreen = Color(0xFF004D40)        // Deep teal-green for accent/preview use
 
-// --- ACCOUNT STRUCTURE TYPE COLORS ---
-// Semantic per-type colors for account icons and badges.
-// Single source of truth — reference these from AccountStructureTypeUi.kt.
-
-object AccountStructureColors {
-    val bank = Color(0xFF2196F3)
-    val savings = Color(0xFF4CAF50)
-    val cash = Color(0xFF8BC34A)
-    val digitalWallet = Color(0xFF00BCD4)
-    val credit = Color(0xFFF44336)
-    val investment = Color(0xFFFF9800)
-    val crypto = Color(0xFFFFC107)
-    val other = Color(0xFF9E9E9E)
-
-    fun getColor(type: AccountStructureType): Color =
-        when (type) {
-            AccountStructureType.BANK -> bank
-            AccountStructureType.SAVINGS -> savings
-            AccountStructureType.CASH -> cash
-            AccountStructureType.DIGITAL_WALLET -> digitalWallet
-            AccountStructureType.CREDIT -> credit
-            AccountStructureType.INVESTMENT -> investment
-            AccountStructureType.CRYPTO -> crypto
-            AccountStructureType.OTHER -> other
-        }
-}
+val AccountStructureType.color: Color
+    get() = Color(this.colorHex.toColorInt())
 
 // =============================================================================
 // APP COLORS

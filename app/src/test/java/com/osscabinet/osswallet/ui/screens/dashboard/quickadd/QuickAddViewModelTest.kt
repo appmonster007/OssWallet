@@ -413,7 +413,7 @@ class QuickAddViewModelTest {
         assertEquals("EUR", state.selectedCurrency)
         assertEquals("acc2", (state.selectedAccount as? AccountRef.Wallet)?.id)
         assertEquals(5L, state.selectedCategoryId)
-        assertEquals(1, state.currentStep)
+        assertEquals(2, state.currentStep)
     }
 
     @Test

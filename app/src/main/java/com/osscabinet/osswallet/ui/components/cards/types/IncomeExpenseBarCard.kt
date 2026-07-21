@@ -12,15 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +26,7 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.AeonDropdownSelector
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -139,33 +133,12 @@ fun IncomeExpenseBarCard(
                 dropdownEnabled = false
             )
 
-            // Segmented button: Trend | Cumulative
-            val modeOptions = listOf("Trend", "Cumulative")
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                modeOptions.forEachIndexed { index, label ->
-                    val isSelected =
-                        (isCumulative && (label == "Cumulative")) || (!isCumulative && (label == "Trend"))
-                    SegmentedButton(
-                        selected = isSelected,
-                        onClick = {
-                            callbacks.onUpdate(config.copy(isCumulative = (label == "Cumulative")))
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = modeOptions.size
-                        ),
-                        label = {
-                            Text(
-                                text = label,
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp)
-                            )
-                        }
-                    )
-                }
-            }
-
-            // Legend row
-            IncomeExpenseLegendRow(perspective = config.perspective)
+            // Legend row with Trend/Cumulative dropdown
+            IncomeExpenseLegendRow(
+                perspective = config.perspective,
+                isCumulative = isCumulative,
+                onModeChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+            )
 
             // Build chart data.
             // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
@@ -260,16 +233,29 @@ private fun buildCumulativeNet(buckets: List<com.osscabinet.ossWallet.domain.car
 }
 
 @Composable
-private fun IncomeExpenseLegendRow(perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) {
+private fun IncomeExpenseLegendRow(
+    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective,
+    isCumulative: Boolean,
+    onModeChange: (Boolean) -> Unit
+) {
     val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective)
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IncomeExpenseLegendItem(color = ChartColorGreen, label = labels[ChartMetric.INCOME] ?: "Income")
-        IncomeExpenseLegendItem(color = ChartColorRed, label = labels[ChartMetric.EXPENSE] ?: "Expense")
-        IncomeExpenseLegendItem(color = ChartColorBlue, label = labels[ChartMetric.NET] ?: "Net")
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IncomeExpenseLegendItem(color = ChartColorGreen, label = labels[ChartMetric.INCOME] ?: "Income")
+            IncomeExpenseLegendItem(color = ChartColorRed, label = labels[ChartMetric.EXPENSE] ?: "Expense")
+            IncomeExpenseLegendItem(color = ChartColorBlue, label = labels[ChartMetric.NET] ?: "Net")
+        }
+
+        AeonDropdownSelector(
+            value = if (isCumulative) "Cumulative" else "Trend",
+            options = listOf("Trend", "Cumulative"),
+            labelProvider = { it },
+            onValueChange = { onModeChange(it == "Cumulative") }
+        )
     }
 }
 

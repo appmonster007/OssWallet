@@ -166,11 +166,6 @@ fun CategoryTreemapCard(
             )
         }
     ) {
-        AeonMetricToggle(
-            perspective = config.perspective,
-            selectedMetric = config.selectedMetric,
-            onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
-        )
         Spacer(modifier = Modifier.height(16.dp))
 
         if (navigationStack.size > 1) {
@@ -312,7 +307,11 @@ fun CategoryTreemapCard(
                 currency = currency,
                 showComparison = config.showComparison,
                 isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
-                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
+                perspective = config.perspective,
+                selectedMetric = config.selectedMetric,
+                onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) },
+                splitTransfers = config.splitTransfers
             )
 
             if (config.showLegend) {

@@ -216,6 +216,8 @@ class TagUpSetPlotCardComputer(
                     amount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                     income = ps.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                     expense = ps.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    transferIn = ps.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    transferOut = ps.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                     incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
                     expenseByCurrency = expByCurr.filterValues { it.signum() != 0 },
                     transactionCount = count
@@ -244,6 +246,8 @@ class TagUpSetPlotCardComputer(
                 totalAmount = total.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 income = stats.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 expense = stats.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transferIn = stats.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transferOut = stats.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
                 incomeByCurrency = stats.incomeByCurrency,
                 expenseByCurrency = stats.expenseByCurrency,
                 transactionCount = stats.count

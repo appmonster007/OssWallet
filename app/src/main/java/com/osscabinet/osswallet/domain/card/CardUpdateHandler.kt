@@ -70,14 +70,16 @@ interface CardUpdateHandler {
                 
                 // Safety: If the card has a selected metric that's unsupported in the new
                 // perspective (e.g., TRANSFER in CASH_FLOW), reset it to NET.
-                val labels = AccountingPerspective.labelsFor(perspective)
-                
+                // Pass splitTransfers so that TRANSFER_IN/OUT are not reset when split is on.
+                fun labelsForUpdated(splitTransfers: Boolean) =
+                    AccountingPerspective.labelsFor(perspective, splitTransfers)
+
                 when (updated) {
-                    is CategoryPieChartCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
-                    is CategoryTreemapCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
-                    is CashFlowComparisonCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
-                    is CategorySpendingTrendCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
-                    is TagUpSetPlotCardConfig -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated
+                    is CategoryPieChartCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
+                    is CategoryTreemapCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
+                    is CashFlowComparisonCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
+                    is CategorySpendingTrendCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
+                    is TagUpSetPlotCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
                     else -> updated
                 }
             }

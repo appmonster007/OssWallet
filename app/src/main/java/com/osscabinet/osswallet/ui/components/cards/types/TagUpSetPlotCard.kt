@@ -137,13 +137,12 @@ fun TagUpSetPlotCard(
         val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
             val getMetricValue: (TagUpSetSet) -> BigDecimal = { s ->
                 when (selectedMetric) {
-                    ChartMetric.INCOME -> s.income
-                    ChartMetric.EXPENSE -> s.expense
+                    ChartMetric.INCOME       -> s.income
+                    ChartMetric.EXPENSE      -> s.expense
+                    ChartMetric.TRANSFER_IN  -> s.transferIn
+                    ChartMetric.TRANSFER_OUT -> s.transferOut
                     ChartMetric.NET,
-                    ChartMetric.TRANSFER,
-                    ChartMetric.TRANSFER_IN,
-                    ChartMetric.TRANSFER_OUT,
-                    -> s.income.add(s.expense)
+                    ChartMetric.TRANSFER     -> s.income.add(s.expense)
                 }
             }
 
@@ -182,12 +181,12 @@ fun TagUpSetPlotCard(
                 if (indices.isEmpty()) null
                 else {
                     val amount = when (selectedMetric) {
-                        ChartMetric.INCOME -> intersection.income
-                        ChartMetric.EXPENSE -> intersection.expense
+                        ChartMetric.INCOME       -> intersection.income
+                        ChartMetric.EXPENSE      -> intersection.expense
+                        ChartMetric.TRANSFER_IN  -> intersection.transferIn
+                        ChartMetric.TRANSFER_OUT -> intersection.transferOut
                         ChartMetric.NET,
-                        ChartMetric.TRANSFER,
-                        ChartMetric.TRANSFER_IN,
-                        ChartMetric.TRANSFER_OUT -> intersection.income.add(intersection.expense)
+                        ChartMetric.TRANSFER     -> intersection.income.add(intersection.expense)
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,

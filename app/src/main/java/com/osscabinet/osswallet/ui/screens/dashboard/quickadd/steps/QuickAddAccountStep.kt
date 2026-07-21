@@ -76,6 +76,7 @@ fun QuickAddAccountStep(
     entryMode: EntryMode,
     activeSide: AmountEditingSide = AmountEditingSide.SOURCE,
     isStepActive: Boolean = false,
+    isSheetSettled: Boolean = false,
     onAccountTapped: (String, Boolean) -> Unit,
     onToggleType: () -> Unit,
     onToggleTransfer: () -> Unit = {},
@@ -86,8 +87,8 @@ fun QuickAddAccountStep(
     var structureFilter by remember { mutableStateOf<AccountStructureType?>(null) }
     val focusRequester = remember { FocusRequester() }
 
-    LaunchedEffect(isStepActive) {
-        if (isStepActive) focusRequester.requestFocus()
+    LaunchedEffect(isStepActive, isSheetSettled) {
+        if (isStepActive && isSheetSettled) focusRequester.requestFocus()
     }
 
     val filtered = remember(accounts, searchQuery, structureFilter) {

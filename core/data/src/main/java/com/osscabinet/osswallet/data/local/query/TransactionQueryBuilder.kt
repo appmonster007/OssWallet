@@ -101,10 +101,10 @@ class TransactionQueryBuilder {
                 }
 
                 // Force REAL casting for numeric functions to preserve decimal precision during aggregation,
-                // then CAST the final aggregate result to TEXT to prevent Room/SQLite from using 
-                // floating point types that might round or use scientific notation.
+                // then ROUND the result to 8 decimal places to eliminate floating point noise from REAL summation.
+                // Finally, CAST the result to TEXT to prevent Room/SQLite from using scientific notation.
                 val wrappedExpr = if (func != "COUNT") {
-                    "CAST($func(CAST($finalExpr AS REAL)) AS TEXT)"
+                    "CAST(ROUND($func(CAST($finalExpr AS REAL)), 8) AS TEXT)"
                 } else {
                     "$func($finalExpr)"
                 }

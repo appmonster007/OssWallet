@@ -38,13 +38,17 @@ fun ChartSummarySection(
     currency: String,
     showComparison: Boolean,
     isAllTime: Boolean,
-    positiveDeltaIsGood: Boolean,
     perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
     modifier: Modifier = Modifier,
-    splitTransfers: Boolean = false
+    splitTransfers: Boolean = false,
+    dropdownEnabled: Boolean = true
 ) {
+    val positiveDeltaIsGood = selectedMetric == ChartMetric.INCOME || 
+                             selectedMetric == ChartMetric.NET || 
+                             selectedMetric == ChartMetric.TRANSFER_IN ||
+                             selectedMetric == ChartMetric.TRANSFER
     val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 
@@ -62,12 +66,23 @@ fun ChartSummarySection(
                 color = AppColors.contentSecondary.copy(alpha = 0.6f)
             )
 
-            AeonDropdownSelector(
-                value = selectedMetric,
-                options = options,
-                labelProvider = { labels[it] ?: it.name },
-                onValueChange = onMetricChange
-            )
+            if (dropdownEnabled) {
+                AeonDropdownSelector(
+                    value = selectedMetric,
+                    options = options,
+                    labelProvider = { labels[it] ?: it.name },
+                    onValueChange = onMetricChange
+                )
+            } else {
+                Text(
+                    text = labels[selectedMetric] ?: selectedMetric.name,
+                    style = AppTextStyles.caption.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.primary
+                    ),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
         }
 
         Row(

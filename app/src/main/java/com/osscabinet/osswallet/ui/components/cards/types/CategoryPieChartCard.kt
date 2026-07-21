@@ -262,7 +262,7 @@ fun CategoryPieChartCard(
                     previousTotal = previousTotalValue,
                     showComparison = config.showComparison,
                     isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
-                    positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
+                    positiveDeltaIsGood = false,
                     onSliceClick = {},
                     onDrillInClick = { slice ->
                         val clickedItem = groupedData.find { it.category == slice.label }
@@ -302,7 +302,6 @@ fun CategoryPieChartCard(
                 currency = currency,
                 showComparison = config.showComparison,
                 isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
-                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
                 perspective = config.perspective,
                 selectedMetric = config.selectedMetric,
                 onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) },

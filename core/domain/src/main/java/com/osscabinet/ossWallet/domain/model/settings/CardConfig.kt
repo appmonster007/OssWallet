@@ -501,27 +501,23 @@ sealed class AccountingPerspective {
         fun labelsFor(
             perspective: AccountingPerspective,
             splitTransfers: Boolean = false
-        ): Map<ChartMetric, String> =
-            when (perspective) {
-                is CashFlow -> mapOf(
-                    ChartMetric.INCOME to "IN",
-                    ChartMetric.EXPENSE to "OUT",
-                    ChartMetric.NET to "NET"
-                )
+        ): Map<ChartMetric, String> = buildMap {
+            val isCashFlow = perspective is AccountingPerspective.CashFlow
+            put(ChartMetric.INCOME, if (isCashFlow) "IN" else "INC")
+            put(ChartMetric.EXPENSE, if (isCashFlow) "OUT" else "EXP")
 
-                // Accounting is the default perspective.
-                else -> buildMap {
-                    put(ChartMetric.INCOME, "INC")
-                    put(ChartMetric.EXPENSE, "EXP")
-                    if (splitTransfers) {
-                        put(ChartMetric.TRANSFER_IN, "TRF IN")
-                        put(ChartMetric.TRANSFER_OUT, "TRF OUT")
-                    } else {
-                        put(ChartMetric.TRANSFER, "TRF")
-                    }
-                    put(ChartMetric.NET, "NET")
+            if (!isCashFlow) {
+                // splitTransfers is only applicable for Accounting mode
+                if (splitTransfers) {
+                    put(ChartMetric.TRANSFER_IN, "TRF IN")
+                    put(ChartMetric.TRANSFER_OUT, "TRF OUT")
+                } else {
+                    put(ChartMetric.TRANSFER, "TRF")
                 }
             }
+
+            put(ChartMetric.NET, "NET")
+        }
 
         val ALL: List<AccountingPerspective> get() = listOf(Accounting, CashFlow)
     }

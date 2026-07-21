@@ -275,6 +275,8 @@ data class TagUpSetSet(
     @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
+    val transfer: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferIn: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val transferOut: BigDecimal = BigDecimal.ZERO,
@@ -293,6 +295,8 @@ data class TagUpSetIntersection(
     val income: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transfer: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val transferIn: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)

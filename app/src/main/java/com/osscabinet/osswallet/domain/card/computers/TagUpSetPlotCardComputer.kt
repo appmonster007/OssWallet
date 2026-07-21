@@ -10,18 +10,21 @@ import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.query.AggregationDimension
 import com.osscabinet.ossWallet.domain.model.query.StandardMetrics
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.UpSetIntersectionSortMode
 import com.osscabinet.ossWallet.domain.model.settings.UpSetTagSortMode
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
+import com.osscabinet.ossWallet.domain.service.financial.extractFrom
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import java.math.BigDecimal
 import java.math.RoundingMode
 
+// All fields are perspective-resolved (toPerspective already applied).
 private data class IndividualTagStats(
     val income: BigDecimal,
     val expense: BigDecimal,
+    val transfer: BigDecimal,
     val count: Int,
     val incomeByCurrency: Map<String, BigDecimal>,
     val expenseByCurrency: Map<String, BigDecimal>
@@ -76,59 +79,61 @@ class TagUpSetPlotCardComputer(
             }
             .groupBy { it.dimensions[AggregationDimension.TAGS]!! }
             .mapValues { (_, rows) ->
-                var val1Total = BigDecimal.ZERO
-                var val2Total = BigDecimal.ZERO
+                var rawIncome  = BigDecimal.ZERO
+                var rawExpense = BigDecimal.ZERO
+                var rawTrfIn   = BigDecimal.ZERO
+                var rawTrfOut  = BigDecimal.ZERO
                 var countTotal = 0
+                val incByCurr  = mutableMapOf<String, BigDecimal>()
+                val expByCurr  = mutableMapOf<String, BigDecimal>()
 
                 rows.forEach { row ->
                     val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
-                    val inc = row.metrics["income"] ?: BigDecimal.ZERO
-                    val exp = row.metrics["expense"] ?: BigDecimal.ZERO
-                    val trIn = row.metrics["transferIn"] ?: BigDecimal.ZERO
-                    val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
+                    val inc  = row.metrics["income"]      ?: BigDecimal.ZERO
+                    val exp  = row.metrics["expense"]     ?: BigDecimal.ZERO
+                    val trIn = row.metrics["transferIn"]  ?: BigDecimal.ZERO
+                    val trOut= row.metrics["transferOut"] ?: BigDecimal.ZERO
 
-                    val (v1, v2) = when (config.perspective) {
-                        is AccountingPerspective.Accounting -> {
-                            if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
-                        }
-                        is AccountingPerspective.CashFlow -> inc.add(trIn) to exp.add(trOut)
-                    }
+                    // Perspective-resolved native breakdown (no currency conversion)
+                    val rowPs = FinancialSummary(
+                        totalAmount = BigDecimal.ZERO, income = inc, expense = exp,
+                        transfer = trIn.add(trOut), transferIn = trIn, transferOut = trOut,
+                        transactionCount = 0
+                    ).toPerspective(config.perspective)
+                    incByCurr[currency] = (incByCurr[currency] ?: BigDecimal.ZERO).add(rowPs.income)
+                    expByCurr[currency] = (expByCurr[currency] ?: BigDecimal.ZERO).add(rowPs.expense)
 
-                    val1Total += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
-                    val2Total += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
+                    // Accumulate raw primitives in base currency
+                    rawIncome  = rawIncome.add(CurrencyService.convertAmount(inc,  currency, baseCurrency, exchangeRates, 10))
+                    rawExpense = rawExpense.add(CurrencyService.convertAmount(exp,  currency, baseCurrency, exchangeRates, 10))
+                    rawTrfIn   = rawTrfIn.add(CurrencyService.convertAmount(trIn,  currency, baseCurrency, exchangeRates, 10))
+                    rawTrfOut  = rawTrfOut.add(CurrencyService.convertAmount(trOut, currency, baseCurrency, exchangeRates, 10))
                     countTotal += row.count
                 }
 
-                val (incByCurr, expByCurr) = rows.associate {
-                    val currency = it.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
-                    val inc = it.metrics["income"] ?: BigDecimal.ZERO
-                    val exp = it.metrics["expense"] ?: BigDecimal.ZERO
-                    val trIn = it.metrics["transferIn"] ?: BigDecimal.ZERO
-                    val trOut = it.metrics["transferOut"] ?: BigDecimal.ZERO
+                val ps = FinancialSummary(
+                    totalAmount = BigDecimal.ZERO,
+                    income = rawIncome, expense = rawExpense,
+                    transfer = rawTrfIn.add(rawTrfOut), transferIn = rawTrfIn, transferOut = rawTrfOut,
+                    transactionCount = 0
+                ).toPerspective(config.perspective)
 
-                    val (v1, v2) = when (config.perspective) {
-                        is AccountingPerspective.Accounting -> {
-                            if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
-                        }
-                        is AccountingPerspective.CashFlow -> inc.add(trIn) to exp.add(trOut)
-                    }
-                    currency to (v1 to v2)
-                }.let { map ->
-                    map.mapValues { it.value.first }.filterValues { it.signum() != 0 } to
-                        map.mapValues { it.value.second }.filterValues { it.signum() != 0 }
-                }
-
-                IndividualTagStats(val1Total, val2Total, countTotal, incByCurr, expByCurr)
+                IndividualTagStats(
+                    income = ps.income, expense = ps.expense, transfer = ps.transfer,
+                    count = countTotal,
+                    incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
+                    expenseByCurrency = expByCurr.filterValues { it.signum() != 0 }
+                )
             }
             .toList()
             .let { list ->
                 val metricValue = { p: Pair<String, IndividualTagStats> ->
-                    when (config.selectedMetric) {
-                        ChartMetric.INCOME -> p.second.income
-                        ChartMetric.EXPENSE -> p.second.expense
-                        ChartMetric.NET -> p.second.income.add(p.second.expense)
-                        ChartMetric.TRANSFER -> p.second.income.add(p.second.expense)
-                    }
+                    // income/expense/transfer are already perspective-resolved
+                    config.selectedMetric.extractFrom(FinancialSummary(
+                        totalAmount = BigDecimal.ZERO,
+                        income = p.second.income, expense = p.second.expense,
+                        transfer = p.second.transfer, transactionCount = 0
+                    ))
                 }
                 when (config.tagSortMode) {
                     UpSetTagSortMode.NAME_ASC -> list.sortedBy { it.first }
@@ -160,48 +165,53 @@ class TagUpSetPlotCardComputer(
             }
             .filter { (key, _) -> key.isNotEmpty() }
             .map { (filteredTags, rows) ->
-                var val1Total = BigDecimal.ZERO
-                var val2Total = BigDecimal.ZERO
-                val val1ByCurr = mutableMapOf<String, BigDecimal>()
-                val val2ByCurr = mutableMapOf<String, BigDecimal>()
+                var rawIncome  = BigDecimal.ZERO
+                var rawExpense = BigDecimal.ZERO
+                var rawTrfIn   = BigDecimal.ZERO
+                var rawTrfOut  = BigDecimal.ZERO
+                val incByCurr  = mutableMapOf<String, BigDecimal>()
+                val expByCurr  = mutableMapOf<String, BigDecimal>()
                 var count = 0
 
                 rows.forEach { row ->
                     val currency = row.dimensions[AggregationDimension.CURRENCY] ?: baseCurrency
-                    val inc = row.metrics["income"] ?: BigDecimal.ZERO
-                    val exp = row.metrics["expense"] ?: BigDecimal.ZERO
-                    val trIn = row.metrics["transferIn"] ?: BigDecimal.ZERO
-                    val trOut = row.metrics["transferOut"] ?: BigDecimal.ZERO
+                    val inc  = row.metrics["income"]      ?: BigDecimal.ZERO
+                    val exp  = row.metrics["expense"]     ?: BigDecimal.ZERO
+                    val trIn = row.metrics["transferIn"]  ?: BigDecimal.ZERO
+                    val trOut= row.metrics["transferOut"] ?: BigDecimal.ZERO
 
-                    val (v1, v2) = when (config.perspective) {
-                        is AccountingPerspective.Accounting -> {
-                            if (config.selectedMetric == ChartMetric.TRANSFER) trIn to trOut else inc to exp
-                        }
-                        is AccountingPerspective.CashFlow -> inc.add(trIn) to exp.add(trOut)
-                    }
+                    // Perspective-resolved native breakdown (no currency conversion)
+                    val rowPs = FinancialSummary(
+                        totalAmount = BigDecimal.ZERO, income = inc, expense = exp,
+                        transfer = trIn.add(trOut), transferIn = trIn, transferOut = trOut,
+                        transactionCount = 0
+                    ).toPerspective(config.perspective)
+                    incByCurr[currency] = (incByCurr[currency] ?: BigDecimal.ZERO).add(rowPs.income)
+                    expByCurr[currency] = (expByCurr[currency] ?: BigDecimal.ZERO).add(rowPs.expense)
 
-                    val1Total += CurrencyService.convertAmount(v1, currency, baseCurrency, exchangeRates, 10)
-                    val2Total += CurrencyService.convertAmount(v2, currency, baseCurrency, exchangeRates, 10)
-
-                    val1ByCurr[currency] = (val1ByCurr[currency] ?: BigDecimal.ZERO) + v1
-                    val2ByCurr[currency] = (val2ByCurr[currency] ?: BigDecimal.ZERO) + v2
+                    rawIncome  = rawIncome.add(CurrencyService.convertAmount(inc,  currency, baseCurrency, exchangeRates, 10))
+                    rawExpense = rawExpense.add(CurrencyService.convertAmount(exp,  currency, baseCurrency, exchangeRates, 10))
+                    rawTrfIn   = rawTrfIn.add(CurrencyService.convertAmount(trIn,  currency, baseCurrency, exchangeRates, 10))
+                    rawTrfOut  = rawTrfOut.add(CurrencyService.convertAmount(trOut, currency, baseCurrency, exchangeRates, 10))
                     count += row.count
                 }
 
-                val amount = when (config.selectedMetric) {
-                    ChartMetric.INCOME -> val1Total
-                    ChartMetric.EXPENSE -> val2Total
-                    ChartMetric.NET -> val1Total.add(val2Total)
-                    ChartMetric.TRANSFER -> val1Total.add(val2Total)
-                }
+                val ps = FinancialSummary(
+                    totalAmount = BigDecimal.ZERO,
+                    income = rawIncome, expense = rawExpense,
+                    transfer = rawTrfIn.add(rawTrfOut), transferIn = rawTrfIn, transferOut = rawTrfOut,
+                    transactionCount = 0
+                ).toPerspective(config.perspective)
+
+                val amount = config.selectedMetric.extractFrom(ps)
 
                 TagUpSetIntersection(
                     tags = filteredTags,
                     amount = amount.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    income = val1Total.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    expense = val2Total.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                    incomeByCurrency = val1ByCurr.filterValues { it.signum() != 0 },
-                    expenseByCurrency = val2ByCurr.filterValues { it.signum() != 0 },
+                    income = ps.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    expense = ps.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                    incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
+                    expenseByCurrency = expByCurr.filterValues { it.signum() != 0 },
                     transactionCount = count
                 )
             }
@@ -215,12 +225,12 @@ class TagUpSetPlotCardComputer(
             }
 
         val sets = tagTotals.map { (tag, stats) ->
-            val total = when (config.selectedMetric) {
-                ChartMetric.INCOME -> stats.income
-                ChartMetric.EXPENSE -> stats.expense
-                ChartMetric.NET -> stats.income.add(stats.expense)
-                ChartMetric.TRANSFER -> stats.income.add(stats.expense)
-            }
+            // income/expense/transfer are already perspective-resolved
+            val total = config.selectedMetric.extractFrom(FinancialSummary(
+                totalAmount = BigDecimal.ZERO,
+                income = stats.income, expense = stats.expense,
+                transfer = stats.transfer, transactionCount = 0
+            ))
             TagUpSetSet(
                 tagName = tag,
                 totalAmount = total.setScale(CurrencyService.precision, RoundingMode.HALF_UP),

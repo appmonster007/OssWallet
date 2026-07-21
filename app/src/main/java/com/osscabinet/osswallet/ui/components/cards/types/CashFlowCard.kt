@@ -235,18 +235,33 @@ private fun CashFlowTable(
                     if (showExpense) add(TransactionType.EXPENSE)
                     if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
                 }
-                val currentInflow = (if (showIncome) result.totalIncomeInBase else BigDecimal.ZERO) +
-                        (if (showTransfer) result.totalTransferInInBase else BigDecimal.ZERO)
-                val prevInflow = previousResult?.let {
-                    (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) +
-                            (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
+                val currentInflow = when {
+                    showIncome && showTransfer -> result.totalInflowInBase
+                    showIncome                 -> result.totalIncomeInBase
+                    showTransfer               -> result.totalTransferInInBase
+                    else                       -> BigDecimal.ZERO
                 }
-
-                val currentOutflow = (if (showExpense) result.totalExpensesInBase else BigDecimal.ZERO) +
-                        (if (showTransfer) result.totalTransferOutInBase else BigDecimal.ZERO)
+                val prevInflow = previousResult?.let {
+                    when {
+                        showIncome && showTransfer -> it.totalInflowInBase
+                        showIncome                 -> it.totalIncomeInBase
+                        showTransfer               -> it.totalTransferInInBase
+                        else                       -> BigDecimal.ZERO
+                    }
+                }
+                val currentOutflow = when {
+                    showExpense && showTransfer -> result.totalOutflowInBase
+                    showExpense                 -> result.totalExpensesInBase
+                    showTransfer                -> result.totalTransferOutInBase
+                    else                        -> BigDecimal.ZERO
+                }
                 val prevOutflow = previousResult?.let {
-                    (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) +
-                            (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
+                    when {
+                        showExpense && showTransfer -> it.totalOutflowInBase
+                        showExpense                 -> it.totalExpensesInBase
+                        showTransfer                -> it.totalTransferOutInBase
+                        else                        -> BigDecimal.ZERO
+                    }
                 }
 
                 listOf(

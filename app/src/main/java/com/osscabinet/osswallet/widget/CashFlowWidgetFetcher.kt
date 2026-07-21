@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowCardConfig
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
@@ -36,16 +35,16 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
                         anchor = common.baseCurrency,
                         rates = common.exchangeRates
                     ),
-                    filter = TransactionFilter(
-                        timelineRange = config.timelineRange.withExcludeFuture(true)
+                    filter = config.filter.copy(
+                        timelineRange = config.filter.timelineRange.withExcludeFuture(true)
                     ),
                     accounts = emptyList(),
                     categories = emptyList()
                 ),
                 config = CashFlowCardConfig(
                     cardId = "cf_widget_$widgetId",
-                    filter = TransactionFilter(
-                        timelineRange = config.timelineRange.withExcludeFuture(true)
+                    filter = config.filter.copy(
+                        timelineRange = config.filter.timelineRange.withExcludeFuture(true)
                     )
                 )
             )
@@ -62,8 +61,8 @@ class CashFlowWidgetFetcher : WidgetDataFetcher {
 //        val transferFormatted = formatCurrency(transferInBase, common.baseCurrency)
 
         val prevNetInBase: BigDecimal? = if (config.showComparison) {
-            val currentFilter = TransactionFilter(
-                timelineRange = config.timelineRange.withExcludeFuture(true)
+            val currentFilter = config.filter.copy(
+                timelineRange = config.filter.timelineRange.withExcludeFuture(true)
             )
             val (prevStart, prevEnd) = TimelineService.getPreviousRange(currentFilter.timelineRange)
             if (prevStart != null && prevEnd != null) {

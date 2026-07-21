@@ -2,8 +2,6 @@ package com.osscabinet.ossWallet.widget
 
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.widget.WidgetDataLoader.CommonData
@@ -40,14 +38,16 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
             RecentTransactionsWidgetPrefsStore(context).load(widgetId)
         }.getOrElse { RecentTransactionsWidgetConfig() }
 
-        val filter = TransactionFilter(timelineRange = TimelineRange.AllTime(excludeFuture = true))
-        
-        // Fetch all transactions for the profile
+        val filter = config.filter.copy(
+            timelineRange = config.filter.timelineRange.withExcludeFuture(true)
+        )
+
+        // Fetch transactions for the configured timeline
         val allTransactions = common.databaseQueryService
             .observeFilteredTransactions(common.profileId, filter)
             .first()
 
-        // Apply "last 20 or last 7 days" logic
+        // Apply "last N or last 7 days" logic within the timeline window
         val recentTransactions = TransactionFilterService.filterToRecent(
             items = allTransactions,
             getTimestamp = { it.timestamp },
@@ -90,7 +90,7 @@ class RecentTransactionsWidgetFetcher : WidgetDataFetcher {
         }
 
         prefs[RecentTransactionsGlanceWidget.Keys.IS_LOADED] = "true"
-        prefs[RecentTransactionsGlanceWidget.Keys.PERIOD_LABEL] = "Latest"
+        prefs[RecentTransactionsGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
         prefs[RecentTransactionsGlanceWidget.Keys.TRANSACTIONS_JSON] = Json.encodeToString(widgetTransactions)
         prefs[RecentTransactionsGlanceWidget.Keys.PRIMARY_DISPLAY] = config.primaryDisplay.name
     }

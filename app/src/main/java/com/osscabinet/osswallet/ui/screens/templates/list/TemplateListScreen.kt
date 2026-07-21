@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AddToHomeScreen
 import androidx.compose.material.icons.rounded.ArrowDownward
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Check
@@ -51,8 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.pm.ShortcutManagerCompat
+import com.osscabinet.ossWallet.ui.screens.shortcut.buildShortcutIconBitmap
+import com.osscabinet.ossWallet.ui.screens.shortcut.createTemplateHomeScreenShortcut
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Category
@@ -241,6 +248,7 @@ fun TemplateListScreenContent(
                                     categoryName = categoryMap[template.categoryId]?.name
                                         ?: "Unknown",
                                     categoryIconName = categoryMap[template.categoryId]?.iconName,
+                                    categoryColorHex = categoryMap[template.categoryId]?.colorHex,
                                     onEdit = { navigate { actions.onAddTemplateClick(template.id) } },
                                     onDelete = { templateToDelete = template },
                                     onToggleStar = { onToggleStar(template) },
@@ -317,11 +325,22 @@ fun TemplateItem(
     template: Template,
     categoryName: String,
     categoryIconName: String?,
+    categoryColorHex: Int? = null,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleStar: () -> Unit,
     onCreatePlannedPayment: () -> Unit
 ) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val iconPainter = rememberVectorPainter(getIconByName(categoryIconName))
+    val pinSupported = remember(context) { ShortcutManagerCompat.isRequestPinShortcutSupported(context) }
+    val iconBgColor = template.colorHex?.let {
+        runCatching { android.graphics.Color.parseColor(it) }.getOrNull()
+    }?.let { Color(it) }
+        ?: categoryColorHex?.let { Color(it) }
+        ?: AppColors.primary
+
     val (badgeColor, badgeIcon) = when (template.entryMode) {
         EntryMode.EXPENSE -> AppColors.error to Icons.Rounded.ArrowDownward
         EntryMode.INCOME -> PositiveAmountColor to Icons.Rounded.ArrowUpward
@@ -376,6 +395,17 @@ fun TemplateItem(
                 leadingIcon = { Icon(Icons.Rounded.Schedule, null, tint = AppColors.primary) },
                 onClick = { onDismiss(); onCreatePlannedPayment() }
             )
+            if (pinSupported) {
+                DropdownMenuItem(
+                    text = { Text("Add to Homescreen") },
+                    leadingIcon = { Icon(Icons.Rounded.AddToHomeScreen, null, tint = AppColors.primary) },
+                    onClick = {
+                        onDismiss()
+                        val bitmap = buildShortcutIconBitmap(iconPainter, density, iconBgColor)
+                        createTemplateHomeScreenShortcut(context, template, bitmap)
+                    }
+                )
+            }
             DropdownMenuItem(
                 text = { Text(if (template.isStarred) "Unstar" else "Star") },
                 leadingIcon = {

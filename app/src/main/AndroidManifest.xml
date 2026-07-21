@@ -45,6 +45,11 @@
             android:theme="@style/Theme.App.QuickAddShortcut"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".ui.screens.shortcut.ShortcutConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.OssWallet" />
+
         <!-- NetWorth homescreen widget -->
         <receiver
             android:name=".widget.NetWorthWidgetProvider"

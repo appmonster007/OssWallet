@@ -7,9 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,12 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,21 +27,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
-import com.osscabinet.ossWallet.domain.model.timeline.LastPeriodType
-import com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType
-import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
+import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.ui.components.AeonDashedButton
+import com.osscabinet.ossWallet.ui.components.AeonTimelinePeriodSelector
 import com.osscabinet.ossWallet.ui.components.AeonTopAppBar
 import com.osscabinet.ossWallet.ui.components.AeonTopBarNavTitlePill
 import com.osscabinet.ossWallet.ui.components.AeonTopBarSection
 import com.osscabinet.ossWallet.ui.components.entry.EntrySwitchRow
+import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
+import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterSheet
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
+import androidx.compose.material3.Text
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,6 +112,8 @@ private fun CashFlowWidgetConfigScreen(
     onSave: () -> Unit,
     onBack: () -> Unit
 ) {
+    var showFilterSheet by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = AppColors.screenBackground,
         topBar = {
@@ -143,16 +143,27 @@ private fun CashFlowWidgetConfigScreen(
                 style = AppTextStyles.formSectionLabel,
                 color = AppColors.primary
             )
-            CashFlowTimelineOptions(
-                selected = config.timelineRange,
-                onSelect = { onConfigChange(config.copy(timelineRange = it)) }
+            AeonTimelinePeriodSelector(
+                currentRange = config.filter.timelineRange,
+                onRangeSelected = {
+                    onConfigChange(config.copy(filter = config.filter.copy(timelineRange = it)))
+                },
+                swipeEntireComponent = true,
+                isFlush = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            AeonDashedButton(
+                onClick = { showFilterSheet = true },
+                text = "Advanced Filters",
+                icon = Icons.Filled.Tune
             )
 
             HorizontalDivider(color = AppColors.divider.copy(alpha = 0.5f))
 
             EntrySwitchRow(
                 label = "Show Base Conversion",
-                subtitle = "Show \u2248 equivalent in base currency",
+                subtitle = "Show ≈ equivalent in base currency",
                 checked = config.showBaseConversion,
                 onCheckedChange = { onConfigChange(config.copy(showBaseConversion = it)) },
                 isFlush = true
@@ -189,36 +200,24 @@ private fun CashFlowWidgetConfigScreen(
             Spacer(modifier = Modifier.height(AeonTheme.dimensions.spacingLg))
         }
     }
-}
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun CashFlowTimelineOptions(
-    selected: TimelineRange,
-    onSelect: (TimelineRange) -> Unit
-) {
-    val options: List<Pair<String, TimelineRange>> = listOf(
-        "All Time" to TimelineRange.AllTime(),
-        "Today" to TimelineRange.ThisPeriod(ThisPeriodType.TODAY),
-        "This Week" to TimelineRange.ThisPeriod(ThisPeriodType.WEEK),
-        "This Month" to TimelineRange.ThisPeriod(ThisPeriodType.MONTH),
-        "This Quarter" to TimelineRange.ThisPeriod(ThisPeriodType.QUARTER),
-        "This Year" to TimelineRange.ThisPeriod(ThisPeriodType.YEAR),
-        "Last 30 Days" to TimelineRange.LastPeriod(LastPeriodType.LAST_30_DAYS),
-        "Last 6 Months" to TimelineRange.LastPeriod(LastPeriodType.LAST_6_MONTHS),
-        "Last 1 Year" to TimelineRange.LastPeriod(LastPeriodType.LAST_1_YEAR),
-    )
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        options.forEach { (label, range) ->
-            FilterChip(
-                selected = range == selected,
-                onClick = { onSelect(range) },
-                label = { Text(label, style = AppTextStyles.chipLabel) }
-            )
-        }
+    if (showFilterSheet) {
+        TransactionFilterSheet(
+            filter = config.filter,
+            accounts = emptyList(),
+            categories = emptyList(),
+            onSearchTransactions = { flowOf(emptyList()) },
+            onFilterEvent = { event ->
+                when (event) {
+                    is FilterEvent.Apply -> onConfigChange(config.copy(filter = event.filter))
+                    is FilterEvent.Reset -> onConfigChange(
+                        config.copy(filter = TransactionFilter(timelineRange = config.filter.timelineRange))
+                    )
+                    else -> {}
+                }
+            },
+            onSaveFilterClick = { onConfigChange(config.copy(filter = it)) },
+            onClose = { showFilterSheet = false }
+        )
     }
 }

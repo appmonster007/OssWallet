@@ -15,4 +15,16 @@
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 
+    <shortcut
+            android:shortcutId="template_quick_add"
+            android:enabled="true"
+            android:icon="@drawable/ic_shortcut_template"
+            android:shortcutShortLabel="@string/shortcut_template_short"
+            android:shortcutLongLabel="@string/shortcut_template_long">
+        <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="com.osscabinet.ossWallet"
+                android:targetClass="com.osscabinet.ossWallet.ui.screens.shortcut.ShortcutConfigActivity" />
+    </shortcut>
+
 </shortcuts>

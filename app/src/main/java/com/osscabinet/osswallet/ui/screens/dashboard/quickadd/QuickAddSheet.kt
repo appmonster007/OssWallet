@@ -3,6 +3,8 @@ package com.osscabinet.ossWallet.ui.screens.dashboard.quickadd
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -97,6 +99,7 @@ private const val TOTAL_STEPS = 3
 @Composable
 fun QuickAddSheet(
     onDismiss: () -> Unit,
+    initialTemplate: Template? = null,
     viewModel: QuickAddViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -104,12 +107,32 @@ fun QuickAddSheet(
     val categories by viewModel.categories.collectAsState()
     var saveSucceeded by remember { mutableStateOf(false) }
 
+    // When launched with a pre-selected template, suppress step content until
+    // openWithTemplate has propagated to `state`. Step -1 is a sentinel:
+    // the when(step) else->{} branch renders nothing so QuickAddTemplateStep
+    // never enters composition and its focus requester never fires.
+    //
+    // Key insight: `state.selectedTemplate` and `state.currentStep` are fields of
+    // the same QuickAddState object emitted by the same StateFlow. They update
+    // atomically in the same recomposition, eliminating the one-frame gap that a
+    // separate `templateApplied` boolean would have (it could flip true one frame
+    // before `state.currentStep` updates, briefly exposing step 0).
+    val effectiveState = if (initialTemplate != null && state.selectedTemplate == null) {
+        state.copy(currentStep = -1)
+    } else {
+        state
+    }
+
     QuickAddSheetInternal(
-        state = state,
+        state = effectiveState,
         sections = sections,
         categories = categories,
         onDismiss = onDismiss,
-        onReset = viewModel::reset,
+        onReset = if (initialTemplate != null) {
+            { viewModel.openWithTemplate(initialTemplate) }
+        } else {
+            viewModel::reset
+        },
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
         onTemplateSelected = viewModel::onTemplateSelected,
         onSuggestionSelected = viewModel::onSuggestionSelected,
@@ -177,7 +200,9 @@ internal fun QuickAddSheetInternal(
     }
 
     // Reset state every time the sheet opens
-    LaunchedEffect(Unit) { onReset() }
+    LaunchedEffect(Unit) {
+        onReset()
+    }
 
     fun hideKeyboard() {
         keyboardController?.hide()
@@ -477,7 +502,10 @@ private fun QuickAddSheetContent(
                 targetState = state.currentStep,
                 modifier = Modifier.fillMaxWidth(),
                 transitionSpec = {
-                    if (targetState > initialState) {
+                    if (initialState == -1) {
+                        // Sentinel → real step: sheet is opening directly at this step, no slide
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else if (targetState > initialState) {
                         (slideInHorizontally(tween(280)) { it } + fadeIn(tween(200))).togetherWith(
                             slideOutHorizontally(tween(280)) { -it } + fadeOut(tween(200))
                         )
@@ -514,6 +542,7 @@ private fun QuickAddSheetContent(
                         entryMode = state.entryMode,
                         activeSide = state.activeAccountSide,
                         isStepActive = state.currentStep == STEP_ACCOUNT,
+                        isSheetSettled = isSheetSettled,
                         onAccountTapped = onAccountTapped,
                         onToggleType = { onToggleType() },
                         onToggleTransfer = { onToggleTransfer() },

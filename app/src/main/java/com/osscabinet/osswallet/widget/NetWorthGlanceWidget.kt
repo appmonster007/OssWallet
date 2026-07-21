@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -31,167 +30,266 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.osscabinet.ossWallet.R
 
-/**
- * NetWorth Glance widget — matches the NetWorth dashboard card design.
- */
 class NetWorthGlanceWidget : BaseOssWalletWidget() {
 
     @Composable
     override fun RenderContent(context: Context, prefs: Preferences, size: DpSize) {
-        NetWorthWidgetContent(context, prefs, size)
+        NetWorthWidgetContent(prefs, size)
     }
 
     object Keys {
-        val IS_LOADED = stringPreferencesKey("nw_is_loaded")
-        val NET_WORTH = stringPreferencesKey("nw_net_worth")
-        val INCOME = stringPreferencesKey("nw_income")
-        val EXPENSE = stringPreferencesKey("nw_expense")
+        val IS_LOADED            = stringPreferencesKey("nw_is_loaded")
+        val NET_WORTH            = stringPreferencesKey("nw_net_worth")
+        val INC                  = stringPreferencesKey("nw_inc")
+        val EXP                  = stringPreferencesKey("nw_exp")
         val NET_WORTH_COMPARISON = stringPreferencesKey("nw_comparison")
-        val INCOME_COMPARISON = stringPreferencesKey("nw_income_comparison")
-        val EXPENSE_COMPARISON = stringPreferencesKey("nw_expense_comparison")
-        val PERIOD_LABEL = stringPreferencesKey("nw_period_label")
-        val FONT_SIZE = stringPreferencesKey("nw_font_size")
+        val PERIOD_LABEL         = stringPreferencesKey("nw_period_label")
+        val FONT_SIZE            = stringPreferencesKey("nw_font_size")
     }
 }
 
+private val STRIP_HEIGHT = 130.dp
+private val WIDE4_WIDTH  = 300.dp
+private val WIDE5_WIDTH  = 390.dp
+
 @Composable
-internal fun NetWorthWidgetContent(context: Context, prefs: Preferences, widgetSize: DpSize) {
-    // Discrete scaling buckets for better predictability and readability
-    val scale = when {
-        widgetSize.height < 100.dp -> 0.85f // Compact (1-row)
-        widgetSize.height < 180.dp -> 1.0f  // Standard (2-row)
-        else -> 1.15f                       // Large (3-row+)
-    }
-
-    val isCompact = widgetSize.height < 100.dp
-
-    // Guarantee "-999,999 USD" (6 digits + 3-char ISO = ~12 chars) fits on one line.
-    val maxNetWorthSp = ((widgetSize.width.value - 24f) / (12f * 0.6f)).coerceAtLeast(9f)
-
+internal fun NetWorthWidgetContent(prefs: Preferences, widgetSize: DpSize) {
     val isLoaded = prefs[NetWorthGlanceWidget.Keys.IS_LOADED] == "true"
     if (!isLoaded) {
-        WidgetPlaceholder(scale)
-    } else {
-        WidgetBody(prefs, scale, isCompact, maxNetWorthSp)
+        Column(modifier = GlanceModifier.fillMaxSize()) {
+            Text(
+                text = "NET WORTH",
+                style = TextStyle(
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+            Text(
+                text = "Loading…",
+                style = TextStyle(
+                    fontSize = TextUnit(10f, TextUnitType.Sp),
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+        }
+        return
     }
-}
 
-@Composable
-private fun WidgetPlaceholder(scale: Float) {
-    Text(
-        text = "Net Worth",
-        style = TextStyle(
-            fontSize = TextUnit(12f * scale, TextUnitType.Sp),
-            fontWeight = FontWeight.Bold,
-            color = GlanceTheme.colors.onSurface
-        )
-    )
-    Spacer(modifier = GlanceModifier.height((4 * scale).dp))
-    Text(
-        text = "Tap to open app",
-        style = TextStyle(
-            fontSize = TextUnit(10f * scale, TextUnitType.Sp),
-            color = GlanceTheme.colors.onSurfaceVariant
-        )
-    )
-}
-
-@Composable
-internal fun WidgetBody(
-    prefs: Preferences,
-    scale: Float,
-    isCompact: Boolean = false,
-    maxNetWorthSp: Float = Float.MAX_VALUE,
-) {
     val keys = NetWorthGlanceWidget.Keys
-
     val baseFontSize = when (prefs[keys.FONT_SIZE]) {
-        "Small" -> 18f
-        "Large" -> 24f
+        "Small"   -> 18f
+        "Large"   -> 24f
         "X-Large" -> 32f
-        else -> 20f
+        else      -> 20f
     }
-    // Clamp to maxNetWorthSp so "-999,999 USD" always fits on one line regardless of widget size.
-    val netWorthFontSize = minOf(baseFontSize * scale, maxNetWorthSp)
-    val subtitleFontSize = 10f * scale
+    val netWorth    = prefs[keys.NET_WORTH] ?: ""
+    val inc         = prefs[keys.INC] ?: ""
+    val exp         = prefs[keys.EXP] ?: ""
+    val changeText  = prefs[keys.NET_WORTH_COMPARISON]?.takeIf { it.isNotEmpty() }
+    val periodLabel = prefs[keys.PERIOD_LABEL] ?: ""
 
-    val netWorthComparison = prefs[keys.NET_WORTH_COMPARISON]?.takeIf { it.isNotEmpty() }
-    val incomeComparison = prefs[keys.INCOME_COMPARISON]?.takeIf { it.isNotEmpty() }
-    val expenseComparison = prefs[keys.EXPENSE_COMPARISON]?.takeIf { it.isNotEmpty() }
-    val subText = netWorthComparison ?: prefs[keys.PERIOD_LABEL]
+    val isStrip = widgetSize.height < STRIP_HEIGHT
+    val isWide4 = widgetSize.width  >= WIDE4_WIDTH
+    val isWide5 = widgetSize.width  >= WIDE5_WIDTH
 
+    when {
+        isStrip && !isWide4            -> NwStrip3x1(netWorth, changeText, baseFontSize)
+        isStrip && isWide4 && !isWide5 -> NwStrip4x1(netWorth, inc, exp, changeText, baseFontSize)
+        isStrip                        -> NwStrip5x1(netWorth, inc, exp, changeText, baseFontSize)
+        !isStrip && !isWide4           -> NwCard3x2(netWorth, inc, exp, changeText, periodLabel, baseFontSize)
+        else                           -> NwCard4x2(netWorth, inc, exp, changeText, periodLabel, baseFontSize)
+    }
+}
+
+@Composable
+private fun NwStrip3x1(netWorth: String, changeText: String?, baseFontSize: Float) {
     Column(modifier = GlanceModifier.fillMaxSize()) {
-        // TOP: net worth section
-        Column(
-            modifier = GlanceModifier
-                .fillMaxWidth()
-                .defaultWeight(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "NET WORTH",
+                style = TextStyle(
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+            if (changeText != null) {
+                Spacer(modifier = GlanceModifier.defaultWeight())
                 Text(
-                    text = "NET WORTH",
+                    text = changeText,
                     style = TextStyle(
-                        fontSize = TextUnit(subtitleFontSize, TextUnitType.Sp),
-                        fontWeight = FontWeight.Bold,
-                        color = GlanceTheme.colors.onSurfaceVariant
+                        fontSize = TextUnit(8f, TextUnitType.Sp),
+                        color = ColorProvider(R.color.widget_accent)
                     )
                 )
-                if (subText != null) {
-                    Spacer(modifier = GlanceModifier.defaultWeight())
+            }
+        }
+        Text(
+            text = netWorth,
+            style = TextStyle(
+                fontSize = TextUnit(baseFontSize, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(R.color.widget_on_surface)
+            )
+        )
+    }
+}
+
+@Composable
+private fun NwStrip4x1(netWorth: String, inc: String, exp: String, changeText: String?, baseFontSize: Float) {
+    Row(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = GlanceModifier.defaultWeight()) {
+            Text(
+                text = "NET WORTH",
+                style = TextStyle(
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = netWorth,
+                    style = TextStyle(
+                        fontSize = TextUnit(baseFontSize, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(R.color.widget_on_surface)
+                    )
+                )
+                if (changeText != null) {
+                    Spacer(modifier = GlanceModifier.width(6.dp))
                     Text(
-                        text = subText,
+                        text = changeText,
                         style = TextStyle(
-                            fontSize = TextUnit(subtitleFontSize, TextUnitType.Sp),
-                            color = GlanceTheme.colors.onSurfaceVariant
+                            fontSize = TextUnit(8f, TextUnitType.Sp),
+                            color = ColorProvider(R.color.widget_accent)
                         )
                     )
                 }
             }
-            Spacer(modifier = GlanceModifier.height((4 * scale).dp))
+        }
+        Spacer(modifier = GlanceModifier.width(8.dp))
+        Column(horizontalAlignment = Alignment.End) {
+            NwBadgePill("INC", inc, R.color.widget_positive, R.color.widget_positive_container)
+            Spacer(modifier = GlanceModifier.height(4.dp))
+            NwBadgePill("EXP", exp, R.color.widget_negative, R.color.widget_negative_container)
+        }
+    }
+}
+
+@Composable
+private fun NwStrip5x1(netWorth: String, inc: String, exp: String, changeText: String?, baseFontSize: Float) {
+    Row(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = prefs[keys.NET_WORTH] ?: "",
+                text = "NET WORTH",
                 style = TextStyle(
-                    fontSize = TextUnit(netWorthFontSize, TextUnitType.Sp),
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    color = GlanceTheme.colors.onSurface
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+            Text(
+                text = netWorth,
+                style = TextStyle(
+                    fontSize = TextUnit(baseFontSize, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(R.color.widget_on_surface)
                 )
             )
         }
+        Column(modifier = GlanceModifier.defaultWeight(), horizontalAlignment = Alignment.End) {
+            NwBadgePill("INC", inc, R.color.widget_positive, R.color.widget_positive_container)
+            Spacer(modifier = GlanceModifier.height(4.dp))
+            NwBadgePill("EXP", exp, R.color.widget_negative, R.color.widget_negative_container)
+        }
+        if (changeText != null) {
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "CHG",
+                    style = TextStyle(
+                        fontSize = TextUnit(7f, TextUnitType.Sp),
+                        color = ColorProvider(R.color.widget_on_surface_variant)
+                    )
+                )
+                Text(
+                    text = changeText,
+                    style = TextStyle(
+                        fontSize = TextUnit(10f, TextUnitType.Sp),
+                        fontWeight = FontWeight.Bold,
+                        color = ColorProvider(R.color.widget_accent)
+                    )
+                )
+            }
+        }
+    }
+}
 
-        // BOTTOM: income + expense badges
-        Row(
-            modifier = GlanceModifier
-                .fillMaxWidth()
-                .defaultWeight(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BadgeColumn(
-                label = "INCOME",
-                amount = prefs[keys.INCOME] ?: "",
-                comparison = incomeComparison,
-                bgColorRes = R.color.widget_badge_income_bg,
-                colorRes = R.color.widget_income_color,
-                labelColorRes = R.color.widget_income_label,
-                compColorRes = R.color.widget_income_comparison,
-                scale = scale,
-                isCompact = isCompact,
+@Composable
+private fun NwCard3x2(
+    netWorth: String,
+    inc: String,
+    exp: String,
+    changeText: String?,
+    periodLabel: String,
+    baseFontSize: Float
+) {
+    Column(modifier = GlanceModifier.fillMaxSize()) {
+        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "NET WORTH",
+                style = TextStyle(
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
+                    fontWeight = FontWeight.Bold,
+                    color = ColorProvider(R.color.widget_on_surface_variant)
+                )
+            )
+            Spacer(modifier = GlanceModifier.defaultWeight())
+            if (periodLabel.isNotBlank()) {
+                Text(
+                    text = periodLabel,
+                    style = TextStyle(
+                        fontSize = TextUnit(8f, TextUnitType.Sp),
+                        color = ColorProvider(R.color.widget_on_surface_variant)
+                    )
+                )
+            }
+        }
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        Text(
+            text = netWorth,
+            style = TextStyle(
+                fontSize = TextUnit(baseFontSize + 2f, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(R.color.widget_on_surface)
+            )
+        )
+        if (changeText != null) {
+            Text(
+                text = changeText,
+                style = TextStyle(
+                    fontSize = TextUnit(9f, TextUnitType.Sp),
+                    color = ColorProvider(R.color.widget_accent)
+                )
+            )
+        }
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        Row(modifier = GlanceModifier.fillMaxWidth().height(52.dp)) {
+            NwBadgeCard(
+                label = "INC",
+                amount = inc,
+                colorRes = R.color.widget_positive,
+                bgColorRes = R.color.widget_positive_container,
                 modifier = GlanceModifier.defaultWeight().fillMaxHeight()
             )
             Spacer(modifier = GlanceModifier.width(8.dp))
-            BadgeColumn(
-                label = "EXPENSE",
-                amount = prefs[keys.EXPENSE] ?: "",
-                comparison = expenseComparison,
-                bgColorRes = R.color.widget_badge_expense_bg,
-                colorRes = R.color.widget_expense_color,
-                labelColorRes = R.color.widget_expense_label,
-                compColorRes = R.color.widget_expense_comparison,
-                scale = scale,
-                isCompact = isCompact,
+            NwBadgeCard(
+                label = "EXP",
+                amount = exp,
+                colorRes = R.color.widget_negative,
+                bgColorRes = R.color.widget_negative_container,
                 modifier = GlanceModifier.defaultWeight().fillMaxHeight()
             )
         }
@@ -199,59 +297,135 @@ internal fun WidgetBody(
 }
 
 @Composable
-private fun BadgeColumn(
-    label: String,
-    amount: String,
-    comparison: String?,
-    @ColorRes bgColorRes: Int,
-    @ColorRes colorRes: Int,
-    @ColorRes labelColorRes: Int,
-    @ColorRes compColorRes: Int,
-    scale: Float,
-    isCompact: Boolean,
-    modifier: GlanceModifier = GlanceModifier
+private fun NwCard4x2(
+    netWorth: String,
+    inc: String,
+    exp: String,
+    changeText: String?,
+    periodLabel: String,
+    baseFontSize: Float
 ) {
-    val horizPadding = if (isCompact) 4.dp else (10 * scale).dp
-    val vertPadding = if (isCompact) 2.dp else (6 * scale).dp
-    val cornerRadius = (14 * scale).dp
-    val labelFontSize = if (isCompact) 7f else 10f * scale
-    val amountFontSize = if (isCompact) 9f else 14f * scale
-
-    Column(
-        modifier = modifier
-            .background(bgColorRes)
-            .cornerRadius(cornerRadius)
-            .padding(horizontal = horizPadding, vertical = vertPadding),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Column(modifier = GlanceModifier.fillMaxSize()) {
+        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = label,
+                text = "NET WORTH",
                 style = TextStyle(
-                    fontSize = TextUnit(labelFontSize, TextUnitType.Sp),
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
                     fontWeight = FontWeight.Bold,
-                    color = ColorProvider(labelColorRes)
+                    color = ColorProvider(R.color.widget_on_surface_variant)
                 )
             )
-            if (comparison != null) {
-                Spacer(modifier = GlanceModifier.defaultWeight())
+            if (changeText != null) {
+                Spacer(modifier = GlanceModifier.width(8.dp))
                 Text(
-                    text = comparison,
+                    text = changeText,
                     style = TextStyle(
-                        fontSize = TextUnit(9f * scale, TextUnitType.Sp),
-                        color = ColorProvider(compColorRes)
+                        fontSize = TextUnit(8f, TextUnitType.Sp),
+                        color = ColorProvider(R.color.widget_accent)
+                    )
+                )
+            }
+            Spacer(modifier = GlanceModifier.defaultWeight())
+            if (periodLabel.isNotBlank()) {
+                Text(
+                    text = periodLabel,
+                    style = TextStyle(
+                        fontSize = TextUnit(8f, TextUnitType.Sp),
+                        color = ColorProvider(R.color.widget_on_surface_variant)
                     )
                 )
             }
         }
-        Spacer(modifier = GlanceModifier.height((4 * scale).dp))
+        Spacer(modifier = GlanceModifier.defaultWeight())
+        Text(
+            text = netWorth,
+            style = TextStyle(
+                fontSize = TextUnit(baseFontSize + 6f, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(R.color.widget_on_surface)
+            )
+        )
+        Spacer(modifier = GlanceModifier.height(8.dp))
+        Row(modifier = GlanceModifier.fillMaxWidth().height(52.dp)) {
+            NwBadgeCard(
+                label = "INC",
+                amount = inc,
+                colorRes = R.color.widget_positive,
+                bgColorRes = R.color.widget_positive_container,
+                modifier = GlanceModifier.defaultWeight().fillMaxHeight()
+            )
+            Spacer(modifier = GlanceModifier.width(8.dp))
+            NwBadgeCard(
+                label = "EXP",
+                amount = exp,
+                colorRes = R.color.widget_negative,
+                bgColorRes = R.color.widget_negative_container,
+                modifier = GlanceModifier.defaultWeight().fillMaxHeight()
+            )
+        }
+    }
+}
+
+@Composable
+private fun NwBadgePill(
+    label: String,
+    amount: String,
+    @ColorRes colorRes: Int,
+    @ColorRes bgColorRes: Int
+) {
+    Row(
+        modifier = GlanceModifier
+            .background(ColorProvider(bgColorRes))
+            .cornerRadius(8.dp)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(
+                fontSize = TextUnit(7f, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(colorRes)
+            )
+        )
+        Spacer(modifier = GlanceModifier.defaultWeight())
         Text(
             text = amount,
             style = TextStyle(
-                fontSize = TextUnit(amountFontSize, TextUnitType.Sp),
+                fontSize = TextUnit(9f, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(colorRes)
+            )
+        )
+    }
+}
+
+@Composable
+private fun NwBadgeCard(
+    label: String,
+    amount: String,
+    @ColorRes colorRes: Int,
+    @ColorRes bgColorRes: Int,
+    modifier: GlanceModifier = GlanceModifier
+) {
+    Column(
+        modifier = modifier
+            .background(ColorProvider(bgColorRes))
+            .cornerRadius(12.dp)
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(
+                fontSize = TextUnit(7f, TextUnitType.Sp),
+                fontWeight = FontWeight.Bold,
+                color = ColorProvider(colorRes)
+            )
+        )
+        Text(
+            text = amount,
+            style = TextStyle(
+                fontSize = TextUnit(11f, TextUnitType.Sp),
                 fontWeight = FontWeight.Bold,
                 color = ColorProvider(colorRes)
             )

@@ -3,7 +3,6 @@ package com.osscabinet.ossWallet.widget
 import android.content.Context
 import androidx.datastore.preferences.core.MutablePreferences
 import com.osscabinet.ossWallet.domain.card.CardInput
-import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.NetWorthCardConfig
 import com.osscabinet.ossWallet.domain.service.aggregation.CardAggregationService
 import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
@@ -32,8 +31,8 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
                         anchor = common.baseCurrency,
                         rates = common.exchangeRates
                     ),
-                    filter = TransactionFilter(
-                        timelineRange = config.timelineRange.withExcludeFuture(true)
+                    filter = config.filter.copy(
+                        timelineRange = config.filter.timelineRange.withExcludeFuture(true)
                     ),
                     accounts = emptyList(),
                     categories = emptyList()
@@ -47,25 +46,20 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         }.getOrNull()
 
         val netWorth = renderData?.currentPeriodMetrics?.netWorth ?: BigDecimal.ZERO
-        val income = renderData?.currentPeriodMetrics?.cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO
-        val expense = renderData?.currentPeriodMetrics?.cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO
-        val prev = renderData?.previousPeriodMetrics
+        val cashFlow = renderData?.currentPeriodMetrics?.cashFlow
+        val prev     = renderData?.previousPeriodMetrics
 
         val formatter = CurrencyReprUi.CurrencyNumberFormatter()
-        prefs[NetWorthGlanceWidget.Keys.IS_LOADED] = "true"
-        prefs[NetWorthGlanceWidget.Keys.NET_WORTH] =
+        prefs[NetWorthGlanceWidget.Keys.IS_LOADED]            = "true"
+        prefs[NetWorthGlanceWidget.Keys.NET_WORTH]            =
             formatter.format(netWorth, common.baseCurrency)
-        prefs[NetWorthGlanceWidget.Keys.INCOME] =
-            formatter.format(income, common.baseCurrency)
-        prefs[NetWorthGlanceWidget.Keys.EXPENSE] =
-            formatter.format(expense, common.baseCurrency)
+        prefs[NetWorthGlanceWidget.Keys.INC]                  =
+            formatter.format(cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO, common.baseCurrency)
+        prefs[NetWorthGlanceWidget.Keys.EXP]                  =
+            formatter.format((cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO).abs(), common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
-        prefs[NetWorthGlanceWidget.Keys.INCOME_COMPARISON] =
-            buildComparisonText(income, prev?.cashFlow?.totalIncomeInBase, config.showComparison) ?: ""
-        prefs[NetWorthGlanceWidget.Keys.EXPENSE_COMPARISON] =
-            buildComparisonText(expense, prev?.cashFlow?.totalExpensesInBase, config.showComparison) ?: ""
-        prefs[NetWorthGlanceWidget.Keys.PERIOD_LABEL] = config.timelineLabel
-        prefs[NetWorthGlanceWidget.Keys.FONT_SIZE] = config.fontSize
+        prefs[NetWorthGlanceWidget.Keys.PERIOD_LABEL]         = config.timelineLabel
+        prefs[NetWorthGlanceWidget.Keys.FONT_SIZE]            = config.fontSize
     }
 }

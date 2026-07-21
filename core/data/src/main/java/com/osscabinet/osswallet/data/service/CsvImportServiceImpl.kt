@@ -829,7 +829,8 @@ class CsvImportServiceImpl @Inject constructor(
                                             target,
                                             tid,
                                             TransactionType.TRANSFER_INFLOW,
-                                            source.amount.abs().multiply(rate),
+                                            source.amount.abs().multiply(rate)
+                                                .setScale(8, RoundingMode.HALF_UP),
                                             sid,
                                             profileId,
                                             existingTags,
@@ -1125,7 +1126,8 @@ class CsvImportServiceImpl @Inject constructor(
                                             target,
                                             tid,
                                             TransactionType.TRANSFER_INFLOW,
-                                            source.amount.abs().multiply(rate),
+                                            source.amount.abs().multiply(rate)
+                                                .setScale(8, RoundingMode.HALF_UP),
                                             sid,
                                             profileId,
                                             existingTags,

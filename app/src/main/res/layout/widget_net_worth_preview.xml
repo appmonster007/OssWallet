@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Preview at 3x1 compact size (~180×50dp). Fonts and padding scaled to match
-     the compact scale=0.85 values used by the live Glance widget at 1-cell height. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Preview at 4x2 card size (~349x175dp). Represents the richest NwCard4x2 layout. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -10,114 +9,100 @@
         android:paddingTop="10dp"
         android:paddingBottom="10dp">
 
-    <!-- TOP: NET WORTH title + amount, fills upper half -->
+    <!-- Header: NET WORTH + change% + period label -->
     <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:gravity="center_vertical">
-
-        <!-- Title row: label left, comparison right -->
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="NET WORTH"
-                    android:textColor="@color/widget_subtle"
-                    android:textSize="8sp"
-                    android:textStyle="bold" />
-
-            <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1" />
-
-            <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="+2.5%"
-                    android:textColor="@color/widget_subtle"
-                    android:textSize="8sp" />
-
-        </LinearLayout>
-
-        <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="3dp" />
 
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="125,000.50 $"
-                android:textColor="@color/widget_on_surface"
-                android:textSize="12sp"
+                android:text="NET WORTH"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp"
                 android:textStyle="bold" />
+
+        <FrameLayout
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+2.5%"
+                android:textColor="@color/widget_accent"
+                android:textSize="8sp" />
+
+        <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="This Year"
+                android:textColor="@color/widget_subtle"
+                android:textSize="8sp" />
 
     </LinearLayout>
 
-    <!-- BOTTOM: income + expense badges, fills lower half -->
-    <LinearLayout
+    <!-- Spacer -->
+    <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_weight="1" />
+
+    <!-- Hero amount -->
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="125,000.50 $"
+            android:textColor="@color/widget_on_surface"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+    <!-- Spacer -->
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+    <!-- Bottom: INC badge + EXP badge -->
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:baselineAligned="false">
 
-        <!-- Income badge -->
+        <!-- INC badge -->
         <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_badge_income"
                 android:orientation="vertical"
-                android:gravity="center_vertical"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
 
-            <LinearLayout
-                    android:layout_width="match_parent"
+            <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="INCOME"
-                        android:textColor="@color/widget_income_label"
-                        android:textSize="7sp"
-                        android:textStyle="bold" />
-
-                <FrameLayout
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1" />
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="+8.3%"
-                        android:textColor="@color/widget_income_comparison"
-                        android:textSize="7sp" />
-
-            </LinearLayout>
-
-            <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="3dp" />
+                    android:text="INC"
+                    android:textColor="@color/widget_income_label"
+                    android:textSize="7sp"
+                    android:textStyle="bold" />
 
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5,000.00 $"
                     android:textColor="@color/widget_income_color"
-                    android:textSize="9sp"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
         </LinearLayout>
@@ -126,56 +111,32 @@
                 android:layout_width="8dp"
                 android:layout_height="match_parent" />
 
-        <!-- Expense badge -->
+        <!-- EXP badge -->
         <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/widget_badge_expense"
                 android:orientation="vertical"
-                android:gravity="center_vertical"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp">
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
 
-            <LinearLayout
-                    android:layout_width="match_parent"
+            <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="EXPENSE"
-                        android:textColor="@color/widget_expense_label"
-                        android:textSize="7sp"
-                        android:textStyle="bold" />
-
-                <FrameLayout
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1" />
-
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="-4.1%"
-                        android:textColor="@color/widget_expense_comparison"
-                        android:textSize="7sp" />
-
-            </LinearLayout>
-
-            <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="3dp" />
+                    android:text="EXP"
+                    android:textColor="@color/widget_expense_label"
+                    android:textSize="7sp"
+                    android:textStyle="bold" />
 
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="3,200.00 $"
                     android:textColor="@color/widget_expense_color"
-                    android:textSize="9sp"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
         </LinearLayout>

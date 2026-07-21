@@ -209,6 +209,7 @@ fun AeonAccountCardLarge(
     summary: AccountSummaryItem,
     baseCurrency: String,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
+    splitTransfers: Boolean = false,
     onClick: () -> Unit,
     previousSummary: AccountSummaryItem? = null,
     cardNumber: String? = null,
@@ -336,16 +337,39 @@ fun AeonAccountCardLarge(
                             modifier = Modifier.weight(1f)
                         )
                         AccountFlowSeparator()
-                        AccountFlowReadout(
-                            label = "TRF",
-                            amount = flow.netTransfer,
-                            currency = account.currencyCode,
-                            color = AppColors.accent,
-                            onClick = onClickTransfer,
-                            previousAmount = prevFlow?.netTransfer,
-                            modifier = Modifier.weight(1f),
-                            forceShowPlus = true
-                        )
+                        if (splitTransfers) {
+                            AccountFlowReadout(
+                                label = "TRF IN",
+                                amount = flow.transferIn,
+                                currency = account.currencyCode,
+                                color = AppColors.accent,
+                                onClick = onClickTransfer,
+                                previousAmount = prevFlow?.transferIn,
+                                modifier = Modifier.weight(1f),
+                                forceShowPlus = true
+                            )
+                            AccountFlowSeparator()
+                            AccountFlowReadout(
+                                label = "TRF OUT",
+                                amount = flow.transferOut,
+                                currency = account.currencyCode,
+                                color = AppColors.accent,
+                                onClick = onClickTransfer,
+                                previousAmount = prevFlow?.transferOut,
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            AccountFlowReadout(
+                                label = "TRF",
+                                amount = flow.netTransfer,
+                                currency = account.currencyCode,
+                                color = AppColors.accent,
+                                onClick = onClickTransfer,
+                                previousAmount = prevFlow?.netTransfer,
+                                modifier = Modifier.weight(1f),
+                                forceShowPlus = true
+                            )
+                        }
                     }
 
                     is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow -> {

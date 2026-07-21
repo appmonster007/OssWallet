@@ -403,6 +403,8 @@ private fun CashFlowComparisonSettingsContent(
                 ),
             )
         },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) },
     )
 }
 

@@ -340,11 +340,10 @@ private fun IncomeExpenseBarSettingsContent(
         perspective = config.perspective,
         onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
-    ) {
-        callbacks.onUpdate(
-            config.copy(
-                excludeInternalTransfers = it,
-            ),
-        )
-    }
+        onExcludeInternalTransfersChange = {
+            callbacks.onUpdate(config.copy(excludeInternalTransfers = it))
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) }
+    )
 }

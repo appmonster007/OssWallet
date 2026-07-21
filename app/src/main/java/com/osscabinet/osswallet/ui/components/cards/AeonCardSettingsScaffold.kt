@@ -84,7 +84,9 @@ fun CardPerspectiveSettings(
     perspective: AccountingPerspective,
     onPerspectiveChange: (AccountingPerspective) -> Unit,
     excludeInternalTransfers: Boolean = true,
-    onExcludeInternalTransfersChange: (Boolean) -> Unit = {}
+    onExcludeInternalTransfersChange: (Boolean) -> Unit = {},
+    splitTransfers: Boolean = false,
+    onSplitTransfersChange: (Boolean) -> Unit = {},
 ) {
     CardSettingsSection("Perspective") {
         val allPerspectives = AccountingPerspective.ALL
@@ -127,6 +129,16 @@ fun CardPerspectiveSettings(
             checked = excludeInternalTransfers,
             onCheckedChange = onExcludeInternalTransfersChange,
             enabled = perspective is AccountingPerspective.CashFlow,
+            showBackground = false,
+            showBorder = false
+        )
+
+        AeonSettingsToggle(
+            label = "Split transfers",
+            description = "Show transfer in and out separately instead of a net value",
+            checked = splitTransfers,
+            onCheckedChange = onSplitTransfersChange,
+            enabled = perspective is AccountingPerspective.Accounting,
             showBackground = false,
             showBorder = false
         )

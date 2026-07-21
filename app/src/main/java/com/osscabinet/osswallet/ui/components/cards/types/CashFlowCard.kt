@@ -169,7 +169,44 @@ private fun CashFlowTable(
                         }
                     )
                 )
-                if (showTransfer) add(
+                if (showTransfer && config.splitTransfers) {
+                    add(
+                        TableColumn(
+                            label = "TRF IN", key = "trfIn", color = accentColor,
+                            totalInBase = result.totalTransferInInBase,
+                            previousTotalInBase = previousResult?.totalTransferInInBase,
+                            nativeOf = { it.transferIn },
+                            baseOf = { it.transferInInBase },
+                            onCellClick = { ccy ->
+                                callbacks.onClickTransfer?.invoke(
+                                    baseFilterForDrill.copy(
+                                        transactionTypes = setOf(TransactionType.TRANSFER_INFLOW),
+                                        currencies = setOf(ccy),
+                                    )
+                                )
+                            },
+                            isSigned = true
+                        )
+                    )
+                    add(
+                        TableColumn(
+                            label = "TRF OUT", key = "trfOut", color = accentColor,
+                            totalInBase = result.totalTransferOutInBase,
+                            previousTotalInBase = previousResult?.totalTransferOutInBase,
+                            nativeOf = { it.transferOut },
+                            baseOf = { it.transferOutInBase },
+                            onCellClick = { ccy ->
+                                callbacks.onClickTransfer?.invoke(
+                                    baseFilterForDrill.copy(
+                                        transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW),
+                                        currencies = setOf(ccy),
+                                    )
+                                )
+                            },
+                            isSigned = true
+                        )
+                    )
+                } else if (showTransfer) add(
                     TableColumn(
                         label = "TRANSFER", key = "trf", color = accentColor,
                         totalInBase = result.totalNetTransferInBase,
@@ -567,7 +604,9 @@ private fun CashFlowSettingsContent(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
     )
 }
 
@@ -673,6 +712,7 @@ fun mapCashFlow(
         onFilterChange = updateHandler::updateCardCashFlowFilter,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onShowNetColumnChange = updateHandler::updateCardCashFlowShowNetColumn,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickExpense = { drillDown ->

@@ -179,7 +179,10 @@ data class AccountSummaryItem(
     @Serializable(with = BigDecimalSerializer::class)
     val balanceInBase: BigDecimal = BigDecimal.ZERO,
     val currentPeriodFlow: AccountFlowMetrics = AccountFlowMetrics(),
-    val previousPeriodFlow: AccountFlowMetrics? = null
+    val previousPeriodFlow: AccountFlowMetrics? = null,
+    // Running account balance across the filtered period, one point per time bucket
+    // (in account currency). Empty when there is no history to plot.
+    val balanceHistory: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyList()
 )
 
 /**

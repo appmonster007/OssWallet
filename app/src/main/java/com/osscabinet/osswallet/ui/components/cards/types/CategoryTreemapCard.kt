@@ -307,7 +307,6 @@ fun CategoryTreemapCard(
                 currency = currency,
                 showComparison = config.showComparison,
                 isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
-                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
                 perspective = config.perspective,
                 selectedMetric = config.selectedMetric,
                 onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) },

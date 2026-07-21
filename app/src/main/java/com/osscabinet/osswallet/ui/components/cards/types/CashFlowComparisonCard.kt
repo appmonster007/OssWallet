@@ -12,11 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,12 +30,12 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartMarker
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
@@ -66,9 +62,7 @@ fun CashFlowComparisonCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
-
-    var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
-    LaunchedEffect(config.selectedMetric) { selectedMetric = config.selectedMetric }
+    val selectedMetric = config.selectedMetric
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -95,51 +89,52 @@ fun CashFlowComparisonCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Keep the selected metric coherent with the split-transfers setting so a stale
-            // TRF / TRF IN selection doesn't leave the toggle with nothing highlighted.
-            val effectiveMetric = coerceTransferMetric(selectedMetric, config.splitTransfers)
-
-            // Metric toggle row — purely display-local; no config persist needed
-            AeonMetricToggle(
-                perspective = config.perspective,
-                selectedMetric = effectiveMetric,
-                onMetricChange = { metric -> selectedMetric = metric },
-                splitTransfers = config.splitTransfers
-            )
-
             // Aggregate sum for current period
-            val aggregateTotal = renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
-                acc + when (effectiveMetric) {
-                    ChartMetric.NET -> p.net
-                    ChartMetric.INCOME -> p.income
-                    ChartMetric.EXPENSE -> p.expense
-                    ChartMetric.TRANSFER -> p.transfer
-                    ChartMetric.TRANSFER_IN -> p.transferIn
-                    ChartMetric.TRANSFER_OUT -> p.transferOut
+            val aggregateTotal = remember(renderData.currentSeries, selectedMetric) {
+                renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
+                    acc + when (selectedMetric) {
+                        ChartMetric.NET -> p.net
+                        ChartMetric.INCOME -> p.income
+                        ChartMetric.EXPENSE -> p.expense
+                        ChartMetric.TRANSFER -> p.transfer
+                        ChartMetric.TRANSFER_IN -> p.transferIn
+                        ChartMetric.TRANSFER_OUT -> p.transferOut
+                    }
                 }
             }
-            Text(
-                text = formatCurrency(
-                    amount = aggregateTotal,
-                    currencyCode = renderData.currency,
-                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
-                ),
-                style = AppTextStyles.cardSecondaryAmount,
-                color = AppColors.contentPrimary,
-                modifier = Modifier.padding(horizontal = 2.dp)
-            )
 
-            // Legend row
-            LegendRow(
-                showCurrent = config.showCurrentPeriod,
-                showPrevious = config.showPreviousPeriod,
-                showLastYear = config.showSamePeriodLastYear
+            val previousAggregateTotal = remember(renderData.previousSeries, selectedMetric) {
+                if (renderData.previousSeries.points.isEmpty()) null
+                else renderData.previousSeries.points.fold(BigDecimal.ZERO) { acc, p ->
+                    acc + when (selectedMetric) {
+                        ChartMetric.NET -> p.net
+                        ChartMetric.INCOME -> p.income
+                        ChartMetric.EXPENSE -> p.expense
+                        ChartMetric.TRANSFER -> p.transfer
+                        ChartMetric.TRANSFER_IN -> p.transferIn
+                        ChartMetric.TRANSFER_OUT -> p.transferOut
+                    }
+                }
+            }
+
+            ChartSummarySection(
+                total = aggregateTotal,
+                previousTotal = previousAggregateTotal,
+                currency = renderData.currency,
+                showComparison = config.showPreviousPeriod,
+                isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
+                perspective = config.perspective,
+                selectedMetric = selectedMetric,
+                onMetricChange = { metric ->
+                    callbacks.onUpdate(config.copy(selectedMetric = metric))
+                },
+                splitTransfers = config.splitTransfers
             )
 
             // Chart
             val series = buildSeriesList(
                 config = config,
-                selectedMetric = effectiveMetric,
+                selectedMetric = selectedMetric,
                 isCumulative = config.isCumulative,
                 renderData = renderData
             )
@@ -192,17 +187,6 @@ fun CashFlowComparisonCard(
         }
     }
 }
-
-/**
- * Keeps a saved metric selection valid when the split-transfers setting changes:
- * TRF ↔ TRF IN so the toggle always has a highlighted option.
- */
-private fun coerceTransferMetric(metric: ChartMetric, splitTransfers: Boolean): ChartMetric = when {
-    splitTransfers && metric == ChartMetric.TRANSFER -> ChartMetric.TRANSFER_IN
-    !splitTransfers && (metric == ChartMetric.TRANSFER_IN || metric == ChartMetric.TRANSFER_OUT) -> ChartMetric.TRANSFER
-    else -> metric
-}
-
 
 @Composable
 private fun LegendRow(

@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,13 +49,12 @@ import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
-import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
-import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
@@ -76,6 +76,7 @@ fun CategorySpendingTrendCard(
     val config = renderData.config
     var categoriesExpanded by rememberSaveable { mutableStateOf(value = false) }
 
+    val selectedMetric = config.selectedMetric
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
     AeonExpressiveCard(
@@ -101,10 +102,22 @@ fun CategorySpendingTrendCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AeonMetricToggle(
+            val totalAmount = remember(renderData.activeCategories) {
+                renderData.activeCategories.sumOf { it.totalAmount }
+            }
+
+            ChartSummarySection(
+                total = totalAmount,
+                previousTotal = null,
+                currency = renderData.currency,
+                showComparison = false,
+                isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
                 perspective = config.perspective,
-                selectedMetric = config.selectedMetric,
-                onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
+                selectedMetric = selectedMetric,
+                onMetricChange = { metric ->
+                    callbacks.onUpdate(config.copy(selectedMetric = metric))
+                },
+                splitTransfers = config.splitTransfers
             )
 
             // Resolve nature colors in composable scope

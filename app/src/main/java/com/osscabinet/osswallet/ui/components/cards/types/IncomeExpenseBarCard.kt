@@ -31,6 +31,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -40,6 +41,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -94,8 +96,7 @@ fun IncomeExpenseBarCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
-
-    var isCumulative by rememberSaveable { mutableStateOf(config.isCumulative) }
+    val isCumulative = config.isCumulative
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -122,6 +123,22 @@ fun IncomeExpenseBarCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Net total for the period (sum of all bucket net values)
+            val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
+
+            ChartSummarySection(
+                total = netTotal,
+                previousTotal = null,
+                currency = renderData.currency,
+                showComparison = false,
+                isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
+                perspective = config.perspective,
+                selectedMetric = ChartMetric.NET, // This card is a combination, but summary shows NET
+                onMetricChange = { /* Metric change not applicable to this combined card */ },
+                splitTransfers = config.splitTransfers,
+                dropdownEnabled = false
+            )
+
             // Segmented button: Trend | Cumulative
             val modeOptions = listOf("Trend", "Cumulative")
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -131,9 +148,7 @@ fun IncomeExpenseBarCard(
                     SegmentedButton(
                         selected = isSelected,
                         onClick = {
-                            val newCumulative = label == "Cumulative"
-                            isCumulative = newCumulative
-                            callbacks.onUpdate(config.copy(isCumulative = newCumulative))
+                            callbacks.onUpdate(config.copy(isCumulative = (label == "Cumulative")))
                         },
                         shape = SegmentedButtonDefaults.itemShape(
                             index = index,
@@ -149,31 +164,31 @@ fun IncomeExpenseBarCard(
                 }
             }
 
-            // Net total for the period (sum of all bucket net values)
-            val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
-            Text(
-                text = CurrencyReprUi.formatCurrencyAnnotated(
-                    amount = netTotal,
-                    currencyCode = renderData.currency,
-                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
-                ),
-                style = AppTextStyles.cardSecondaryAmount,
-                color = AppColors.contentPrimary,
-                modifier = Modifier.padding(horizontal = 2.dp)
-            )
-
             // Legend row
-            IncomeExpenseLegendRow()
+            IncomeExpenseLegendRow(perspective = config.perspective)
 
             // Build chart data.
             // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
             // For Cumulative mode, we prepend a zero point at the start so the trajectory begins at 0.
-            val incomeChartData =
-                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
-                else renderData.buckets.map { it.income }
-            val expenseChartData =
-                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
-                else renderData.buckets.map { it.expense }
+            val incomeChartData = if (isCumulative) {
+                var running = BigDecimal.ZERO
+                listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                    running = running.add(it.income)
+                    running
+                }
+            } else {
+                renderData.buckets.map { it.income }
+            }
+
+            val expenseChartData = if (isCumulative) {
+                var running = BigDecimal.ZERO
+                listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                    running = running.add(it.expense)
+                    running
+                }
+            } else {
+                renderData.buckets.map { it.expense }
+            }
 
             // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
             val xLabelData: List<String?> = if (isCumulative) {
@@ -245,15 +260,16 @@ private fun buildCumulativeNet(buckets: List<com.osscabinet.ossWallet.domain.car
 }
 
 @Composable
-private fun IncomeExpenseLegendRow() {
+private fun IncomeExpenseLegendRow(perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective) {
+    val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IncomeExpenseLegendItem(color = ChartColorGreen, label = "Income")
-        IncomeExpenseLegendItem(color = ChartColorRed, label = "Expense")
-        IncomeExpenseLegendItem(color = ChartColorBlue, label = "Net")
+        IncomeExpenseLegendItem(color = ChartColorGreen, label = labels[ChartMetric.INCOME] ?: "Income")
+        IncomeExpenseLegendItem(color = ChartColorRed, label = labels[ChartMetric.EXPENSE] ?: "Expense")
+        IncomeExpenseLegendItem(color = ChartColorBlue, label = labels[ChartMetric.NET] ?: "Net")
     }
 }
 

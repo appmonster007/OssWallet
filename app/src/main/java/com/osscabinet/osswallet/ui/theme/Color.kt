@@ -7,6 +7,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.formatter.ThemeMode
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.settings.UiIdentity
 
 // --- AMOLED THEME ---
@@ -210,6 +211,18 @@ object AccountStructureColors {
     val investment = Color(0xFFFF9800)
     val crypto = Color(0xFFFFC107)
     val other = Color(0xFF9E9E9E)
+
+    fun getColor(type: AccountStructureType): Color =
+        when (type) {
+            AccountStructureType.BANK -> bank
+            AccountStructureType.SAVINGS -> savings
+            AccountStructureType.CASH -> cash
+            AccountStructureType.DIGITAL_WALLET -> digitalWallet
+            AccountStructureType.CREDIT -> credit
+            AccountStructureType.INVESTMENT -> investment
+            AccountStructureType.CRYPTO -> crypto
+            AccountStructureType.OTHER -> other
+        }
 }
 
 // =============================================================================
@@ -231,7 +244,7 @@ val LocalThemeMode = staticCompositionLocalOf<ThemeMode> {
 }
 
 val LocalUiIdentity = staticCompositionLocalOf {
-    com.osscabinet.ossWallet.domain.model.settings.UiIdentity.DEFAULT
+    UiIdentity.DEFAULT
 }
 
 object AppColors {

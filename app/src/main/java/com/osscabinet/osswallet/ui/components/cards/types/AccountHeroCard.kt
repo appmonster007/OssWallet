@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -35,9 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -64,6 +60,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.cards.resolveSeeAll
+import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -108,7 +105,6 @@ fun AccountHeroCard(
 
     AeonExpressiveCard(
         title = account.name,
-        subtitle = account.structureType.displayName,
         icon = icon,
         accentColor = accentColor,
         backgroundIcon = icon,
@@ -132,11 +128,37 @@ fun AccountHeroCard(
         ) {
             // ── 1. Balance hero ─────────────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = if (isAccounting) "TOTAL BALANCE" else "NET CASH FLOW",
-                    style = AppTextStyles.overlineLabel.copy(letterSpacing = 3.sp, fontSize = 9.sp),
-                    color = AppColors.contentSecondary.copy(alpha = 0.7f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isAccounting) "TOTAL BALANCE" else "NET CASH FLOW",
+                        style = AppTextStyles.overlineLabel.copy(
+                            letterSpacing = 3.sp,
+                            fontSize = 9.sp
+                        ),
+                        color = AppColors.contentSecondary.copy(alpha = 0.7f)
+                    )
+
+                    Surface(
+                        color = AccountStructureColors.getColor(account.structureType)
+                            .copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = account.structureType.displayName.uppercase(),
+                            style = AppTextStyles.tagLabel.copy(
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = AccountStructureColors.getColor(account.structureType),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
 
                 val symbolStyle = SpanStyle(fontWeight = FontWeight.Light, fontSize = 21.sp)
                 Text(
@@ -146,7 +168,10 @@ fun AccountHeroCard(
                         spec = CurrencyDisplaySpec(useSemanticColor = true),
                         partStyles = CurrencyPartStyles(symbol = symbolStyle)
                     ),
-                    style = AppTextStyles.heroAmountLarge.copy(fontSize = 30.sp, letterSpacing = (-1).sp),
+                    style = AppTextStyles.heroAmountLarge.copy(
+                        fontSize = 30.sp,
+                        letterSpacing = (-1).sp
+                    ),
                     color = AppColors.contentPrimary,
                     modifier = remember(config.perspective, config.filter, callbacks) {
                         Modifier.clickable {
@@ -161,7 +186,10 @@ fun AccountHeroCard(
                         text = CurrencyReprUi.formatCurrencyAnnotated(
                             amount = summary.balanceInBase,
                             currencyCode = baseCurrency,
-                            spec = CurrencyDisplaySpec(isApproximate = true, useSemanticColor = false)
+                            spec = CurrencyDisplaySpec(
+                                isApproximate = true,
+                                useSemanticColor = false
+                            )
                         ),
                         style = AppTextStyles.transactionTitle.copy(
                             fontWeight = FontWeight.Medium,
@@ -324,7 +352,10 @@ fun AccountHeroCard(
                 ) {
                     Text(
                         text = "DISTRIBUTION",
-                        style = AppTextStyles.overlineLabel.copy(letterSpacing = 2.sp, fontSize = 9.sp),
+                        style = AppTextStyles.overlineLabel.copy(
+                            letterSpacing = 2.sp,
+                            fontSize = 9.sp
+                        ),
                         color = AppColors.contentSecondary.copy(alpha = 0.7f)
                     )
                     CurrencyGhostGrid(
@@ -402,7 +433,10 @@ private fun LedgerRow(
                     shortenThreshold = 12
                 )
             ),
-            style = AppTextStyles.screenSubTitle.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp),
+            style = AppTextStyles.screenSubTitle.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            ),
             color = color
         )
     }
@@ -497,7 +531,11 @@ private fun CurrencyChip(
         ) {
             Text(
                 text = currency,
-                style = AppTextStyles.overlineLabel.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                style = AppTextStyles.overlineLabel.copy(
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
                 color = accentColor
             )
             Text(
@@ -506,7 +544,10 @@ private fun CurrencyChip(
                     currencyCode = currency,
                     spec = CurrencyDisplaySpec(useSemanticColor = false, shortenThreshold = 9)
                 ),
-                style = AppTextStyles.transactionTitle.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                style = AppTextStyles.transactionTitle.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                ),
                 color = AppColors.contentPrimary,
                 maxLines = 1
             )
@@ -621,12 +662,44 @@ fun mapAccountHero(
         onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onFilterChange = updateHandler::updateCardHeroFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickExpense = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickTransfer = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickExpense = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
+        onClickTransfer = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickInflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickOutflow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickOutflow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickNet = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
-        onClickNetFlow = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
+        onClickNetFlow = { drillDown ->
+            onRecordsClick(
+                resolveDrillDown(
+                    input,
+                    config,
+                    drillDown
+                )
+            )
+        },
         onClickCurrency = { currency ->
             val drillDown = TransactionFilter(currencies = setOf(currency))
             onRecordsClick(resolveDrillDown(input, config, drillDown))
@@ -698,7 +771,11 @@ private fun AccountHeroCardPreviewContent(theme: String) {
             AccountHeroCard(
                 summary = summary,
                 baseCurrency = "USD",
-                config = AccountHeroCardConfig(cardId = "preview", showCurrencyBadges = true, showComparison = true),
+                config = AccountHeroCardConfig(
+                    cardId = "preview",
+                    showCurrencyBadges = true,
+                    showComparison = true
+                ),
                 balanceHistory = listOf(
                     BigDecimal("-180000"), BigDecimal("-195000"), BigDecimal("-188000"),
                     BigDecimal("-210000"), BigDecimal("-225000"), BigDecimal("-245800")

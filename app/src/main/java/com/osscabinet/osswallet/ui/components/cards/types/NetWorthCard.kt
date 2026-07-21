@@ -276,34 +276,14 @@ fun NetWorthCard(
                     }
 
                     is AccountingPerspective.CashFlow -> {
-                        val inflow = when {
-                            showIncome && showTransfer -> cf.totalInflowInBase
-                            showIncome                 -> cf.totalIncomeInBase
-                            showTransfer               -> cf.totalTransferInInBase
-                            else                       -> BigDecimal.ZERO
-                        }
-                        val outflow = when {
-                            showExpense && showTransfer -> cf.totalOutflowInBase
-                            showExpense                 -> cf.totalExpensesInBase
-                            showTransfer                -> cf.totalTransferOutInBase
-                            else                        -> BigDecimal.ZERO
-                        }
-                        val prevInflow = prevCf?.let {
-                            when {
-                                showIncome && showTransfer -> it.totalInflowInBase
-                                showIncome                 -> it.totalIncomeInBase
-                                showTransfer               -> it.totalTransferInInBase
-                                else                       -> BigDecimal.ZERO
-                            }
-                        }
-                        val prevOutflow = prevCf?.let {
-                            when {
-                                showExpense && showTransfer -> it.totalOutflowInBase
-                                showExpense                 -> it.totalExpensesInBase
-                                showTransfer                -> it.totalTransferOutInBase
-                                else                        -> BigDecimal.ZERO
-                            }
-                        }
+                        // toPerspective() absorbs transferIn into income and zeroes
+                        // totalTransferInInBase, so treat showTransfer as showInflow.
+                        val showInflow  = showIncome || showTransfer
+                        val showOutflow = showExpense || showTransfer
+                        val inflow      = if (showInflow)  cf.totalInflowInBase  else BigDecimal.ZERO
+                        val outflow     = if (showOutflow) cf.totalOutflowInBase else BigDecimal.ZERO
+                        val prevInflow  = if (showInflow)  prevCf?.totalInflowInBase  else null
+                        val prevOutflow = if (showOutflow) prevCf?.totalOutflowInBase else null
 
                         NetWorthFlowColumn(
                             label = "IN",

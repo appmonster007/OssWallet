@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
@@ -159,22 +161,26 @@ fun AccountHeroCard(
 
                 val symbolStyle = SpanStyle(
                     fontWeight = FontWeight.Light,
-                    color = contentColor.copy(alpha = 0.9f),
                     fontSize = 24.sp
                 )
 
-                Text(
-                    text = CurrencyReprUi.formatCurrencyAnnotated(
-                        amount = summary.balance,
-                        currencyCode = account.currencyCode,
-                        spec = CurrencyDisplaySpec(useSemanticColor = true),
-                        partStyles = CurrencyPartStyles(symbol = symbolStyle)
-                    ),
-                    style = AppTextStyles.heroAmountLarge.copy(
-                        fontSize = 36.sp,
-                        letterSpacing = (-1).sp
-                    ),
-                    color = contentColor,
+                val annotatedBalance = CurrencyReprUi.formatCurrencyAnnotated(
+                    amount = summary.balance,
+                    currencyCode = account.currencyCode,
+                    spec = CurrencyDisplaySpec(useSemanticColor = true),
+                    partStyles = CurrencyPartStyles(
+                        symbol = symbolStyle,
+                        positive = posColor,
+                        negative = negColor
+                    )
+                )
+
+                val balanceStyle = AppTextStyles.heroAmountLarge.copy(
+                    fontSize = 36.sp,
+                    letterSpacing = (-1).sp
+                )
+
+                Box(
                     modifier = Modifier.clickable {
                         if (config.perspective is AccountingPerspective.Accounting) {
                             callbacks.onClickNet?.invoke(config.filter)
@@ -182,7 +188,25 @@ fun AccountHeroCard(
                             callbacks.onClickNetFlow?.invoke(config.filter)
                         }
                     }
-                )
+                ) {
+                    // Outline/Border
+                    Text(
+                        text = annotatedBalance,
+                        style = balanceStyle.copy(
+                            drawStyle = Stroke(
+                                width = 1.6f,
+                                join = StrokeJoin.Round
+                            )
+                        ),
+                        color = if (isDarkBg) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.6f)
+                    )
+                    // Fill
+                    Text(
+                        text = annotatedBalance,
+                        style = balanceStyle,
+                        color = contentColor
+                    )
+                }
 
                 if (account.currencyCode != baseCurrency) {
                     Text(
@@ -610,7 +634,7 @@ private fun AccountHeroCardPreviewContent(theme: String) {
             "EUR" to BigDecimal("45000.00"),
             "GBP" to BigDecimal("12000.00")
         ),
-        balance = BigDecimal("245800.50"),
+        balance = BigDecimal("-245800.50"),
         balanceInBase = BigDecimal("245800.50"),
         currentPeriodFlow = AccountFlowMetrics(
             income = BigDecimal("15000.00"),

@@ -21,10 +21,13 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 // All fields are perspective-resolved (toPerspective already applied).
+// transferIn/transferOut are raw (toPerspective does not zero them) for TRANSFER_IN/OUT metric support.
 private data class IndividualTagStats(
     val income: BigDecimal,
     val expense: BigDecimal,
     val transfer: BigDecimal,
+    val transferIn: BigDecimal,
+    val transferOut: BigDecimal,
     val count: Int,
     val incomeByCurrency: Map<String, BigDecimal>,
     val expenseByCurrency: Map<String, BigDecimal>
@@ -120,6 +123,7 @@ class TagUpSetPlotCardComputer(
 
                 IndividualTagStats(
                     income = ps.income, expense = ps.expense, transfer = ps.transfer,
+                    transferIn = ps.transferIn, transferOut = ps.transferOut,
                     count = countTotal,
                     incomeByCurrency = incByCurr.filterValues { it.signum() != 0 },
                     expenseByCurrency = expByCurr.filterValues { it.signum() != 0 }
@@ -128,11 +132,13 @@ class TagUpSetPlotCardComputer(
             .toList()
             .let { list ->
                 val metricValue = { p: Pair<String, IndividualTagStats> ->
-                    // income/expense/transfer are already perspective-resolved
+                    // income/expense/transfer are perspective-resolved; transferIn/Out are raw
                     config.selectedMetric.extractFrom(FinancialSummary(
                         totalAmount = BigDecimal.ZERO,
                         income = p.second.income, expense = p.second.expense,
-                        transfer = p.second.transfer, transactionCount = 0
+                        transfer = p.second.transfer,
+                        transferIn = p.second.transferIn, transferOut = p.second.transferOut,
+                        transactionCount = 0
                     ))
                 }
                 when (config.tagSortMode) {
@@ -225,11 +231,13 @@ class TagUpSetPlotCardComputer(
             }
 
         val sets = tagTotals.map { (tag, stats) ->
-            // income/expense/transfer are already perspective-resolved
+            // income/expense/transfer are perspective-resolved; transferIn/Out are raw
             val total = config.selectedMetric.extractFrom(FinancialSummary(
                 totalAmount = BigDecimal.ZERO,
                 income = stats.income, expense = stats.expense,
-                transfer = stats.transfer, transactionCount = 0
+                transfer = stats.transfer,
+                transferIn = stats.transferIn, transferOut = stats.transferOut,
+                transactionCount = 0
             ))
             TagUpSetSet(
                 tagName = tag,

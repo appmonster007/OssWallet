@@ -123,6 +123,7 @@ fun UnifiedCardRenderer(
                     config = renderData.config,
                     callbacks = cardWithCallbacks.callbacks,
                     layoutProps = effectiveProps,
+                    balanceHistory = renderData.summary.balanceHistory,
                 )
             }
 

@@ -50,7 +50,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -262,6 +265,7 @@ fun AeonExpressiveCard(
 
                     AeonCardHeader(
                         title = title,
+                        titleColor = contentColor,
                         subtitle = effectiveSubtitle,
                         subtitleColor = subtitleColor,
                         icon = icon,
@@ -344,6 +348,7 @@ internal fun AeonCardHeader(
     subtitleColor: Color = AppColors.contentSecondary,
     icon: ImageVector? = null,
     iconColor: Color = AppColors.contentPrimary,
+    titleColor: Color = AppColors.contentPrimary,
     onIconClick: (() -> Unit)? = null,
     trailingIcon: ImageVector? = null,
     trailingIconColor: Color = AppColors.error,
@@ -400,7 +405,7 @@ internal fun AeonCardHeader(
             Text(
                 text = title,
                 style = AppTextStyles.cardSectionTitle,
-                color = AppColors.contentPrimary,
+                color = titleColor,
             )
             if (subtitle != null) {
                 Row(

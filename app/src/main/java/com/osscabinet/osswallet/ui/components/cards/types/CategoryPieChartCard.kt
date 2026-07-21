@@ -1,6 +1,7 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +19,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.rounded.PieChart
@@ -50,7 +49,6 @@ import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
@@ -64,9 +62,6 @@ import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.LocalThemeMode
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
-import com.osscabinet.ossWallet.ui.util.CurrencyPartStyles
-import com.osscabinet.ossWallet.ui.util.CurrencyReprUi
 import com.osscabinet.ossWallet.ui.util.formatCurrency
 import com.osscabinet.ossWallet.ui.util.generateShade
 import com.osscabinet.ossWallet.ui.util.toChartColor
@@ -88,18 +83,56 @@ fun CategoryPieChartCard(
     val isAmoled = mode.isAmoled
 
     val filteredData = remember(data, config.showOnlyActiveCategories) {
-        if (config.showOnlyActiveCategories) {
-            data.filter { it.amount.signum() != 0 }
-        } else {
-            data
-        }
+        if (config.showOnlyActiveCategories) data.filter { it.amount.signum() != 0 } else data
     }
 
     var navigationStack by remember(filteredData) {
-        mutableStateOf(listOf(filteredData))
+        mutableStateOf(
+            listOf(
+                filteredData,
+            )
+        )
     }
-
     val currentData = navigationStack.last()
+
+    val groupedData = remember(currentData, navigationStack.size) {
+        val sorted = currentData.sortedByDescending { it.amount.abs() }
+
+        val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
+            val prevLevelRawData = navigationStack[navigationStack.size - 2]
+            prevLevelRawData.none { it.subcategoryData === currentData }
+        } else false
+
+        if (!isMoreCategoriesDrillDown) {
+            val mainItems = sorted.filter { it.percentage >= 0.02f }
+            val others =
+                sorted.filter { (it.percentage < 0.02f) && (it.amount.abs() > BigDecimal.ZERO) }
+
+            if (others.size > 1) {
+                val otherSum = others.sumOf { it.amount }
+                val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                val otherPrevSum = if (others.any { it.previousAmount != null }) {
+                    others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+                } else null
+
+                mainItems + CategoryChartData(
+                    category = "More Categories",
+                    categoryId = -1L,
+                    amount = otherSum,
+                    colorHex = 0xFF9E9E9E.toInt(), // Grey
+                    percentage = otherPercentage,
+                    hasSubcategories = true,
+                    subcategoryCount = others.size,
+                    subcategoryData = others,
+                    previousAmount = otherPrevSum
+                )
+            } else {
+                sorted
+            }
+        } else {
+            sorted
+        }
+    }
 
     AeonExpressiveCard(
         title = config.title,
@@ -121,11 +154,6 @@ fun CategoryPieChartCard(
             )
         }
     ) {
-        AeonMetricToggle(
-            perspective = config.perspective,
-            selectedMetric = config.selectedMetric,
-            onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) }
-        )
         Spacer(modifier = Modifier.height(16.dp))
 
         if (navigationStack.size > 1) {
@@ -176,45 +204,6 @@ fun CategoryPieChartCard(
                         )
                     }
                 }
-            }
-        }
-
-        val groupedData = remember(currentData, navigationStack.size) {
-            val sorted = currentData.sortedByDescending { it.amount.abs() }
-
-            val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
-                val prevLevelRawData = navigationStack[navigationStack.size - 2]
-                prevLevelRawData.none { it.subcategoryData === currentData }
-            } else false
-
-            if (!isMoreCategoriesDrillDown) {
-                val mainItems = sorted.filter { it.percentage >= 0.02f }
-                val others =
-                    sorted.filter { it.percentage < 0.02f && it.amount.abs() > BigDecimal.ZERO }
-
-                if (others.size > 1) {
-                    val otherSum = others.sumOf { it.amount }
-                    val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                    val otherPrevSum = if (others.any { it.previousAmount != null }) {
-                        others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
-                    } else null
-
-                    mainItems + CategoryChartData(
-                        category = "More Categories",
-                        categoryId = -1L,
-                        amount = otherSum,
-                        colorHex = 0xFF9E9E9E.toInt(),
-                        percentage = otherPercentage,
-                        hasSubcategories = true,
-                        subcategoryCount = others.size,
-                        subcategoryData = others,
-                        previousAmount = otherPrevSum
-                    )
-                } else {
-                    sorted
-                }
-            } else {
-                sorted
             }
         }
 
@@ -313,33 +302,36 @@ fun CategoryPieChartCard(
                 currency = currency,
                 showComparison = config.showComparison,
                 isAllTime = config.filter.timelineRange is TimelineRange.AllTime,
-                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET
+                positiveDeltaIsGood = config.selectedMetric == ChartMetric.INCOME || config.selectedMetric == ChartMetric.NET,
+                perspective = config.perspective,
+                selectedMetric = config.selectedMetric,
+                onMetricChange = { callbacks.onUpdate(config.copy(selectedMetric = it)) },
+                splitTransfers = config.splitTransfers
             )
-        }
 
-        if (config.showLegend && groupedData.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            CategoryLegend(
-                data = groupedData,
-                currency = currency,
-                navigationStack = navigationStack,
-                isDarkTheme = isDarkTheme,
-                isAmoled = isAmoled,
-                showFullBreakdown = config.showFullBreakdown,
-                onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
-                onItemClick = { item ->
-                    if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
-                        navigationStack += listOf(item.subcategoryData)
-                    } else {
-                        val categoryIds = item.allCategoryIds()
-                        callbacks.onRecordsClick(
-                            config.filter.copy(
-                                categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
+            if (config.showLegend) {
+                Spacer(modifier = Modifier.height(16.dp))
+                PieLegend(
+                    data = groupedData,
+                    currency = currency,
+                    isDarkTheme = isDarkTheme,
+                    isAmoled = isAmoled,
+                    showFullBreakdown = config.showFullBreakdown,
+                    onToggleBreakdown = { callbacks.onUpdate(config.copy(showFullBreakdown = it)) },
+                    onItemClick = { item ->
+                        if (item.hasSubcategories && !item.subcategoryData.isNullOrEmpty()) {
+                            navigationStack += listOf(item.subcategoryData)
+                        } else {
+                            val categoryIds = item.allCategoryIds()
+                            callbacks.onRecordsClick(
+                                config.filter.copy(
+                                    categoryIds = categoryIds.asSequence().map { it.toLong() }.toSet()
+                                )
                             )
-                        )
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -354,17 +346,19 @@ private fun CategoryPieChartSettingsContent(
         AeonSettingsToggle(
             "Show Labels",
             config.showLabels,
+            description = "Display category names on segments",
             onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
         )
         AeonSettingsToggle(
             "Show Legend",
             config.showLegend,
+            description = "Display list of categories beneath the map",
             onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
         )
         AeonSettingsToggle(
             "Rounded Visuals",
             config.rounded,
-            description = "Apply spacing and modern segment styles",
+            description = "Apply rounded corners and spacing to segments",
             onCheckedChange = { onUpdate(config.copy(rounded = it)) }
         )
     }
@@ -381,12 +375,6 @@ private fun CategoryPieChartSettingsContent(
             description = "Only show categories with non-zero values",
             onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
         )
-        AeonSettingsToggle(
-            "Show Comparison",
-            config.showComparison,
-            description = "Compare to previous period in chart center",
-            onCheckedChange = { onUpdate(config.copy(showComparison = it)) }
-        )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
@@ -400,10 +388,9 @@ private fun CategoryPieChartSettingsContent(
 
 
 @Composable
-fun CategoryLegend(
+fun PieLegend(
     data: List<CategoryChartData>,
     currency: String,
-    navigationStack: List<List<CategoryChartData>>,
     isDarkTheme: Boolean,
     isAmoled: Boolean,
     showFullBreakdown: Boolean,
@@ -416,22 +403,7 @@ fun CategoryLegend(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        displayData.forEachIndexed { index, item ->
-            val baseColor = if (navigationStack.size > 1) {
-                val currentData = navigationStack.last()
-                val prevStack = navigationStack[navigationStack.size - 2]
-                val parentItem = prevStack.find { it.subcategoryData === currentData }
-                parentItem?.colorHex?.let { Color(it) } ?: Color(item.colorHex)
-            } else {
-                Color(item.colorHex)
-            }
-
-            val displayColor = if (navigationStack.size > 1) {
-                baseColor.generateShade(index, data.size, isDarkTheme, isAmoled)
-            } else {
-                baseColor.toChartColor(isDarkTheme, isAmoled)
-            }
-
+        displayData.forEach { item ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -440,16 +412,17 @@ fun CategoryLegend(
                     .clickable { onItemClick(item) }
             ) {
                 Surface(
-                    modifier = Modifier.size(12.dp),
-                    shape = RoundedCornerShape(3.dp),
-                    color = displayColor,
-                    border = BorderStroke(1.dp, AppColors.contentPrimary.copy(alpha = 0.1f))
+                    modifier = Modifier.size(10.dp),
+                    shape = RoundedCornerShape(2.dp),
+                    color = Color(item.colorHex).toChartColor(isDarkTheme, isAmoled),
+                    border = BorderStroke(0.5.dp, AppColors.divider.copy(alpha = 0.3f))
                 ) {}
 
                 Text(
                     text = item.category,
-                    style = AppTextStyles.listItemSubtitle.copy(
-                        fontWeight = FontWeight.Medium
+                    style = AppTextStyles.drawerItemLabel.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
                     ),
                     modifier = Modifier.weight(1f)
                 )
@@ -460,8 +433,9 @@ fun CategoryLegend(
                 ) {
                     Text(
                         text = formatCurrency(item.amount, currency),
-                        style = AppTextStyles.listItemSubtitle.copy(
-                            fontWeight = FontWeight.Black
+                        style = AppTextStyles.drawerItemLabel.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
                         ),
                         color = AppColors.contentPrimary
                     )
@@ -523,6 +497,12 @@ fun mapCategoryPieChart(
         onUpdate = { newConfig ->
             if (newConfig is CategoryPieChartCardConfig) {
                 updateHandler.updateCardCategoryPieChartConfig(config.cardId, newConfig)
+            } else {
+                if (com.osscabinet.ossWallet.BuildConfig.DEBUG)
+                    android.util.Log.w(
+                        "CardBridge",
+                        "CategoryPieChart.onUpdate: unexpected ${newConfig::class.simpleName}"
+                    )
             }
         },
         onDelete = onDelete?.let { { it(config.cardId) } },
@@ -545,24 +525,7 @@ fun mapCategoryPieChart(
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun CategoryPieChartCardPreview() {
-    val subData = listOf(
-        CategoryChartData(
-            category = "Coffee",
-            categoryId = null,
-            amount = BigDecimal("50.00"),
-            colorHex = 0xFF795548.toInt(),
-            percentage = 0.1f
-        ),
-        CategoryChartData(
-            category = "Dinner",
-            categoryId = null,
-            amount = BigDecimal("150.00"),
-            colorHex = 0xFFFF9800.toInt(),
-            percentage = 0.3f
-        )
-    )
-
-    val richData = listOf(
+    val sampleData = listOf(
         CategoryChartData(
             category = "Housing",
             categoryId = null,
@@ -571,20 +534,18 @@ fun CategoryPieChartCardPreview() {
             percentage = 0.6f
         ),
         CategoryChartData(
-            category = "Food & Dining",
+            category = "Food",
             categoryId = null,
             amount = BigDecimal("450.00"),
             colorHex = 0xFFFF5722.toInt(),
-            percentage = 0.225f,
-            hasSubcategories = true,
-            subcategoryData = subData
+            percentage = 0.2f
         ),
         CategoryChartData(
             category = "Transport",
             categoryId = null,
             amount = BigDecimal("150.00"),
             colorHex = 0xFF4CAF50.toInt(),
-            percentage = 0.075f
+            percentage = 0.1f
         ),
         CategoryChartData(
             category = "Entertainment",
@@ -592,94 +553,25 @@ fun CategoryPieChartCardPreview() {
             amount = BigDecimal("200.00"),
             colorHex = 0xFF9C27B0.toInt(),
             percentage = 0.1f
-        ),
-        CategoryChartData(
-            category = "Misc 1",
-            categoryId = null,
-            amount = BigDecimal("10.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 2",
-            categoryId = null,
-            amount = BigDecimal("9.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 3",
-            categoryId = null,
-            amount = BigDecimal("8.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 4",
-            categoryId = null,
-            amount = BigDecimal("7.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 5",
-            categoryId = null,
-            amount = BigDecimal("6.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 6",
-            categoryId = null,
-            amount = BigDecimal("5.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 7",
-            categoryId = null,
-            amount = BigDecimal("4.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 8",
-            categoryId = null,
-            amount = BigDecimal("3.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 9",
-            categoryId = null,
-            amount = BigDecimal("2.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
-        ),
-        CategoryChartData(
-            category = "Misc 10",
-            categoryId = null,
-            amount = BigDecimal("1.00"),
-            colorHex = 0xFF607D8B.toInt(),
-            percentage = 0.01f
         )
     )
 
     OssWalletTheme {
-        Column(
+        Box(
             modifier = Modifier
+                .background(AppColors.background)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CategoryPieChartCard(
                 config = CategoryPieChartCardConfig(
-                    cardId = "rich",
-                    title = "Category Pie Chart",
+                    cardId = "preview",
+                    title = "Category Breakdown",
+                    showLabels = true,
+                    showLegend = true,
                     showComparison = true,
                     filter = TransactionFilter(timelineRange = TimelineRange.ThisPeriod(com.osscabinet.ossWallet.domain.model.timeline.ThisPeriodType.MONTH))
                 ),
-                data = richData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.8"))) },
+                data = sampleData.map { it.copy(previousAmount = it.amount.multiply(BigDecimal("0.9"))) },
                 currency = "USD"
             )
         }

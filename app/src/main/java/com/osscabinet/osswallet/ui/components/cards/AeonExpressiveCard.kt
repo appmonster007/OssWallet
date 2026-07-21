@@ -123,16 +123,161 @@ class AeonCardState internal constructor(
 }
 
 /**
- * Standardizes the synchronization between local state and global card editing sessions.
+ * Standardized header component for all Aeon cards.
  */
 @Composable
-fun rememberAeonCardState(
-    cardId: String? = LocalCardId.current,
-): AeonCardState {
-    val sessionState = LocalEditingCardId.current
-    val onSessionChange = LocalOnEditCard.current
-    return remember(cardId, sessionState) {
-        AeonCardState(cardId, onSessionChange = onSessionChange, sessionState = sessionState)
+internal fun AeonCardHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    subtitleColor: Color = AppColors.contentSecondary,
+    icon: ImageVector? = null,
+    iconColor: Color = AppColors.contentPrimary,
+    titleColor: Color = AppColors.contentPrimary,
+    onIconClick: (() -> Unit)? = null,
+    trailingIcon: ImageVector? = null,
+    trailingIconColor: Color = AppColors.error,
+    onTrailingIconClick: (() -> Unit)? = null,
+    subtitleClickable: Boolean = false,
+    onSubtitleClick: (() -> Unit)? = null,
+    onHeaderClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    showFilterIndicator: Boolean = false,
+    accentColor: Color = AppColors.primary
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (icon == null) modifier else Modifier)
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onHeaderClick?.invoke() },
+                onLongClick = onLongClick
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+    ) {
+        if (icon != null) {
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .then(modifier)
+                    .then(
+                        if (onIconClick != null || onHeaderClick != null) {
+                            Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onIconClick?.invoke() ?: onHeaderClick?.invoke() })
+                        } else Modifier
+                    ),
+                shape = CircleShape,
+                color = iconColor.copy(alpha = 0.15f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = iconColor,
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = AppTextStyles.cardSectionTitle,
+                color = titleColor,
+            )
+            if (subtitle != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = subtitle,
+                        style = AppTextStyles.cardPeriodReadout,
+                        color = subtitleColor,
+                        modifier = Modifier.then(
+                            if (subtitleClickable) Modifier
+                                .clickable { onSubtitleClick?.invoke() }
+                                .aeonDottedUnderline()
+                            else Modifier))
+                    if (showFilterIndicator) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .background(color = accentColor, shape = CircleShape)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (trailingIcon != null) {
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .clickable(onClick = onTrailingIconClick ?: {}),
+                shape = CircleShape,
+                color = trailingIconColor.copy(alpha = 0.10f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = trailingIcon,
+                        contentDescription = "Action",
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = trailingIconColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Shared glass surface shell for card sides.
+ */
+@Composable
+private fun AeonCardSideShell(
+    modifier: Modifier = Modifier, containerColor: Color, content: @Composable BoxScope.() -> Unit
+) {
+    val hazeLayers = LocalAeonHaze.current
+    val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
+    val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
+    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+
+    val cardStyle = GlassTokens.cardStyle(isSystemInDarkTheme())
+    val glassStyle = remember(containerColor, cardStyle) {
+        cardStyle.copyStyle(bgColor = containerColor, isDark = null)
+    }
+
+    CompositionLocalProvider(
+        LocalGlassmorphismEnabled provides true, LocalParentGlassHaze provides surfaceHazeState
+    ) {
+        GlassSurface(
+            modifier = modifier.fillMaxWidth(),
+            shape = cardShape,
+            hazeState = surfaceHazeState,
+            hazeStyle = glassStyle,
+            fallbackColor = containerColor,
+        ) {
+            AeonGlassHost(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aeonHazeSource(overlayHazeState)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AeonTheme.dimensions.cardPadding)
+                ) {
+                    content()
+                }
+            }
+        }
     }
 }
 
@@ -333,161 +478,16 @@ fun AeonExpressiveCard(
 }
 
 /**
- * Standardized header component for all Aeon cards.
+ * Standardizes the synchronization between local state and global card editing sessions.
  */
 @Composable
-internal fun AeonCardHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    subtitleColor: Color = AppColors.contentSecondary,
-    icon: ImageVector? = null,
-    iconColor: Color = AppColors.contentPrimary,
-    titleColor: Color = AppColors.contentPrimary,
-    onIconClick: (() -> Unit)? = null,
-    trailingIcon: ImageVector? = null,
-    trailingIconColor: Color = AppColors.error,
-    onTrailingIconClick: (() -> Unit)? = null,
-    subtitleClickable: Boolean = false,
-    onSubtitleClick: (() -> Unit)? = null,
-    onHeaderClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-    showFilterIndicator: Boolean = false,
-    accentColor: Color = AppColors.primary
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (icon == null) modifier else Modifier)
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onHeaderClick?.invoke() },
-                onLongClick = onLongClick
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-    ) {
-        if (icon != null) {
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .then(modifier)
-                    .then(
-                        if (onIconClick != null || onHeaderClick != null) {
-                            Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onIconClick?.invoke() ?: onHeaderClick?.invoke() })
-                        } else Modifier
-                    ),
-                shape = CircleShape,
-                color = iconColor.copy(alpha = 0.15f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconColor,
-                    )
-                }
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = AppTextStyles.cardSectionTitle,
-                color = titleColor,
-            )
-            if (subtitle != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = subtitle,
-                        style = AppTextStyles.cardPeriodReadout,
-                        color = subtitleColor,
-                        modifier = Modifier.then(
-                            if (subtitleClickable) Modifier
-                                .clickable { onSubtitleClick?.invoke() }
-                                .aeonDottedUnderline()
-                            else Modifier))
-                    if (showFilterIndicator) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .background(color = accentColor, shape = CircleShape)
-                        )
-                    }
-                }
-            }
-        }
-
-        if (trailingIcon != null) {
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .clickable(onClick = onTrailingIconClick ?: {}),
-                shape = CircleShape,
-                color = trailingIconColor.copy(alpha = 0.10f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = trailingIcon,
-                        contentDescription = "Action",
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = trailingIconColor,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Shared glass surface shell for card sides.
- */
-@Composable
-private fun AeonCardSideShell(
-    modifier: Modifier = Modifier, containerColor: Color, content: @Composable BoxScope.() -> Unit
-) {
-    val hazeLayers = LocalAeonHaze.current
-    val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
-    val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
-    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
-
-    val cardStyle = GlassTokens.cardStyle(isSystemInDarkTheme())
-    val glassStyle = remember(containerColor, cardStyle) {
-        cardStyle.copyStyle(bgColor = containerColor, isDark = null)
-    }
-
-    CompositionLocalProvider(
-        LocalGlassmorphismEnabled provides true, LocalParentGlassHaze provides surfaceHazeState
-    ) {
-        GlassSurface(
-            modifier = modifier.fillMaxWidth(),
-            shape = cardShape,
-            hazeState = surfaceHazeState,
-            hazeStyle = glassStyle,
-            fallbackColor = containerColor,
-        ) {
-            AeonGlassHost(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aeonHazeSource(overlayHazeState)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AeonTheme.dimensions.cardPadding)
-                ) {
-                    content()
-                }
-            }
-        }
+fun rememberAeonCardState(
+    cardId: String? = LocalCardId.current,
+): AeonCardState {
+    val sessionState = LocalEditingCardId.current
+    val onSessionChange = LocalOnEditCard.current
+    return remember(cardId, sessionState) {
+        AeonCardState(cardId, onSessionChange = onSessionChange, sessionState = sessionState)
     }
 }
 

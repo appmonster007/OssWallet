@@ -155,6 +155,10 @@ data class CategoryTreeMetrics(
     val expense: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
     val transfer: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferOut: BigDecimal = BigDecimal.ZERO,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
@@ -166,7 +170,11 @@ data class CategoryTreeMetrics(
     @Serializable(with = BigDecimalSerializer::class)
     val previousExpense: BigDecimal? = null,
     @Serializable(with = BigDecimalSerializer::class)
-    val previousTransfer: BigDecimal? = null
+    val previousTransfer: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val previousTransferIn: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val previousTransferOut: BigDecimal? = null
 )
 
 /**

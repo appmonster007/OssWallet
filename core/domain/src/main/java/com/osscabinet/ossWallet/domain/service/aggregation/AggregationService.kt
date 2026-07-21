@@ -481,6 +481,14 @@ object AggregationService {
                                 precision,
                                 RoundingMode.HALF_UP
                             ),
+                            transferIn = breakdown.financialSummary.transferIn.setScale(
+                                precision,
+                                RoundingMode.HALF_UP
+                            ),
+                            transferOut = breakdown.financialSummary.transferOut.setScale(
+                                precision,
+                                RoundingMode.HALF_UP
+                            ),
                             colorHex = entity.colorHex,
                             percentage = if (globalTotal.signum() != 0) (breakdown.totalAmount.abs()
                                 .divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
@@ -501,6 +509,14 @@ object AggregationService {
                             previousTransfer = previousBreakdown?.financialSummary?.transfer?.setScale(
                                 precision,
                                 RoundingMode.HALF_UP
+                            ),
+                            previousTransferIn = previousBreakdown?.financialSummary?.transferIn?.setScale(
+                                precision,
+                                RoundingMode.HALF_UP
+                            ),
+                            previousTransferOut = previousBreakdown?.financialSummary?.transferOut?.setScale(
+                                precision,
+                                RoundingMode.HALF_UP
                             )
                         )
                     )
@@ -516,6 +532,10 @@ object AggregationService {
                 if (actualChildrenData.isEmpty()) breakdown.expense else combinedChildren.sumOf { it.expense }
             val totalTransfer =
                 if (actualChildrenData.isEmpty()) breakdown.financialSummary.transfer else combinedChildren.sumOf { it.transfer }
+            val totalTransferIn =
+                if (actualChildrenData.isEmpty()) breakdown.financialSummary.transferIn else combinedChildren.sumOf { it.transferIn }
+            val totalTransferOut =
+                if (actualChildrenData.isEmpty()) breakdown.financialSummary.transferOut else combinedChildren.sumOf { it.transferOut }
             val totalNet = totalIncome + totalExpense + totalTransfer
 
             val totalPrevNet = if (previousBreakdowns != null) {
@@ -542,6 +562,18 @@ object AggregationService {
                     it.previousTransfer ?: BigDecimal.ZERO
                 }
             } else null
+            val totalPrevTransferIn = if (previousBreakdowns != null) {
+                if (actualChildrenData.isEmpty()) previousBreakdown?.financialSummary?.transferIn
+                    ?: BigDecimal.ZERO else combinedChildren.sumOf {
+                    it.previousTransferIn ?: BigDecimal.ZERO
+                }
+            } else null
+            val totalPrevTransferOut = if (previousBreakdowns != null) {
+                if (actualChildrenData.isEmpty()) previousBreakdown?.financialSummary?.transferOut
+                    ?: BigDecimal.ZERO else combinedChildren.sumOf {
+                    it.previousTransferOut ?: BigDecimal.ZERO
+                }
+            } else null
 
             return CategoryTreeMetrics(
                 category = entity.name,
@@ -550,6 +582,8 @@ object AggregationService {
                 income = totalIncome.setScale(precision, RoundingMode.HALF_UP),
                 expense = totalExpense.setScale(precision, RoundingMode.HALF_UP),
                 transfer = totalTransfer.setScale(precision, RoundingMode.HALF_UP),
+                transferIn = totalTransferIn.setScale(precision, RoundingMode.HALF_UP),
+                transferOut = totalTransferOut.setScale(precision, RoundingMode.HALF_UP),
                 colorHex = entity.colorHex,
                 percentage = if (globalTotal.signum() != 0) (totalNet.abs()
                     .divide(globalTotal, 4, RoundingMode.HALF_UP)).toFloat() else 0f,
@@ -558,7 +592,9 @@ object AggregationService {
                 previousNetBalance = totalPrevNet?.setScale(precision, RoundingMode.HALF_UP),
                 previousIncome = totalPrevIncome?.setScale(precision, RoundingMode.HALF_UP),
                 previousExpense = totalPrevExpense?.setScale(precision, RoundingMode.HALF_UP),
-                previousTransfer = totalPrevTransfer?.setScale(precision, RoundingMode.HALF_UP)
+                previousTransfer = totalPrevTransfer?.setScale(precision, RoundingMode.HALF_UP),
+                previousTransferIn = totalPrevTransferIn?.setScale(precision, RoundingMode.HALF_UP),
+                previousTransferOut = totalPrevTransferOut?.setScale(precision, RoundingMode.HALF_UP)
             )
         }
 

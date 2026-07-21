@@ -1,11 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,7 +42,7 @@ import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -63,7 +63,7 @@ fun AeonCardSettingsScaffold(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
     ) {
         AeonCardHeader(
             title = title,
@@ -199,7 +199,19 @@ fun CardSettingsSection(
     showBackground: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val sectionContent = @Composable {
+    val shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (showBackground) {
+                    Modifier
+                        .background(AppColors.cardSurfaceProminent, shape)
+                        .aeonHairlineBorder(shape)
+                } else Modifier
+            )
+    ) {
         Column(
             modifier = Modifier.padding(vertical = if (showBackground) 16.dp else 8.dp),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
@@ -221,22 +233,6 @@ fun CardSettingsSection(
             ) {
                 content()
             }
-        }
-    }
-
-    if (showBackground) {
-        GlassSurface(
-            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            hazeStyle = GlassTokens.itemStyle(),
-            modifier = modifier.fillMaxWidth(),
-            borderColor = AppColors.outlineVariant.copy(alpha = 0.3f),
-            borderWidth = 0.5.dp
-        ) {
-            sectionContent()
-        }
-    } else {
-        Box(modifier = modifier.fillMaxWidth()) {
-            sectionContent()
         }
     }
 }

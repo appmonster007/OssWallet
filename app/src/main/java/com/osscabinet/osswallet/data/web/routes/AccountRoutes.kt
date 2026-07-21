@@ -98,13 +98,7 @@ fun Route.accountRoutes(
                     id = java.util.UUID.randomUUID().toString(),
                     name = req.name,
                     currencyCode = req.currencyCode,
-                    structureType = AccountStructureType.entries.find {
-                        it.name.equals(
-                            req.structureType,
-                            ignoreCase = true
-                        )
-                    }
-                        ?: AccountStructureType.SAVINGS,
+                    structureType = AccountStructureType.fromString(req.structureType),
                     colorHex = req.colorHex,
                     icon = req.icon,
                     allowedCurrencies = req.allowedCurrencies
@@ -228,14 +222,7 @@ fun Route.accountRoutes(
                 val updated = existing.copy(
                     name = req.name ?: existing.name,
                     currencyCode = req.currencyCode ?: existing.currencyCode,
-                    structureType = req.structureType?.let { t ->
-                        AccountStructureType.entries.find {
-                            it.name.equals(
-                                t,
-                                ignoreCase = true
-                            )
-                        } ?: existing.structureType
-                    } ?: existing.structureType,
+                    structureType = req.structureType?.let { AccountStructureType.fromString(it) } ?: existing.structureType,
                     colorHex = req.colorHex ?: existing.colorHex,
                     icon = req.icon ?: existing.icon,
                     isArchived = req.isArchived ?: existing.isArchived,

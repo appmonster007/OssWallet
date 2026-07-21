@@ -152,6 +152,7 @@ import androidx.compose.material.icons.rounded.KebabDining
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.KingBed
 import androidx.compose.material.icons.rounded.Kitchen
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Laptop
 import androidx.compose.material.icons.rounded.Lightbulb
@@ -574,3 +575,6 @@ fun getIconByName(name: String?): ImageVector =
 
 fun getAccountIconByName(name: String?): ImageVector =
     AppIconMap[name] ?: Icons.Rounded.AccountBalance
+
+val com.osscabinet.ossWallet.domain.model.AccountStructureType.icon: ImageVector
+    get() = AppIconMap[this.iconKey] ?: Icons.Rounded.Layers

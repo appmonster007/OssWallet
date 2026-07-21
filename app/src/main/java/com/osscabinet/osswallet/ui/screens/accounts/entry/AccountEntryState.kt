@@ -11,12 +11,12 @@ enum class BalanceUpdateMode {
 
 data class AccountEntryState(
     val accountName: String = "",
-    val structureType: AccountStructureType = AccountStructureType.SAVINGS,
+    val structureType: AccountStructureType = AccountStructureType.BANK,
     val primaryCurrency: String = "USD",
     val allowedCurrencies: Set<String> = emptySet(),
     val initialBalances: Map<String, String> = emptyMap(),  // signed amounts: positive=inflow, negative=outflow
-    val selectedIconName: String = "AccountBalance",
-    val accentColorHex: String = "#004D5F",
+    val selectedIconName: String = AccountStructureType.BANK.iconKey,
+    val accentColorHex: String = AccountStructureType.BANK.colorHex,
     val currentBalance: BigDecimal = BigDecimal.ZERO,
 
     // Balance Update Flow

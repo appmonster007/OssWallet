@@ -69,7 +69,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.osscabinet.ossWallet.ui.theme.AccentDeepPurple
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.theme.AeonSize
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -795,7 +796,7 @@ fun AeonTopAppBarPreview(
                                 .background(
                                     Brush.verticalGradient(
                                         listOf(
-                                            AccountStructureColors.digitalWallet.copy(
+                                            AccountStructureType.DIGITAL_WALLET.color.copy(
                                                 alpha = 0.35f
                                             ), Color.Transparent
                                         )

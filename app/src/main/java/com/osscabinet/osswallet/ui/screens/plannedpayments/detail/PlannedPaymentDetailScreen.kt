@@ -993,9 +993,9 @@ fun PlannedPaymentDetailPreview() {
                 id = "acc_1",
                 name = "Chase Bank",
                 currencyCode = "USD",
-                structureType = AccountStructureType.SAVINGS,
-                colorHex = "#004D5F",
-                icon = "AccountBalance"
+                structureType = AccountStructureType.BANK,
+                colorHex = AccountStructureType.BANK.colorHex,
+                icon = AccountStructureType.BANK.iconKey
             )
         )
     }

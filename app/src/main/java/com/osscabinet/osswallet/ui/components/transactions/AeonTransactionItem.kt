@@ -45,7 +45,8 @@ import com.osscabinet.ossWallet.domain.model.CashFlowType
 import com.osscabinet.ossWallet.domain.model.TagUiModel
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
 import com.osscabinet.ossWallet.ui.theme.AccentBlue
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -352,7 +353,7 @@ fun AeonTransactionItemRegularPreview() {
                 TagUiModel("Work", -1)
             ),
             icon = Icons.Rounded.Category,
-            iconBg = AccountStructureColors.savings,
+            iconBg = AccountStructureType.SAVINGS.color,
             onClick = {}
         )
     }

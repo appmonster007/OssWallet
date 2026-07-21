@@ -30,7 +30,11 @@ data class CashFlowTimePoint(
     val transfer: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
     val net: BigDecimal,
-    val bucketEnd: Long = 0L
+    val bucketEnd: Long = 0L,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferOut: BigDecimal = BigDecimal.ZERO
 )
 
 @Serializable

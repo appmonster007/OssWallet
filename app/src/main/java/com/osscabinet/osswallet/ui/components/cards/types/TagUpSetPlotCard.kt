@@ -141,6 +141,8 @@ fun TagUpSetPlotCard(
                     ChartMetric.EXPENSE -> s.expense
                     ChartMetric.NET,
                     ChartMetric.TRANSFER,
+                    ChartMetric.TRANSFER_IN,
+                    ChartMetric.TRANSFER_OUT,
                     -> s.income.add(s.expense)
                 }
             }
@@ -183,7 +185,9 @@ fun TagUpSetPlotCard(
                         ChartMetric.INCOME -> intersection.income
                         ChartMetric.EXPENSE -> intersection.expense
                         ChartMetric.NET,
-                        ChartMetric.TRANSFER -> intersection.income.add(intersection.expense)
+                        ChartMetric.TRANSFER,
+                        ChartMetric.TRANSFER_IN,
+                        ChartMetric.TRANSFER_OUT -> intersection.income.add(intersection.expense)
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,

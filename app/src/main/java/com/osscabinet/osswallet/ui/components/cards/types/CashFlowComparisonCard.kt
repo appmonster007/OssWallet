@@ -93,20 +93,27 @@ fun CashFlowComparisonCard(
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Keep the selected metric coherent with the split-transfers setting so a stale
+            // TRF / TRF IN selection doesn't leave the toggle with nothing highlighted.
+            val effectiveMetric = coerceTransferMetric(selectedMetric, config.splitTransfers)
+
             // Metric toggle row — purely display-local; no config persist needed
             AeonMetricToggle(
                 perspective = config.perspective,
-                selectedMetric = selectedMetric,
-                onMetricChange = { metric -> selectedMetric = metric }
+                selectedMetric = effectiveMetric,
+                onMetricChange = { metric -> selectedMetric = metric },
+                splitTransfers = config.splitTransfers
             )
 
             // Aggregate sum for current period
             val aggregateTotal = renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
-                acc + when (selectedMetric) {
+                acc + when (effectiveMetric) {
                     ChartMetric.NET -> p.net
                     ChartMetric.INCOME -> p.income
                     ChartMetric.EXPENSE -> p.expense
                     ChartMetric.TRANSFER -> p.transfer
+                    ChartMetric.TRANSFER_IN -> p.transferIn
+                    ChartMetric.TRANSFER_OUT -> p.transferOut
                 }
             }
             Text(
@@ -130,7 +137,7 @@ fun CashFlowComparisonCard(
             // Chart
             val series = buildSeriesList(
                 config = config,
-                selectedMetric = selectedMetric,
+                selectedMetric = effectiveMetric,
                 isCumulative = config.isCumulative,
                 renderData = renderData
             )
@@ -182,6 +189,16 @@ fun CashFlowComparisonCard(
             }
         }
     }
+}
+
+/**
+ * Keeps a saved metric selection valid when the split-transfers setting changes:
+ * TRF ↔ TRF IN so the toggle always has a highlighted option.
+ */
+private fun coerceTransferMetric(metric: ChartMetric, splitTransfers: Boolean): ChartMetric = when {
+    splitTransfers && metric == ChartMetric.TRANSFER -> ChartMetric.TRANSFER_IN
+    !splitTransfers && (metric == ChartMetric.TRANSFER_IN || metric == ChartMetric.TRANSFER_OUT) -> ChartMetric.TRANSFER
+    else -> metric
 }
 
 
@@ -255,6 +272,8 @@ private fun buildSeriesList(
                 ChartMetric.INCOME -> point.income
                 ChartMetric.EXPENSE -> point.expense
                 ChartMetric.TRANSFER -> point.transfer
+                ChartMetric.TRANSFER_IN -> point.transferIn
+                ChartMetric.TRANSFER_OUT -> point.transferOut
             }
             running += value
             AeonLineChartPoint(

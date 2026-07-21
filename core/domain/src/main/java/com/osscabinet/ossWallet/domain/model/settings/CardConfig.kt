@@ -482,7 +482,7 @@ data class RecentActivitiesCardConfig(
  * Shared metric selector for various chart cards.
  */
 @Serializable
-enum class ChartMetric { NET, INCOME, EXPENSE, TRANSFER }
+enum class ChartMetric { NET, INCOME, EXPENSE, TRANSFER, TRANSFER_IN, TRANSFER_OUT }
 
 /**
  * Defines the perspective used for financial calculations and display.
@@ -498,26 +498,29 @@ sealed class AccountingPerspective {
     data object CashFlow : AccountingPerspective()
 
     companion object {
-        fun labelsFor(perspective: AccountingPerspective): Map<ChartMetric, String> =
-            when {
-                perspective is Accounting -> mapOf(
-                    ChartMetric.INCOME to "INC",
-                    ChartMetric.EXPENSE to "EXP",
-                    ChartMetric.TRANSFER to "TRF",
-                    ChartMetric.NET to "NET"
-                )
-
-                perspective is CashFlow -> mapOf(
+        fun labelsFor(
+            perspective: AccountingPerspective,
+            splitTransfers: Boolean = false
+        ): Map<ChartMetric, String> =
+            when (perspective) {
+                is CashFlow -> mapOf(
                     ChartMetric.INCOME to "IN",
                     ChartMetric.EXPENSE to "OUT",
                     ChartMetric.NET to "NET"
                 )
 
-                else -> mapOf(
-                    ChartMetric.INCOME to "INC",
-                    ChartMetric.EXPENSE to "EXP",
-                    ChartMetric.NET to "NET"
-                )
+                // Accounting is the default perspective.
+                else -> buildMap {
+                    put(ChartMetric.INCOME, "INC")
+                    put(ChartMetric.EXPENSE, "EXP")
+                    if (splitTransfers) {
+                        put(ChartMetric.TRANSFER_IN, "TRF IN")
+                        put(ChartMetric.TRANSFER_OUT, "TRF OUT")
+                    } else {
+                        put(ChartMetric.TRANSFER, "TRF")
+                    }
+                    put(ChartMetric.NET, "NET")
+                }
             }
 
         val ALL: List<AccountingPerspective> get() = listOf(Accounting, CashFlow)

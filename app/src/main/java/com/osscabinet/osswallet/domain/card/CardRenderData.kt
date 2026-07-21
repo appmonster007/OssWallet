@@ -274,6 +274,10 @@ data class TagUpSetSet(
     val income: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferOut: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
     val transactionCount: Int = 0,
@@ -289,6 +293,10 @@ data class TagUpSetIntersection(
     val income: BigDecimal = BigDecimal.ZERO,
     @Serializable(with = BigDecimalSerializer::class)
     val expense: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferOut: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, @Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyMap(),
     val transactionCount: Int

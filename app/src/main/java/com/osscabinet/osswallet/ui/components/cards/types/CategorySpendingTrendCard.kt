@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +20,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,9 +32,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -47,6 +46,8 @@ import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.forCategory
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.AeonDropdownSelector
+import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -60,6 +61,7 @@ import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLegendItemData
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -117,10 +119,9 @@ fun CategorySpendingTrendCard(
                 isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
                 perspective = config.perspective,
                 selectedMetric = selectedMetric,
-                onMetricChange = { metric ->
-                    callbacks.onUpdate(config.copy(selectedMetric = metric))
-                },
-                splitTransfers = config.splitTransfers
+                onMetricChange = { /* Disabled */ },
+                splitTransfers = config.splitTransfers,
+                dropdownEnabled = false
             )
 
             // Resolve nature colors in composable scope
@@ -128,79 +129,37 @@ fun CategorySpendingTrendCard(
             val needColor = InfoColor
             val wantColor = WarningColor
 
+            // Interactive Legend Row (Must, Need, Want)
+            CategoryNatureLegendRow(
+                selectedNatures = config.selectedNatures,
+                isCumulative = config.isCumulative,
+                onToggleNature = { nature ->
+                    val newNatures = if (config.selectedNatures.contains(nature)) {
+                        config.selectedNatures - nature
+                    } else {
+                        config.selectedNatures + nature
+                    }
+                    callbacks.onUpdate(config.copy(selectedNatures = newNatures))
+                },
+                onModeChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+            )
+
             // Stacked bar chart
-            val chartGroups = remember(renderData, mustColor, needColor, wantColor, config.isCumulative) {
-                buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative)
+            val chartGroups = remember(renderData, mustColor, needColor, wantColor, config.isCumulative, config.selectedNatures) {
+                buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative, config.selectedNatures)
             }
             if (chartGroups.isNotEmpty()) {
                 AeonBarChart(
                     groups = chartGroups,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp),
+                        .height(280.dp),
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
                     showXAxisLabels = true,
                     roundedBars = false,
                     animate = layoutProps.animate
                 )
-            }
-
-            // Nature filters (Must, Need, Want) - Placed below graph, equally spaced
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CategoryNature.entries.forEach { nature ->
-                    val isSelected = nature in config.selectedNatures
-                    val natureColor = when (nature) {
-                        CategoryNature.MUST -> AppColors.error
-                        CategoryNature.NEED -> InfoColor
-                        CategoryNature.WANT -> WarningColor
-                    }
-
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            val newNatures = if (isSelected) {
-                                config.selectedNatures - nature
-                            } else {
-                                config.selectedNatures + nature
-                            }
-                            callbacks.onUpdate(config.copy(selectedNatures = newNatures))
-                        },
-                        label = {
-                            Box(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = nature.name.lowercase()
-                                        .replaceFirstChar { it.uppercase() },
-                                    style = AppTextStyles.caption.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                )
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = natureColor.copy(alpha = 0.12f),
-                            selectedLabelColor = natureColor,
-                            containerColor = Color.Transparent,
-                            labelColor = AppColors.contentSecondary.copy(alpha = 0.6f)
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = AppColors.contentSecondary.copy(alpha = 0.2f),
-                            selectedBorderColor = natureColor,
-                            borderWidth = 1.dp,
-                            selectedBorderWidth = 1.dp,
-                            enabled = true,
-                            selected = isSelected
-                        )
-                    )
-                }
             }
 
             // Expandable category list header
@@ -242,6 +201,96 @@ fun CategorySpendingTrendCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryNatureLegendRow(
+    selectedNatures: Set<CategoryNature>,
+    isCumulative: Boolean,
+    onToggleNature: (CategoryNature) -> Unit,
+    onModeChange: (Boolean) -> Unit,
+) {
+    // Resolve colors in composable scope
+    val mustColor = AppColors.error
+    val needColor = InfoColor
+    val wantColor = WarningColor
+
+    val items = remember(selectedNatures, mustColor, needColor, wantColor) {
+        CategoryNature.entries.map { nature ->
+            val label = nature.name.lowercase().replaceFirstChar { it.uppercase() }
+            val color = when (nature) {
+                CategoryNature.MUST -> mustColor
+                CategoryNature.NEED -> needColor
+                CategoryNature.WANT -> wantColor
+            }
+            AeonLegendItemData(
+                color = color,
+                label = label,
+                isEnabled = nature in selectedNatures,
+                metadata = mapOf("nature" to nature)
+            )
+        }.sortedBy { it.label }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FlowRow(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { item ->
+                CategoryNatureLegendItem(
+                    color = item.color,
+                    label = item.label,
+                    isEnabled = item.isEnabled,
+                    onClick = { onToggleNature(item.metadata["nature"] as CategoryNature) }
+                )
+            }
+        }
+
+        Box(modifier = Modifier.padding(start = 8.dp)) {
+            AeonDropdownSelector(
+                value = if (isCumulative) "Cumulative" else "Trend",
+                options = listOf("Trend", "Cumulative"),
+                labelProvider = { it },
+                onValueChange = { onModeChange(it == "Cumulative") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CategoryNatureLegendItem(
+    color: Color,
+    label: String,
+    isEnabled: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .alpha(if (isEnabled) 1f else 0.4f)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 16.dp, height = 3.dp)
+                .background(
+                    color = if (isEnabled) color else color.copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(2.dp)
+                )
+        )
+        Text(
+            text = label,
+            style = AppTextStyles.caption.copy(fontSize = 10.sp),
+            color = if (isEnabled) AppColors.contentPrimary else AppColors.contentSecondary
+        )
     }
 }
 
@@ -325,12 +374,6 @@ private fun CategorySpendingSettingsContent(
     onUpdate: (CategorySpendingTrendCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
-        AeonSettingsToggle(
-            label = "Cumulative",
-            checked = config.isCumulative,
-            onCheckedChange = { onUpdate(config.copy(isCumulative = it)) },
-            showBackground = false
-        )
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
@@ -455,7 +498,7 @@ fun CategorySpendingTrendCardPreview() {
         ),
         granularity = com.osscabinet.ossWallet.domain.card.CashFlowComparisonGranularity.MONTH,
         activeCategories = listOf(
-            com.osscabinet.ossWallet.domain.card.CategorySummary(
+            CategorySummary(
                 1L,
                 "Rent",
                 0xFFE57373.toInt(),
@@ -492,32 +535,34 @@ private fun buildChartGroups(
     mustColor: Color,
     needColor: Color,
     wantColor: Color,
-    isCumulative: Boolean
+    isCumulative: Boolean,
+    selectedNatures: Set<CategoryNature>
 ): List<AeonBarChartGroup> {
     val runningTotals = mutableMapOf<CategoryNature, BigDecimal>()
-
-    return renderData.buckets.map { bucket ->
+    
+    val baseGroups = renderData.buckets.map { bucket ->
         val finalBars = mutableListOf<AeonBarChartBar>()
 
         CategoryNature.entries.forEach { nature ->
-            val currentAmount = bucket.categoryAmounts.asSequence()
+            val natureAmount = bucket.categoryAmounts.asSequence()
                 .filter { it.nature == nature }
                 .map { it.amount }
                 .fold(BigDecimal.ZERO, BigDecimal::add)
 
             if (isCumulative) {
                 val prevRunning = runningTotals[nature] ?: BigDecimal.ZERO
-                val newRunning = prevRunning.add(currentAmount)
+                val newRunning = prevRunning.add(natureAmount)
                 runningTotals[nature] = newRunning
             }
 
             val displayValue = if (isCumulative) {
                 runningTotals[nature] ?: BigDecimal.ZERO
             } else {
-                currentAmount
+                natureAmount
             }
 
-            if (displayValue.signum() != 0) {
+            // Only add the bar if it's in the selected natures AND has a value
+            if (nature in selectedNatures && displayValue.signum() != 0) {
                 val color = when (nature) {
                     CategoryNature.MUST -> mustColor
                     CategoryNature.NEED -> needColor
@@ -531,7 +576,12 @@ private fun buildChartGroups(
         AeonBarChartGroup(
             label = bucket.label,
             bars = finalBars.sortedBy { it.value.abs() }
-                .ifEmpty { listOf(AeonBarChartBar(BigDecimal.ZERO, "", Color.Transparent)) }
         )
+    }
+
+    return if (isCumulative) {
+        listOf(AeonBarChartGroup("", emptyList())) + baseGroups
+    } else {
+        baseGroups
     }
 }

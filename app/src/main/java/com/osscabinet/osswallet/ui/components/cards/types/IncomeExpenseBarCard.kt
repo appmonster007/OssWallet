@@ -44,6 +44,7 @@ import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLegendItemData
 import com.osscabinet.ossWallet.ui.theme.AccentOrange
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -335,12 +336,20 @@ private fun IncomeExpenseLegendRow(
 ) {
     val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective, splitTransfers)
     
+    // Resolve colors in composable scope
+    val incColor = ChartColorGreen
+    val expColor = ChartColorRed
+    val trfInColor = ChartColorOrange
+    val trfOutColor = AccentOrange
+    val trfColor = ChartColorOrange
+    val netColor = ChartColorBlue
+
     val legendItems = remember(labels, visibleMetrics, perspective, splitTransfers) {
         buildList {
             // 1. Income
             add(
-                LegendItemData(
-                    color = ChartColorGreen,
+                AeonLegendItemData(
+                    color = incColor,
                     label = labels[ChartMetric.INCOME] ?: "Income",
                     isEnabled = visibleMetrics.contains(ChartMetric.INCOME),
                     onClick = { onToggleMetrics(listOf(ChartMetric.INCOME)) }
@@ -348,8 +357,8 @@ private fun IncomeExpenseLegendRow(
             )
             // 2. Expense
             add(
-                LegendItemData(
-                    color = ChartColorRed,
+                AeonLegendItemData(
+                    color = expColor,
                     label = labels[ChartMetric.EXPENSE] ?: "Expense",
                     isEnabled = visibleMetrics.contains(ChartMetric.EXPENSE),
                     onClick = { onToggleMetrics(listOf(ChartMetric.EXPENSE)) }
@@ -365,16 +374,16 @@ private fun IncomeExpenseLegendRow(
             if (showTransferLegend) {
                 if (isCashFlow || splitTransfers) {
                     add(
-                        LegendItemData(
-                            color = ChartColorOrange,
+                        AeonLegendItemData(
+                            color = trfInColor,
                             label = labels[ChartMetric.TRANSFER_IN] ?: "In",
                             isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER_IN),
                             onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER_IN)) }
                         )
                     )
                     add(
-                        LegendItemData(
-                            color = AccentOrange,
+                        AeonLegendItemData(
+                            color = trfOutColor,
                             label = labels[ChartMetric.TRANSFER_OUT] ?: "Out",
                             isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER_OUT),
                             onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER_OUT)) }
@@ -382,8 +391,8 @@ private fun IncomeExpenseLegendRow(
                     )
                 } else {
                     add(
-                        LegendItemData(
-                            color = ChartColorOrange,
+                        AeonLegendItemData(
+                            color = trfColor,
                             label = "Transfers",
                             isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER),
                             onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER)) }
@@ -394,8 +403,8 @@ private fun IncomeExpenseLegendRow(
             
             // 4. Net
             add(
-                LegendItemData(
-                    color = ChartColorBlue,
+                AeonLegendItemData(
+                    color = netColor,
                     label = labels[ChartMetric.NET] ?: "Net",
                     isEnabled = visibleMetrics.contains(ChartMetric.NET),
                     onClick = { onToggleMetrics(listOf(ChartMetric.NET)) }
@@ -434,13 +443,6 @@ private fun IncomeExpenseLegendRow(
         }
     }
 }
-
-private data class LegendItemData(
-    val color: Color,
-    val label: String,
-    val isEnabled: Boolean,
-    val onClick: () -> Unit
-)
 
 @Composable
 private fun IncomeExpenseLegendItem(

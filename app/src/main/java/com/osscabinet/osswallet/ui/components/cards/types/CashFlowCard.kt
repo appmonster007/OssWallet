@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +66,7 @@ fun CashFlowCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -76,7 +78,7 @@ fun CashFlowCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnUpdate.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -169,7 +171,44 @@ private fun CashFlowTable(
                         }
                     )
                 )
-                if (showTransfer) add(
+                if (showTransfer && config.splitTransfers) {
+                    add(
+                        TableColumn(
+                            label = "TRF IN", key = "trfIn", color = accentColor,
+                            totalInBase = result.totalTransferInInBase,
+                            previousTotalInBase = previousResult?.totalTransferInInBase,
+                            nativeOf = { it.transferIn },
+                            baseOf = { it.transferInInBase },
+                            onCellClick = { ccy ->
+                                callbacks.onClickTransfer?.invoke(
+                                    baseFilterForDrill.copy(
+                                        transactionTypes = setOf(TransactionType.TRANSFER_INFLOW),
+                                        currencies = setOf(ccy),
+                                    )
+                                )
+                            },
+                            isSigned = true
+                        )
+                    )
+                    add(
+                        TableColumn(
+                            label = "TRF OUT", key = "trfOut", color = accentColor,
+                            totalInBase = result.totalTransferOutInBase,
+                            previousTotalInBase = previousResult?.totalTransferOutInBase,
+                            nativeOf = { it.transferOut },
+                            baseOf = { it.transferOutInBase },
+                            onCellClick = { ccy ->
+                                callbacks.onClickTransfer?.invoke(
+                                    baseFilterForDrill.copy(
+                                        transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW),
+                                        currencies = setOf(ccy),
+                                    )
+                                )
+                            },
+                            isSigned = true
+                        )
+                    )
+                } else if (showTransfer) add(
                     TableColumn(
                         label = "TRANSFER", key = "trf", color = accentColor,
                         totalInBase = result.totalNetTransferInBase,
@@ -198,33 +237,23 @@ private fun CashFlowTable(
                     if (showExpense) add(TransactionType.EXPENSE)
                     if (showTransfer) add(TransactionType.TRANSFER_OUTFLOW)
                 }
-                val currentInflow = (if (showIncome) result.totalIncomeInBase else BigDecimal.ZERO) +
-                        (if (showTransfer) result.totalTransferInInBase else BigDecimal.ZERO)
-                val prevInflow = previousResult?.let {
-                    (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) +
-                            (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
-                }
-
-                val currentOutflow = (if (showExpense) result.totalExpensesInBase else BigDecimal.ZERO) +
-                        (if (showTransfer) result.totalTransferOutInBase else BigDecimal.ZERO)
-                val prevOutflow = previousResult?.let {
-                    (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) +
-                            (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
-                }
+                // In CashFlow perspective, toPerspective() absorbs transferIn into income and
+                // zeroes totalTransferInInBase/it.transferIn. Treat showTransfer as showInflow
+                // so transfer-only filters show the absorbed contribution rather than 0.
+                val showInflow  = showIncome || showTransfer
+                val showOutflow = showExpense || showTransfer
+                val currentInflow  = if (showInflow)  result.totalInflowInBase  else BigDecimal.ZERO
+                val prevInflow     = if (showInflow)  previousResult?.totalInflowInBase  else null
+                val currentOutflow = if (showOutflow) result.totalOutflowInBase else BigDecimal.ZERO
+                val prevOutflow    = if (showOutflow) previousResult?.totalOutflowInBase else null
 
                 listOf(
                     TableColumn(
                         label = "INFLOW", key = "in", color = positiveColor,
                         totalInBase = currentInflow,
                         previousTotalInBase = prevInflow,
-                        nativeOf = {
-                            (if (showIncome) it.income else BigDecimal.ZERO) +
-                                    (if (showTransfer) it.transferIn else BigDecimal.ZERO)
-                        },
-                        baseOf = {
-                            (if (showIncome) it.incomeInBase else BigDecimal.ZERO) +
-                                    (if (showTransfer) it.transferInInBase else BigDecimal.ZERO)
-                        },
+                        nativeOf = { if (showInflow)  it.income  else BigDecimal.ZERO },
+                        baseOf   = { if (showInflow)  it.incomeInBase  else BigDecimal.ZERO },
                         onCellClick = { ccy ->
                             callbacks.onClickInflow?.invoke(
                                 baseFilterForDrill.copy(
@@ -238,14 +267,8 @@ private fun CashFlowTable(
                         label = "OUTFLOW", key = "out", color = negativeColor,
                         totalInBase = currentOutflow,
                         previousTotalInBase = prevOutflow,
-                        nativeOf = {
-                            (if (showExpense) it.expense else BigDecimal.ZERO) +
-                                    (if (showTransfer) it.transferOut else BigDecimal.ZERO)
-                        },
-                        baseOf = {
-                            (if (showExpense) it.expenseInBase else BigDecimal.ZERO) +
-                                    (if (showTransfer) it.transferOutInBase else BigDecimal.ZERO)
-                        },
+                        nativeOf = { if (showOutflow) it.expense  else BigDecimal.ZERO },
+                        baseOf   = { if (showOutflow) it.expenseInBase else BigDecimal.ZERO },
                         onCellClick = { ccy ->
                             callbacks.onClickOutflow?.invoke(
                                 baseFilterForDrill.copy(
@@ -533,12 +556,19 @@ private fun CashFlowSettingsContent(
     baseCurrency: String,
     callbacks: CardCallbacks.CashFlow,
 ) {
+    val currentOnShowBaseConversionChange = rememberUpdatedState(callbacks.onShowBaseConversionChange)
+    val currentOnShowNetColumnChange = rememberUpdatedState(callbacks.onShowNetColumnChange)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
+    val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
+    val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
+
     CardSettingsSection("Display") {
         AeonBaseConversionToggle(
             baseCurrency = baseCurrency,
             showBaseConversion = config.showBaseConversion,
             onShowBaseConversionChange = {
-                callbacks.onShowBaseConversionChange(config.cardId, it)
+                currentOnShowBaseConversionChange.value(config.cardId, it)
             },
             showBackground = false
         )
@@ -546,7 +576,7 @@ private fun CashFlowSettingsContent(
             label = "Show NET column",
             checked = config.showNetColumn,
             onCheckedChange = {
-                callbacks.onShowNetColumnChange(config.cardId, it)
+                currentOnShowNetColumnChange.value(config.cardId, it)
             },
             showBackground = false
         )
@@ -554,20 +584,22 @@ private fun CashFlowSettingsContent(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        onPerspectiveChange = { currentOnPerspectiveChange.value(config.cardId, it) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onExcludeInternalTransfersChange(
+            currentOnExcludeInternalTransfersChange.value(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { currentOnSplitTransfersChange.value(config.cardId, it) }
     )
 }
 
@@ -673,6 +705,7 @@ fun mapCashFlow(
         onFilterChange = updateHandler::updateCardCashFlowFilter,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onShowNetColumnChange = updateHandler::updateCardCashFlowShowNetColumn,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickExpense = { drillDown ->

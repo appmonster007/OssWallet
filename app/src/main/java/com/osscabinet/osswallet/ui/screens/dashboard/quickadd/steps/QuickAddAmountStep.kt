@@ -1023,8 +1023,8 @@ fun PreviewQuickAddAmountStep() {
         "Cash",
         "USD",
         AccountStructureType.CASH,
-        "#4CAF50",
-        "Payments",
+        AccountStructureType.CASH.colorHex,
+        AccountStructureType.CASH.iconKey,
         allowedCurrencies = listOf("USD", "EUR")
     )
     val mockCategory = Category(1, "Food", "Restaurant", -16737025, false, null)
@@ -1059,8 +1059,8 @@ fun PreviewQuickAddTransferAmountStep() {
         "Cash",
         "USD",
         AccountStructureType.CASH,
-        "#4CAF50",
-        "Payments",
+        AccountStructureType.CASH.colorHex,
+        AccountStructureType.CASH.iconKey,
         allowedCurrencies = listOf("USD", "EUR")
     )
     val toAccount = Account(
@@ -1068,8 +1068,8 @@ fun PreviewQuickAddTransferAmountStep() {
         "Savings",
         "EUR",
         AccountStructureType.BANK,
-        "#2196F3",
-        "AccountBalance",
+        AccountStructureType.BANK.colorHex,
+        AccountStructureType.BANK.iconKey,
         allowedCurrencies = listOf("EUR", "USD")
     )
 
@@ -1106,8 +1106,8 @@ fun PreviewQuickAddFixedTransferAmountStep() {
         "Cash",
         "USD",
         AccountStructureType.CASH,
-        "#4CAF50",
-        "Payments",
+        AccountStructureType.CASH.colorHex,
+        AccountStructureType.CASH.iconKey,
         allowedCurrencies = listOf("USD", "EUR")
     )
     val toAccount = Account(
@@ -1115,8 +1115,8 @@ fun PreviewQuickAddFixedTransferAmountStep() {
         "Savings",
         "EUR",
         AccountStructureType.BANK,
-        "#2196F3",
-        "AccountBalance",
+        AccountStructureType.BANK.colorHex,
+        AccountStructureType.BANK.iconKey,
         allowedCurrencies = listOf("EUR", "USD")
     )
 

@@ -12,10 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,12 +31,12 @@ import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
-import com.osscabinet.ossWallet.ui.components.cards.AeonMetricToggle
 import com.osscabinet.ossWallet.ui.components.cards.CardCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartMarker
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
@@ -65,8 +63,8 @@ fun CashFlowComparisonCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
-
-    var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
+    val selectedMetric = config.selectedMetric
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -88,44 +86,39 @@ fun CashFlowComparisonCard(
         settingsContent = {
             CashFlowComparisonSettingsContent(
                 config = config,
-                callbacks = callbacks,
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Metric toggle row — purely display-local; no config persist needed
-            AeonMetricToggle(
-                perspective = config.perspective,
-                selectedMetric = selectedMetric,
-                onMetricChange = { metric -> selectedMetric = metric }
-            )
-
+            // --- Gated Heavy Computations ---
             // Aggregate sum for current period
-            val aggregateTotal = renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
-                acc + when (selectedMetric) {
-                    ChartMetric.NET -> p.net
-                    ChartMetric.INCOME -> p.income
-                    ChartMetric.EXPENSE -> p.expense
-                    ChartMetric.TRANSFER -> p.transfer
+            val aggregateTotal = remember(renderData.currentSeries, selectedMetric) {
+                renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
+                    acc + when (selectedMetric) {
+                        ChartMetric.NET -> p.net
+                        ChartMetric.INCOME -> p.income
+                        ChartMetric.EXPENSE -> p.expense
+                        ChartMetric.TRANSFER -> p.transfer
+                        ChartMetric.TRANSFER_IN -> p.transferIn
+                        ChartMetric.TRANSFER_OUT -> p.transferOut
+                    }
                 }
             }
-            Text(
-                text = formatCurrency(
-                    amount = aggregateTotal,
-                    currencyCode = renderData.currency,
-                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
-                ),
-                style = AppTextStyles.cardSecondaryAmount,
-                color = AppColors.contentPrimary,
-                modifier = Modifier.padding(horizontal = 2.dp)
-            )
 
-            // Legend row
-            LegendRow(
-                showCurrent = config.showCurrentPeriod,
-                showPrevious = config.showPreviousPeriod,
-                showLastYear = config.showSamePeriodLastYear
-            )
+            val previousAggregateTotal = remember(renderData.previousSeries, selectedMetric) {
+                if (renderData.previousSeries.points.isEmpty()) null
+                else renderData.previousSeries.points.fold(BigDecimal.ZERO) { acc, p ->
+                    acc + when (selectedMetric) {
+                        ChartMetric.NET -> p.net
+                        ChartMetric.INCOME -> p.income
+                        ChartMetric.EXPENSE -> p.expense
+                        ChartMetric.TRANSFER -> p.transfer
+                        ChartMetric.TRANSFER_IN -> p.transferIn
+                        ChartMetric.TRANSFER_OUT -> p.transferOut
+                    }
+                }
+            }
 
             // Chart
             val series = buildSeriesList(
@@ -133,6 +126,20 @@ fun CashFlowComparisonCard(
                 selectedMetric = selectedMetric,
                 isCumulative = config.isCumulative,
                 renderData = renderData
+            )
+
+            ChartSummarySection(
+                total = aggregateTotal,
+                previousTotal = previousAggregateTotal,
+                currency = renderData.currency,
+                showComparison = config.showPreviousPeriod,
+                isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
+                perspective = config.perspective,
+                selectedMetric = selectedMetric,
+                onMetricChange = { metric ->
+                    callbacks.onUpdate(config.copy(selectedMetric = metric))
+                },
+                splitTransfers = config.splitTransfers
             )
 
             if (series.isNotEmpty()) {
@@ -183,7 +190,6 @@ fun CashFlowComparisonCard(
         }
     }
 }
-
 
 @Composable
 private fun LegendRow(
@@ -255,6 +261,8 @@ private fun buildSeriesList(
                 ChartMetric.INCOME -> point.income
                 ChartMetric.EXPENSE -> point.expense
                 ChartMetric.TRANSFER -> point.transfer
+                ChartMetric.TRANSFER_IN -> point.transferIn
+                ChartMetric.TRANSFER_OUT -> point.transferOut
             }
             running += value
             AeonLineChartPoint(
@@ -356,19 +364,19 @@ private fun buildMarkersList(
 @Composable
 private fun CashFlowComparisonSettingsContent(
     config: CashFlowComparisonCardConfig,
-    callbacks: CardCallbacks.CashFlowComparison,
+    onUpdate: (CashFlowComparisonCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Cumulative",
             checked = config.isCumulative,
-            onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+            onCheckedChange = { onUpdate(config.copy(isCumulative = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            onCheckedChange = { onUpdate(config.copy(showGridLines = it)) },
             showBackground = false
         )
     }
@@ -376,33 +384,35 @@ private fun CashFlowComparisonSettingsContent(
         AeonSettingsToggle(
             label = "Current Period",
             checked = config.showCurrentPeriod,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
+            onCheckedChange = { onUpdate(config.copy(showCurrentPeriod = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Previous Period",
             checked = config.showPreviousPeriod,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
+            onCheckedChange = { onUpdate(config.copy(showPreviousPeriod = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Same Period Last Year",
             checked = config.showSamePeriodLastYear,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
+            onCheckedChange = { onUpdate(config.copy(showSamePeriodLastYear = it)) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onUpdate(
+            onUpdate(
                 config.copy(
                     excludeInternalTransfers = it,
                 ),
             )
         },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) },
     )
 }
 

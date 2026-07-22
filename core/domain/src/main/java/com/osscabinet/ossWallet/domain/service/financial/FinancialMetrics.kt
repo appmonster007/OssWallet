@@ -4,6 +4,7 @@ import com.osscabinet.ossWallet.domain.model.PaymentMethod
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.util.BigDecimalSerializer
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
@@ -81,6 +82,21 @@ data class FinancialSummary(
 }
 
 /**
+ * Extracts a scalar value for this metric from a perspective-resolved [FinancialSummary].
+ * Always call [FinancialSummary.toPerspective] before calling this — [ChartMetric.INCOME]
+ * and [ChartMetric.EXPENSE] already include absorbed transfers in CashFlow perspective,
+ * and [ChartMetric.TRANSFER] is zero in CashFlow perspective.
+ */
+fun ChartMetric.extractFrom(summary: FinancialSummary): BigDecimal = when (this) {
+    ChartMetric.NET          -> summary.income + summary.expense + summary.transfer
+    ChartMetric.INCOME       -> summary.income
+    ChartMetric.EXPENSE      -> summary.expense
+    ChartMetric.TRANSFER     -> summary.transfer
+    ChartMetric.TRANSFER_IN  -> summary.transferIn
+    ChartMetric.TRANSFER_OUT -> summary.transferOut
+}
+
+/**
  * Type alias for backward compatibility. TransactionSummary is now FinancialSummary.
  */
 typealias TransactionSummary = FinancialSummary
@@ -139,6 +155,10 @@ data class CategoryTreeMetrics(
     val expense: BigDecimal,
     @Serializable(with = BigDecimalSerializer::class)
     val transfer: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val transferOut: BigDecimal = BigDecimal.ZERO,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
@@ -150,7 +170,11 @@ data class CategoryTreeMetrics(
     @Serializable(with = BigDecimalSerializer::class)
     val previousExpense: BigDecimal? = null,
     @Serializable(with = BigDecimalSerializer::class)
-    val previousTransfer: BigDecimal? = null
+    val previousTransfer: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val previousTransferIn: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val previousTransferOut: BigDecimal? = null
 )
 
 /**

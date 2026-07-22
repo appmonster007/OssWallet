@@ -12,15 +12,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,7 +26,9 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
+import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.ui.components.AeonDropdownSelector
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
 import com.osscabinet.ossWallet.ui.components.cards.AeonInteractionCallbacks
@@ -40,6 +37,7 @@ import com.osscabinet.ossWallet.ui.components.cards.CardLayoutProps
 import com.osscabinet.ossWallet.ui.components.cards.CardPerspectiveSettings
 import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
+import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
 import com.osscabinet.ossWallet.ui.theme.AppColors
@@ -94,8 +92,8 @@ fun IncomeExpenseBarCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val config = renderData.config
-
-    var isCumulative by rememberSaveable { mutableStateOf(config.isCumulative) }
+    val isCumulative = config.isCumulative
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -117,82 +115,84 @@ fun IncomeExpenseBarCard(
         settingsContent = {
             IncomeExpenseBarSettingsContent(
                 config = config,
-                callbacks = callbacks,
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Segmented button: Trend | Cumulative
-            val modeOptions = listOf("Trend", "Cumulative")
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                modeOptions.forEachIndexed { index, label ->
-                    val isSelected =
-                        (isCumulative && (label == "Cumulative")) || (!isCumulative && (label == "Trend"))
-                    SegmentedButton(
-                        selected = isSelected,
-                        onClick = {
-                            val newCumulative = label == "Cumulative"
-                            isCumulative = newCumulative
-                            callbacks.onUpdate(config.copy(isCumulative = newCumulative))
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = modeOptions.size
-                        ),
-                        label = {
-                            Text(
-                                text = label,
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp)
-                            )
-                        }
-                    )
+            // --- Gated Heavy Computations ---
+            // Net total for the period (sum of all bucket net values)
+            val netTotal = remember(renderData.buckets) {
+                renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
+            }
+
+            ChartSummarySection(
+                total = netTotal,
+                previousTotal = null,
+                currency = renderData.currency,
+                showComparison = false,
+                isAllTime = config.filter.timelineRange is com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.AllTime,
+                perspective = config.perspective,
+                selectedMetric = ChartMetric.NET, // This card is a combination, but summary shows NET
+                onMetricChange = { /* Metric change not applicable to this combined card */ },
+                splitTransfers = config.splitTransfers,
+                dropdownEnabled = false
+            )
+
+            // Legend row with Trend/Cumulative dropdown
+            IncomeExpenseLegendRow(
+                perspective = config.perspective,
+                isCumulative = isCumulative,
+                onModeChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+            )
+
+            // Build chart data.
+            val incomeChartData = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    var running = BigDecimal.ZERO
+                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                        running = running.add(it.income)
+                        running
+                    }
+                } else {
+                    renderData.buckets.map { it.income }
                 }
             }
 
-            // Net total for the period (sum of all bucket net values)
-            val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
-            Text(
-                text = CurrencyReprUi.formatCurrencyAnnotated(
-                    amount = netTotal,
-                    currencyCode = renderData.currency,
-                    spec = CurrencyDisplaySpec(precision = CurrencyService.precision)
-                ),
-                style = AppTextStyles.cardSecondaryAmount,
-                color = AppColors.contentPrimary,
-                modifier = Modifier.padding(horizontal = 2.dp)
-            )
-
-            // Legend row
-            IncomeExpenseLegendRow()
-
-            // Build chart data.
-            // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
-            // For Cumulative mode, we prepend a zero point at the start so the trajectory begins at 0.
-            val incomeChartData =
-                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.income }
-                else renderData.buckets.map { it.income }
-            val expenseChartData =
-                if (isCumulative) listOf(BigDecimal.ZERO) + renderData.buckets.map { it.expense }
-                else renderData.buckets.map { it.expense }
+            val expenseChartData = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    var running = BigDecimal.ZERO
+                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                        running = running.add(it.expense)
+                        running
+                    }
+                } else {
+                    renderData.buckets.map { it.expense }
+                }
+            }
 
             // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
-            val xLabelData: List<String?> = if (isCumulative) {
-                listOf(null) + renderData.buckets.map { it.label }
-            } else {
-                renderData.buckets.map { it.label }
+            val xLabelData: List<String?> = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    listOf(null) + renderData.buckets.map { it.label }
+                } else {
+                    renderData.buckets.map { it.label }
+                }
             }
 
-            val realBuckets = if (renderData.todayBucketIndex >= 0) {
-                renderData.buckets.take(renderData.todayBucketIndex + 1)
-            } else if (renderData.todayBucketIndex == -1) {
-                renderData.buckets
-            } else {
-                emptyList()
-            }
-            val netLineData: List<BigDecimal> = if (isCumulative) {
-                buildCumulativeNet(realBuckets)
-            } else {
-                realBuckets.map { it.net }
+            val netLineData: List<BigDecimal> = remember(renderData.buckets, renderData.todayBucketIndex, isCumulative) {
+                val realBuckets = if (renderData.todayBucketIndex >= 0) {
+                    renderData.buckets.take(renderData.todayBucketIndex + 1)
+                } else if (renderData.todayBucketIndex == -1) {
+                    renderData.buckets
+                } else {
+                    emptyList()
+                }
+                if (isCumulative) {
+                    buildCumulativeNet(realBuckets)
+                } else {
+                    realBuckets.map { it.net }
+                }
             }
 
             if (renderData.buckets.isNotEmpty()) {
@@ -245,15 +245,29 @@ private fun buildCumulativeNet(buckets: List<com.osscabinet.ossWallet.domain.car
 }
 
 @Composable
-private fun IncomeExpenseLegendRow() {
+private fun IncomeExpenseLegendRow(
+    perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective,
+    isCumulative: Boolean,
+    onModeChange: (Boolean) -> Unit
+) {
+    val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective)
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IncomeExpenseLegendItem(color = ChartColorGreen, label = "Income")
-        IncomeExpenseLegendItem(color = ChartColorRed, label = "Expense")
-        IncomeExpenseLegendItem(color = ChartColorBlue, label = "Net")
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            IncomeExpenseLegendItem(color = ChartColorGreen, label = labels[ChartMetric.INCOME] ?: "Income")
+            IncomeExpenseLegendItem(color = ChartColorRed, label = labels[ChartMetric.EXPENSE] ?: "Expense")
+            IncomeExpenseLegendItem(color = ChartColorBlue, label = labels[ChartMetric.NET] ?: "Net")
+        }
+
+        AeonDropdownSelector(
+            value = if (isCumulative) "Cumulative" else "Trend",
+            options = listOf("Trend", "Cumulative"),
+            labelProvider = { it },
+            onValueChange = { onModeChange(it == "Cumulative") }
+        )
     }
 }
 
@@ -326,25 +340,24 @@ fun IncomeExpenseBarCardPreview() {
 @Composable
 private fun IncomeExpenseBarSettingsContent(
     config: IncomeExpenseBarCardConfig,
-    callbacks: CardCallbacks.IncomeExpenseBar,
+    onUpdate: (IncomeExpenseBarCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            onCheckedChange = { onUpdate(config.copy(showGridLines = it)) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
-    ) {
-        callbacks.onUpdate(
-            config.copy(
-                excludeInternalTransfers = it,
-            ),
-        )
-    }
+        onExcludeInternalTransfersChange = {
+            onUpdate(config.copy(excludeInternalTransfers = it))
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
+    )
 }

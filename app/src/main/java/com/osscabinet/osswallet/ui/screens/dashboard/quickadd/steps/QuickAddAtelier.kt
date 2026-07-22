@@ -58,7 +58,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
+import com.osscabinet.ossWallet.domain.model.AccountStructureType
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.CategoryBrown
@@ -385,7 +386,7 @@ private fun PreviewAtelierTile() {
                 AtelierTile(
                     label = "Savings",
                     icon = Icons.Rounded.AccountBalance,
-                    iconColor = AccountStructureColors.bank,
+                    iconColor = AccountStructureType.BANK.color,
                     isSelected = false,
                     hasChildren = true,
                     onTap = {},
@@ -484,7 +485,7 @@ private fun PreviewAtelierSegmentedToggle() {
                     AtelierSegment("INCOME", Icons.Rounded.ArrowUpward)
                 ),
                 selectedIndex = 1,
-                activeColor = AccountStructureColors.savings,
+                activeColor = AccountStructureType.SAVINGS.color,
                 onSelect = {}
             )
         }

@@ -29,8 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -72,11 +70,9 @@ import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.components.aeonHazeSource
 import com.osscabinet.ossWallet.ui.components.transactions.FilterEvent
 import com.osscabinet.ossWallet.ui.components.transactions.TransactionFilterPill
-import com.osscabinet.ossWallet.ui.theme.AccountStructureColors
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
-import com.osscabinet.ossWallet.ui.theme.DeepTealGreen
 import com.osscabinet.ossWallet.ui.theme.GlassTokens
 import com.osscabinet.ossWallet.ui.theme.HazeLayer
 import com.osscabinet.ossWallet.ui.theme.LocalAeonHaze
@@ -127,16 +123,161 @@ class AeonCardState internal constructor(
 }
 
 /**
- * Standardizes the synchronization between local state and global card editing sessions.
+ * Standardized header component for all Aeon cards.
  */
 @Composable
-fun rememberAeonCardState(
-    cardId: String? = LocalCardId.current,
-): AeonCardState {
-    val sessionState = LocalEditingCardId.current
-    val onSessionChange = LocalOnEditCard.current
-    return remember(cardId, sessionState) {
-        AeonCardState(cardId, onSessionChange = onSessionChange, sessionState = sessionState)
+internal fun AeonCardHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    subtitleColor: Color = AppColors.contentSecondary,
+    icon: ImageVector? = null,
+    iconColor: Color = AppColors.contentPrimary,
+    titleColor: Color = AppColors.contentPrimary,
+    onIconClick: (() -> Unit)? = null,
+    trailingIcon: ImageVector? = null,
+    trailingIconColor: Color = AppColors.error,
+    onTrailingIconClick: (() -> Unit)? = null,
+    subtitleClickable: Boolean = false,
+    onSubtitleClick: (() -> Unit)? = null,
+    onHeaderClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    showFilterIndicator: Boolean = false,
+    accentColor: Color = AppColors.primary
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (icon == null) modifier else Modifier)
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onHeaderClick?.invoke() },
+                onLongClick = onLongClick
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
+    ) {
+        if (icon != null) {
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .then(modifier)
+                    .then(
+                        if (onIconClick != null || onHeaderClick != null) {
+                            Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onIconClick?.invoke() ?: onHeaderClick?.invoke() })
+                        } else Modifier
+                    ),
+                shape = CircleShape,
+                color = iconColor.copy(alpha = 0.15f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = iconColor,
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = AppTextStyles.cardSectionTitle,
+                color = titleColor,
+            )
+            if (subtitle != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = subtitle,
+                        style = AppTextStyles.cardPeriodReadout,
+                        color = subtitleColor,
+                        modifier = Modifier.then(
+                            if (subtitleClickable) Modifier
+                                .clickable { onSubtitleClick?.invoke() }
+                                .aeonDottedUnderline()
+                            else Modifier))
+                    if (showFilterIndicator) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .background(color = accentColor, shape = CircleShape)
+                        )
+                    }
+                }
+            }
+        }
+
+        if (trailingIcon != null) {
+            Surface(
+                modifier = Modifier
+                    .size(AeonTheme.dimensions.iconSizeLg)
+                    .clickable(onClick = onTrailingIconClick ?: {}),
+                shape = CircleShape,
+                color = trailingIconColor.copy(alpha = 0.10f),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = trailingIcon,
+                        contentDescription = "Action",
+                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
+                        tint = trailingIconColor,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Shared glass surface shell for card sides.
+ */
+@Composable
+private fun AeonCardSideShell(
+    modifier: Modifier = Modifier, containerColor: Color, content: @Composable BoxScope.() -> Unit
+) {
+    val hazeLayers = LocalAeonHaze.current
+    val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
+    val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
+    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
+
+    val cardStyle = GlassTokens.cardStyle(isSystemInDarkTheme())
+    val glassStyle = remember(containerColor, cardStyle) {
+        cardStyle.copyStyle(bgColor = containerColor, isDark = null)
+    }
+
+    CompositionLocalProvider(
+        LocalGlassmorphismEnabled provides true, LocalParentGlassHaze provides surfaceHazeState
+    ) {
+        GlassSurface(
+            modifier = modifier.fillMaxWidth(),
+            shape = cardShape,
+            hazeState = surfaceHazeState,
+            hazeStyle = glassStyle,
+            fallbackColor = containerColor,
+        ) {
+            AeonGlassHost(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aeonHazeSource(overlayHazeState)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(AeonTheme.dimensions.cardPadding)
+                ) {
+                    content()
+                }
+            }
+        }
     }
 }
 
@@ -216,7 +357,7 @@ fun AeonExpressiveCard(
                 scaleX = scale
                 scaleY = scale
                 rotationY = rotation
-                cameraDistance = 20f * density 
+                cameraDistance = 20f * density
 
                 // Dynamic visual weight during rotation
                 if (rotation > 0.5f && rotation < 179.5f) {
@@ -234,7 +375,8 @@ fun AeonExpressiveCard(
             .animateContentSize(tween(400, easing = FastOutSlowInEasing))
             .then(
                 if ((onClick != null) && !state.isFlipped) Modifier.clickable(
-                    interactionSource = interactionSource ?: remember { MutableInteractionSource() },
+                    interactionSource = interactionSource
+                        ?: remember { MutableInteractionSource() },
                     indication = LocalIndication.current,
                     onClick = onClick,
                 ) else Modifier
@@ -256,12 +398,15 @@ fun AeonExpressiveCard(
                 }
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    val effectiveSubtitle = remember(subtitle, filter?.timelineRange, timelineMode) {
-                        subtitle ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
-                    }
+                    val effectiveSubtitle =
+                        remember(subtitle, filter?.timelineRange, timelineMode) {
+                            subtitle
+                                ?: if (!timelineMode) filter?.timelineRange?.let { timelineLabel(it) } else null
+                        }
 
                     AeonCardHeader(
                         title = title,
+                        titleColor = contentColor,
                         subtitle = effectiveSubtitle,
                         subtitleColor = subtitleColor,
                         icon = icon,
@@ -299,8 +444,7 @@ fun AeonExpressiveCard(
             // BACK SIDE: Identity transform restoration via 180 counter-rotation
             AeonCardSideShell(
                 containerColor = containerColor,
-                modifier = Modifier.graphicsLayer { rotationY = 180f }
-            ) {
+                modifier = Modifier.graphicsLayer { rotationY = 180f }) {
                 val onDismissBack = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     state.flip(false)
@@ -334,166 +478,16 @@ fun AeonExpressiveCard(
 }
 
 /**
- * Standardized header component for all Aeon cards.
+ * Standardizes the synchronization between local state and global card editing sessions.
  */
 @Composable
-internal fun AeonCardHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    subtitleColor: Color = AppColors.contentSecondary,
-    icon: ImageVector? = null,
-    iconColor: Color = AppColors.contentPrimary,
-    onIconClick: (() -> Unit)? = null,
-    trailingIcon: ImageVector? = null,
-    trailingIconColor: Color = AppColors.error,
-    onTrailingIconClick: (() -> Unit)? = null,
-    subtitleClickable: Boolean = false,
-    onSubtitleClick: (() -> Unit)? = null,
-    onHeaderClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-    showFilterIndicator: Boolean = false,
-    accentColor: Color = AppColors.primary
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (icon == null) modifier else Modifier)
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = { onHeaderClick?.invoke() },
-                onLongClick = onLongClick
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
-    ) {
-        if (icon != null) {
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .then(modifier)
-                    .then(
-                        if (onIconClick != null || onHeaderClick != null) {
-                            Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onIconClick?.invoke() ?: onHeaderClick?.invoke() }
-                            )
-                        } else Modifier
-                    ),
-                shape = CircleShape,
-                color = iconColor.copy(alpha = 0.15f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = iconColor,
-                    )
-                }
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = AppTextStyles.cardSectionTitle,
-                color = AppColors.contentPrimary,
-            )
-            if (subtitle != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = subtitle,
-                        style = AppTextStyles.cardPeriodReadout,
-                        color = subtitleColor,
-                        modifier = Modifier.then(
-                            if (subtitleClickable) Modifier
-                                .clickable { onSubtitleClick?.invoke() }
-                                .aeonDottedUnderline() 
-                            else Modifier
-                        )
-                    )
-                    if (showFilterIndicator) {
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .background(color = accentColor, shape = CircleShape)
-                        )
-                    }
-                }
-            }
-        }
-
-        if (trailingIcon != null) {
-            Surface(
-                modifier = Modifier
-                    .size(AeonTheme.dimensions.iconSizeLg)
-                    .clickable(onClick = onTrailingIconClick ?: {}),
-                shape = CircleShape,
-                color = trailingIconColor.copy(alpha = 0.10f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = trailingIcon,
-                        contentDescription = "Action",
-                        modifier = Modifier.size(AeonTheme.dimensions.iconSizeSm),
-                        tint = trailingIconColor,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Shared glass surface shell for card sides.
- */
-@Composable
-private fun AeonCardSideShell(
-    modifier: Modifier = Modifier,
-    containerColor: Color,
-    content: @Composable BoxScope.() -> Unit
-) {
-    val hazeLayers = LocalAeonHaze.current
-    val surfaceHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Surface)
-    val overlayHazeState = hazeLayers?.states?.getOrNull(HazeLayer.Overlay)
-    val cardShape = RoundedCornerShape(AeonTheme.dimensions.cardCornerRadius)
-    
-    val cardStyle = GlassTokens.cardStyle(isSystemInDarkTheme())
-    val glassStyle = remember(containerColor, cardStyle) {
-        cardStyle.copyStyle(bgColor = containerColor, isDark = null)
-    }
-
-    CompositionLocalProvider(
-        LocalGlassmorphismEnabled provides true,
-        LocalParentGlassHaze provides surfaceHazeState
-    ) {
-        GlassSurface(
-            modifier = modifier.fillMaxWidth(),
-            shape = cardShape,
-            hazeState = surfaceHazeState,
-            hazeStyle = glassStyle,
-            fallbackColor = containerColor,
-        ) {
-            AeonGlassHost(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aeonHazeSource(overlayHazeState)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(AeonTheme.dimensions.cardPadding)
-                ) {
-                    content()
-                }
-            }
-        }
+fun rememberAeonCardState(
+    cardId: String? = LocalCardId.current,
+): AeonCardState {
+    val sessionState = LocalEditingCardId.current
+    val onSessionChange = LocalOnEditCard.current
+    return remember(cardId, sessionState) {
+        AeonCardState(cardId, onSessionChange = onSessionChange, sessionState = sessionState)
     }
 }
 
@@ -538,9 +532,7 @@ fun AeonHeroCard(
                 color = contentColor.copy(alpha = 0.6f)
             )
             Text(
-                text = amount,
-                style = AppTextStyles.heroAmountDisplay,
-                color = amountColor
+                text = amount, style = AppTextStyles.heroAmountDisplay, color = amountColor
             )
         }
         if (content != null) {
@@ -575,6 +567,7 @@ private fun FilterPillOverlay(
                     val current = currentFilter.value ?: return@remember
                     currentOnFilterChange.value.invoke(current.copy(timelineRange = event.range))
                 }
+
                 is FilterEvent.Reset -> currentOnFilterChange.value.invoke(TransactionFilter())
                 else -> Unit
             }
@@ -605,7 +598,9 @@ private fun FilterPillOverlay(
     } else {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false),
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false, dismissOnClickOutside = false
+            ),
         ) {
             val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
             SideEffect { dialogWindow?.setDimAmount(0f) }
@@ -636,19 +631,21 @@ private fun timelineLabel(range: TimelineRange): String {
     val endCal = Calendar.getInstance().apply { timeInMillis = endMs }
     val currentYear = Calendar.getInstance()[Calendar.YEAR]
 
-    val resolvedDate = if (
-        (startCal[Calendar.DAY_OF_MONTH] == 1) &&
-        (endCal[Calendar.DAY_OF_MONTH] == endCal.getActualMaximum(Calendar.DAY_OF_MONTH)) &&
-        (startCal[Calendar.MONTH] == endCal[Calendar.MONTH]) &&
-        (startCal[Calendar.YEAR] == endCal[Calendar.YEAR])
-    ) {
-        SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(startMs))
-    } else {
-        val fmt = if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear)
-            SimpleDateFormat("MMM d", Locale.getDefault())
-        else SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-        "${fmt.format(Date(startMs))} – ${fmt.format(Date(endMs))}"
-    }
+    val resolvedDate =
+        if ((startCal[Calendar.DAY_OF_MONTH] == 1) && (endCal[Calendar.DAY_OF_MONTH] == endCal.getActualMaximum(
+                Calendar.DAY_OF_MONTH
+            )) && (startCal[Calendar.MONTH] == endCal[Calendar.MONTH]) && (startCal[Calendar.YEAR] == endCal[Calendar.YEAR])
+        ) {
+            SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(Date(startMs))
+        } else {
+            val fmt =
+                if (startCal.get(Calendar.YEAR) == currentYear && endCal.get(Calendar.YEAR) == currentYear) SimpleDateFormat(
+                    "MMM d",
+                    Locale.getDefault()
+                )
+                else SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+            "${fmt.format(Date(startMs))} – ${fmt.format(Date(endMs))}"
+        }
 
     val prefix = when (range) {
         is TimelineRange.ThisPeriod -> "${range.period.label} · "
@@ -664,16 +661,24 @@ private fun timelineLabel(range: TimelineRange): String {
 @Composable
 private fun AeonExpressiveCardLightPreview() {
     OssWalletTheme(theme = "Light") {
-        Box(Modifier.background(AppColors.background).padding(16.dp)) {
+        Box(
+            Modifier
+                .background(AppColors.background)
+                .padding(16.dp)
+        ) {
             AeonExpressiveCard(
                 title = "Net Worth",
                 subtitle = "Monthly · January 2024",
                 icon = Icons.Rounded.AccountBalance,
                 filter = TransactionFilter(),
                 onFilterChange = {},
-                settingsContent = { Text("Configuration Screen") }
-            ) {
-                Text("$12,450.00", style = AppTextStyles.heroAmount, color = AppColors.primary, modifier = Modifier.padding(vertical = 8.dp))
+                settingsContent = { Text("Configuration Screen") }) {
+                Text(
+                    "$12,450.00",
+                    style = AppTextStyles.heroAmount,
+                    color = AppColors.primary,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
         }
     }

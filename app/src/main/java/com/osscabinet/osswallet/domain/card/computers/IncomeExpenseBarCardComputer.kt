@@ -164,30 +164,37 @@ class IncomeExpenseBarCardComputer(
 
         val points = buckets.mapIndexed { idx, (bucketStart, bucketEnd, label) ->
             val summaries = byBucket[idx] ?: emptyMap()
-            var val1 = BigDecimal.ZERO
-            var val2 = BigDecimal.ZERO
-            var valTrf = BigDecimal.ZERO
+            var rawIncome  = BigDecimal.ZERO
+            var rawExpense = BigDecimal.ZERO
+            var rawTrfIn   = BigDecimal.ZERO
+            var rawTrfOut  = BigDecimal.ZERO
 
             summaries.forEach { (currency, summary) ->
                 val factor = conversionFactors[currency] ?: return@forEach
-                val (inc, exp) = when (perspective) {
-                    is AccountingPerspective.Accounting -> summary.income to summary.expense
-                    is AccountingPerspective.CashFlow ->
-                        summary.income.add(summary.transferIn) to summary.expense.add(summary.transferOut)
-                }
-                val1 = val1.add(inc.multiply(factor))
-                val2 = val2.add(exp.multiply(factor))
-                valTrf = valTrf.add(summary.transfer.multiply(factor))
+                rawIncome  = rawIncome.add(summary.income.multiply(factor))
+                rawExpense = rawExpense.add(summary.expense.multiply(factor))
+                rawTrfIn   = rawTrfIn.add(summary.transferIn.multiply(factor))
+                rawTrfOut  = rawTrfOut.add(summary.transferOut.multiply(factor))
             }
+
+            val ps = FinancialSummary(
+                totalAmount = BigDecimal.ZERO,
+                income = rawIncome, expense = rawExpense,
+                transfer = rawTrfIn.add(rawTrfOut),
+                transferIn = rawTrfIn, transferOut = rawTrfOut,
+                transactionCount = 0
+            ).toPerspective(perspective)
 
             CashFlowTimePoint(
                 label = label,
                 epochMillis = bucketStart,
                 bucketEnd = bucketEnd,
-                income = val1.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                expense = val2.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                transfer = valTrf.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
-                net = val1.add(val2).setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+                income   = ps.income.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                expense  = ps.expense.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transfer = ps.transfer.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                net      = (ps.income + ps.expense + ps.transfer).setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transferIn  = ps.transferIn.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
+                transferOut = ps.transferOut.setScale(CurrencyService.precision, RoundingMode.HALF_UP),
             )
         }
 

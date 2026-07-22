@@ -1,11 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -42,7 +42,7 @@ import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.ui.components.AeonGridColumnsSettings
 import com.osscabinet.ossWallet.ui.components.AeonLayoutToggle
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
-import com.osscabinet.ossWallet.ui.components.GlassSurface
+import com.osscabinet.ossWallet.ui.components.aeonHairlineBorder
 import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
@@ -63,7 +63,7 @@ fun AeonCardSettingsScaffold(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
+        verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm),
     ) {
         AeonCardHeader(
             title = title,
@@ -84,7 +84,9 @@ fun CardPerspectiveSettings(
     perspective: AccountingPerspective,
     onPerspectiveChange: (AccountingPerspective) -> Unit,
     excludeInternalTransfers: Boolean = true,
-    onExcludeInternalTransfersChange: (Boolean) -> Unit = {}
+    onExcludeInternalTransfersChange: (Boolean) -> Unit = {},
+    splitTransfers: Boolean = false,
+    onSplitTransfersChange: (Boolean) -> Unit = {},
 ) {
     CardSettingsSection("Perspective") {
         val allPerspectives = AccountingPerspective.ALL
@@ -121,15 +123,28 @@ fun CardPerspectiveSettings(
             }
         }
 
+        if (perspective is AccountingPerspective.Accounting) {
+            AeonSettingsToggle(
+                label = "Split transfers",
+                description = "Show transfer in and out separately instead of a net value",
+                checked = splitTransfers,
+                onCheckedChange = onSplitTransfersChange,
+                enabled = true,
+                showBackground = false,
+                showBorder = false
+            )
+        }
+
         AeonSettingsToggle(
             label = "Exclude internal transfers",
             description = "Hides transfers between accounts",
             checked = excludeInternalTransfers,
             onCheckedChange = onExcludeInternalTransfersChange,
-            enabled = perspective is AccountingPerspective.CashFlow,
+            enabled = if (perspective is AccountingPerspective.Accounting) splitTransfers else true,
             showBackground = false,
             showBorder = false
         )
+
     }
 }
 
@@ -142,9 +157,10 @@ fun AeonMetricToggle(
     perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    splitTransfers: Boolean = false
 ) {
-    val labels = AccountingPerspective.labelsFor(perspective)
+    val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 
     SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {
@@ -183,7 +199,19 @@ fun CardSettingsSection(
     showBackground: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val sectionContent = @Composable {
+    val shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (showBackground) {
+                    Modifier
+                        .background(AppColors.cardSurfaceProminent, shape)
+                        .aeonHairlineBorder(shape)
+                } else Modifier
+            )
+    ) {
         Column(
             modifier = Modifier.padding(vertical = if (showBackground) 16.dp else 8.dp),
             verticalArrangement = Arrangement.spacedBy(AeonTheme.dimensions.spacingSm)
@@ -205,22 +233,6 @@ fun CardSettingsSection(
             ) {
                 content()
             }
-        }
-    }
-
-    if (showBackground) {
-        GlassSurface(
-            shape = RoundedCornerShape(AeonTheme.dimensions.containerCornerRadius),
-            hazeStyle = GlassTokens.itemStyle(),
-            modifier = modifier.fillMaxWidth(),
-            borderColor = AppColors.outlineVariant.copy(alpha = 0.3f),
-            borderWidth = 0.5.dp
-        ) {
-            sectionContent()
-        }
-    } else {
-        Box(modifier = modifier.fillMaxWidth()) {
-            sectionContent()
         }
     }
 }

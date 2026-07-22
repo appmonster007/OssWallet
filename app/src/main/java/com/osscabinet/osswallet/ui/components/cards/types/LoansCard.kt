@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.buildAnnotatedString
@@ -63,6 +64,7 @@ fun LoansCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnFilterChange = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -75,7 +77,7 @@ fun LoansCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnFilterChange.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -110,6 +112,8 @@ private fun LoansSettingsContent(
     config: LoansCardConfig,
     callbacks: CardCallbacks.Loans,
 ) {
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
+
     CardSettingsSection("Show Type") {
         listOf("ALL", "LENT", "BORROWED").forEach { type ->
             Row(
@@ -125,7 +129,7 @@ private fun LoansSettingsContent(
                 )
                 RadioButton(
                     selected = config.showType == type,
-                    onClick = { callbacks.onUpdate(config.copy(showType = type)) }
+                    onClick = { currentOnUpdate.value(config.copy(showType = type)) }
                 )
             }
         }

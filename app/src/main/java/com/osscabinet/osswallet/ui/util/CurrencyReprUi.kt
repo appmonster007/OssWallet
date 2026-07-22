@@ -1,16 +1,29 @@
 package com.osscabinet.ossWallet.ui.util
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.domain.service.currency.NumberFormatter
 import com.osscabinet.ossWallet.domain.service.currency.NumberShortener
 import com.osscabinet.ossWallet.ui.theme.AppColors
+import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import java.math.BigDecimal
 
 /**
@@ -136,19 +149,18 @@ object CurrencyReprUi {
         return buildAnnotatedString {
             withStyle(baseStyle.copy(color = semanticColor)) {
                 if (spec.isApproximate) {
-                    withStyle(partStyles.approx ?: baseStyle) { append("≈ ") }
+                    partStyles.approx?.let { withStyle(it) { append("≈ ") } } ?: append("≈ ")
                 }
-                withStyle(partStyles.sign ?: baseStyle) { append(parts.sign) }
+                partStyles.sign?.let { withStyle(it) { append(parts.sign) } } ?: append(parts.sign)
+
                 if (parts.symbolPosition == CurrencyService.SymbolPosition.LEFT) {
-                    withStyle(partStyles.symbol ?: baseStyle) { append(parts.symbol) }
-                    withStyle(partStyles.value ?: baseStyle) { append(parts.value) }
+                    partStyles.symbol?.let { withStyle(it) { append(parts.symbol) } } ?: append(parts.symbol)
+                    partStyles.value?.let { withStyle(it) { append(parts.value) } } ?: append(parts.value)
                 } else {
-                    withStyle(partStyles.value ?: baseStyle) { append(parts.value) }
+                    partStyles.value?.let { withStyle(it) { append(parts.value) } } ?: append(parts.value)
                     if (parts.symbol.isNotEmpty()) {
-                        withStyle(partStyles.symbol ?: baseStyle) {
-                            append(" ")
-                            append(parts.symbol)
-                        }
+                        append(" ")
+                        partStyles.symbol?.let { withStyle(it) { append(parts.symbol) } } ?: append(parts.symbol)
                     }
                 }
             }
@@ -165,3 +177,124 @@ fun formatCurrency(
     currencyCode: String? = null,
     spec: CurrencyDisplaySpec = CurrencyDisplaySpec(),
 ): String = CurrencyReprUi.CurrencyNumberFormatter().format(amount, currencyCode, spec)
+
+@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+fun CurrencyReprUiPreview() {
+    OssWalletTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(text = "Default (Positive):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("1234.56"),
+                        currencyCode = "USD"
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Negative (Semantic Color):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("-1234.56"),
+                        currencyCode = "USD"
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Force Show Plus:", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("1234.56"),
+                        currencyCode = "USD",
+                        spec = CurrencyDisplaySpec(forceShowPlus = true)
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Shortened (Large Amount):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("1234567.89"),
+                        currencyCode = "INR",
+                        spec = CurrencyDisplaySpec(shortenThreshold = 10)
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Approximate:", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("500"),
+                        currencyCode = "EUR",
+                        spec = CurrencyDisplaySpec(isApproximate = true)
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Custom Precision (0):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("1234.56"),
+                        currencyCode = "JPY",
+                        spec = CurrencyDisplaySpec(precision = 0)
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Text(text = "Partially Styled (Symbol Light):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("245800.50"),
+                        currencyCode = "USD",
+                        spec = CurrencyDisplaySpec(useSemanticColor = true),
+                        partStyles = CurrencyPartStyles(
+                            symbol = SpanStyle(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        )
+                    ),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
+                Text(text = "Partially Styled Neg(Symbol Light):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("-245800.50"),
+                        currencyCode = "USD",
+                        spec = CurrencyDisplaySpec(useSemanticColor = true),
+                        partStyles = CurrencyPartStyles(
+                            symbol = SpanStyle(
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                                // No color specified, should inherit negative color
+                            )
+                        )
+                    ),
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
+                Text(text = "Partially Styled (Value Bold):", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = CurrencyReprUi.formatCurrencyAnnotated(
+                        amount = BigDecimal("4200.00"),
+                        currencyCode = "EUR",
+                        partStyles = CurrencyPartStyles(
+                            value = SpanStyle(fontWeight = FontWeight.ExtraBold),
+                            symbol = SpanStyle(fontSize = 12.sp)
+                        )
+                    ),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+    }
+}

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,6 +47,7 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.model.settings.TagUpSetPlotCardConfig
@@ -107,6 +110,7 @@ fun TagUpSetPlotCard(
     val config = renderData.config
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
     var selectedIntersection by remember { mutableStateOf<AeonUpSetIntersection?>(null) }
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -128,20 +132,21 @@ fun TagUpSetPlotCard(
         settingsContent = {
             TagUpSetSettingsContent(
                 config = config,
-                onUpdate = { newConfig ->
-                    callbacks.onUpdate(newConfig)
-                },
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
+        // --- Gated Heavy Computations ---
         val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
             val getMetricValue: (TagUpSetSet) -> BigDecimal = { s ->
                 when (selectedMetric) {
-                    ChartMetric.INCOME -> s.income
-                    ChartMetric.EXPENSE -> s.expense
-                    ChartMetric.NET,
-                    ChartMetric.TRANSFER,
-                    -> s.income.add(s.expense)
+                    ChartMetric.INCOME       -> s.income
+                    ChartMetric.EXPENSE      -> s.expense
+                    ChartMetric.TRANSFER     -> s.transfer
+                    ChartMetric.TRANSFER_IN  -> s.transferIn
+                    ChartMetric.TRANSFER_OUT -> s.transferOut
+                    ChartMetric.NET          -> s.income.add(s.expense).add(s.transfer)
+                    else                     -> BigDecimal.ZERO
                 }
             }
 
@@ -160,6 +165,7 @@ fun TagUpSetPlotCard(
                     total = getMetricValue(it),
                     income = it.income,
                     expense = it.expense,
+                    transfer = it.transfer,
                     incomeByCurrency = it.incomeByCurrency,
                     expenseByCurrency = it.expenseByCurrency,
                     transactionCount = it.transactionCount
@@ -180,16 +186,20 @@ fun TagUpSetPlotCard(
                 if (indices.isEmpty()) null
                 else {
                     val amount = when (selectedMetric) {
-                        ChartMetric.INCOME -> intersection.income
-                        ChartMetric.EXPENSE -> intersection.expense
-                        ChartMetric.NET,
-                        ChartMetric.TRANSFER -> intersection.income.add(intersection.expense)
+                        ChartMetric.INCOME       -> intersection.income
+                        ChartMetric.EXPENSE      -> intersection.expense
+                        ChartMetric.TRANSFER     -> intersection.transfer
+                        ChartMetric.TRANSFER_IN  -> intersection.transferIn
+                        ChartMetric.TRANSFER_OUT -> intersection.transferOut
+                        ChartMetric.NET          -> intersection.income.add(intersection.expense).add(intersection.transfer)
+                        else                     -> BigDecimal.ZERO
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,
                         value = amount,
                         income = intersection.income,
                         expense = intersection.expense,
+                        transfer = intersection.transfer,
                         incomeByCurrency = intersection.incomeByCurrency,
                         expenseByCurrency = intersection.expenseByCurrency,
                         count = intersection.transactionCount
@@ -204,6 +214,7 @@ fun TagUpSetPlotCard(
                 }
             }
         }
+
 
         Column(modifier = Modifier.fillMaxWidth()) {
             if (uiSets.isNotEmpty()) {
@@ -221,6 +232,7 @@ fun TagUpSetPlotCard(
                                 selectedMetric = metric
                                 callbacks.onUpdate(config.copy(selectedMetric = metric))
                             },
+                            splitTransfers = config.splitTransfers,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(end = 8.dp)
@@ -239,6 +251,7 @@ fun TagUpSetPlotCard(
                             value = set.total,
                             income = set.income,
                             expense = set.expense,
+                            transfer = set.transfer,
                             incomeByCurrency = set.incomeByCurrency,
                             expenseByCurrency = set.expenseByCurrency,
                             count = set.transactionCount
@@ -299,7 +312,7 @@ fun TagUpSetPlotCard(
                                 expenseByCurrency = intersection.expenseByCurrency,
                                 incomeBase = intersection.income,
                                 expenseBase = intersection.expense,
-                                netBase = intersection.income.add(intersection.expense),
+                                netBase = intersection.income.add(intersection.expense).add(intersection.transfer),
                                 baseCurrency = renderData.currency,
                                 labelColumnWidth = 32.dp,
                                 showCurrencyBreakdown = true
@@ -330,9 +343,10 @@ private fun CompactMetricSelector(
     perspective: AccountingPerspective,
     selectedMetric: ChartMetric,
     onMetricChange: (ChartMetric) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    splitTransfers: Boolean = false
 ) {
-    val labels: Map<ChartMetric, String> = AccountingPerspective.labelsFor(perspective)
+    val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 
     Column(
@@ -352,7 +366,7 @@ private fun CompactMetricSelector(
                 onClick = { onMetricChange(metric) },
                 shape = shape,
                 color = if (isSelected) AppColors.primaryContainer.copy(alpha = 0.5f) else AppColors.cardSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border),
+                border = androidx.compose.foundation.BorderStroke(0.5.dp, AppColors.border),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -524,7 +538,9 @@ private fun TagUpSetSettingsContent(
         perspective = config.perspective,
         onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
-        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) }
+        onExcludeInternalTransfersChange = { onUpdate(config.copy(excludeInternalTransfers = it)) },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
     )
     CardSettingsSection("Sorting") {
         Row(

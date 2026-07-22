@@ -12,7 +12,7 @@ import com.osscabinet.ossWallet.domain.card.resolveEffectiveFilter
 import com.osscabinet.ossWallet.domain.model.CategoryNature
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CategorySpendingTrendCardConfig
-import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
+import com.osscabinet.ossWallet.domain.service.financial.extractFrom
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.service.aggregation.TransactionAggregationService
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
@@ -113,20 +113,7 @@ class CategorySpendingTrendCardComputer(
                 if (config.selectedNatures.size < CategoryNature.entries.size && nature !in config.selectedNatures) return@forEach
 
                 val summary = CurrencyService.calculateTotalFinancialSummary(byCurrency, input.targetCurrency, input.exchangeRates)
-                val amount = when (config.perspective) {
-                    is AccountingPerspective.Accounting -> when (config.selectedMetric) {
-                        ChartMetric.NET -> summary.income.add(summary.expense).add(summary.transfer)
-                        ChartMetric.INCOME -> summary.income
-                        ChartMetric.EXPENSE -> summary.expense
-                        ChartMetric.TRANSFER -> summary.transfer
-                    }
-                    is AccountingPerspective.CashFlow -> when (config.selectedMetric) {
-                        ChartMetric.NET -> summary.income.add(summary.expense).add(summary.transferIn).add(summary.transferOut)
-                        ChartMetric.INCOME -> summary.income.add(summary.transferIn)
-                        ChartMetric.EXPENSE -> summary.expense.add(summary.transferOut)
-                        ChartMetric.TRANSFER -> BigDecimal.ZERO
-                    }
-                }
+                val amount = config.selectedMetric.extractFrom(summary.toPerspective(config.perspective))
                 if (amount.signum() != 0) {
                     amountsByCategory[catId] = (amountsByCategory[catId] ?: BigDecimal.ZERO).add(amount)
                     categoryTotalsMap[catId] = (categoryTotalsMap[catId] ?: BigDecimal.ZERO).add(amount)

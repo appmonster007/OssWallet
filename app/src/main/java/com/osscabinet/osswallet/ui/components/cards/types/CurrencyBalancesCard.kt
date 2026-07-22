@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +67,7 @@ fun CurrencyBalancesCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnFilterChange = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -78,7 +80,7 @@ fun CurrencyBalancesCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnFilterChange.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -161,16 +163,20 @@ private fun CurrencyBalancesSettingsContent(
     baseCurrency: String,
     callbacks: CardCallbacks.CurrencyBalances,
 ) {
+    val currentOnLayoutChange = rememberUpdatedState(callbacks.onLayoutChange)
+    val currentOnGridColumnsChange = rememberUpdatedState(callbacks.onGridColumnsChange)
+    val currentOnShowBaseConversionChange = rememberUpdatedState(callbacks.onShowBaseConversionChange)
+
     CardSettingsSection("Display") {
         AeonLayoutToggle(
             layout = config.layout,
-            onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+            onLayoutChange = { currentOnLayoutChange.value(config.cardId, it) },
             showBackground = false
         )
         if (config.layout == "grid") {
             AeonGridColumnsSettings(
                 gridColumns = config.gridColumns,
-                onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
+                onGridColumnsChange = { currentOnGridColumnsChange.value(config.cardId, it) },
                 showBackground = false
             )
         }
@@ -178,7 +184,7 @@ private fun CurrencyBalancesSettingsContent(
             baseCurrency = baseCurrency,
             showBaseConversion = config.showBaseConversion,
             onShowBaseConversionChange = {
-                callbacks.onShowBaseConversionChange(
+                currentOnShowBaseConversionChange.value(
                     config.cardId,
                     it
                 )

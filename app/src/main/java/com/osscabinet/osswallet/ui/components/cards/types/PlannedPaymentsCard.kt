@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,7 @@ fun PlannedPaymentsCard(
     layoutProps: CardLayoutProps = CardLayoutProps()
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
         AeonExpressiveCard(
             title = config.title,
@@ -98,7 +100,7 @@ fun PlannedPaymentsCard(
             baseFilter = layoutProps.baseFilter,
             filterRules = layoutProps.filterRules ?: config.filterRules,
             filterContext = layoutProps.filterContext,
-            onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+            onFilterChange = { currentOnUpdate.value.invoke(config.cardId, it) },
             onSaveFilterClick = callbacks.onSaveFilterClick,
             onDelete = callbacks.onDelete,
             settingsContent = {
@@ -194,6 +196,8 @@ private fun PlannedPaymentsSettingsContent(
     config: PlannedPaymentsCardConfig,
     callbacks: CardCallbacks.PlannedPayments,
 ) {
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
     val dims = AeonTheme.dimensions
     CardSettingsSection("Show") {
         val viewModes = listOf(
@@ -212,7 +216,7 @@ private fun PlannedPaymentsSettingsContent(
                 Text(label, style = AppTextStyles.transactionTitle)
                 RadioButton(
                     selected = config.viewMode == mode,
-                    onClick = { callbacks.onUpdate(config.copy(viewMode = mode)) }
+                    onClick = { currentOnUpdate.value(config.copy(viewMode = mode)) }
                 )
             }
         }
@@ -236,7 +240,7 @@ private fun PlannedPaymentsSettingsContent(
             AeonStepperField(
                 value = config.maxItems,
                 onDecrement = {
-                    callbacks.onUpdate(
+                    currentOnUpdate.value(
                         config.copy(
                             maxItems = (config.maxItems - 1).coerceAtLeast(
                                 1
@@ -244,7 +248,7 @@ private fun PlannedPaymentsSettingsContent(
                         )
                     )
                 },
-                onIncrement = { callbacks.onUpdate(config.copy(maxItems = config.maxItems + 1)) },
+                onIncrement = { currentOnUpdate.value(config.copy(maxItems = config.maxItems + 1)) },
                 min = 1
             )
         }
@@ -252,7 +256,7 @@ private fun PlannedPaymentsSettingsContent(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }

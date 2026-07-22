@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ fun AccountsCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnFilterChange = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -80,7 +82,7 @@ fun AccountsCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnFilterChange.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -174,41 +176,51 @@ private fun AccountsSettingsContent(
     config: AccountsCardConfig,
     callbacks: CardCallbacks.Accounts,
 ) {
+    val currentOnLayoutChange = rememberUpdatedState(callbacks.onLayoutChange)
+    val currentOnGridColumnsChange = rememberUpdatedState(callbacks.onGridColumnsChange)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnShowAddAccountCardChange = rememberUpdatedState(callbacks.onShowAddAccountCardChange)
+    val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
+    val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
+    val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
+
     CardSettingsSection("Layout") {
         AeonLayoutToggle(
             layout = config.layout,
-            onLayoutChange = { callbacks.onLayoutChange(config.cardId, it) },
+            onLayoutChange = { currentOnLayoutChange.value(config.cardId, it) },
             showBackground = false
         )
         AeonGridColumnsSettings(
             gridColumns = config.gridColumns,
-            onGridColumnsChange = { callbacks.onGridColumnsChange(config.cardId, it) },
+            onGridColumnsChange = { currentOnGridColumnsChange.value(config.cardId, it) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show add account card",
             checked = config.showAddAccountCard,
-            onCheckedChange = { callbacks.onShowAddAccountCardChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowAddAccountCardChange.value(config.cardId, it) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { newPerspective -> callbacks.onPerspectiveChange(config.cardId, newPerspective) },
+        onPerspectiveChange = { newPerspective -> currentOnPerspectiveChange.value(config.cardId, newPerspective) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onExcludeInternalTransfersChange(
+            currentOnExcludeInternalTransfersChange.value(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { currentOnSplitTransfersChange.value(config.cardId, it) }
     )
     OutlinedButton(
         onClick = { callbacks.onManageClick() },
@@ -244,6 +256,7 @@ private fun FlowRowScope.AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
+        splitTransfers = config.splitTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -269,6 +282,7 @@ private fun AccountItemWrapper(
         baseCurrency = baseCurrency,
         gridColumns = config.gridColumns,
         perspective = config.perspective,
+        splitTransfers = config.splitTransfers,
         onAccountClick = onAccountClick,
         onRecordsClick = onRecordsClick,
         filter = config.filter,
@@ -284,6 +298,7 @@ private fun AccountItemContent(
     baseCurrency: String,
     gridColumns: Int,
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.Accounting,
+    splitTransfers: Boolean = false,
     onAccountClick: (String) -> Unit,
     onRecordsClick: ((TransactionFilter) -> Unit)? = null,
     filter: TransactionFilter = TransactionFilter(),
@@ -298,6 +313,7 @@ private fun AccountItemContent(
             previousSummary = prevStats,
             baseCurrency = baseCurrency,
             perspective = perspective,
+            splitTransfers = splitTransfers,
             onClick = { onAccountClick(account.id) },
             modifier = modifier,
             onClickIncome = {
@@ -510,6 +526,7 @@ fun mapAccounts(
         onShowAddAccountCardChange = updateHandler::updateCardAccountsShowAddAccountCard,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onManageClick = callbacks.accountActions.onManageClick,
         onAccountClick = callbacks.accountActions.onClick,
         onRecordsClick = { drillDown ->

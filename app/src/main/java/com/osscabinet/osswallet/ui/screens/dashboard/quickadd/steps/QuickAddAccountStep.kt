@@ -371,9 +371,9 @@ private fun AtelierTypeToggle(
 @Composable
 fun PreviewQuickAddAccountStep() {
     val mockAccounts = listOf(
-        Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
-        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance"),
-        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, "#F44336", "CreditCard")
+        Account("1", "Cash", "USD", AccountStructureType.CASH, AccountStructureType.CASH.colorHex, AccountStructureType.CASH.iconKey),
+        Account("2", "Bank", "USD", AccountStructureType.BANK, AccountStructureType.BANK.colorHex, AccountStructureType.BANK.iconKey),
+        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, AccountStructureType.CREDIT.colorHex, AccountStructureType.CREDIT.iconKey)
     )
 
     OssWalletTheme {
@@ -394,9 +394,9 @@ fun PreviewQuickAddAccountStep() {
 @Composable
 fun PreviewQuickAddTransferAccountStep() {
     val mockAccounts = listOf(
-        Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
-        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance"),
-        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, "#F44336", "CreditCard")
+        Account("1", "Cash", "USD", AccountStructureType.CASH, AccountStructureType.CASH.colorHex, AccountStructureType.CASH.iconKey),
+        Account("2", "Bank", "USD", AccountStructureType.BANK, AccountStructureType.BANK.colorHex, AccountStructureType.BANK.iconKey),
+        Account("3", "Credit Card", "USD", AccountStructureType.CREDIT, AccountStructureType.CREDIT.colorHex, AccountStructureType.CREDIT.iconKey)
     )
 
     OssWalletTheme {

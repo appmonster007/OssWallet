@@ -1,5 +1,6 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
+import com.osscabinet.ossWallet.domain.card.CardComputerUtils
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
@@ -33,6 +34,9 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Instant
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Service for computing card data directly from the database using DatabaseQueryService.
@@ -809,6 +813,17 @@ object CardAggregationService {
         val balancesByCurrency = lifetimeSummariesByCurrency
             .mapValues { it.value.totalAmount.setScale(CurrencyService.precision, RoundingMode.HALF_UP) }
 
+        // Running balance across the filtered period, for the hero sparkline.
+        val balanceHistory = computeAccountBalanceHistory(
+            queryService = queryService,
+            profileId = profileId,
+            accountId = targetAccountId,
+            accountCurrency = account.currencyCode,
+            periodFilter = periodFilter,
+            exchangeRates = input.exchangeRates,
+            excludeInternal = excludeInternal
+        )
+
         val summary = AccountSummaryItem(
             account = account,
             currencyBalances = balancesByCurrency,
@@ -820,7 +835,8 @@ object CardAggregationService {
                 precision = 10
             ),
             currentPeriodFlow = currentFlow.toPerspective(config.perspective),
-            previousPeriodFlow = previousFlow?.toPerspective(config.perspective)
+            previousPeriodFlow = previousFlow?.toPerspective(config.perspective),
+            balanceHistory = balanceHistory
         )
 
         return CardRenderData.AccountHero(
@@ -829,6 +845,97 @@ object CardAggregationService {
             currency = input.targetCurrency,
             exchangeRates = input.exchangeRates
         )
+    }
+
+    /**
+     * Builds a running-balance series across [periodFilter]'s window, in [accountCurrency].
+     *
+     * Reuses the income/expense-bar pipeline: [CardComputerUtils] for granularity + buckets and
+     * [TransactionAggregationService.getSummaryByCurrencyByDay] for a single-call daily aggregation.
+     * Seeds from the account's balance strictly before the window so the line reflects the true
+     * balance trajectory, then cumulates each bucket's net delta (FinancialSummary.totalAmount).
+     */
+    private suspend fun computeAccountBalanceHistory(
+        queryService: DatabaseQueryService,
+        profileId: Int,
+        accountId: String,
+        accountCurrency: String,
+        periodFilter: TransactionFilter,
+        exchangeRates: ExchangeRateSnapshot,
+        excludeInternal: Boolean,
+    ): List<BigDecimal> {
+        val zone = TimelineService.systemZoneId
+        val (rawStart, rawEnd) = TimelineService.getDateRange(periodFilter.timelineRange)
+        val end = rawEnd ?: System.currentTimeMillis()
+        val start = rawStart ?: run {
+            val minTs = queryService.getMinTransactionTimestamp(profileId) ?: return emptyList()
+            Instant.ofEpochMilli(minTs).atZone(zone).toLocalDate()
+                .atStartOfDay(zone).toInstant().toEpochMilli()
+        }
+        if (start >= end) return emptyList()
+
+        val granularity = CardComputerUtils.resolveGranularity(start, end)
+        val buckets = CardComputerUtils.generateBuckets(start, end, granularity)
+        if (buckets.size < 2) return emptyList()
+
+        // Opening balance strictly before the window (0 when the window is all-time).
+        val opening = if (rawStart == null) BigDecimal.ZERO else {
+            val beforeFilter = TransactionFilter(
+                accountIds = setOf(accountId),
+                timelineRange = TimelineRange.CustomRange(
+                    end = start - 1,
+                    excludeFuture = periodFilter.timelineRange.excludeFuture
+                )
+            )
+            val beforeByCcy = TransactionAggregationService
+                .getSummaryByCurrency(queryService, profileId, beforeFilter)
+                .getOrDefault(emptyMap())
+            CurrencyService.calculateTotalFinancialSummary(beforeByCcy, accountCurrency, exchangeRates)
+                .totalAmount
+        }
+
+        // Per-day deltas within the window in a single DB call, then folded into buckets.
+        val dailyData = TransactionAggregationService.getSummaryByCurrencyByDay(
+            queryService, profileId,
+            periodFilter.copy(timelineRange = TimelineRange.CustomRange(start, end)),
+            excludeInternal
+        ).getOrDefault(emptyMap())
+
+        val dayFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val bucketStarts = buckets.map { it.first }
+        val perBucketDelta = Array(buckets.size) { BigDecimal.ZERO }
+
+        // One conversion factor per source currency → account currency.
+        val anchor = exchangeRates.anchor
+        val toRate = if (accountCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[accountCurrency]
+        fun factor(ccy: String): BigDecimal? {
+            if (ccy == accountCurrency) return BigDecimal.ONE
+            val fromRate = if (ccy == anchor) BigDecimal.ONE else exchangeRates.rates[ccy]
+            if (fromRate == null || toRate == null || fromRate.signum() == 0) return null
+            return toRate.divide(fromRate, 14, RoundingMode.HALF_UP)
+        }
+
+        dailyData.forEach { (dayKey, byCcy) ->
+            val dayStart = try {
+                LocalDate.parse(dayKey, dayFmt).atStartOfDay(zone).toInstant().toEpochMilli()
+            } catch (_: Exception) {
+                return@forEach
+            }
+            val idx = bucketStarts.indexOfLast { it <= dayStart }
+            if (idx < 0) return@forEach
+            var delta = BigDecimal.ZERO
+            byCcy.forEach { (ccy, summary) ->
+                val f = factor(ccy) ?: return@forEach
+                delta = delta.add(summary.totalAmount.multiply(f))
+            }
+            perBucketDelta[idx] = perBucketDelta[idx].add(delta)
+        }
+
+        var running = opening
+        return buckets.indices.map { i ->
+            running = running.add(perBucketDelta[i])
+            running.setScale(CurrencyService.precision, RoundingMode.HALF_UP)
+        }
     }
 
     private fun TransactionFilter.toBalanceFilter(): TransactionFilter {

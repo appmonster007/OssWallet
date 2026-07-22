@@ -280,6 +280,8 @@ class CardAggregationServiceTest {
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
             Result.success(mapOf("USD" to fs(total = "5000.00", income = "1000.00", expense = "-200.00")))
+        coEvery { queryService.getMinTransactionTimestamp(any()) } returns 0L
+        coEvery { queryService.aggregate(any(), any(), any(), any(), any(), any(), any()) } returns Result.success(emptyList())
 
         val result = CardAggregationService.computeAccountHeroCard(queryService, profileId, input, config)
 

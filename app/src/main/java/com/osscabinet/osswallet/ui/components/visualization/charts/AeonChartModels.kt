@@ -60,6 +60,7 @@ data class AeonUpSetSet(
     val color: Color = Color.Unspecified,
     val income: BigDecimal = BigDecimal.ZERO,
     val expense: BigDecimal = BigDecimal.ZERO,
+    val transfer: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
     val transactionCount: Int = 0
@@ -70,6 +71,7 @@ data class AeonUpSetIntersection(
     val value: BigDecimal,
     val income: BigDecimal = BigDecimal.ZERO,
     val expense: BigDecimal = BigDecimal.ZERO,
+    val transfer: BigDecimal = BigDecimal.ZERO,
     val incomeByCurrency: Map<String, BigDecimal> = emptyMap(),
     val expenseByCurrency: Map<String, BigDecimal> = emptyMap(),
     val count: Int

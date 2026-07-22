@@ -624,8 +624,8 @@ fun PreviewQuickAddSheet_Template() {
     val mockState = QuickAddState(
         currentStep = STEP_TEMPLATE,
         accounts = listOf(
-            Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
-            Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+            Account("1", "Cash", "USD", AccountStructureType.CASH, AccountStructureType.CASH.colorHex, AccountStructureType.CASH.iconKey),
+            Account("2", "Bank", "USD", AccountStructureType.BANK, AccountStructureType.BANK.colorHex, AccountStructureType.BANK.iconKey)
         ),
         selectedAccount = AccountRef.Unselected
     )
@@ -701,8 +701,8 @@ fun PreviewQuickAddSheet_Account() {
         entryMode = EntryMode.TRANSFER,
         selectedAccount = AccountRef.Wallet("1"),
         accounts = listOf(
-            Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments"),
-            Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+            Account("1", "Cash", "USD", AccountStructureType.CASH, AccountStructureType.CASH.colorHex, AccountStructureType.CASH.iconKey),
+            Account("2", "Bank", "USD", AccountStructureType.BANK, AccountStructureType.BANK.colorHex, AccountStructureType.BANK.iconKey)
         ),
         structureTypes = AccountStructureType.entries
     )
@@ -738,9 +738,9 @@ fun PreviewQuickAddSheet_Account() {
 @Preview(showBackground = true)
 @Composable
 fun PreviewQuickAddSheet_Amount() {
-    val fromAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, "#4CAF50", "Payments")
+    val fromAccount = Account("1", "Cash", "USD", AccountStructureType.CASH, AccountStructureType.CASH.colorHex, AccountStructureType.CASH.iconKey)
     val toAccount =
-        Account("2", "Bank", "USD", AccountStructureType.BANK, "#2196F3", "AccountBalance")
+        Account("2", "Bank", "USD", AccountStructureType.BANK, AccountStructureType.BANK.colorHex, AccountStructureType.BANK.iconKey)
     val mockState = QuickAddState(
         currentStep = STEP_AMOUNT,
         entryMode = EntryMode.TRANSFER,

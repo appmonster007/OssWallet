@@ -11,6 +11,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.osscabinet.ossWallet.domain.card.CardInput
@@ -43,6 +44,7 @@ fun RecentActivitiesCard(
     baseCurrency: String = "USD",
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     AeonExpressiveCard(
         title = config.title,
@@ -55,13 +57,13 @@ fun RecentActivitiesCard(
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
         onClick = { callbacks.onRecordsClick(config.filter) },
-        onFilterChange = { callbacks.onUpdate(config.copy(filter = it)) },
+        onFilterChange = { currentOnUpdate.value.invoke(config.copy(filter = it)) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
             RecentActivitiesSettingsContent(
                 config = config,
-                onUpdate = callbacks.onUpdate,
+                onUpdate = { currentOnUpdate.value.invoke(it) },
             )
         }
     ) {

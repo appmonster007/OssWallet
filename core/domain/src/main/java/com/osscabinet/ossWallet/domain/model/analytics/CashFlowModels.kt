@@ -32,6 +32,8 @@ data class CashFlowResult(
     val filteredTransactions: List<Transaction>
 ) {
     val totalNetTransferInBase: BigDecimal get() = totalTransferInInBase.add(totalTransferOutInBase)
+    val totalInflowInBase: BigDecimal get() = totalIncomeInBase.add(totalTransferInInBase)
+    val totalOutflowInBase: BigDecimal get() = totalExpensesInBase.add(totalTransferOutInBase)
     val totalNetCrossCcyTransferInBase: BigDecimal
         get() = totalCrossCcyTransferInInBase.add(
             totalCrossCcyTransferOutInBase
@@ -179,7 +181,10 @@ data class AccountSummaryItem(
     @Serializable(with = BigDecimalSerializer::class)
     val balanceInBase: BigDecimal = BigDecimal.ZERO,
     val currentPeriodFlow: AccountFlowMetrics = AccountFlowMetrics(),
-    val previousPeriodFlow: AccountFlowMetrics? = null
+    val previousPeriodFlow: AccountFlowMetrics? = null,
+    // Running account balance across the filtered period, one point per time bucket
+    // (in account currency). Empty when there is no history to plot.
+    val balanceHistory: List<@Serializable(with = BigDecimalSerializer::class) BigDecimal> = emptyList()
 )
 
 /**

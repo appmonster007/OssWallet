@@ -71,6 +71,7 @@ fun AeonPieChart(
     isDonut: Boolean = true,
     animate: Boolean = false,
     rounded: Boolean = true,
+    showCenterTotal: Boolean = true,
     previousTotal: BigDecimal? = null,
     showComparison: Boolean = false,
     isAllTime: Boolean = true,
@@ -117,7 +118,7 @@ fun AeonPieChart(
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
         val center = Offset(widthPx / 2, heightPx / 2)
-        val radius = (widthPx.coerceAtMost(heightPx) / 2) * 0.8f
+        val radius = (widthPx.coerceAtMost(heightPx) / 2) * 0.7f
 
         fun findSliceAt(offset: Offset): AeonPieChartSlice? {
             val dx = offset.x - center.x
@@ -309,7 +310,7 @@ fun AeonPieChart(
             }
 
             // Center total for donut charts
-            if (isDonut) {
+            if (isDonut && showCenterTotal) {
                 Column(
                     modifier = Modifier
                         .align(Alignment.Center)

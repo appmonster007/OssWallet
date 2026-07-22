@@ -21,6 +21,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,6 +77,7 @@ fun NetWorthCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -88,7 +90,7 @@ fun NetWorthCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnUpdate.value?.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -224,36 +226,66 @@ fun NetWorthCard(
                         }
                         if (showTransfer) {
                             if (showIncome || showExpense) NetWorthSeparator()
-                            NetWorthFlowColumn(
-                                label = "TRF",
-                                amount = cf.totalNetTransferInBase,
-                                currency = displayCurrency,
-                                color = AppColors.accent,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable {
-                                        callbacks.onClickTransfer?.invoke(
-                                            config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
-                                        )
-                                    },
-                                previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
-                                forceShowPlus = true
-                            )
+                            if (config.splitTransfers) {
+                                NetWorthFlowColumn(
+                                    label = "TRF IN",
+                                    amount = cf.totalTransferInInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_INFLOW))
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalTransferInInBase else null,
+                                    forceShowPlus = true
+                                )
+                                NetWorthSeparator()
+                                NetWorthFlowColumn(
+                                    label = "TRF OUT",
+                                    amount = cf.totalTransferOutInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = setOf(TransactionType.TRANSFER_OUTFLOW))
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalTransferOutInBase else null
+                                )
+                            } else {
+                                NetWorthFlowColumn(
+                                    label = "TRF",
+                                    amount = cf.totalNetTransferInBase,
+                                    currency = displayCurrency,
+                                    color = AppColors.accent,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            callbacks.onClickTransfer?.invoke(
+                                                config.filter.copy(transactionTypes = TransactionType.TRANSFER_TYPES)
+                                            )
+                                        },
+                                    previousAmount = if (config.showComparison) prevCf?.totalNetTransferInBase else null,
+                                    forceShowPlus = true
+                                )
+                            }
                         }
                     }
 
                     is AccountingPerspective.CashFlow -> {
-                        val inflow =
-                            (if (showIncome) cf.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferInInBase else BigDecimal.ZERO)
-                        val outflow =
-                            (if (showExpense) cf.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) cf.totalTransferOutInBase else BigDecimal.ZERO)
-
-                        val prevInflow = prevCf?.let {
-                            (if (showIncome) it.totalIncomeInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferInInBase else BigDecimal.ZERO)
-                        }
-                        val prevOutflow = prevCf?.let {
-                            (if (showExpense) it.totalExpensesInBase else BigDecimal.ZERO) + (if (showTransfer) it.totalTransferOutInBase else BigDecimal.ZERO)
-                        }
+                        // toPerspective() absorbs transferIn into income and zeroes
+                        // totalTransferInInBase, so treat showTransfer as showInflow.
+                        val showInflow  = showIncome || showTransfer
+                        val showOutflow = showExpense || showTransfer
+                        val inflow      = if (showInflow)  cf.totalInflowInBase  else BigDecimal.ZERO
+                        val outflow     = if (showOutflow) cf.totalOutflowInBase else BigDecimal.ZERO
+                        val prevInflow  = if (showInflow)  prevCf?.totalInflowInBase  else null
+                        val prevOutflow = if (showOutflow) prevCf?.totalOutflowInBase else null
 
                         NetWorthFlowColumn(
                             label = "IN",
@@ -392,6 +424,12 @@ private fun NetWorthSettingsContent(
     config: NetWorthCardConfig,
     callbacks: CardCallbacks.NetWorth
 ) {
+    val currentOnFontSizeChange = rememberUpdatedState(callbacks.onFontSizeChange)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
+    val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
+    val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
+
     CardSettingsSection("Font Size") {
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
@@ -401,7 +439,7 @@ private fun NetWorthSettingsContent(
             listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                 SegmentedButton(
                     selected = config.fontSize == size,
-                    onClick = { callbacks.onFontSizeChange(config.cardId, size) },
+                    onClick = { currentOnFontSizeChange.value(config.cardId, size) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
                     label = {
                         Text(
@@ -422,20 +460,22 @@ private fun NetWorthSettingsContent(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        onPerspectiveChange = { currentOnPerspectiveChange.value(config.cardId, it) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onExcludeInternalTransfersChange(
+            currentOnExcludeInternalTransfersChange.value(
                 config.cardId,
                 it
             )
-        }
+        },
+        splitTransfers = config.splitTransfers,
+        onSplitTransfersChange = { currentOnSplitTransfersChange.value(config.cardId, it) }
     )
 }
 
@@ -579,6 +619,7 @@ fun mapNetWorth(
         onShowComparisonChange = updateHandler::updateCardShowComparison,
         onPerspectiveChange = updateHandler::updateCardPerspective,
         onExcludeInternalTransfersChange = updateHandler::updateCardExcludeInternalTransfers,
+        onSplitTransfersChange = updateHandler::updateCardSplitTransfers,
         onFilterChange = updateHandler::updateCardNetWorthFilter,
         onClickIncome = { drillDown -> onRecordsClick(resolveDrillDown(input, config, drillDown)) },
         onClickExpense = { drillDown ->

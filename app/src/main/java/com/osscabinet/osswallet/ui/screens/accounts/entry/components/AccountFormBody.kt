@@ -58,9 +58,9 @@ import com.osscabinet.ossWallet.ui.theme.AeonTheme
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
-import com.osscabinet.ossWallet.ui.util.color
+import com.osscabinet.ossWallet.ui.theme.color
 import com.osscabinet.ossWallet.ui.util.formatCurrency
-import com.osscabinet.ossWallet.ui.util.icon
+import com.osscabinet.ossWallet.ui.components.icon
 import com.osscabinet.ossWallet.ui.util.toColorInt
 import java.math.BigDecimal
 

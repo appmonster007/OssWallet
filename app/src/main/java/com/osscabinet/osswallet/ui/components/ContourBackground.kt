@@ -44,6 +44,7 @@ fun ContourBackground(
 @Composable
 private fun GeographicalContours(modifier: Modifier) {
     val baseColor = AppColors.onScreenBackground
+    val accentColor = AppColors.accent
     val randomize = LocalRandomizeContourEachLoad.current
 
     val pathData = remember(randomize) {
@@ -147,7 +148,7 @@ private fun GeographicalContours(modifier: Modifier) {
             )
             drawPath(
                 path = pathData.second,
-                color = baseColor.copy(alpha = 0.30f),
+                color = accentColor.copy(alpha = 0.25f),
                 style = Stroke(width = 2.8f / scaleX)
             )
         }
@@ -223,6 +224,7 @@ private data class PeakV4(val x: Float, val y: Float, val strength: Float, val r
 private fun OrganicContours(modifier: Modifier) {
     val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
+    val accentColor = AppColors.accent
 
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
@@ -266,7 +268,12 @@ private fun OrganicContours(modifier: Modifier) {
         }) {
             drawPath(
                 path = combinedPath,
-                color = baseColor.copy(alpha = 0.08f),
+                color = baseColor.copy(alpha = 0.05f),
+                style = Stroke(width = 1.0f / scaleX)
+            )
+            drawPath(
+                path = combinedPath,
+                color = accentColor.copy(alpha = 0.06f),
                 style = Stroke(width = 1.0f / scaleX)
             )
         }
@@ -278,6 +285,7 @@ private fun OrganicContours(modifier: Modifier) {
 private fun BoldContours(modifier: Modifier) {
     val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
+    val accentColor = AppColors.accent
 
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
@@ -321,7 +329,12 @@ private fun BoldContours(modifier: Modifier) {
         }) {
             drawPath(
                 path = combinedPath,
-                color = baseColor.copy(alpha = 0.2f),
+                color = baseColor.copy(alpha = 0.12f),
+                style = Stroke(width = 3.5f / scaleX)
+            )
+            drawPath(
+                path = combinedPath,
+                color = accentColor.copy(alpha = 0.12f),
                 style = Stroke(width = 3.5f / scaleX)
             )
         }
@@ -334,6 +347,7 @@ private fun BoldContours(modifier: Modifier) {
 private fun CleanContours(modifier: Modifier) {
     val randomize = LocalRandomizeContourEachLoad.current
     val baseColor = AppColors.onScreenBackground
+    val accentColor = AppColors.accent
 
     val combinedPath = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
@@ -373,7 +387,12 @@ private fun CleanContours(modifier: Modifier) {
         }) {
             drawPath(
                 path = combinedPath,
-                color = baseColor.copy(alpha = 0.08f),
+                color = baseColor.copy(alpha = 0.05f),
+                style = Stroke(width = 1.0f / scaleX)
+            )
+            drawPath(
+                path = combinedPath,
+                color = accentColor.copy(alpha = 0.06f),
                 style = Stroke(width = 1.0f / scaleX)
             )
         }

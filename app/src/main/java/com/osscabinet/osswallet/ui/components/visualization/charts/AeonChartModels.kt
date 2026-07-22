@@ -102,6 +102,17 @@ data class AeonBarChartGroup(
 )
 
 /**
+ * Data model for interactive chart legends.
+ */
+data class AeonLegendItemData(
+    val color: Color,
+    val label: String,
+    val isEnabled: Boolean,
+    val onClick: () -> Unit = {},
+    val metadata: Map<String, Any> = emptyMap()
+)
+
+/**
  * Data model for treemap charts.
  */
 data class AeonTreemapNode(

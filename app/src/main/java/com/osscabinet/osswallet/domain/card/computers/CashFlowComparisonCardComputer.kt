@@ -83,9 +83,9 @@ class CashFlowComparisonCardComputer(
             excludeFuture = true,
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
-            perspective = config.perspective,
             zone = zone,
-            dayFormatter = dayFormatter
+            dayFormatter = dayFormatter,
+            perspective = config.perspective
         )
 
         // 2. Previous period series — shift master buckets back, single DB call
@@ -109,9 +109,9 @@ class CashFlowComparisonCardComputer(
                 excludeFuture = excludeFuture,
                 baseCurrency = input.targetCurrency,
                 exchangeRates = input.exchangeRates,
-                perspective = config.perspective,
                 zone = zone,
-                dayFormatter = dayFormatter
+                dayFormatter = dayFormatter,
+                perspective = config.perspective
             )
         } else CashFlowComparisonSeries(emptyList())
 
@@ -140,9 +140,9 @@ class CashFlowComparisonCardComputer(
             excludeFuture = excludeFuture,
             baseCurrency = input.targetCurrency,
             exchangeRates = input.exchangeRates,
-            perspective = config.perspective,
             zone = zone,
-            dayFormatter = dayFormatter
+            dayFormatter = dayFormatter,
+            perspective = config.perspective
         )
 
         val fullCurrentBuckets = if (excludeFuture) masterBuckets.size else CardComputerUtils.generateBuckets(currentStart, currentEnd, granularity).size
@@ -184,9 +184,9 @@ class CashFlowComparisonCardComputer(
         excludeFuture: Boolean,
         baseCurrency: String,
         exchangeRates: ExchangeRateSnapshot,
-        perspective: AccountingPerspective,
         zone: java.time.ZoneId,
-        dayFormatter: DateTimeFormatter
+        dayFormatter: DateTimeFormatter,
+        perspective: AccountingPerspective
     ): CashFlowComparisonSeries {
         val bucketStartMillis = buckets.map { it.first }
 

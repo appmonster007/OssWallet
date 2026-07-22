@@ -61,6 +61,7 @@ import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartLegend
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLegendItemData
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
@@ -228,6 +229,7 @@ private fun CategoryNatureLegendRow(
                 color = color,
                 label = label,
                 isEnabled = nature in selectedNatures,
+                onClick = { onToggleNature(nature) },
                 metadata = mapOf("nature" to nature)
             )
         }.sortedBy { it.label }
@@ -238,20 +240,10 @@ private fun CategoryNatureLegendRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        FlowRow(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items.forEach { item ->
-                CategoryNatureLegendItem(
-                    color = item.color,
-                    label = item.label,
-                    isEnabled = item.isEnabled,
-                    onClick = { onToggleNature(item.metadata["nature"] as CategoryNature) }
-                )
-            }
-        }
+        AeonChartLegend(
+            items = items,
+            modifier = Modifier.weight(1f)
+        )
 
         Box(modifier = Modifier.padding(start = 8.dp)) {
             AeonDropdownSelector(
@@ -261,36 +253,6 @@ private fun CategoryNatureLegendRow(
                 onValueChange = { onModeChange(it == "Cumulative") }
             )
         }
-    }
-}
-
-@Composable
-private fun CategoryNatureLegendItem(
-    color: Color,
-    label: String,
-    isEnabled: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .alpha(if (isEnabled) 1f else 0.4f)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(width = 16.dp, height = 3.dp)
-                .background(
-                    color = if (isEnabled) color else color.copy(alpha = 0.4f),
-                    shape = RoundedCornerShape(2.dp)
-                )
-        )
-        Text(
-            text = label,
-            style = AppTextStyles.caption.copy(fontSize = 10.sp),
-            color = if (isEnabled) AppColors.contentPrimary else AppColors.contentSecondary
-        )
     }
 }
 

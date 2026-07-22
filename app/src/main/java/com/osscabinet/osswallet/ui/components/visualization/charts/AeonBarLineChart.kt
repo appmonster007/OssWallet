@@ -95,7 +95,7 @@ fun AeonBarLineChart(
     showGrid: Boolean = true,
     roundedBars: Boolean = false
 ) {
-    if (groups.isEmpty() || lineData.isEmpty()) {
+    if (groups.isEmpty() && lineData.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No data available", style = AppTextStyles.caption)
         }
@@ -138,11 +138,13 @@ fun AeonBarLineChart(
                 add(pos)
                 add(neg)
             }
-            addAll(lineData)
+            if (lineData.isNotEmpty()) {
+                addAll(lineData)
+            }
         }
 
-        val minY = allValues.minOf { it }.coerceAtMost(BigDecimal.ZERO)
-        val maxY = allValues.maxOf { it }.coerceAtLeast(BigDecimal.ONE)
+        val minY = if (allValues.isEmpty()) BigDecimal.ZERO else allValues.minOf { it }.coerceAtMost(BigDecimal.ZERO)
+        val maxY = if (allValues.isEmpty()) BigDecimal.ONE else allValues.maxOf { it }.coerceAtLeast(BigDecimal.ONE)
 
         // Nice step logic
         val dataRange = (maxY - minY).abs().toDouble().coerceAtLeast(1.0)
@@ -314,49 +316,51 @@ fun AeonBarLineChart(
             }
 
             // 4. Draw Net Line (+ gradient area fill)
-            val linePath = Path()
-            val areaPath = Path()
-            var prevX = 0f
-            var prevY = 0f
-            val lineTotal = lineData.size
-            lineData.forEachIndexed { index, value ->
-                val x = indexToX(index, groups.size)
-                val y = valueToY(value)
-                val animatedY = zeroY + (y - zeroY) * animationProgress.value
+            if (lineData.isNotEmpty()) {
+                val linePath = Path()
+                val areaPath = Path()
+                var prevX = 0f
+                var prevY = 0f
+                val lineTotal = lineData.size
+                lineData.forEachIndexed { index, value ->
+                    val x = indexToX(index, groups.size)
+                    val y = valueToY(value)
+                    val animatedY = zeroY + (y - zeroY) * animationProgress.value
 
-                if (index == 0) {
-                    linePath.moveTo(x, animatedY)
-                    areaPath.moveTo(x, zeroY)
-                    areaPath.lineTo(x, animatedY)
-                } else {
-                    val dx = x - prevX
-                    linePath.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
-                    areaPath.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
+                    if (index == 0) {
+                        linePath.moveTo(x, animatedY)
+                        areaPath.moveTo(x, zeroY)
+                        areaPath.lineTo(x, animatedY)
+                    } else {
+                        val dx = x - prevX
+                        linePath.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
+                        areaPath.cubicTo(prevX + dx * 0.3f, prevY, x - dx * 0.3f, animatedY, x, animatedY)
+                    }
+                    if (index == lineTotal - 1) {
+                        areaPath.lineTo(x, zeroY)
+                        areaPath.close()
+                    }
+                    prevX = x
+                    prevY = animatedY
                 }
-                if (index == lineTotal - 1) {
-                    areaPath.lineTo(x, zeroY)
-                    areaPath.close()
-                }
-                prevX = x
-                prevY = animatedY
-            }
 
-            // Draw area gradient
-            drawPath(
-                path = areaPath,
-                brush = Brush.verticalGradient(
-                    colors = listOf(lineColor.copy(alpha = 0.2f), lineColor.copy(alpha = 0f)),
-                    startY = topPadding,
-                    endY = heightPx - bottomPadding
+                // Draw area gradient
+                drawPath(
+                    path = areaPath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(lineColor.copy(alpha = 0.2f), lineColor.copy(alpha = 0f)),
+                        startY = topPadding,
+                        endY = heightPx - bottomPadding
+                    )
                 )
-            )
 
-            val lineStrokeWidth = if (lineThicknessDp > 0f) with(density) { lineThicknessDp.dp.toPx() } else (dims.spacingXs * 0.75f).toPx()
-            drawPath(
-                path = linePath,
-                color = lineColor,
-                style = Stroke(width = lineStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
+                val lineStrokeWidth = if (lineThicknessDp > 0f) with(density) { lineThicknessDp.dp.toPx() } else (dims.spacingXs * 0.75f).toPx()
+                drawPath(
+                    path = linePath,
+                    color = lineColor,
+                    style = Stroke(width = lineStrokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+            }
 
             // 5. Draw SMA
             smaData?.let { sma ->

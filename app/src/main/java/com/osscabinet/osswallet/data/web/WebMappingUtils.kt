@@ -146,6 +146,8 @@ internal fun CategoryTreeMetrics.toCategoryBreakdownDto(total: Double, metric: C
     val amountVal = when (metric) {
         ChartMetric.INCOME -> income.toDouble()
         ChartMetric.EXPENSE -> expense.abs().toDouble()
+        ChartMetric.INFLOW -> (income + transferIn).toDouble()
+        ChartMetric.OUTFLOW -> (expense + transferOut).abs().toDouble()
         else -> netBalance.abs().toDouble()
     }
     val percentageVal = if (total > 0.0 && amountVal.isFinite() && total.isFinite()) {
@@ -357,6 +359,8 @@ internal fun CardRenderData.toPayloadDto(
             when (metric) {
                 ChartMetric.INCOME -> it.income.toDouble()
                 ChartMetric.EXPENSE -> it.expense.abs().toDouble()
+                ChartMetric.INFLOW -> (it.income + it.transferIn).toDouble()
+                ChartMetric.OUTFLOW -> (it.expense + it.transferOut).abs().toDouble()
                 else -> it.netBalance.abs().toDouble()
             }
         }
@@ -372,6 +376,8 @@ internal fun CardRenderData.toPayloadDto(
             when (metric) {
                 ChartMetric.INCOME -> it.income.toDouble()
                 ChartMetric.EXPENSE -> it.expense.abs().toDouble()
+                ChartMetric.INFLOW -> (it.income + it.transferIn).toDouble()
+                ChartMetric.OUTFLOW -> (it.expense + it.transferOut).abs().toDouble()
                 else -> it.netBalance.abs().toDouble()
             }
         }

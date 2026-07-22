@@ -108,7 +108,10 @@ data class AeonLegendItemData(
     val color: Color,
     val label: String,
     val isEnabled: Boolean,
+    val isDashed: Boolean = false,
+    val alpha: Float = 1f,
     val onClick: () -> Unit = {},
+    val id: String = "",
     val metadata: Map<String, Any> = emptyMap()
 )
 

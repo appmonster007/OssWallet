@@ -86,6 +86,10 @@ data class FinancialSummary(
  * Always call [FinancialSummary.toPerspective] before calling this — [ChartMetric.INCOME]
  * and [ChartMetric.EXPENSE] already include absorbed transfers in CashFlow perspective,
  * and [ChartMetric.TRANSFER] is zero in CashFlow perspective.
+ *
+ * [ChartMetric.INFLOW] and [ChartMetric.OUTFLOW] are only selectable in CashFlow mode where
+ * toPerspective has already merged transferIn into income and transferOut into expense. They
+ * therefore return summary.income / summary.expense directly to avoid double-counting.
  */
 fun ChartMetric.extractFrom(summary: FinancialSummary): BigDecimal = when (this) {
     ChartMetric.NET          -> summary.income + summary.expense + summary.transfer
@@ -94,6 +98,8 @@ fun ChartMetric.extractFrom(summary: FinancialSummary): BigDecimal = when (this)
     ChartMetric.TRANSFER     -> summary.transfer
     ChartMetric.TRANSFER_IN  -> summary.transferIn
     ChartMetric.TRANSFER_OUT -> summary.transferOut
+    ChartMetric.INFLOW       -> summary.income
+    ChartMetric.OUTFLOW      -> summary.expense
 }
 
 /**

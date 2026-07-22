@@ -145,8 +145,9 @@ fun TagUpSetPlotCard(
                     ChartMetric.TRANSFER     -> s.transfer
                     ChartMetric.TRANSFER_IN  -> s.transferIn
                     ChartMetric.TRANSFER_OUT -> s.transferOut
+                    ChartMetric.INFLOW       -> s.income
+                    ChartMetric.OUTFLOW      -> s.expense
                     ChartMetric.NET          -> s.income.add(s.expense).add(s.transfer)
-                    else                     -> BigDecimal.ZERO
                 }
             }
 
@@ -191,8 +192,9 @@ fun TagUpSetPlotCard(
                         ChartMetric.TRANSFER     -> intersection.transfer
                         ChartMetric.TRANSFER_IN  -> intersection.transferIn
                         ChartMetric.TRANSFER_OUT -> intersection.transferOut
+                        ChartMetric.INFLOW       -> intersection.income
+                        ChartMetric.OUTFLOW      -> intersection.expense
                         ChartMetric.NET          -> intersection.income.add(intersection.expense).add(intersection.transfer)
-                        else                     -> BigDecimal.ZERO
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,

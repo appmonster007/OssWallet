@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -109,6 +110,7 @@ fun TagUpSetPlotCard(
     val config = renderData.config
     var selectedMetric by rememberSaveable { mutableStateOf(config.selectedMetric) }
     var selectedIntersection by remember { mutableStateOf<AeonUpSetIntersection?>(null) }
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -130,12 +132,11 @@ fun TagUpSetPlotCard(
         settingsContent = {
             TagUpSetSettingsContent(
                 config = config,
-                onUpdate = { newConfig ->
-                    callbacks.onUpdate(newConfig)
-                },
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
+        // --- Gated Heavy Computations ---
         val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
             val getMetricValue: (TagUpSetSet) -> BigDecimal = { s ->
                 when (selectedMetric) {
@@ -213,6 +214,7 @@ fun TagUpSetPlotCard(
                 }
             }
         }
+
 
         Column(modifier = Modifier.fillMaxWidth()) {
             if (uiSets.isNotEmpty()) {

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -56,6 +57,7 @@ fun BudgetsCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnFilterChange = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -68,7 +70,7 @@ fun BudgetsCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnFilterChange.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -106,18 +108,21 @@ private fun BudgetsSettingsContent(
     config: BudgetsCardConfig,
     callbacks: CardCallbacks.Budgets,
 ) {
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Show archived budgets",
             checked = config.showArchived,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showArchived = it)) },
+            onCheckedChange = { currentOnUpdate.value(config.copy(showArchived = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }

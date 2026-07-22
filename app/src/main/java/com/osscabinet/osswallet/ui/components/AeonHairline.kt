@@ -2,6 +2,7 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -29,13 +30,15 @@ fun Modifier.aeonHairlineBorder(
     base: Color = AppColors.outlineVariant,
 ): Modifier {
     val isDark = LocalThemeMode.current.isDarkTheme
-    val brush = Brush.linearGradient(
-        colors = listOf(
-            accent.copy(alpha = if (isDark) 0.26f else 0.20f),
-            base.copy(alpha = if (isDark) 0.22f else 0.55f),
-            base.copy(alpha = if (isDark) 0.06f else 0.20f),
-        ),
-    )
+    val brush = remember(accent, base, isDark) {
+        Brush.linearGradient(
+            colors = listOf(
+                accent.copy(alpha = if (isDark) 0.26f else 0.20f),
+                base.copy(alpha = if (isDark) 0.22f else 0.55f),
+                base.copy(alpha = if (isDark) 0.06f else 0.20f),
+            ),
+        )
+    }
     return this.border(width, brush, shape)
 }
 

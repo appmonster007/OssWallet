@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,6 +64,7 @@ fun CashFlowComparisonCard(
 ) {
     val config = renderData.config
     val selectedMetric = config.selectedMetric
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -84,11 +86,12 @@ fun CashFlowComparisonCard(
         settingsContent = {
             CashFlowComparisonSettingsContent(
                 config = config,
-                callbacks = callbacks,
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // --- Gated Heavy Computations ---
             // Aggregate sum for current period
             val aggregateTotal = remember(renderData.currentSeries, selectedMetric) {
                 renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
@@ -117,6 +120,14 @@ fun CashFlowComparisonCard(
                 }
             }
 
+            // Chart
+            val series = buildSeriesList(
+                config = config,
+                selectedMetric = selectedMetric,
+                isCumulative = config.isCumulative,
+                renderData = renderData
+            )
+
             ChartSummarySection(
                 total = aggregateTotal,
                 previousTotal = previousAggregateTotal,
@@ -129,14 +140,6 @@ fun CashFlowComparisonCard(
                     callbacks.onUpdate(config.copy(selectedMetric = metric))
                 },
                 splitTransfers = config.splitTransfers
-            )
-
-            // Chart
-            val series = buildSeriesList(
-                config = config,
-                selectedMetric = selectedMetric,
-                isCumulative = config.isCumulative,
-                renderData = renderData
             )
 
             if (series.isNotEmpty()) {
@@ -361,19 +364,19 @@ private fun buildMarkersList(
 @Composable
 private fun CashFlowComparisonSettingsContent(
     config: CashFlowComparisonCardConfig,
-    callbacks: CardCallbacks.CashFlowComparison,
+    onUpdate: (CashFlowComparisonCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Cumulative",
             checked = config.isCumulative,
-            onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) },
+            onCheckedChange = { onUpdate(config.copy(isCumulative = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            onCheckedChange = { onUpdate(config.copy(showGridLines = it)) },
             showBackground = false
         )
     }
@@ -381,35 +384,35 @@ private fun CashFlowComparisonSettingsContent(
         AeonSettingsToggle(
             label = "Current Period",
             checked = config.showCurrentPeriod,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showCurrentPeriod = it)) },
+            onCheckedChange = { onUpdate(config.copy(showCurrentPeriod = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Previous Period",
             checked = config.showPreviousPeriod,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showPreviousPeriod = it)) },
+            onCheckedChange = { onUpdate(config.copy(showPreviousPeriod = it)) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Same Period Last Year",
             checked = config.showSamePeriodLastYear,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showSamePeriodLastYear = it)) },
+            onCheckedChange = { onUpdate(config.copy(showSamePeriodLastYear = it)) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onUpdate(
+            onUpdate(
                 config.copy(
                     excludeInternalTransfers = it,
                 ),
             )
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) },
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) },
     )
 }
 

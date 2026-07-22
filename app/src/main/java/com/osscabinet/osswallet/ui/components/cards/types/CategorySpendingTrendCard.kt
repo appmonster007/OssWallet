@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,6 +76,7 @@ fun CategorySpendingTrendCard(
 ) {
     val config = renderData.config
     var categoriesExpanded by rememberSaveable { mutableStateOf(value = false) }
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val selectedMetric = config.selectedMetric
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
@@ -97,11 +99,12 @@ fun CategorySpendingTrendCard(
         settingsContent = {
             CategorySpendingSettingsContent(
                 config = config,
-                callbacks = callbacks,
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // --- Gated Heavy Computations ---
             val totalAmount = remember(renderData.activeCategories) {
                 renderData.activeCategories.sumOf { it.totalAmount }
             }
@@ -126,8 +129,9 @@ fun CategorySpendingTrendCard(
             val wantColor = WarningColor
 
             // Stacked bar chart
-            val chartGroups =
+            val chartGroups = remember(renderData, mustColor, needColor, wantColor, config.isCumulative) {
                 buildChartGroups(renderData, mustColor, needColor, wantColor, config.isCumulative)
+            }
             if (chartGroups.isNotEmpty()) {
                 AeonBarChart(
                     groups = chartGroups,
@@ -318,33 +322,35 @@ private fun NatureChip(nature: CategoryNature) {
 @Composable
 private fun CategorySpendingSettingsContent(
     config: CategorySpendingTrendCardConfig,
-    callbacks: CardCallbacks.CategorySpendingTrend,
+    onUpdate: (CategorySpendingTrendCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Cumulative",
             checked = config.isCumulative,
-            onCheckedChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
+            onCheckedChange = { onUpdate(config.copy(isCumulative = it)) },
+            showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) }
+            onCheckedChange = { onUpdate(config.copy(showGridLines = it)) },
+            showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onUpdate(
+            onUpdate(
                 config.copy(
                     excludeInternalTransfers = it
                 )
             )
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) }
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
     )
 }
 

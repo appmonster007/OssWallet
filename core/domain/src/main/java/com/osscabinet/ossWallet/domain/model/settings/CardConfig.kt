@@ -596,6 +596,14 @@ data class IncomeExpenseBarCardConfig(
     // Accounting perspective only: show transfer in / out as separate rows rather than a net value.
     val splitTransfers: Boolean = false,
     val showGridLines: Boolean = true,
+    val visibleMetrics: Set<ChartMetric> = setOf(
+        ChartMetric.INCOME,
+        ChartMetric.EXPENSE,
+        ChartMetric.TRANSFER,
+        ChartMetric.TRANSFER_IN,
+        ChartMetric.TRANSFER_OUT,
+        ChartMetric.NET
+    ),
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(
             ThisPeriodType.YEAR,

@@ -1,9 +1,11 @@
 package com.osscabinet.ossWallet.ui.components.cards.types
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +30,6 @@ import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
-import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
 import com.osscabinet.ossWallet.ui.components.AeonDropdownSelector
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -39,11 +41,15 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartBar
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarChartGroup
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonBarLineChart
+import com.osscabinet.ossWallet.ui.theme.AccentOrange
 import com.osscabinet.ossWallet.ui.theme.AppColors
 import com.osscabinet.ossWallet.ui.theme.AppTextStyles
 import com.osscabinet.ossWallet.ui.theme.ChartColorBlue
 import com.osscabinet.ossWallet.ui.theme.ChartColorGreen
+import com.osscabinet.ossWallet.ui.theme.ChartColorOrange
 import com.osscabinet.ossWallet.ui.theme.ChartColorRed
 import com.osscabinet.ossWallet.ui.theme.OssWalletTheme
 import com.osscabinet.ossWallet.ui.util.CurrencyDisplaySpec
@@ -143,35 +149,93 @@ fun IncomeExpenseBarCard(
             IncomeExpenseLegendRow(
                 perspective = config.perspective,
                 isCumulative = isCumulative,
+                splitTransfers = config.splitTransfers,
+                visibleMetrics = config.visibleMetrics,
+                onToggleMetrics = { metrics: List<ChartMetric> ->
+                    var newMetrics = config.visibleMetrics
+                    metrics.forEach { metric: ChartMetric ->
+                        newMetrics = if (newMetrics.contains(metric)) {
+                            newMetrics - metric
+                        } else {
+                            newMetrics + metric
+                        }
+                    }
+                    callbacks.onUpdate(config.copy(visibleMetrics = newMetrics))
+                },
                 onModeChange = { callbacks.onUpdate(config.copy(isCumulative = it)) }
             )
 
             // Build chart data.
-            val incomeChartData = remember(renderData.buckets, isCumulative) {
+            val barGroups = remember(renderData.buckets, config.perspective, config.splitTransfers, isCumulative, config.visibleMetrics) {
+                val isCashFlow = config.perspective is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow
+                val showInc = config.visibleMetrics.contains(ChartMetric.INCOME)
+                val showExp = config.visibleMetrics.contains(ChartMetric.EXPENSE)
+                val showTrf = config.visibleMetrics.contains(ChartMetric.TRANSFER)
+                val showTrfIn = config.visibleMetrics.contains(ChartMetric.TRANSFER_IN)
+                val showTrfOut = config.visibleMetrics.contains(ChartMetric.TRANSFER_OUT)
+
                 if (isCumulative) {
-                    var running = BigDecimal.ZERO
-                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
-                        running = running.add(it.income)
-                        running
+                    var runInc = BigDecimal.ZERO
+                    var runExp = BigDecimal.ZERO
+                    var runTrf = BigDecimal.ZERO
+                    var runTrfIn = BigDecimal.ZERO
+                    var runTrfOut = BigDecimal.ZERO
+                    
+                    listOf(AeonBarChartGroup("", emptyList())) + renderData.buckets.map { p ->
+                        runInc += p.income
+                        runExp += p.expense
+                        runTrf += p.transfer
+                        runTrfIn += p.transferIn
+                        runTrfOut += p.transferOut
+                        
+                        val bars = mutableListOf<AeonBarChartBar>()
+                        if (isCashFlow) {
+                            val rawInc = runInc - runTrfIn
+                            if (showInc) bars.add(AeonBarChartBar(rawInc, "Income", ChartColorGreen))
+                            if (showTrfIn) bars.add(AeonBarChartBar(runTrfIn, "Transfer In", ChartColorOrange))
+                            
+                            val rawExp = runExp - runTrfOut
+                            if (showExp) bars.add(AeonBarChartBar(rawExp, "Expense", ChartColorRed))
+                            if (showTrfOut) bars.add(AeonBarChartBar(runTrfOut, "Transfer Out", AccentOrange))
+                        } else {
+                            if (showInc) bars.add(AeonBarChartBar(runInc, "Income", ChartColorGreen))
+                            if (showExp) bars.add(AeonBarChartBar(runExp, "Expense", ChartColorRed))
+                            if (config.splitTransfers) {
+                                if (showTrfIn) bars.add(AeonBarChartBar(runTrfIn, "Transfer In", ChartColorOrange))
+                                if (showTrfOut) bars.add(AeonBarChartBar(runTrfOut, "Transfer Out", AccentOrange))
+                            } else {
+                                if (showTrf) bars.add(AeonBarChartBar(runTrf, "Transfer", ChartColorOrange))
+                            }
+                        }
+                        AeonBarChartGroup(p.label, bars)
                     }
                 } else {
-                    renderData.buckets.map { it.income }
+                    renderData.buckets.map { p ->
+                        val bars = mutableListOf<AeonBarChartBar>()
+                        if (isCashFlow) {
+                            val rawInc = p.income - p.transferIn
+                            if (showInc) bars.add(AeonBarChartBar(rawInc, "Income", ChartColorGreen))
+                            if (showTrfIn) bars.add(AeonBarChartBar(p.transferIn, "Transfer In", ChartColorOrange))
+                            
+                            val rawExp = p.expense - p.transferOut
+                            if (showExp) bars.add(AeonBarChartBar(rawExp, "Expense", ChartColorRed))
+                            if (showTrfOut) bars.add(AeonBarChartBar(p.transferOut, "Transfer Out", AccentOrange))
+                        } else {
+                            if (showInc) bars.add(AeonBarChartBar(p.income, "Income", ChartColorGreen))
+                            if (showExp) bars.add(AeonBarChartBar(p.expense, "Expense", ChartColorRed))
+                            if (config.splitTransfers) {
+                                if (showTrfIn) bars.add(AeonBarChartBar(p.transferIn, "Transfer In", ChartColorOrange))
+                                if (showTrfOut) bars.add(AeonBarChartBar(p.transferOut, "Transfer Out", AccentOrange))
+                            } else {
+                                if (showTrf) bars.add(AeonBarChartBar(p.transfer, "Transfer", ChartColorOrange))
+                            }
+                        }
+                        AeonBarChartGroup(p.label, bars)
+                    }
                 }
             }
 
-            val expenseChartData = remember(renderData.buckets, isCumulative) {
-                if (isCumulative) {
-                    var running = BigDecimal.ZERO
-                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
-                        running = running.add(it.expense)
-                        running
-                    }
-                } else {
-                    renderData.buckets.map { it.expense }
-                }
-            }
-
-            // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
+            // X-Labels: For cumulative mode, we prepend null for the origin point.
             val xLabelData: List<String?> = remember(renderData.buckets, isCumulative) {
                 if (isCumulative) {
                     listOf(null) + renderData.buckets.map { it.label }
@@ -180,7 +244,9 @@ fun IncomeExpenseBarCard(
                 }
             }
 
-            val netLineData: List<BigDecimal> = remember(renderData.buckets, renderData.todayBucketIndex, isCumulative) {
+            val netLineData: List<BigDecimal> = remember(renderData.buckets, renderData.todayBucketIndex, isCumulative, config.visibleMetrics) {
+                if (!config.visibleMetrics.contains(ChartMetric.NET)) return@remember emptyList()
+
                 val realBuckets = if (renderData.todayBucketIndex >= 0) {
                     renderData.buckets.take(renderData.todayBucketIndex + 1)
                 } else if (renderData.todayBucketIndex == -1) {
@@ -197,18 +263,32 @@ fun IncomeExpenseBarCard(
 
             if (renderData.buckets.isNotEmpty()) {
                 AeonBarLineChart(
-                    incomeData = incomeChartData,
-                    expenseData = expenseChartData,
+                    groups = barGroups,
                     lineData = netLineData,
                     xLabels = xLabelData,
                     showXAxisLabels = true,
                     lineThicknessDp = 1.5f,
-                    barColorPositive = ChartColorGreen,
-                    barColorNegative = ChartColorRed,
                     lineColor = ChartColorBlue,
                     currency = renderData.currency,
                     showGrid = config.showGridLines,
                     animate = layoutProps.animate,
+                    onNavigateToRecords = { index ->
+                        val bucket = if (isCumulative) {
+                            if (index > 0) renderData.buckets.getOrNull(index - 1) else null
+                        } else {
+                            renderData.buckets.getOrNull(index)
+                        }
+
+                        bucket?.let {
+                            val drillDownFilter = TransactionFilter(
+                                timelineRange = com.osscabinet.ossWallet.domain.model.timeline.TimelineRange.CustomRange(
+                                    start = it.epochMillis,
+                                    end = it.bucketEnd
+                                )
+                            )
+                            callbacks.onRecordsClick(drillDownFilter)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(220.dp)
@@ -248,47 +328,146 @@ private fun buildCumulativeNet(buckets: List<com.osscabinet.ossWallet.domain.car
 private fun IncomeExpenseLegendRow(
     perspective: com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective,
     isCumulative: Boolean,
+    splitTransfers: Boolean,
+    visibleMetrics: Set<ChartMetric>,
+    onToggleMetrics: (List<ChartMetric>) -> Unit,
     onModeChange: (Boolean) -> Unit
 ) {
-    val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective)
+    val labels = com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.labelsFor(perspective, splitTransfers)
+    
+    val legendItems = remember(labels, visibleMetrics, perspective, splitTransfers) {
+        buildList {
+            // 1. Income
+            add(
+                LegendItemData(
+                    color = ChartColorGreen,
+                    label = labels[ChartMetric.INCOME] ?: "Income",
+                    isEnabled = visibleMetrics.contains(ChartMetric.INCOME),
+                    onClick = { onToggleMetrics(listOf(ChartMetric.INCOME)) }
+                )
+            )
+            // 2. Expense
+            add(
+                LegendItemData(
+                    color = ChartColorRed,
+                    label = labels[ChartMetric.EXPENSE] ?: "Expense",
+                    isEnabled = visibleMetrics.contains(ChartMetric.EXPENSE),
+                    onClick = { onToggleMetrics(listOf(ChartMetric.EXPENSE)) }
+                )
+            )
+            
+            // 3. Transfers
+            val isCashFlow = perspective is com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective.CashFlow
+            val showTransferLegend = isCashFlow || 
+                                     (labels.containsKey(ChartMetric.TRANSFER)) ||
+                                     (labels.containsKey(ChartMetric.TRANSFER_IN))
+
+            if (showTransferLegend) {
+                if (isCashFlow || splitTransfers) {
+                    add(
+                        LegendItemData(
+                            color = ChartColorOrange,
+                            label = labels[ChartMetric.TRANSFER_IN] ?: "In",
+                            isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER_IN),
+                            onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER_IN)) }
+                        )
+                    )
+                    add(
+                        LegendItemData(
+                            color = AccentOrange,
+                            label = labels[ChartMetric.TRANSFER_OUT] ?: "Out",
+                            isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER_OUT),
+                            onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER_OUT)) }
+                        )
+                    )
+                } else {
+                    add(
+                        LegendItemData(
+                            color = ChartColorOrange,
+                            label = "Transfers",
+                            isEnabled = visibleMetrics.contains(ChartMetric.TRANSFER),
+                            onClick = { onToggleMetrics(listOf(ChartMetric.TRANSFER)) }
+                        )
+                    )
+                }
+            }
+            
+            // 4. Net
+            add(
+                LegendItemData(
+                    color = ChartColorBlue,
+                    label = labels[ChartMetric.NET] ?: "Net",
+                    isEnabled = visibleMetrics.contains(ChartMetric.NET),
+                    onClick = { onToggleMetrics(listOf(ChartMetric.NET)) }
+                )
+            )
+        }.sortedBy { it.label }
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IncomeExpenseLegendItem(color = ChartColorGreen, label = labels[ChartMetric.INCOME] ?: "Income")
-            IncomeExpenseLegendItem(color = ChartColorRed, label = labels[ChartMetric.EXPENSE] ?: "Expense")
-            IncomeExpenseLegendItem(color = ChartColorBlue, label = labels[ChartMetric.NET] ?: "Net")
+        FlowRow(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            legendItems.forEach { item ->
+                IncomeExpenseLegendItem(
+                    color = item.color,
+                    label = item.label,
+                    isEnabled = item.isEnabled,
+                    onClick = item.onClick
+                )
+            }
         }
 
-        AeonDropdownSelector(
-            value = if (isCumulative) "Cumulative" else "Trend",
-            options = listOf("Trend", "Cumulative"),
-            labelProvider = { it },
-            onValueChange = { onModeChange(it == "Cumulative") }
-        )
+        Box(modifier = Modifier.padding(start = 8.dp)) {
+            AeonDropdownSelector(
+                value = if (isCumulative) "Cumulative" else "Trend",
+                options = listOf("Trend", "Cumulative"),
+                labelProvider = { it },
+                onValueChange = { onModeChange(it == "Cumulative") }
+            )
+        }
     }
 }
 
+private data class LegendItemData(
+    val color: Color,
+    val label: String,
+    val isEnabled: Boolean,
+    val onClick: () -> Unit
+)
+
 @Composable
-private fun IncomeExpenseLegendItem(color: Color, label: String) {
+private fun IncomeExpenseLegendItem(
+    color: Color,
+    label: String,
+    isEnabled: Boolean,
+    onClick: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .alpha(if (isEnabled) 1f else 0.4f)
     ) {
         Box(
             modifier = Modifier
                 .size(width = 16.dp, height = 3.dp)
                 .background(
-                    color = color,
+                    color = if (isEnabled) color else color.copy(alpha = 0.4f),
                     shape = RoundedCornerShape(2.dp)
                 )
         )
         Text(
             text = label,
             style = AppTextStyles.caption.copy(fontSize = 10.sp),
-            color = AppColors.contentSecondary
+            color = if (isEnabled) AppColors.contentPrimary else AppColors.contentSecondary
         )
     }
 }
@@ -358,6 +537,8 @@ private fun IncomeExpenseBarSettingsContent(
             onUpdate(config.copy(excludeInternalTransfers = it))
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
+        onSplitTransfersChange = {
+            onUpdate(config.copy(splitTransfers = it))
+        }
     )
 }

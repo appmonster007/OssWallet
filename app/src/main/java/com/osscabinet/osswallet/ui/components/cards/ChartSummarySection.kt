@@ -48,7 +48,8 @@ fun ChartSummarySection(
     val positiveDeltaIsGood = selectedMetric == ChartMetric.INCOME || 
                              selectedMetric == ChartMetric.NET || 
                              selectedMetric == ChartMetric.TRANSFER_IN ||
-                             selectedMetric == ChartMetric.TRANSFER
+                             selectedMetric == ChartMetric.TRANSFER ||
+                             selectedMetric == ChartMetric.INFLOW
     val labels = AccountingPerspective.labelsFor(perspective, splitTransfers)
     val options = ChartMetric.entries.filter { it in labels }
 

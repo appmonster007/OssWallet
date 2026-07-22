@@ -24,6 +24,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.CashFlowComparisonSeries
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
+import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
@@ -38,7 +39,9 @@ import com.osscabinet.ossWallet.ui.components.cards.CardSettingsSection
 import com.osscabinet.ossWallet.ui.components.cards.CardWithCallbacks
 import com.osscabinet.ossWallet.ui.components.cards.ChartSummarySection
 import com.osscabinet.ossWallet.ui.components.cards.resolveDrillDown
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartLegend
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonChartMarker
+import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLegendItemData
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChart
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartPoint
 import com.osscabinet.ossWallet.ui.components.visualization.charts.AeonLineChartSeries
@@ -93,7 +96,8 @@ fun CashFlowComparisonCard(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // --- Gated Heavy Computations ---
             // Aggregate sum for current period
-            val aggregateTotal = remember(renderData.currentSeries, selectedMetric) {
+            val aggregateTotal = remember(renderData.currentSeries, selectedMetric, config.perspective) {
+                val isCashFlow = config.perspective is AccountingPerspective.CashFlow
                 renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
                     acc + when (selectedMetric) {
                         ChartMetric.NET -> p.net
@@ -102,20 +106,27 @@ fun CashFlowComparisonCard(
                         ChartMetric.TRANSFER -> p.transfer
                         ChartMetric.TRANSFER_IN -> p.transferIn
                         ChartMetric.TRANSFER_OUT -> p.transferOut
+                        ChartMetric.INFLOW -> if (isCashFlow) p.income else (p.income + p.transferIn)
+                        ChartMetric.OUTFLOW -> if (isCashFlow) p.expense else (p.expense + p.transferOut)
                     }
                 }
             }
 
-            val previousAggregateTotal = remember(renderData.previousSeries, selectedMetric) {
+            val previousAggregateTotal = remember(renderData.previousSeries, selectedMetric, config.perspective) {
                 if (renderData.previousSeries.points.isEmpty()) null
-                else renderData.previousSeries.points.fold(BigDecimal.ZERO) { acc, p ->
-                    acc + when (selectedMetric) {
-                        ChartMetric.NET -> p.net
-                        ChartMetric.INCOME -> p.income
-                        ChartMetric.EXPENSE -> p.expense
-                        ChartMetric.TRANSFER -> p.transfer
-                        ChartMetric.TRANSFER_IN -> p.transferIn
-                        ChartMetric.TRANSFER_OUT -> p.transferOut
+                else {
+                    val isCashFlow = config.perspective is AccountingPerspective.CashFlow
+                    renderData.previousSeries.points.fold(BigDecimal.ZERO) { acc, p ->
+                        acc + when (selectedMetric) {
+                            ChartMetric.NET -> p.net
+                            ChartMetric.INCOME -> p.income
+                            ChartMetric.EXPENSE -> p.expense
+                            ChartMetric.TRANSFER -> p.transfer
+                            ChartMetric.TRANSFER_IN -> p.transferIn
+                            ChartMetric.TRANSFER_OUT -> p.transferOut
+                            ChartMetric.INFLOW -> if (isCashFlow) p.income else (p.income + p.transferIn)
+                            ChartMetric.OUTFLOW -> if (isCashFlow) p.expense else (p.expense + p.transferOut)
+                        }
                     }
                 }
             }
@@ -197,52 +208,48 @@ private fun LegendRow(
     showPrevious: Boolean,
     showLastYear: Boolean
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (showCurrent) {
-            LegendItem(color = CurrentPeriodColor, label = "Current", isDashed = false, alpha = 1f)
-        }
-        if (showPrevious) {
-            LegendItem(color = PreviousPeriodColor, label = "Previous", isDashed = true, alpha = 1f)
-        }
-        if (showLastYear) {
-            LegendItem(color = LastYearColor, label = "Last Year", isDashed = true, alpha = 0.6f)
+    val items = remember(showCurrent, showPrevious, showLastYear) {
+        buildList<AeonLegendItemData> {
+            if (showCurrent) {
+                add(
+                    AeonLegendItemData(
+                        color = CurrentPeriodColor,
+                        label = "Current",
+                        isEnabled = true,
+                        isDashed = false,
+                        alpha = 1f
+                    )
+                )
+            }
+            if (showPrevious) {
+                add(
+                    AeonLegendItemData(
+                        color = PreviousPeriodColor,
+                        label = "Previous",
+                        isEnabled = true,
+                        isDashed = true,
+                        alpha = 1f
+                    )
+                )
+            }
+            if (showLastYear) {
+                add(
+                    AeonLegendItemData(
+                        color = LastYearColor,
+                        label = "Last Year",
+                        isEnabled = true,
+                        isDashed = true,
+                        alpha = 0.6f
+                    )
+                )
+            }
         }
     }
-}
 
-@Composable
-private fun LegendItem(
-    color: Color,
-    label: String,
-    isDashed: Boolean,
-    alpha: Float
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        androidx.compose.foundation.Canvas(modifier = Modifier.size(width = 16.dp, height = 3.dp)) {
-            drawLine(
-                color = color.copy(alpha = alpha),
-                start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
-                end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
-                strokeWidth = size.height,
-                pathEffect = if (isDashed) androidx.compose.ui.graphics.PathEffect.dashPathEffect(
-                    floatArrayOf(4f, 3f)
-                ) else null,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
-        }
-        Text(
-            text = label,
-            style = AppTextStyles.caption.copy(fontSize = 10.sp),
-            color = AppColors.contentSecondary.copy(alpha = alpha)
-        )
-    }
+    AeonChartLegend(
+        items = items,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 private fun buildSeriesList(
@@ -255,6 +262,7 @@ private fun buildSeriesList(
 
     fun seriesPoints(s: CashFlowComparisonSeries): List<AeonLineChartPoint> {
         var running = BigDecimal.ZERO
+        val isCashFlow = config.perspective is AccountingPerspective.CashFlow
         val dataPoints = s.points.mapIndexed { index, point ->
             val value = when (selectedMetric) {
                 ChartMetric.NET -> point.net
@@ -263,6 +271,8 @@ private fun buildSeriesList(
                 ChartMetric.TRANSFER -> point.transfer
                 ChartMetric.TRANSFER_IN -> point.transferIn
                 ChartMetric.TRANSFER_OUT -> point.transferOut
+                ChartMetric.INFLOW -> if (isCashFlow) point.income else (point.income + point.transferIn)
+                ChartMetric.OUTFLOW -> if (isCashFlow) point.expense else (point.expense + point.transferOut)
             }
             running += value
             AeonLineChartPoint(

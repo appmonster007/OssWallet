@@ -256,6 +256,8 @@ private fun mapCategoryMetrics(
         ChartMetric.TRANSFER -> transferTotal.abs()
         ChartMetric.TRANSFER_IN -> items.sumOf { it.transferIn.abs() }
         ChartMetric.TRANSFER_OUT -> items.sumOf { it.transferOut.abs() }
+        ChartMetric.INFLOW -> items.sumOf { (it.income + it.transferIn).abs() }
+        ChartMetric.OUTFLOW -> items.sumOf { (it.expense + it.transferOut).abs() }
     }
 
     fun mapOne(metric: CategoryTreeMetrics): CategoryChartData? {
@@ -266,6 +268,8 @@ private fun mapCategoryMetrics(
             ChartMetric.TRANSFER -> metric.transfer
             ChartMetric.TRANSFER_IN -> metric.transferIn
             ChartMetric.TRANSFER_OUT -> metric.transferOut
+            ChartMetric.INFLOW -> metric.income + metric.transferIn
+            ChartMetric.OUTFLOW -> metric.expense + metric.transferOut
         }
         val prevAmount = when (selectedMetric) {
             ChartMetric.INCOME -> metric.previousIncome
@@ -274,6 +278,8 @@ private fun mapCategoryMetrics(
             ChartMetric.TRANSFER -> metric.previousTransfer
             ChartMetric.TRANSFER_IN -> metric.previousTransferIn
             ChartMetric.TRANSFER_OUT -> metric.previousTransferOut
+            ChartMetric.INFLOW -> metric.previousIncome?.let { it + (metric.previousTransferIn ?: BigDecimal.ZERO) }
+            ChartMetric.OUTFLOW -> metric.previousExpense?.let { it + (metric.previousTransferOut ?: BigDecimal.ZERO) }
         }
         val subData = metric.subcategoryData.asSequence().mapNotNull { mapOne(it) }
             .sortedByDescending { it.amount.abs() }.toList()

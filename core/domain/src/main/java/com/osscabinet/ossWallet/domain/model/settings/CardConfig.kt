@@ -482,7 +482,7 @@ data class RecentActivitiesCardConfig(
  * Shared metric selector for various chart cards.
  */
 @Serializable
-enum class ChartMetric { NET, INCOME, EXPENSE, TRANSFER, TRANSFER_IN, TRANSFER_OUT }
+enum class ChartMetric { NET, INCOME, EXPENSE, TRANSFER, TRANSFER_IN, TRANSFER_OUT, INFLOW, OUTFLOW }
 
 /**
  * Defines the perspective used for financial calculations and display.
@@ -503,11 +503,13 @@ sealed class AccountingPerspective {
             splitTransfers: Boolean = false
         ): Map<ChartMetric, String> = buildMap {
             val isCashFlow = perspective is AccountingPerspective.CashFlow
-            put(ChartMetric.INCOME, if (isCashFlow) "IN" else "INC")
-            put(ChartMetric.EXPENSE, if (isCashFlow) "OUT" else "EXP")
-
-            if (!isCashFlow) {
-                // splitTransfers is only applicable for Accounting mode
+            
+            if (isCashFlow) {
+                put(ChartMetric.INFLOW, "Inflow")
+                put(ChartMetric.OUTFLOW, "Outflow")
+            } else {
+                put(ChartMetric.INCOME, "Income")
+                put(ChartMetric.EXPENSE, "Expense")
                 if (splitTransfers) {
                     put(ChartMetric.TRANSFER_IN, "TRF IN")
                     put(ChartMetric.TRANSFER_OUT, "TRF OUT")
@@ -602,7 +604,9 @@ data class IncomeExpenseBarCardConfig(
         ChartMetric.TRANSFER,
         ChartMetric.TRANSFER_IN,
         ChartMetric.TRANSFER_OUT,
-        ChartMetric.NET
+        ChartMetric.NET,
+        ChartMetric.INFLOW,
+        ChartMetric.OUTFLOW
     ),
     override val filter: TransactionFilter = TransactionFilter(
         timelineRange = TimelineRange.ThisPeriod(

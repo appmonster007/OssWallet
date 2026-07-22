@@ -69,17 +69,34 @@ interface CardUpdateHandler {
                 }
                 
                 // Safety: If the card has a selected metric that's unsupported in the new
-                // perspective (e.g., TRANSFER in CASH_FLOW), reset it to NET.
+                // perspective (e.g., TRANSFER in CASH_FLOW), reset it to NET or map it appropriately.
                 // Pass splitTransfers so that TRANSFER_IN/OUT are not reset when split is on.
                 fun labelsForUpdated(splitTransfers: Boolean) =
                     AccountingPerspective.labelsFor(perspective, splitTransfers)
 
+                fun <C : CardConfig> adjustMetric(config: C, selectedMetric: ChartMetric, splitTransfers: Boolean): ChartMetric {
+                    val labels = labelsForUpdated(splitTransfers)
+                    if (selectedMetric in labels) return selectedMetric
+                    
+                    return when {
+                        perspective is AccountingPerspective.CashFlow && selectedMetric == ChartMetric.INCOME -> ChartMetric.INFLOW
+                        perspective is AccountingPerspective.CashFlow && selectedMetric == ChartMetric.EXPENSE -> ChartMetric.OUTFLOW
+                        perspective is AccountingPerspective.Accounting && selectedMetric == ChartMetric.INFLOW -> ChartMetric.INCOME
+                        perspective is AccountingPerspective.Accounting && selectedMetric == ChartMetric.OUTFLOW -> ChartMetric.EXPENSE
+                        else -> ChartMetric.NET
+                    }
+                }
+
                 when (updated) {
-                    is CategoryPieChartCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
-                    is CategoryTreemapCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
-                    is CashFlowComparisonCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
-                    is CategorySpendingTrendCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
-                    is TagUpSetPlotCardConfig -> labelsForUpdated(updated.splitTransfers).let { labels -> if (updated.selectedMetric !in labels) updated.copy(selectedMetric = ChartMetric.NET) else updated }
+                    is CategoryPieChartCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is CategoryTreemapCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is CashFlowComparisonCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is CategorySpendingTrendCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is TagUpSetPlotCardConfig -> updated.copy(selectedMetric = adjustMetric(updated, updated.selectedMetric, updated.splitTransfers))
+                    is IncomeExpenseBarCardConfig -> {
+                        val remapped = updated.visibleMetrics.map { m -> adjustMetric(updated, m, updated.splitTransfers) }.toSet()
+                        updated.copy(visibleMetrics = remapped)
+                    }
                     else -> updated
                 }
             }

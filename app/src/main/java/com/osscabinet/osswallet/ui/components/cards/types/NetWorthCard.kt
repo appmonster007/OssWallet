@@ -21,6 +21,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -76,6 +77,7 @@ fun NetWorthCard(
     layoutProps: CardLayoutProps = CardLayoutProps(),
 ) {
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = config.title,
@@ -88,7 +90,7 @@ fun NetWorthCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnUpdate.value?.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -422,6 +424,12 @@ private fun NetWorthSettingsContent(
     config: NetWorthCardConfig,
     callbacks: CardCallbacks.NetWorth
 ) {
+    val currentOnFontSizeChange = rememberUpdatedState(callbacks.onFontSizeChange)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
+    val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
+    val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
+
     CardSettingsSection("Font Size") {
         SingleChoiceSegmentedButtonRow(
             modifier = Modifier
@@ -431,7 +439,7 @@ private fun NetWorthSettingsContent(
             listOf("Small", "Medium", "Large", "X-Large").forEachIndexed { index, size ->
                 SegmentedButton(
                     selected = config.fontSize == size,
-                    onClick = { callbacks.onFontSizeChange(config.cardId, size) },
+                    onClick = { currentOnFontSizeChange.value(config.cardId, size) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
                     label = {
                         Text(
@@ -452,22 +460,22 @@ private fun NetWorthSettingsContent(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        onPerspectiveChange = { currentOnPerspectiveChange.value(config.cardId, it) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onExcludeInternalTransfersChange(
+            currentOnExcludeInternalTransfersChange.value(
                 config.cardId,
                 it
             )
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
+        onSplitTransfersChange = { currentOnSplitTransfersChange.value(config.cardId, it) }
     )
 }
 

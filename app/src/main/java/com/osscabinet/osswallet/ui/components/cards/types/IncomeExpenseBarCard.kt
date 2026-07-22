@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -91,6 +93,7 @@ fun IncomeExpenseBarCard(
 ) {
     val config = renderData.config
     val isCumulative = config.isCumulative
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
 
@@ -112,13 +115,16 @@ fun IncomeExpenseBarCard(
         settingsContent = {
             IncomeExpenseBarSettingsContent(
                 config = config,
-                callbacks = callbacks,
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // --- Gated Heavy Computations ---
             // Net total for the period (sum of all bucket net values)
-            val netTotal = renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
+            val netTotal = remember(renderData.buckets) {
+                renderData.buckets.fold(BigDecimal.ZERO) { acc, p -> acc + p.net }
+            }
 
             ChartSummarySection(
                 total = netTotal,
@@ -141,46 +147,52 @@ fun IncomeExpenseBarCard(
             )
 
             // Build chart data.
-            // For Trend mode, we don't prepend a zero origin so the line and bars align 1:1.
-            // For Cumulative mode, we prepend a zero point at the start so the trajectory begins at 0.
-            val incomeChartData = if (isCumulative) {
-                var running = BigDecimal.ZERO
-                listOf(BigDecimal.ZERO) + renderData.buckets.map {
-                    running = running.add(it.income)
-                    running
+            val incomeChartData = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    var running = BigDecimal.ZERO
+                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                        running = running.add(it.income)
+                        running
+                    }
+                } else {
+                    renderData.buckets.map { it.income }
                 }
-            } else {
-                renderData.buckets.map { it.income }
             }
 
-            val expenseChartData = if (isCumulative) {
-                var running = BigDecimal.ZERO
-                listOf(BigDecimal.ZERO) + renderData.buckets.map {
-                    running = running.add(it.expense)
-                    running
+            val expenseChartData = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    var running = BigDecimal.ZERO
+                    listOf(BigDecimal.ZERO) + renderData.buckets.map {
+                        running = running.add(it.expense)
+                        running
+                    }
+                } else {
+                    renderData.buckets.map { it.expense }
                 }
-            } else {
-                renderData.buckets.map { it.expense }
             }
 
             // X-Labels: For cumulative mode, we prepend null for the origin point to avoid repeating the first date label.
-            val xLabelData: List<String?> = if (isCumulative) {
-                listOf(null) + renderData.buckets.map { it.label }
-            } else {
-                renderData.buckets.map { it.label }
+            val xLabelData: List<String?> = remember(renderData.buckets, isCumulative) {
+                if (isCumulative) {
+                    listOf(null) + renderData.buckets.map { it.label }
+                } else {
+                    renderData.buckets.map { it.label }
+                }
             }
 
-            val realBuckets = if (renderData.todayBucketIndex >= 0) {
-                renderData.buckets.take(renderData.todayBucketIndex + 1)
-            } else if (renderData.todayBucketIndex == -1) {
-                renderData.buckets
-            } else {
-                emptyList()
-            }
-            val netLineData: List<BigDecimal> = if (isCumulative) {
-                buildCumulativeNet(realBuckets)
-            } else {
-                realBuckets.map { it.net }
+            val netLineData: List<BigDecimal> = remember(renderData.buckets, renderData.todayBucketIndex, isCumulative) {
+                val realBuckets = if (renderData.todayBucketIndex >= 0) {
+                    renderData.buckets.take(renderData.todayBucketIndex + 1)
+                } else if (renderData.todayBucketIndex == -1) {
+                    renderData.buckets
+                } else {
+                    emptyList()
+                }
+                if (isCumulative) {
+                    buildCumulativeNet(realBuckets)
+                } else {
+                    realBuckets.map { it.net }
+                }
             }
 
             if (renderData.buckets.isNotEmpty()) {
@@ -328,24 +340,24 @@ fun IncomeExpenseBarCardPreview() {
 @Composable
 private fun IncomeExpenseBarSettingsContent(
     config: IncomeExpenseBarCardConfig,
-    callbacks: CardCallbacks.IncomeExpenseBar,
+    onUpdate: (IncomeExpenseBarCardConfig) -> Unit,
 ) {
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Show Grid Lines",
             checked = config.showGridLines,
-            onCheckedChange = { callbacks.onUpdate(config.copy(showGridLines = it)) },
+            onCheckedChange = { onUpdate(config.copy(showGridLines = it)) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onUpdate(config.copy(perspective = it)) },
+        onPerspectiveChange = { onUpdate(config.copy(perspective = it)) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onUpdate(config.copy(excludeInternalTransfers = it))
+            onUpdate(config.copy(excludeInternalTransfers = it))
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { callbacks.onUpdate(config.copy(splitTransfers = it)) }
+        onSplitTransfersChange = { onUpdate(config.copy(splitTransfers = it)) }
     )
 }

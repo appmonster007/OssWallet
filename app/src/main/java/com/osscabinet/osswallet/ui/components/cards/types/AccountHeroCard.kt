@@ -24,6 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -102,6 +103,7 @@ fun AccountHeroCard(
 
     val isAccounting = config.perspective is AccountingPerspective.Accounting
     val displayFilter = layoutProps.computeDisplayFilter(config.filter)
+    val currentOnUpdate = rememberUpdatedState(callbacks.onFilterChange)
 
     AeonExpressiveCard(
         title = account.name,
@@ -115,7 +117,7 @@ fun AccountHeroCard(
         baseFilter = layoutProps.baseFilter,
         filterRules = layoutProps.filterRules ?: config.filterRules,
         filterContext = layoutProps.filterContext,
-        onFilterChange = { callbacks.onFilterChange(config.cardId, it) },
+        onFilterChange = { currentOnUpdate.value.invoke(config.cardId, it) },
         onSaveFilterClick = callbacks.onSaveFilterClick,
         onDelete = callbacks.onDelete,
         settingsContent = {
@@ -611,31 +613,37 @@ private fun AccountHeroSettingsContent(
     config: AccountHeroCardConfig,
     callbacks: CardCallbacks.AccountHero,
 ) {
+    val currentOnShowCurrencyBadgesChange = rememberUpdatedState(callbacks.onShowCurrencyBadgesChange)
+    val currentOnShowComparisonChange = rememberUpdatedState(callbacks.onShowComparisonChange)
+    val currentOnPerspectiveChange = rememberUpdatedState(callbacks.onPerspectiveChange)
+    val currentOnExcludeInternalTransfersChange = rememberUpdatedState(callbacks.onExcludeInternalTransfersChange)
+    val currentOnSplitTransfersChange = rememberUpdatedState(callbacks.onSplitTransfersChange)
+
     CardSettingsSection("Display") {
         AeonSettingsToggle(
             label = "Show Currency Distribution",
             description = "Show breakdown of multi-currency balances",
             checked = config.showCurrencyBadges,
-            onCheckedChange = { callbacks.onShowCurrencyBadgesChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowCurrencyBadgesChange.value(config.cardId, it) },
             showBackground = false
         )
         AeonSettingsToggle(
             label = "Show Comparison",
             description = "Show change from previous period",
             checked = config.showComparison,
-            onCheckedChange = { callbacks.onShowComparisonChange(config.cardId, it) },
+            onCheckedChange = { currentOnShowComparisonChange.value(config.cardId, it) },
             showBackground = false
         )
     }
     CardPerspectiveSettings(
         perspective = config.perspective,
-        onPerspectiveChange = { callbacks.onPerspectiveChange(config.cardId, it) },
+        onPerspectiveChange = { currentOnPerspectiveChange.value(config.cardId, it) },
         excludeInternalTransfers = config.excludeInternalTransfers,
         onExcludeInternalTransfersChange = {
-            callbacks.onExcludeInternalTransfersChange(config.cardId, it)
+            currentOnExcludeInternalTransfersChange.value(config.cardId, it)
         },
         splitTransfers = config.splitTransfers,
-        onSplitTransfersChange = { callbacks.onSplitTransfersChange(config.cardId, it) }
+        onSplitTransfersChange = { currentOnSplitTransfersChange.value(config.cardId, it) }
     )
 }
 

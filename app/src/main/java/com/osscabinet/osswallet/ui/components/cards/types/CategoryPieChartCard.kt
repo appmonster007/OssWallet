@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,57 +83,16 @@ fun CategoryPieChartCard(
     val isDarkTheme = mode.isDarkTheme
     val isAmoled = mode.isAmoled
 
-    val filteredData = remember(data, config.showOnlyActiveCategories) {
-        if (config.showOnlyActiveCategories) data.filter { it.amount.signum() != 0 } else data
-    }
+    val filteredData = if (config.showOnlyActiveCategories) {
+        remember(data) { data.filter { it.amount.signum() != 0 } }
+    } else data
 
     var navigationStack by remember(filteredData) {
-        mutableStateOf(
-            listOf(
-                filteredData,
-            )
-        )
+        mutableStateOf(listOf(filteredData))
     }
     val currentData = navigationStack.last()
 
-    val groupedData = remember(currentData, navigationStack.size) {
-        val sorted = currentData.sortedByDescending { it.amount.abs() }
-
-        val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
-            val prevLevelRawData = navigationStack[navigationStack.size - 2]
-            prevLevelRawData.none { it.subcategoryData === currentData }
-        } else false
-
-        if (!isMoreCategoriesDrillDown) {
-            val mainItems = sorted.filter { it.percentage >= 0.02f }
-            val others =
-                sorted.filter { (it.percentage < 0.02f) && (it.amount.abs() > BigDecimal.ZERO) }
-
-            if (others.size > 1) {
-                val otherSum = others.sumOf { it.amount }
-                val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
-                val otherPrevSum = if (others.any { it.previousAmount != null }) {
-                    others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
-                } else null
-
-                mainItems + CategoryChartData(
-                    category = "More Categories",
-                    categoryId = -1L,
-                    amount = otherSum,
-                    colorHex = 0xFF9E9E9E.toInt(), // Grey
-                    percentage = otherPercentage,
-                    hasSubcategories = true,
-                    subcategoryCount = others.size,
-                    subcategoryData = others,
-                    previousAmount = otherPrevSum
-                )
-            } else {
-                sorted
-            }
-        } else {
-            sorted
-        }
-    }
+    val currentOnUpdate = rememberUpdatedState(callbacks.onUpdate)
 
     AeonExpressiveCard(
         title = config.title,
@@ -150,10 +110,51 @@ fun CategoryPieChartCard(
         settingsContent = {
             CategoryPieChartSettingsContent(
                 config = config,
-                onUpdate = { callbacks.onUpdate(it) },
+                onUpdate = { currentOnUpdate.value(it) },
             )
         }
     ) {
+        // --- Gated Heavy Computations ---
+        // These only run when the front side is actually visible.
+        val groupedData = remember(currentData, navigationStack.size) {
+            val sorted = currentData.sortedByDescending { it.amount.abs() }
+
+            val isMoreCategoriesDrillDown = if (navigationStack.size > 1) {
+                val prevLevelRawData = navigationStack[navigationStack.size - 2]
+                prevLevelRawData.none { it.subcategoryData === currentData }
+            } else false
+
+            if (!isMoreCategoriesDrillDown) {
+                val mainItems = sorted.filter { it.percentage >= 0.02f }
+                val others =
+                    sorted.filter { (it.percentage < 0.02f) && (it.amount.abs() > BigDecimal.ZERO) }
+
+                if (others.size > 1) {
+                    val otherSum = others.sumOf { it.amount }
+                    val otherPercentage = others.sumOf { it.percentage.toDouble() }.toFloat()
+                    val otherPrevSum = if (others.any { it.previousAmount != null }) {
+                        others.sumOf { it.previousAmount ?: BigDecimal.ZERO }
+                    } else null
+
+                    mainItems + CategoryChartData(
+                        category = "More Categories",
+                        categoryId = -1L,
+                        amount = otherSum,
+                        colorHex = 0xFF9E9E9E.toInt(), // Grey
+                        percentage = otherPercentage,
+                        hasSubcategories = true,
+                        subcategoryCount = others.size,
+                        subcategoryData = others,
+                        previousAmount = otherPrevSum
+                    )
+                } else {
+                    sorted
+                }
+            } else {
+                sorted
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (navigationStack.size > 1) {
@@ -346,19 +347,22 @@ private fun CategoryPieChartSettingsContent(
             "Show Labels",
             config.showLabels,
             description = "Display category names on segments",
-            onCheckedChange = { onUpdate(config.copy(showLabels = it)) }
+            onCheckedChange = { onUpdate(config.copy(showLabels = it)) },
+            showBackground = false
         )
         AeonSettingsToggle(
             "Show Legend",
             config.showLegend,
             description = "Display list of categories beneath the map",
-            onCheckedChange = { onUpdate(config.copy(showLegend = it)) }
+            onCheckedChange = { onUpdate(config.copy(showLegend = it)) },
+            showBackground = false
         )
         AeonSettingsToggle(
             "Rounded Visuals",
             config.rounded,
             description = "Apply rounded corners and spacing to segments",
-            onCheckedChange = { onUpdate(config.copy(rounded = it)) }
+            onCheckedChange = { onUpdate(config.copy(rounded = it)) },
+            showBackground = false
         )
     }
     CardSettingsSection("Data") {
@@ -366,13 +370,15 @@ private fun CategoryPieChartSettingsContent(
             "Full Breakdown",
             config.showFullBreakdown,
             description = "Show all categories instead of top 5",
-            onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) }
+            onCheckedChange = { onUpdate(config.copy(showFullBreakdown = it)) },
+            showBackground = false
         )
         AeonSettingsToggle(
             "Active Only",
             config.showOnlyActiveCategories,
             description = "Only show categories with non-zero values",
-            onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) }
+            onCheckedChange = { onUpdate(config.copy(showOnlyActiveCategories = it)) },
+            showBackground = false
         )
     }
     CardPerspectiveSettings(

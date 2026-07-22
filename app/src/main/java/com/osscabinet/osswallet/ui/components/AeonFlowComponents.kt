@@ -2,7 +2,10 @@ package com.osscabinet.ossWallet.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -131,16 +134,23 @@ fun AeonSettingsToggle(
     }
 
     if (showBackground) {
-        Surface(
-            color = if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(
-                alpha = 0.5f
-            ),
-            shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius),
-            modifier = modifier.fillMaxWidth(),
-            border = if (showBorder) BorderStroke(
-                1.dp,
-                AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f)
-            ) else null
+        val shape = RoundedCornerShape(AeonTheme.dimensions.componentCornerRadius)
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(
+                    if (enabled) AppColors.surfaceContainerLow else AppColors.surfaceContainerLow.copy(
+                        alpha = 0.5f
+                    )
+                )
+                .then(
+                    if (showBorder) Modifier.border(
+                        1.dp,
+                        AppColors.outlineVariant.copy(alpha = if (enabled) 1f else 0.5f),
+                        shape
+                    ) else Modifier
+                )
         ) {
             content()
         }

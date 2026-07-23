@@ -229,7 +229,7 @@ fun Route.plannedPaymentRoutes(
 
                 val request = TransactionRequest(
                     name = payment.name,
-                    amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
+                    amount = TransactionEntryService.getMagnitude(payment.amount),
                     entryMode = payment.entryMode,
                     accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@post call.respond(
                         HttpStatusCode.BadRequest,
@@ -332,7 +332,7 @@ fun Route.plannedPaymentRoutes(
 
                 val request = TransactionRequest(
                     name = payment.name,
-                    amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
+                    amount = TransactionEntryService.getMagnitude(payment.amount),
                     entryMode = payment.entryMode,
                     accountId = payment.accountId,
                     categoryId = payment.categoryId,

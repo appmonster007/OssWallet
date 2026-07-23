@@ -1,7 +1,7 @@
 package com.osscabinet.ossWallet.domain.service.aggregation
 
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.Transaction
+import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.service.financial.AccountBreakdown
 import com.osscabinet.ossWallet.domain.service.financial.CategoryBreakdown
 import com.osscabinet.ossWallet.domain.service.financial.CurrencyBreakdown
@@ -107,74 +107,38 @@ fun List<Transaction>.breakdownByStatus(
         .sortedByDescending { it.totalAmount.abs() }
 
 /**
- * Breaks down transactions by tags.
+ * Breaks down transactions by tags using a single-pass optimized loop.
  */
 fun List<Transaction>.breakdownByTags(
     exchangeRates: ExchangeRateSnapshot? = null,
     baseCurrency: String? = null
 ): List<TagBreakdown> {
-    // Tags are multi-value, so we need a custom flatMap before grouping
-    return flatMap { tx -> tx.tags.map { tag -> tag to tx } }
-        .groupBy { it.first }
-        .mapValues { (_, pairs) -> pairs.map { it.second } }
-        .map { (tag, txs) ->
-            val summaries = AggregationService.calculateSummaryByCurrency(txs)
-            val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
-                summaries.mapValues { (currency, summary) ->
-                    CurrencyService.convertFinancialSummaryToBase(summary, currency, baseCurrency, exchangeRates)
-                }
-            } else {
-                summaries
+    val tagMap = mutableMapOf<String, MutableMap<String, FinancialSummary>>()
+    for (tx in this) {
+        for (tag in tx.tags) {
+            val currencyMap = tagMap.getOrPut(tag) { mutableMapOf() }
+            val s = currencyMap[tx.currency] ?: FinancialSummary.EMPTY
+            currencyMap[tx.currency] = when (tx.transactionType) {
+                TransactionType.INCOME -> s.copy(income = s.income.add(tx.amount), transactionCount = s.transactionCount + 1)
+                TransactionType.EXPENSE -> s.copy(expense = s.expense.add(tx.amount), transactionCount = s.transactionCount + 1)
+                TransactionType.TRANSFER_INFLOW -> s.copy(transferIn = s.transferIn.add(tx.amount), transactionCount = s.transactionCount + 1)
+                TransactionType.TRANSFER_OUTFLOW -> s.copy(transferOut = s.transferOut.add(tx.amount), transactionCount = s.transactionCount + 1)
             }
-            FinancialMetrics(
-                key = tag,
-                metrics = FinancialSummary.aggregate(convertedSummaries.values),
-                currencyBreakdown = summaries
-            )
-        }.sortedByDescending { it.totalAmount.abs() }
+        }
+    }
+
+    return tagMap.map { (tag, summaries) ->
+        val convertedSummaries = if (exchangeRates != null && baseCurrency != null) {
+            summaries.mapValues { (currency, summary) ->
+                CurrencyService.convertFinancialSummaryToBase(summary, currency, baseCurrency, exchangeRates)
+            }
+        } else {
+            summaries
+        }
+        FinancialMetrics(
+            key = tag,
+            metrics = FinancialSummary.aggregate(convertedSummaries.values),
+            currencyBreakdown = summaries
+        )
+    }.sortedByDescending { it.totalAmount.abs() }
 }
-
-// ==================== Composite Breakdown Methods ====================
-
-fun List<Transaction>.breakdownByAccountForCurrency(currency: String): List<AccountBreakdown> =
-    filter { it.currency == currency }.breakdownByAccount()
-
-fun List<Transaction>.breakdownByCurrencyForAccount(accountId: String): List<CurrencyBreakdown> =
-    filter { it.accountId == accountId }.breakdownByCurrency()
-
-fun List<Transaction>.breakdownByCategoryForAccount(
-    accountId: String,
-    exchangeRates: ExchangeRateSnapshot? = null,
-    baseCurrency: String? = null
-): List<CategoryBreakdown> =
-    filter { it.accountId == accountId }.breakdownByCategory(exchangeRates, baseCurrency)
-
-fun List<Transaction>.breakdownByCategoryAndAccount(accounts: List<Account>): Map<String, List<AccountBreakdown>> =
-    groupBy { it.categoryId.toString() }.mapValues { (_, txs) -> txs.breakdownByAccount() }
-
-fun List<Transaction>.breakdownByAccountAndCategory(): Map<String, List<CategoryBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByCategory() }
-
-fun List<Transaction>.breakdownByAccountAndCurrency(): Map<String, List<CurrencyBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByCurrency() }
-
-fun List<Transaction>.breakdownByCurrencyAndAccount(): Map<String, List<AccountBreakdown>> =
-    groupBy { it.currency }.mapValues { (_, txs) -> txs.breakdownByAccount() }
-
-fun List<Transaction>.breakdownByAccountAndDate(): Map<String, List<DateBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByDate() }
-
-fun List<Transaction>.breakdownByAccountAndMonth(): Map<String, List<MonthBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByMonth() }
-
-fun List<Transaction>.breakdownByAccountAndTransactionType(): Map<String, List<TransactionTypeBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByTransactionType() }
-
-fun List<Transaction>.breakdownByAccountAndPaymentMethod(): Map<String, List<PaymentMethodBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByPaymentMethod() }
-
-fun List<Transaction>.breakdownByAccountAndStatus(): Map<String, List<StatusBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByStatus() }
-
-fun List<Transaction>.breakdownByAccountAndTags(): Map<String, List<TagBreakdown>> =
-    filter { it.accountId != null }.groupBy { it.accountId!! }.mapValues { (_, txs) -> txs.breakdownByTags() }

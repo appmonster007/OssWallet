@@ -408,23 +408,7 @@ class AccountEntryViewModel @Inject constructor(
                     profileId
                 )
                 s.pendingAdjustmentDeltas.forEach { (currency, delta) ->
-                    if (delta.signum() != 0) {
-                        val absAmount = delta.abs()
-                        transactionRepository.insertTransaction(
-                            Transaction(
-                                name = "Balance Adjustment",
-                                accountId = s.accountId!!,
-                                amount = if (delta.signum() > 0) absAmount else absAmount.negate(),
-                                timestamp = System.currentTimeMillis(),
-                                currency = currency,
-                                categoryId = Category.SYSTEM_TRANSFER,
-                                transactionType = if (delta.signum() > 0) TransactionType.TRANSFER_INFLOW
-                                else TransactionType.TRANSFER_OUTFLOW,
-                                note = "Balance adjustment"
-                            ),
-                            profileId
-                        )
-                    }
+                    accountUseCases.createBalanceAdjustment(s.accountId!!, currency, delta, profileId)
                 }
                 s.allowedCurrencies.forEach { currency ->
                     val signed =

@@ -17,6 +17,7 @@ import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
 import com.osscabinet.ossWallet.domain.repository.WebServerRepository
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.http.HttpStatusCode
@@ -67,7 +68,8 @@ class WebServerManager @Inject constructor(
     private val cardComputerRegistry: CardComputerRegistry,
     private val templateRepository: TemplateRepository,
     private val transactionManager: TransactionManager,
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val accountUseCases: AccountUseCases
 ) : WebServerRepository {
 
     private val _serverState = MutableStateFlow<WebServerState>(WebServerState.Stopped)
@@ -130,7 +132,8 @@ class WebServerManager @Inject constructor(
             cardComputerRegistry = cardComputerRegistry,
             templateRepository = templateRepository,
             transactionManager = transactionManager,
-            transactionUseCases = transactionUseCases
+            transactionUseCases = transactionUseCases,
+            accountUseCases = accountUseCases
         )
 
         try {

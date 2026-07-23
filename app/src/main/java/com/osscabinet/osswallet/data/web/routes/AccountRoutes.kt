@@ -4,14 +4,14 @@ import com.osscabinet.ossWallet.data.web.AuthSessionManager
 import com.osscabinet.ossWallet.data.web.authenticate
 import com.osscabinet.ossWallet.data.web.dto.*
 import com.osscabinet.ossWallet.data.web.toDto
-import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
-import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionType
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
 import com.osscabinet.ossWallet.domain.repository.CategoryRepository
 import com.osscabinet.ossWallet.domain.repository.SettingsRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -24,7 +24,8 @@ fun Route.accountRoutes(
     accountRepository: AccountRepository,
     transactionRepository: TransactionRepository,
     settingsRepository: SettingsRepository,
-    categoryRepository: CategoryRepository
+    categoryRepository: CategoryRepository,
+    accountUseCases: AccountUseCases
 ) {
     route("/accounts") {
         get {
@@ -38,13 +39,7 @@ fun Route.accountRoutes(
                 val txByAccount = allTransactions.groupBy { it.accountId }
                 val dtos = accounts.map { account ->
                     val txs = txByAccount[account.id] ?: emptyList()
-                    val balance = txs.fold(BigDecimal.ZERO) { acc, tx ->
-                        when (tx.transactionType) {
-                            TransactionType.INCOME -> acc + tx.amount
-                            TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                        }
-                    }
+                    val balance = txs.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
                     val income = txs.filter { it.transactionType == TransactionType.INCOME }
                         .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
                     val expense = txs.filter { it.transactionType == TransactionType.EXPENSE }
@@ -55,13 +50,7 @@ fun Route.accountRoutes(
                         .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
                     val distribution = txs.groupBy { it.currency }
                         .mapValues { (_, cTxs) ->
-                            cTxs.fold(BigDecimal.ZERO) { a, tx ->
-                                when (tx.transactionType) {
-                                    TransactionType.INCOME -> a + tx.amount
-                                    TransactionType.EXPENSE -> a - tx.amount
-                                    TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> a + tx.amount
-                                }
-                            }.toDouble()
+                            cTxs.fold(BigDecimal.ZERO) { a, tx -> a + tx.amount }.toDouble()
                         }.filter { it.value != 0.0 }
                     AccountDto(
                         id = account.id,
@@ -94,46 +83,26 @@ fun Route.accountRoutes(
             try {
                 val profileId = settingsRepository.currentProfileId.first()
                 val req = call.receive<CreateAccountRequest>()
-                val account = Account(
-                    id = java.util.UUID.randomUUID().toString(),
+                val accountId = accountUseCases.createAccountWithInitialBalances(
                     name = req.name,
-                    currencyCode = req.currencyCode,
+                    initialBalances = if (req.initialBalance != null && req.initialBalance != 0.0)
+                        mapOf(req.currencyCode to req.initialBalance.toString()) else emptyMap(),
+                    currency = req.currencyCode,
                     structureType = AccountStructureType.fromString(req.structureType),
                     colorHex = req.colorHex,
                     icon = req.icon,
-                    allowedCurrencies = req.allowedCurrencies
+                    allowedCurrencies = req.allowedCurrencies,
+                    profileId = profileId
                 )
-                accountRepository.insertAccount(account, profileId)
-                if (req.initialBalance != null && req.initialBalance != 0.0) {
-                    val initTx = Transaction(
-                        name = "Initial Balance",
-                        amount = BigDecimal.valueOf(kotlin.math.abs(req.initialBalance)),
-                        currency = account.currencyCode,
-                        transactionType = if (req.initialBalance >= 0) TransactionType.INCOME else TransactionType.EXPENSE,
-                        accountId = account.id,
-                        categoryId = 0L,
-                        timestamp = System.currentTimeMillis()
-                    )
-                    transactionRepository.insertTransaction(initTx, profileId)
-                }
-                val allTransactions =
-                    transactionRepository.getAllTransactionsSync(profileId)
-                val balance = allTransactions.filter { it.accountId == account.id }
-                    .fold(BigDecimal.ZERO) { acc, tx ->
-                        when (tx.transactionType) {
-                            TransactionType.INCOME -> acc + tx.amount
-                            TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                        }
-                    }
+
                 call.respond(
                     HttpStatusCode.Created, ApiResponse(
                         success = true, data = AccountDto(
-                            id = account.id,
-                            name = account.name,
-                            currency = account.currencyCode,
-                            balance = balance.toDouble(),
-                            type = account.structureType.name
+                            id = accountId,
+                            name = req.name,
+                            currency = req.currencyCode,
+                            balance = req.initialBalance ?: 0.0,
+                            type = req.structureType
                         )
                     )
                 )
@@ -158,13 +127,7 @@ fun Route.accountRoutes(
                     ?: return@get call.respond(HttpStatusCode.NotFound, ApiResponse<Unit>(success = false, error = "Account not found"))
                 val allTransactions = transactionRepository.getAllTransactionsSync(profileId)
                 val txForAccount = allTransactions.filter { it.accountId == account.id }
-                val balance = txForAccount.fold(BigDecimal.ZERO) { acc, tx ->
-                    when (tx.transactionType) {
-                        TransactionType.INCOME -> acc + tx.amount
-                        TransactionType.EXPENSE -> acc - tx.amount
-                        TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                    }
-                }
+                val balance = txForAccount.fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
                 val income = txForAccount.filter { it.transactionType == TransactionType.INCOME }
                     .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
                 val expense = txForAccount.filter { it.transactionType == TransactionType.EXPENSE }
@@ -175,13 +138,7 @@ fun Route.accountRoutes(
                     .fold(BigDecimal.ZERO) { a, tx -> a + tx.amount.abs() }
                 val distribution = txForAccount.groupBy { it.currency }
                     .mapValues { (_, cTxs) ->
-                        cTxs.fold(BigDecimal.ZERO) { a, tx ->
-                            when (tx.transactionType) {
-                                TransactionType.INCOME -> a + tx.amount
-                                TransactionType.EXPENSE -> a - tx.amount
-                                TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> a + tx.amount
-                            }
-                        }.toDouble()
+                        cTxs.fold(BigDecimal.ZERO) { a, tx -> a + tx.amount }.toDouble()
                     }.filter { it.value != 0.0 }
                 val categoryMap = categoryRepository.getAllCategoriesSync().associateBy { it.id }
                 val accountMap = accountRepository.getAllAccountsSync(profileId).associateBy { it.id }
@@ -232,13 +189,7 @@ fun Route.accountRoutes(
                 val allTransactions =
                     transactionRepository.getAllTransactionsSync(profileId)
                 val balance = allTransactions.filter { it.accountId == updated.id }
-                    .fold(BigDecimal.ZERO) { acc, tx ->
-                        when (tx.transactionType) {
-                            TransactionType.INCOME -> acc + tx.amount
-                            TransactionType.EXPENSE -> acc - tx.amount
-                            TransactionType.TRANSFER_INFLOW, TransactionType.TRANSFER_OUTFLOW -> acc + tx.amount
-                        }
-                    }
+                    .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }
                 call.respond(
                     ApiResponse(
                         success = true, data = AccountDto(

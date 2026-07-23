@@ -214,11 +214,12 @@ object TransactionEntryService {
     }
 
     /**
-     * Calculates the signed amount based on entry mode.
-     * Managed by TransactionManager for transfers, but needed for normal transactions.
+     * Returns the absolute magnitude of the amount for a TransactionRequest.
+     * Note: TransactionRequest is magnitude-based; the manager
+     * handles database-specific signing (negative for outflows) automatically.
      */
-    fun getSignedAmount(amount: BigDecimal, entryMode: EntryMode): BigDecimal {
-        return if (entryMode == EntryMode.INCOME) amount.abs() else amount.abs().negate()
+    fun getMagnitude(amount: BigDecimal): BigDecimal {
+        return amount.abs()
     }
 
     /**
@@ -275,7 +276,7 @@ object TransactionEntryService {
 
         return TransactionRequest(
             name = name,
-            amount = getSignedAmount(amount, entryMode),
+            amount = getMagnitude(amount),
             entryMode = entryMode,
             accountId = sourceAccount.toDbTransferSide(),
             currency = finalSourceCurrency,

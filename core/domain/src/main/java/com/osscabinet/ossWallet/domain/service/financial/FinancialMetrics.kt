@@ -192,32 +192,6 @@ data class CurrencyBreakdown(
 }
 
 /**
- * Complete breakdown of income and expense transactions with currency sub-grouping.
- * Uses FinancialSummary for totals to maintain DRY principle.
- */
-data class IncomeExpenseBreakdown(
-    val metrics: FinancialSummary,
-    val incomeTransactions: List<Transaction>,
-    val expenseTransactions: List<Transaction>,
-    val incomeCurrencyBreakdown: Map<String, FinancialSummary>,
-    val expenseCurrencyBreakdown: Map<String, FinancialSummary>
-) {
-    companion object {
-        fun empty() = IncomeExpenseBreakdown(
-            metrics = FinancialSummary.EMPTY,
-            incomeTransactions = emptyList(),
-            expenseTransactions = emptyList(),
-            incomeCurrencyBreakdown = emptyMap(),
-            expenseCurrencyBreakdown = emptyMap()
-        )
-    }
-
-    // Convenience accessors
-    val netFlow: BigDecimal get() = metrics.netFlow
-    val transactionCount: Int get() = metrics.transactionCount
-}
-
-/**
  * Generic label group with transactions and currency breakdown.
  * Unlike other breakdown types, this includes the actual transactions in each group.
  * Used by breakdownByLabel for custom label-based breakdowns.

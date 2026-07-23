@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 
 class TransactionManager(
-    private val transactionUseCases: TransactionUseCases,
+    internal val transactionUseCases: TransactionUseCases,
     private val plannedPaymentRepository: PlannedPaymentRepository,
     private val widgetRefreshTrigger: WidgetRefreshTrigger
 ) {
@@ -73,7 +73,7 @@ class TransactionManager(
                 val amount = split.amount.toBigDecimalOrNull() ?: BigDecimal.ZERO
                 val request = baseRequest.copy(
                     name = categoryNameLookup(split.categoryId ?: baseRequest.categoryId),
-                    amount = if (baseRequest.entryMode == EntryMode.INCOME) amount else amount.negate(),
+                    amount = TransactionEntryService.getMagnitude(amount),
                     categoryId = split.categoryId ?: baseRequest.categoryId,
                     note = split.note
                 )
@@ -392,7 +392,10 @@ class TransactionManager(
             accountId = accountId,
             categoryId = categoryId
         )).copy(
-            amount = TransactionEntryService.getSignedAmount(amount, entryMode),
+            amount = when (entryMode) {
+                EntryMode.INCOME -> amount.abs()
+                EntryMode.EXPENSE, EntryMode.TRANSFER -> amount.abs().negate()
+            },
             transactionType = defaultType,
             accountId = accountId,
             currency = currency,

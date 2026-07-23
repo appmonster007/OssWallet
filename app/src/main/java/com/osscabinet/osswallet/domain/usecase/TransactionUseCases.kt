@@ -185,6 +185,14 @@ class TransactionUseCases(
         )
     }
 
+    suspend fun getInitialBalanceTransaction(
+        accountId: String,
+        currency: String,
+        profileId: Int
+    ): Transaction? {
+        return repository.getInitialBalanceTransaction(accountId, currency, profileId)
+    }
+
     suspend fun <T> runAtomically(block: suspend () -> T): T =
         repository.runAtomically(block)
 }

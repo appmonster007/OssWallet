@@ -40,7 +40,7 @@ class PlannedPaymentWorker(
 
         due.filter { it.status == PlannedPaymentStatus.ACTIVE }.forEach { payment ->
             if (payment.autoConfirm) {
-                val amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode)
+                val amount = TransactionEntryService.getMagnitude(payment.amount)
 
                 val request = TransactionRequest(
                     name = allCategories.find { it.id == payment.categoryId }?.name

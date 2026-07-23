@@ -11,7 +11,6 @@ import com.osscabinet.ossWallet.domain.service.currency.ExchangeRateSnapshot
 import com.osscabinet.ossWallet.domain.service.financial.CategoryTreeMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialMetrics
 import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
-import com.osscabinet.ossWallet.domain.service.financial.IncomeExpenseBreakdown
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -20,8 +19,6 @@ import java.math.RoundingMode
  * Focused on base calculations and summary generation.
  */
 object AggregationService {
-
-    val EMPTY_SUMMARY = FinancialSummary.EMPTY
 
     /**
      * Calculates the total balance for an account in its target currency.
@@ -32,8 +29,12 @@ object AggregationService {
         accountCurrency: String,
         exchangeRates: ExchangeRateSnapshot
     ): BigDecimal {
-        val accountTransactions = allTransactions.filter { it.accountId == accountId }
-        val totalsByCurrency = calculateTotalByCurrency(accountTransactions)
+        val totalsByCurrency = mutableMapOf<String, BigDecimal>()
+        for (tx in allTransactions) {
+            if (tx.accountId == accountId) {
+                totalsByCurrency[tx.currency] = (totalsByCurrency[tx.currency] ?: BigDecimal.ZERO).add(tx.amount)
+            }
+        }
         return CurrencyService.calculateTotalInCurrency(
             totalsByCurrency,
             accountCurrency,
@@ -53,11 +54,8 @@ object AggregationService {
         if (transactions.isEmpty()) return CashFlowResult.empty()
 
         val summariesByCurrency = calculateSummaryByCurrency(transactions)
-        
-        val allCurrencies = summariesByCurrency.keys.distinct().sorted()
 
-        val cashFlowBreakdown = allCurrencies.map { curr ->
-            val summary = summariesByCurrency[curr] ?: FinancialSummary.EMPTY
+        val cashFlowBreakdown = summariesByCurrency.map { (curr, summary) ->
             val metricsInBase = CurrencyService.convertFinancialSummaryToBase(
                 summary, curr, baseCurrency, exchangeRates
             ).setScale(precision)
@@ -67,7 +65,7 @@ object AggregationService {
                 metrics = summary.setScale(precision),
                 metricsInBase = metricsInBase
             )
-        }
+        }.sortedBy { it.currency }
 
         val totalMetricsInBase = cashFlowBreakdown.fold(FinancialSummary.EMPTY) { acc, item ->
             acc + item.metricsInBase
@@ -106,94 +104,37 @@ object AggregationService {
     }
 
     /**
-     * Calculates summary metrics for a list of transactions using a single-pass loop.
-     */
-    fun calculateTransactionSummary(transactions: List<Transaction>): FinancialSummary {
-        if (transactions.isEmpty()) return EMPTY_SUMMARY
-
-        var income = BigDecimal.ZERO
-        var expense = BigDecimal.ZERO
-        var transferIn = BigDecimal.ZERO
-        var transferOut = BigDecimal.ZERO
-
-        for (tx in transactions) {
-            when (tx.transactionType) {
-                TransactionType.INCOME -> income = income.add(tx.amount)
-                TransactionType.EXPENSE -> expense = expense.add(tx.amount)
-                TransactionType.TRANSFER_INFLOW -> transferIn = transferIn.add(tx.amount)
-                TransactionType.TRANSFER_OUTFLOW -> transferOut = transferOut.add(tx.amount)
-            }
-        }
-
-        return FinancialSummary(
-            income = income,
-            expense = expense,
-            transferIn = transferIn,
-            transferOut = transferOut,
-            transactionCount = transactions.size
-        )
-    }
-
-    /**
      * Calculates transaction summary grouped by currency using a single-pass loop.
      */
     fun calculateSummaryByCurrency(transactions: List<Transaction>): Map<String, FinancialSummary> {
         val result = mutableMapOf<String, FinancialSummary>()
-        
+
         for (tx in transactions) {
             val curr = tx.currency
             val current = result[curr] ?: FinancialSummary.EMPTY
-            
+
             val updated = when (tx.transactionType) {
-                TransactionType.INCOME -> current.copy(income = current.income.add(tx.amount), transactionCount = current.transactionCount + 1)
-                TransactionType.EXPENSE -> current.copy(expense = current.expense.add(tx.amount), transactionCount = current.transactionCount + 1)
-                TransactionType.TRANSFER_INFLOW -> current.copy(transferIn = current.transferIn.add(tx.amount), transactionCount = current.transactionCount + 1)
-                TransactionType.TRANSFER_OUTFLOW -> current.copy(transferOut = current.transferOut.add(tx.amount), transactionCount = current.transactionCount + 1)
+                TransactionType.INCOME -> current.copy(
+                    income = current.income.add(tx.amount),
+                    transactionCount = current.transactionCount + 1
+                )
+                TransactionType.EXPENSE -> current.copy(
+                    expense = current.expense.add(tx.amount),
+                    transactionCount = current.transactionCount + 1
+                )
+                TransactionType.TRANSFER_INFLOW -> current.copy(
+                    transferIn = current.transferIn.add(tx.amount),
+                    transactionCount = current.transactionCount + 1
+                )
+                TransactionType.TRANSFER_OUTFLOW -> current.copy(
+                    transferOut = current.transferOut.add(tx.amount),
+                    transactionCount = current.transactionCount + 1
+                )
             }
             result[curr] = updated
         }
-        
+
         return result
-    }
-
-    /**
-     * Calculates total transaction amounts by currency.
-     */
-    fun calculateTotalByCurrency(transactions: List<Transaction>): Map<String, BigDecimal> =
-        transactions.groupBy { it.currency }.mapValues { (_, txs) -> txs.sumOf { it.amount } }
-
-    /**
-     * Calculates income and expense breakdown with currency sub-grouping.
-     */
-    fun calculateIncomeExpenseBreakdown(
-        transactions: List<Transaction>,
-        exchangeRates: ExchangeRateSnapshot? = null,
-        baseCurrency: String? = null
-    ): IncomeExpenseBreakdown {
-        if (transactions.isEmpty()) return IncomeExpenseBreakdown.empty()
-
-        val summariesByCurrency = calculateSummaryByCurrency(transactions)
-        
-        val incomeCurrencyBreakdown = summariesByCurrency.mapValues { (_, s) -> 
-            s.copy(expense = BigDecimal.ZERO, transferIn = BigDecimal.ZERO, transferOut = BigDecimal.ZERO)
-        }
-        val expenseCurrencyBreakdown = summariesByCurrency.mapValues { (_, s) -> 
-            s.copy(income = BigDecimal.ZERO, transferIn = BigDecimal.ZERO, transferOut = BigDecimal.ZERO)
-        }
-
-        val totalMetrics = if (exchangeRates != null && baseCurrency != null) {
-            CurrencyService.calculateTotalInBaseCurrency(summariesByCurrency, baseCurrency, exchangeRates)
-        } else {
-            summariesByCurrency.values.fold(FinancialSummary.EMPTY) { acc, s -> acc + s }
-        }
-
-        return IncomeExpenseBreakdown(
-            metrics = totalMetrics,
-            incomeTransactions = transactions.filter { it.transactionType == TransactionType.INCOME },
-            expenseTransactions = transactions.filter { it.transactionType == TransactionType.EXPENSE },
-            incomeCurrencyBreakdown = incomeCurrencyBreakdown,
-            expenseCurrencyBreakdown = expenseCurrencyBreakdown
-        )
     }
 
     /**
@@ -349,7 +290,7 @@ object AggregationService {
                         )
                     )
                 }
-                combinedChildren.addAll(actualChildrenData)
+                combinedEntities(combinedChildren, actualChildrenData)
             }
 
             combinedChildren.sortByDescending { it.netBalance.abs() }
@@ -383,7 +324,14 @@ object AggregationService {
 
         return allCategories.filter { it.parentId == null }
             .mapNotNull { buildSubTree(it.id) }
-            .filter { it.netBalance.signum() != 0 || it.subcategoryData.isNotEmpty() || (it.previousNetBalance?.signum() ?: 0 != 0) }
+            .filter {
+                it.netBalance.signum() != 0 || it.subcategoryData.isNotEmpty() || ((it.previousNetBalance?.signum()
+                    ?: 0) != 0)
+            }
             .sortedByDescending { it.netBalance.abs() }
+    }
+
+    private fun combinedEntities(target: MutableList<CategoryTreeMetrics>, source: List<CategoryTreeMetrics>) {
+        target.addAll(source)
     }
 }

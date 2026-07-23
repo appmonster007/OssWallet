@@ -900,8 +900,10 @@ class CsvImportServiceImpl @Inject constructor(
                         ?: categoryMap[unresolvedCategoryName(row).lowercase()]
                         ?: Category.SYSTEM_OTHERS
                     val type = detectTransactionType(row)
-                    val finalAmount =
-                        if (type == TransactionType.EXPENSE) amount.abs().negate() else amount.abs()
+                    val finalAmount = when (type) {
+                        TransactionType.EXPENSE, TransactionType.TRANSFER_OUTFLOW -> amount.abs().negate()
+                        else -> amount.abs()
+                    }
                     val warranty = row["warranty_in_month"]?.toIntOrNull()
                         ?.let { timestamp + (it * 2592000000L) }
                     transactionDao.insertTransaction(
@@ -1197,7 +1199,8 @@ class CsvImportServiceImpl @Inject constructor(
                     val cid = existingCats.find { it.name.equals(leaf, ignoreCase = true) }?.id
                         ?: categoryMap[leaf.lowercase()] ?: Category.SYSTEM_OTHERS
                     val isInc = row["income"]?.toBoolean() ?: false
-                    val finalAmount = if (isInc) amount.abs() else amount.abs().negate()
+                    val type = if (isInc) TransactionType.INCOME else TransactionType.EXPENSE
+                    val finalAmount = if (type == TransactionType.INCOME) amount.abs() else amount.abs().negate()
                     val tags = resolveTagIds(
                         if (row["type"]?.contains(
                                 "repetitive",
@@ -1349,8 +1352,10 @@ class CsvImportServiceImpl @Inject constructor(
 
                         else -> TransactionType.EXPENSE
                     }
-                    val finalAmount =
-                        if (type == TransactionType.INCOME) amount.abs() else amount.abs().negate()
+                    val finalAmount = when (type) {
+                        TransactionType.EXPENSE, TransactionType.TRANSFER_OUTFLOW -> amount.abs().negate()
+                        else -> amount.abs()
+                    }
                     transactionDao.insertTransaction(
                         TransactionEntity(
                             0,

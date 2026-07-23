@@ -92,19 +92,12 @@ class AggregationServiceTest {
             createTransaction(amount = BigDecimal("85"), currency = "EUR")
         )
 
-        val balances = AggregationService.calculateCurrencyBalances(
-            transactions = transactions,
-            baseCurrency = "USD",
-            exchangeRates = exchangeRates
-        )
+        val summaries = AggregationService.calculateSummaryByCurrency(transactions)
+        val usdSummary = summaries["USD"]
+        val eurSummary = summaries["EUR"]
 
-        val usdBalance = balances.find { it.currency == "USD" }
-        val eurBalance = balances.find { it.currency == "EUR" }
-
-        assertEquals(0, BigDecimal("150").compareTo(usdBalance?.amount))
-        assertEquals(0, BigDecimal("150").compareTo(usdBalance?.amountInBase))
-        assertEquals(0, BigDecimal("85").compareTo(eurBalance?.amount))
-        assertEquals(0, BigDecimal("100").compareTo(eurBalance?.amountInBase))
+        assertEquals(0, BigDecimal("150").compareTo(usdSummary?.netFlow))
+        assertEquals(0, BigDecimal("85").compareTo(eurSummary?.netFlow))
     }
 
     @Test

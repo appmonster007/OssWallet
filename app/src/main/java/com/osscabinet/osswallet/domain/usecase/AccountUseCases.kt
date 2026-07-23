@@ -3,16 +3,16 @@ package com.osscabinet.ossWallet.domain.usecase
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
-import com.osscabinet.ossWallet.domain.model.Transaction
-import com.osscabinet.ossWallet.domain.model.TransactionType
+import com.osscabinet.ossWallet.domain.model.EntryMode
+import com.osscabinet.ossWallet.domain.model.dto.TransactionRequest
 import com.osscabinet.ossWallet.domain.repository.AccountRepository
-import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import java.math.BigDecimal
 import java.util.UUID
 
 class AccountUseCases(
     private val accountRepository: AccountRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionManager: TransactionManager
 ) {
     suspend fun deleteAccount(accountId: String, profileId: Int) {
         accountRepository.deleteAccount(accountId, profileId)
@@ -27,7 +27,7 @@ class AccountUseCases(
         icon: String,
         allowedCurrencies: List<String>,
         profileId: Int
-    ) {
+    ): String {
         val accountId = UUID.randomUUID().toString()
         accountRepository.insertAccount(
             Account(
@@ -44,23 +44,43 @@ class AccountUseCases(
 
         initialBalances.forEach { (curr, balance) ->
             val amount = balance.toBigDecimalOrNull() ?: BigDecimal.ZERO
-            if (amount.compareTo(BigDecimal.ZERO) != 0) {
-                val isInflow = amount.signum() >= 0
-                transactionRepository.insertTransaction(
-                    Transaction(
-                        name = "Initial Balance",
-                        accountId = accountId,
-                        amount = amount,
-                        currency = curr,
-                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
-                        note = "Initial Balance",
-                        timestamp = System.currentTimeMillis(),
-                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
-                    ),
-                    profileId
+            if (amount.signum() != 0) {
+                val entryMode = if (amount.signum() >= 0) EntryMode.INCOME else EntryMode.EXPENSE
+                val request = TransactionRequest(
+                    name = "Initial Balance",
+                    amount = amount.abs(),
+                    entryMode = entryMode,
+                    accountId = accountId,
+                    currency = curr,
+                    categoryId = Category.SYSTEM_INITIAL_BALANCE,
+                    note = "Initial Balance",
+                    timestamp = System.currentTimeMillis()
                 )
+                transactionManager.handleSaveTransaction(null, request, profileId)
             }
         }
+        return accountId
+    }
+
+    suspend fun createBalanceAdjustment(
+        accountId: String,
+        currency: String,
+        delta: BigDecimal,
+        profileId: Int
+    ) {
+        if (delta.signum() == 0) return
+        val entryMode = if (delta.signum() > 0) EntryMode.INCOME else EntryMode.EXPENSE
+        val request = TransactionRequest(
+            name = "Balance Adjustment",
+            amount = delta.abs(),
+            entryMode = entryMode,
+            accountId = accountId,
+            currency = currency,
+            categoryId = Category.SYSTEM_TRANSFER,
+            note = "Balance adjustment",
+            timestamp = System.currentTimeMillis()
+        )
+        transactionManager.handleSaveTransaction(null, request, profileId)
     }
 
     suspend fun upsertInitialBalance(
@@ -69,37 +89,28 @@ class AccountUseCases(
         amount: BigDecimal,
         profileId: Int
     ) {
-        val existing = transactionRepository.getInitialBalanceTransaction(accountId, currency, profileId)
+        val existing = transactionManager.transactionUseCases.getInitialBalanceTransaction(
+            accountId,
+            currency,
+            profileId
+        )
         when {
-            amount.compareTo(BigDecimal.ZERO) == 0 && existing != null ->
-                transactionRepository.deleteTransaction(existing.id, profileId)
-            amount.compareTo(BigDecimal.ZERO) != 0 && existing != null -> {
-                val isInflow = amount.signum() >= 0
-                transactionRepository.updateTransaction(
-                    existing,
-                    existing.copy(
-                        amount = amount,
-                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
-                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
-                    ),
-                    profileId
+            amount.signum() == 0 && existing != null ->
+                transactionManager.deleteTransaction(existing.id, profileId)
+
+            amount.signum() != 0 -> {
+                val entryMode = if (amount.signum() >= 0) EntryMode.INCOME else EntryMode.EXPENSE
+                val request = TransactionRequest(
+                    name = "Initial Balance",
+                    amount = amount.abs(),
+                    entryMode = entryMode,
+                    accountId = accountId,
+                    currency = currency,
+                    categoryId = Category.SYSTEM_INITIAL_BALANCE,
+                    note = "Initial Balance",
+                    timestamp = System.currentTimeMillis()
                 )
-            }
-            amount.compareTo(BigDecimal.ZERO) != 0 -> {
-                val isInflow = amount.signum() >= 0
-                transactionRepository.insertTransaction(
-                    Transaction(
-                        name = "Initial Balance",
-                        accountId = accountId,
-                        amount = amount,
-                        currency = currency,
-                        categoryId = Category.SYSTEM_INITIAL_BALANCE,
-                        note = "Initial Balance",
-                        timestamp = System.currentTimeMillis(),
-                        transactionType = if (isInflow) TransactionType.TRANSFER_INFLOW else TransactionType.TRANSFER_OUTFLOW
-                    ),
-                    profileId
-                )
+                transactionManager.handleSaveTransaction(existing, request, profileId)
             }
         }
     }

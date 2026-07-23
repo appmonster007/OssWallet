@@ -6,6 +6,7 @@ import com.osscabinet.ossWallet.data.web.routes.*
 import com.osscabinet.ossWallet.domain.card.CardComputerRegistry
 import com.osscabinet.ossWallet.domain.repository.*
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
+import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -33,7 +34,8 @@ class WebApiRoutes(
     private val cardComputerRegistry: CardComputerRegistry,
     private val templateRepository: TemplateRepository,
     private val transactionManager: TransactionManager,
-    private val transactionUseCases: TransactionUseCases
+    private val transactionUseCases: TransactionUseCases,
+    private val accountUseCases: AccountUseCases
 ) {
     fun Application.installRoutes() {
         routing {
@@ -108,7 +110,8 @@ class WebApiRoutes(
                     accountRepository,
                     transactionRepository,
                     settingsRepository,
-                    categoryRepository
+                    categoryRepository,
+                    accountUseCases
                 )
                 transactionRoutes(
                     authSessionManager,
@@ -136,7 +139,6 @@ class WebApiRoutes(
                 plannedPaymentRoutes(
                     authSessionManager,
                     plannedPaymentRepository,
-                    transactionRepository,
                     accountRepository,
                     categoryRepository,
                     settingsRepository,

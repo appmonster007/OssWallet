@@ -217,7 +217,7 @@ fun Route.transactionRoutes(
 
                 val domainRequest = TransactionRequest(
                     name = req.name,
-                    amount = TransactionEntryService.getSignedAmount(BigDecimal.valueOf(req.amount), txType),
+                    amount = TransactionEntryService.getMagnitude(BigDecimal.valueOf(req.amount)),
                     timestamp = req.timestamp,
                     currency = req.currency,
                     entryMode = txType,
@@ -333,7 +333,7 @@ fun Route.transactionRoutes(
 
                 val domainRequest = TransactionRequest(
                     name = req.name ?: old.name,
-                    amount = req.amount?.let { TransactionEntryService.getSignedAmount(BigDecimal.valueOf(it), txType) } ?: old.amount,
+                    amount = req.amount?.let { TransactionEntryService.getMagnitude(BigDecimal.valueOf(it)) } ?: old.amount,
                     timestamp = req.timestamp ?: old.timestamp,
                     currency = req.currency ?: old.currency,
                     entryMode = txType,
@@ -460,32 +460,34 @@ fun Route.transactionRoutes(
             val year = cal.get(Calendar.YEAR)
             val month = cal.get(Calendar.MONTH) + 1
 
-            val monthlyTx = allTransactions.filter { tx ->
-                val txCal =
-                    Calendar.getInstance().also { it.timeInMillis = tx.timestamp }
-                txCal.get(Calendar.YEAR) == year && txCal.get(Calendar.MONTH) + 1 == month
-            }
+            var netWorthSum = BigDecimal.ZERO
+            var monthlyIncome = BigDecimal.ZERO
+            var monthlyExpenses = BigDecimal.ZERO
 
-                val netWorth = accounts.sumOf { account ->
-                    allTransactions
-                        .filter { it.accountId == account.id }
-                        .fold(BigDecimal.ZERO) { acc, tx -> acc + tx.amount }.toDouble()
+            val targetAccountIds = accounts.map { it.id }.toSet()
+
+            for (tx in allTransactions) {
+                if (tx.accountId in targetAccountIds) {
+                    netWorthSum = netWorthSum.add(tx.amount)
                 }
 
-            val income = monthlyTx
-                .filter { it.transactionType == TransactionType.INCOME }
-                .sumOf { it.amount.toDouble() }
-            val expenses = monthlyTx
-                .filter { it.transactionType == TransactionType.EXPENSE }
-                .sumOf { it.amount.toDouble() }
+                val txCal = Calendar.getInstance().also { it.timeInMillis = tx.timestamp }
+                if (txCal.get(Calendar.YEAR) == year && txCal.get(Calendar.MONTH) + 1 == month) {
+                    when (tx.transactionType) {
+                        TransactionType.INCOME -> monthlyIncome = monthlyIncome.add(tx.amount)
+                        TransactionType.EXPENSE -> monthlyExpenses = monthlyExpenses.add(tx.amount)
+                        else -> {}
+                    }
+                }
+            }
 
             call.respond(
                 ApiResponse(
                     success = true,
                     data = MonthlySummaryDto(
-                        netWorth = netWorth,
-                        monthlyIncome = income,
-                        monthlyExpenses = expenses,
+                        netWorth = netWorthSum.toDouble(),
+                        monthlyIncome = monthlyIncome.toDouble(),
+                        monthlyExpenses = monthlyExpenses.toDouble(),
                         month = "$year-${month.toString().padStart(2, '0')}"
                     )
                 )

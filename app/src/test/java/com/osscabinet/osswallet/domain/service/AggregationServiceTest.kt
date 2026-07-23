@@ -78,9 +78,9 @@ class AggregationServiceTest {
         // Income: 100 (USD) + 200 (from EUR) = 300
         // Expense: 50 (USD) + 100 (from EUR) = 150
         // Net: 300 - 150 = 150
-        assertEquals("Income should be 300", 0, BigDecimal("300.00").compareTo(result.totalIncomeInBase))
-        assertEquals("Expense should be 150 (abs)", 0, BigDecimal("150.00").abs().compareTo(result.totalExpensesInBase.abs()))
-        assertEquals("Net should be 150", 0, BigDecimal("150.00").compareTo(result.netInBase))
+        assertEquals("Income should be 300", 0, BigDecimal("300.00").compareTo(result.metricsInBase.income))
+        assertEquals("Expense should be 150 (abs)", 0, BigDecimal("150.00").abs().compareTo(result.metricsInBase.expense.abs()))
+        assertEquals("Net should be 150", 0, BigDecimal("150.00").compareTo(result.metricsInBase.netFlow))
         assertEquals(2, result.breakdown.size)
     }
 
@@ -169,13 +169,13 @@ class AggregationServiceTest {
 
         // Root "Food" should have total of 50 + 100 = 150
         val foodRoot = tree.find { it.category == "Food" }
-        assertEquals(0, BigDecimal("150").compareTo(foodRoot?.expense?.abs()))
+        assertEquals(0, BigDecimal("150").compareTo(foodRoot?.metrics?.expense?.abs()))
         assertEquals(2, foodRoot?.subcategoryData?.size)
         // First subcategory is "Groceries" (100 in base)
         assertEquals("Groceries", foodRoot?.subcategoryData?.get(0)?.category)
-        assertEquals(0, BigDecimal("100").compareTo(foodRoot?.subcategoryData?.get(0)?.expense?.abs()))
+        assertEquals(0, BigDecimal("100").compareTo(foodRoot?.subcategoryData?.get(0)?.metrics?.expense?.abs()))
         // Second subcategory is pseudo-child for direct "Food" transactions (50 in base)
         assertEquals("Food", foodRoot?.subcategoryData?.get(1)?.category)
-        assertEquals(0, BigDecimal("50").compareTo(foodRoot?.subcategoryData?.get(1)?.expense?.abs()))
+        assertEquals(0, BigDecimal("50").compareTo(foodRoot?.subcategoryData?.get(1)?.metrics?.expense?.abs()))
     }
 }

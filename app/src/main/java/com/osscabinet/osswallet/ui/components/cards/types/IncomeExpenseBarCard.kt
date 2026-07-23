@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.osscabinet.ossWallet.domain.card.CardInput
 import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.IncomeExpenseBarCardConfig
@@ -145,18 +146,17 @@ fun IncomeExpenseBarCard(
                 renderData.buckets.map { p ->
                     var bucketNet = BigDecimal.ZERO
                     if (isCashFlow) {
-                        // In CashFlow mode, p.income is Inflow, p.expense is Outflow.
-                        if (showInflow) bucketNet += p.income
-                        if (showOutflow) bucketNet += p.expense
+                        if (showInflow) bucketNet += p.metrics.inflow
+                        if (showOutflow) bucketNet += p.metrics.outflow
                     } else {
                         // In Accounting mode, we look at individual components.
-                        if (showInc) bucketNet += p.income
-                        if (showExp) bucketNet += p.expense
+                        if (showInc) bucketNet += p.metrics.income
+                        if (showExp) bucketNet += p.metrics.expense
                         if (config.splitTransfers) {
-                            if (showTrfIn) bucketNet += p.transferIn
-                            if (showTrfOut) bucketNet += p.transferOut
+                            if (showTrfIn) bucketNet += p.metrics.transferIn
+                            if (showTrfOut) bucketNet += p.metrics.transferOut
                         } else {
-                            if (showTrf) bucketNet += p.transfer
+                            if (showTrf) bucketNet += p.metrics.transfer
                         }
                     }
                     bucketNet
@@ -218,19 +218,23 @@ fun IncomeExpenseBarCard(
                     var runTrf = BigDecimal.ZERO
                     var runTrfIn = BigDecimal.ZERO
                     var runTrfOut = BigDecimal.ZERO
+                    var runInflow = BigDecimal.ZERO
+                    var runOutflow = BigDecimal.ZERO
                     
                     listOf(AeonBarChartGroup("", emptyList())) + renderData.buckets.map { p ->
-                        runInc += p.income
-                        runExp += p.expense
-                        runTrf += p.transfer
-                        runTrfIn += p.transferIn
-                        runTrfOut += p.transferOut
+                        runInc += p.metrics.income
+                        runExp += p.metrics.expense
+                        runTrf += p.metrics.transfer
+                        runTrfIn += p.metrics.transferIn
+                        runTrfOut += p.metrics.transferOut
+                        runInflow += p.metrics.inflow
+                        runOutflow += p.metrics.outflow
                         
                         val bars = mutableListOf<AeonBarChartBar>()
                         if (isCashFlow) {
                             // Directional View: Inflow and Outflow
-                            if (showInflow && runInc.signum() != 0) bars.add(AeonBarChartBar(runInc, "Inflow", ChartColorGreen))
-                            if (showOutflow && runExp.signum() != 0) bars.add(AeonBarChartBar(runExp, "Outflow", ChartColorRed))
+                            if (showInflow && runInflow.signum() != 0) bars.add(AeonBarChartBar(runInflow, "Inflow", ChartColorGreen))
+                            if (showOutflow && runOutflow.signum() != 0) bars.add(AeonBarChartBar(runOutflow, "Outflow", ChartColorRed))
                         } else {
                             // Detailed Nature View
                             if (showInc && runInc.signum() != 0) bars.add(AeonBarChartBar(runInc, "Income", ChartColorGreen))
@@ -249,16 +253,16 @@ fun IncomeExpenseBarCard(
                         val bars = mutableListOf<AeonBarChartBar>()
                         if (isCashFlow) {
                             // Directional View: Inflow and Outflow
-                            if (showInflow && p.income.signum() != 0) bars.add(AeonBarChartBar(p.income, "Inflow", ChartColorGreen))
-                            if (showOutflow && p.expense.signum() != 0) bars.add(AeonBarChartBar(p.expense, "Outflow", ChartColorRed))
+                            if (showInflow && p.metrics.inflow.signum() != 0) bars.add(AeonBarChartBar(p.metrics.inflow, "Inflow", ChartColorGreen))
+                            if (showOutflow && p.metrics.outflow.signum() != 0) bars.add(AeonBarChartBar(p.metrics.outflow, "Outflow", ChartColorRed))
                         } else {
-                            if (showInc && p.income.signum() != 0) bars.add(AeonBarChartBar(p.income, "Income", ChartColorGreen))
-                            if (showExp && p.expense.signum() != 0) bars.add(AeonBarChartBar(p.expense, "Expense", ChartColorRed))
+                            if (showInc && p.metrics.income.signum() != 0) bars.add(AeonBarChartBar(p.metrics.income, "Income", ChartColorGreen))
+                            if (showExp && p.metrics.expense.signum() != 0) bars.add(AeonBarChartBar(p.metrics.expense, "Expense", ChartColorRed))
                             if (config.splitTransfers) {
-                                if (showTrfIn && p.transferIn.signum() != 0) bars.add(AeonBarChartBar(p.transferIn, "Transfer In", ChartColorOrange))
-                                if (showTrfOut && p.transferOut.signum() != 0) bars.add(AeonBarChartBar(p.transferOut, "Transfer Out", AccentOrange))
+                                if (showTrfIn && p.metrics.transferIn.signum() != 0) bars.add(AeonBarChartBar(p.metrics.transferIn, "Transfer In", ChartColorOrange))
+                                if (showTrfOut && p.metrics.transferOut.signum() != 0) bars.add(AeonBarChartBar(p.metrics.transferOut, "Transfer Out", AccentOrange))
                             } else {
-                                if (showTrf && p.transfer.signum() != 0) bars.add(AeonBarChartBar(p.transfer, "Transfer", ChartColorOrange))
+                                if (showTrf && p.metrics.transfer.signum() != 0) bars.add(AeonBarChartBar(p.metrics.transfer, "Transfer", ChartColorOrange))
                             }
                         }
                         AeonBarChartGroup(p.label, bars)
@@ -486,26 +490,32 @@ fun IncomeExpenseBarCardPreview() {
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
             "Jan",
             0,
-            BigDecimal("5000"),
-            BigDecimal("-3500"),
-            BigDecimal.ZERO,
-            BigDecimal("1500")
+            FinancialSummary(
+                income = BigDecimal("5000"),
+                expense = BigDecimal("-3500"),
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO
+            )
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
             "Feb",
             0,
-            BigDecimal("5200"),
-            BigDecimal("-4000"),
-            BigDecimal.ZERO,
-            BigDecimal("1200")
+            FinancialSummary(
+                income = BigDecimal("5200"),
+                expense = BigDecimal("-4000"),
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO
+            )
         ),
         com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
             "Mar",
             0,
-            BigDecimal("4800"),
-            BigDecimal("-3800"),
-            BigDecimal.ZERO,
-            BigDecimal("1000")
+            FinancialSummary(
+                income = BigDecimal("4800"),
+                expense = BigDecimal("-3800"),
+                transferIn = BigDecimal.ZERO,
+                transferOut = BigDecimal.ZERO
+            )
         )
     )
     val renderData = CardRenderData.IncomeExpenseBar(

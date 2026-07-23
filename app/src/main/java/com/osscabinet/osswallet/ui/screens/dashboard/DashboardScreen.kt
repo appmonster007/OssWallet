@@ -65,6 +65,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardType
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.NetWorthMetrics
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.Account
 import com.osscabinet.ossWallet.domain.model.AccountStructureType
 import com.osscabinet.ossWallet.domain.model.Category
@@ -74,7 +75,6 @@ import com.osscabinet.ossWallet.domain.model.Template
 import com.osscabinet.ossWallet.domain.model.Transaction
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.TransactionStatus
-import com.osscabinet.ossWallet.domain.model.analytics.AccountFlowMetrics
 import com.osscabinet.ossWallet.domain.model.analytics.AccountSummaryItem
 import com.osscabinet.ossWallet.domain.model.analytics.CashFlowResult
 import com.osscabinet.ossWallet.domain.model.settings.AccountsCardConfig
@@ -1190,9 +1190,11 @@ fun DashboardScreenPreview() {
                     currentPeriodMetrics = NetWorthMetrics(
                         netWorth = BigDecimal("12500.00"),
                         cashFlow = CashFlowResult.empty().copy(
-                            totalIncomeInBase = BigDecimal("5000.00"),
-                            totalExpensesInBase = BigDecimal("3000.00"),
-                            netInBase = BigDecimal("2000.00")
+                            metricsInBase = FinancialSummary(
+                                income = BigDecimal("5000.00"),
+                                expense = BigDecimal("-3000.00"), // Expenses should be negative
+                                transactionCount = 10
+                            )
                         )
                     ),
                     currency = "USD"
@@ -1208,9 +1210,10 @@ fun DashboardScreenPreview() {
                             currencyBalances = mapOf("USD" to BigDecimal("12500.00")),
                             balance = BigDecimal("12500.00"),
                             balanceInBase = BigDecimal("12500.00"),
-                            currentPeriodFlow = AccountFlowMetrics(
+                            currentPeriodMetrics = FinancialSummary(
                                 income = BigDecimal("5000.00"),
-                                expense = BigDecimal("3000.00")
+                                expense = BigDecimal("-3000.00"),
+                                transactionCount = 10
                             )
                         )
                     ),

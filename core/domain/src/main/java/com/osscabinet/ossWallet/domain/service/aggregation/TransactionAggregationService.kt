@@ -209,22 +209,15 @@ object TransactionAggregationService {
     internal fun mapToFinancialSummary(data: AggregatedData): FinancialSummary {
         val income = data.metrics["income"] ?: BigDecimal.ZERO
         val expense = data.metrics["expense"] ?: BigDecimal.ZERO
-        val transfer = data.metrics["transfer"] ?: BigDecimal.ZERO
         val transferIn = data.metrics["transferIn"] ?: BigDecimal.ZERO
         val transferOut = data.metrics["transferOut"] ?: BigDecimal.ZERO
-        val crossCcyTransferIn = data.metrics["crossCcyTransferIn"] ?: BigDecimal.ZERO
-        val crossCcyTransferOut = data.metrics["crossCcyTransferOut"] ?: BigDecimal.ZERO
 
         // StandardMetrics uses signed SUM in DB, so income is positive and expense is negative.
         return FinancialSummary(
-            totalAmount = data.metrics["total"] ?: income.add(expense),
             income = income,
             expense = expense,
-            transfer = transfer,
             transferIn = transferIn,
             transferOut = transferOut,
-            crossCcyTransferIn = crossCcyTransferIn,
-            crossCcyTransferOut = crossCcyTransferOut,
             transactionCount = data.count
         )
     }

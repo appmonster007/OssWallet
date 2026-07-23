@@ -27,10 +27,10 @@ function renderAccountsCard(d, baseCur) {
       <div class="stat-value ${cls}" style="font-size: ${gridColumns === 1 ? '1.3rem' : '1.1rem'}">${fmt(acc.balance||0,acc.currency)}</div>
       ${showBase ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">≈ ${fmt(acc.balanceInBase,bCur)}</div>` : ''}
 
-      ${gridColumns < 3 && acc.income != null ? `<div style="font-size:0.75rem;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <span class="amount-income" title="${incLabel}" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['INCOME']})">${incLabel} ${fmt(acc.income||0,acc.currency)}</span>
-        <span class="amount-expense" title="${expLabel}" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['EXPENSE']})">${expLabel} ${fmt(acc.expense||0,acc.currency)}</span>
-        ${hasTransfer?`<span style="color:var(--text-muted)" title="Transfer" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['TRANSFER']})">↔ ${fmt(acc.transfer||0,acc.currency)}</span>`:''}
+      ${gridColumns < 3 && acc.metrics?.income != null ? `<div style="font-size:0.75rem;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="amount-income" title="${incLabel}" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['INCOME']})">${incLabel} ${fmt(acc.metrics.income||0,acc.currency)}</span>
+        <span class="amount-expense" title="${expLabel}" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['EXPENSE']})">${expLabel} ${fmt(acc.metrics.expense||0,acc.currency)}</span>
+        ${hasTransfer?`<span style="color:var(--text-muted)" title="Transfer" style="cursor:pointer" onclick="event.stopPropagation(); navigateWithFilter('${esc(d.cardId)}', {accountIds:['${esc(acc.id)}'], transactionTypes:['TRANSFER']})">↔ ${fmt(acc.metrics.transfer||0,acc.currency)}</span>`:''}
       </div>` : ''}
 
       ${gridColumns === 1 ? `<div style="margin-top:10px;display:flex;gap:6px">

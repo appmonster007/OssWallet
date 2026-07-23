@@ -6,7 +6,5 @@ import kotlinx.serialization.Serializable
 data class CashFlowPointDto(
     val label: String,
     val epochMillis: Long,
-    val income: Double,
-    val expense: Double,
-    val net: Double
+    val metrics: FinancialSummaryDto
 )

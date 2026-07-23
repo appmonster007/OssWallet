@@ -13,93 +13,111 @@ import java.math.BigDecimal
  * Base financial summary with common metrics for transaction calculations.
  * Used as the foundation for other financial data structures.
  */
+@Serializable
 data class FinancialSummary(
-    val totalAmount: BigDecimal,
-    val income: BigDecimal,
-    val expense: BigDecimal,
-    val transfer: BigDecimal,
-    val transactionCount: Int,
+    @Serializable(with = BigDecimalSerializer::class)
+    val income: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val expense: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferIn: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
     val transferOut: BigDecimal = BigDecimal.ZERO,
-    val crossCcyTransferIn: BigDecimal = BigDecimal.ZERO,
-    val crossCcyTransferOut: BigDecimal = BigDecimal.ZERO,
+    val transactionCount: Int = 0
 ) {
     /**
-     * Net flow (income + expense)
+     * Net flow (income + expense + transferIn + transferOut)
      */
-    val netFlow: BigDecimal get() = income + expense
+    val netFlow: BigDecimal get() = income.add(expense).add(transferIn).add(transferOut)
 
     /**
-     * Transforms this summary based on the requested perspective.
-     * Nature (ACCOUNTING): keeps raw metrics.
-     * Directional (CASH_FLOW): merges transfers into income/expense as inflow/outflow.
+     * Total amount (alias for netFlow for backward compatibility)
      */
-    fun toPerspective(perspective: AccountingPerspective): FinancialSummary {
-        return when (perspective) {
-            AccountingPerspective.Accounting -> this
-            is AccountingPerspective.CashFlow -> this.copy(
-                income = income.add(transferIn),
-                expense = expense.add(transferOut),
-                transfer = BigDecimal.ZERO // Transfers are absorbed into inflow/outflow
-            )
-        }
-    }
+    val totalAmount: BigDecimal get() = netFlow
+
+    /**
+     * Net transfer (transferIn + transferOut)
+     */
+    val transfer: BigDecimal get() = transferIn.add(transferOut)
+
+    /**
+     * Total inflow (income + transferIn)
+     */
+    val inflow: BigDecimal get() = income.add(transferIn)
+
+    /**
+     * Total outflow (expense + transferOut)
+     */
+    val outflow: BigDecimal get() = expense.add(transferOut)
+
+    operator fun minus(other: FinancialSummary): FinancialSummary = FinancialSummary(
+        income = income.subtract(other.income),
+        expense = expense.subtract(other.expense),
+        transferIn = transferIn.subtract(other.transferIn),
+        transferOut = transferOut.subtract(other.transferOut),
+        transactionCount = transactionCount - other.transactionCount
+    )
+
+    operator fun plus(other: FinancialSummary): FinancialSummary = FinancialSummary(
+        income = income.add(other.income),
+        expense = expense.add(other.expense),
+        transferIn = transferIn.add(other.transferIn),
+        transferOut = transferOut.add(other.transferOut),
+        transactionCount = transactionCount + other.transactionCount
+    )
+
+    operator fun times(rate: BigDecimal): FinancialSummary = FinancialSummary(
+        income = income.multiply(rate),
+        expense = expense.multiply(rate),
+        transferIn = transferIn.multiply(rate),
+        transferOut = transferOut.multiply(rate),
+        transactionCount = transactionCount
+    )
+
+    fun abs(): FinancialSummary = FinancialSummary(
+        income = income.abs(),
+        expense = expense.abs(),
+        transferIn = transferIn.abs(),
+        transferOut = transferOut.abs(),
+        transactionCount = transactionCount
+    )
+
+    fun setScale(precision: Int, roundingMode: java.math.RoundingMode = java.math.RoundingMode.HALF_UP): FinancialSummary = FinancialSummary(
+        income = income.setScale(precision, roundingMode),
+        expense = expense.setScale(precision, roundingMode),
+        transferIn = transferIn.setScale(precision, roundingMode),
+        transferOut = transferOut.setScale(precision, roundingMode),
+        transactionCount = transactionCount
+    )
 
     companion object {
         /**
          * Empty financial summary for use when no transactions are available.
          */
-        val EMPTY = FinancialSummary(
-            totalAmount = BigDecimal.ZERO,
-            income = BigDecimal.ZERO,
-            expense = BigDecimal.ZERO,
-            transfer = BigDecimal.ZERO,
-            transferIn = BigDecimal.ZERO,
-            transferOut = BigDecimal.ZERO,
-            crossCcyTransferIn = BigDecimal.ZERO,
-            crossCcyTransferOut = BigDecimal.ZERO,
-            transactionCount = 0
-        )
+        val EMPTY = FinancialSummary()
 
         /**
          * Aggregates a collection of FinancialSummary objects into a single one.
          */
         fun aggregate(summaries: Collection<FinancialSummary>): FinancialSummary {
             if (summaries.isEmpty()) return EMPTY
-            return FinancialSummary(
-                totalAmount = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.totalAmount) },
-                income = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.income) },
-                expense = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.expense) },
-                transfer = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transfer) },
-                transferIn = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transferIn) },
-                transferOut = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.transferOut) },
-                crossCcyTransferIn = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.crossCcyTransferIn) },
-                crossCcyTransferOut = summaries.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.crossCcyTransferOut) },
-                transactionCount = summaries.sumOf { it.transactionCount }
-            )
+            return summaries.reduce { acc, s -> acc + s }
         }
     }
 }
 
 /**
- * Extracts a scalar value for this metric from a perspective-resolved [FinancialSummary].
- * Always call [FinancialSummary.toPerspective] before calling this — [ChartMetric.INCOME]
- * and [ChartMetric.EXPENSE] already include absorbed transfers in CashFlow perspective,
- * and [ChartMetric.TRANSFER] is zero in CashFlow perspective.
- *
- * [ChartMetric.INFLOW] and [ChartMetric.OUTFLOW] are only selectable in CashFlow mode where
- * toPerspective has already merged transferIn into income and transferOut into expense. They
- * therefore return summary.income / summary.expense directly to avoid double-counting.
+ * Extracts a scalar value for this metric from a [FinancialSummary].
  */
 fun ChartMetric.extractFrom(summary: FinancialSummary): BigDecimal = when (this) {
-    ChartMetric.NET          -> summary.income + summary.expense + summary.transfer
+    ChartMetric.NET          -> summary.netFlow
     ChartMetric.INCOME       -> summary.income
     ChartMetric.EXPENSE      -> summary.expense
     ChartMetric.TRANSFER     -> summary.transfer
     ChartMetric.TRANSFER_IN  -> summary.transferIn
     ChartMetric.TRANSFER_OUT -> summary.transferOut
-    ChartMetric.INFLOW       -> summary.income
-    ChartMetric.OUTFLOW      -> summary.expense
+    ChartMetric.INFLOW       -> summary.inflow
+    ChartMetric.OUTFLOW      -> summary.outflow
 }
 
 /**
@@ -113,8 +131,7 @@ typealias TransactionSummary = FinancialSummary
 data class FinancialDelta(
     val absoluteChange: BigDecimal,
     val percentageChange: Double,
-    val incomeChange: BigDecimal,
-    val expenseChange: BigDecimal
+    val delta: FinancialSummary
 )
 
 /**
@@ -123,14 +140,11 @@ data class FinancialDelta(
  */
 data class FinancialMetrics<K>(
     val key: K,
-    val financialSummary: FinancialSummary,
+    val metrics: FinancialSummary,
     val currencyBreakdown: Map<String, FinancialSummary>
 ) {
-    val totalAmount: BigDecimal get() = financialSummary.totalAmount
-    val income: BigDecimal get() = financialSummary.income
-    val expense: BigDecimal get() = financialSummary.expense
-    val netFlow: BigDecimal get() = financialSummary.netFlow
-    val transactionCount: Int get() = financialSummary.transactionCount
+    val totalAmount: BigDecimal get() = metrics.totalAmount
+    val transactionCount: Int get() = metrics.transactionCount
 }
 
 // Type aliases for specific breakdown types (for semantic clarity)
@@ -153,35 +167,17 @@ typealias StatusBreakdown = FinancialMetrics<String>
 data class CategoryTreeMetrics(
     val category: String,
     val categoryId: Long?,
-    @Serializable(with = BigDecimalSerializer::class)
-    val netBalance: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val income: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val expense: BigDecimal,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transfer: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferIn: BigDecimal = BigDecimal.ZERO,
-    @Serializable(with = BigDecimalSerializer::class)
-    val transferOut: BigDecimal = BigDecimal.ZERO,
+    val metrics: FinancialSummary,
     val colorHex: Int,
     val percentage: Float,
     val hasSubcategories: Boolean = false,
     val subcategoryData: List<CategoryTreeMetrics> = emptyList(),
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousNetBalance: BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousIncome: BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousExpense: BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousTransfer: BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousTransferIn: BigDecimal? = null,
-    @Serializable(with = BigDecimalSerializer::class)
-    val previousTransferOut: BigDecimal? = null
-)
+    val previousMetrics: FinancialSummary? = null
+) {
+    // Accessors for core properties
+    val netBalance: BigDecimal get() = metrics.netFlow
+    val previousNetBalance: BigDecimal? get() = previousMetrics?.netFlow
+}
 
 /**
  * Currency breakdown with detailed financial metrics.
@@ -189,12 +185,10 @@ data class CategoryTreeMetrics(
  */
 data class CurrencyBreakdown(
     val currency: String,
-    val financialSummary: FinancialSummary
+    val metrics: FinancialSummary
 ) {
-    val totalAmount: BigDecimal get() = financialSummary.totalAmount
-    val income: BigDecimal get() = financialSummary.income
-    val expense: BigDecimal get() = financialSummary.expense
-    val transactionCount: Int get() = financialSummary.transactionCount
+    val totalAmount: BigDecimal get() = metrics.netFlow
+    val transactionCount: Int get() = metrics.transactionCount
 }
 
 /**
@@ -202,7 +196,7 @@ data class CurrencyBreakdown(
  * Uses FinancialSummary for totals to maintain DRY principle.
  */
 data class IncomeExpenseBreakdown(
-    val financialSummary: FinancialSummary,
+    val metrics: FinancialSummary,
     val incomeTransactions: List<Transaction>,
     val expenseTransactions: List<Transaction>,
     val incomeCurrencyBreakdown: Map<String, FinancialSummary>,
@@ -210,7 +204,7 @@ data class IncomeExpenseBreakdown(
 ) {
     companion object {
         fun empty() = IncomeExpenseBreakdown(
-            financialSummary = FinancialSummary.EMPTY,
+            metrics = FinancialSummary.EMPTY,
             incomeTransactions = emptyList(),
             expenseTransactions = emptyList(),
             incomeCurrencyBreakdown = emptyMap(),
@@ -218,12 +212,9 @@ data class IncomeExpenseBreakdown(
         )
     }
 
-    // Convenience accessors for backward compatibility
-    val totalIncome: BigDecimal get() = financialSummary.income
-    val totalExpense: BigDecimal get() = financialSummary.expense
-    val netFlow: BigDecimal get() = financialSummary.netFlow
-    val totalAmount: BigDecimal get() = financialSummary.totalAmount
-    val transactionCount: Int get() = financialSummary.transactionCount
+    // Convenience accessors
+    val netFlow: BigDecimal get() = metrics.netFlow
+    val transactionCount: Int get() = metrics.transactionCount
 }
 
 /**
@@ -233,12 +224,9 @@ data class IncomeExpenseBreakdown(
  */
 data class LabelGroup<L>(
     val label: L,
-    val financialSummary: FinancialSummary,
+    val metrics: FinancialSummary,
     val transactions: List<Transaction>,
     val currencyBreakdown: Map<String, FinancialSummary>
 ) {
-    val totalAmount: BigDecimal get() = financialSummary.totalAmount
-    val income: BigDecimal get() = financialSummary.income
-    val expense: BigDecimal get() = financialSummary.expense
-    val transactionCount: Int get() = financialSummary.transactionCount
+    val transactionCount: Int get() = metrics.transactionCount
 }

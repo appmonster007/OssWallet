@@ -67,20 +67,17 @@ class CardAggregationServiceTest {
     }
 
     private fun fs(
-        total: String,
+        total: String? = null,
         income: String = "0",
         expense: String = "0",
-        transfer: String = "0",
         transferIn: String = "0",
         transferOut: String = "0",
     ) = FinancialSummary(
-        totalAmount = BigDecimal(total),
         income = BigDecimal(income),
         expense = BigDecimal(expense),
-        transfer = BigDecimal(transfer),
-        transactionCount = 1,
         transferIn = BigDecimal(transferIn),
         transferOut = BigDecimal(transferOut),
+        transactionCount = 1
     )
 
     private fun baseInput(
@@ -125,10 +122,23 @@ class CardAggregationServiceTest {
         val currentSummary = mapOf(
             "acc1" to mapOf(
                 "USD" to FinancialSummary(
+                    income = BigDecimal("5000.00"), // This will be the balance for balanceFilter
+                    expense = BigDecimal("-200.00"),
+                    transferIn = BigDecimal.ZERO,
+                    transferOut = BigDecimal.ZERO,
+                    transactionCount = 5
+                )
+            )
+        )
+        
+        // Mock current period ONLY summary (for flow)
+        val currentFlowSummary = mapOf(
+            "acc1" to mapOf(
+                "USD" to FinancialSummary(
                     income = BigDecimal("1000.00"),
                     expense = BigDecimal("-200.00"),
-                    totalAmount = BigDecimal("5000.00"),
-                    transfer = BigDecimal.ZERO,
+                    transferIn = BigDecimal.ZERO,
+                    transferOut = BigDecimal.ZERO,
                     transactionCount = 5
                 )
             )
@@ -138,22 +148,35 @@ class CardAggregationServiceTest {
         val previousSummary = mapOf(
             "acc1" to mapOf(
                 "USD" to FinancialSummary(
+                    income = BigDecimal("4200.00"),
+                    expense = BigDecimal("-150.00"),
+                    transferIn = BigDecimal.ZERO,
+                    transferOut = BigDecimal.ZERO,
+                    transactionCount = 4
+                )
+            )
+        )
+        
+        // Mock previous period ONLY summary (for flow)
+        val previousFlowSummary = mapOf(
+            "acc1" to mapOf(
+                "USD" to FinancialSummary(
                     income = BigDecimal("800.00"),
                     expense = BigDecimal("-150.00"),
-                    totalAmount = BigDecimal("4200.00"),
-                    transfer = BigDecimal.ZERO,
+                    transferIn = BigDecimal.ZERO,
+                    transferOut = BigDecimal.ZERO,
                     transactionCount = 4
                 )
             )
         )
 
         coEvery { 
-            TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, any()) 
+            TransactionAggregationService.getSummaryByAccountAndCurrency(queryService, profileId, any(), any()) 
         } returnsMany listOf(
-            Result.success(currentSummary), // Balance filter call
-            Result.success(currentSummary), // Current period call
-            Result.success(previousSummary), // Balance filter call
-            Result.success(previousSummary)  // Previous period call
+            Result.success(currentSummary), // Balance filter call (current)
+            Result.success(currentFlowSummary), // Current period call
+            Result.success(previousSummary), // Balance filter call (previous)
+            Result.success(previousFlowSummary)  // Previous period call
         )
 
         every { TimelineService.getPreviousRange(any()) } returns Pair(1000L, 2000L)
@@ -164,16 +187,16 @@ class CardAggregationServiceTest {
         assertNotNull(summary)
         
         // Current Period Flow
-        assertEquals(0, BigDecimal("1000.00").compareTo(summary!!.currentPeriodFlow.income))
-        assertEquals(0, BigDecimal("-200.00").compareTo(summary.currentPeriodFlow.expense))
+        assertEquals(0, BigDecimal("1000.00").compareTo(summary!!.currentPeriodMetrics.income))
+        assertEquals(0, BigDecimal("-200.00").compareTo(summary.currentPeriodMetrics.expense))
         
         // Previous Period Flow
-        assertNotNull(summary.previousPeriodFlow)
-        assertEquals(0, BigDecimal("800.00").compareTo(summary.previousPeriodFlow?.income))
-        assertEquals(0, BigDecimal("-150.00").compareTo(summary.previousPeriodFlow?.expense))
+        assertNotNull(summary.previousPeriodMetrics)
+        assertEquals(0, BigDecimal("800.00").compareTo(summary.previousPeriodMetrics?.income))
+        assertEquals(0, BigDecimal("-150.00").compareTo(summary.previousPeriodMetrics?.expense))
         
-        // Balance (Cumulative)
-        assertEquals(0, BigDecimal("5000.00").compareTo(summary.balance))
+        // Balance (Cumulative) - 5000 + (-200) = 4800
+        assertEquals(0, BigDecimal("4800.00").compareTo(summary.balance))
     }
 
     @Test
@@ -184,7 +207,7 @@ class CardAggregationServiceTest {
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
-            Result.success(mapOf("USD" to fs(total = "5000.00", income = "1000.00", expense = "-200.00")))
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
 
         val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
 
@@ -203,8 +226,8 @@ class CardAggregationServiceTest {
 
         val result = CardAggregationService.computeCashFlowCard(queryService, profileId, baseInput(), config)
 
-        assertEquals(0, BigDecimal("1000.00").compareTo(result.result.totalIncomeInBase))
-        assertEquals(0, BigDecimal("-300.00").compareTo(result.result.totalExpensesInBase))
+        assertEquals(0, BigDecimal("1000.00").compareTo(result.result.metricsInBase.income))
+        assertEquals(0, BigDecimal("-300.00").compareTo(result.result.metricsInBase.expense))
     }
 
     @Test
@@ -214,7 +237,7 @@ class CardAggregationServiceTest {
             filter = TransactionFilter(timelineRange = TimelineRange.AllTime())
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
-            Result.success(mapOf("USD" to fs(total = "5000.00")))
+            Result.success(mapOf("USD" to fs(income = "5000.00")))
 
         val result = CardAggregationService.computeCurrencyBalancesCard(queryService, profileId, baseInput(), config)
 
@@ -279,14 +302,14 @@ class CardAggregationServiceTest {
             filter = TransactionFilter(accountIds = setOf("acc1"), timelineRange = TimelineRange.AllTime())
         )
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
-            Result.success(mapOf("USD" to fs(total = "5000.00", income = "1000.00", expense = "-200.00")))
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
         coEvery { queryService.getMinTransactionTimestamp(any()) } returns 0L
         coEvery { queryService.aggregate(any(), any(), any(), any(), any(), any(), any()) } returns Result.success(emptyList())
 
         val result = CardAggregationService.computeAccountHeroCard(queryService, profileId, input, config)
 
         assertEquals(0, BigDecimal("5000.00").compareTo(result.summary.balance))
-        assertEquals(0, BigDecimal("1000.00").compareTo(result.summary.currentPeriodFlow.income))
+        assertEquals(0, BigDecimal("5200.00").compareTo(result.summary.currentPeriodMetrics.income))
     }
 
     @Test
@@ -326,7 +349,7 @@ class CardAggregationServiceTest {
         )
         every { TimelineService.getPreviousRange(any(), any()) } returns Pair(1000L, 2000L)
         coEvery { TransactionAggregationService.getSummaryByCurrency(any(), any(), any(), any()) } returns
-            Result.success(mapOf("USD" to fs(total = "5000.00", income = "1000.00", expense = "-200.00")))
+            Result.success(mapOf("USD" to fs(income = "5200.00", expense = "-200.00")))
 
         val result = CardAggregationService.computeNetWorthCard(queryService, profileId, baseInput(), config)
 

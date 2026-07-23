@@ -173,65 +173,20 @@ object CurrencyService {
         exchangeRates: ExchangeRateSnapshot,
         precision: Int = 10
     ): FinancialSummary {
-        return FinancialSummary(
-            totalAmount = convertAmount(
-                summary.totalAmount,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            income = convertAmount(
-                summary.income,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            expense = convertAmount(
-                summary.expense,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            transfer = convertAmount(
-                summary.transfer,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            transferIn = convertAmount(
-                summary.transferIn,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            transferOut = convertAmount(
-                summary.transferOut,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            crossCcyTransferIn = convertAmount(
-                summary.crossCcyTransferIn,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            crossCcyTransferOut = convertAmount(
-                summary.crossCcyTransferOut,
-                fromCurrency,
-                toCurrency,
-                exchangeRates,
-                precision
-            ),
-            transactionCount = summary.transactionCount
-        )
+        val rate = if (fromCurrency == toCurrency) BigDecimal.ONE
+        else {
+            val anchor = exchangeRates.anchor
+            val fromRate = if (fromCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[fromCurrency]
+            val toRate = if (toCurrency == anchor) BigDecimal.ONE else exchangeRates.rates[toCurrency]
+            if (fromRate == null || toRate == null || fromRate.signum() == 0) null
+            else toRate.divide(fromRate, maxOf(precision + 4, 10), RoundingMode.HALF_UP)
+        }
+
+        return if (rate != null) {
+            summary.times(rate).setScale(precision)
+        } else {
+            summary.setScale(precision)
+        }
     }
 
     fun calculateTotalFinancialSummary(
@@ -243,19 +198,7 @@ object CurrencyService {
 
         return summaries.map { (currency, summary) ->
             convertFinancialSummary(summary, currency, targetCurrency, exchangeRates)
-        }.reduce { acc, summary ->
-            FinancialSummary(
-                totalAmount = acc.totalAmount + summary.totalAmount,
-                income = acc.income + summary.income,
-                expense = acc.expense + summary.expense,
-                transfer = acc.transfer + summary.transfer,
-                transferIn = acc.transferIn + summary.transferIn,
-                transferOut = acc.transferOut + summary.transferOut,
-                crossCcyTransferIn = acc.crossCcyTransferIn + summary.crossCcyTransferIn,
-                crossCcyTransferOut = acc.crossCcyTransferOut + summary.crossCcyTransferOut,
-                transactionCount = acc.transactionCount + summary.transactionCount
-            )
-        }
+        }.reduce { acc, summary -> acc + summary }
     }
 
     fun convertFinancialSummaryToBase(

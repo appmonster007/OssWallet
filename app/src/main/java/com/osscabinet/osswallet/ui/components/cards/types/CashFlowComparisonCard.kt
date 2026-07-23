@@ -28,6 +28,7 @@ import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
 import com.osscabinet.ossWallet.domain.model.settings.CashFlowComparisonCardConfig
 import com.osscabinet.ossWallet.domain.model.settings.ChartMetric
 import com.osscabinet.ossWallet.domain.service.currency.CurrencyService
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.ui.components.AeonSettingsToggle
 import com.osscabinet.ossWallet.ui.components.cards.AeonCardSettingsScaffold
 import com.osscabinet.ossWallet.ui.components.cards.AeonExpressiveCard
@@ -97,17 +98,16 @@ fun CashFlowComparisonCard(
             // --- Gated Heavy Computations ---
             // Aggregate sum for current period
             val aggregateTotal = remember(renderData.currentSeries, selectedMetric, config.perspective) {
-                val isCashFlow = config.perspective is AccountingPerspective.CashFlow
                 renderData.currentSeries.points.fold(BigDecimal.ZERO) { acc, p ->
                     acc + when (selectedMetric) {
-                        ChartMetric.NET -> p.net
-                        ChartMetric.INCOME -> p.income
-                        ChartMetric.EXPENSE -> p.expense
-                        ChartMetric.TRANSFER -> p.transfer
-                        ChartMetric.TRANSFER_IN -> p.transferIn
-                        ChartMetric.TRANSFER_OUT -> p.transferOut
-                        ChartMetric.INFLOW -> if (isCashFlow) p.income else (p.income + p.transferIn)
-                        ChartMetric.OUTFLOW -> if (isCashFlow) p.expense else (p.expense + p.transferOut)
+                        ChartMetric.NET -> p.metrics.netFlow
+                        ChartMetric.INCOME -> p.metrics.income
+                        ChartMetric.EXPENSE -> p.metrics.expense
+                        ChartMetric.TRANSFER -> p.metrics.transfer
+                        ChartMetric.TRANSFER_IN -> p.metrics.transferIn
+                        ChartMetric.TRANSFER_OUT -> p.metrics.transferOut
+                        ChartMetric.INFLOW -> p.metrics.inflow
+                        ChartMetric.OUTFLOW -> p.metrics.outflow
                     }
                 }
             }
@@ -115,17 +115,16 @@ fun CashFlowComparisonCard(
             val previousAggregateTotal = remember(renderData.previousSeries, selectedMetric, config.perspective) {
                 if (renderData.previousSeries.points.isEmpty()) null
                 else {
-                    val isCashFlow = config.perspective is AccountingPerspective.CashFlow
                     renderData.previousSeries.points.fold(BigDecimal.ZERO) { acc, p ->
                         acc + when (selectedMetric) {
-                            ChartMetric.NET -> p.net
-                            ChartMetric.INCOME -> p.income
-                            ChartMetric.EXPENSE -> p.expense
-                            ChartMetric.TRANSFER -> p.transfer
-                            ChartMetric.TRANSFER_IN -> p.transferIn
-                            ChartMetric.TRANSFER_OUT -> p.transferOut
-                            ChartMetric.INFLOW -> if (isCashFlow) p.income else (p.income + p.transferIn)
-                            ChartMetric.OUTFLOW -> if (isCashFlow) p.expense else (p.expense + p.transferOut)
+                            ChartMetric.NET -> p.metrics.netFlow
+                            ChartMetric.INCOME -> p.metrics.income
+                            ChartMetric.EXPENSE -> p.metrics.expense
+                            ChartMetric.TRANSFER -> p.metrics.transfer
+                            ChartMetric.TRANSFER_IN -> p.metrics.transferIn
+                            ChartMetric.TRANSFER_OUT -> p.metrics.transferOut
+                            ChartMetric.INFLOW -> p.metrics.inflow
+                            ChartMetric.OUTFLOW -> p.metrics.outflow
                         }
                     }
                 }
@@ -262,17 +261,16 @@ private fun buildSeriesList(
 
     fun seriesPoints(s: CashFlowComparisonSeries): List<AeonLineChartPoint> {
         var running = BigDecimal.ZERO
-        val isCashFlow = config.perspective is AccountingPerspective.CashFlow
         val dataPoints = s.points.mapIndexed { index, point ->
             val value = when (selectedMetric) {
-                ChartMetric.NET -> point.net
-                ChartMetric.INCOME -> point.income
-                ChartMetric.EXPENSE -> point.expense
-                ChartMetric.TRANSFER -> point.transfer
-                ChartMetric.TRANSFER_IN -> point.transferIn
-                ChartMetric.TRANSFER_OUT -> point.transferOut
-                ChartMetric.INFLOW -> if (isCashFlow) point.income else (point.income + point.transferIn)
-                ChartMetric.OUTFLOW -> if (isCashFlow) point.expense else (point.expense + point.transferOut)
+                ChartMetric.NET -> point.metrics.netFlow
+                ChartMetric.INCOME -> point.metrics.income
+                ChartMetric.EXPENSE -> point.metrics.expense
+                ChartMetric.TRANSFER -> point.metrics.transfer
+                ChartMetric.TRANSFER_IN -> point.metrics.transferIn
+                ChartMetric.TRANSFER_OUT -> point.metrics.transferOut
+                ChartMetric.INFLOW -> point.metrics.inflow
+                ChartMetric.OUTFLOW -> point.metrics.outflow
             }
             running += value
             AeonLineChartPoint(
@@ -483,26 +481,26 @@ fun CashFlowComparisonShorterPrevPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "01/02",
                     0,
-                    BigDecimal("100"),
-                    BigDecimal("50"),
-                    BigDecimal.ZERO,
-                    BigDecimal("50")
+                    com.osscabinet.ossWallet.domain.service.financial.FinancialSummary(
+                        income = BigDecimal("100"),
+                        expense = BigDecimal("50")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "02/02",
                     0,
-                    BigDecimal("120"),
-                    BigDecimal("60"),
-                    BigDecimal.ZERO,
-                    BigDecimal("60")
+                    com.osscabinet.ossWallet.domain.service.financial.FinancialSummary(
+                        income = BigDecimal("120"),
+                        expense = BigDecimal("60")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "03/02",
                     0,
-                    BigDecimal("150"),
-                    BigDecimal("70"),
-                    BigDecimal.ZERO,
-                    BigDecimal("80")
+                    com.osscabinet.ossWallet.domain.service.financial.FinancialSummary(
+                        income = BigDecimal("150"),
+                        expense = BigDecimal("70")
+                    )
                 )
             )
         ),
@@ -511,18 +509,18 @@ fun CashFlowComparisonShorterPrevPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "01/01",
                     0,
-                    BigDecimal("80"),
-                    BigDecimal("40"),
-                    BigDecimal.ZERO,
-                    BigDecimal("40")
+                    com.osscabinet.ossWallet.domain.service.financial.FinancialSummary(
+                        income = BigDecimal("80"),
+                        expense = BigDecimal("40")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "02/01",
                     0,
-                    BigDecimal("90"),
-                    BigDecimal("45"),
-                    BigDecimal.ZERO,
-                    BigDecimal("45")
+                    com.osscabinet.ossWallet.domain.service.financial.FinancialSummary(
+                        income = BigDecimal("90"),
+                        expense = BigDecimal("45")
+                    )
                 )
             )
         ),
@@ -558,18 +556,18 @@ fun CashFlowComparisonLongerPrevPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "01/02",
                     0,
-                    BigDecimal("100"),
-                    BigDecimal("50"),
-                    BigDecimal.ZERO,
-                    BigDecimal("50")
+                    FinancialSummary(
+                        income = BigDecimal("100"),
+                        expense = BigDecimal("50")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "02/02",
                     0,
-                    BigDecimal("120"),
-                    BigDecimal("60"),
-                    BigDecimal.ZERO,
-                    BigDecimal("60")
+                    FinancialSummary(
+                        income = BigDecimal("120"),
+                        expense = BigDecimal("60")
+                    )
                 )
             )
         ),
@@ -578,42 +576,42 @@ fun CashFlowComparisonLongerPrevPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "01/01",
                     0,
-                    BigDecimal("80"),
-                    BigDecimal("40"),
-                    BigDecimal.ZERO,
-                    BigDecimal("40")
+                    FinancialSummary(
+                        income = BigDecimal("80"),
+                        expense = BigDecimal("40")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "02/01",
                     0,
-                    BigDecimal("90"),
-                    BigDecimal("45"),
-                    BigDecimal.ZERO,
-                    BigDecimal("45")
+                    FinancialSummary(
+                        income = BigDecimal("90"),
+                        expense = BigDecimal("45")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "03/01",
                     0,
-                    BigDecimal("100"),
-                    BigDecimal("50"),
-                    BigDecimal.ZERO,
-                    BigDecimal("50")
+                    FinancialSummary(
+                        income = BigDecimal("100"),
+                        expense = BigDecimal("50")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "04/01",
                     0,
-                    BigDecimal("110"),
-                    BigDecimal("55"),
-                    BigDecimal.ZERO,
-                    BigDecimal("55")
+                    FinancialSummary(
+                        income = BigDecimal("110"),
+                        expense = BigDecimal("55")
+                    )
                 ),
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "05/01",
                     0,
-                    BigDecimal("120"),
-                    BigDecimal("60"),
-                    BigDecimal.ZERO,
-                    BigDecimal("60")
+                    FinancialSummary(
+                        income = BigDecimal("120"),
+                        expense = BigDecimal("60")
+                    )
                 )
             )
         ),
@@ -652,10 +650,10 @@ fun CashFlowComparisonTightMarkersPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "28/02",
                     0,
-                    BigDecimal("120"),
-                    BigDecimal("60"),
-                    BigDecimal.ZERO,
-                    BigDecimal("60")
+                    FinancialSummary(
+                        income = BigDecimal("120"),
+                        expense = BigDecimal("60")
+                    )
                 )
             )
         ),
@@ -664,10 +662,10 @@ fun CashFlowComparisonTightMarkersPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "29/01",
                     0,
-                    BigDecimal("100"),
-                    BigDecimal("50"),
-                    BigDecimal.ZERO,
-                    BigDecimal("50")
+                    FinancialSummary(
+                        income = BigDecimal("100"),
+                        expense = BigDecimal("50")
+                    )
                 )
             )
         ),
@@ -676,10 +674,10 @@ fun CashFlowComparisonTightMarkersPreview() {
                 com.osscabinet.ossWallet.domain.card.CashFlowTimePoint(
                     "01/03",
                     0,
-                    BigDecimal("100"),
-                    BigDecimal("50"),
-                    BigDecimal.ZERO,
-                    BigDecimal("50")
+                    FinancialSummary(
+                        income = BigDecimal("100"),
+                        expense = BigDecimal("50")
+                    )
                 )
             )
         ),

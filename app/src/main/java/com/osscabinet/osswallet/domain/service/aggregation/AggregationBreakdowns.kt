@@ -128,7 +128,7 @@ fun List<Transaction>.breakdownByTags(
             }
             FinancialMetrics(
                 key = tag,
-                financialSummary = FinancialSummary.aggregate(convertedSummaries.values),
+                metrics = FinancialSummary.aggregate(convertedSummaries.values),
                 currencyBreakdown = summaries
             )
         }.sortedByDescending { it.totalAmount.abs() }

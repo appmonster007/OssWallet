@@ -5,7 +5,10 @@ function renderCashFlowComparisonCard(d, cardId, metric) {
   const m = metric || d.selectedMetric || 'net';
   const isCumulative = d.isCumulative;
 
-  const getVal = (p,key) => key==='income'?(p.income||0):key==='expense'?(p.expense||0):(p.net||0);
+  const getVal = (p,key) => {
+    const metrics = p.metrics || {};
+    return key==='income'?(metrics.income||0):key==='expense'?(metrics.expense||0):(metrics.netFlow||0);
+  };
 
   const processSeries = (data, name, color, opacity, isDashed) => {
     let pts = [];

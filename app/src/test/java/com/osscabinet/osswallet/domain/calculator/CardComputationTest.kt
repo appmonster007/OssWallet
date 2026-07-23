@@ -92,9 +92,9 @@ class CardComputationTest {
         val config = CashFlowCardConfig(cardId = "test", filter = TransactionFilter(timelineRange = TimelineRange.AllTime()))
         val result = runBlocking { registry.compute(CardType.CASH_FLOW, input, config) as CardRenderData.CashFlow }
         
-        assertEquals(BigDecimal("1000.00"), result.result.totalIncomeInBase)
-        assertEquals(BigDecimal("-58.82"), result.result.totalExpensesInBase)
-        assertEquals(BigDecimal("941.18"), result.result.netInBase)
+        assertEquals(BigDecimal("1000.00"), result.result.metricsInBase.income)
+        assertEquals(BigDecimal("-58.82"), result.result.metricsInBase.expense)
+        assertEquals(BigDecimal("941.18"), result.result.metricsInBase.netFlow)
     }
 
     @Test

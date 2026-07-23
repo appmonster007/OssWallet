@@ -46,6 +46,7 @@ import com.osscabinet.ossWallet.domain.card.CardRenderData
 import com.osscabinet.ossWallet.domain.card.CardUpdateHandler
 import com.osscabinet.ossWallet.domain.card.TagUpSetIntersection
 import com.osscabinet.ossWallet.domain.card.TagUpSetSet
+import com.osscabinet.ossWallet.domain.service.financial.FinancialSummary
 import com.osscabinet.ossWallet.domain.model.TransactionFilter
 import com.osscabinet.ossWallet.domain.model.timeline.TimelineRange
 import com.osscabinet.ossWallet.domain.model.settings.AccountingPerspective
@@ -140,14 +141,14 @@ fun TagUpSetPlotCard(
         val uiSets = remember(renderData.sets, selectedMetric, config.tagSortMode) {
             val getMetricValue: (TagUpSetSet) -> BigDecimal = { s ->
                 when (selectedMetric) {
-                    ChartMetric.INCOME       -> s.income
-                    ChartMetric.EXPENSE      -> s.expense
-                    ChartMetric.TRANSFER     -> s.transfer
-                    ChartMetric.TRANSFER_IN  -> s.transferIn
-                    ChartMetric.TRANSFER_OUT -> s.transferOut
-                    ChartMetric.INFLOW       -> s.income
-                    ChartMetric.OUTFLOW      -> s.expense
-                    ChartMetric.NET          -> s.income.add(s.expense).add(s.transfer)
+                    ChartMetric.INCOME       -> s.metrics.income
+                    ChartMetric.EXPENSE      -> s.metrics.expense
+                    ChartMetric.TRANSFER     -> s.metrics.transfer
+                    ChartMetric.TRANSFER_IN  -> s.metrics.transferIn
+                    ChartMetric.TRANSFER_OUT -> s.metrics.transferOut
+                    ChartMetric.INFLOW       -> s.metrics.inflow
+                    ChartMetric.OUTFLOW      -> s.metrics.outflow
+                    ChartMetric.NET          -> s.metrics.netFlow
                 }
             }
 
@@ -164,12 +165,16 @@ fun TagUpSetPlotCard(
                 AeonUpSetSet(
                     name = it.tagName,
                     total = getMetricValue(it),
-                    income = it.income,
-                    expense = it.expense,
-                    transfer = it.transfer,
-                    incomeByCurrency = it.incomeByCurrency,
-                    expenseByCurrency = it.expenseByCurrency,
-                    transactionCount = it.transactionCount
+                    income = it.metrics.income,
+                    expense = it.metrics.expense,
+                    transfer = it.metrics.transfer,
+                    inflow = it.metrics.inflow,
+                    outflow = it.metrics.outflow,
+                    incomeByCurrency = it.metricsByCurrency.mapValues { v -> v.value.income },
+                    expenseByCurrency = it.metricsByCurrency.mapValues { v -> v.value.expense },
+                    inflowByCurrency = it.metricsByCurrency.mapValues { v -> v.value.inflow },
+                    outflowByCurrency = it.metricsByCurrency.mapValues { v -> v.value.outflow },
+                    transactionCount = it.metrics.transactionCount
                 )
             }
         }
@@ -187,24 +192,28 @@ fun TagUpSetPlotCard(
                 if (indices.isEmpty()) null
                 else {
                     val amount = when (selectedMetric) {
-                        ChartMetric.INCOME       -> intersection.income
-                        ChartMetric.EXPENSE      -> intersection.expense
-                        ChartMetric.TRANSFER     -> intersection.transfer
-                        ChartMetric.TRANSFER_IN  -> intersection.transferIn
-                        ChartMetric.TRANSFER_OUT -> intersection.transferOut
-                        ChartMetric.INFLOW       -> intersection.income
-                        ChartMetric.OUTFLOW      -> intersection.expense
-                        ChartMetric.NET          -> intersection.income.add(intersection.expense).add(intersection.transfer)
+                        ChartMetric.INCOME       -> intersection.metrics.income
+                        ChartMetric.EXPENSE      -> intersection.metrics.expense
+                        ChartMetric.TRANSFER     -> intersection.metrics.transfer
+                        ChartMetric.TRANSFER_IN  -> intersection.metrics.transferIn
+                        ChartMetric.TRANSFER_OUT -> intersection.metrics.transferOut
+                        ChartMetric.INFLOW       -> intersection.metrics.inflow
+                        ChartMetric.OUTFLOW      -> intersection.metrics.outflow
+                        ChartMetric.NET          -> intersection.metrics.netFlow
                     }
                     AeonUpSetIntersection(
                         setIndices = indices,
                         value = amount,
-                        income = intersection.income,
-                        expense = intersection.expense,
-                        transfer = intersection.transfer,
-                        incomeByCurrency = intersection.incomeByCurrency,
-                        expenseByCurrency = intersection.expenseByCurrency,
-                        count = intersection.transactionCount
+                        income = intersection.metrics.income,
+                        expense = intersection.metrics.expense,
+                        transfer = intersection.metrics.transfer,
+                        inflow = intersection.metrics.inflow,
+                        outflow = intersection.metrics.outflow,
+                        incomeByCurrency = intersection.metricsByCurrency.mapValues { v -> v.value.income },
+                        expenseByCurrency = intersection.metricsByCurrency.mapValues { v -> v.value.expense },
+                        inflowByCurrency = intersection.metricsByCurrency.mapValues { v -> v.value.inflow },
+                        outflowByCurrency = intersection.metricsByCurrency.mapValues { v -> v.value.outflow },
+                        count = intersection.metrics.transactionCount
                     )
                 }
             }.let { list ->
@@ -660,41 +669,59 @@ fun TagUpSetPlotCardPreview() {
                     sets = listOf(
                         TagUpSetSet(
                             "Food",
-                            BigDecimal("500"),
-                            expense = BigDecimal("500"),
-                            transactionCount = 10
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("500"),
+                                transactionCount = 10
+                            ),
+                            emptyMap()
                         ),
                         TagUpSetSet(
                             "Business",
-                            BigDecimal("300"),
-                            expense = BigDecimal("300"),
-                            transactionCount = 5
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("300"),
+                                transactionCount = 5
+                            ),
+                            emptyMap()
                         ),
                         TagUpSetSet(
                             "Travel",
-                            BigDecimal("200"),
-                            expense = BigDecimal("200"),
-                            transactionCount = 3
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("200"),
+                                transactionCount = 3
+                            ),
+                            emptyMap()
                         )
                     ),
                     intersections = listOf(
                         TagUpSetIntersection(
                             setOf("Food", "Business"),
-                            BigDecimal("100"),
-                            expense = BigDecimal("100"),
-                            transactionCount = 2
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("100"),
+                                transactionCount = 2
+                            ),
+                            emptyMap()
                         ),
                         TagUpSetIntersection(
                             setOf("Food"),
-                            BigDecimal("400"),
-                            expense = BigDecimal("400"),
-                            transactionCount = 8
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("400"),
+                                transactionCount = 8
+                            ),
+                            emptyMap()
                         ),
                         TagUpSetIntersection(
                             setOf("Business"),
-                            BigDecimal("200"),
-                            expense = BigDecimal("200"),
-                            transactionCount = 3
+                            FinancialSummary(
+                                income = BigDecimal.ZERO,
+                                expense = BigDecimal("200"),
+                                transactionCount = 3
+                            ),
+                            emptyMap()
                         )
                     ),
                     currency = "USD"

@@ -54,9 +54,9 @@ class NetWorthWidgetFetcher : WidgetDataFetcher {
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH]            =
             formatter.format(netWorth, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.INC]                  =
-            formatter.format(cashFlow?.totalIncomeInBase ?: BigDecimal.ZERO, common.baseCurrency)
+            formatter.format(cashFlow?.metricsInBase?.income ?: BigDecimal.ZERO, common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.EXP]                  =
-            formatter.format((cashFlow?.totalExpensesInBase ?: BigDecimal.ZERO).abs(), common.baseCurrency)
+            formatter.format((cashFlow?.metricsInBase?.expense ?: BigDecimal.ZERO).abs(), common.baseCurrency)
         prefs[NetWorthGlanceWidget.Keys.NET_WORTH_COMPARISON] =
             buildComparisonText(netWorth, prev?.netWorth, config.showComparison) ?: ""
         prefs[NetWorthGlanceWidget.Keys.PERIOD_LABEL]         = config.timelineLabel

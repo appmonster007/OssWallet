@@ -647,7 +647,7 @@ class DashboardViewModel @Inject constructor(
             val profileId = settingsRepository.currentProfileId.first()
             val request = TransactionRequest(
                 name = payment.name,
-                amount = TransactionEntryService.getSignedAmount(payment.amount, payment.entryMode),
+                amount = TransactionEntryService.getMagnitude(payment.amount),
                 entryMode = payment.entryMode,
                 accountId = payment.accountId.takeIf { !it.isNullOrBlank() } ?: return@launch,
                 currency = payment.currency,

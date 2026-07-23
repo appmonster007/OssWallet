@@ -37,6 +37,7 @@ import com.osscabinet.ossWallet.domain.service.discovery.DiscoveredPattern
 import com.osscabinet.ossWallet.domain.service.discovery.PatternDiscoveryService
 import com.osscabinet.ossWallet.domain.service.filter.TransactionFilterService
 import com.osscabinet.ossWallet.domain.service.management.PlannedPaymentService
+import com.osscabinet.ossWallet.domain.service.management.TransactionEntryService
 import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.timeline.TimelineService
 import com.osscabinet.ossWallet.domain.usecase.TransactionUseCases
@@ -507,7 +508,7 @@ class TransactionViewModel @Inject constructor(
 
             val request = TransactionRequest(
                 name = payment.name,
-                amount = amount,
+                amount = TransactionEntryService.getMagnitude(amount),
                 entryMode = entryMode,
                 accountId = accountId,
                 currency = currency,

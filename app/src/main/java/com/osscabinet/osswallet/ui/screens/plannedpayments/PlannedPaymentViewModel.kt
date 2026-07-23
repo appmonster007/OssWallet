@@ -213,7 +213,7 @@ class PlannedPaymentViewModel @Inject constructor(
 
         return TransactionRequest(
             name = categoryName,
-            amount = TransactionEntryService.getSignedAmount(amount, entryMode),
+            amount = TransactionEntryService.getMagnitude(amount),
             entryMode = entryMode,
             accountId = accountId,
             currency = currency,

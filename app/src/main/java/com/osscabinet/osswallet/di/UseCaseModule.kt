@@ -22,6 +22,7 @@ import com.osscabinet.ossWallet.domain.repository.SharedWalletRepository
 import com.osscabinet.ossWallet.domain.repository.TagRepository
 import com.osscabinet.ossWallet.domain.repository.TemplateRepository
 import com.osscabinet.ossWallet.domain.repository.TransactionRepository
+import com.osscabinet.ossWallet.domain.service.management.TransactionManager
 import com.osscabinet.ossWallet.domain.service.query.DatabaseQueryService
 import com.osscabinet.ossWallet.domain.usecase.AccountUseCases
 import com.osscabinet.ossWallet.domain.usecase.ComputeCardUseCase
@@ -68,9 +69,9 @@ object UseCaseModule {
     @Singleton
     fun provideAccountUseCases(
         accountRepository: AccountRepository,
-        transactionRepository: TransactionRepository
+        transactionManager: TransactionManager
     ): AccountUseCases {
-        return AccountUseCases(accountRepository, transactionRepository)
+        return AccountUseCases(accountRepository, transactionManager)
     }
 
     @Provides

@@ -45,9 +45,9 @@ class CardComputationTest {
         object : CardDataComputer<NetWorthCardConfig, CardRenderData.NetWorth> {
             override val supportedType = CardType.NET_WORTH
             override suspend fun compute(input: CardInput, config: NetWorthCardConfig): CardRenderData.NetWorth {
-                val totals = AggregationService.calculateTotalByCurrency(transactions)
+                val summaries = AggregationService.calculateSummaryByCurrency(transactions)
                 val netWorth = CurrencyService.calculateTotalInCurrency(
-                    totals, input.targetCurrency, input.exchangeRates
+                    summaries.mapValues { it.value.netFlow }, input.targetCurrency, input.exchangeRates
                 )
                 val cashFlow = AggregationService.calculateCashFlowResult(transactions, input.targetCurrency, input.exchangeRates)
                 return CardRenderData.NetWorth(config, NetWorthMetrics(netWorth, cashFlow), input.targetCurrency)

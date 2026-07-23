@@ -49,8 +49,8 @@ private fun GeographicalContours(modifier: Modifier) {
 
     val pathData = remember(randomize) {
         val random = if (randomize) Random.Default else Random(42)
-        val gridX = 30 // Reduced for efficiency
-        val gridY = 30
+        val gridX = 300 // Reduced for efficiency
+        val gridY = 300
         val cellW = 1000f / gridX
         val cellH = 1000f / gridY
 
